@@ -12,6 +12,7 @@ shutter.py is part of the KalAO Instrument Control Software
 
 from . import core
 import numbers
+from opcua import Client, ua
 
 def status():
     """
