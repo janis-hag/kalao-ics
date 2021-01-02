@@ -18,15 +18,8 @@ def connect(addr="192.168.1.140", port=4840):
     beck = Client("opc.tcp://%s:%d"%(addr, port))
     beck.connect()
     root = beck.get_root_node()
-    print(":::::root:::::")
-    print(root)
     objects = beck.get_objects_node()
-    print(":::::objects:::::")
-    print(objects)
     child = objects.get_children()
-    print(":::::child:::::")
-    print(child)
-    print()
     return beck
 
 
