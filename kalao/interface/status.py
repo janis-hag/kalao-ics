@@ -20,13 +20,11 @@ def short():
     :return: dictionary with all device short status
     """
 
-    other_status = {
+    short_status = {
         'ccd_temp': 'ERROR',
         'emccd_temp': 'ERROR'
     }
 
-    plc_status = core.status()
-
-    short_status = plc_status | other_status
+    short_status.update(core.status())
 
     return short_status
