@@ -17,9 +17,9 @@ from opcua import Client, ua
 def connect(addr="192.168.1.140", port=4840):
     beck = Client("opc.tcp://%s:%d"%(addr, port))
     beck.connect()
-    root = beck.get_root_node()
-    objects = beck.get_objects_node()
-    child = objects.get_children()
+    # root = beck.get_root_node()
+    # objects = beck.get_objects_node()
+    # child = objects.get_children()
     return beck
 
 
@@ -44,16 +44,17 @@ def status():
     Query status of all PLC connected devices
     :return: device status dictionary
     """
+
     plc_status = {
-        'shutter' : 'ERROR',
-        'flip_mirror' : 'ERROR',
-        'calib_unit' : 'ERROR',
-        'temp_1' : 'ERROR',
-        'temp_2' : 'ERROR',
-        'temp_3' : 'ERROR',
-        'temp_4' : 'ERROR'
+        'shutter': 'ERROR',
+        'flip_mirror': 'ERROR',
+        'calib_unit': 'ERROR',
+        'temp_1': 'ERROR',
+        'temp_2': 'ERROR',
+        'temp_3': 'ERROR',
+        'temp_4': 'ERROR',
+        'laser': 'ERROR',
+        'tungsten': 'ERROR'
     }
 
     return plc_status
-
-
