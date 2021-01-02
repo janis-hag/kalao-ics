@@ -10,7 +10,7 @@ calibunit.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
-import core
+from . import core
 import numbers
 
 def move(position=23.36):
