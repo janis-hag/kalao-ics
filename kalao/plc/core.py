@@ -52,13 +52,13 @@ def status():
     :return: device status dictionary
     """
     plc_status = {
-        'shutter' = 'ERROR',
-        'flip_mirror' = 'ERROR',
-        'calib_unit' = 'ERROR',
-        'temp_1' = 'ERROR',
-        'temp_2' = 'ERROR',
-        'temp_3' = 'ERROR',
-        'temp_4' = 'ERROR'
+        'shutter' : 'ERROR',
+        'flip_mirror' : 'ERROR',
+        'calib_unit' : 'ERROR',
+        'temp_1' : 'ERROR',
+        'temp_2' : 'ERROR',
+        'temp_3' : 'ERROR',
+        'temp_4' : 'ERROR'
     }
 
     return plc_status
