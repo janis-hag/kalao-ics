@@ -7,10 +7,11 @@
 
 """
 status.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from kalao.plc import core
+from kalao.cacao import fake_data
 
 
 def short():
@@ -28,3 +29,9 @@ def short():
     short_status.update(core.status())
 
     return short_status
+
+def cacao_streams():
+	return fake_data.fake_streams(False)
+
+def cacao_measurements():
+	return fake_data.fake_measurements()
