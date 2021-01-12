@@ -44,7 +44,7 @@ def fake_streams():
 			nuvustream_full[(5*i+4+4)*cols+(5*j+2+4)] = (max-min) * 0.2  + random.gauss(0, noise)
 			nuvustream_full[(5*i+4+4)*cols+(5*j+3+4)] = (max-min) * 0.2  + random.gauss(0, noise)
 
-	streams["nuvustream_full"] = nuvustream_full
+	streams["nuvustream_full"] = {"data": nuvustream_full, "width": cols, "height": rows, "min": min, "max": max}
 
 	if debug:
 		axs[0, 0].imshow(np.array(nuvustream_full).reshape(rows, cols), cmap='gray')
@@ -70,7 +70,7 @@ def fake_streams():
 	for i in null:
 		shwfs_slopes[i] = 0
 
-	streams["shwfs_slopes"] = shwfs_slopes
+	streams["shwfs_slopes"] = {"data": shwfs_slopes, "width": cols, "height": rows, "min": min, "max": max}
 
 	if debug:
 		axs[0, 1].imshow(np.array(shwfs_slopes).reshape(rows, cols), cmap='gray')
@@ -95,7 +95,7 @@ def fake_streams():
 	for i in null:
 		dm01disp[i] = 0
 
-	streams["dm01disp"] = dm01disp
+	streams["dm01disp"] = {"data": dm01disp, "width": cols, "height": rows, "min": min, "max": max}
 
 	if debug:
 		axs[1, 0].imshow(np.array(dm01disp).reshape(rows, cols), cmap='gray')
@@ -118,7 +118,7 @@ def fake_streams():
 	for i in null:
 		shwfs_slopes_flux[i] = 0
 
-	streams["shwfs_slopes_flux"] = shwfs_slopes_flux
+	streams["shwfs_slopes_flux"] = {"data": shwfs_slopes_flux, "width": cols, "height": rows, "min": min, "max": max}
 
 	if debug:
 		axs[1, 1].imshow(np.array(shwfs_slopes_flux).reshape(rows, cols), cmap='gray')
