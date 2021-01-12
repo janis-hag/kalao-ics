@@ -31,7 +31,7 @@ def short():
     return short_status
 
 def cacao_streams():
-	return fake_data.fake_streams(False)
+	return fake_data.fake_streams()
 
 def cacao_measurements():
 	return fake_data.fake_measurements()

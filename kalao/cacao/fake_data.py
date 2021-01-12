@@ -1,8 +1,15 @@
 import math
 import random
 
-def fake_streams(debug):
+debug = False
+
+def fake_streams():
+	streams = {}
+
 	if debug:
+		import matplotlib.pyplot as plt
+		import numpy as np
+
 		fig, axs = plt.subplots(2, 2)
 
 	# Fake WFS
@@ -11,7 +18,7 @@ def fake_streams(debug):
 	min = 0
 	max = 65536
 	noise = 2500
-	nuvustream = [0]*rows*cols
+	nuvustream_full = [0]*rows*cols
 
 	null = [0,10,110,120]
 
@@ -20,25 +27,27 @@ def fake_streams(debug):
 			if i*11+j in null:
 				continue
 
-			nuvustream[(5*i+2+4)*cols+(5*j+2+4)] = (max-min) * 1  + random.gauss(0, noise)
-			nuvustream[(5*i+2+4)*cols+(5*j+3+4)] = (max-min) * 1  + random.gauss(0, noise)
-			nuvustream[(5*i+3+4)*cols+(5*j+2+4)] = (max-min) * 1  + random.gauss(0, noise)
-			nuvustream[(5*i+3+4)*cols+(5*j+3+4)] = (max-min) * 1  + random.gauss(0, noise)
+			nuvustream_full[(5*i+2+4)*cols+(5*j+2+4)] = (max-min) * 1  + random.gauss(0, noise)
+			nuvustream_full[(5*i+2+4)*cols+(5*j+3+4)] = (max-min) * 1  + random.gauss(0, noise)
+			nuvustream_full[(5*i+3+4)*cols+(5*j+2+4)] = (max-min) * 1  + random.gauss(0, noise)
+			nuvustream_full[(5*i+3+4)*cols+(5*j+3+4)] = (max-min) * 1  + random.gauss(0, noise)
 
-			nuvustream[(5*i+1+4)*cols+(5*j+2+4)] = (max-min) * 0.2  + random.gauss(0, noise)
-			nuvustream[(5*i+1+4)*cols+(5*j+3+4)] = (max-min) * 0.2  + random.gauss(0, noise)
+			nuvustream_full[(5*i+1+4)*cols+(5*j+2+4)] = (max-min) * 0.2  + random.gauss(0, noise)
+			nuvustream_full[(5*i+1+4)*cols+(5*j+3+4)] = (max-min) * 0.2  + random.gauss(0, noise)
 
-			nuvustream[(5*i+2+4)*cols+(5*j+1+4)] = (max-min) * 0.2  + random.gauss(0, noise)
-			nuvustream[(5*i+3+4)*cols+(5*j+1+4)] = (max-min) * 0.2  + random.gauss(0, noise)
+			nuvustream_full[(5*i+2+4)*cols+(5*j+1+4)] = (max-min) * 0.2  + random.gauss(0, noise)
+			nuvustream_full[(5*i+3+4)*cols+(5*j+1+4)] = (max-min) * 0.2  + random.gauss(0, noise)
 
-			nuvustream[(5*i+2+4)*cols+(5*j+4+4)] = (max-min) * 0.2  + random.gauss(0, noise)
-			nuvustream[(5*i+3+4)*cols+(5*j+4+4)] = (max-min) * 0.2  + random.gauss(0, noise)
+			nuvustream_full[(5*i+2+4)*cols+(5*j+4+4)] = (max-min) * 0.2  + random.gauss(0, noise)
+			nuvustream_full[(5*i+3+4)*cols+(5*j+4+4)] = (max-min) * 0.2  + random.gauss(0, noise)
 
-			nuvustream[(5*i+4+4)*cols+(5*j+2+4)] = (max-min) * 0.2  + random.gauss(0, noise)
-			nuvustream[(5*i+4+4)*cols+(5*j+3+4)] = (max-min) * 0.2  + random.gauss(0, noise)
+			nuvustream_full[(5*i+4+4)*cols+(5*j+2+4)] = (max-min) * 0.2  + random.gauss(0, noise)
+			nuvustream_full[(5*i+4+4)*cols+(5*j+3+4)] = (max-min) * 0.2  + random.gauss(0, noise)
+
+	streams["nuvustream_full"] = nuvustream_full
 
 	if debug:
-		axs[0, 0].imshow(np.array(nuvustream).reshape(rows, cols), cmap='gray')
+		axs[0, 0].imshow(np.array(nuvustream_full).reshape(rows, cols), cmap='gray')
 
 	# Fake linear slopes
 	rows = 11
@@ -61,10 +70,12 @@ def fake_streams(debug):
 	for i in null:
 		shwfs_slopes[i] = 0
 
+	streams["shwfs_slopes"] = shwfs_slopes
+
 	if debug:
 		axs[0, 1].imshow(np.array(shwfs_slopes).reshape(rows, cols), cmap='gray')
 
-	# Fake a focus on the DM
+	# Fake focus on the DM
 	rows = 12
 	cols = 12
 	min = -1.75
@@ -84,8 +95,11 @@ def fake_streams(debug):
 	for i in null:
 		dm01disp[i] = 0
 
+	streams["dm01disp"] = dm01disp
+
 	if debug:
 		axs[1, 0].imshow(np.array(dm01disp).reshape(rows, cols), cmap='gray')
+
 
 	# Fake WFS flux
 	rows = 11
@@ -93,22 +107,24 @@ def fake_streams(debug):
 	min = 65536*4
 	max = 65536*4
 	noise = 2500*4
-	nuvustream_flux = [0]*rows*cols
+	shwfs_slopes_flux = [0]*rows*cols
 
 	null = [0,10,110,120]
 
 	for i in range(11):
 		for j in range(11):
-			nuvustream_flux[i*cols+j] = (max-min) * 1 + min + random.gauss(0, noise)
+			shwfs_slopes_flux[i*cols+j] = (max-min) * 1 + min + random.gauss(0, noise)
 
 	for i in null:
-		nuvustream_flux[i] = 0
+		shwfs_slopes_flux[i] = 0
+
+	streams["shwfs_slopes_flux"] = shwfs_slopes_flux
 
 	if debug:
-		axs[1, 1].imshow(np.array(nuvustream_flux).reshape(rows, cols), cmap='gray')
+		axs[1, 1].imshow(np.array(shwfs_slopes_flux).reshape(rows, cols), cmap='gray')
 		plt.show()
 
-	return nuvustream, shwfs_slopes, dm01disp, nuvustream_flux
+	return streams
 
 def fake_measurements():
 	measurements = {}
@@ -130,7 +146,6 @@ def fake_measurements():
 	return measurements
 
 if __name__ == "__main__":
-	import matplotlib.pyplot as plt
-	import numpy as np
+	debug = True
 
-	fake_streams(True)
+	fake_streams()
