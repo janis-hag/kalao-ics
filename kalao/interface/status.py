@@ -25,6 +25,7 @@ def short():
         'emccd_temp': 'ERROR'
     }
 
-    short_status.update(core.status())
+    # Add status from PLC
+    short_status.update(core.plc_status())
 
     return short_status

@@ -39,13 +39,13 @@ def browse_recursive(client):
                 pass
 
 
-def status():
+def plc_status():
     """
     Query status of all PLC connected devices
     :return: device status dictionary
     """
 
-    plc_status = {
+    plc_status_values = {
         'shutter': 'ERROR',
         'flip_mirror': 'ERROR',
         'calib_unit': 'ERROR',
@@ -57,4 +57,4 @@ def status():
         'tungsten': 'ERROR'
     }
 
-    return plc_status
+    return plc_status_values
