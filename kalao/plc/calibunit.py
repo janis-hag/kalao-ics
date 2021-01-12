@@ -63,11 +63,14 @@ def status():
     # Connect to OPCUA server
     beck = core.connect()
 
-    beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value()
-    beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value()
-    beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value()
-    beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelActual").get_value()
-    beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelTarget").get_value()
+    status_dict = {}
+
+    status_dict['sStatus'] = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value()
+    status_dict['sErrorText'] = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value()
+    status_dict['nErrorCode'] = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value()
+    status_dict['lrVelActual'] = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelActual").get_value()
+    status_dict['lrVelTarget'] = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelTarget").get_value()
 
     beck.disconnect()
 
+    return status_dict
