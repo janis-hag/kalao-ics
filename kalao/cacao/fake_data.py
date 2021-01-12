@@ -104,7 +104,7 @@ def fake_streams():
 	# Fake WFS flux
 	rows = 11
 	cols = 11
-	min = 65536*4
+	min = 0
 	max = 65536*4
 	noise = 2500*4
 	shwfs_slopes_flux = [0]*rows*cols
