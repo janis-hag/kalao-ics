@@ -1,5 +1,6 @@
 import math
 import random
+from datetime import datetime, timezone
 
 debug = False
 
@@ -126,7 +127,7 @@ def fake_streams():
 
 	return streams
 
-def fake_measurements():
+def fake_measurements_for_db():
 	measurements = {}
 
 	measurements["temp_ccd"] = -60 + random.gauss(0, 0.05)
@@ -137,11 +138,20 @@ def fake_measurements():
 	measurements["emgain"] = 200
 	measurements["exposuretime"] = 1
 
-	measurements["flux"] = 6000 + random.gauss(0, 2500)
+	measurements["flux"] = 60000 + random.gauss(0, 2500)
 	measurements["residual"] = 0.05 + random.gauss(0, 0.02)
 
 	measurements["tip"] = 0 + random.gauss(0, 0.5)
 	measurements["tilt"] = 0 + random.gauss(0, 0.5)
+
+	return measurements
+
+def fake_measurements():
+	timestamp = datetime.now(timezone.utc).timestamp()
+	measurements = {}
+
+	for key, value in fake_measurements_for_db().items():
+		measurements[key] = {'timestamps': [timestamp], 'values': [value]}
 
 	return measurements
 
