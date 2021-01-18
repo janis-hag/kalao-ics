@@ -1,1 +1,1 @@
-all = ["core", "calibunit", "flipmirror"]
+all = ["core", "calibunit", "flipmirror", "shutter"]
