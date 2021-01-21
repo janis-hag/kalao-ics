@@ -31,14 +31,14 @@ def short():
 
     return short_status
 
-def cacao_streams(randomData=False):
-    if randomData:
-        return fake_data.fake_streams()
-    else:# To do
+def cacao_streams(realData=True):
+    if realData:
+        return fake_data.fake_streams() # TODO
+    else:
         return fake_data.fake_streams()
 
-def cacao_measurements(randomData=False):
-    if randomData:
-        return fake_data.fake_measurements()
-    else:# To do
+def cacao_measurements(realData=True):
+    if realData:
+        return fake_data.fake_measurements() # TODO
+    else:
         return fake_data.fake_measurements()
