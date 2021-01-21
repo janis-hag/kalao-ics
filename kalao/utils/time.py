@@ -9,7 +9,7 @@ def datetime_is_naive(d):
 
 def get_start_of_night(dt):
 	if datetime_is_naive(dt):
-		raise Exception("Datetime must not be naive")
+		raise TypeError("Datetime must not be naive")
 
 	timezone_chile = pytz.timezone("America/Santiago")
 	dt_chile = dt.astimezone(timezone_chile)
@@ -25,7 +25,7 @@ def get_mjd(dt):
     if not isinstance(dt, datetime):
         raise TypeError('Invalid type for parameter "date" - expecting datetime')
     elif datetime_is_naive(dt):
-        raise Exception("Datetime must not be naive")
+        raise TypeError("Datetime must not be naive")
     elif dt.year < 1801 or dt.year > 2099:
         raise ValueError('Datetime must be between year 1801 and 2099')
 

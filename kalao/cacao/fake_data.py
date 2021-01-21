@@ -130,19 +130,19 @@ def fake_streams():
 def fake_measurements_for_db():
 	measurements = {}
 
-	measurements["temp_ccd"] = -60 + random.gauss(0, 0.05)
-	measurements["temp_controller"] = 45 + random.gauss(0, 0.05)
-	measurements["temp_power_supply"] = 44 + random.gauss(0, 0.05)
-	measurements["temp_fpga"] = 50 + random.gauss(0, 0.05)
-	measurements["temp_heatsink"] = 19 + random.gauss(0, 0.05)
-	measurements["emgain"] = 200
-	measurements["exposuretime"] = 1
+	measurements["nuvu_temp_ccd"] = -60 + random.gauss(0, 0.05)
+	measurements["nuvu_temp_controller"] = 45 + random.gauss(0, 0.05)
+	measurements["nuvu_temp_power_supply"] = 44 + random.gauss(0, 0.05)
+	measurements["nuvu_temp_fpga"] = 50 + random.gauss(0, 0.05)
+	measurements["nuvu_temp_heatsink"] = 19 + random.gauss(0, 0.05)
+	measurements["nuvu_emgain"] = 200
+	measurements["nuvu_exposuretime"] = 1
 
-	measurements["flux"] = 60000 + random.gauss(0, 2500)
-	measurements["residual"] = 0.05 + random.gauss(0, 0.02)
+	measurements["slopes_max_flux"] = 60000 + random.gauss(0, 2500)
+	measurements["slopes_residual"] = 0.05 + random.gauss(0, 0.02)
 
-	measurements["tip"] = 0 + random.gauss(0, 0.5)
-	measurements["tilt"] = 0 + random.gauss(0, 0.5)
+	measurements["pi_tip"] = 0 + random.gauss(0, 0.5)
+	measurements["pi_tilt"] = 0 + random.gauss(0, 0.5)
 
 	return measurements
 
