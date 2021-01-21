@@ -13,6 +13,7 @@ calibunit.py is part of the KalAO Instrument Control Software
 from . import core
 import numbers
 from opcua import Client, ua
+from time import sleep
 
 
 def move(position=23.36):
@@ -23,7 +24,7 @@ def move(position=23.36):
     motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
     motor_bExecute = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bExecute")
 
-    # Check if enabled, if not do enable
+    # Check if initialised
     init_result = initialise(beck=beck, motor_nCommand=motor_nCommand, motor_bExecute=motor_bExecute)
     if not init_result == 0:
         return init_result
@@ -104,12 +105,11 @@ def initialise(beck=None, motor_nCommand=None, motor_bExecute=None):
         # Connect to OPCUA server
         beck = core.connect()
     if motor_nCommand is None and motor_bExecute is None:
-        # Connect to OPCUA server
-        beck = core.connect()
         # define commands
         motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
         motor_bExecute = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bExecute")
 
+    # Check if enabled, if no do enable
     if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value():
         motor_bEnable = beck.get_node("ns = 4; s = MAIN.Linear_Standa_8MT.ctrl.bEnable")
         motor_bEnable.set_attribute(
@@ -125,7 +125,11 @@ def initialise(beck=None, motor_nCommand=None, motor_bExecute=None):
             motor_nCommand.get_data_type_as_variant_type())))
         # Execute
         send_execute(motor_bExecute)
-    return
+        sleep(15)
+        if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value():
+            error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value())
+            return error
+    return 0
 
 
 def send_execute(motor_bExecute):
