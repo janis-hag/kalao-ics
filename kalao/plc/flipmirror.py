@@ -15,20 +15,13 @@ import numbers
 from opcua import Client, ua
 
 
-def status():
+def status(beck=None):
     """
     Query the status of the flip mirror.
 
     :return: complete status of flip mirror
     """
-    # Connect to OPCUA server
-    beck = core.connect()
 
-    beck.get_node("ns=4; s=MAIN.FlipMirror.stat.lrPosActual").get_value()
-    beck.get_node("ns=4; s=MAIN.FlipMirror.stat.sStatus").get_value()
-    beck.get_node("ns=4; s=MAIN.FlipMirror.stat.sErrorText").get_value()
-    beck.get_node("ns=4; s=MAIN.FlipMirror.stat.nErrorCode").get_value()
-    beck.get_node("ns=4; s=MAIN.FlipMirror.stat.lrVelActual").get_value()
-    beck.get_node("ns=4; s=MAIN.FlipMirror.stat.lrVelTarget").get_value()
+    status_dict = core.device_status('Flip.FlipMirror', beck=beck)
 
-    beck.disconnect()
+    return status_dict

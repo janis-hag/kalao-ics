@@ -14,23 +14,17 @@ from . import core
 import numbers
 from opcua import Client, ua
 
-def status():
+
+def status(beck=None):
     """
-    Query the full status of the shutter.
+    Query the status of the shutter
 
-    :return: complete status shutter
+    :return: complete status of shutter
     """
-    # Connect to OPCUA server
-    beck = core.connect()
 
-    beck.get_node("ns=4; s=MAIN.Shutter.stat.lrPosActual").get_value()
-    beck.get_node("ns=4; s=MAIN.Shutter.stat.sStatus").get_value()
-    beck.get_node("ns=4; s=MAIN.Shutter.stat.sErrorText").get_value()
-    beck.get_node("ns=4; s=MAIN.Shutter.stat.nErrorCode").get_value()
-    beck.get_node("ns=4; s=MAIN.Shutter.stat.lrVelActual").get_value()
-    beck.get_node("ns=4; s=MAIN.Shutter.stat.lrVelTarget").get_value()
+    status_dict = core.device_status('Shutter', beck=beck)
 
-    beck.disconnect()
+    return status_dict
 
 def short_status():
     """

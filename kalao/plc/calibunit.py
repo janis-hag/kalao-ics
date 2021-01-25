@@ -22,10 +22,9 @@ def move(position=23.36):
     beck = core.connect()
     # define commands
     motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
-    motor_bExecute = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bExecute")
 
     # Check if initialised
-    init_result = initialise(beck=beck, motor_nCommand=motor_nCommand, motor_bExecute=motor_bExecute)
+    init_result = initialise(beck=beck, motor_nCommand=motor_nCommand)
     if not init_result == 0:
         return init_result
 
@@ -50,8 +49,7 @@ def move(position=23.36):
             ua.AttributeIds.Value, ua.DataValue(ua.Variant(int(3),
                                                            motor_nCommand.get_data_type_as_variant_type())))
         # Execute
-        motor_bExecute.set_attribute(ua.AttributeIds.Value,
-                                     ua.DataValue(ua.Variant(True, motor_bExecute.get_data_type_as_variant_type())))
+        send_execute(beck)
         # Get new position
         new_position = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value()
         # motor_lrPosition = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
@@ -71,23 +69,24 @@ def status(beck=None):
 
     :return: complete status of calibration unit
     """
-    # Connect to OPCUA server
-    if beck is None:
-        disconnect_on_exit = True
-        beck = core.connect()
-    else:
-        disconnect_on_exit = False
+    # # Connect to OPCUA server
+    # if beck is None:
+    #     disconnect_on_exit = True
+    #     beck = core.connect()
+    # else:
+    #     disconnect_on_exit = False
 
-    status_dict = {'sStatus': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value(),
-                   'sErrorText': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value(),
-                   'nErrorCode': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value(),
-                   'lrVelActual': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelActual").get_value(),
-                   'lrVelTarget': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelTarget").get_value(),
-                   'lrPosActual': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value(),
-                   'lrPosition': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition").get_value()}
+    status_dict = core.device_status('Linear_Standa_8MT', beck=beck)
+    # status_dict = {'sStatus': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value(),
+    #                'sErrorText': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value(),
+    #                'nErrorCode': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value(),
+    #                'lrVelActual': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelActual").get_value(),
+    #                'lrVelTarget': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelTarget").get_value(),
+    #                'lrPosActual': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value(),
+    #                'lrPosition': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition").get_value()}
 
-    if disconnect_on_exit:
-        beck.disconnect()
+    # if disconnect_on_exit:
+    #     beck.disconnect()
 
     return status_dict
 
@@ -100,14 +99,20 @@ def check_error(beck):
         return
 
 
-def initialise(beck=None, motor_nCommand=None, motor_bExecute=None):
+def initialise(beck=None, motor_nCommand=None):
+    '''
+    Initialise the calibration unit.
+
+    :param beck: the handle for the plc connection
+    :param motor_nCommand: handle to send commands to the motor
+    :return: returns 0 on success and error code on failure
+    '''
     if beck is None:
         # Connect to OPCUA server
         beck = core.connect()
-    if motor_nCommand is None and motor_bExecute is None:
+    if motor_nCommand is None:
         # define commands
         motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
-        motor_bExecute = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bExecute")
 
     # Check if enabled, if no do enable
     if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value():
@@ -120,18 +125,25 @@ def initialise(beck=None, motor_nCommand=None, motor_bExecute=None):
 
     # Check if init, if not do init
     if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value():
-        motor_nCommand.set_attribute(
-            ua.AttributeIds.Value, ua.DataValue(ua.Variant(int(1),
-            motor_nCommand.get_data_type_as_variant_type())))
-        # Execute
-        send_execute(motor_bExecute)
+        send_init(beck, motor_nCommand)
         sleep(15)
+        while(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value() == 'INITIALISING'):
+            sleep(15)
         if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value():
             error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value())
             return error
     return 0
 
 
-def send_execute(motor_bExecute):
+def send_execute(beck):
+    motor_bExecute = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bExecute")
+
     motor_bExecute.set_attribute(
         ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, motor_bExecute.get_data_type_as_variant_type())))
+
+
+def send_init(beck, motor_nCommand):
+    motor_nCommand.set_attribute(ua.AttributeIds.Value,
+                                 ua.DataValue(ua.Variant(int(1), motor_nCommand.get_data_type_as_variant_type())))
+    # Execute
+    send_execute(beck)

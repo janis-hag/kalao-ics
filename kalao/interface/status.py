@@ -14,6 +14,7 @@ from kalao.plc import core
 from kalao.cacao import fake_data
 
 
+
 def short():
     """
     Query short status of all KalAO devices
