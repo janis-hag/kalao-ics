@@ -97,7 +97,7 @@ def switch(action_name):
     shutter_switch.set_attribute(
         ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
 
-    bStatus = beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value())
+    bStatus = beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value()
 
     beck.disconnect()
     return bStatus
