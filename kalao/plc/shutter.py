@@ -81,6 +81,7 @@ def close():
     bStatus = switch('bClose_Shutter')
     return bStatus
 
+
 def switch(action_name):
     """
      Open or Close the shutter depending on action_name
@@ -95,8 +96,12 @@ def switch(action_name):
     shutter_switch.set_attribute(
         ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
 
-    sleep(2)
-    bStatus = beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value()
+    sleep(1)
+
+    if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value():
+        bStatus = 'CLOSE'
+    else:
+        bStatus = 'OPEN'
 
     beck.disconnect()
     return bStatus
