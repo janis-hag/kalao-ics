@@ -80,8 +80,24 @@ def close():
 
     :return: status of shutter
     """
+    bStatus = switch('bClose_Shutter')
+    return bStatus
+
+def switch(action_name):
+    """
+     Open or Close the shutter depending on action_name
+
+    :param action_name: bClose_Shutter or
+    :return: status of shutter
+    """
     # Connect to OPCUA server
     beck = core.connect()
 
+    shutter_switch = beck.get_node("ns = 4; s = MAIN.Shutter." + action_name)
+    shutter_switch.set_attribute(
+        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
+
+    bStatus = beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value())
+
     beck.disconnect()
-    return status
+    return bStatus
