@@ -11,8 +11,7 @@ shutter.py is part of the KalAO Instrument Control Software
 """
 
 from . import core
-#import numbers
-from opcua import Client, ua
+from opcua import ua
 from time import sleep
 
 
@@ -27,7 +26,32 @@ def status(beck=None):
 
     return status_dict
 
-def short_status():
+
+# def short_status():
+#     """
+#     Query the single string status of the shutter.
+#
+#     :return: single string status of shutter
+#     """
+#     # Connect to OPCUA server
+#     beck = core.connect()
+#
+#     # Check error status
+#     error_code = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
+#     if error_code != 0:
+#         #someting went wrong
+#         return beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.sStatus").get_value()
+#
+#     # beck.get_node("ns=4; s=MAIN.Shutter.stat.lrPosActual").get_value()
+#     # beck.get_node("ns=4; s=MAIN.Shutter.stat.sStatus").get_value()
+#     # beck.get_node("ns=4; s=MAIN.Shutter.stat.sErrorText").get_value()
+#     # beck.get_node("ns=4; s=MAIN.Shutter.stat.lrVelActual").get_value()
+#     # beck.get_node("ns=4; s=MAIN.Shutter.stat.lrVelTarget").get_value()
+#
+#     beck.disconnect()
+
+
+def position():
     """
     Query the single string status of the shutter.
 
@@ -37,18 +61,18 @@ def short_status():
     beck = core.connect()
 
     # Check error status
-    error_code = beck.get_node("ns=4; s=MAIN.Shutter.stat.nErrorCode").get_value()
+    error_code = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
     if error_code != 0:
         #someting went wrong
-        return beck.get_node("ns=4; s=MAIN.Shutter.stat.sStatus").get_value()
-
-    # beck.get_node("ns=4; s=MAIN.Shutter.stat.lrPosActual").get_value()
-    # beck.get_node("ns=4; s=MAIN.Shutter.stat.sStatus").get_value()
-    # beck.get_node("ns=4; s=MAIN.Shutter.stat.sErrorText").get_value()
-    # beck.get_node("ns=4; s=MAIN.Shutter.stat.lrVelActual").get_value()
-    # beck.get_node("ns=4; s=MAIN.Shutter.stat.lrVelTarget").get_value()
-
-    beck.disconnect()
+        beck.disconnect()
+        return beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
+    else:
+        if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value():
+            bStatus = 'CLOSE'
+        else:
+            bStatus = 'OPEN'
+        beck.disconnect()
+        return bStatus
 
 def init():
     """

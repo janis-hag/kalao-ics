@@ -48,8 +48,8 @@ def plc_status():
     """
 
     plc_status_values = {
-        'shutter': shutter.status()['lrPosActual'],
-        'flip_mirror': flipmirror.status()['lrPosActual'],
+        'shutter': shutter.poistion(),
+        'flip_mirror': flipmirror.poistion(),
         'calib_unit': calibunit.status()['lrPosActual'],
         'temp_1': 'ERROR',
         'temp_2': 'ERROR',

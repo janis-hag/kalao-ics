@@ -11,8 +11,7 @@ flipmirror.py is part of the KalAO Instrument Control Software
 """
 
 from . import core
-import numbers
-from opcua import Client, ua
+from opcua import ua
 from time import sleep
 
 
@@ -69,3 +68,27 @@ def switch(action_name):
 
     beck.disconnect()
     return flip_position
+
+
+def position():
+    """
+    Query the single string status of the shutter.
+
+    :return: single string status of shutter
+    """
+    # Connect to OPCUA server
+    beck = core.connect()
+
+    # Check error status
+    error_code = beck.get_node("ns=4; s=MAIN.Flip.FlipMirror.nErrorCode").get_value()
+    if error_code != 0:
+        #someting went wrong
+        beck.disconnect()
+        return beck.get_node("ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
+    else:
+        if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Flip").get_value():
+            flip_position = 'UP'
+        else:
+            flip_position = 'DOWN'
+        beck.disconnect()
+        return flip_position
