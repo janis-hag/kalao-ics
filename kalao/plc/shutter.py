@@ -22,7 +22,7 @@ def status(beck=None):
     :return: complete status of shutter
     """
 
-    status_dict = core.device_status('Shutter', beck=beck)
+    status_dict = core.device_status('Shutter.Shutter', beck=beck)
 
     return status_dict
 
