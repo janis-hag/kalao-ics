@@ -11,8 +11,9 @@ shutter.py is part of the KalAO Instrument Control Software
 """
 
 from . import core
-import numbers
+#import numbers
 from opcua import Client, ua
+from time import sleep
 
 
 def status(beck=None):
@@ -67,11 +68,8 @@ def open():
 
     :return: status of shutter
     """
-    # Connect to OPCUA server
-    beck = core.connect()
-    beck.disconnect()
-    return status
-
+    bStatus = switch('bOpen_Shutter')
+    return bStatus
 
 
 def close():
@@ -97,6 +95,7 @@ def switch(action_name):
     shutter_switch.set_attribute(
         ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
 
+    sleep(2)
     bStatus = beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value()
 
     beck.disconnect()
