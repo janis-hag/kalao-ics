@@ -1,1 +1,1 @@
-all = ["core", "calibunit", "flipmirror", "shutter"]
+__all__ = ["core", "calibunit", "flipmirror", "shutter"]

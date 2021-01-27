@@ -1,1 +1,1 @@
-all = ["plc", "interface", "filterwheel"]
+__all__ = ["plc", "interface", "filterwheel"]

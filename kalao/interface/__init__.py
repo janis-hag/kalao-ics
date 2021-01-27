@@ -1,1 +1,1 @@
-all = ["status"]
+__all__ = ["status"]
