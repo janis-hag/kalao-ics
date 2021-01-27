@@ -25,20 +25,20 @@ def connect(addr="192.168.1.140", port=4840):
     return beck
 
 
-def browse_recursive(client):
-    node = client.get_root_node()
-    for childId in node.get_children():
-        ch = client.get_node(childId)
-        print(ch.get_node_class())
-        if ch.get_node_class() == ua.NodeClass.Object:
-            browse_recursive(ch)
-        elif ch.get_node_class() == ua.NodeClass.Variable:
-            try:
-                print("{bn} has value {val}".format(
-                        bn=ch.get_browse_name(),
-                        val=str(ch.get_value())))
-            except ua.uaerrors._auto.BadWaitingForInitialData:
-                pass
+# def browse_recursive(client):
+#     node = client.get_root_node()
+#     for childId in node.get_children():
+#         ch = client.get_node(childId)
+#         print(ch.get_node_class())
+#         if ch.get_node_class() == ua.NodeClass.Object:
+#             browse_recursive(ch)
+#         elif ch.get_node_class() == ua.NodeClass.Variable:
+#             try:
+#                 print("{bn} has value {val}".format(
+#                         bn=ch.get_browse_name(),
+#                         val=str(ch.get_value())))
+#             except ua.uaerrors._auto.BadWaitingForInitialData:
+#                 pass
 
 
 def plc_status():

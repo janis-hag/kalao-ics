@@ -80,7 +80,7 @@ def position():
     beck = core.connect()
 
     # Check error status
-    error_code = beck.get_node("ns=4; s=MAIN.Flip.FlipMirror.nErrorCode").get_value()
+    error_code = beck.get_node('ns=4;s=MAIN.Flip.FlipMirror.stat.nErrorCode').get_value()
     if error_code != 0:
         #someting went wrong
         beck.disconnect()
