@@ -82,7 +82,7 @@ def set_intensity(intensity):
     laser_bSetIntensity.set_attribute(
             ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, laser_bSetIntensity.get_data_type_as_variant_type())))
 
-    sleep(6)
+    sleep(7)
     current = beck.get_node("ns=4;s=MAIN.Laser.Current").get_value()
 
     beck.disconnect()
