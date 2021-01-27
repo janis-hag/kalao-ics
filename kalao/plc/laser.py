@@ -17,9 +17,9 @@ from time import sleep
 
 def status(beck=None):
     """
-    Query the status of the laser
+    Query the current intensity of the laser
 
-    :return: status of laser
+    :return: intensity of laser
     """
     # Connect to OPCUA server
     if beck is None:
@@ -28,7 +28,7 @@ def status(beck=None):
     else:
         disconnect_on_exit = False
 
-    laser_status = beck.get_node('ns = 4;s = MAIN.Laser.Status').get_value()
+    laser_status = beck.get_node('ns = 4;s = MAIN.Laser.Current').get_value()
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -82,6 +82,7 @@ def set_intensity(intensity):
     laser_bSetIntensity.set_attribute(
             ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, laser_bSetIntensity.get_data_type_as_variant_type())))
 
+    sleep(6)
     current = beck.get_node("ns=4;s=MAIN.Laser.Current").get_value()
 
     beck.disconnect()
