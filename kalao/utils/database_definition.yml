@@ -95,9 +95,9 @@ temp_water_out:
   long: Temperature inside the KalAO enclosure
   unit: °C
 laser:
-  short: laser status
-  long: Laser calibration lamp status
-  unit: TBD
+  short: laser power
+  long: Laser calibration lamp power
+  unit: mW
 tungsten:
   short: tungsten status
   long: Tungsten calibration lamp status
