@@ -6,7 +6,7 @@
 # @AUTHOR : Janis Hagelberg
 
 """
-calibunit.py is part of the KalAO Instrument Control Software
+calib_unit.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 

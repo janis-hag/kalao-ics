@@ -52,7 +52,7 @@ def plc_status():
     plc_status_values = {
         'shutter': shutter.position(),
         'flip_mirror': flip_mirror.position(),
-        'calib_unit': calibunit.status()['lrPosActual'],
+        'calib_unit': calib_unit.status()['lrPosActual'],
         'temp_bench': 'ERROR',
         'temp_enclosure': 'ERROR',
         'temp_water_in': 'ERROR',
