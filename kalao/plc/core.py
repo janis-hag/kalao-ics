@@ -11,8 +11,10 @@ beck.py is part of the KalAO Instrument Control Software
 """
 
 from kalao.plc import shutter
-from kalao.plc import calibunit
-from kalao.plc import flipmirror
+from kalao.plc import calib_unit
+from kalao.plc import flip_mirror
+from kalao.utils import database
+
 from opcua import Client, ua
 
 
@@ -49,7 +51,7 @@ def plc_status():
 
     plc_status_values = {
         'shutter': shutter.position(),
-        'flip_mirror': flipmirror.position(),
+        'flip_mirror': flip_mirror.position(),
         'calib_unit': calibunit.status()['lrPosActual'],
         'temp_bench': 'ERROR',
         'temp_enclosure': 'ERROR',
@@ -61,8 +63,8 @@ def plc_status():
 
     plc_status_text = {
         'shutter': shutter.status()['sErrorText'],
-        'flip_mirror': flipmirror.status()['sErrorText'],
-        'calib_unit': calibunit.status()['sStatus'],
+        'flip_mirror': flip_mirror.status()['sErrorText'],
+        'calib_unit': calib_unit.status()['sStatus'],
         'temp_bench': 'ERROR',
         'temp_enclosure': 'ERROR',
         'temp_water_in': 'ERROR',
@@ -99,3 +101,7 @@ def device_status(node_path, beck=None):
         beck.disconnect()
 
     return device_status_dict
+
+def database_update():
+    values, text = plc_status()
+    database.store_measurements(values)
