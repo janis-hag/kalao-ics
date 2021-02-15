@@ -10,6 +10,8 @@ from CacaoProcessTools import fps, FPS_status
 from kalao.utils import database
 
 def _get_stream(name, min, max):
+	#TODO: check if stream is alive
+
 	stream = SHM(name)
 	data = stream.get_data(check=True)
 
@@ -22,13 +24,14 @@ def streams():
 	streams["shwfs_slopes"] = _get_stream("shwfs_slopes", -2, 2)
 	streams["dm01disp"] = _get_stream("dm01disp", -1.75, 1.75)
 	streams["shwfs_slopes_flux"] = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
+	#streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) #TODO: uncomment when modal control is working
 
 	return streams
 
 def measurements_save():
 	measurements = {}
 
-	# TODO check fps.RUNrunning
+	#TODO: check if fps exists and check fps.RUNrunning
 	fps_nuvu = fps("nuvu_acquire")
 
 	measurements["nuvu_temp_ccd"]          = fps_nuvu["nuvu_accquire.temp_ccd"]

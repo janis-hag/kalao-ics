@@ -55,7 +55,7 @@ nuvu_exposuretime:
   long: Exposure time of the EMCCD
   unit: ms
 
-# S-H WFS
+# Shack-Hartmann WFS
 slopes_flux_subaperture:
   short: Max. flux
   long: Maximum flux in a subaperture

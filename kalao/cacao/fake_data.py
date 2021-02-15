@@ -105,9 +105,25 @@ def fake_streams():
 			if max_flux < min_flux:
 				dm01disp[i*cols+j] = max
 			else:
-				dm01disp[i*cols+j] = (max-min - noise) * (math.sqrt((i-middle_x)**2 + (j-middle_y)**2)/diag) + min + noise + random.gauss(0, noise) - noise
+				dm01disp[i*cols+j] = (max-min - noise) * (math.sqrt((i-middle_x)**2 + (j-middle_y)**2)/diag) + min + noise + random.gauss(0, noise)
 
 	streams["dm01disp"] = {"data": dm01disp, "width": cols, "height": rows, "min": min, "max": max}
+
+	# Fake mode coefficients
+	rows = 1
+	cols = 121
+	min = -1.75
+	max = 1.75
+	noise = 0.03
+	aol1_modeval = [0]*rows*cols
+
+	sign = 1
+	tau = 3
+	for i in range(cols):
+		aol1_modeval[i] = sign * ((max-min)/2 - 2*noise) * math.exp(-i/tau) + (max+min)/2 + random.gauss(0, noise)
+		sign *= -1
+
+	streams["aol1_modeval"] = {"data": aol1_modeval, "width": cols, "height": rows, "min": min, "max": max}
 
 	return streams
 
@@ -139,7 +155,7 @@ def fake_measurements():
 
 	return measurements
 
-def fake_measurements_plots():
+def fake_measurements_series():
 	timestamp = datetime.now(timezone.utc).timestamp()
 	measurements = {}
 	keys = ["pi_tip", "pi_tilt"]

@@ -11,9 +11,9 @@ status.py is part of the KalAO Instrument Control Software
 """
 
 from kalao.plc import core
-from kalao.cacao import fake_data
+from kalao.cacao import fake_data, telemetry
 
-
+from kalao.utils import database
 
 def short():
     """
@@ -32,14 +32,21 @@ def short():
 
     return short_status
 
-def cacao_streams(realData=True):
+def streams(realData=True):
     if realData:
-        return fake_data.fake_streams() # TODO
+        return telemetry.streams()
     else:
         return fake_data.fake_streams()
 
-def cacao_measurements(realData=True):
+def measurements(realData=True):
     if realData:
-        return fake_data.fake_measurements() # TODO
+        return database.get_all_last_measurements()
     else:
         return fake_data.fake_measurements()
+
+def measurements_series(realData=True):
+    if realData:
+        # Will be database.get_measurements(keys, nb_of_point)
+        return fake_data.fake_measurements_series() # TODO
+    else:
+        return fake_data.fake_measurements_series()
