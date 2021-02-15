@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+@author: Nathanaël Restori
+"""
+
 import math
 
 from datetime import datetime, timedelta, timezone

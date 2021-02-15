@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+@author: Nathanaël Restori
+"""
+
 from pymongo import MongoClient
 from pymongo import ASCENDING, DESCENDING
 from pprint import pprint
@@ -6,16 +12,25 @@ from kalao.cacao import fake_data
 from kalao.utils import time
 
 from datetime import datetime, timezone
+import yaml
 import json
 import os
 
 path = os.path.dirname(__file__)
-with open(path + "/database_definition.json") as file:
+definition_json = path + "/database_definition.json"
+definition_yaml = path + "/database_definition.yml"
+
+with open(definition_json) as file:
 	definition = json.load(file)
 
-def get_db(datetime):
+def convert_database_definition():
+	with open(definition_yaml, 'r') as yaml_in, open(definition_json, "w") as json_out:
+		yaml_object = yaml.safe_load(yaml_in)
+		json.dump(yaml_object, json_out)
+
+def get_db(dt):
 	client = MongoClient("127.0.0.1")
-	return client[time.get_start_of_night(datetime)]
+	return client[time.get_start_of_night(dt)]
 
 def store_measurements(data):
 	now_utc = datetime.now(timezone.utc)
@@ -29,29 +44,30 @@ def store_measurements(data):
 		if not key in definition:
 			raise KeyError(f'Inserting unknown key "{key}" in database')
 
-	result = db.measurements.insert_one(data)
+	return db.measurements.insert_one(data)
 
-def populate_measurements(data, nb_of_point):
-	now_utc = datetime.now(timezone.utc)
-	db = get_db(now_utc)
+def get_measurements(keys, nb_of_point, dt=None):
+	# If dt is None, get db for today, otherwise get db for the day/night specified  by dt
+	if dt is None:
+		dt = datetime.now(timezone.utc)
+	db = get_db(dt)
 
-	for key in data.keys():
+	data = {}
+
+	for key in keys:
 		cursor = db.measurements.find({key: {'$exists': True}}, {'time_unix': True, key: True}, sort=[('time_unix', DESCENDING)], limit=nb_of_point)
 
-		timestamps = []
-		points = []
+		data[key] = {'timestamps': [], 'values': []}
 
 		for doc in cursor:
-			timestamps.append(doc['time_unix'])
-			points.append(doc[key])
-
-		data[key] = {'timestamps': timestamps, 'values': points}
-
-def get_all_last_measurements():
-	data = {}
-	for key in definition.keys():
-		data[key] = None
-
-	populate_measurements(data, 1)
+			data[key]['timestamps'].append(doc['time_unix'])
+			data[key]['values'].append(doc[key])
 
 	return data
+
+def get_all_last_measurements():
+	return get_measurements(definition.keys(), 1)
+
+if __name__ == "__main__":
+	print("Converting database definition")
+	convert_database_definition()

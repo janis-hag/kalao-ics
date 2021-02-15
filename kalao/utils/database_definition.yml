@@ -49,14 +49,14 @@ nuvu_temp_heatsink:
 nuvu_emgain:
   short: EM Gain
   long: Gain of the EMCCD
-  unit: -
+  unit: '-'
 nuvu_exposuretime:
   short: Exp. time
   long: Exposure time of the EMCCD
   unit: ms
 
 # S-H WFS
-slopes_max_flux:
+slopes_flux_subaperture:
   short: Max. flux
   long: Maximum flux in a subaperture
   unit: ADU
