@@ -126,8 +126,10 @@ def initialise(beck=None, motor_nCommand=None):
     # Check if init, if not do init
     if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value():
         send_init(beck, motor_nCommand)
+        print('Starting calib_unit init.')
         sleep(15)
         while(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value() == 'INITIALISING'):
+            print(.)
             sleep(15)
         if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value():
             error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value())
