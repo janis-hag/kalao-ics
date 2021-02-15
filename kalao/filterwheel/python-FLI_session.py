@@ -12,6 +12,8 @@ from astropy.io import fits
 import datetime
 import time
 
+# clear griz, hole
+
 fw = thorlabs.ThorlabsFW102C(com='/dev/ttyUSB0')
 fw.enable()
 time.sleep(2)

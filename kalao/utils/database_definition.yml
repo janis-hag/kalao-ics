@@ -64,3 +64,41 @@ slopes_residual:
   short: Slopes residual
   long: Slopes residual
   unit: N/A
+
+# PLC
+shutter:
+  short: position
+  long: Shutter position
+  unit:
+flip_mirror:
+  short: position
+  long: Flipmirror position
+  unit:
+calib_unit:
+  short: position
+  long: Calibration unit position
+  unit: mm
+temp_bench:
+  short: bench temeperature
+  long: Temperature of the aluminum bench
+  unit: °C
+temp_enclosure:
+  short: enclosure temperature
+  long: Temperature inside the KalAO enclosure
+  unit: °C
+temp_water_in:
+  short: enclosure temperature
+  long: Temperature inside the KalAO enclosure
+  unit: °C
+temp_water_out:
+  short: enclosure temperature
+  long: Temperature inside the KalAO enclosure
+  unit: °C
+laser:
+  short: laser status
+  long: Laser calibration lamp status
+  unit: TBD
+tungsten:
+  short: tungsten status
+  long: Tungsten calibration lamp status
+  unit: TBD

@@ -51,10 +51,10 @@ def plc_status():
         'shutter': shutter.position(),
         'flip_mirror': flipmirror.position(),
         'calib_unit': calibunit.status()['lrPosActual'],
-        'temp_1': 'ERROR',
-        'temp_2': 'ERROR',
-        'temp_3': 'ERROR',
-        'temp_4': 'ERROR',
+        'temp_bench': 'ERROR',
+        'temp_enclosure': 'ERROR',
+        'temp_water_in': 'ERROR',
+        'temp_water_out': 'ERROR',
         'laser': 'ERROR',
         'tungsten': 'ERROR'
     }
@@ -63,10 +63,10 @@ def plc_status():
         'shutter': shutter.status()['sErrorText'],
         'flip_mirror': flipmirror.status()['sErrorText'],
         'calib_unit': calibunit.status()['sStatus'],
-        'temp_1': 'ERROR',
-        'temp_2': 'ERROR',
-        'temp_3': 'ERROR',
-        'temp_4': 'ERROR',
+        'temp_bench': 'ERROR',
+        'temp_enclosure': 'ERROR',
+        'temp_water_in': 'ERROR',
+        'temp_water_out': 'ERROR',
         'laser': 'ERROR',
         'tungsten': 'ERROR'
     }

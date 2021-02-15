@@ -14,6 +14,7 @@ from . import core
 from opcua import ua
 from time import sleep
 
+MAX_ALLOWED_LASER_INTENSITY = 0.71
 
 def status(beck=None):
     """
@@ -67,6 +68,9 @@ def set_intensity(intensity):
     # Connect to OPCUA server
     beck = core.connect()
 
+    # Limit intensity to protect the WFS
+    if intensity > MAX_ALLOWED_LASER_INTENSITY:
+        intensity = MAX_ALLOWED_LASER_INTENSITY
     if not beck.get_node("ns=4;s=MAIN.Laser.bEnable").get_value():
         laser_enable = beck.get_node("ns=4;s=MAIN.Laser.bEnable")
         laser_enable.set_attribute(
