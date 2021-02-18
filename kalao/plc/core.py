@@ -45,7 +45,7 @@ def plc_status():
         'temp_water_in': 'ERROR',
         'temp_water_out': 'ERROR',
         'laser': laser.status(),
-        'tungsten': tungsten.status()['nStatus']
+        'tungsten': tungsten.status()['sStatus']
     }
 
     plc_status_text = {

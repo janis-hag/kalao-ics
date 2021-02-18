@@ -22,7 +22,7 @@ def check_error(beck):
         return 0
     else:
         error_status = 'ERROR'
-        return
+        return error_status
 
 
 def initialise(beck=None, tungsten_nCommand=None):
@@ -114,9 +114,24 @@ def status(beck=None):
     :return: complete status of tungsten lamp
     """
 
-    status_dict = core.device_status('Tungsten', beck=beck)
+    node_path = 'Tungsten'
 
-    return status_dict
+    # Connect to OPCUA server
+    if beck is None:
+        disconnect_on_exit = True
+        beck = core.connect()
+    else:
+        disconnect_on_exit = False
+
+    device_status_dict = dict(sStatus=beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sStatus").get_value(),
+                              sErrorText=beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sErrorText").get_value(),
+                              nErrorCode=beck.get_node("ns=4; s=MAIN." + node_path + ".stat.nErrorCode").get_value(),
+                              lrPosition=beck.get_node("ns=4; s=MAIN." + node_path + ".ctrl.nStatus").get_value())
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return device_status_dict
 
 
 def switch(action_name):
@@ -129,15 +144,11 @@ def switch(action_name):
     # Connect to OPCUA server
     beck = core.connect()
 
-    laser_switch = beck.get_node("ns = 4; s = MAIN.Laser." + action_name)
-    laser_switch.set_attribute(
-        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
+    tungsten_switch = beck.get_node("ns = 4; s = MAIN.Tungsten." + action_name)
+    tungsten_switch.set_attribute(
+        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, tungsten_switch.get_data_type_as_variant_type())))
 
     sleep(1)
-    if beck.get_node("ns=4;s=MAIN.Laser.bDisable").get_value():
-        laser_status = 'OFF'
-    else:
-        laser_status = 'ON'
 
     beck.disconnect()
-    return laser_status
+    return tungsten_status
