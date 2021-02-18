@@ -107,6 +107,16 @@ def send_execute(beck):
 #     send_execute(beck)
 
 
+def status(beck=None):
+    """
+    Query the status of the tungsten lamp.
+
+    :return: complete status of tungsten lamp
+    """
+
+    status_dict = core.device_status('Tungsten', beck=beck)
+
+    return status_dict
 
 
 def switch(action_name):

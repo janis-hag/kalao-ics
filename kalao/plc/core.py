@@ -13,9 +13,12 @@ beck.py is part of the KalAO Instrument Control Software
 from . import shutter
 from . import calib_unit
 from . import flip_mirror
+from . import laser
+from . import tungsten
 from kalao.utils import database
 
-from opcua import Client, ua
+from opcua import Client
+#from opcua import ua
 
 
 def connect(addr="192.168.1.140", port=4840):
@@ -25,22 +28,6 @@ def connect(addr="192.168.1.140", port=4840):
     # objects = beck.get_objects_node()
     # child = objects.get_children()
     return beck
-
-
-# def browse_recursive(client):
-#     node = client.get_root_node()
-#     for childId in node.get_children():
-#         ch = client.get_node(childId)
-#         print(ch.get_node_class())
-#         if ch.get_node_class() == ua.NodeClass.Object:
-#             browse_recursive(ch)
-#         elif ch.get_node_class() == ua.NodeClass.Variable:
-#             try:
-#                 print("{bn} has value {val}".format(
-#                         bn=ch.get_browse_name(),
-#                         val=str(ch.get_value())))
-#             except ua.uaerrors._auto.BadWaitingForInitialData:
-#                 pass
 
 
 def plc_status():
@@ -57,8 +44,8 @@ def plc_status():
         'temp_enclosure': 'ERROR',
         'temp_water_in': 'ERROR',
         'temp_water_out': 'ERROR',
-        'laser': 'ERROR',
-        'tungsten': 'ERROR'
+        'laser': laser.status(),
+        'tungsten': tungsten.status()['nStatus']
     }
 
     plc_status_text = {
@@ -69,8 +56,8 @@ def plc_status():
         'temp_enclosure': 'ERROR',
         'temp_water_in': 'ERROR',
         'temp_water_out': 'ERROR',
-        'laser': 'ERROR',
-        'tungsten': 'ERROR'
+        'laser': laser.status(),
+        'tungsten': tungsten.status()['sStatus']
     }
 
     return plc_status_values, plc_status_text
