@@ -16,6 +16,7 @@ from . import core
 from opcua import ua
 from time import sleep
 
+node_path = 'Tungsten'
 
 def check_error(beck):
     if beck.get_node("ns=4; s=MAIN.Tungsten.stat.sErrorText").get_value() == 0:
@@ -38,10 +39,6 @@ def initialise(beck=None, tungsten_nCommand=None):
         beck = core.connect()
     # if tungsten_nCommand is None:
     #     # define commands
-
-    # Check if enabled, if no do enable
-    if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bEnabled").get_value():
-        send_enable(beck)
 
     # Check if init, if not do init
     if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
@@ -123,10 +120,10 @@ def status(beck=None):
     else:
         disconnect_on_exit = False
 
-    device_status_dict = dict(sStatus=beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sStatus").get_value(),
-                              sErrorText=beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sErrorText").get_value(),
-                              nErrorCode=beck.get_node("ns=4; s=MAIN." + node_path + ".stat.nErrorCode").get_value(),
-                              lrPosition=beck.get_node("ns=4; s=MAIN." + node_path + ".ctrl.nStatus").get_value())
+    device_status_dict = {'sStatus': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sStatus").get_value(),
+                          'sErrorText': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sErrorText").get_value(),
+                          'nErrorCode': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.nErrorCode").get_value(),
+                          'lrPosition': beck.get_node("ns=4; s=MAIN." + node_path + ".ctrl.nStatus").get_value()}
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -149,6 +146,7 @@ def switch(action_name):
         ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, tungsten_switch.get_data_type_as_variant_type())))
 
     sleep(1)
-
+    tungsten_status = beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sStatus").get_value()
     beck.disconnect()
+
     return tungsten_status

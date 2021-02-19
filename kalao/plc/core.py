@@ -36,29 +36,27 @@ def plc_status():
     :return: device status dictionary
     """
 
-    plc_status_values = {
-        'shutter': shutter.position(),
-        'flip_mirror': flip_mirror.position(),
-        'calib_unit': calib_unit.status()['lrPosActual'],
-        'temp_bench': 'ERROR',
-        'temp_enclosure': 'ERROR',
-        'temp_water_in': 'ERROR',
-        'temp_water_out': 'ERROR',
-        'laser': laser.status(),
-        'tungsten': tungsten.status()['sStatus']
-    }
+    # TODO check if all initialised
 
-    plc_status_text = {
-        'shutter': shutter.status()['sErrorText'],
-        'flip_mirror': flip_mirror.status()['sErrorText'],
-        'calib_unit': calib_unit.status()['sStatus'],
-        'temp_bench': 'ERROR',
-        'temp_enclosure': 'ERROR',
-        'temp_water_in': 'ERROR',
-        'temp_water_out': 'ERROR',
-        'laser': laser.status(),
-        'tungsten': tungsten.status()['sStatus']
-    }
+    plc_status_values = {'shutter': shutter.position(),
+                         'flip_mirror': flip_mirror.position(),
+                         'calib_unit': calib_unit.status()['lrPosActual'],
+                         'temp_bench': 'ERROR',
+                         'temp_enclosure': 'ERROR',
+                         'temp_water_in': 'ERROR',
+                         'temp_water_out': 'ERROR',
+                         'laser': laser.status(),
+                         'tungsten': tungsten.status()['sStatus']}
+
+    plc_status_text = {'shutter': shutter.status()['sErrorText'],
+                       'flip_mirror': flip_mirror.status()['sErrorText'],
+                       'calib_unit': calib_unit.status()['sStatus'],
+                       'temp_bench': 'ERROR',
+                       'temp_enclosure': 'ERROR',
+                       'temp_water_in': 'ERROR',
+                       'temp_water_out': 'ERROR',
+                       'laser': laser.status(),
+                       'tungsten': tungsten.status()['sStatus']}
 
     return plc_status_values, plc_status_text
 
