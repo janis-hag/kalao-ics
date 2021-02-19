@@ -22,7 +22,7 @@ def status(beck=None):
     :return: complete status of flip mirror
     """
 
-    status_dict = core.device_status('Flip.flip_mirror', beck=beck)
+    status_dict = core.device_status('Flip.FlipMirror', beck=beck)
 
     return status_dict
 
@@ -79,12 +79,14 @@ def position():
     # Connect to OPCUA server
     beck = core.connect()
 
+    # TODO check if initialised first
+
     # Check error status
-    error_code = beck.get_node('ns=4;s=MAIN.Flip.flip_mirror.stat.nErrorCode').get_value()
+    error_code = beck.get_node('ns=4;s=MAIN.Flip.FlipMirror.stat.nErrorCode').get_value()
     if error_code != 0:
         #someting went wrong
         beck.disconnect()
-        return beck.get_node("ns=4; s=MAIN.Flip.flip_mirror.stat.sErrorText").get_value()
+        return beck.get_node("ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
     else:
         if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Flip").get_value():
             flip_position = 'UP'

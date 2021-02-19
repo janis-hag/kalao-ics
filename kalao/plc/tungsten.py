@@ -36,6 +36,7 @@ def initialise(beck=None, tungsten_nCommand=None):
     '''
     if beck is None:
         # Connect to OPCUA server
+        disconnect_on_exit = True
         beck = core.connect()
     # if tungsten_nCommand is None:
     #     # define commands
@@ -48,9 +49,14 @@ def initialise(beck=None, tungsten_nCommand=None):
         while(beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value() == 'INITIALISING'):
             sleep(15)
         if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
-            error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value())
-            return error
-    return 0
+            tungsten_status = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value())
+        else:
+            tungsten_status = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return tungsten_status
 
 
 def send_enable(beck):
@@ -123,7 +129,7 @@ def status(beck=None):
     device_status_dict = {'sStatus': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sStatus").get_value(),
                           'sErrorText': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sErrorText").get_value(),
                           'nErrorCode': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.nErrorCode").get_value(),
-                          'lrPosition': beck.get_node("ns=4; s=MAIN." + node_path + ".ctrl.nStatus").get_value()}
+                          'nStatus': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.nStatus").get_value()}
 
     if disconnect_on_exit:
         beck.disconnect()
