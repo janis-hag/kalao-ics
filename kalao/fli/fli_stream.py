@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Filename : fli_stream.py
+# @Date : 2021-02-23-14-10
+# @Project: KalAO-ICS
+# @AUTHOR : Janis Hagelberg
+
+"""
+fli_stream.py is part of the KalAO Instrument Control Software
+(KalAO-ICS). 
+"""
+
+import FLI
+from pyMilk.interfacing.isio_shmlib import SHM
+
+
+def run(cam):
+    # initialise stream
+    #shm = SHM('fli_stream')
+
+    dit = 1
+
+    cam.set_exposure(dit)
+    img =  cam.take_photo()
+
+    # Creating a brand new stream
+    shm = SHM('fli_stream', img,
+                 location=-1,  # CPU
+                 shared=True,  # Shared
+                 )
+
+    while True:
+        cam.set_exposure(dit)
+        img = cam.take_photo()
+        shm.set_data(img)
+        time.sleep(0.5)
+
+if __name__ == '__main__':
+    cam = FLI.USBCamera.find_devices()[0]
+    cam.get_info()
+    cam.get_temperature()
+    cam.set_temperature(-30)
+    cam.set_exposure(1)
+    run(cam)
