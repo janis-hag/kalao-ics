@@ -12,13 +12,11 @@ fli_stream.py is part of the KalAO Instrument Control Software
 
 import FLI
 from pyMilk.interfacing.isio_shmlib import SHM
+from time import sleep
 
-
+dit = 1
 def run(cam):
     # initialise stream
-    #shm = SHM('fli_stream')
-
-    dit = 1
 
     cam.set_exposure(dit)
     img =  cam.take_photo()
@@ -33,12 +31,12 @@ def run(cam):
         cam.set_exposure(dit)
         img = cam.take_photo()
         shm.set_data(img)
-        time.sleep(0.5)
+        sleep(0.5)
 
 if __name__ == '__main__':
     cam = FLI.USBCamera.find_devices()[0]
     cam.get_info()
     cam.get_temperature()
     cam.set_temperature(-30)
-    cam.set_exposure(1)
+    cam.set_exposure(dit)
     run(cam)
