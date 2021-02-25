@@ -13,8 +13,18 @@ fli_stream.py is part of the KalAO Instrument Control Software
 import FLI
 from pyMilk.interfacing.isio_shmlib import SHM
 from time import sleep
+from signal import signal, SIGINT
+from sys import exit
 
 dit = 1
+
+
+def handler(signal_received, frame):
+    # Handle any cleanup here
+    print('SIGINT or CTRL-C detected. Exiting gracefully')
+    exit(0)
+
+
 def run(cam):
     # initialise stream
 
@@ -34,6 +44,9 @@ def run(cam):
         sleep(0.5)
 
 if __name__ == '__main__':
+    # Tell Python to run the handler() function when SIGINT is recieved
+    signal(SIGINT, handler)
+
     cam = FLI.USBCamera.find_devices()[0]
     cam.get_info()
     cam.get_temperature()
