@@ -21,7 +21,7 @@ dit = 1
 
 def handler(signal_received, frame):
     # Handle any cleanup here
-    print('SIGINT or CTRL-C detected. Exiting gracefully')
+    print('\n SIGINT or CTRL-C detected. Exiting gracefully')
     exit(0)
 
 
