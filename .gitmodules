@@ -1,0 +1,12 @@
+[submodule "tcs_communication/libipc"]
+	path = tcs_communication/libipc
+	url = git@gitlab.unige.ch:euler/t4_libraries/libipc.git
+[submodule "tcs_communication/libgop"]
+	path = tcs_communication/libgop
+	url = git@gitlab.unige.ch:euler/t4_libraries/libgop.git
+[submodule "tcs_communication/pymod_libgop"]
+	path = tcs_communication/pymod_libgop
+	url = git@gitlab.unige.ch:euler/wrappers/pymod_libgop.git
+[submodule "tcs_communication/pymod_libipc"]
+	path = tcs_communication/pymod_libipc
+	url = git@gitlab.unige.ch:euler/wrappers/pymod_libipc.git
