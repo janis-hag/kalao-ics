@@ -15,13 +15,14 @@ from pyMilk.interfacing.isio_shmlib import SHM
 from time import sleep
 from signal import signal, SIGINT
 from sys import exit
+from pprint import pprint
 
 dit = 1
 
 
 def handler(signal_received, frame):
     # Handle any cleanup here
-    print('\n SIGINT or CTRL-C detected. Exiting gracefully')
+    print('\nSIGINT or CTRL-C detected. Exiting.')
     exit(0)
 
 
@@ -41,15 +42,15 @@ def run(cam):
         cam.set_exposure(dit)
         img = cam.take_photo()
         shm.set_data(img)
-        sleep(0.5)
+        sleep(0.2)
 
 if __name__ == '__main__':
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)
 
     cam = FLI.USBCamera.find_devices()[0]
-    cam.get_info()
-    cam.get_temperature()
+    pprint(dict(cam.get_info()))
+    print('Temperature: '+str(cam.get_temperature()))
     cam.set_temperature(-30)
     cam.set_exposure(dit)
     run(cam)
