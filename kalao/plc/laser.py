@@ -57,7 +57,7 @@ def enable():
     return laser_status
 
 
-def set_intensity(intensity):
+def set_intensity(intensity=0.04):
     """
     Set light intensity of the laser source
 

@@ -59,21 +59,6 @@ def initialise(beck=None, tungsten_nCommand=None):
     return tungsten_status
 
 
-def send_enable(beck):
-    """
-    Enable tungsten lamp
-    :param beck: the handle for the plc connection
-    :return:
-    """
-    tungsten_bEnable = beck.get_node("ns = 4; s = MAIN.Tungsten.ctrl.bEnable")
-    tungsten_bEnable.set_attribute(
-        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, tungsten_bEnable.get_data_type_as_variant_type())))
-    sleep(5)
-    if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bEnabled").get_value():
-        error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value())
-        return error
-
-
 def send_command(beck, nCommand_value):
     """
     Send a command to the tungsten lamp
