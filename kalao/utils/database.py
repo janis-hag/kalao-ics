@@ -7,7 +7,7 @@
 from pymongo import MongoClient
 from pymongo import ASCENDING, DESCENDING
 
-from . import kalao_time
+from kalao.utils import kalao_time
 
 from datetime import datetime, timezone
 import yaml
