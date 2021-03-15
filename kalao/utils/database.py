@@ -6,10 +6,8 @@
 
 from pymongo import MongoClient
 from pymongo import ASCENDING, DESCENDING
-from pprint import pprint
 
-from kalao.cacao import fake_data
-from kalao.utils import kalao_time
+from . import kalao_time
 
 from datetime import datetime, timezone
 import yaml
