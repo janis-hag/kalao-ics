@@ -78,13 +78,13 @@ calib_unit:
   short: position
   long: Calibration unit position
   unit: mm
-temp_bench:
-  short: bench temeperature
-  long: Temperature of the aluminum bench
-  unit: °C
-temp_enclosure:
-  short: enclosure temperature
+temp_bench_air:
+  short: bench  air temeperature
   long: Temperature inside the KalAO enclosure
+  unit: °C
+temp_bench_board:
+  short: bench board temperature
+  long: Temperature of the aluminum bench
   unit: °C
 temp_water_in:
   short: enclosure temperature
@@ -102,3 +102,59 @@ tungsten:
   short: tungsten status
   long: Tungsten calibration lamp status
   unit: TBD
+
+# AO loop status
+
+# RTC status
+nvme_pci-Composite:
+  short: SSD mean temperature
+  long:  SSD mean temperature
+  unit: °C
+nvme_pci-Sensor_1:
+  short: SSD 1 temperature
+  long:  SSD 1 temperature
+  unit: °C
+nvme_pci-Sensor_2:
+  short: SSD 2 temperature
+  long:  SSD 2 temperature
+  unit: °C
+acpitz_acpi-temp1:
+  short: mainboard temperature
+  long:  mainboard temperature
+  unit: °C
+coretemp_isa-Package_id_0:
+  short: CPU mean temperature
+  long:  CPU mean temperature
+  unit: °C
+coretemp_isa-Core_0:
+  short: Core 0 temperature
+  long:  Core 0 of 8 temperature
+  unit: °C
+coretemp_isa-Core_1:
+  short: Core 1 temperature
+  long:  Core 1 of 8 temperature
+  unit: °C
+coretemp_isa-Core_2:
+  short: Core 2 temperature
+  long:  Core 2 of 8 temperature
+  unit: °C
+coretemp_isa-Core_3:
+  short: Core 3 temperature
+  long:  Core 3 of 8 temperature
+  unit: °C
+coretemp_isa-Core_4:
+  short: Core 4 temperature
+  long:  Core 4 of 8 temperature
+  unit: °C
+coretemp_isa-Core_5:
+  short: Core 5 temperature
+  long:  Core 5 of 8 temperature
+  unit: °C
+coretemp_isa-Core_6:
+  short: Core 6 temperature
+  long:  Core 67 of 8 temperature
+  unit: °C
+coretemp_isa-Core_7:
+  short: Core 7 temperature
+  long: Core 7 of 8 temperature
+  unit: °C

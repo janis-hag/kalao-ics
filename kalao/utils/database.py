@@ -9,7 +9,7 @@ from pymongo import ASCENDING, DESCENDING
 from pprint import pprint
 
 from kalao.cacao import fake_data
-from kalao.utils import time
+from kalao.utils import kalao_time
 
 from datetime import datetime, timezone
 import yaml
@@ -30,7 +30,7 @@ def convert_database_definition():
 
 def get_db(dt):
 	client = MongoClient("127.0.0.1")
-	return client[time.get_start_of_night(dt)]
+	return client[kalao_time.get_start_of_night(dt)]
 
 def store_measurements(data):
 	now_utc = datetime.now(timezone.utc)
@@ -38,7 +38,7 @@ def store_measurements(data):
 
 	data['time_unix'] = now_utc.timestamp()
 	data['time_utc'] = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ") # ISO 8601: YYYY-MM-DDThh:mm:ssZ
-	data['time_mjd'] = time.get_mjd(now_utc)
+	data['time_mjd'] = kalao_time.get_mjd(now_utc)
 
 	for key in data.keys():
 		if not key in definition:
