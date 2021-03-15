@@ -57,6 +57,25 @@ def enable():
     return laser_status
 
 
+def lock():
+    """
+    Lock laser into software only control
+
+    :return: status of the laser lock
+    """
+    laser_status = switch('bLock')
+    return laser_status
+
+
+def unlock():
+    """
+    Lock laser into software only control
+
+    :return: status of the laser lock
+    """
+    laser_status = switch('bUnlock')
+    return laser_status
+
 def set_intensity(intensity=0.04):
     """
     Set light intensity of the laser source

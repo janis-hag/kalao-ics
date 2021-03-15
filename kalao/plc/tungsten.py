@@ -26,37 +26,28 @@ def check_error(beck):
         return error_status
 
 
-def initialise(beck=None, tungsten_nCommand=None):
+def on(beck=None):
     '''
-    Initialise the calibration unit.
+    Turn off tungsten lamp
 
-    :param beck: the handle for the plc connection
-    :param tungsten_nCommand: handle to send commands to the motor
-    :return: returns 0 on success and error code on failure
+    :param beck: handle to for the beckhoff connection
+    :return: status of the lamp
     '''
-    if beck is None:
-        # Connect to OPCUA server
-        disconnect_on_exit = True
-        beck = core.connect()
-    # if tungsten_nCommand is None:
-    #     # define commands
 
-    # Check if init, if not do init
-    if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
-        # init
-        send_command(beck, 1)
-        sleep(15)
-        while(beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value() == 'INITIALISING'):
-            sleep(15)
-        if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
-            tungsten_status = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value())
-        else:
-            tungsten_status = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
+    state = send_command(beck, 3)
+    return state
 
-    if disconnect_on_exit:
-        beck.disconnect()
 
-    return tungsten_status
+def off(beck=None):
+    '''
+    Turn off tungsten lamp
+
+    :param beck: handle to for the beckhoff connection
+    :return: status of the lamp
+    '''
+
+    state = send_command(beck, 2)
+    return state
 
 
 def send_command(beck, nCommand_value):
@@ -76,9 +67,51 @@ def send_command(beck, nCommand_value):
     tungsten_nCommand = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.nCommand")
 
     tungsten_nCommand.set_attribute(ua.AttributeIds.Value,
-                                 ua.DataValue(ua.Variant(int(nCommand_value), tungsten_nCommand.get_data_type_as_variant_type())))
+                                    ua.DataValue(ua.Variant(int(nCommand_value),
+                                                            tungsten_nCommand.get_data_type_as_variant_type())))
     # Execute
     send_execute(beck)
+
+    state = beck.get_node("ns=4; s=MAIN.Tungsten.stat.nStatus").get_value()
+
+    return state
+
+
+
+def initialise(beck=None, tungsten_nCommand=None):
+    '''
+    Initialise the calibration unit.
+
+    :param beck: the handle for the plc connection
+    :param tungsten_nCommand: handle to send commands to the motor
+    :return: returns 0 on success and error code on failure
+    '''
+    if beck is None:
+        # Connect to OPCUA server
+        disconnect_on_exit = True
+        beck = core.connect()
+    else:
+        disconnect_on_exit = False
+    # if tungsten_nCommand is None:
+    #     # define commands
+    tungsten_status = 'ERROR'
+
+    # Check if init, if not do init
+    if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
+        # init
+        send_command(beck, 1)
+        sleep(15)
+        while(beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value() == 'INITIALISING'):
+            sleep(15)
+        if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
+            tungsten_status = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value())
+        else:
+            tungsten_status = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return tungsten_status
 
 
 def send_execute(beck):
@@ -141,3 +174,4 @@ def switch(action_name):
     beck.disconnect()
 
     return tungsten_status
+
