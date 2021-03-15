@@ -15,7 +15,8 @@ import pyqtgraph as pg
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
-from kalao.cacao.toolbox import *
+#from kalao.cacao.toolbox import *
+from toolbox import *
 
 def clamp(n, minn, maxn):
 	if n < minn:
