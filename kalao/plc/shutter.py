@@ -74,7 +74,7 @@ def position():
         beck.disconnect()
         return bStatus
 
-def init():
+def initialise():
     """
     Initialise the shutter.
 
