@@ -1,27 +1,40 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import asyncio
+import threading
 
-async def init_FLI_cam():
-	#await ...
+from kalao.plc import shutter
+from kalao.plc import calib_unit
+from kalao.plc import flip_mirror
+from kalao.plc import laser
+from kalao.plc import tungsten
+
+def init_FLI_cam():
 	pass
 
-async def check_PLC_init_status():
-	#await ...
+def check_PLC_init_status():
+	calib_return 		= calib_unit.initialise()
+	flip_mirror_return 	= flip_mirror.initialise()
+	shutter_return 		= shutter.initialise()
+	# print return values for control ?
+
+def init_CACAO():
 	pass
 
-async def init_CACAO():
-	#await ...
-	pass
+def init_Shutter():
+	shutter.initialise()
 
-async def init_system():
+th_FLI = threading.Thread(target = init_FLI_cam)
+th_PLC = threading.Thread(target = check_PLC_init_status)
+th_CACAO = threading.Thread(target = init_CACAO)
+th_Shutter = threading.Thread(target = init_Shutter)
 
-	await asyncio.gather(
-		init_FLI_cam(),
-		check_PLC_init_status(),
-		init_CACAO()
-	)
+th_FLI.start()
+th_PLC.start()
+th_CACAO.start()
+th_Shutter.start()
 
-
-asyncio.run(init_system())
+th_FLI.join()
+th_PLC.join()
+th_CACAO.join()
+th_Shutter.join()

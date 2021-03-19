@@ -16,11 +16,7 @@ while True:
 	conn, address = socket.accept()
 
 	cmd_recv = conn.recv(1)
-	cmd_recv = int(cmd_recv.decode("utf8"))
-
-	# Execute the command received
-	# cmd_dict is define in seq_command
-	cmd_dict[cmd_recv]()
+	cmd_recv = cmd_recv.decode("utf8")
 
 
 conn.close()
