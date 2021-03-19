@@ -9,18 +9,20 @@ import math
 from datetime import datetime, timedelta, timezone
 import pytz
 
+
 def datetime_is_naive(d):
-	# From: https://docs.python.org/3/library/datetime.html#determining-if-an-object-is-aware-or-naive
-	return d.tzinfo is None or d.tzinfo.utcoffset(d) is None
+    # From: https://docs.python.org/3/library/datetime.html#determining-if-an-object-is-aware-or-naive
+    return d.tzinfo is None or d.tzinfo.utcoffset(d) is None
+
 
 def get_start_of_night(dt):
-	if datetime_is_naive(dt):
-		raise TypeError("Datetime must not be naive")
+    if datetime_is_naive(dt):
+        raise TypeError("Datetime must not be naive")
 
-	timezone_chile = pytz.timezone("America/Santiago")
-	dt_chile = dt.astimezone(timezone_chile)
+    timezone_chile = pytz.timezone("America/Santiago")
+    dt_chile = dt.astimezone(timezone_chile)
 
-	return (dt_chile - timedelta(hours=12)).strftime("%Y-%m-%d")
+    return (dt_chile - timedelta(hours=12)).strftime("%Y-%m-%d")
 
 
 def get_mjd(dt):
@@ -48,3 +50,7 @@ def get_mjd(dt):
                                         - 24000.5
 
     return julian_datetime
+
+
+def get_isotime():
+    return datetime.now().isoformat(timespec='milliseconds')

@@ -65,6 +65,20 @@ slopes_residual:
   long: Slopes residual
   unit: N/A
 
+# FLI
+fli_exposuretime:
+  short: FLI Exp. time
+  long: Exposure time of the FLI
+  unit: ms
+fli_temp_CCD:
+  short: FLI CC Temp.
+  long: Temperature of the FLI CCD
+  unit: °C
+fli_temp_heatsink:
+  short: FLI HS Temp.
+  long: Temperature of the FLI heatsink
+  unit: °C
+
 # PLC
 shutter:
   short: position

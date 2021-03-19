@@ -97,6 +97,7 @@ def open():
     :return: status of shutter
     """
     bStatus = switch('bOpen_Shutter')
+
     return bStatus
 
 
