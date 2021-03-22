@@ -50,7 +50,12 @@ def initialisation():
 		pass
 
 	def check_PLC_init_status():
-		foncs = [calib_unit.initialise, flip_mirror.initialise, shutter.initialise]
+		foncs = [
+			calib_unit.initialise,
+			flip_mirror.initialise,
+			shutter.initialise
+		]
+
 		multi_threading(foncs)
 
 	def init_CACAO():
@@ -59,5 +64,16 @@ def initialisation():
 	def init_Shutter():
 		shutter.initialise()
 
-	init_foncs = [init_FLI_cam, check_PLC_init_status, init_CACAO, init_Shutter]
+	def init_Tungsten():
+		tungsten.initialise()
+
+
+	init_foncs = [
+		init_FLI_cam,
+		check_PLC_init_status,
+		init_CACAO,
+		init_Shutter,
+		init_Tungsten
+	]
+
 	multi_threading(init_foncs)
