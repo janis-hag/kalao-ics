@@ -10,31 +10,31 @@ from kalao.plc import tungsten
 from kalao.cacao import control
 
 
-def dark():
-	tungsten.off()
-	laser.off()
+def dark(beckTungsten = None):
+	tungsten.off(beckTungsten)
+	laser.disable()
 	shutter.close()
 	#Take Image
 
-def tungsten_FLAT():
+def tungsten_FLAT(beckTungsten = None):
 	shutter.close()
-	tungsten.on()
+	tungsten.on(beckTungsten)
 	flip_mirror.up()
 	#Select Filter
 	#Take Image
-	tungsten.off()
+	tungsten.off(beckTungsten)
 
-def sky_FLAT():
-	tungsten.off()
-	laser.off()
+def sky_FLAT(beckTungsten = None):
+	tungsten.off(beckTungsten)
+	laser.disable()
 	flip_mirror.down()
 	shutter.open()
 	#Select Fitler
 	#Take Image
 
-def target_observation():
-	tungsten.off()
-	laser.off()
+def target_observation(beckTungsten = None):
+	tungsten.off(beckTungsten)
+	laser.disable()
 	shutter.open()
 	flip_mirror.down()
 	#Select Filter
@@ -44,10 +44,18 @@ def target_observation():
 	#Take Image
 	shutter.close()
 
-
-def AO_loop_calibration():
+def AO_loop_calibration(intensityLaser = 0.04):
 	shutter.close()
 	flip_mirror.up()
-	laser.set_intensity()
+	laser.set_intensity(intensityLaser)
 	control.start_calib()
 	laser.set_intensity(0)
+
+
+commandDict = {
+	"kal_dark": 				dark,
+	"kal_tungsten_FLAT": 		tungsten_FLAT,
+	"kal_sky_FLAT": 			sky_FLAT,
+	"kal_target_observation":	target_observation,
+	"kal_AO_loop_calibration": 	AO_loop_calibration
+}
