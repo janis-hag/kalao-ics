@@ -24,7 +24,13 @@ while True:
 	separator 	= command[0]
 	command 	= command[1:]
 	commandList = command.split(separator)
+	#
+	# 'command' is commandList[0], 'arguments' are commandList[1:]
+	#
 	print("%.6f"%(time.time()), " command=>", commandList[0], "< arg=",commandList[1:], sep="")
+
+	# commandDict is a dict with keys = "kal_****" and values is function object
+	command_seq.commandDict[commandList[0]](commandList[1:])
 
 conn.close()
 socket.close()
