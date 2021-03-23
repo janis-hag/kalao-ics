@@ -1,4 +1,4 @@
-# test_server.py  
+# test_server.py
 #
 import sys, os
 import logging
@@ -42,7 +42,7 @@ while (True):
     print("%.6f"%(time.time()), "Initialize new gop connection. Wait for client ...")
     gc = gop.initializeGopConnection(socketName, verbosity)
     continue    # go to beginning
-    
+
   seperator   = command[0]
   command     = command[1:]
   commandList = command.split(seperator)
@@ -50,6 +50,25 @@ while (True):
   # 'command' is commandList[0], 'arguments' are commandList[1:]
   #
   print ("%.6f"%(time.time()), " command=>", command, "< arg=",commandList[1:], sep="")
+
+  # Check if its a KalAO command and send it
+  if(commandList[0][:3] == "kal"):
+    hostSeq, portSeq = ('localhost', 5555)
+    socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    try:
+      socketSeq.connect((hostSeq,portSeq))
+      print("%.6f"%(time.time()), "Connected to sequencer")
+
+      commandKal = seperator + command
+      socketSeq.sendall(commandKal.encode("utf8"))
+      print("%.6f"%(time.time()), "Command sent")
+
+    except ConnectionRefusedError:
+      print("%.6f"%(time.time()), "Error: connection to sequencer refused")
+    finally:
+      socketSeq.close()
+
   #
   # Manage the command. 2 cases:
   # - its a state machine (with a nodeId wich starts with "ns=")
@@ -70,10 +89,10 @@ while (True):
     message = "/OK"
     print("%.6f"%(time.time()), "Send acknoledge: ", message)
     gop.write(message)
-  
+
 #
 # in case of break, we disconnect all serveurs
-#   
+#
 print ("%.6f"%(time.time()), socketName, " close gop connection and exit")
-gop.closeConnection()   
+gop.closeConnection()
 sys.exit(0)

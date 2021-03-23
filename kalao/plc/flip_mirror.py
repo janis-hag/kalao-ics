@@ -7,7 +7,7 @@
 
 """
 flip_mirror.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from . import core
@@ -94,3 +94,6 @@ def position():
             flip_position = 'DOWN'
         beck.disconnect()
         return flip_position
+
+def initialise():
+    return 0
