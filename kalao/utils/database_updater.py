@@ -34,14 +34,13 @@ if __name__ == "__main__":
     while (True):
         sleep(10)
         # Get measurements from and cacao
-        cacao.telemetry.measurements_save()
+        #cacao.telemetry.measurements_save()
 
         #get Measurements from plc and store
         plc.core.database_update()
 
         # get RTC data and update
         rtc.temperatures.database_update()
-        #database.store_measurements(data)
 
         # FLI science camera temperature
         #fli.control.database_update()

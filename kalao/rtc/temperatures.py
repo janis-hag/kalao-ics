@@ -33,5 +33,5 @@ def read_all():
     return temperatures
 
 def database_update():
-    values, text = read_all()
+    values = read_all()
     database.store_measurements(values)

@@ -53,7 +53,7 @@ def cancel():
 def database_update():
     # fli_temp_heatsink
     # fli_temp_CCD
-    values, text = read_all()
+    values = {'fli_temp_CCD': get_temperature()}
     database.store_measurements(values)
 
 
