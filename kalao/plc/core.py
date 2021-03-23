@@ -54,7 +54,7 @@ def plc_status():
                        'temp_bench': 'ERROR',
                        'temp_enclosure': 'ERROR',
                        'temp_water_in': 'ERROR',
-                       'temp_water_out': 'ERROR',sh
+                       'temp_water_out': 'ERROR',
                        'laser': laser.status(),
                        'tungsten': tungsten.status()['sStatus']}
 
