@@ -38,23 +38,25 @@ def plc_status():
 
     # TODO check if all initialised
 
+    temps = temperatures()
+
     plc_status_values = {'shutter': shutter.position(),
                          'flip_mirror': flip_mirror.position(),
                          'calib_unit': calib_unit.status()['lrPosActual'],
-                         'temp_bench_air': 'ERROR',
-                         'temp_bench_board': 'ERROR',
-                         'temp_water_in': 'ERROR',
-                         'temp_water_out': 'ERROR',
+                         'temp_bench_air': temps['temp_bench_air'],
+                         'temp_bench_board': temps['temp_bench_board'],
+                         'temp_water_in': temps['temp_water_in'],
+                         'temp_water_out': temps['temp_water_out'],
                          'laser': laser.status(),
                          'tungsten': tungsten.status()['sStatus']}
 
     plc_status_text = {'shutter': shutter.status()['sErrorText'],
                        'flip_mirror': flip_mirror.status()['sErrorText'],
                        'calib_unit': calib_unit.status()['sStatus'],
-                       'temp_bench': 'ERROR',
-                       'temp_enclosure': 'ERROR',
-                       'temp_water_in': 'ERROR',
-                       'temp_water_out': 'ERROR',
+                       'temp_bench_air': temps['temp_bench_air'],
+                       'temp_bench_board': temps['temp_bench_board'],
+                       'temp_water_in': temps['temp_water_in'],
+                       'temp_water_out': temps['temp_water_out'],
                        'laser': laser.status(),
                        'tungsten': tungsten.status()['sStatus']}
 
@@ -90,3 +92,28 @@ def device_status(node_path, beck=None):
 def database_update():
     values, text = plc_status()
     database.store_measurements(values)
+
+
+def temperatures(beck=None):
+    """
+    Query the current intensity of the laser
+
+    :return: intensity of laser
+    """
+    # Connect to OPCUA server
+    if beck is None:
+        disconnect_on_exit = True
+        beck = connect()
+    else:
+        disconnect_on_exit = False
+
+    temp_values = {'temp_bench_air': beck.get_node('ns=4;s=MAIN.Temp_Bench_Air').get_value()/10,
+              'temp_bench_board': beck.get_node('ns=4;s=MAIN.Temp_Bench_Board').get_value()/10,
+              'temp_water_in': beck.get_node('ns=4;s=MAIN.Temp_Water_In').get_value()/10,
+              'temp_water_out': beck.get_node('ns=4;s=MAIN.Temp_Water_Out').get_value()/10
+              }
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return temp_values
