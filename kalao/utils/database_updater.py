@@ -43,4 +43,4 @@ if __name__ == "__main__":
         rtc.temperatures.database_update()
 
         # FLI science camera temperature
-        #fli.control.database_update()
+        fli.control.database_update()
