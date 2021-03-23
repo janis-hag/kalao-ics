@@ -16,7 +16,11 @@ import requests
 
 
 def take_science_exposure(dit=0.05, filepath=None):
-    acquire(dit,filepath)
+
+    req.result = acquire(dit,filepath)
+
+    return req.result
+
 
 def acquire(dit=0.05, filepath=None):
 
@@ -29,9 +33,59 @@ def acquire(dit=0.05, filepath=None):
     print(req.status_code)
     print(req.text)
 
+    if req.status_code == 200:
+        return 0
+    else:
+        return req.text
+
+
+def cancel():
+
+    params = {'cancel': True}
+    req = send_request('cancel', params)
+
+    if req.status_code == 200:
+        return 0
+    else:
+        return req.text
+
+
+def database_update():
+    # fli_temp_heatsink
+    # fli_temp_CCD
+    values, text = read_all()
+    database.store_measurements(values)
+
+
+def get_temperature():
+
+    req = send_request('temperature', 'GET')
+
+    if req.status_code == 200:
+        temperature = req.text
+        return temperature
+
+    return req.text
+
+
+def set_temperature(temperature):
+
+    params = {'temperature': temperature}
+    req = send_request('temperature', params)
+
+    if req.status_code == 200:
+        return 0
+    else:
+        return req.text
+
+
 def send_request(type, params):
 
     url = 'http://127.0.0.1:9080/'+type
-    req = requests.post(url, json = params)
+    if params == 'GET':
+        req = requests.get(url)
+    else:
+        req = requests.post(url, json = params)
 
     return req
+
