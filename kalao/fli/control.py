@@ -10,8 +10,9 @@ control.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
-from ..utils import kalao_time
 import requests
+
+from kalao.utils import database, kalao_time
 #from datetime import datetime
 
 
