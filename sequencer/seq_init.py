@@ -8,6 +8,7 @@ from kalao.plc import calib_unit
 from kalao.plc import flip_mirror
 from kalao.plc import laser
 from kalao.plc import tungsten
+from kalao.fli import control
 
 # Thread subclass that allows you to retrieve a return value
 # **https://stackoverflow.com/questions/6893968/how-to-get-the-return-value-from-a-thread-in-python**
@@ -47,7 +48,7 @@ def multi_threading(foncs, timeout = None):
 def initialisation():
 
 	def init_FLI_cam():
-		pass
+		control.initialise()
 
 	def check_PLC_init_status():
 		foncs = [

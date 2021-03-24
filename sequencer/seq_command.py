@@ -7,48 +7,47 @@ from kalao.plc import calib_unit
 from kalao.plc import flip_mirror
 from kalao.plc import laser
 from kalao.plc import tungsten
-from kalao.cacao import control
+from kalao.fli import control
 
 
-def dark(beckTungsten = None):
-	tungsten.off(beckTungsten)
-	laser.disable()
+def dark(ditControl=0.05, filepathControl=None):
+	core.lamps_off()
 	shutter.close()
-	#Take Image
+	control.acquire(dit = ditControl, filepath = filepathControl)
 
-def tungsten_FLAT(beckTungsten = None):
+
+def tungsten_FLAT(beckTungsten = None, ditControl=0.05, filepathControl=None):
 	shutter.close()
-	tungsten.on(beckTungsten)
+	tungsten.on(beck = beckTungsten)
 	flip_mirror.up()
 	#Select Filter
-	#Take Image
-	tungsten.off(beckTungsten)
+	control.acquire(dit = ditControl, filepath = filepathControl)
+	tungsten.off(beck = beckTungsten)
 
-def sky_FLAT(beckTungsten = None):
-	tungsten.off(beckTungsten)
-	laser.disable()
+def sky_FLAT(ditControl=0.05, filepathControl=None):
+	core.lamps_off()
 	flip_mirror.down()
 	shutter.open()
 	#Select Fitler
-	#Take Image
+	control.acquire(dit = ditControl, filepath = filepathControl)
+	shutter.close()
 
-def target_observation(beckTungsten = None):
-	tungsten.off(beckTungsten)
-	laser.disable()
+def target_observation(ditControl=0.05, filepathControl=None):
+	core.lamps_off()
 	shutter.open()
 	flip_mirror.down()
 	#Select Filter
 	#Centre on target
-	control.close_loop()
+	#cacao.close_loop()
 	#Monitor AO and cancel exposure if needed
-	#Take Image
+	control.acquire(dit = ditControl, filepath = filepathControl)
 	shutter.close()
 
 def AO_loop_calibration(intensityLaser = 0.04):
 	shutter.close()
 	flip_mirror.up()
-	laser.set_intensity(intensityLaser)
-	control.start_calib()
+	laser.set_intensity(intensity = intensityLaser)
+	#cacao.start_calib()
 	laser.set_intensity(0)
 
 
