@@ -6,7 +6,7 @@ import seq_init
 import socket
 import time
 
-#seq_init.initialisation()
+from itertools import zip_longest
 
 host, port = ('', 5555)
 
@@ -19,7 +19,7 @@ while True:
 	print("%.6f"%(time.time()), "Waiting on connection..")
 	conn, address = socket.accept()
 
-	command = (conn.recv(256)).decode("utf8")
+	command = (conn.recv(4096)).decode("utf8")
 
 	separator 	= command[0]
 	command 	= command[1:]
@@ -29,8 +29,11 @@ while True:
 	#
 	print("%.6f"%(time.time()), " command=>", commandList[0], "< arg=",commandList[1:], sep="")
 
+	# Transform list of arg to a dict
+	argDict = dict(zip_longest(*[iter(commandList[1:])] * 2, fillvalue=""))
+
 	# commandDict is a dict with keys = "kal_****" and values is function object
-	command_seq.commandDict[commandList[0]](commandList[1:])
+	seq_command.commandDict[commandList[0]](argDict)
 
 conn.close()
 socket.close()
