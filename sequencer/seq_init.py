@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from sys import path as SysPath
+from os import path as OsPath
+SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
 from threading import Thread
+from multiprocessing import Process
+from multiprocessing import Queue
 
 from kalao.plc import shutter
 from kalao.plc import calib_unit
@@ -23,58 +28,68 @@ class ThreadWithReturnValue(Thread):
         Thread.join(self, *args)
         return self._return
 
-# Multi-thread fonction: take array of object <function>
+# Multi-thread fonction: create array of object <function>
 # Create a thread for each function and start the function
-# Block until the end of each thread and print return value.
-def multi_threading(foncs, timeout = None):
+# Block until the end of each thread or timeout passed
+# Then print return value and add return value to Queue object
+def initBenchComponents(q):
+
+	# array of object <function>
+	init_foncs = [
+		control.initialise,
+		calib_unit.initialise,
+		flip_mirror.initialise,
+		shutter.initialise,
+		tungsten.initialise,
+		laser.initialise
+	]
+
 	threads = []
 	returnInfo = []
 
+	returnValue = 0
+
+	# Create a thread for each function and set the thread's name to function's name
 	for fonc in foncs:
 		th = ThreadWithReturnValue(target = fonc)
+		th.daemon = True
 		th.start()
 		th.setName(fonc.__name__)
 		threads.append(th)
 
+	# 'join' methode block until return of each thread or timeout expired
+	# and return the function return value if timeout not expired
+	# Set returnValue to 1 if timeout expired
 	for th in threads:
 		returnInfo.append( (th.getName(), th.join(timeout)) )
+		if th.is_alive():
+			print(th.getName(),"got timeout")
+			returnValue = 1
 
+	# Print each thread's name and the returned value of the thread
+	# Set returnValue to 1 if a returned value is 1
 	for r in returnInfo:
 		print(r[0],":", r[1])
+		if r[1] == 1:
+			returnValue = 1
+
+	q.put(returnValue)
+
+def initialisation(nbTry, timeout):
+
+	# READ CONFIG
 
 
-# Define each init process of some composants
-# Start them in multi-thread
-def initialisation():
+	# Create a subprocess with a Queue object for return value
+	# if returned value != 0, try 'nbTry' times
+	for _ in range(nbTry):
+		q = Queue()
+		p = Process(target = initBenchComponents, arg = (q, timeout))
+		p.start()
+		p.join()
 
-	def init_FLI_cam():
-		control.initialise()
-
-	def check_PLC_init_status():
-		foncs = [
-			calib_unit.initialise,
-			flip_mirror.initialise,
-			shutter.initialise
-		]
-
-		multi_threading(foncs)
-
-	def init_CACAO():
-		pass
-
-	def init_Shutter():
-		shutter.initialise()
-
-	def init_Tungsten():
-		tungsten.initialise()
+		if q.get() == 0:
+			break
 
 
-	init_foncs = [
-		init_FLI_cam,
-		check_PLC_init_status,
-		init_CACAO,
-		init_Shutter,
-		init_Tungsten
-	]
-
-	multi_threading(init_foncs)
+	# Start CACAO
