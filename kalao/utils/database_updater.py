@@ -18,7 +18,7 @@ from kalao import cacao #.telemetry
 from kalao import plc #.core
 from kalao import rtc #.temperatures
 from kalao import fli
-
+from kalao.utils import database
 
 def handler(signal_received, frame):
     # Handle any cleanup here
@@ -36,11 +36,17 @@ if __name__ == "__main__":
         # Get measurements from and cacao
         #cacao.telemetry.measurements_save()
 
+        values = {}
         #get Measurements from plc and store
-        plc.core.database_update()
+        plc_values, text = plc.core.plc_status()
+        values.update(plc_values)
 
         # get RTC data and update
-        rtc.temperatures.database_update()
+        rtc_temperatures = rtc.temperatures.read_all()
+        values.update(rtc_temperatures)
 
         # FLI science camera temperature
-        fli.control.database_update()
+        fli_temperatures = {'fli_temp_CCD': fli.control.get_temperature()}
+        values.update(fli_temperatures)
+
+        database.store_measurements(values)

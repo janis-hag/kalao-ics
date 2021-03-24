@@ -52,5 +52,8 @@ def get_mjd(dt):
     return julian_datetime
 
 
-def get_isotime():
-    return datetime.now().isoformat(timespec='milliseconds')
+def get_isotime(now=None):
+    if now is None:
+        return datetime.now().isoformat(timespec='milliseconds')
+    else:
+        return now.isoformat(timespec='milliseconds')

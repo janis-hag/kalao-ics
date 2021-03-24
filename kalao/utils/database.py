@@ -35,7 +35,8 @@ def store_measurements(data):
 	db = get_db(now_utc)
 
 	data['time_unix'] = now_utc.timestamp()
-	data['time_utc'] = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ") # ISO 8601: YYYY-MM-DDThh:mm:ssZ
+	data['time_utc'] = kalao_time.get_isotime(now_utc)
+	# data['time_utc'] = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ") # ISO 8601: YYYY-MM-DDThh:mm:ssZ
 	data['time_mjd'] = kalao_time.get_mjd(now_utc)
 
 	for key in data.keys():
