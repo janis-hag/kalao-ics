@@ -30,6 +30,17 @@ def connect(addr="192.168.1.140", port=4840):
     return beck
 
 
+def lamps_off():
+
+    laser_status = laser.disable()
+    tungsten_status = tungsten.off()
+
+    if tungsten_status == 'OFF' and laser_status == 0:
+        return 0
+    else:
+        return 1
+
+
 def plc_status():
     """
     Query status of all PLC connected devices

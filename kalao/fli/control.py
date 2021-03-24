@@ -90,3 +90,7 @@ def send_request(type, params):
 
     return req
 
+
+def initialise():
+    # systtemctl restart kalaocamera.service
+    return 0
