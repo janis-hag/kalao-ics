@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import sys
+from os import path
+sys.path.append(path.dirname(path.abspath(path.dirname(__file__))))
 
 from kalao.plc import shutter
 from kalao.plc import calib_unit
