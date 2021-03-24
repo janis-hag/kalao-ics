@@ -7,7 +7,7 @@
 
 """
 laser.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from . import core
@@ -135,3 +135,6 @@ def switch(action_name):
 
     beck.disconnect()
     return laser_status
+
+def initialise():
+    return 0
