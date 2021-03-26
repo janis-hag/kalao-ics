@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from sys import path as SysPath
-from os import path as OsPath
+from os  import path as OsPath
 SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
-from threading import Thread
-from multiprocessing import Process
-from multiprocessing import Queue
+from threading 			import Thread
+from multiprocessing 	import Process, Queue
+from configparser 		import ConfigParser
 
 from kalao.plc import shutter
 from kalao.plc import calib_unit
@@ -14,6 +14,9 @@ from kalao.plc import flip_mirror
 from kalao.plc import laser
 from kalao.plc import tungsten
 from kalao.fli import control
+
+import seq_server
+import seq_command
 
 # Thread subclass that allows you to retrieve a return value
 # **https://stackoverflow.com/questions/6893968/how-to-get-the-return-value-from-a-thread-in-python**
@@ -75,10 +78,23 @@ def initBenchComponents(q):
 
 	q.put(returnValue)
 
-def initialisation(nbTry, timeout):
 
-	# READ CONFIG
+def initialisation():
 
+	# Read config file and create a dict for each section where keys is parameter
+	parser = ConfigParser()
+	parser.read('../kalao.config')
+
+	host	= parser.get('PLC','IP')
+	port 	= parser.getint('PLC','Port')
+	nbTry   = parser.getint('PLC','InitNbTry')
+	timeout = parser.getint('PLC','InitTimeout')
+
+	args = {
+		'filepath'	: parser.get('FLI','ScienceDataStorage'),
+		'exptime'	: parser.getint('FLI','ExpTime'),
+		'intensity'	: parser.getint('PLC', 'laserMaxAllowed')
+		}
 
 	# Create a subprocess with a Queue object for return value
 	# if returned value != 0, try 'nbTry' times
@@ -92,4 +108,8 @@ def initialisation(nbTry, timeout):
 			break
 
 
-	# Start CACAO
+	# Start CACAO here ----
+
+
+	# Start sequencer server socket, wait for connection and launch received command
+	seq_server.Seq_server(host, port, args)

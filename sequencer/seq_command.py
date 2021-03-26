@@ -12,29 +12,33 @@ from kalao.plc import tungsten
 from kalao.fli import control
 
 
-def dark(ditControl=0.05, filepathControl=None):
-	core.lamps_off()
-	shutter.close()
-	control.acquire(dit = ditControl, filepath = filepathControl)
+def dark(dit = 0.05, filepath = None, **kwargs):
+	if core.lamps_off() != 0:
+		print("Error: failed to turn off lamps")
 
+	if shutter.close() != 'CLOSE':
+		print("Error: failed to close the shutter")
 
-def tungsten_FLAT(beckTungsten = None, ditControl=0.05, filepathControl=None):
+	if control.acquire(dit = dit, filepath = filepath) != 0:
+		print("Error: failed to store in MondoDB")
+
+def tungsten_FLAT(beck = None, dit = 0.05, filepath = None, **kwargs):
 	shutter.close()
-	tungsten.on(beck = beckTungsten)
+	tungsten.on(beck = beck)
 	flip_mirror.up()
 	#Select Filter
-	control.acquire(dit = ditControl, filepath = filepathControl)
-	tungsten.off(beck = beckTungsten)
+	control.acquire(dit = dit, filepath = filepath)
+	tungsten.off(beck = beck)
 
-def sky_FLAT(ditControl=0.05, filepathControl=None):
+def sky_FLAT(dit = 0.05, filepath = None, **kwargs):
 	core.lamps_off()
 	flip_mirror.down()
 	shutter.open()
 	#Select Fitler
-	control.acquire(dit = ditControl, filepath = filepathControl)
+	control.acquire(dit = dit, filepath = filepath)
 	shutter.close()
 
-def target_observation(ditControl=0.05, filepathControl=None):
+def target_observation(dit = 0.05, filepath = None, **kwargs):
 	core.lamps_off()
 	shutter.open()
 	flip_mirror.down()
@@ -42,13 +46,13 @@ def target_observation(ditControl=0.05, filepathControl=None):
 	#Centre on target
 	#cacao.close_loop()
 	#Monitor AO and cancel exposure if needed
-	control.acquire(dit = ditControl, filepath = filepathControl)
+	control.acquire(dit = dit, filepath = filepath)
 	shutter.close()
 
-def AO_loop_calibration(intensityLaser = 0.04):
+def AO_loop_calibration(intensity = 0, **kwargs):
 	shutter.close()
 	flip_mirror.up()
-	laser.set_intensity(intensity = intensityLaser)
+	laser.set_intensity(intensity)
 	#cacao.start_calib()
 	laser.set_intensity(0)
 
