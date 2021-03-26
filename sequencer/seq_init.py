@@ -91,9 +91,9 @@ def initialisation():
 	timeout = parser.getint('PLC','InitTimeout')
 
 	args = {
-		'filepath'	: parser.get('FLI','ScienceDataStorage'),
-		'exptime'	: parser.getint('FLI','ExpTime'),
-		'intensity'	: parser.getint('PLC', 'laserMaxAllowed')
+		'filepath'		: parser.get('FLI','ScienceDataStorage'),
+		'exptime'		: parser.getint('FLI','ExpTime'),
+		'MaxIntensity'	: parser.getint('PLC', 'laserMaxAllowed')
 		}
 
 	# Create a subprocess with a Queue object for return value
