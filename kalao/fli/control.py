@@ -92,5 +92,6 @@ def send_request(type, params):
 
 
 def initialise():
+    # update fli file with content of kalao.config
     # systtemctl restart kalaocamera.service
     return 0
