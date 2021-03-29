@@ -53,7 +53,7 @@ def initBenchComponents(q):
 	returnValue = 0
 
 	# Create a thread for each function and set the thread's name to function's name
-	for fonc in foncs:
+	for fonc in init_foncs:
 		th = ThreadWithReturnValue(target = fonc)
 		th.daemon = True
 		th.start()
@@ -64,10 +64,7 @@ def initBenchComponents(q):
 	# and return the function return value if timeout not expired
 	# Set returnValue to 1 if timeout expired
 	for th in threads:
-		returnInfo.append( (th.getName(), th.join(timeout)) )
-		if th.is_alive():
-			print(th.getName(),"got timeout")
-			returnValue = 1
+		returnInfo.append( (th.getName(), th.join()) )
 
 	# Print each thread's name and the returned value of the thread
 	# Set returnValue to 1 if a returned value is 1
@@ -78,6 +75,14 @@ def initBenchComponents(q):
 
 	q.put(returnValue)
 
+def startThread(q, timeout):
+	th = ThreadWithReturnValue(target = initBenchComponents, args = (q,))
+	th.daemon = True
+	th.start()
+	th.join(timeout)
+	if th.is_alive():
+		print("Threads got timeout")
+		q.put(1)
 
 def initialisation():
 
@@ -92,7 +97,7 @@ def initialisation():
 
 	args = {
 		'filepath'		: parser.get('FLI','ScienceDataStorage'),
-		'exptime'		: parser.getint('FLI','ExpTime'),
+		'dit'			: parser.getint('FLI','ExpTime'),
 		'MaxIntensity'	: parser.getint('PLC', 'laserMaxAllowed')
 		}
 
@@ -100,7 +105,7 @@ def initialisation():
 	# if returned value != 0, try 'nbTry' times
 	for _ in range(nbTry):
 		q = Queue()
-		p = Process(target = initBenchComponents, arg = (q, timeout))
+		p = Process(target = startThread, args = (q, timeout))
 		p.start()
 		p.join()
 
