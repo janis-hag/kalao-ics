@@ -14,11 +14,12 @@ from signal import signal, SIGINT
 from sys import exit
 from time import sleep
 
-from kalao import cacao #.telemetry
-from kalao import plc #.core
-from kalao import rtc #.temperatures
+from kalao import cacao  #.telemetry
+from kalao import plc
+from kalao import rtc
 from kalao import fli
 from kalao.utils import database
+
 
 def handler(signal_received, frame):
     # Handle any cleanup here
@@ -31,22 +32,28 @@ if __name__ == "__main__":
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)
 
+    counter = 0
     while (True):
-        sleep(10)
+        values = {}
         # Get measurements from and cacao
         #cacao.telemetry.measurements_save()
+        counter +=1
+        sleep(10)
 
-        values = {}
-        #get Measurements from plc and store
-        plc_values, text = plc.core.plc_status()
-        values.update(plc_values)
+        if counter > 5:
+            #TODO counter should be time based
+            #get Measurements from plc and store
+            plc_values, text = plc.core.plc_status()
+            values.update(plc_values)
 
-        # get RTC data and update
-        rtc_temperatures = rtc.temperatures.read_all()
-        values.update(rtc_temperatures)
+            # get RTC data and update
+            rtc_temperatures = rtc.temperatures.read_all()
+            values.update(rtc_temperatures)
 
-        # FLI science camera temperature
-        fli_temperatures = {'fli_temp_CCD': fli.control.get_temperature()}
-        values.update(fli_temperatures)
+            # FLI science camera temperature
+            fli_temperatures = {'fli_temp_CCD': fli.control.get_temperature()}
+            values.update(fli_temperatures)
+
+            counter = 0
 
         database.store_measurements(values)
