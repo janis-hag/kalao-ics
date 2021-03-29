@@ -34,14 +34,24 @@ while (True):
   print("")
   print("%.6f"%(time.time()), "Wait for command")
   #
-  # read and parse the input string
+  # read and concat until "#" char, then parse the input string
   #
-  command     = gop.read()
+  command     = ""
+  controlRead = ""
+  while '#' not in controlRead:
+    controlRead = gop.read()
+
+    if(controlRead == -1):
+      print("%.6f"%(time.time()), "Initialize new gop connection. Wait for client ...")
+      gc = gop.initializeGopConnection(socketName, verbosity)
+      break
+
+    command += controlRead # concat input string
+
+  if(controlRead == -1):
+    continue # go to beginning
+
   print ("%.6f"%(time.time()), "AFter gop.read() := ", command)
-  if(command == -1):
-    print("%.6f"%(time.time()), "Initialize new gop connection. Wait for client ...")
-    gc = gop.initializeGopConnection(socketName, verbosity)
-    continue    # go to beginning
 
   seperator   = command[0]
   command     = command[1:]
