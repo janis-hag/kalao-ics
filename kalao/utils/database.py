@@ -24,14 +24,17 @@ definition_yaml = path + "/database_definition.yml"
 with open(definition_json) as file:
     definition = json.load(file)
 
+
 def convert_database_definition():
     with open(definition_yaml, 'r') as yaml_in, open(definition_json, "w") as json_out:
         yaml_object = yaml.safe_load(yaml_in)
         json.dump(yaml_object, json_out)
 
+
 def get_db(dt):
     client = MongoClient("127.0.0.1")
     return client[kalao_time.get_start_of_night(dt)]
+
 
 def store_monitoring(data):
     now_utc = datetime.now(timezone.utc)
@@ -47,6 +50,7 @@ def store_monitoring(data):
             raise KeyError(f'Inserting unknown key "{key}" in database')
 
     return db.monitoring.insert_one(data)
+
 
 def get_monitoring(keys, nb_of_point, dt=None):
     # If dt is None, get db for today, otherwise get db for the day/night specified  by dt
@@ -67,10 +71,12 @@ def get_monitoring(keys, nb_of_point, dt=None):
 
     return data
 
+
 def get_all_last_monitoring():
     return get_monitoring(definition.keys(), 1)
 
-def read_mongo_to_pandas(dt, host='localhost', port=27017, username=None, password=None, no_id=True):
+
+def read_mongo_to_pandas(dt, collection='monitoring', no_id=True):
     """ Read from Mongo and Store into DataFrame """
 
     # Connect to MongoDB
@@ -80,7 +86,7 @@ def read_mongo_to_pandas(dt, host='localhost', port=27017, username=None, passwo
 
     # Make a query to the specific DB and Collection
     #cursor = db[collection].find(query)
-    cursor = db.find()
+    cursor = db[collection].find()
 
 
     # Expand the cursor and construct the DataFrame
@@ -91,6 +97,7 @@ def read_mongo_to_pandas(dt, host='localhost', port=27017, username=None, passwo
         del df['_id']
 
     return df
+
 
 if __name__ == "__main__":
     print("Converting database definition")
