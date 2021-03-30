@@ -66,6 +66,10 @@ slopes_residual:
   unit: N/A
 
 # FLI
+fli_status:
+  short: FLI camera status
+  long: Logging FLI status
+  unit: ""
 fli_exposuretime:
   short: FLI Exp. time
   long: Exposure time of the FLI
@@ -115,7 +119,7 @@ laser:
 tungsten:
   short: tungsten status
   long: Tungsten calibration lamp status
-  unit: TBD
+  unit: ""
 
 # AO loop status
 

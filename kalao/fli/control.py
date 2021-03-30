@@ -11,10 +11,14 @@ control.py is part of the KalAO Instrument Control Software
 """
 
 import requests
+import requests.exceptions
 
 from kalao.utils import database, kalao_time
 #from datetime import datetime
 
+#  TODO read from config
+address = '127.0.0.1'
+port = '9080'
 
 def take_science_exposure(dit=0.05, filepath=None):
 
@@ -82,7 +86,7 @@ def set_temperature(temperature):
 
 def send_request(type, params):
 
-    url = 'http://127.0.0.1:9080/'+type
+    url = 'http://'+address+':'+port+'/'+type
     if params == 'GET':
         req = requests.get(url)
     else:
@@ -95,3 +99,15 @@ def initialise():
     # update fli file with content of kalao.config
     # systtemctl restart kalaocamera.service
     return 0
+
+def check_server_status():
+
+    try:
+        r = requests.get('http://'+address+port)
+        r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        return "DOWN"
+    except requests.exceptions.HTTPError:
+        return "ERROR"
+    else:
+        return "OK"

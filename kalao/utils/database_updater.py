@@ -50,9 +50,13 @@ if __name__ == "__main__":
             rtc_temperatures = rtc.temperatures.read_all()
             values.update(rtc_temperatures)
 
-            # FLI science camera temperature
-            fli_temperatures = {'fli_temp_CCD': fli.control.get_temperature()}
-            values.update(fli_temperatures)
+            # FLI science camera status
+            fli_server_status = fli.control.check_server_status()
+            if fli_server_status == 'OK':
+                fli_status = {'fli_temp_CCD': fli.control.get_temperature(), 'fli_status': fli_server_status}
+                values.update(fli_status)
+            else:
+                values.update({'fli_status': fli_server_status})
 
             counter = 0
 
