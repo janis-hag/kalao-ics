@@ -35,14 +35,14 @@ if __name__ == "__main__":
     counter = 0
     while (True):
         values = {}
-        # Get measurements from and cacao
-        #cacao.telemetry.measurements_save()
+        # Get monitoring from and cacao
+        #cacao.telemetry.monitoring_save()
         counter +=1
         sleep(10)
 
         if counter > 5:
             #TODO counter should be time based
-            #get Measurements from plc and store
+            #get monitoring from plc and store
             plc_values, text = plc.core.plc_status()
             values.update(plc_values)
 
@@ -56,4 +56,4 @@ if __name__ == "__main__":
 
             counter = 0
 
-        database.store_measurements(values)
+        database.store_monitoring(values)

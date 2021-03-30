@@ -127,47 +127,47 @@ def fake_streams():
 
 	return streams
 
-def fake_measurements_for_db():
-	measurements = {}
+def fake_monitoring_for_db():
+	monitoring = {}
 
-	measurements["nuvu_temp_ccd"] = -60 + random.gauss(0, 0.05)
-	measurements["nuvu_temp_controller"] = 45 + random.gauss(0, 0.05)
-	measurements["nuvu_temp_power_supply"] = 45 + random.gauss(0, 0.05)
-	measurements["nuvu_temp_fpga"] = 50 + random.gauss(0, 0.05)
-	measurements["nuvu_temp_heatsink"] = 15 + random.gauss(0, 0.05)
-	measurements["nuvu_emgain"] = 200
-	measurements["nuvu_exposuretime"] = 0.5
+	monitoring["nuvu_temp_ccd"] = -60 + random.gauss(0, 0.05)
+	monitoring["nuvu_temp_controller"] = 45 + random.gauss(0, 0.05)
+	monitoring["nuvu_temp_power_supply"] = 45 + random.gauss(0, 0.05)
+	monitoring["nuvu_temp_fpga"] = 50 + random.gauss(0, 0.05)
+	monitoring["nuvu_temp_heatsink"] = 15 + random.gauss(0, 0.05)
+	monitoring["nuvu_emgain"] = 200
+	monitoring["nuvu_exposuretime"] = 0.5
 
-	measurements["slopes_flux_subaperture"] = 2**16-1 - 200 + random.gauss(0, 200)
-	measurements["slopes_residual"] = 0.05 + random.gauss(0, 0.02)
+	monitoring["slopes_flux_subaperture"] = 2**16-1 - 200 + random.gauss(0, 200)
+	monitoring["slopes_residual"] = 0.05 + random.gauss(0, 0.02)
 
-	measurements["pi_tip"] = 0 + random.gauss(0, 0.5)
-	measurements["pi_tilt"] = 0 + random.gauss(0, 0.5)
+	monitoring["pi_tip"] = 0 + random.gauss(0, 0.5)
+	monitoring["pi_tilt"] = 0 + random.gauss(0, 0.5)
 
-	return measurements
+	return monitoring
 
-def fake_measurements():
+def fake_monitoring():
 	timestamp = datetime.now(timezone.utc).timestamp()
-	measurements = {}
+	monitoring = {}
 
-	for key, value in fake_measurements_for_db().items():
-		measurements[key] = {'timestamps': [timestamp], 'values': [value]}
+	for key, value in fake_monitoring_for_db().items():
+		monitoring[key] = {'timestamps': [timestamp], 'values': [value]}
 
-	return measurements
+	return monitoring
 
-def fake_measurements_series():
+def fake_monitoring_series():
 	timestamp = datetime.now(timezone.utc).timestamp()
-	measurements = {}
+	monitoring = {}
 	keys = ["pi_tip", "pi_tilt"]
 
 	for key in keys:
-		measurements[key] = {'timestamps': [], 'values': []}
+		monitoring[key] = {'timestamps': [], 'values': []}
 
 		for i in range(3*3600):
-			measurements[key]['timestamps'].append(timestamp-i)
-			measurements[key]['values'].append(fake_measurements_for_db()[key])
+			monitoring[key]['timestamps'].append(timestamp-i)
+			monitoring[key]['values'].append(fake_monitoring_for_db()[key])
 
-	return measurements
+	return monitoring
 
 if __name__ == "__main__":
 	import matplotlib.pyplot as plt

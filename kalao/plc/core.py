@@ -102,7 +102,7 @@ def device_status(node_path, beck=None):
 
 def database_update():
     values, text = plc_status()
-    database.store_measurements(values)
+    database.store_monitoring(values)
 
 
 def temperatures(beck=None):

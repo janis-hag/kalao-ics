@@ -34,4 +34,4 @@ def read_all():
 
 def database_update():
     values = read_all()
-    database.store_measurements(values)
+    database.store_monitoring(values)

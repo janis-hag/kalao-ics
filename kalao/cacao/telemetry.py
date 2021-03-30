@@ -28,29 +28,29 @@ def streams():
 
 	return streams
 
-def measurements_save():
-	measurements = {}
+def monitoring_save():
+	monitoring = {}
 
 	#TODO: check if fps exists and check fps.RUNrunning
 	fps_nuvu = fps("nuvu_acquire")
 
-	measurements["nuvu_temp_ccd"]          = fps_nuvu["nuvu_accquire.temp_ccd"]
-	measurements["nuvu_temp_controller"]   = fps_nuvu["nuvu_accquire.temp_controller"]
-	measurements["nuvu_temp_power_supply"] = fps_nuvu["nuvu_accquire.temp_power_supply"]
-	measurements["nuvu_temp_fpga"]         = fps_nuvu["nuvu_accquire.temp_fpga"]
-	measurements["nuvu_temp_heatsink"]     = fps_nuvu["nuvu_accquire.temp_heatsink"]
-	measurements["nuvu_emgain"]            = fps_nuvu["nuvu_accquire.emgain"]
-	measurements["nuvu_exposuretime"]      = fps_nuvu["nuvu_accquire.exposuretime"]
+	monitoring["nuvu_temp_ccd"]          = fps_nuvu["nuvu_accquire.temp_ccd"]
+	monitoring["nuvu_temp_controller"]   = fps_nuvu["nuvu_accquire.temp_controller"]
+	monitoring["nuvu_temp_power_supply"] = fps_nuvu["nuvu_accquire.temp_power_supply"]
+	monitoring["nuvu_temp_fpga"]         = fps_nuvu["nuvu_accquire.temp_fpga"]
+	monitoring["nuvu_temp_heatsink"]     = fps_nuvu["nuvu_accquire.temp_heatsink"]
+	monitoring["nuvu_emgain"]            = fps_nuvu["nuvu_accquire.emgain"]
+	monitoring["nuvu_exposuretime"]      = fps_nuvu["nuvu_accquire.exposuretime"]
 
 	fps_slopes = fps("shwfs_process")
 
-	measurements["slopes_flux_subaperture"] = fps_slopes["shwfs_process.flux_subaperture"]
-	measurements["slopes_residual"]         = fps_slopes["shwfs_process.residual"]
+	monitoring["slopes_flux_subaperture"] = fps_slopes["shwfs_process.flux_subaperture"]
+	monitoring["slopes_residual"]         = fps_slopes["shwfs_process.residual"]
 
 	pi_stream = SHM("dm02disp")
 	pi_data = pi_stream.get_data(check=True)
 
-	measurements["pi_tip"] = pi_data[0]
-	measurements["pi_tilt"] = pi_data[1]
+	monitoring["pi_tip"] = pi_data[0]
+	monitoring["pi_tilt"] = pi_data[1]
 
-	database.store_measurements(measurements)
+	database.store_monitoring(monitoring)

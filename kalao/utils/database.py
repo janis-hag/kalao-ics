@@ -33,7 +33,7 @@ def get_db(dt):
     client = MongoClient("127.0.0.1")
     return client[kalao_time.get_start_of_night(dt)]
 
-def store_measurements(data):
+def store_monitoring(data):
     now_utc = datetime.now(timezone.utc)
     db = get_db(now_utc)
 
@@ -46,9 +46,9 @@ def store_measurements(data):
         if not key in definition:
             raise KeyError(f'Inserting unknown key "{key}" in database')
 
-    return db.measurements.insert_one(data)
+    return db.monitoring.insert_one(data)
 
-def get_measurements(keys, nb_of_point, dt=None):
+def get_monitoring(keys, nb_of_point, dt=None):
     # If dt is None, get db for today, otherwise get db for the day/night specified  by dt
     if dt is None:
         dt = datetime.now(timezone.utc)
@@ -57,7 +57,7 @@ def get_measurements(keys, nb_of_point, dt=None):
     data = {}
 
     for key in keys:
-        cursor = db.measurements.find({key: {'$exists': True}}, {'time_unix': True, key: True}, sort=[('time_unix', DESCENDING)], limit=nb_of_point)
+        cursor = db.monitoring.find({key: {'$exists': True}}, {'time_unix': True, key: True}, sort=[('time_unix', DESCENDING)], limit=nb_of_point)
 
         data[key] = {'timestamps': [], 'values': []}
 
@@ -67,8 +67,8 @@ def get_measurements(keys, nb_of_point, dt=None):
 
     return data
 
-def get_all_last_measurements():
-    return get_measurements(definition.keys(), 1)
+def get_all_last_monitoring():
+    return get_monitoring(definition.keys(), 1)
 
 def read_mongo_to_pandas(dt, host='localhost', port=27017, username=None, password=None, no_id=True):
     """ Read from Mongo and Store into DataFrame """

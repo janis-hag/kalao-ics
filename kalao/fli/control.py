@@ -55,7 +55,7 @@ def database_update():
     # fli_temp_heatsink
     # fli_temp_CCD
     values = {'fli_temp_CCD': get_temperature()}
-    database.store_measurements(values)
+    database.store_monitoring(values)
 
 
 def get_temperature():

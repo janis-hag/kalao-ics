@@ -38,15 +38,15 @@ def streams(realData=True):
     else:
         return fake_data.fake_streams()
 
-def measurements(realData=True):
+def monitoring(realData=True):
     if realData:
-        return database.get_all_last_measurements()
+        return database.get_all_last_monitoring()
     else:
-        return fake_data.fake_measurements()
+        return fake_data.fake_monitoring()
 
-def measurements_series(realData=True):
+def monitoring_series(realData=True):
     if realData:
-        # Will be database.get_measurements(keys, nb_of_point)
-        return fake_data.fake_measurements_series() # TODO
+        # Will be database.get_monitoring(keys, nb_of_point)
+        return fake_data.fake_monitoring_series() # TODO
     else:
-        return fake_data.fake_measurements_series()
+        return fake_data.fake_monitoring_series()
