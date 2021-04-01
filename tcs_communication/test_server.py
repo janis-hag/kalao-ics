@@ -43,7 +43,8 @@ while (True):
 
     if(controlRead == -1):
       print("%.6f"%(time.time()), "Initialize new gop connection. Wait for client ...")
-      gc = gop.initializeGopConnection(socketName, verbosity)
+      #gc = gop.initializeGopConnection(socketName, verbosity)
+      gc = gop.initializeInetGopConnection(socketName, socketPort, verbosity)
       break
 
     command += controlRead # concat input string
