@@ -60,4 +60,5 @@ if __name__ == "__main__":
 
             counter = 0
 
-        database.store_monitoring(values)
+        if not values == {}:
+            database.store_monitoring(values)
