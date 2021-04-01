@@ -39,9 +39,9 @@ def get_db(dt):
 def store_monitoring(data):
     return store_data('monitoring', data)
 
+
 def store_obs_log(data):
     return store_data('obs_log', data)
-
 
 
 def store_data(collection_name, data):
@@ -63,15 +63,21 @@ def store_data(collection_name, data):
 
 
 def get_monitoring(keys, nb_of_point, dt=None):
+    return get_data('monitoring', keys, nb_of_point, dt=None)
+
+
+def get_data(collection_name, keys, nb_of_point, dt=None):
     # If dt is None, get db for today, otherwise get db for the day/night specified  by dt
     if dt is None:
         dt = datetime.now(timezone.utc)
     db = get_db(dt)
 
+    #collection = db[collection_name]
+
     data = {}
 
     for key in keys:
-        cursor = db.monitoring.find({key: {'$exists': True}}, {'time_unix': True, key: True}, sort=[('time_unix', DESCENDING)], limit=nb_of_point)
+        cursor = db[collection_name].find({key: {'$exists': True}}, {'time_unix': True, key: True}, sort=[('time_unix', DESCENDING)], limit=nb_of_point)
 
         data[key] = {'timestamps': [], 'values': []}
 
