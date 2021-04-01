@@ -37,6 +37,14 @@ def get_db(dt):
 
 
 def store_monitoring(data):
+    return store_data('monitoring', data)
+
+def store_obs_log(data):
+    return store_data('obs_log', data)
+
+
+
+def store_data(collection_name, data):
     now_utc = datetime.now(timezone.utc)
     db = get_db(now_utc)
 
@@ -45,11 +53,13 @@ def store_monitoring(data):
     # data['time_utc'] = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ") # ISO 8601: YYYY-MM-DDThh:mm:ssZ
     data['time_mjd'] = kalao_time.get_mjd(now_utc)
 
+    collection = db[collection_name]
+
     for key in data.keys():
         if not key in definition:
             raise KeyError(f'Inserting unknown key "{key}" in database')
 
-    return db.monitoring.insert_one(data)
+    return collection.insert_one(data)
 
 
 def get_monitoring(keys, nb_of_point, dt=None):
