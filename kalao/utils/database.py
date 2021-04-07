@@ -93,7 +93,7 @@ def get_data(collection_name, keys, nb_of_point, dt=None):
         data[key] = {'time_utc': [], 'values': []}
 
         for doc in cursor:
-            data[key]['time_utc'].append(doc['time_unix'])
+            data[key]['time_utc'].append(doc['time_utc'])
             data[key]['values'].append(doc[key])
 
     return data
