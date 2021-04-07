@@ -18,17 +18,28 @@ from kalao.utils import kalao_time
 
 
 path = os.path.dirname(__file__)
-definition_json = path + "/database_definition.json"
-definition_yaml = path + "/database_definition.yml"
+monitoring_definition_json = path + "/database_definition_monitoring.json"
+monitoring_definition_yaml = path + "/database_definition_monitoring.yml"
 
-with open(definition_json) as file:
-    definition = json.load(file)
+obs_log_definition_json = path + "/database_definition_obs_log.json"
+obs_log_definition_yaml = path + "/database_definition_obs_log.yml"
+
+definition_names = [('monitoring', monitoring_definition_yaml, monitoring_definition_json),
+                    ('obs_log', obs_log_definition_yaml, obs_log_definition_json)]
+
+definitions = {}
+
+for def_name, def_yaml, definition_json in definition_names:
+    with open(definition_json) as file:
+        definitions[def_name] = json.load(file)
 
 
 def convert_database_definition():
-    with open(definition_yaml, 'r') as yaml_in, open(definition_json, "w") as json_out:
-        yaml_object = yaml.safe_load(yaml_in)
-        json.dump(yaml_object, json_out)
+    for def_name, def_yaml, def_json in definition_names:
+        with open(def_yaml, 'r') as yaml_in, open(def_json, "w") as json_out:
+            yaml_object = yaml.safe_load(yaml_in)
+            json.dump(yaml_object, json_out)
+
 
 
 def get_db(dt):
@@ -37,21 +48,21 @@ def get_db(dt):
 
 
 def store_monitoring(data):
-    return store_data('monitoring', data)
+    return store_data('monitoring', data, definitions['monitoring'])
 
 
 def store_obs_log(data):
     return store_data('obs_log', data)
 
 
-def store_data(collection_name, data):
-    now_utc = datetime.now(timezone.utc)
+def store_data(collection_name, data, definition):
+    now_utc = kalao_time.now()
     db = get_db(now_utc)
 
-    data['time_unix'] = now_utc.timestamp()
-    data['time_utc'] = kalao_time.get_isotime(now_utc)
+    data['time_utc'] = now_utc
+    #data['time_utc'] = kalao_time.get_isotime(now_utc)
     # data['time_utc'] = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ") # ISO 8601: YYYY-MM-DDThh:mm:ssZ
-    data['time_mjd'] = kalao_time.get_mjd(now_utc)
+    #data['time_mjd'] = kalao_time.get_mjd(now_utc)
 
     collection = db[collection_name]
 
@@ -77,19 +88,19 @@ def get_data(collection_name, keys, nb_of_point, dt=None):
     data = {}
 
     for key in keys:
-        cursor = db[collection_name].find({key: {'$exists': True}}, {'time_unix': True, key: True}, sort=[('time_unix', DESCENDING)], limit=nb_of_point)
+        cursor = db[collection_name].find({key: {'$exists': True}}, {'time_utc': True, key: True}, sort=[('time_utc', DESCENDING)], limit=nb_of_point)
 
-        data[key] = {'timestamps': [], 'values': []}
+        data[key] = {'time_utc': [], 'values': []}
 
         for doc in cursor:
-            data[key]['timestamps'].append(doc['time_unix'])
+            data[key]['time_utc'].append(doc['time_unix'])
             data[key]['values'].append(doc[key])
 
     return data
 
 
 def get_all_last_monitoring():
-    return get_monitoring(definition.keys(), 1)
+    return get_monitoring(definitions['monitoring'].keys(), 1)
 
 
 def read_mongo_to_pandas(dt, collection='monitoring', no_id=True):

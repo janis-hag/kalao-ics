@@ -57,3 +57,6 @@ def get_isotime(now=None):
         return datetime.now().isoformat(timespec='milliseconds')
     else:
         return now.isoformat(timespec='milliseconds')
+
+def now():
+    return datetime.now(timezone.utc)
