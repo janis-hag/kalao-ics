@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from sys import path as SysPath
 from os  import path as OsPath
+# methode dirname return parent directory and methode abspath return absolut path
 SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
 from threading 			import Thread
@@ -24,33 +25,21 @@ class ThreadWithReturnValue(Thread):
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, Verbose=None):
         Thread.__init__(self, group, target, name, args, kwargs)
         self._return = None
-    def run(self):
+    def run(self):watch?v=AQ7-qKQMce4
         if self._target is not None:
             self._return = self._target(*self._args, **self._kwargs)
     def join(self, *args):
         Thread.join(self, *args)
         return self._return
 
-# Multi-thread fonction: create array of object <function>
+# Multi-thread fonction: take array of func objects
 # Create a thread for each function and start the function
-# Block until the end of each thread or timeout passed
+# 'join' methode block until the end of each thread
 # Then print return value and add return value to Queue object
-def initBenchComponents(q):
-
-	# array of object <function>
-	init_foncs = [
-		control.initialise,
-		calib_unit.initialise,
-		flip_mirror.initialise,
-		shutter.initialise,
-		tungsten.initialise,
-		laser.initialise
-	]
+# And add name of func who returned error to Queue object
+def initBenchComponents(q, init_foncs):
 
 	threads = []
-	returnInfo = []
-
-	returnValue = 0
 
 	# Create a thread for each function and set the thread's name to function's name
 	for fonc in init_foncs:
@@ -64,25 +53,24 @@ def initBenchComponents(q):
 	# and return the function return value if timeout not expired
 	# Set returnValue to 1 if timeout expired
 	for th in threads:
-		returnInfo.append( (th.getName(), th.join()) )
+		rValue = th.join()
+		if rValue != 0:
+			print("Error:",th.getName(), "return", rValue)
+			q.put(th.getName())
 
-	# Print each thread's name and the returned value of the thread
-	# Set returnValue to 1 if a returned value is 1
-	for r in returnInfo:
-		print(r[0],":", r[1])
-		if r[1] == 1:
-			returnValue = 1
-
-	q.put(returnValue)
-
-def startThread(q, timeout):
-	th = ThreadWithReturnValue(target = initBenchComponents, args = (q,))
+def startThread(q, timeout, init_foncs):
+	th = ThreadWithReturnValue(target = initBenchComponents, args = (q, init_foncs))
 	th.daemon = True
 	th.start()
 	th.join(timeout)
 	if th.is_alive():
-		print("Threads got timeout")
+		print("Initialisation got timeout")
 		q.put(1)
+
+def startProcess(startThread, q, timeout, init_foncs):
+	p = Process(target = startThread, args = (q, timeout, init_foncs))
+	p.start()
+	p.join()
 
 def initialisation():
 
@@ -95,26 +83,51 @@ def initialisation():
 	nbTry   = parser.getint('PLC','InitNbTry')
 	timeout = parser.getint('PLC','InitTimeout')
 
-	args = {
-		'filepath'		: parser.get('FLI','ScienceDataStorage'),
-		'dit'			: parser.getint('FLI','ExpTime'),
-		'MaxIntensity'	: parser.getint('PLC', 'laserMaxAllowed')
-		}
+	# dict where keys is string name of object <function> and values is object <function>
+	init_dict = {
+		"control.initialise"	: control.initialise,
+		"calib_unit.initialise"	: calib_unit.initialise,
+		"flip_mirror.initialise": flip_mirror.initialise,
+		"shutter.initialise"	: shutter.initialise,
+		"tungsten.initialise"	: tungsten.initialise,
+		"laser.initialise"		: laser.initialise
+	}
+
+	# array of object <function>
+	init_foncs = list(init_dict.values())
 
 	# Create a subprocess with a Queue object for return value
 	# if returned value != 0, try 'nbTry' times
-	for _ in range(nbTry):
-		q = Queue()
-		p = Process(target = startThread, args = (q, timeout))
-		p.start()
-		p.join()
+	q = Queue()
+	startProcess(startThread, q, timeout, init_foncs)
 
-		if q.get() == 0:
+	for _ in range(nbTry):
+		value = 0
+		error_foncs = []
+
+		while not q.empty():
+			value = q.get()
+
+			# if value egal 1 then a timeout happened
+			# clear queue object and try again
+			if value == 1:
+				while not q.empty():
+					q.get()
+				startProcess(startThread, q, timeout, init_foncs)
+				break
+			else:
+				error_foncs.append(init_dict[value])
+
+		if value == 1:
+			continue
+		elif error_foncs == []:
 			break
+		else:
+			startProcess(startThread, q, timeout, error_foncs)
 
 
 	# Start CACAO here ----
 
 
 	# Start sequencer server socket, wait for connection and launch received command
-	seq_server.Seq_server(host, port, args)
+	seq_server.Seq_server(host, port)
