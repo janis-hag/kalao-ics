@@ -78,8 +78,6 @@ def initialisation():
 	parser = ConfigParser()
 	parser.read('../kalao.config')
 
-	host	= parser.get('PLC','IP')
-	port 	= parser.getint('PLC','Port')
 	nbTry   = parser.getint('PLC','InitNbTry')
 	timeout = parser.getint('PLC','InitTimeout')
 
@@ -121,13 +119,11 @@ def initialisation():
 		if value == 1:
 			continue
 		elif error_foncs == []:
-			break
+			return 0
 		else:
 			startProcess(startThread, q, timeout, error_foncs)
 
+	return 1
+
 
 	# Start CACAO here ----
-
-
-	# Start sequencer server socket, wait for connection and launch received command
-	seq_server.Seq_server(host, port)
