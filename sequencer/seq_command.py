@@ -19,7 +19,7 @@ def dark(dit = 0.05, filepath = None, **kwargs):
 	if shutter.close() != 'CLOSE':
 		print("Error: failed to close the shutter")
 
-	if control.acquire(dit = dit, filepath = filepath) != 0:
+	if control.take_image(dit = dit, filepath = filepath) != 0:
 		print("Error: failed to store in MondoDB")
 
 def tungsten_FLAT(beck = None, dit = 0.05, filepath = None, **kwargs):
@@ -27,7 +27,7 @@ def tungsten_FLAT(beck = None, dit = 0.05, filepath = None, **kwargs):
 	tungsten.on(beck = beck)
 	flip_mirror.up()
 	#Select Filter
-	control.acquire(dit = dit, filepath = filepath)
+	control.take_image(dit = dit, filepath = filepath)
 	tungsten.off(beck = beck)
 
 def sky_FLAT(dit = 0.05, filepath = None, **kwargs):
@@ -35,7 +35,7 @@ def sky_FLAT(dit = 0.05, filepath = None, **kwargs):
 	flip_mirror.down()
 	shutter.open()
 	#Select Fitler
-	control.acquire(dit = dit, filepath = filepath)
+	control.take_image(dit = dit, filepath = filepath)
 	shutter.close()
 
 def target_observation(dit = 0.05, filepath = None, **kwargs):
@@ -46,7 +46,7 @@ def target_observation(dit = 0.05, filepath = None, **kwargs):
 	#Centre on target
 	#cacao.close_loop()
 	#Monitor AO and cancel exposure if needed
-	control.acquire(dit = dit, filepath = filepath)
+	control.take_image(dit = dit, filepath = filepath)
 	shutter.close()
 
 def AO_loop_calibration(intensity = 0, **kwargs):
