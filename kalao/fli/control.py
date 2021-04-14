@@ -22,27 +22,34 @@ port = '9080'
 
 def take_science_exposure(dit=0.05, filepath=None):
 
-    req.result = acquire(dit,filepath)
+    req_result = take_image(dit, filepath)
 
-    return req.result
+    return req_result
 
 
-def acquire(dit=0.05, filepath=None):
+def take_image(dit=0.05, filepath=None):
 
     if filepath is None:
         filename = 'KALAO.' + kalao_time.get_isotime() + '.fits'
         filepath = '/home/kalao/data/science/'+filename
     params = {'exptime': dit, 'filepath': filepath}
     req = send_request('acquire', params)
-    # store to mongo db instead of printing.
-    print(req.status_code)
-    print(req.text)
+
+    # Logging exposure command into database
+    log(req)
 
     if req.status_code == 200:
         return 0
     else:
         return req.text
 
+
+def log(req):
+   database.store_obs_log({'fli_log': req.text+' ('+req.status_code+')'})
+
+
+def log_last_iamge_path( fli_imagE_path):
+    database.store_obs_log({'fli_image_path': fli_image_path})
 
 def cancel():
 
