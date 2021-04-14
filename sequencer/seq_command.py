@@ -11,47 +11,98 @@ from kalao.plc import laser
 from kalao.plc import tungsten
 from kalao.fli import control
 
+from configparser import ConfigParser
 
-def dark(dit = 0.05, filepath = None, **kwargs):
+# Read config file and create a dict for each section where keys is parameter
+parser = ConfigParser()
+parser.read('../kalao.config')
+
+ExpTime 			= parser.getint('FLI','ExpTime')
+ScienceDataStorage 	= parser.get('FLI', 'ScienceDataStorage')
+
+# store to mongo db instead of printing.
+
+def dark(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
 	if core.lamps_off() != 0:
 		print("Error: failed to turn off lamps")
 
 	if shutter.close() != 'CLOSE':
 		print("Error: failed to close the shutter")
 
-	if control.take_image(dit = dit, filepath = filepath) != 0:
-		print("Error: failed to store in MondoDB")
+	rValue = control.acquire(dit = dit, filepath = filepath)
+	if rValue != 0:
+		print(rValue)
 
-def tungsten_FLAT(beck = None, dit = 0.05, filepath = None, **kwargs):
-	shutter.close()
+def tungsten_FLAT(beck = None, dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
+	if shutter.close() != 'CLOSE':
+		print("Error: failed to close the shutter")
+
 	tungsten.on(beck = beck)
-	flip_mirror.up()
+
+	if flip_mirror.up() != 'UP':
+		print("Error: flip mirror did not go up")
+
 	#Select Filter
-	control.take_image(dit = dit, filepath = filepath)
+
+	rValue = control.acquire(dit = dit, filepath = filepath)
+	if rValue != 0:
+		# store to mongo db instead of printing.
+		print(rValue)
+
 	tungsten.off(beck = beck)
 
-def sky_FLAT(dit = 0.05, filepath = None, **kwargs):
-	core.lamps_off()
-	flip_mirror.down()
-	shutter.open()
-	#Select Fitler
-	control.take_image(dit = dit, filepath = filepath)
-	shutter.close()
+def sky_FLAT(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
+	if core.lamps_off() != 0:
+		print("Error: failed to turn off lamps")
 
-def target_observation(dit = 0.05, filepath = None, **kwargs):
-	core.lamps_off()
-	shutter.open()
-	flip_mirror.down()
+	if flip_mirror.down() != 'DOWN':
+		print("Error: flip mirror did not go down")
+
+	if shutter.open() != 'OPEN':
+		print("Error: failed to open the shutter")
+
+	#Select Fitler
+
+	rValue = control.acquire(dit = dit, filepath = filepath)
+	if rValue != 0:
+		# store to mongo db instead of printing.
+		print(rValue)
+
+	if shutter.close() != 'CLOSE':
+		print("Error: failed to close the shutter")
+
+def target_observation(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
+	if core.lamps_off() != 0:
+		print("Error: failed to turn off lamps")
+
+	if shutter.open() != 'OPEN':
+		print("Error: failed to open the shutter")
+
+	if flip_mirror.down() != 'DOWN':
+		print("Error: flip mirror did not go down")
+
 	#Select Filter
 	#Centre on target
 	#cacao.close_loop()
 	#Monitor AO and cancel exposure if needed
-	control.take_image(dit = dit, filepath = filepath)
-	shutter.close()
+
+	rValue = control.acquire(dit = dit, filepath = filepath)
+	if rValue != 0:
+		# store to mongo db instead of printing.
+		print(rValue)
+
+	if shutter.close() != 'CLOSE':
+		print("Error: failed to close the shutter")
+
 
 def AO_loop_calibration(intensity = 0, **kwargs):
-	shutter.close()
-	flip_mirror.up()
+
+	if shutter.close() != 'CLOSE':
+		print("Error: failed to close the shutter")
+
+	if flip_mirror.up() != 'UP':
+		print("Error: flip mirror did not go up")
+
 	laser.set_intensity(intensity)
 	#cacao.start_calib()
 	laser.set_intensity(0)

@@ -4,9 +4,19 @@
 import seq_command
 import socket
 import time
-from itertools import zip_longest
 
-def Seq_server(host, port, args):
+from itertools 		import zip_longest
+from configparser 	import ConfigParser
+
+
+def seq_server():
+
+	# Read config file and create a dict for each section where keys is parameter
+	parser = ConfigParser()
+	parser.read('../kalao.config')
+
+	host = parser.get('PLC','IP')
+	port = parser.getint('PLC','Port')
 
 	socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	socket.bind((host, port))
@@ -27,8 +37,8 @@ def Seq_server(host, port, args):
 		#
 		print("%.6f"%(time.time()), " command=>", commandList[0], "< arg=",commandList[1:], sep="")
 
-		# Transform list of arg to a dict and add it to args parameter
-		args.update(dict(zip_longest(*[iter(commandList[1:])] * 2, fillvalue="")))
+		# Transform list of arg to a dict
+		args = dict(zip_longest(*[iter(commandList[1:])] * 2, fillvalue=""))
 
 		# commandDict is a dict with keys = "kal_****" and values is function object
 		seq_command.commandDict[commandList[0]](**args)
