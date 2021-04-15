@@ -24,7 +24,7 @@ def move(position=23.36):
     motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
 
     # Check if initialised
-    init_result = initialise(beck=beck, motor_nCommand=motor_nCommand)
+    init_result = initialise(fore_init=False, beck=beck, motor_nCommand=motor_nCommand)
     if not init_result == 0:
         return init_result
 
@@ -99,7 +99,7 @@ def check_error(beck):
         return
 
 
-def initialise(beck=None, motor_nCommand=None):
+def initialise(force_init=False, beck=None, motor_nCommand=None):
     '''
     Initialise the calibration unit.
 
@@ -115,7 +115,7 @@ def initialise(beck=None, motor_nCommand=None):
         motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
 
     # Check if enabled, if no do enable
-    if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value():
+    if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value() or not force_init:
         motor_bEnable = beck.get_node("ns = 4; s = MAIN.Linear_Standa_8MT.ctrl.bEnable")
         motor_bEnable.set_attribute(
             ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, motor_bEnable.get_data_type_as_variant_type())))
@@ -124,7 +124,7 @@ def initialise(beck=None, motor_nCommand=None):
             return error
 
     # Check if init, if not do init
-    if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value():
+    if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value() or not force_init:
         send_init(beck, motor_nCommand)
         print('Starting calib_unit init.')
         sleep(15)
