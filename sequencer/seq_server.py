@@ -8,6 +8,7 @@ import time
 from itertools      import zip_longest
 from configparser   import ConfigParser
 from queue          import Queue
+from threading      import Thread
 
 def seq_server():
 
@@ -21,6 +22,10 @@ def seq_server():
     socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socket.bind((host, port))
     print("%.6f"%(time.time()), "Server on")
+
+    q = Queue()
+    th = None
+    preCommand = ""
 
     while True:
         socket.listen()
@@ -37,11 +42,25 @@ def seq_server():
         #
         print("%.6f"%(time.time()), " command=>", commandList[0], "< arg=",commandList[1:], sep="")
 
-        # Transform list of arg to a dict
+        # Transform list of arg to a dict and add Queue Object q
         args = dict(zip_longest(*[iter(commandList[1:])] * 2, fillvalue=""))
+        args["q"] = q
 
+        # if abort commande, stop last command with Queue object q
+        # and start abort func
+        if(commandList[0] == preCommand + "_abort"):
+            q.put(1)
+            seq_command.commandDict[commandList[0]]()
+            th.join()
+        elif(th != None):
+            th.join()
+
+        # Start a subThread with received command
         # commandDict is a dict with keys = "kal_****" and values is function object
-        seq_command.commandDict[commandList[0]](**args)
+        th = Thread(target = seq_command.commandDict[commandList[0]], kwargs = args)
+        th.start()
+
+        preCommand = commandList[0]
 
     conn.close()
     socket.close()
