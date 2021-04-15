@@ -83,7 +83,7 @@ def initialise():
     # Connect to OPCUA server
     beck = core.connect()
 
-    status = beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value()
+    status = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
 
     beck.disconnect()
 

@@ -85,8 +85,13 @@ def position():
     error_code = beck.get_node('ns=4;s=MAIN.Flip.FlipMirror.stat.nErrorCode').get_value()
     if error_code != 0:
         #someting went wrong
+
+        # Logging error
+        error_text = beck.get_node("ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
+
+        database.store_obs_log({'fli_mirror_log': 'ERROR: '+error_text})
         beck.disconnect()
-        return beck.get_node("ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
+        return error_text
     else:
         if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Flip").get_value():
             flip_position = 'UP'

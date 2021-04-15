@@ -48,8 +48,13 @@ def log(req):
    database.store_obs_log({'fli_log': req.text+' ('+req.status_code+')'})
 
 
-def log_last_iamge_path( fli_imagE_path):
+def log_last_image_path( fli_image_path):
     database.store_obs_log({'fli_image_path': fli_image_path})
+
+
+def log_last_image_path( fli_image_path):
+    database.store_obs_log({'fli_image_path': fli_image_path})
+
 
 def cancel():
 

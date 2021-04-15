@@ -107,6 +107,8 @@ def initialise(beck=None, tungsten_nCommand=None):
             tungsten_status = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value())
         else:
             tungsten_status = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
+    else:
+        tungsten_status = 0
 
     if disconnect_on_exit:
         beck.disconnect()

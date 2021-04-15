@@ -41,7 +41,6 @@ def convert_database_definition():
             json.dump(yaml_object, json_out)
 
 
-
 def get_db(dt):
     client = MongoClient("127.0.0.1")
     return client[kalao_time.get_start_of_night(dt)]
@@ -52,7 +51,7 @@ def store_monitoring(data):
 
 
 def store_obs_log(data):
-    return store_data('obs_log', data)
+    return store_data('obs_log', data, definitions['obs_log'])
 
 
 def store_data(collection_name, data, definition):
@@ -77,10 +76,15 @@ def get_monitoring(keys, nb_of_point, dt=None):
     return get_data('monitoring', keys, nb_of_point, dt=None)
 
 
+def get_obs_log(keys, nb_of_point, dt=None):
+    return get_data('obs_log', keys, nb_of_point, dt=None)
+
+
+
 def get_data(collection_name, keys, nb_of_point, dt=None):
     # If dt is None, get db for today, otherwise get db for the day/night specified  by dt
     if dt is None:
-        dt = datetime.now(timezone.utc)
+        dt = kalao_time.now()
     db = get_db(dt)
 
     #collection = db[collection_name]
@@ -101,6 +105,10 @@ def get_data(collection_name, keys, nb_of_point, dt=None):
 
 def get_all_last_monitoring():
     return get_monitoring(definitions['monitoring'].keys(), 1)
+
+
+def get_all_last_obs_log():
+    return get_monitoring(definitions['obs_log'].keys(), 1)
 
 
 def read_mongo_to_pandas(dt, collection='monitoring', no_id=True):
