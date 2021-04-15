@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import time
 import sys
 from os import path
 sys.path.append(path.dirname(path.abspath(path.dirname(__file__))))
@@ -19,10 +20,11 @@ parser.read('../kalao.config')
 
 ExpTime             = parser.getint('FLI','ExpTime')
 ScienceDataStorage  = parser.get('FLI', 'ScienceDataStorage')
+TimeSup             = parser.getint('FLI','TimeSup')
 
 # store to mongo db instead of printing.
 
-def dark(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
+def dark(q = None, dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
 
@@ -32,6 +34,19 @@ def dark(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
     rValue = control.acquire(dit = dit, filepath = filepath)
     if rValue != 0:
         print(rValue)
+
+    # Check every sec if Queue object q is empty
+    # if not, break sleep while and seq_server should abort the command
+    t = 0
+    while(t < dit + TimeSup):
+        t += 1
+        time.sleep(1)
+        if(not q.empty()):
+            q.get()
+            break
+
+def dark_abort():
+    pass
 
 def tungsten_FLAT(beck = None, dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
     if shutter.close() != 'CLOSE':
