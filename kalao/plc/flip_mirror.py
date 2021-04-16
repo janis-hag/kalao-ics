@@ -10,7 +10,9 @@ flip_mirror.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from . import core
+from kalao.utils import database
+from kalao.plc import core
+
 from opcua import ua
 from time import sleep
 

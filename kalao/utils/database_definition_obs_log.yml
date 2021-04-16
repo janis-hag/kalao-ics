@@ -22,9 +22,13 @@ fli_log:
   short: FLI camera status
   long: Logging FLI status
   unit: text
-fli_image_path:
+fli_latest_image_path:
   short: path to saved image
   long: store path to saved image
+  unit: text
+fli_temporary_image_path:
+  short: path to temporary image
+  long: store path to temporary image
   unit: text
 
 # PLC
