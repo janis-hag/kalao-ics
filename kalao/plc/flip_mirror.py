@@ -91,7 +91,7 @@ def position():
         # Logging error
         error_text = beck.get_node("ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
 
-        database.store_obs_log({'fli_mirror_log': 'ERROR: '+error_text})
+        database.store_obs_log({'flip_mirror_log': 'ERROR: '+error_text})
         beck.disconnect()
         return error_text
     else:
