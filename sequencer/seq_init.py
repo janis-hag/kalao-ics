@@ -16,8 +16,8 @@ from kalao.plc import laser
 from kalao.plc import tungsten
 from kalao.fli import control
 
-import seq_server
-import seq_command
+from kalao.sequencer import seq_server
+from kalao.sequencer import seq_command
 
 # Thread subclass that allows you to retrieve a return value
 # **https://stackoverflow.com/questions/6893968/how-to-get-the-return-value-from-a-thread-in-python**
