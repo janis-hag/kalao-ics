@@ -81,7 +81,6 @@ def get_obs_log(keys, nb_of_point, dt=None):
     return get_data('obs_log', keys, nb_of_point, dt=None)
 
 
-
 def get_data(collection_name, keys, nb_of_point, dt=None):
     # If dt is None, get db for today, otherwise get db for the day/night specified  by dt
     if dt is None:
@@ -109,8 +108,15 @@ def get_all_last_monitoring():
 
 
 def get_all_last_obs_log():
-    return get_obs_log(definitions['obs_log'].keys(), 1)
+    return get_data('obs_log', definitions['obs_log'].keys(), 1, dt=None)
 
+
+def get_latest_record(collection_name):
+    dt = datetime.now(timezone.utc)
+    db = get_db(dt)
+    latest_record = list(db[collection_name].find().limit(1).sort([('$natural',-1)]))[0]
+
+    return latest_record
 
 def read_mongo_to_pandas(dt, collection='monitoring', no_id=True):
     """ Read from Mongo and Store into DataFrame """
