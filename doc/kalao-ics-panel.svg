@@ -24,8 +24,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.98994949"
-     inkscape:cx="882.54586"
-     inkscape:cy="423.61782"
+     inkscape:cx="986.36153"
+     inkscape:cy="638.81801"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -36,10 +36,10 @@
      inkscape:snap-nodes="true"
      inkscape:snap-text-baseline="true"
      inkscape:snap-global="false"
-     inkscape:window-width="2867"
-     inkscape:window-height="1776"
-     inkscape:window-x="0"
-     inkscape:window-y="27"
+     inkscape:window-width="2865"
+     inkscape:window-height="1774"
+     inkscape:window-x="651"
+     inkscape:window-y="328"
      inkscape:window-maximized="0">
     <sodipodi:guide
        position="-15.501633,220.53624"
@@ -381,11 +381,11 @@
          id="tspan888"
          x="888.63519"
          y="599.17633"
-         style="font-size:26.6667px">centring_needed, image = kalao.interface.fli_view()</tspan><tspan
+         style="font-size:26.6667px">centring_needed, image = kalao.interface.star_centering.fli_view()</tspan><tspan
          sodipodi:role="line"
          x="892.3396"
          y="625.57635"
          id="tspan892"
-         style="font-size:26.6667px">kalao.interface.star_position_pixels(x, y) </tspan></text>
+         style="font-size:26.6667px">kalao.interface.star_centering.star_pixel(x, y) </tspan></text>
   </g>
 </svg>

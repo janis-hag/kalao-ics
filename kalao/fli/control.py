@@ -12,9 +12,17 @@ control.py is part of the KalAO Instrument Control Software
 
 import requests
 import requests.exceptions
+import os
 
 from kalao.utils import database, kalao_time
-#from datetime import datetime
+from configparser import ConfigParser
+
+# Read config file
+parser = ConfigParser()
+parser.read('../kalao.config')
+
+ScienceDataStorage = parser.get('FLI','ScienceDataStorage')
+TemporaryDataStorage = parser.get('FLI','Temporary')
 
 #  TODO read from config
 address = '127.0.0.1'
@@ -30,13 +38,14 @@ def take_science_exposure(dit=0.05, filepath=None):
 def take_image(dit=0.05, filepath=None):
 
     if filepath is None:
-        filename = 'KALAO.' + kalao_time.get_isotime() + '.fits'
-        filepath = '/home/kalao/data/science/'+filename
+        filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
+        filepath = TemporaryDataStorage+os.sep+filename
     params = {'exptime': dit, 'filepath': filepath}
     req = send_request('acquire', params)
 
     # Logging exposure command into database
     log(req)
+    database.store_obs_log({'fli_temporary_image_path': filepath})
 
     if req.status_code == 200:
         return 0
@@ -49,11 +58,11 @@ def log(req):
 
 
 def log_last_image_path( fli_image_path):
-    database.store_obs_log({'fli_image_path': fli_image_path})
+    database.store_obs_log({'fli_last_image_path': fli_image_path})
 
 
-def log_last_image_path( fli_image_path):
-    database.store_obs_log({'fli_image_path': fli_image_path})
+def log_temporary_image_path( fli_image_path):
+    database.store_obs_log({'fli_temporary_image_path': fli_image_path})
 
 
 def cancel():
@@ -110,6 +119,7 @@ def send_request(type, params):
 def initialise():
     # update fli file with content of kalao.config
     # systtemctl restart kalaocamera.service
+    # https://github.com/torfsen/service
     return 0
 
 def check_server_status():

@@ -30,7 +30,7 @@ def run(cam):
     # initialise stream
 
     cam.set_exposure(dit)
-    img =  cam.take_photo()
+    img = cam.take_photo()
 
     # Creating a brand new stream
     shm = SHM('fli_stream', img,
