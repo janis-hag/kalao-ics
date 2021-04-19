@@ -17,7 +17,7 @@ from configparser       import ConfigParser
 from pathlib import Path
 import os
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
 parser = ConfigParser()
 parser.read(config_path)
