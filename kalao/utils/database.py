@@ -17,7 +17,8 @@ import pandas as pd
 from kalao.utils import kalao_time
 
 
-path = os.path.dirname(__file__)
+path = os.path.dirname(os.path.abspath(__file__))
+
 monitoring_definition_json = path + "/database_definition_monitoring.json"
 monitoring_definition_yaml = path + "/database_definition_monitoring.yml"
 
