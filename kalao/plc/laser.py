@@ -14,10 +14,13 @@ from . import core
 from opcua import ua
 from time import sleep
 from configparser       import ConfigParser
+from pathlib import Path
+import os
 
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 # Read config file
 parser = ConfigParser()
-parser.read('../kalao.config')
+parser.read(config_path)
 
 MAX_ALLOWED_LASER_INTENSITY = parser.getfloat('PLC','LaserMaxAllowed')
 
