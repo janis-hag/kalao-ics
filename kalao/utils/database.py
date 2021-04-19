@@ -108,7 +108,7 @@ def get_all_last_monitoring():
 
 
 def get_all_last_obs_log():
-    return get_monitoring(definitions['obs_log'].keys(), 1)
+    return get_obs_log(definitions['obs_log'].keys(), 1)
 
 
 def read_mongo_to_pandas(dt, collection='monitoring', no_id=True):

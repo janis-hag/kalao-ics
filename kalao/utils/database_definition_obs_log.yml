@@ -22,7 +22,7 @@ fli_log:
   short: FLI camera status
   long: Logging FLI status
   unit: text
-fli_latest_image_path:
+fli_last_image_path:
   short: path to saved image
   long: store path to saved image
   unit: text

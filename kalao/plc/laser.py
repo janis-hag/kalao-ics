@@ -13,8 +13,14 @@ laser.py is part of the KalAO Instrument Control Software
 from . import core
 from opcua import ua
 from time import sleep
+from configparser       import ConfigParser
 
-MAX_ALLOWED_LASER_INTENSITY = 0.71
+# Read config file
+parser = ConfigParser()
+parser.read('../kalao.config')
+
+MAX_ALLOWED_LASER_INTENSITY = parser.getfloat('PLC','LaserMaxAllowed')
+
 
 def status(beck=None):
     """
