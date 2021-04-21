@@ -71,8 +71,8 @@ def log_temporary_image_path( fli_image_path):
 
 def cancel():
 
-    params = {'cancel': True}
-    req = send_request('cancel', params)
+    params = {'cancelExposure': True}
+    req = send_request('cancelExposure', params)
 
     if req.status_code == 200:
         return 0
