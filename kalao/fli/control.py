@@ -16,10 +16,13 @@ import os
 
 from kalao.utils import database, kalao_time
 from configparser import ConfigParser
+import os
+
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 
 # Read config file
 parser = ConfigParser()
-parser.read('../kalao.config')
+parser.read(config_path)
 
 ScienceDataStorage = parser.get('FLI','ScienceDataStorage')
 TemporaryDataStorage = parser.get('FLI','Temporary')
