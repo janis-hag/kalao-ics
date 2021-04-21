@@ -15,9 +15,14 @@ from kalao.fli import control
 
 from configparser import ConfigParser
 
+from pathlib import Path
+import os
+
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+
 # Read config file and create a dict for each section where keys is parameter
 parser = ConfigParser()
-parser.read('../kalao.config')
+parser.read(config_path)
 
 ExpTime             = parser.getint('FLI','ExpTime')
 ScienceDataStorage  = parser.get('FLI', 'ScienceDataStorage')
