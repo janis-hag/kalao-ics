@@ -26,7 +26,7 @@ parser = ConfigParser()
 parser.read(config_path)
 
 ScienceDataStorage = parser.get('FLI','ScienceDataStorage')
-TemporaryDataStorage = parser.get('FLI','Temporary')
+TemporaryDataStorage = parser.get('FLI','TemporaryDataStorage')
 
 #  TODO read from config
 address = '127.0.0.1'
