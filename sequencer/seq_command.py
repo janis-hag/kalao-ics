@@ -45,7 +45,9 @@ def dark(q = None, dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
 
     # Check every sec if Queue object q is empty
     # if not, break sleep while and seq_server should abort the command
-    for t in range(dit+TimeSup):
+    t = 0
+    while t < dit + TimeSup:
+        t += 1
         time.sleep(1)
         if not q.empty():
             q.get()
