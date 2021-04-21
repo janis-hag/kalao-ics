@@ -10,6 +10,7 @@ from kalao.plc import calib_unit
 from kalao.plc import flip_mirror
 from kalao.plc import laser
 from kalao.plc import tungsten
+from kalao.plc import core
 from kalao.fli import control
 
 from configparser import ConfigParser
@@ -27,21 +28,21 @@ TimeSup             = parser.getint('FLI','TimeSup')
 def dark(q = None, dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
+        # database.store_monitoring({'laser': laser.status()})
+        # database.store_monitoring({'tungsten': tungsten.status()})
 
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
-    rValue = control.acquire(dit = dit, filepath = filepath)
+    rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
         print(rValue)
 
     # Check every sec if Queue object q is empty
     # if not, break sleep while and seq_server should abort the command
-    t = 0
-    while(t < dit + TimeSup):
-        t += 1
+    for t in range(dit+TimeSup):
         time.sleep(1)
-        if(not q.empty()):
+        if not q.empty():
             q.get()
             break
 
@@ -59,7 +60,7 @@ def tungsten_FLAT(beck = None, dit = ExpTime, filepath = ScienceDataStorage, **k
 
     #Select Filter
 
-    rValue = control.acquire(dit = dit, filepath = filepath)
+    rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
         # store to mongo db instead of printing.
         print(rValue)
@@ -78,7 +79,7 @@ def sky_FLAT(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
 
     #Select Fitler
 
-    rValue = control.acquire(dit = dit, filepath = filepath)
+    rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
         # store to mongo db instead of printing.
         print(rValue)
@@ -101,7 +102,7 @@ def target_observation(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
     #cacao.close_loop()
     #Monitor AO and cancel exposure if needed
 
-    rValue = control.acquire(dit = dit, filepath = filepath)
+    rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
         # store to mongo db instead of printing.
         print(rValue)
