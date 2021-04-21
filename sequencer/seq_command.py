@@ -24,7 +24,7 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-ExpTime             = parser.getint('FLI','ExpTime')
+ExpTime             = parser.getfloat('FLI','ExpTime')
 ScienceDataStorage  = parser.get('FLI', 'ScienceDataStorage')
 TimeSup             = parser.getint('FLI','TimeSup')
 
