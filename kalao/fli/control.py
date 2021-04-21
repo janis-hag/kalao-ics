@@ -58,7 +58,7 @@ def take_image(dit=0.05, filepath=None):
 
 
 def log(req):
-   database.store_obs_log({'fli_log': req.text+' ('+req.status_code+')'})
+   database.store_obs_log({'fli_log': req.text+' ('+str(req.status_code)+')'})
 
 
 def log_last_image_path( fli_image_path):
