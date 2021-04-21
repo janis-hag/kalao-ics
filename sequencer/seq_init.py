@@ -9,6 +9,9 @@ from threading          import Thread
 from multiprocessing    import Process, Queue
 from configparser       import ConfigParser
 
+from pathlib import Path
+import os
+
 from kalao.plc import shutter
 from kalao.plc import calib_unit
 from kalao.plc import flip_mirror
@@ -75,8 +78,11 @@ def startProcess(startThread, q, timeout, init_foncs):
 def initialisation():
 
     # Read config file and create a dict for each section where keys is parameter
+
+    config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+
     parser = ConfigParser()
-    parser.read('../kalao.config')
+    parser.read(config_path)
 
     nbTry   = parser.getint('PLC','InitNbTry')
     timeout = parser.getint('PLC','InitTimeout')
