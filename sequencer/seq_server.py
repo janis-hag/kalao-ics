@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from kalao.sequencer import seq_command
+from sequencer import seq_command
 
 import socket
 import time
