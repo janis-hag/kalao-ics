@@ -38,6 +38,7 @@ def lamps_off():
     if tungsten_status == 'OFF' and laser_status == 0:
         return 0
     else:
+        # TODO store in obs_log
         return 1
 
 

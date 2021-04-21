@@ -48,7 +48,7 @@ temperature_log:
   short: temeperature
   long: Temperature inside the KalAO enclosure
   unit: text
-laser-log:
+laser_log:
   short: laser lamp status
   long: Laser calibration lamp status
   unit: text
