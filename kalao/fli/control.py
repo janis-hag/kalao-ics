@@ -16,6 +16,7 @@ import os
 
 from kalao.utils import database, kalao_time
 from configparser import ConfigParser
+from pathlib import Path
 import os
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
