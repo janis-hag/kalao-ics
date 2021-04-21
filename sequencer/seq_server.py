@@ -53,6 +53,9 @@ def seq_server():
             q.put(1)
             seq_command.commandDict[commandList[0]]()
             th.join()
+            if not q.empty():
+                q.get()
+            continue
         elif(th != None):
             th.join()
 
