@@ -41,7 +41,8 @@ def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
     # Check if an abort was requested
     if not q.empty():
         q.get()
-        return
+        dit = -1
+        TimeSup = 0
 
     rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
