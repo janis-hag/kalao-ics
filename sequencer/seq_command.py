@@ -24,43 +24,61 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-ExpTime             = parser.getfloat('FLI','ExpTime')
-ScienceDataStorage  = parser.get('FLI', 'ScienceDataStorage')
-TimeSup             = parser.getint('FLI','TimeSup')
+ExpTime = parser.getfloat('FLI','ExpTime')
+TimeSup = parser.getint('FLI','TimeSup')
 
-# store to mongo db instead of printing.
-
-def dark(q = None, dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
+def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
-        # database.store_monitoring({'laser': laser.status()})
-        # database.store_monitoring({'tungsten': tungsten.status()})
+    else:
+        print("Lamps off OK")
 
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
+    else:
+        print("Shutter closed OK")
+
+    # Check if an abort was requested
+    if not q.empty():
+        q.get()
+        return
 
     rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
         print(rValue)
+    else:
+        print("Image taken OK")
 
     # Check every sec if Queue object q is empty
-    # if not, break sleep while and seq_server should abort the command
+    # if not, break while sleep
     t = 0
     while t < dit + TimeSup:
         t += 1
         time.sleep(1)
+        print(".")
         if not q.empty():
             q.get()
             break
 
-def dark_abort():
-    pass
+    # STORE "SEQ_SERVER FREE" TO MONGODB
 
-def tungsten_FLAT(beck = None, dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
+def dark_abort():
+    # two cancel are done to avoid concurrency problems
+    rValue = control.cancel()
+    if(rValue != 0):
+        print(rValue)
+
+    time.sleep(1)
+
+    rValue = control.cancel()
+    if(rValue != 0):
+        print(rValue)
+
+def tungsten_FLAT(beck = None, dit = ExpTime, filepath = None, **kwargs):
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
-    tungsten.on(beck = beck)
+    print(tungsten.on(beck = beck))
 
     if flip_mirror.up() != 'UP':
         print("Error: flip mirror did not go up")
@@ -74,7 +92,7 @@ def tungsten_FLAT(beck = None, dit = ExpTime, filepath = ScienceDataStorage, **k
 
     tungsten.off(beck = beck)
 
-def sky_FLAT(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
+def sky_FLAT(dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
 
@@ -94,7 +112,7 @@ def sky_FLAT(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
-def target_observation(dit = ExpTime, filepath = ScienceDataStorage, **kwargs):
+def target_observation(dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
 
@@ -133,6 +151,7 @@ def AO_loop_calibration(intensity = 0, **kwargs):
 
 commandDict = {
     "kal_dark":                 dark,
+    "kal_dark_abort":           dark_abort,
     "kal_tungsten_FLAT":        tungsten_FLAT,
     "kal_sky_FLAT":             sky_FLAT,
     "kal_target_observation":   target_observation,
