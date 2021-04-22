@@ -48,6 +48,7 @@ def initBenchComponents(q, init_foncs):
     for fonc in init_foncs:
         th = ThreadWithReturnValue(target = fonc)
         th.daemon = True
+        print(fonc.__name__, "starded..")
         th.start()
         th.setName(fonc.__name__)
         threads.append(th)
@@ -60,20 +61,27 @@ def initBenchComponents(q, init_foncs):
         if rValue != 0:
             print("Error:",th.getName(), "return", rValue)
             q.put(th.getName())
+        else:
+            print(th.getName(), "OK")
 
 def startThread(q, timeout, init_foncs):
     th = ThreadWithReturnValue(target = initBenchComponents, args = (q, init_foncs))
     th.daemon = True
+    print("Subthreads started..")
     th.start()
     th.join(timeout)
     if th.is_alive():
         print("Initialisation got timeout")
         q.put(1)
+    else:
+        print("All subthreads returned")
 
 def startProcess(startThread, q, timeout, init_foncs):
     p = Process(target = startThread, args = (q, timeout, init_foncs))
+    print("Subprocess started..")
     p.start()
     p.join()
+    print("Subprocess OK")
 
 def initialisation():
 
@@ -105,7 +113,7 @@ def initialisation():
     q = Queue()
     startProcess(startThread, q, timeout, init_foncs)
 
-    for _ in range(nbTry):
+    for t in range(1,nbTry):
         value = 0
         error_foncs = []
 
@@ -117,6 +125,7 @@ def initialisation():
             if value == 1:
                 while not q.empty():
                     q.get()
+                print(t,"retry..")
                 startProcess(startThread, q, timeout, init_foncs)
                 break
             else:
@@ -130,6 +139,5 @@ def initialisation():
             startProcess(startThread, q, timeout, error_foncs)
 
     return 1
-
 
     # Start CACAO here ----
