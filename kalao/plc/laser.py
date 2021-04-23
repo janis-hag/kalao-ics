@@ -23,6 +23,7 @@ parser = ConfigParser()
 parser.read(config_path)
 
 MAX_ALLOWED_LASER_INTENSITY = parser.getfloat('PLC','LaserMaxAllowed')
+LASER_SWITCH_WAIT = parser.getfloat('PLC','LaserSwitchWait')
 
 
 def status(beck=None):
@@ -38,7 +39,10 @@ def status(beck=None):
     else:
         disconnect_on_exit = False
 
-    laser_status = beck.get_node('ns = 4;s = MAIN.Laser.Current').get_value()
+    if beck.get_node('ns = 4;s = MAIN.Laser.Status').get_value():
+        laser_status = beck.get_node('ns = 4;s = MAIN.Laser.Current').get_value()
+    else:
+        laser_status =  'OFF'
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -52,6 +56,8 @@ def disable():
 
     :return: status of the laser
     """
+
+    set_intensity(0)
     laser_status = switch('bDisable')
     return laser_status
 
@@ -136,11 +142,11 @@ def switch(action_name):
     laser_switch.set_attribute(
         ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
 
-    sleep(1)
-    if beck.get_node("ns=4;s=MAIN.Laser.bDisable").get_value():
-        laser_status = 'OFF'
-    else:
+    sleep(LASER_SWITCH_WAIT)
+    if beck.get_node("ns=4;s=MAIN.Laser.Status").get_value():
         laser_status = 'ON'
+    else:
+        laser_status = 'OFF'
 
     beck.disconnect()
     return laser_status
