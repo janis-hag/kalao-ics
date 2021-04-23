@@ -1,5 +1,5 @@
-from kalao.sequencer import seq_init
-from kalao.sequencer import seq_server
+from sequencer import seq_init
+from sequencer import seq_server
 
 
 if __name__ == '__main__':
