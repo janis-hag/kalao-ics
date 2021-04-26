@@ -8,7 +8,7 @@ from numpy.random import randint
 
 import json
 import sys
-sys.path.append('includes/kalao-ics')
+sys.path.append(path.dirname(path.abspath(path.dirname(__file__))))
 
 from kalao.interface import status as k_status
 
