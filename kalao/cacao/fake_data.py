@@ -6,6 +6,7 @@
 
 import math
 import random
+import builtins
 from datetime import datetime, timedelta, timezone
 
 from kalao.cacao.toolbox import *
@@ -101,7 +102,7 @@ def fake_streams():
 			act_index = get_actuator_1d(i, j)
 			for subap in get_subapertures_around_actuator(act_index):
 				if get_subaperture_2d(subap) != (None, None):
-						max_flux = __builtins__.max(max_flux, flux[get_subaperture_2d(subap)])
+						max_flux = builtins.max(max_flux, flux[get_subaperture_2d(subap)])
 
 			if max_flux < min_flux:
 				dm01disp[i*cols+j] = max
