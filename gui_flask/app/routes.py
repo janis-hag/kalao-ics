@@ -10,28 +10,21 @@ import json
 import sys
 
 from os import path
-sys.path.append(path.dirname(path.abspath(path.dirname(__file__))))
 
-from kalao.interface import status as k_status
+print(path.dirname(path.dirname(path.abspath(path.dirname(__file__)))));
+#sys.path.append('../includes/kalao-ics')
+sys.path.append(path.dirname(path.dirname(path.abspath(path.dirname(__file__)))))
+
+from kalao.cacao import telemetry as k_telemetry
 
 CORS(app)
 
 
 @app.route('/')
-@app.route('/index')
-def index():
-    return k_status.short()
-@app.route('/status', methods=['GET'])
-def status():
-    return k_status.short()
-@app.route('/PLCData', methods=['GET'])
-def PLCData():
-    return '{"shutter":"OPEN"}'
-
 @app.route('/pixelImages', methods=['GET'])
 def pixelImages():
     random = bool(request.args.get('random', default = "", type = str))
-    return k_status.cacao_streams(random)
+    return k_telemetry.streams(random)
 
 @app.route('/measurements', methods=['GET'])
 def measurements():
