@@ -8,25 +8,31 @@ from pyMilk.interfacing.isio_shmlib import SHM
 from CacaoProcessTools import fps, FPS_status
 
 from kalao.utils import database
+from kalao.cacao import fake_data
 
 def _get_stream(name, min, max):
 	#TODO: check if stream is alive
+	# Return empty stream if not existing
 
 	stream = SHM(name)
 	data = stream.get_data(check=True)
 
 	return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min, "max": max}
 
-def streams():
-	streams = {}
+def streams(realData=True):
+	if not realData:
+		# Returning fake streams for testing purposes
+		return fake_data.fake_streams()
+	else:
+		streams = {}
 
-	streams["nuvu_stream"] = _get_stream("nuvu_stream", 0, 2**16-1)
-	streams["shwfs_slopes"] = _get_stream("shwfs_slopes", -2, 2)
-	streams["dm01disp"] = _get_stream("dm01disp", -1.75, 1.75)
-	streams["shwfs_slopes_flux"] = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
-	#streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) #TODO: uncomment when modal control is working
+		streams["nuvu_stream"] = _get_stream("nuvu_stream", 0, 2**16-1)
+		streams["shwfs_slopes"] = _get_stream("shwfs_slopes", -2, 2)
+		streams["dm01disp"] = _get_stream("dm01disp", -1.75, 1.75)
+		streams["shwfs_slopes_flux"] = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
+		#streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) #TODO: uncomment when modal control is working
 
-	return streams
+		return streams
 
 def monitoring_save():
 	monitoring = {}

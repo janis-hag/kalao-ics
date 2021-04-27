@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 
 from kalao.cacao.toolbox import *
 
+
 def fake_streams():
 	streams = {}
 
@@ -127,6 +128,7 @@ def fake_streams():
 
 	return streams
 
+
 def fake_monitoring_for_db():
 	monitoring = {}
 
@@ -146,6 +148,7 @@ def fake_monitoring_for_db():
 
 	return monitoring
 
+
 def fake_monitoring():
 	timestamp = datetime.now(timezone.utc).timestamp()
 	monitoring = {}
@@ -154,6 +157,7 @@ def fake_monitoring():
 		monitoring[key] = {'timestamps': [timestamp], 'values': [value]}
 
 	return monitoring
+
 
 def fake_monitoring_series():
 	timestamp = datetime.now(timezone.utc).timestamp()
@@ -168,6 +172,7 @@ def fake_monitoring_series():
 			monitoring[key]['values'].append(fake_monitoring_for_db()[key])
 
 	return monitoring
+
 
 if __name__ == "__main__":
 	import matplotlib.pyplot as plt

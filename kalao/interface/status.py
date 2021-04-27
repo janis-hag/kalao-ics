@@ -64,3 +64,6 @@ def latest_obs_log_entry():
     formated_entry_text = time_string+' '+key_name+': '+record_text
 
     return formated_entry_text
+
+def pi_tip_til_series(realData=True):
+    if not realData:
