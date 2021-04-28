@@ -44,7 +44,7 @@ def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
     if not q.empty():
         q.get()
         dit = -1
-        TimeSup = 0
+        #TimeSup = 0
 
     rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
