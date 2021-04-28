@@ -62,3 +62,8 @@ sequencer_status:
   short: Sequencer status
   long: Status of the sequencer waiting/busy/error
   unit: text
+sequencer_log:
+  short: sequencer log
+  long: Log ouput of the sequencer
+  unit: text
+
