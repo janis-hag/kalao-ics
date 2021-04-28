@@ -192,5 +192,3 @@ if __name__ == "__main__":
 	_add_stream(1, 1, "dm01disp")
 
 	plt.show()
-
-
