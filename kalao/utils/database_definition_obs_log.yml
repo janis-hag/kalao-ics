@@ -57,3 +57,8 @@ tungsten_log:
   long: Tungsten calibration lamp status
   unit: text
 
+# Sequencer
+sequencer_status:
+  short: Sequencer status
+  long: Status of the sequencer waiting/busy/error
+  unit: text
