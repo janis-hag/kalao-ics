@@ -28,8 +28,7 @@ ExpTime = parser.getfloat('FLI','ExpTime')
 TimeSup = parser.getint('FLI','TimeSup')
 
 def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
-    print("exptime:",ExpTime)
-    print("timesup:",TimeSup)
+    tmpTimeSup = TimeSup
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
     else:
@@ -44,7 +43,7 @@ def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
     if not q.empty():
         q.get()
         dit = -1
-        #TimeSup = 0
+        tmpTimeSup = 0
 
     rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
