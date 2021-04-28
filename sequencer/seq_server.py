@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from sys import path as SysPath
+from os  import path as OsPath
+# methode dirname return parent directory and methode abspath return absolut path
+SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
 from sequencer import seq_command
 
-from ../kalao.utils import database
+from kalao.utils import database
 
 import socket
 import time
