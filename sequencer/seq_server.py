@@ -23,8 +23,8 @@ def seq_server():
     parser = ConfigParser()
     parser.read('../kalao.config')
 
-    host = parser.get('PLC','IP')
-    port = parser.getint('PLC','Port')
+    host = parser.get('SEQ','IP')
+    port = parser.getint('SEQ','Port')
 
     socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socket.bind((host, port))
