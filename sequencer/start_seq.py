@@ -8,8 +8,5 @@ if __name__ == '__main__':
         print("Initialisation OK.")
     else:
         print("Error: Initialisation failed")
-        return 1
 
     seq_server.seq_server()
-
-    return 0
