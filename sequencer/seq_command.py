@@ -28,8 +28,8 @@ ExpTime = parser.getfloat('FLI','ExpTime')
 TimeSup = parser.getint('FLI','TimeSup')
 
 def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
-	print("exptime:",ExpTime)
-	print("timesup:",TimeSup)
+    print("exptime:",ExpTime)
+    print("timesup:",TimeSup)
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
     else:
