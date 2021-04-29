@@ -59,5 +59,5 @@ def telemetry_save():
 	telemetry["pi_tip"] = pi_data[0]
 	telemetry["pi_tilt"] = pi_data[1]
 
-	database.store_ao_telemetry(telemetry)
+	database.store_telemetry(telemetry)
 
