@@ -176,7 +176,7 @@ def fake_monitoring_series():
 
 def fake_latest_obs_log_entry():
 
-	time_string = datetime.datetime.today().isoformat(timespec='milliseconds')
+	time_string = datetime.today().isoformat(timespec='milliseconds')
 	key_name = 'TEST'
 	record_text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua'
 	formated_entry_text = time_string+' '+key_name+': '+record_text
