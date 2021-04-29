@@ -170,7 +170,7 @@ def fake_telemetry_series():
 		telemetry[key] = {'time_utc': [], 'values': []}
 
 		for i in range(3*3600):
-			telemetry[key]['time_utc'].append(time_now - datetime.timedelta(seconds=i))
+			telemetry[key]['time_utc'].append(time_now - timedelta(seconds=i))
 			telemetry[key]['values'].append(fake_telemetry_for_db()[key])
 
 	return telemetry
