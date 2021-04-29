@@ -26,8 +26,8 @@ def seq_server():
     host = parser.get('SEQ','IP')
     port = parser.getint('SEQ','Port')
 
-    socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socket.bind((host, port))
+    socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socketSeq.bind((host, port))
     print("%.6f"%(time.time()), "Server on")
 
     q = Queue()
@@ -35,9 +35,9 @@ def seq_server():
     preCommand = ""
 
     while True:
-        socket.listen()
+        socketSeq.listen()
         print("%.6f"%(time.time()), "Waiting on connection..")
-        conn, address = socket.accept()
+        conn, address = socketSeq.accept()
 
         command = (conn.recv(4096)).decode("utf8")
 
@@ -73,5 +73,9 @@ def seq_server():
         preCommand = commandList[0]
 
     conn.close()
-    socket.close()
+    socketSeq.close()
     print("%.6f"%(time.time()), "Server off")
+
+
+if __name__ == "__main__":
+	seq_server()
