@@ -64,7 +64,14 @@ while (True):
 
   # Check if its a KalAO command and send it
   if(commandList[0][:3] == "kal"):
-    hostSeq, portSeq = ('localhost', 5555)
+    # Read config file and create a dict for each section where keys is parameter
+    parser = ConfigParser()
+    parser.read('../kalao.config')
+
+    host = parser.get('SEQ','IP')
+    port = parser.getint('SEQ','Port')
+
+    hostSeq, portSeq = (host, port)
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
