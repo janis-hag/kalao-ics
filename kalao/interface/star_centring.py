@@ -11,14 +11,21 @@ star_centering.py is part of the KalAO Instrument Control Software
 """
 
 from astropy.io import fits
+import os
+import numpy as np
 
 from kalao.utils import database
 
 
 def fli_view():
 
+    #TODO return empty array if no image exists
     fli_image_path, file_date = get_temporary_image_path()
-    centering_image = fits.getdata(fli_image_path)[256:768, 256:768]
+
+    if fli_image_path is not None and file_date is not None and os.path.isfile(fli_image_path):
+        centering_image = fits.getdata(fli_image_path)
+    else:
+        centering_image = np.zeros((1024, 1204))
 
     manual_centering_needed = False
 
