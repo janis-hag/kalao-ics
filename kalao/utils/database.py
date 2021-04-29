@@ -25,8 +25,13 @@ monitoring_definition_yaml = path + "/database_definition_monitoring.yml"
 obs_log_definition_json = path + "/database_definition_obs_log.json"
 obs_log_definition_yaml = path + "/database_definition_obs_log.yml"
 
+#ao_telemetry
+ao_telemetry_definition_json = path + "/database_definition_ao_telemetry.json"
+ao_telemetry_definition_yaml = path + "/database_definition_ao_telemetry.yml"
+
 definition_names = [('monitoring', monitoring_definition_yaml, monitoring_definition_json),
-                    ('obs_log', obs_log_definition_yaml, obs_log_definition_json)]
+                    ('obs_log', obs_log_definition_yaml, obs_log_definition_json),
+                    ('ao_telemetry', ao_telemetry_definition_yaml, ao_telemetry_definition_json)]
 
 definitions = {}
 
@@ -55,6 +60,10 @@ def store_obs_log(data):
     return store_data('obs_log', data, definitions['obs_log'])
 
 
+def store_ao_telemetry(data):
+    return store_data('ao_telemetry', data, definitions['ao_telemetry'])
+
+
 def store_data(collection_name, data, definition):
     now_utc = kalao_time.now()
     db = get_db(now_utc)
@@ -79,6 +88,10 @@ def get_monitoring(keys, nb_of_point, dt=None):
 
 def get_obs_log(keys, nb_of_point, dt=None):
     return get_data('obs_log', keys, nb_of_point, dt=None)
+
+
+def get_ao_telemetry(keys, nb_of_point, dt=None):
+    return get_data('ao_telemetry', keys, nb_of_point, dt=None)
 
 
 def get_data(collection_name, keys, nb_of_point, dt=None):
@@ -109,6 +122,10 @@ def get_all_last_monitoring():
 
 def get_all_last_obs_log():
     return get_data('obs_log', definitions['obs_log'].keys(), 1, dt=None)
+
+
+def get_all_last_ao_telemetry():
+    return get_data('ao_telemetry', definitions['ao_telemetry'].keys(), 1, dt=None)
 
 
 def get_latest_record(collection_name):
