@@ -34,29 +34,29 @@ def streams(realData=True):
 
 		return streams
 
-def monitoring_save():
-	monitoring = {}
+def telemetry_save():
+	telemetry = {}
 
 	#TODO: check if fps exists and check fps.RUNrunning
 	fps_nuvu = fps("nuvu_acquire")
 
-	monitoring["nuvu_temp_ccd"]          = fps_nuvu["nuvu_accquire.temp_ccd"]
-	monitoring["nuvu_temp_controller"]   = fps_nuvu["nuvu_accquire.temp_controller"]
-	monitoring["nuvu_temp_power_supply"] = fps_nuvu["nuvu_accquire.temp_power_supply"]
-	monitoring["nuvu_temp_fpga"]         = fps_nuvu["nuvu_accquire.temp_fpga"]
-	monitoring["nuvu_temp_heatsink"]     = fps_nuvu["nuvu_accquire.temp_heatsink"]
-	monitoring["nuvu_emgain"]            = fps_nuvu["nuvu_accquire.emgain"]
-	monitoring["nuvu_exposuretime"]      = fps_nuvu["nuvu_accquire.exposuretime"]
+	telemetry["nuvu_temp_ccd"]          = fps_nuvu["nuvu_accquire.temp_ccd"]
+	telemetry["nuvu_temp_controller"]   = fps_nuvu["nuvu_accquire.temp_controller"]
+	telemetry["nuvu_temp_power_supply"] = fps_nuvu["nuvu_accquire.temp_power_supply"]
+	telemetry["nuvu_temp_fpga"]         = fps_nuvu["nuvu_accquire.temp_fpga"]
+	telemetry["nuvu_temp_heatsink"]     = fps_nuvu["nuvu_accquire.temp_heatsink"]
+	telemetry["nuvu_emgain"]            = fps_nuvu["nuvu_accquire.emgain"]
+	telemetry["nuvu_exposuretime"]      = fps_nuvu["nuvu_accquire.exposuretime"]
 
 	fps_slopes = fps("shwfs_process")
 
-	monitoring["slopes_flux_subaperture"] = fps_slopes["shwfs_process.flux_subaperture"]
-	monitoring["slopes_residual"]         = fps_slopes["shwfs_process.residual"]
+	telemetry["slopes_flux_subaperture"] = fps_slopes["shwfs_process.flux_subaperture"]
+	telemetry["slopes_residual"]         = fps_slopes["shwfs_process.residual"]
 
 	pi_stream = SHM("dm02disp")
 	pi_data = pi_stream.get_data(check=True)
 
-	monitoring["pi_tip"] = pi_data[0]
-	monitoring["pi_tilt"] = pi_data[1]
+	telemetry["pi_tip"] = pi_data[0]
+	telemetry["pi_tilt"] = pi_data[1]
 
-	database.store_monitoring(monitoring)
+	database.get_ao_telemetry(telemetry)
