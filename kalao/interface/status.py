@@ -65,5 +65,6 @@ def latest_obs_log_entry():
 
     return formated_entry_text
 
-def pi_tip_til_series(realData=True):
-    if not realData:
+# TO DO
+#def pi_tip_til_series(realData=True):
+#    if not realData:
