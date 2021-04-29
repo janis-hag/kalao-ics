@@ -42,18 +42,19 @@ def streams(realData=True):
 
 
 def monitoring(realData=True):
+    # Unused function to be removed.
     if realData:
         return database.get_all_last_monitoring()
     else:
-        return fake_data.fake_monitoring()
+        return fake_data.fake_telemetry()
 
 
-def monitoring_series(realData=True):
+def telemetry_series(realData=True):
     if realData:
         # Will be database.get_monitoring(keys, nb_of_point)
-        return fake_data.fake_monitoring_series() # TODO
+        return fake_data.fake_telemetry_series() # TODO
     else:
-        return fake_data.fake_monitoring_series()
+        return fake_data.fake_telemetry_series()
 
 
 def latest_obs_log_entry(realData=True):
@@ -68,6 +69,3 @@ def latest_obs_log_entry(realData=True):
     else:
         return fake_data.fake_latest_obs_log_entry()
 
-# TO DO
-#def pi_tip_til_series(realData=True):
-#    if not realData:

@@ -36,7 +36,7 @@ if __name__ == "__main__":
     while (True):
         values = {}
         # Get monitoring from and cacao
-        #cacao.telemetry.monitoring_save()
+        #cacao.telemetry.telemetry_save()
         counter +=1
         sleep(10)
 

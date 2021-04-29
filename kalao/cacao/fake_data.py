@@ -10,7 +10,7 @@ import builtins
 from datetime import datetime, timedelta, timezone
 
 from kalao.cacao.toolbox import *
-
+from kalao.utils import kalao_time
 
 def fake_streams():
 	streams = {}
@@ -130,49 +130,50 @@ def fake_streams():
 	return streams
 
 
-def fake_monitoring_for_db():
-	monitoring = {}
+def fake_telemetry_for_db():
+	telemetry = {}
 
-	monitoring["nuvu_temp_ccd"] = -60 + random.gauss(0, 0.05)
-	monitoring["nuvu_temp_controller"] = 45 + random.gauss(0, 0.05)
-	monitoring["nuvu_temp_power_supply"] = 45 + random.gauss(0, 0.05)
-	monitoring["nuvu_temp_fpga"] = 50 + random.gauss(0, 0.05)
-	monitoring["nuvu_temp_heatsink"] = 15 + random.gauss(0, 0.05)
-	monitoring["nuvu_emgain"] = 200
-	monitoring["nuvu_exposuretime"] = 0.5
+	telemetry["nuvu_temp_ccd"] = -60 + random.gauss(0, 0.05)
+	telemetry["nuvu_temp_controller"] = 45 + random.gauss(0, 0.05)
+	telemetry["nuvu_temp_power_supply"] = 45 + random.gauss(0, 0.05)
+	telemetry["nuvu_temp_fpga"] = 50 + random.gauss(0, 0.05)
+	telemetry["nuvu_temp_heatsink"] = 15 + random.gauss(0, 0.05)
+	telemetry["nuvu_emgain"] = 200
+	telemetry["nuvu_exposuretime"] = 0.5
 
-	monitoring["slopes_flux_subaperture"] = 2**16-1 - 200 + random.gauss(0, 200)
-	monitoring["slopes_residual"] = 0.05 + random.gauss(0, 0.02)
+	telemetry["slopes_flux_subaperture"] = 2**16-1 - 200 + random.gauss(0, 200)
+	telemetry["slopes_residual"] = 0.05 + random.gauss(0, 0.02)
 
-	monitoring["pi_tip"] = 0 + random.gauss(0, 0.5)
-	monitoring["pi_tilt"] = 0 + random.gauss(0, 0.5)
+	telemetry["pi_tip"] = 0 + random.gauss(0, 0.5)
+	telemetry["pi_tilt"] = 0 + random.gauss(0, 0.5)
 
-	return monitoring
-
-
-def fake_monitoring():
-	timestamp = datetime.now(timezone.utc).timestamp()
-	monitoring = {}
-
-	for key, value in fake_monitoring_for_db().items():
-		monitoring[key] = {'timestamps': [timestamp], 'values': [value]}
-
-	return monitoring
+	return telemetry
 
 
-def fake_monitoring_series():
-	timestamp = datetime.now(timezone.utc).timestamp()
-	monitoring = {}
+def fake_telemetry():
+	time_utc = kalao_time.now()
+	telemetry = {}
+
+	for key, value in fake_telemetry_for_db().items():
+		telemetry[key] = {'time_utc': [time_utc], 'values': [value]}
+
+	return telemetry
+
+
+def fake_telemetry_series():
+	time_now = kalao_time.now()
+
+	telemetry = {}
 	keys = ["pi_tip", "pi_tilt"]
 
 	for key in keys:
-		monitoring[key] = {'timestamps': [], 'values': []}
+		telemetry[key] = {'time_utc': [], 'values': []}
 
 		for i in range(3*3600):
-			monitoring[key]['timestamps'].append(timestamp-i)
-			monitoring[key]['values'].append(fake_monitoring_for_db()[key])
+			telemetry[key]['time_utc'].append(time_now - datetime.timedelta(seconds=i))
+			telemetry[key]['values'].append(fake_telemetry_for_db()[key])
 
-	return monitoring
+	return telemetry
 
 def fake_latest_obs_log_entry():
 
