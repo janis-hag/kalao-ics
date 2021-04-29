@@ -12,6 +12,7 @@ from kalao.plc import laser
 from kalao.plc import tungsten
 from kalao.plc import core
 from kalao.fli import control
+from kalao.utils import database
 
 from configparser import ConfigParser
 
@@ -28,41 +29,39 @@ ExpTime = parser.getfloat('FLI','ExpTime')
 TimeSup = parser.getint('FLI','TimeSup')
 
 def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
-    tmpTimeSup = TimeSup
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
+        # database.store_obs_log({'laser_log': 'Error: failed to turn off lamps.'})
+        # database.store_obs_log({'tungsten_log': 'Error: failed to turn off lamps.'})
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
     else:
         print("Lamps off OK")
 
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
     else:
         print("Shutter closed OK")
 
     # Check if an abort was requested
     if not q.empty():
         q.get()
-        dit = -1
-        tmpTimeSup = 0
+        return
 
     rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
         print(rValue)
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
     else:
         print("Image taken OK")
 
-    # Check every sec if Queue object q is empty
-    # if not, break while sleep
-    t = 0
-    while t < dit + TimeSup:
-        t += 1
-        time.sleep(1)
-        print(".")
-        if not q.empty():
-            q.get()
-            break
+    if check_abort(q,dit) == -1:
+        return
 
-    # STORE "SEQ_SERVER FREE" TO MONGODB
+    database.store_obs_log({'sequencer_status': 'waiting'})
 
 def dark_abort():
     # two cancel are done to avoid concurrency problems
@@ -76,7 +75,10 @@ def dark_abort():
     if(rValue != 0):
         print(rValue)
 
-def tungsten_FLAT(beck = None, dit = ExpTime, filepath = None, **kwargs):
+    database.store_obs_log({'sequencer_status': 'waiting'})
+
+
+def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwargs):
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
@@ -87,12 +89,22 @@ def tungsten_FLAT(beck = None, dit = ExpTime, filepath = None, **kwargs):
 
     #Select Filter
 
+    # Check if an abort was requested
+    if not q.empty():
+        q.get()
+        return
+
     rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
         # store to mongo db instead of printing.
         print(rValue)
 
     tungsten.off(beck = beck)
+
+    # Check every sec if Queue object q is empty
+    # if not, break while sleep
+    if check_abort(q,dit) == -1:
+        return
 
 def sky_FLAT(dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
@@ -113,6 +125,9 @@ def sky_FLAT(dit = ExpTime, filepath = None, **kwargs):
 
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
+
+    if check_abort(q,dit) == -1:
+        return
 
 def target_observation(dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
@@ -137,6 +152,8 @@ def target_observation(dit = ExpTime, filepath = None, **kwargs):
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
+    if check_abort(q,dit) == -1:
+        return
 
 def AO_loop_calibration(intensity = 0, **kwargs):
 
@@ -149,6 +166,23 @@ def AO_loop_calibration(intensity = 0, **kwargs):
     laser.set_intensity(intensity)
     #cacao.start_calib()
     laser.set_intensity(0)
+
+    if check_abort(q,dit) == -1:
+        return
+
+
+def check_abort(q, dit):
+    # Check every sec if Queue object q is empty
+    # if not, break while sleep
+    t = 0
+    while t < dit + TimeSup:
+        t += 1
+        time.sleep(1)
+        print(".")
+        if not q.empty():
+            q.get()
+            return -1
+    return 0
 
 
 commandDict = {

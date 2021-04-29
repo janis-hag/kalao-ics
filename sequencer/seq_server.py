@@ -40,6 +40,7 @@ def seq_server():
         conn, address = socketSeq.accept()
 
         command = (conn.recv(4096)).decode("utf8")
+        database.store_obs_log({'sequencer_status': 'busy'})
 
         separator   = command[0]
         command     = command[1:]
@@ -62,6 +63,7 @@ def seq_server():
             while not q.empty():
                 q.get()
             continue
+            database.store_obs_log({'sequencer_status': 'waiting'})
         elif(th != None):
             th.join()
 
