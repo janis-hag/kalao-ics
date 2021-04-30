@@ -15,6 +15,7 @@ import os
 import numpy as np
 
 from kalao.utils import database
+from kalao.cacao import fake_data
 
 
 def fli_view(realData=False):
