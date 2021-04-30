@@ -23,7 +23,7 @@ def fli_view(realData=False):
     if not realData:
         # Returning fake fli_view for testing purposes
         return fake_data.fake_fli_view()
-	else:
+    else:
         fli_image_path, file_date = get_temporary_image_path()
 
         if fli_image_path is not None and file_date is not None and os.path.isfile(fli_image_path):
