@@ -20,9 +20,9 @@ from kalao.cacao import fake_data
 
 def fli_view(realData=False):
 
-	if not realData:
-		# Returning fake fli_view for testing purposes
-		return fake_data.fake_fli_view()
+    if not realData:
+        # Returning fake fli_view for testing purposes
+        return fake_data.fake_fli_view()
 	else:
         fli_image_path, file_date = get_temporary_image_path()
 
