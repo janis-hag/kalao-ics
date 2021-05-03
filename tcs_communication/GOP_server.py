@@ -28,7 +28,7 @@ print("%.6f"%(time.time()), "Initialize new gop connection. Wait for client ..."
 gc = gop.initializeInetGopConnection(socketName, socketPort, verbosity)
 #
 # Infinite loop, waiting for command
-# Rem; all command reply an acknoledgement
+# Rem; all command reply an acknowledgement
 #
 while (True):
   print("")
@@ -60,11 +60,10 @@ while (True):
   #
   # 'command' is commandList[0], 'arguments' are commandList[1:]
   #
-  print ("%.6f"%(time.time()), " command=>", command, "< arg=",commandList[1:], sep="")
+  print ("%.6f"%(time.time()), " command=>", commandList[0], "< arg=",commandList[1:], sep="")
 
   # Check if its a KalAO command and send it
   if(commandList[0][:3] == "kal"):
-    # Read config file and create a dict for each section where keys is parameter
     parser = ConfigParser()
     parser.read('../kalao.config')
 
@@ -93,19 +92,19 @@ while (True):
   # - its a local command (test, exit, ...)
   #
 
-  if (command == "test"):
+  if (commandList[0] == "test"):
     message = "/OK"
-    print("%.6f"%(time.time()), "Send acknoledge: ", message)
+    print("%.6f"%(time.time()), "Send acknowledge: ", message)
     gop.write(message)
-  elif ((command == "quit") or (command == "exit")):
+  elif ((commandList[0] == "quit") or (commandList[0] == "exit")):
     message = "/OK"
-    print("%.6f"%(time.time()), "Send acknoledge and quit: ", message)
+    print("%.6f"%(time.time()), "Send acknowledge and quit: ", message)
     gop.write(message)
-    print("%.6f"%(time.time()), "Acknoledge sended")
+    print("%.6f"%(time.time()), "Acknowledge sended")
     break
   else:
     message = "/OK"
-    print("%.6f"%(time.time()), "Send acknoledge: ", message)
+    print("%.6f"%(time.time()), "Send acknowledge: ", message)
     gop.write(message)
 
 #
