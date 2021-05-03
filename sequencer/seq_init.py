@@ -48,9 +48,10 @@ def initBenchComponents(q, init_foncs):
     for fonc in init_foncs:
         th = ThreadWithReturnValue(target = fonc)
         th.daemon = True
-        print(fonc.__name__, "starded..")
+        name = fonc.__module__.split(".")[-1] + "." + fonc.wesh.__name__
+        print(name, "starded..")
         th.start()
-        th.setName(fonc.__name__)
+        th.setName(name)
         threads.append(th)
 
     # 'join' methode block until return of each thread or timeout expired
@@ -92,8 +93,15 @@ def initialisation():
     parser = ConfigParser()
     parser.read(config_path)
 
-    nbTry   = parser.getint('PLC','InitNbTry')
-    timeout = parser.getint('PLC','InitTimeout')
+    nbTry   = parser.get('PLC','InitNbTry')
+    timeout = parser.get('PLC','InitTimeout')
+
+    if nbTry.isdigit() and timeout.isdigit():
+        nbTry = int(nbTry)
+        timeout = int(timeout)
+    else:
+        print("Error: wrong values format for 'InitNbTry' or 'InitTimeout' in kalao.config file ")
+        return
 
     # dict where keys is string name of object <function> and values is object <function>
     init_dict = {
@@ -141,3 +149,6 @@ def initialisation():
     return 1
 
     # Start CACAO here ----
+
+if __name__ == "__main__":
+    initialisation()
