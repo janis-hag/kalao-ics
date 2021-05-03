@@ -24,7 +24,13 @@ def seq_server():
     parser.read('../kalao.config')
 
     host = parser.get('SEQ','IP')
-    port = parser.getint('SEQ','Port')
+    port = parser.get('SEQ','Port')
+
+    if port.isdigit():
+        port = int(port)
+    else:
+        print("Error: wrong values format for 'Port' in kalao.config file ")
+        return
 
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socketSeq.bind((host, port))
@@ -50,20 +56,28 @@ def seq_server():
         #
         print("%.6f"%(time.time()), " command=>", commandList[0], "< arg=",commandList[1:], sep="")
 
+        if commandList[0] == 'exit':
+            break
+
         # Transform list of arg to a dict and add Queue Object q
         args = dict(zip_longest(*[iter(commandList[1:])] * 2, fillvalue=""))
         args["q"] = q
 
+        check = cast_args(args)
+        if check != 0:
+            print(check)
+            database.store_obs_log({'sequencer_status': 'waiting'})
+            continue
         # if abort commande, stop last command with Queue object q
         # and start abort func
-        if(commandList[0] == preCommand + "_abort"):
+        if(commandList[0] == preCommand + '_abort'):
             q.put(1)
             seq_command.commandDict[commandList[0]]()
             th.join()
             while not q.empty():
                 q.get()
-            continue
             database.store_obs_log({'sequencer_status': 'waiting'})
+            continue
         elif(th != None):
             th.join()
 
@@ -74,10 +88,36 @@ def seq_server():
 
         preCommand = commandList[0]
 
+    # in case of break, we disconnect the socket
     conn.close()
     socketSeq.close()
-    print("%.6f"%(time.time()), "Server off")
+    print("%.6f"%(time.time()), 'Seq server off')
 
+
+def cast_args(args):
+
+    # Read it from config file ?
+    arg_int    = []
+    arg_float  = ['dit', 'intensity']
+    arg_string = ['filepath']
+
+    for k, v in args:
+        if k in arg_int:
+            if v.isdigit():
+                args[k] = int(v)
+            else:
+                return "Error: {} value cannot be convert in int".format(k)
+        elif k in arg_float:
+            if v.replace('.', '', 1).isdigit():
+                args[k] = float(v)
+            else:
+                return "Error: {} value cannot be convert in float".format(k)
+        elif k in arg_string:
+            pass
+        else:
+            return "Error: {} not in arg list".format(k)
+
+        return 0
 
 if __name__ == "__main__":
-	seq_server()
+    seq_server()

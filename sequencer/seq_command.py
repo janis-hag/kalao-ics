@@ -32,7 +32,7 @@ if ExpTime.replace('.', '', 1).isdigit() and TimeSup.isdigit():
     ExpTime = float(ExpTime)
     TimeSup = int(TimeSup)
 else:
-    print("Error: wrong values format in kalao.config file ")
+    print("Error: wrong values format for 'ExpTime' or 'TimeSup' in kalao.config file ")
     ExpTime = 0
     TimeSup = 0
 
