@@ -25,14 +25,20 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-ExpTime = parser.getfloat('FLI','ExpTime')
-TimeSup = parser.getint('FLI','TimeSup')
+ExpTime = parser.get('FLI','ExpTime')
+TimeSup = parser.get('FLI','TimeSup')
+
+if ExpTime.replace('.', '', 1).isdigit() and TimeSup.isdigit():
+    ExpTime = float(ExpTime)
+    TimeSup = int(TimeSup)
+else:
+    print("Error: wrong values format in kalao.config file ")
+    ExpTime = 0
+    TimeSup = 0
 
 def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
-        # database.store_obs_log({'laser_log': 'Error: failed to turn off lamps.'})
-        # database.store_obs_log({'tungsten_log': 'Error: failed to turn off lamps.'})
         database.store_obs_log({'sequencer_status': 'error'})
         return
     else:
@@ -58,8 +64,7 @@ def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
     else:
         print("Image taken OK")
 
-    if check_abort(q,dit) == -1:
-        return
+    check_abort(q,dit)
 
     database.store_obs_log({'sequencer_status': 'waiting'})
 
@@ -101,10 +106,7 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwarg
 
     tungsten.off(beck = beck)
 
-    # Check every sec if Queue object q is empty
-    # if not, break while sleep
-    if check_abort(q,dit) == -1:
-        return
+    check_abort(q,dit)
 
 def sky_FLAT(dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
@@ -126,8 +128,7 @@ def sky_FLAT(dit = ExpTime, filepath = None, **kwargs):
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
-    if check_abort(q,dit) == -1:
-        return
+    check_abort(q,dit)
 
 def target_observation(dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
@@ -152,8 +153,7 @@ def target_observation(dit = ExpTime, filepath = None, **kwargs):
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
-    if check_abort(q,dit) == -1:
-        return
+    check_abort(q,dit)
 
 def AO_loop_calibration(intensity = 0, **kwargs):
 
@@ -167,8 +167,7 @@ def AO_loop_calibration(intensity = 0, **kwargs):
     #cacao.start_calib()
     laser.set_intensity(0)
 
-    if check_abort(q,dit) == -1:
-        return
+    check_abort(q,dit)
 
 
 def check_abort(q, dit):
@@ -181,9 +180,7 @@ def check_abort(q, dit):
         print(".")
         if not q.empty():
             q.get()
-            return -1
-    return 0
-
+            break
 
 commandDict = {
     "kal_dark":                 dark,
