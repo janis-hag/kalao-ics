@@ -13,8 +13,10 @@ from kalao.cacao.toolbox import *
 from kalao.utils import kalao_time
 
 def fake_fli_view():
-	image = [random.choices(range(1,100), k=1024) for _ in range(1024)]
-	return False,image
+	# image = [random.choices(range(1,100), k=1024) for _ in range(1024)]
+	image = np.random.randint(0, high=np.iinfo(np.uint16).max, size=(256,256), dtype=np.uint16)
+
+	return image
 
 def fake_streams():
 	streams = {}

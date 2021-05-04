@@ -13,23 +13,28 @@ star_centering.py is part of the KalAO Instrument Control Software
 from astropy.io import fits
 import os
 import numpy as np
+from skimage.transform import resize
 
 from kalao.utils import database
 from kalao.cacao import fake_data
 
 
-def fli_view(realData=False):
+def fli_view(binfactor=1, x=512, y=512, realData=False):
 
     if not realData:
         # Returning fake fli_view for testing purposes
-        return fake_data.fake_fli_view()
+        return False, fake_data.fake_fli_view()
     else:
         fli_image_path, file_date = get_temporary_image_path()
 
         if fli_image_path is not None and file_date is not None and os.path.isfile(fli_image_path):
             centering_image = fits.getdata(fli_image_path)
+            if binfactor == 4:
+            centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
+                       anti_aliasing=True)
+            # if binning other that 4 we need to cut edges for the final image to be 256
         else:
-            centering_image = np.zeros((1024, 1204))
+            centering_image = np.zeros((256, 256))
 
         manual_centering_needed = False
 
@@ -70,6 +75,6 @@ def get_temporary_image_path():
 def star_pixel(x, y):
 
     # save x,y into mongodb
-    # set manual_centring_needed to false
+    # set manual_centering_needed to false
 
     return 0
