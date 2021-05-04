@@ -30,7 +30,7 @@ def fli_view(binfactor=1, x=512, y=512, realData=False):
         if fli_image_path is not None and file_date is not None and os.path.isfile(fli_image_path):
             centering_image = fits.getdata(fli_image_path)
             if binfactor == 4:
-            centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
+                centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
                        anti_aliasing=True)
             # if binning other that 4 we need to cut edges for the final image to be 256
         else:
