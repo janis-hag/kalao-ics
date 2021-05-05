@@ -101,7 +101,7 @@ def cast_args(args):
     arg_float  = ['dit', 'intensity']
     arg_string = ['filepath']
 
-    for k, v in args:
+    for k, v in args.items():
         if k in arg_int:
             if v.isdigit():
                 args[k] = int(v)
@@ -117,7 +117,7 @@ def cast_args(args):
         else:
             return "Error: {} not in arg list".format(k)
 
-        return 0
+    return 0
 
 if __name__ == "__main__":
     seq_server()
