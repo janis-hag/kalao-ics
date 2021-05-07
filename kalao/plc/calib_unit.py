@@ -110,9 +110,9 @@ def initialise(force_init=False, beck=None, motor_nCommand=None):
         motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
 
     # Set reset on error to true in case it has been changed
-    motor_bResetError = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bResetError")
-    motor_bResetError.set_attribute(ua.AttributeIds.Value,
-                                    ua.DataValue(ua.Variant(True, motor_bResetError.get_data_type_as_variant_type())))
+    #motor_bResetError = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bResetError")
+    #motor_bResetError.set_attribute(ua.AttributeIds.Value,
+    #                               ua.DataValue(ua.Variant(True, motor_bResetError.get_data_type_as_variant_type())))
 
     # Check if enabled, if no do enable
     if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value() or force_init:
