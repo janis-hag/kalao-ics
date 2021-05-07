@@ -45,6 +45,9 @@ def move(position=23.36):
                                                            motor_nCommand.get_data_type_as_variant_type())))
         # Execute
         send_execute(beck)
+        while(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value() == 'MOVING in Positioning Mode'):
+            print('.')
+            sleep(5)
         # Get new position
         new_position = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value()
         # motor_lrPosition = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
