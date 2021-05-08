@@ -19,13 +19,13 @@ from threading      import Thread
 
 def seq_server():
 
-    # Read config file and create a dict for each section where keys is parameter
+    # Read config file
     parser = ConfigParser()
     parser.read('../kalao.config')
-
     host = parser.get('SEQ','IP')
     port = parser.get('SEQ','Port')
 
+    # check if config value format is right
     if port.isdigit():
         port = int(port)
     else:
@@ -47,6 +47,7 @@ def seq_server():
 
         command = (conn.recv(4096)).decode("utf8")
         database.store_obs_log({'sequencer_status': 'busy'})
+        # store busy when a command is received
 
         separator   = command[0]
         command     = command[1:]
@@ -60,14 +61,17 @@ def seq_server():
             break
 
         # Transform list of arg to a dict and add Queue Object q
+        # from: ['xxx', 'yyy', ... ] -> to: {'xxx': 'yyy', ... }
         args = dict(zip_longest(*[iter(commandList[1:])] * 2, fillvalue=""))
         args["q"] = q
 
+        # try to cast every values of args dict in type needed
         check = cast_args(args)
         if check != 0:
             print(check)
             database.store_obs_log({'sequencer_status': 'waiting'})
             continue
+
         # if abort commande, stop last command with Queue object q
         # and start abort func
         if(commandList[0] == preCommand + '_abort'):
@@ -96,11 +100,16 @@ def seq_server():
 
 def cast_args(args):
 
-    # Read it from config file ?
-    arg_int    = []
-    arg_float  = ['dit', 'intensity']
-    arg_string = ['filepath']
+    parser = ConfigParser()
+    parser.read('config')
 
+    # Create a list form a string
+    # from: "xxx, yyy, zzz" -> to: ['xxx', 'yyy', 'zzz']
+    arg_int    = parser.get('SEQ','gop_arg_int').replace(' ', '').split(',')
+    arg_float  = parser.get('SEQ','gop_arg_float').replace(' ', '').split(',')
+    arg_string = parser.get('SEQ','gop_arg_string').replace(' ', '').split(',')
+
+    # Check for each keys if the cast of the value is possible and cast it
     for k, v in args.items():
         if k in arg_int:
             if v.isdigit():
