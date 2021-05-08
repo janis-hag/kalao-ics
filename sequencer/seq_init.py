@@ -48,8 +48,11 @@ def initBenchComponents(q, init_foncs):
     for fonc in init_foncs:
         th = ThreadWithReturnValue(target = fonc)
         th.daemon = True
+
         name = fonc.__module__.split(".")[-1] + "." + fonc.wesh.__name__
         print(name, "starded..")
+        # name last_module_name.func_name (ex: control.initialise)
+
         th.start()
         th.setName(name)
         threads.append(th)
@@ -62,15 +65,20 @@ def initBenchComponents(q, init_foncs):
         if rValue != 0:
             print("Error:",th.getName(), "return", rValue)
             q.put(th.getName())
+            # add func's name who got an error to Queue object for retry
         else:
             print(th.getName(), "OK")
 
 def startThread(q, timeout, init_foncs):
+    # Create a subthread and block until the end or until timeout second.
     th = ThreadWithReturnValue(target = initBenchComponents, args = (q, init_foncs))
     th.daemon = True
     print("Subthreads started..")
     th.start()
     th.join(timeout)
+
+    # if subthread still alive after timeout second, add flag 1 to Queue object
+    # and end the process, killing the subtread still alive
     if th.is_alive():
         print("Initialisation got timeout")
         q.put(1)
@@ -78,6 +86,8 @@ def startThread(q, timeout, init_foncs):
         print("All subthreads returned")
 
 def startProcess(startThread, q, timeout, init_foncs):
+    # Create a subprocess and block until the end of the subprocess.
+    # this is done to kill all subthreads if initialisation got timeout.
     p = Process(target = startThread, args = (q, timeout, init_foncs))
     print("Subprocess started..")
     p.start()
@@ -86,16 +96,15 @@ def startProcess(startThread, q, timeout, init_foncs):
 
 def initialisation():
 
-    # Read config file and create a dict for each section where keys is parameter
+    # read config file
 
     config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
-
     parser = ConfigParser()
     parser.read(config_path)
-
     nbTry   = parser.get('PLC','InitNbTry')
     timeout = parser.get('PLC','InitTimeout')
 
+    # check if config values is right format
     if nbTry.isdigit() and timeout.isdigit():
         nbTry = int(nbTry)
         timeout = int(timeout)
@@ -137,6 +146,7 @@ def initialisation():
                 startProcess(startThread, q, timeout, init_foncs)
                 break
             else:
+                # add func's name who got an error to a list for retry
                 error_foncs.append(init_dict[value])
 
         if value == 1:
@@ -144,6 +154,7 @@ def initialisation():
         elif error_foncs == []:
             return 0
         else:
+            # retry only func who got an error
             startProcess(startThread, q, timeout, error_foncs)
 
     return 1
