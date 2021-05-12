@@ -13,7 +13,7 @@ laser.py is part of the KalAO Instrument Control Software
 from . import core
 from opcua import ua
 from time import sleep
-from configparser       import ConfigParser
+from configparser import ConfigParser
 from pathlib import Path
 import os
 
