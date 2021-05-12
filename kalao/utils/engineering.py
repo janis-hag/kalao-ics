@@ -36,3 +36,12 @@ def scan_calib(scan_range, dit=0.05):
             print(filename)
 
     tungsten.off()
+
+
+def focus():
+    # Focus sequence like coralie
+
+
+def create_mosaic():
+    # create a 5x5 image grid for initial star centering
+
