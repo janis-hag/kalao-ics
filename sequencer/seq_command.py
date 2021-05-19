@@ -36,39 +36,49 @@ else:
     ExpTime = 0
     TimeSup = 0
 
-def dark(q = None, dit = ExpTime, filepath = None, **kwargs):
+def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
+    """
+    Turn off lamps, close shutter and take 'nbPic' dark picture of 'dit' exposure time.
+
+    If filepath is not None, store the picture to this path.
+
+    q parameter is Queue object for multithreads communication.
+    """
+
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
         database.store_obs_log({'sequencer_status': 'error'})
         return
-    else:
-        print("Lamps off OK")
 
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
         database.store_obs_log({'sequencer_status': 'error'})
         return
-    else:
-        print("Shutter closed OK")
 
-    # Check if an abort was requested
-    if not q.empty():
+    # Check if an abort was requested before taking image was send
+    if q != None and not q.empty():
         q.get()
         return
 
-    rValue = control.take_image(dit = dit, filepath = filepath)
-    if rValue != 0:
-        print(rValue)
-        database.store_obs_log({'sequencer_status': 'error'})
-        return
-    else:
-        print("Image taken OK")
+    # Take nbPic image
+    for _ in range(nbPic):
+        rValue = control.take_image(dit = dit, filepath = filepath)
+        if rValue != 0:
+            print(rValue)
+            database.store_obs_log({'sequencer_status': 'error'})
+            return
 
+    # Check if an abort was requested and send abort to fli cam
     check_abort(q,dit)
 
     database.store_obs_log({'sequencer_status': 'waiting'})
 
 def dark_abort():
+    """
+    Send abort instruction to fli camera.
+
+    Change sequencer status to 'waiting'.
+    """
     # two cancel are done to avoid concurrency problems
     rValue = control.cancel()
     if(rValue != 0):
@@ -82,63 +92,97 @@ def dark_abort():
 
     database.store_obs_log({'sequencer_status': 'waiting'})
 
-
 def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwargs):
+    """
+    1. Close shutter
+    2. Move flip mirror up
+    3. Turn tungsten lamp on
+    4. Select filter
+    5. Take picture
+    6. Turn off tungsten lamp
+    """
+
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
-
-    print(tungsten.on(beck = beck))
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     if flip_mirror.up() != 'UP':
         print("Error: flip mirror did not go up")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
+
+    tungsten.on(beck = beck)
 
     #Select Filter
 
     # Check if an abort was requested
-    if not q.empty():
+    if q != None not q.empty():
         q.get()
         return
 
     rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
-        # store to mongo db instead of printing.
         print(rValue)
-
-    tungsten.off(beck = beck)
+        tungsten.off(beck = beck)
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     check_abort(q,dit)
+    tungsten.off(beck = beck)
+    database.store_obs_log({'sequencer_status': 'waiting'})
 
-def sky_FLAT(dit = ExpTime, filepath = None, **kwargs):
+def sky_FLAT(q = None, dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     if flip_mirror.down() != 'DOWN':
         print("Error: flip mirror did not go down")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     if shutter.open() != 'OPEN':
         print("Error: failed to open the shutter")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     #Select Fitler
 
+    # Check if an abort was requested
+    if q != None not q.empty():
+        q.get()
+        return
+
     rValue = control.take_image(dit = dit, filepath = filepath)
     if rValue != 0:
-        # store to mongo db instead of printing.
         print(rValue)
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
+
+    check_abort(q,dit)
 
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
-    check_abort(q,dit)
+    database.store_obs_log({'sequencer_status': 'waiting'})
 
-def target_observation(dit = ExpTime, filepath = None, **kwargs):
+def target_observation(q = None, dit = ExpTime, filepath = None, **kwargs):
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     if shutter.open() != 'OPEN':
         print("Error: failed to open the shutter")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     if flip_mirror.down() != 'DOWN':
         print("Error: flip mirror did not go down")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     #Select Filter
     #Centre on target
@@ -149,25 +193,35 @@ def target_observation(dit = ExpTime, filepath = None, **kwargs):
     if rValue != 0:
         # store to mongo db instead of printing.
         print(rValue)
-
-    if shutter.close() != 'CLOSE':
-        print("Error: failed to close the shutter")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     check_abort(q,dit)
 
-def AO_loop_calibration(intensity = 0, **kwargs):
+    if shutter.close() != 'CLOSE':
+        print("Error: failed to close the shutter")
+
+    database.store_obs_log({'sequencer_status': 'waiting'})
+
+
+def AO_loop_calibration(q = None, intensity = 0, **kwargs):
 
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     if flip_mirror.up() != 'UP':
         print("Error: flip mirror did not go up")
+        database.store_obs_log({'sequencer_status': 'error'})
+        return
 
     laser.set_intensity(intensity)
     #cacao.start_calib()
-    laser.set_intensity(0)
 
     check_abort(q,dit)
+    laser.set_intensity(0)
+    database.store_obs_log({'sequencer_status': 'waiting'})
 
 
 def check_abort(q, dit):
@@ -178,7 +232,7 @@ def check_abort(q, dit):
         t += 1
         time.sleep(1)
         print(".")
-        if not q.empty():
+        if q != None and not q.empty():
             q.get()
             break
 
