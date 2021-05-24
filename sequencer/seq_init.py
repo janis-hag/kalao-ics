@@ -25,6 +25,10 @@ from sequencer import seq_command
 # Thread subclass that allows you to retrieve a return value
 # **https://stackoverflow.com/questions/6893968/how-to-get-the-return-value-from-a-thread-in-python**
 class ThreadWithReturnValue(Thread):
+    """
+    Thread subclass that allows you to retrieve a return value
+    https://stackoverflow.com/questions/6893968/how-to-get-the-return-value-from-a-thread-in-python
+    """
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, Verbose=None):
         Thread.__init__(self, group, target, name, args, kwargs)
         self._return = None
@@ -41,6 +45,15 @@ class ThreadWithReturnValue(Thread):
 # Then print return value and add return value to Queue object
 # And add name of func who returned error to Queue object
 def initBenchComponents(q, init_foncs):
+    """
+    Create a thread for each function in 'init_foncs' list and start it.
+    Then, block for each thread until his end.
+    If a thread got an error, add name's function to 'q' parameter.
+
+    @param q: Queue object for mutlithread communication
+    @param init_foncs: list of function object
+    @return:
+    """
 
     threads = []
 
@@ -70,7 +83,15 @@ def initBenchComponents(q, init_foncs):
             print(th.getName(), "OK")
 
 def startThread(q, timeout, init_foncs):
-    # Create a subthread and block until the end or until timeout second.
+    """
+    Create a thread and block until its end or until the allowed time is exceeded.
+
+
+    @param q: Queue object for mutlithread communication
+    @param timeout: int corresponding to the number of seconds allowed for the initialization
+    @param init_foncs: list of function object
+    @return:
+    """
     th = ThreadWithReturnValue(target = initBenchComponents, args = (q, init_foncs))
     th.daemon = True
     print("Subthreads started..")
@@ -86,8 +107,17 @@ def startThread(q, timeout, init_foncs):
         print("All subthreads returned")
 
 def startProcess(startThread, q, timeout, init_foncs):
-    # Create a subprocess and block until the end of the subprocess.
-    # this is done to kill all subthreads if initialisation got timeout.
+    """
+    Create a sub-process and block it until the end.
+    This is done in order to kill all sub-threads if a timeout occurs
+
+    @param startThread:
+    @param q:
+    @param timeout:
+    @param init_foncs:
+    @return:
+    """
+
     p = Process(target = startThread, args = (q, timeout, init_foncs))
     print("Subprocess started..")
     p.start()
@@ -95,6 +125,12 @@ def startProcess(startThread, q, timeout, init_foncs):
     print("Subprocess OK")
 
 def initialisation():
+    """
+    Read the configuration file.
+    Create a sub-process with initialisation function.
+
+    @return:
+    """
 
     # read config file
 

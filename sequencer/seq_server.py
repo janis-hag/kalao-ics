@@ -46,8 +46,8 @@ def seq_server():
         conn, address = socketSeq.accept()
 
         command = (conn.recv(4096)).decode("utf8")
-        database.store_obs_log({'sequencer_status': 'busy'})
-        # store busy when a command is received
+        database.store_obs_log({'sequencer_status': 'BUSY'})
+        # store BUSY when a command is received
 
         separator   = command[0]
         command     = command[1:]
@@ -69,7 +69,7 @@ def seq_server():
         check = cast_args(args)
         if check != 0:
             print(check)
-            database.store_obs_log({'sequencer_status': 'waiting'})
+            database.store_obs_log({'sequencer_status': 'ERROR'})
             continue
 
         # if abort commande, stop last command with Queue object q
@@ -80,7 +80,7 @@ def seq_server():
             th.join()
             while not q.empty():
                 q.get()
-            database.store_obs_log({'sequencer_status': 'waiting'})
+            database.store_obs_log({'sequencer_status': 'WAITING'})
             continue
         elif(th != None):
             th.join()
@@ -115,6 +115,7 @@ def cast_args(args):
             if v.isdigit():
                 args[k] = int(v)
             else:
+                database.store_obs_log({'sequencer_log': "Error: {} value cannot be convert in int".format(k)})
                 return "Error: {} value cannot be convert in int".format(k)
         elif k in arg_float:
             if v.replace('.', '', 1).isdigit():
