@@ -22,8 +22,6 @@ from kalao.fli import control
 from sequencer import seq_server
 from sequencer import seq_command
 
-# Thread subclass that allows you to retrieve a return value
-# **https://stackoverflow.com/questions/6893968/how-to-get-the-return-value-from-a-thread-in-python**
 class ThreadWithReturnValue(Thread):
     """
     Thread subclass that allows you to retrieve a return value
