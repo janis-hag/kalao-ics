@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
+import os
+from pathlib import Path
 import time
-from os import path
+from configparser import ConfigParser
 
-sys.path.append(path.dirname(path.abspath(path.dirname(__file__))))
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.plc import shutter
 from kalao.plc import flip_mirror
@@ -14,10 +16,6 @@ from kalao.plc import core
 from kalao.fli import control
 from kalao.utils import database
 
-from configparser import ConfigParser
-
-from pathlib import Path
-import os
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
