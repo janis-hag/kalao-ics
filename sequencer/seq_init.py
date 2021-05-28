@@ -60,7 +60,7 @@ def initBenchComponents(q, init_foncs):
         th = ThreadWithReturnValue(target = fonc)
         th.daemon = True
 
-        name = fonc.__module__.split(".")[-1] + "." + fonc.wesh.__name__
+        name = fonc.__module__.split(".")[-1] + "." + fonc.__name__
         print(name, "starded..")
         # name last_module_name.func_name (ex: control.initialise)
 
