@@ -39,6 +39,7 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
     1. Turn off lamps
     2. Close shutter
     3. Take 'nbPic' dark picture of 'dit' exposure time.
+
     If an error occurs, stores the status of the sequencer in 'ERROR', otherwise stores it in 'WAITING'
 
     @param q: Queue object for multithreads communication
@@ -176,7 +177,7 @@ def sky_FLAT(q = None, dit = ExpTime, filepath = None, **kwargs):
     #Select Fitler
 
     # Check if an abort was requested
-    if q != None not q.empty():
+    if q != None and not q.empty():
         q.get()
         return
 
