@@ -18,6 +18,14 @@ from queue          import Queue
 from threading      import Thread
 
 def seq_server():
+    """
+    receive commands in string form through a socket.
+    format them into a dictionary.
+    create a thread to execute the command.
+
+    @return:
+    """
+
 
     # Read config file
     parser = ConfigParser()
@@ -99,6 +107,13 @@ def seq_server():
 
 
 def cast_args(args):
+    """
+    Modifies the dictionary received in parameter by trying to cast the values in the required type.
+    The required types are stored in the configuration file.
+
+    @param args: dict with keys: param name, values: param in
+    @return: 0 if there was no error and 1 otherwise
+    """
 
     parser = ConfigParser()
     parser.read('config')
@@ -116,16 +131,18 @@ def cast_args(args):
                 args[k] = int(v)
             else:
                 database.store_obs_log({'sequencer_log': "Error: {} value cannot be convert in int".format(k)})
-                return "Error: {} value cannot be convert in int".format(k)
+                return 1
         elif k in arg_float:
             if v.replace('.', '', 1).isdigit():
                 args[k] = float(v)
             else:
-                return "Error: {} value cannot be convert in float".format(k)
+                database.store_obs_log({'sequencer_log': "Error: {} value cannot be convert in float".format(k)})
+                return 1
         elif k in arg_string:
             pass
         else:
-            return "Error: {} not in arg list".format(k)
+            database.store_obs_log({'sequencer_log': "Error: {} not in arg list".format(k)})
+            return 1
 
     return 0
 
