@@ -126,20 +126,4 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     x_star = x + x_f - mid
     y_star = y + y_f - mid
 
-    plotting_res(image, star_spot, x_star, y_star, x_f, y_f)
     return x_star, y_star
-
-
-# # ------------------------------------------------------------------------------------------
-
-
-def plotting_res(image, spot, x, y, x_mean, y_mean):
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.set_size_inches((20, 20))
-    ax1.imshow(image, origin="lower", cmap="gray")
-    ax1.plot(x, y, "x")
-    ax2.imshow(spot, origin="lower", cmap="gray")
-    ax2.plot(x_mean, y_mean, "x")
-    plt.show()
-
-# ------------------------------------------------------------------------------------------
