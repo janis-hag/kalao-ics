@@ -8,11 +8,11 @@ import time
 def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     """
 
-    @param image_path: path for the image to be centered (String)
-    @param spot_size: size of the spot for the search of the star in pixel. Must be odd. (int)
-    @param estim_error: margin of error for the Gaussian fitting (float)
-    @param nb_step: Precision settings (int)
-    @return: center of the star or (-1, -1) if an error has occurred. (float, float)
+    :param image_path: path for the image to be centered (String)
+    :param spot_size: size of the spot for the search of the star in pixel. Must be odd. (int)
+    :param estim_error: margin of error for the Gaussian fitting (float)
+    :param nb_step: Precision settings (int)
+    :return: center of the star or (-1, -1) if an error has occurred. (float, float)
     """
 
     tb = time.time()
