@@ -48,9 +48,9 @@ def initBenchComponents(q, init_foncs):
     Then, block for each thread until his end.
     If a thread got an error, add name's function to 'q' parameter.
 
-    @param q: Queue object for mutlithread communication
-    @param init_foncs: list of function object
-    @return:
+    :param q: Queue object for mutlithread communication
+    :param init_foncs: list of function object
+    :return:
     """
 
     threads = []
@@ -85,10 +85,10 @@ def startThread(q, timeout, init_foncs):
     Create a thread and block until its end or until the allowed time is exceeded.
 
 
-    @param q: Queue object for mutlithread communication
-    @param timeout: int corresponding to the number of seconds allowed for the initialization
-    @param init_foncs: list of function object
-    @return:
+    :param q: Queue object for mutlithread communication
+    :param timeout: int corresponding to the number of seconds allowed for the initialization
+    :param init_foncs: list of function object
+    :return:
     """
     th = ThreadWithReturnValue(target = initBenchComponents, args = (q, init_foncs))
     th.daemon = True
@@ -109,11 +109,11 @@ def startProcess(startThread, q, timeout, init_foncs):
     Create a sub-process and block it until the end.
     This is done in order to kill all sub-threads if a timeout occurs
 
-    @param startThread:
-    @param q:
-    @param timeout:
-    @param init_foncs:
-    @return:
+    :param startThread:
+    :param q:
+    :param timeout:
+    :param init_foncs:
+    :return:
     """
 
     p = Process(target = startThread, args = (q, timeout, init_foncs))
@@ -127,7 +127,7 @@ def initialisation():
     Read the configuration file.
     Create a sub-process with initialisation function.
 
-    @return:
+    :return:
     """
 
     # read config file

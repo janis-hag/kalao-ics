@@ -23,7 +23,7 @@ def seq_server():
     format them into a dictionary.
     create a thread to execute the command.
 
-    @return:
+    :return:
     """
 
 
@@ -111,8 +111,8 @@ def cast_args(args):
     Modifies the dictionary received in parameter by trying to cast the values in the required type.
     The required types are stored in the configuration file.
 
-    @param args: dict with keys: param name, values: param in
-    @return: 0 if there was no error and 1 otherwise
+    :param args: dict with keys: param name, values: param in
+    :return: 0 if there was no error and 1 otherwise
     """
 
     parser = ConfigParser()

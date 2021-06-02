@@ -42,12 +42,12 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
 
     If an error occurs, stores the status of the sequencer in 'ERROR', otherwise stores it in 'WAITING'
 
-    @param q: Queue object for multithreads communication
-    @param dit: float for exposition time
-    @param nbPic: number of picture taken
-    @param filepath: If filepath is not None, store the picture to this path
-    @param kwargs: supports additional arguments
-    @return: nothing
+    :param q: Queue object for multithreads communication
+    :param dit: float for exposition time
+    :param nbPic: number of picture taken
+    :param filepath: If filepath is not None, store the picture to this path
+    :param kwargs: supports additional arguments
+    :return: nothing
     """
 
     if core.lamps_off() != 0:
@@ -80,7 +80,7 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
 def dark_abort():
     """
     Send abort instruction to fli camera and change sequencer status to 'waiting'.
-    @return: nothing
+    :return: nothing
     """
     # two cancel are done to avoid concurrency problems
     rValue = control.cancel()
@@ -106,12 +106,12 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwarg
 
     If an error occurs, stores the status of the sequencer in 'ERROR', otherwise stores it in 'WAITING'
 
-    @param q: Queue object for multithreads communication
-    @param beck:
-    @param dit: float for exposition time
-    @param filepath: If filepath is not None, store the picture to this path
-    @param kwargs: supports additional arguments
-    @return: nothing
+    :param q: Queue object for multithreads communication
+    :param beck:
+    :param dit: float for exposition time
+    :param filepath: If filepath is not None, store the picture to this path
+    :param kwargs: supports additional arguments
+    :return: nothing
     """
 
     if shutter.close() != 'CLOSE':
@@ -153,11 +153,11 @@ def sky_FLAT(q = None, dit = ExpTime, filepath = None, **kwargs):
     5. Take picture
     6. Close shutter
 
-    @param q: Queue object for multithreads communication
-    @param dit: float for exposition time
-    @param filepath: If filepath is not None, store the picture to this path
-    @param kwargs: supports additional arguments
-    @return: nothing
+    :param q: Queue object for multithreads communication
+    :param dit: float for exposition time
+    :param filepath: If filepath is not None, store the picture to this path
+    :param kwargs: supports additional arguments
+    :return: nothing
     """
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
@@ -206,11 +206,11 @@ def target_observation(q = None, dit = ExpTime, filepath = None, **kwargs):
     8. Take picture
     9. Close shutter
 
-    @param q: Queue object for multithreads communication
-    @param dit: float for exposition time
-    @param filepath: If filepath is not None, store the picture to this path
-    @param kwargs: supports additional arguments
-    @return: nothing
+    :param q: Queue object for multithreads communication
+    :param dit: float for exposition time
+    :param filepath: If filepath is not None, store the picture to this path
+    :param kwargs: supports additional arguments
+    :return: nothing
     """
     if core.lamps_off() != 0:
         print("Error: failed to turn off lamps")
@@ -255,10 +255,10 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     4. Start cacao calibration
     5. Set laser intensity to 0
 
-    @param q: Queue object for multithreads communication
-    @param intensity: float
-    @param kwargs: supports additional arguments
-    @return: nothing
+    :param q: Queue object for multithreads communication
+    :param intensity: float
+    :param kwargs: supports additional arguments
+    :return: nothing
     """
 
     if shutter.close() != 'CLOSE':
@@ -283,9 +283,9 @@ def check_abort(q, dit):
     Check every sec if Queue object q is empty
     if not, then an abort is required. Break the while sleep
 
-    @param q:
-    @param dit:
-    @return: nothing
+    :param q:
+    :param dit:
+    :return: nothing
     """
 
     t = 0
