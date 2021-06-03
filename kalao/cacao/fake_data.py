@@ -142,19 +142,19 @@ def fake_telemetry_for_db():
 
 	telemetry = {}
 
-	telemetry["nuvu_temp_ccd"] = {"time_utc": [time_utc], "values": [-60 + random.gauss(0, 0.05)]
-	telemetry["nuvu_temp_controller"] = {"time_utc": [time_utc], "values": [45 + random.gauss(0, 0.05)]
-	telemetry["nuvu_temp_power_supply"] = {"time_utc": [time_utc], "values": [45 + random.gauss(0, 0.05)]
-	telemetry["nuvu_temp_fpga"] = {"time_utc": [time_utc], "values": [50 + random.gauss(0, 0.05)]
-	telemetry["nuvu_temp_heatsink"] = {"time_utc": [time_utc], "values": [15 + random.gauss(0, 0.05)]
-	telemetry["nuvu_emgain"] = {"time_utc": [time_utc], "values": [200]
-	telemetry["nuvu_exposuretime"] = {"time_utc": [time_utc], "values": [0.5]
+	telemetry["nuvu_temp_ccd"] = {"time_utc": [time_utc], "values": [-60 + random.gauss(0, 0.05)]}
+	telemetry["nuvu_temp_controller"] = {"time_utc": [time_utc], "values": [45 + random.gauss(0, 0.05)]}
+	telemetry["nuvu_temp_power_supply"] = {"time_utc": [time_utc], "values": [45 + random.gauss(0, 0.05)]}
+	telemetry["nuvu_temp_fpga"] = {"time_utc": [time_utc], "values": [50 + random.gauss(0, 0.05)]}
+	telemetry["nuvu_temp_heatsink"] = {"time_utc": [time_utc], "values": [15 + random.gauss(0, 0.05)]}
+	telemetry["nuvu_emgain"] = {"time_utc": [time_utc], "values": [200]}
+	telemetry["nuvu_exposuretime"] = {"time_utc": [time_utc], "values": [0.5]}
 
-	telemetry["slopes_flux_subaperture"] = {"time_utc": [time_utc], "values": [2**16-1 - 200 + random.gauss(0, 200)]
-	telemetry["slopes_residual"] = {"time_utc": [time_utc], "values": [0.05 + random.gauss(0, 0.02)]
+	telemetry["slopes_flux_subaperture"] = {"time_utc": [time_utc], "values": [2**16-1 - 200 + random.gauss(0, 200)]}
+	telemetry["slopes_residual"] = {"time_utc": [time_utc], "values": [0.05 + random.gauss(0, 0.02)]}
 
-	telemetry["pi_tip"] = {"time_utc": [time_utc], "values": [0 + random.gauss(0, 0.5)]
-	telemetry["pi_tilt"] = {"time_utc": [time_utc], "values": [0 + random.gauss(0, 0.5)]
+	telemetry["pi_tip"] = {"time_utc": [time_utc], "values": [0 + random.gauss(0, 0.5)]}
+	telemetry["pi_tilt"] = {"time_utc": [time_utc], "values": [0 + random.gauss(0, 0.5)]}
 
 	return telemetry
 
