@@ -94,6 +94,10 @@ def get_telemetry(keys, nb_of_point, dt=None):
     return get_data('telemetry', keys, nb_of_point, dt=None)
 
 
+def get_telemetry_series(realData=True):
+    return fake_data.fake_telemetry_series()
+
+
 def get_data(collection_name, keys, nb_of_point, dt=None):
     # If dt is None, get db for today, otherwise get db for the day/night specified  by dt
     if dt is None:
