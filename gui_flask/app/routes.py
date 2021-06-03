@@ -40,6 +40,11 @@ def monitoring():
     realData = not bool(request.args.get('random', default = "", type = str))
     return k_database.get_all_last_monitoring()
 
+@app.route('/telemetry', methods=['GET'])
+def telemetry():
+    realData = not bool(request.args.get('random', default = "", type = str))
+    return k_database.get_all_last_telemetry(realData)
+
 @app.route('/centeringImage', methods=['GET'])
 def centeringImage():
     realData = not bool(request.args.get('random', default = "", type = str))
