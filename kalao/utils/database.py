@@ -15,7 +15,7 @@ import os
 import pandas as pd
 
 from kalao.utils import kalao_time
-
+from kalao.cacao import fake_data
 
 path = os.path.dirname(os.path.abspath(__file__))
 
@@ -124,7 +124,9 @@ def get_all_last_obs_log():
     return get_data('obs_log', definitions['obs_log'].keys(), 1, dt=None)
 
 
-def get_all_last_telemetry():
+def get_all_last_telemetry(realData=True):
+    if realData is False:
+        return fake_data.fake_telemetry_for_db()
     return get_data('telemetry', definitions['telemetry'].keys(), 1, dt=None)
 
 
