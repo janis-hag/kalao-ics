@@ -156,6 +156,8 @@ def fake_telemetry_for_db():
 	telemetry["pi_tip"] = {"time_utc": [time_utc], "values": [0 + random.gauss(0, 0.5)]}
 	telemetry["pi_tilt"] = {"time_utc": [time_utc], "values": [0 + random.gauss(0, 0.5)]}
 
+	telemetry["time_utc"] = {"time_utc": [time_utc], "values": [time_utc]}
+
 	return telemetry
 
 
