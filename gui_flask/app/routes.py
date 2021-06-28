@@ -3,6 +3,8 @@ from app import app
 from flask_cors import CORS
 from flask import request
 
+from datetime import datetime, timedelta, timezone
+
 from numpy.random import seed
 from numpy.random import randint
 
@@ -25,6 +27,34 @@ from kalao.utils import database as k_database
 CORS(app)
 
 @app.route('/')
+@app.route('/time', methods=['GET'])
+def time():
+    dt = datetime.now(timezone.utc)
+    return {"time": dt}
+
+@app.route('/metaData', methods=['GET'])
+def metaData():
+    projectPath = path.dirname(path.dirname(path.abspath(path.dirname(__file__))))
+    json_file = open(projectPath+"/kalao/utils/database_definition_monitoring.json")
+    monitoringMetaData = json.load(json_file)
+    json_file.close()
+
+    projectPath = path.dirname(path.dirname(path.abspath(path.dirname(__file__))))
+    json_file = open(projectPath+"/kalao/utils/database_definition_obs_log.json")
+    obsLogMetaData = json.load(json_file)
+    json_file.close()
+
+    projectPath = path.dirname(path.dirname(path.abspath(path.dirname(__file__))))
+    json_file = open(projectPath+"/kalao/utils/database_definition_telemetry.json")
+    telemetryMetaData = json.load(json_file)
+    json_file.close()
+
+    return {
+        "monitoring": monitoringMetaData,
+        "telemetry": telemetryMetaData,
+        "obsLog": obsLogMetaData
+    }
+
 @app.route('/pixelImages', methods=['GET'])
 def pixelImages():
     realData = not bool(request.args.get('random', default = "", type = str))
@@ -72,7 +102,23 @@ def centeringImage():
 @app.route('/plots', methods=['GET'])
 def plot():
     random = bool(request.args.get('random', default = "", type = str))
-    return k_status.cacao_measurements(random)
+    series = k_status.telemetry_series(random)
+    limit = 100
+    obj = {}
+    for serie_name in series:
+        obj[serie_name] = {"time": [],"values": []}
+        nb = 0
+        for time in series[serie_name]["time_utc"]:
+            if nb < limit:
+                obj[serie_name]["time"].append(round(datetime.timestamp(time),1))
+            nb+=1
+        nb = 0
+        for values in series[serie_name]["values"]:
+            if nb < limit:
+                obj[serie_name]["values"].append(values["values"][0])
+            nb+=1
+
+    return obj
 
 @app.route('/measurements', methods=['GET'])
 def measurements():
