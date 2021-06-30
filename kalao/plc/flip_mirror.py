@@ -78,10 +78,13 @@ def position():
 
     :return: single string status of shutter
     """
+    if 'flip_mirror' in core.disabled_device_list():
+        return 1
+
     # Connect to OPCUA server
     beck = core.connect()
 
-    # TODO check if initialised first
+    # TODO check if initialised and not disabled
 
     # Check error status
     error_code = beck.get_node('ns=4;s=MAIN.Flip.FlipMirror.stat.nErrorCode').get_value()
