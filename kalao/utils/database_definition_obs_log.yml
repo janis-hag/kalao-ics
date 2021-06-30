@@ -45,7 +45,7 @@ calib_unit_log:
   long: Calibration unit position
   unit: text
 temperature_log:
-  short: temeperature
+  short: Temperature
   long: Temperature inside the KalAO enclosure
   unit: text
 laser_log:

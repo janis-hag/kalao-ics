@@ -20,6 +20,17 @@ from kalao import rtc
 from kalao import fli
 from kalao.utils import database
 
+from configparser import ConfigParser
+from pathlib import Path
+import os
+
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+
+# Read config file
+parser = ConfigParser()
+parser.read(config_path)
+
+PLC_Disabled = parser.get('PLC','Disabled').split(',')
 
 def handler(signal_received, frame):
     # Handle any cleanup here
@@ -43,7 +54,13 @@ if __name__ == "__main__":
         if counter > 5:
             #TODO counter should be time based
             #get monitoring from plc and store
-            plc_values, text = plc.core.plc_status()
+            plc_values, plc_status_text = plc.core.plc_status()
+
+            # Do not log status of disabled devices.
+            if PLC_Disabled == 'None':
+                for device_name in PLC_Disabled:
+                    plc_status_values.pop(device_name)
+                    plc_status_text.pop(device_name)
             values.update(plc_values)
 
             # get RTC data and update
