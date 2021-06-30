@@ -25,8 +25,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="887.17036"
-     inkscape:cy="1074.9531"
+     inkscape:cx="616.25683"
+     inkscape:cy="366.01856"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -38,9 +38,9 @@
      inkscape:snap-text-baseline="true"
      inkscape:snap-global="false"
      inkscape:window-width="2629"
-     inkscape:window-height="1723"
+     inkscape:window-height="1385"
      inkscape:window-x="704"
-     inkscape:window-y="90"
+     inkscape:window-y="27"
      inkscape:window-maximized="0"
      inkscape:snap-bbox="true"
      inkscape:bbox-nodes="true"
@@ -62,7 +62,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -501,7 +501,7 @@
            sodipodi:role="line"
            id="tspan1206"
            x="-249.22449"
-           y="1265.9413"></tspan></text>
+           y="1265.9413" /></text>
       <rect
          style="color:#000000;overflow:visible;opacity:0.791969;fill:#00bfff;stroke:#1e90ff;stroke-width:5.2611;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0"
          id="rect1375"
@@ -528,7 +528,7 @@
            sodipodi:role="line"
            id="tspan1248"
            x="-249.22449"
-           y="1239.5413"></tspan></text>
+           y="1239.5413" /></text>
       <rect
          style="color:#000000;overflow:visible;opacity:0.791969;fill:#00bfff;stroke:#1e90ff;stroke-width:5.2611;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0"
          id="rect1377"
@@ -555,7 +555,7 @@
            sodipodi:role="line"
            id="tspan1286"
            x="-249.22449"
-           y="1239.5413"></tspan></text>
+           y="1239.5413" /></text>
       <rect
          style="color:#000000;overflow:visible;opacity:0.791969;fill:#00bfff;stroke:#1e90ff;stroke-width:5.2611;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0"
          id="rect1383"
@@ -616,7 +616,7 @@
              sodipodi:role="line"
              id="tspan1431"
              x="-249.22449"
-             y="1292.3413"></tspan></text>
+             y="1292.3413" /></text>
       </g>
     </g>
     <text
@@ -652,6 +652,18 @@
          x="224.42923"
          y="1750.09"
          id="tspan1515-4">Restart kalaortc</tspan></text>
+    <text
+       xml:space="preserve"
+       style="color:#000000;font-weight:bold;font-size:26.6667px;line-height:99%;font-family:Arial;-inkscape-font-specification:'Arial, Bold';text-align:center;writing-mode:lr-tb;text-anchor:middle;overflow:visible;opacity:0.791969;fill:#000000;stroke-width:5.2611;stroke-linecap:square;stroke-linejoin:round;"
+       x="813.15308"
+       y="334.75394"
+       id="text975"
+       transform="matrix(0.26458333,0,0,0.26458333,29.560119,-1.3456866)"><tspan
+         sodipodi:role="line"
+         id="tspan973"
+         x="813.15308"
+         y="334.75394"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:32px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal">shws_slopes.mean()</tspan></text>
   </g>
   <g
      inkscape:groupmode="layer"
