@@ -10,6 +10,7 @@ from CacaoProcessTools import fps, FPS_status
 from kalao.utils import database
 from kalao.cacao import fake_data
 
+
 def _get_stream(name, min, max):
 	#TODO: check if stream is alive
 	# Return empty stream if not existing
