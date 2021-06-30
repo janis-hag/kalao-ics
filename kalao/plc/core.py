@@ -20,6 +20,10 @@ from kalao.utils import database
 from opcua import Client
 #from opcua import ua
 
+from configparser import ConfigParser
+from pathlib import Path
+import os
+
 
 def connect(addr="192.168.1.140", port=4840):
     beck = Client("opc.tcp://%s:%d" % (addr, port))
@@ -38,9 +42,19 @@ def lamps_off():
     if tungsten_status == 'OFF' and laser_status == 'OFF':
         return 0
     else:
-        # TODO store in obs_log
+        database.store_obs_log({'tungsten_log': 'WARNING: Unknown return status: '+str(tungsten_status) })
         return 1
 
+def disabled_device_list():
+    config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+
+    # Read config file
+    parser = ConfigParser()
+    parser.read(config_path)
+
+    PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
+
+    return PLC_Disabled
 
 def plc_status():
     """
@@ -71,6 +85,7 @@ def plc_status():
                        'temp_water_out': temps['temp_water_out'],
                        'laser': laser.status(),
                        'tungsten': tungsten.status()['sStatus']}
+
 
     return plc_status_values, plc_status_text
 
