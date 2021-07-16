@@ -23,6 +23,11 @@ from kalao.cacao import telemetry as k_telemetry
 from kalao.interface import status as k_status
 from kalao.interface import star_centering as k_star_centering
 from kalao.utils import database as k_database
+from kalao.plc import laser as k_laser
+from kalao.plc import shutter as k_shutter
+from kalao.plc import flip_mirror as k_flip_mirror
+from kalao.plc import tungsten as k_tungsten
+from kalao.plc import calib_unit as k_calib_unit
 
 CORS(app)
 
@@ -124,6 +129,77 @@ def plot():
 def measurements():
     random = bool(request.args.get('random', default = "", type = str))
     return k_status.cacao_measurements(random)
+
+@app.route('/plcStatus', methods=['GET'])
+def plcStatus():
+
+    return json.dumps({
+        "laser": {
+            "status": k_laser.status()
+        },
+        "shutter": {
+            "position": k_shutter.position()
+        },
+        "flip_mirror": {
+            "position": k_flip_mirror.position()
+        },
+        "tungsten": {
+            "status": k_tungsten.status()
+        },
+        "calib_unit": {
+            "status": k_calib_unit.status()}
+        })
+
+@app.route('/plcLaserEnable', methods=['GET'])
+def plcLaserEnable():
+    return k_laser.enable();
+
+@app.route('/plcLaserDisable', methods=['GET'])
+def plcLaserDisable():
+    return k_laser.disable();
+
+@app.route('/plcShutterOpen', methods=['GET'])
+def plcShutterOpen():
+    return k_shutter.open();
+
+@app.route('/plcShutterClose', methods=['GET'])
+def plcShutterClose():
+    return k_shutter.close();
+
+@app.route('/plcFlipMirrorUp', methods=['GET'])
+def plcFlipMirrorUp():
+    return k_flip_mirror.up();
+
+@app.route('/plcFlipMirrorDown', methods=['GET'])
+def plcFlipMirrorDown():
+    return k_flip_mirror.down();
+
+@app.route('/plcTungstenOn', methods=['GET'])
+def plcTungstenOn():
+    return k_tungsten.on();
+
+@app.route('/plcTungstenOff', methods=['GET'])
+def plcTungstenOff():
+    return k_tungsten.off();
+
+@app.route('/plcCalibUnitLaser', methods=['GET'])
+def plcCalibUnitLaser():
+    return k_calib_unit.laser();
+
+@app.route('/plcCalibUnitTungsten', methods=['GET'])
+def plcCalibUnitTungsten():
+    return k_calib_unit.tungsten();
+
+@app.route('/plcLaserIntensity', methods=['POST'])
+def plcLaserIntensity():
+    options = request.get_json()
+    return k_laser.set_intensity(options["intensity"])
+
+@app.route('/plcCalibUnitMove', methods=['POST'])
+def plcCalibUnitMove():
+    options = request.get_json()
+    print(k_calib_unit.move(options["move"]))
+    return k_calib_unit.move(options["move"])
 
 app.run(host="0.0.0.0", port="80");
 #app.run(host= '10.194.67.128')
