@@ -65,15 +65,22 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
         q.get()
         return
 
+    # TODO prepare temporary dark folder
+
     # Take nbPic image
     for _ in range(nbPic):
         rValue = control.take_image(dit = dit, filepath = filepath)
+        # TODO read file path from obs_log and handle file:
+        #  - update fits header
+        #  - copy to temporary dark and science observations files storage
         if rValue != 0:
             print(rValue)
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return
         # Check if an abort was requested and send abort to fli cam
         check_abort(q, dit)
+
+    # TODO create bad pixel map, replace current dark folder with temporary
 
     database.store_obs_log({'sequencer_status': 'waiting'})
 

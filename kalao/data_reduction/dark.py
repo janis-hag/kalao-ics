@@ -9,3 +9,7 @@
 dark.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
+
+# TODO add funtionc:
+# - create bad_pixel_map
+# - update dark folder
