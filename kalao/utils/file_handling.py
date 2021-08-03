@@ -6,7 +6,7 @@
 # @AUTHOR : Janis Hagelberg
 
 """
-fits_handling.py is part of the KalAO Instrument Control Software
+file_handling.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
@@ -33,6 +33,7 @@ Temporary_folder = parser.get('FLI','TemporaryDataStorage')
 def create_temporary_folder():
     # Prepare temporary dark folder
     # TODO add night date to folder name
+    # check if folder exists
     try:
         for filename in os.listdir(Temporary_folder):
             os.remove(Tempo_dark + "/" + filename)

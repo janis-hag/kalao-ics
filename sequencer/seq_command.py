@@ -70,7 +70,7 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
         q.get()
         return
 
-    temporary_path = create_temporary_folder()
+    temporary_path = file_handling.create_temporary_folder()
 
     # Take nbPic image
     for _ in range(nbPic):
