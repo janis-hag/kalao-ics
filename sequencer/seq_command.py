@@ -16,12 +16,15 @@ from kalao.plc import core
 from kalao.fli import control
 from kalao.utils import database
 
-
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
 # Read config file and create a dict for each section where keys is parameter
 parser = ConfigParser()
 parser.read(config_path)
+
+Tempo_dark = parser.get('FLI','TemporaryDarkFolder')
+Current_dark = parser.get('FLI','CurrentDarkFolder')
+Science_storage = parser.get('FLI','ScienceDataStorage')
 
 ExpTime = parser.get('FLI','ExpTime')
 TimeSup = parser.get('FLI','TimeSup')
@@ -65,7 +68,12 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
         q.get()
         return
 
-    # TODO prepare temporary dark folder
+    # Prepare temporary dark folder
+    try:
+        for filename in os.listdir(Tempo_dark):
+            os.remove(Tempo_dark + "/" + filename)
+    except FileNotFoundError:
+        os.mkdir(Tempo_dark)
 
     # Take nbPic image
     for _ in range(nbPic):
