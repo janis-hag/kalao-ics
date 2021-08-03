@@ -28,16 +28,15 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-Tempo_dark = parser.get('FLI','TemporaryDarkFolder')
-Current_dark = parser.get('FLI','CurrentDarkFolder')
-Science_storage = parser.get('FLI','ScienceDataStorage')
+Temporary_folder = parser.get('FLI','TemporaryDataStorage')
 
 def create_temporary_folder():
     # Prepare temporary dark folder
+    # TODO add night date to folder name
     try:
-        for filename in os.listdir(Tempo_dark):
+        for filename in os.listdir(Temporary_folder):
             os.remove(Tempo_dark + "/" + filename)
     except FileNotFoundError:
-        os.mkdir(Tempo_dark)
+        os.mkdir(Temporary_folder)
 
-    return Tempo_dark
+    return Temporary_folder
