@@ -13,3 +13,31 @@ fits_handling.py is part of the KalAO Instrument Control Software
 # TODO create functions:
 # - def update_fits_header
 # - update_temporary_folder( current_folder, temporary_folder)
+
+import sys
+import os
+from pathlib import Path
+import time
+from configparser import ConfigParser
+
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+
+# Read config file and create a dict for each section where keys is parameter
+parser = ConfigParser()
+parser.read(config_path)
+
+Tempo_dark = parser.get('FLI','TemporaryDarkFolder')
+Current_dark = parser.get('FLI','CurrentDarkFolder')
+Science_storage = parser.get('FLI','ScienceDataStorage')
+
+def create_temporary_folder():
+    # Prepare temporary dark folder
+    try:
+        for filename in os.listdir(Tempo_dark):
+            os.remove(Tempo_dark + "/" + filename)
+    except FileNotFoundError:
+        os.mkdir(Tempo_dark)
+
+    return Tempo_dark

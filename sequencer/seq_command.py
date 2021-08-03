@@ -15,6 +15,7 @@ from kalao.plc import tungsten
 from kalao.plc import core
 from kalao.fli import control
 from kalao.utils import database
+from kalao.utils import file_handling
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
@@ -36,6 +37,7 @@ else:
     print("Error: wrong values format for 'ExpTime' or 'TimeSup' in kalao.config file ")
     ExpTime = 0
     TimeSup = 0
+
 
 def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
     """
@@ -68,12 +70,7 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
         q.get()
         return
 
-    # Prepare temporary dark folder
-    try:
-        for filename in os.listdir(Tempo_dark):
-            os.remove(Tempo_dark + "/" + filename)
-    except FileNotFoundError:
-        os.mkdir(Tempo_dark)
+    temporary_path = create_temporary_folder()
 
     # Take nbPic image
     for _ in range(nbPic):
