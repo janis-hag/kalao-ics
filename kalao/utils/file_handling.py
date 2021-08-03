@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import time
 from configparser import ConfigParser
+from kalao.utils import kalao_time
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -28,16 +29,33 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-Temporary_folder = parser.get('FLI','TemporaryDataStorage')
+Tmp_folder = parser.get('FLI','TemporaryDataStorage')
+Science_folder = parser.get('FLI','ScienceDataStorage')
 
 def create_temporary_folder():
     # Prepare temporary dark folder
     # TODO add night date to folder name
     # check if folder exists
-    try:
-        for filename in os.listdir(Temporary_folder):
-            os.remove(Tempo_dark + "/" + filename)
-    except FileNotFoundError:
-        os.mkdir(Temporary_folder)
 
-    return Temporary_folder
+    Tmp_night_folder = Tmp_folder + '/' + kalao_time.get_start_of_night()
+
+    if not os.path.exists(Tmp_night_folder):
+        os.mkdir(Tmp_night_folder)
+
+    return Tmp_night_folder
+
+def save_temporary_folder():
+    Tmp_night_folder = Tmp_folder + '/' + kalao_time.get_start_of_night()
+    Science_night_folder = Science_folder + '/' + kalao_time.get_start_of_night()
+
+    # if tmp folder of the night exist, move it to ScienceDataStorage
+    if os.path.exists(Tmp_night_folder):
+        os.rename(Tmp_night_folder, Science_night_folder)
+
+    return 0
+
+def clean_temporary_folder():
+    for folder in os.listdir(Tmp_folder):
+        if os.isdir(folder):
+            os.rmdir(Tmp_folder + '/' + folder)
+    return 0
