@@ -32,30 +32,37 @@ parser.read(config_path)
 Tmp_folder = parser.get('FLI','TemporaryDataStorage')
 Science_folder = parser.get('FLI','ScienceDataStorage')
 
-def create_temporary_folder():
-    # Prepare temporary dark folder
-    # TODO add night date to folder name
+def create_night_folder():
+    # Prepare temporary and science folder
     # check if folder exists
+    # remove temporary folder of previous night if empty
 
-    Tmp_night_folder = Tmp_folder + '/' + kalao_time.get_start_of_night()
+    Tmp_night_folder = Tmp_folder+os.sep+kalao_time.get_start_of_night()
+    Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
 
     if not os.path.exists(Tmp_night_folder):
         os.mkdir(Tmp_night_folder)
+    if not os.path.exists(Science_night_folder):
+        os.mkdir(Science_night_folder)
+
+    for folder in os.listdir(Tmp_folder):
+        tmp_path = Tmp_folder+os.sep+folder
+        if tmp_path != Tmp_night_folder and len(os.listdir(tmp_path)) == 0:
+            os.rmdir(tmp_path)
 
     return Tmp_night_folder
 
-def save_temporary_folder():
-    Tmp_night_folder = Tmp_folder + '/' + kalao_time.get_start_of_night()
-    Science_night_folder = Science_folder + '/' + kalao_time.get_start_of_night()
+def save_tmp_picture(image_path):
+    Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
 
-    # if tmp folder of the night exist, move it to ScienceDataStorage
-    if os.path.exists(Tmp_night_folder):
-        os.rename(Tmp_night_folder, Science_night_folder)
+    if os.path.exists(image_path) and os.path.exists(Science_night_folder):
+        os.rename(image_path, Science_night_folder+os.sep+os.path.basename(image_path))
+        return 0
+    else:
+        return 1
 
-    return 0
-
-def clean_temporary_folder():
+def clean_tmp_folder():
     for folder in os.listdir(Tmp_folder):
         if os.isdir(folder):
-            os.rmdir(Tmp_folder + '/' + folder)
+            os.rmdir(Tmp_folder+os.sep+folder)
     return 0
