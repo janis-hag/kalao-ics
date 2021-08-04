@@ -41,3 +41,8 @@ def create_temporary_folder():
         os.mkdir(Temporary_folder)
 
     return Temporary_folder
+
+
+def update_header(file):
+
+    return 0
