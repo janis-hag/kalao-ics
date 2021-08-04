@@ -46,6 +46,7 @@ def take_image(dit=0.05, filepath=None):
         return 0
     if filepath is None:
         filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
+        # filename = kalao_time.get_start_of_night() + os.sep + filename
         filepath = TemporaryDataStorage+os.sep+filename
     params = {'exptime': dit, 'filepath': filepath}
     req = send_request('acquire', params)
