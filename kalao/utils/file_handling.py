@@ -66,3 +66,8 @@ def clean_tmp_folder():
         if os.isdir(folder):
             os.rmdir(Tmp_folder+os.sep+folder)
     return 0
+
+
+def update_header(file):
+
+    return 0
