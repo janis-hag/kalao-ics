@@ -37,13 +37,6 @@ def create_temporary_folder():
     # TODO add night date to folder name
     # check if folder exists
 
-<<<<<<< HEAD
-    return Temporary_folder
-
-
-def update_header(file):
-
-=======
     Tmp_night_folder = Tmp_folder + '/' + kalao_time.get_start_of_night()
 
     if not os.path.exists(Tmp_night_folder):
@@ -65,5 +58,9 @@ def clean_temporary_folder():
     for folder in os.listdir(Tmp_folder):
         if os.isdir(folder):
             os.rmdir(Tmp_folder + '/' + folder)
->>>>>>> 8bf9f32dc270768822fe084f3027fc09183a6fba
+    return 0
+
+
+def update_header(file):
+
     return 0
