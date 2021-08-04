@@ -8,14 +8,8 @@ from configparser import ConfigParser
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from kalao.plc import shutter
-from kalao.plc import flip_mirror
-from kalao.plc import laser
-from kalao.plc import tungsten
-from kalao.plc import core
-from kalao.fli import control
-from kalao.utils import database
-from kalao.utils import file_handling
+from kalao.plc import control, core, tungsten, laser, flip_mirror, shutter
+from kalao.utils import file_handling, database
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
@@ -23,8 +17,6 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-Tempo_dark = parser.get('FLI','TemporaryDarkFolder')
-Current_dark = parser.get('FLI','CurrentDarkFolder')
 Science_storage = parser.get('FLI','ScienceDataStorage')
 
 ExpTime = parser.get('FLI','ExpTime')
@@ -70,28 +62,32 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
         q.get()
         return
 
-    temporary_path = file_handling.create_temporary_folder()
+    temporary_path = file_handling.create_night_folder()
 
     # Take nbPic image
     for _ in range(nbPic):
         rValue = control.take_image(dit = dit, filepath = filepath)
-        # TODO read file path from obs_log and handle file:
+
+        # data = database.get_obs_log('fli_temporary_image_path')
+        # image_path = data['fli_temporary_image_path']
         #  - update fits header
-        #  - copy to temporary dark and science observations files storage
+        # file_handling.save_tmp_picture(image_path)
+
         if rValue != 0:
             print(rValue)
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return
+
         # Check if an abort was requested and send abort to fli cam
         check_abort(q, dit)
 
     # TODO create bad pixel map, replace current dark folder with temporary
 
-    database.store_obs_log({'sequencer_status': 'waiting'})
+    database.store_obs_log({'sequencer_status': 'WAITING'})
 
 def dark_abort():
     """
-    Send abort instruction to fli camera and change sequencer status to 'waiting'.
+    Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
     """
     # two cancel are done to avoid concurrency problems
@@ -105,7 +101,7 @@ def dark_abort():
     if(rValue != 0):
         print(rValue)
 
-    database.store_obs_log({'sequencer_status': 'waiting'})
+    database.store_obs_log({'sequencer_status': 'WAITING'})
 
 def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwargs):
     """
@@ -145,16 +141,26 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwarg
         q.get()
         return
 
-    rValue = control.take_image(dit = dit, filepath = filepath)
-    if rValue != 0:
-        print(rValue)
-        tungsten.off(beck = beck)
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+    temporary_path = file_handling.create_night_folder()
+
+    # Take nbPic image
+    for _ in range(nbPic):
+        rValue = control.take_image(dit = dit, filepath = filepath)
+
+        # data = database.get_obs_log('fli_temporary_image_path')
+        # image_path = data['fli_temporary_image_path']
+        #  - update fits header
+        # file_handling.save_tmp_picture(image_path)
+
+        if rValue != 0:
+            print(rValue)
+            tungsten.off(beck = beck)
+            database.store_obs_log({'sequencer_status': 'ERROR'})
+            return
 
     check_abort(q,dit)
     tungsten.off(beck = beck)
-    database.store_obs_log({'sequencer_status': 'waiting'})
+    database.store_obs_log({'sequencer_status': 'WAITING'})
 
 def sky_FLAT(q = None, dit = ExpTime, filepath = None, **kwargs):
     """
@@ -204,7 +210,7 @@ def sky_FLAT(q = None, dit = ExpTime, filepath = None, **kwargs):
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
-    database.store_obs_log({'sequencer_status': 'waiting'})
+    database.store_obs_log({'sequencer_status': 'WAITING'})
 
 def target_observation(q = None, dit = ExpTime, filepath = None, **kwargs):
     """
@@ -256,7 +262,7 @@ def target_observation(q = None, dit = ExpTime, filepath = None, **kwargs):
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
-    database.store_obs_log({'sequencer_status': 'waiting'})
+    database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
 def AO_loop_calibration(q = None, intensity = 0, **kwargs):
@@ -286,7 +292,7 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     laser.set_intensity(intensity)
     #cacao.start_calib()
     laser.set_intensity(0)
-    database.store_obs_log({'sequencer_status': 'waiting'})
+    database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
 def check_abort(q, dit):
