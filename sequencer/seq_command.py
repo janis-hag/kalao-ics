@@ -70,7 +70,7 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
 
         # data = database.get_obs_log('fli_temporary_image_path')
         # image_path = data['fli_temporary_image_path']
-        #  - update fits header
+        # update_header(image_path)
         # file_handling.save_tmp_picture(image_path)
 
         if rValue != 0:
@@ -149,7 +149,7 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwarg
 
         # data = database.get_obs_log('fli_temporary_image_path')
         # image_path = data['fli_temporary_image_path']
-        #  - update fits header
+        # update_header(image_path)
         # file_handling.save_tmp_picture(image_path)
 
         if rValue != 0:
