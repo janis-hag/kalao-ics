@@ -54,12 +54,15 @@ def create_night_folder():
 
 def save_tmp_picture(image_path):
     Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
+    target_name = Science_night_folder+os.sep+os.path.basename(image_path)
 
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
-        os.rename(image_path, Science_night_folder+os.sep+os.path.basename(image_path))
-        return 0
+        update_header(image_path)
+        os.rename(image_path, target_name)
+        return target_name
     else:
-        return 1
+        # TODO add log error
+        return -1
 
 def update_header(image_path):
 
