@@ -44,6 +44,7 @@ def take_image(dit=0.05, filepath=None):
     if dit < 0:
         database.store_obs_log({'fli_log': 'Abort before exposure started.'})
         return 0
+    # TODO move to file_handling (47-51)
     if filepath is None:
         filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
         # filename = kalao_time.get_start_of_night() + os.sep + filename

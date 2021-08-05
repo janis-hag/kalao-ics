@@ -68,10 +68,8 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
     for _ in range(nbPic):
         rValue = control.take_image(dit = dit, filepath = filepath)
 
-        # data = database.get_obs_log('fli_temporary_image_path')
-        # image_path = data['fli_temporary_image_path']
-        # update_header(image_path)
-        # file_handling.save_tmp_picture(image_path)
+        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
+        file_handling.save_tmp_picture(image_path)
 
         if rValue != 0:
             print(rValue)
@@ -80,8 +78,6 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
 
         # Check if an abort was requested and send abort to fli cam
         check_abort(q, dit)
-
-    # TODO create bad pixel map, replace current dark folder with temporary
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
@@ -134,7 +130,7 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwarg
 
     tungsten.on(beck = beck)
 
-    #Select Filter
+    # TODO Select Filter
 
     # Check if an abort was requested
     if q != None and not q.empty():
@@ -147,10 +143,8 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwarg
     for _ in range(nbPic):
         rValue = control.take_image(dit = dit, filepath = filepath)
 
-        # data = database.get_obs_log('fli_temporary_image_path')
-        # image_path = data['fli_temporary_image_path']
-        # update_header(image_path)
-        # file_handling.save_tmp_picture(image_path)
+        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
+        file_handling.save_tmp_picture(image_path)
 
         if rValue != 0:
             print(rValue)
