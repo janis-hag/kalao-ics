@@ -46,7 +46,7 @@ def create_night_folder():
         os.mkdir(Science_night_folder)
 
     for folder in os.listdir(Tmp_folder):
-        tmp_path = Tmp_folder+os.sep+folder
+        tmp_path = os.path.abspath(folder)
         if tmp_path != Tmp_night_folder and len(os.listdir(tmp_path)) == 0:
             os.rmdir(tmp_path)
 
@@ -61,13 +61,6 @@ def save_tmp_picture(image_path):
     else:
         return 1
 
-def clean_tmp_folder():
-    for folder in os.listdir(Tmp_folder):
-        if os.isdir(folder):
-            os.rmdir(Tmp_folder+os.sep+folder)
-    return 0
-
-
-def update_header(file):
+def update_header(image_path):
 
     return 0
