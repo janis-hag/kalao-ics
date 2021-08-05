@@ -29,12 +29,12 @@ TUNGSTEN_POSITION = parser.getfloat('PLC','TungstenPosition')
 # TODO store errors in obs_log
 
 
-def tungsten():
+def tungsten_position():
     new_position = move(position=TUNGSTEN_POSITION)
     return new_position
 
 
-def laser():
+def laser_position():
     new_position = move(position=LASER_POSITION)
     return new_position
 
