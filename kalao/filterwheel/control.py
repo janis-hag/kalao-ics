@@ -45,7 +45,7 @@ def set_position(filter):
         filter_position = filter
     elif filter in:
 
-    fw = thorlabs.ThorlabsFW102C(com='/dev/ttyUSB0')
+    fw = thorlabs.ThorlabsFilterWheel(com='/dev/ttyUSB0')
     fw.enable()
     time.sleep(2)
     fw.initialize()
@@ -60,7 +60,7 @@ def set_position(filter):
         return 1
 
 def get_position():
-    fw = thorlabs.ThorlabsFW102C(com='/dev/ttyUSB0')
+    fw = thorlabs.ThorlabsFilterWheel(com='/dev/ttyUSB0')
     fw.enable()
     time.sleep(2)
     fw.initialize()
@@ -73,7 +73,7 @@ def get_position():
 
 
 def init():
-    fw = thorlabs.ThorlabsFW102C(com='/dev/ttyUSB0')
+    fw = thorlabs.ThorlabsFilterWheel(com='/dev/ttyUSB0')
     fw.enable()
     time.sleep(2)
     fw.initialize()
