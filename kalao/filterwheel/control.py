@@ -13,6 +13,22 @@ control.py is part of the KalAO Instrument Control Software
 from microscope.filterwheels import thorlabs
 import time
 
+from configparser import ConfigParser
+import os
+from pathlib import Path
+
+from enum import Enum
+
+
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+parser = ConfigParser()
+parser.read(config_path)
+
+dict_id_filter = parser._sections['FilterPosition']
+
+def filter_ids():
+    return Enum('enum_id_filter', dict_id_filter)
+
 # clear griz, hole
 # 0 clear
 # 1 jaune g
