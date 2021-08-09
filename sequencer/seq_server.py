@@ -8,6 +8,7 @@ SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 from sequencer import seq_command
 
 from kalao.utils import database
+from kalao.filterwheel import control
 
 import socket
 import time
@@ -16,6 +17,12 @@ from itertools      import zip_longest
 from configparser   import ConfigParser
 from queue          import Queue
 from threading      import Thread
+
+
+# Read config file
+parser = ConfigParser()
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+parser.read(config_path)
 
 def seq_server():
     """
@@ -26,9 +33,6 @@ def seq_server():
     :return:
     """
 
-    # Read config file
-    parser = ConfigParser()
-    parser.read('../kalao.config')
     host = parser.get('SEQ','IP')
     port = parser.get('SEQ','Port')
 
@@ -115,12 +119,11 @@ def cast_args(args):
     """
 
     parser = ConfigParser()
-    parser.read('../kalao.config')
+    config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+    parser.read(config_path)
 
     # Create bidirect dict with filter id (str and int)
-    Id_filter = parser._sections['FilterPosition']
-    revd = dict( [reversed(i) for i in Id_filter.items()] )
-    Id_filter.update(revd)
+    Id_filter = control.create_filter_id()
 
     # Create a list from a string
     # from: "xxx, yyy, zzz" -> to: ['xxx', 'yyy', 'zzz']
@@ -144,7 +147,9 @@ def cast_args(args):
                 return 1
         elif k in arg_string:
             if k == 'filterposition' and not v.isdigit():
-                args[k] = Id_filter[v]
+                args[k] = int(Id_filter[v])
+            elif k == 'filterposition' and v.isdigit():
+                args[k] = int(v)
         else:
             database.store_obs_log({'sequencer_log': "Error: {} not in arg list".format(k)})
             return 1
