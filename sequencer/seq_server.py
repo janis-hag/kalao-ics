@@ -26,7 +26,6 @@ def seq_server():
     :return:
     """
 
-
     # Read config file
     parser = ConfigParser()
     parser.read('../kalao.config')
@@ -116,9 +115,14 @@ def cast_args(args):
     """
 
     parser = ConfigParser()
-    parser.read('config')
+    parser.read('../kalao.config')
 
-    # Create a list form a string
+    # Create bidirect dict with filter id (str and int)
+    Id_filter = parser._sections['FilterPosition']
+    revd = dict( [reversed(i) for i in Id_filter.items()] )
+    Id_filter.update(revd)
+
+    # Create a list from a string
     # from: "xxx, yyy, zzz" -> to: ['xxx', 'yyy', 'zzz']
     arg_int    = parser.get('SEQ','gop_arg_int').replace(' ', '').split(',')
     arg_float  = parser.get('SEQ','gop_arg_float').replace(' ', '').split(',')
@@ -139,7 +143,8 @@ def cast_args(args):
                 database.store_obs_log({'sequencer_log': "Error: {} value cannot be convert in float".format(k)})
                 return 1
         elif k in arg_string:
-            pass
+            if k == 'filterposition' and not v.isdigit():
+                args[k] = Id_filter[v]
         else:
             database.store_obs_log({'sequencer_log': "Error: {} not in arg list".format(k)})
             return 1
