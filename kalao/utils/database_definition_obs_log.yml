@@ -70,7 +70,7 @@ sequencer_log:
 # FilterWheel
 filterwheel_status:
   short: Filterwheel status
-  long: Status of the filterwheel clear/jaune/violet/bleu clair/argent/empty
+  long: Status of the filterwheel clear/g/r/i/z/empty
   unit: text
 filterwheel_log:
   short: Filterwheel log
