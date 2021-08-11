@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.plc import control, core, tungsten, laser, flip_mirror, shutter
 from kalao.utils import file_handling, database
+from kalao.filterwheel import filter_control
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
@@ -99,7 +100,7 @@ def dark_abort():
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwargs):
+def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
     """
     1. Close shutter
     2. Move flip mirror up
@@ -130,7 +131,10 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwarg
 
     tungsten.on(beck = beck)
 
-    # TODO Select Filter
+    if filter_control.set_position(filter_arg) == -1:
+        print("Error: problem with filter selection")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
 
     # Check if an abort was requested
     if q != None and not q.empty():
@@ -156,7 +160,7 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, **kwarg
     tungsten.off(beck = beck)
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def sky_FLAT(q = None, dit = ExpTime, filepath = None, **kwargs):
+def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -186,8 +190,10 @@ def sky_FLAT(q = None, dit = ExpTime, filepath = None, **kwargs):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    #Select Fitler
-
+    if filter_control.set_position(filter_arg) == -1:
+        print("Error: problem with filter selection")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
     # Check if an abort was requested
     if q != None and not q.empty():
         q.get()
@@ -206,7 +212,7 @@ def sky_FLAT(q = None, dit = ExpTime, filepath = None, **kwargs):
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def target_observation(q = None, dit = ExpTime, filepath = None, **kwargs):
+def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -239,14 +245,25 @@ def target_observation(q = None, dit = ExpTime, filepath = None, **kwargs):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    #Select Filter
+    if filter_control.set_position(filter_arg) == -1:
+        print("Error: problem with filter selection")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
     #Centre on target
-    #cacao.close_loop()
+
+    cacao.close_loop()
+
     #Monitor AO and cancel exposure if needed
 
+    temporary_path = file_handling.create_night_folder()
+
     rValue = control.take_image(dit = dit, filepath = filepath)
+
+    image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
+    file_handling.save_tmp_picture(image_path)
+
     if rValue != 0:
-        # store to mongo db instead of printing.
         print(rValue)
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
