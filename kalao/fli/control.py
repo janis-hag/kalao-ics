@@ -28,9 +28,15 @@ parser.read(config_path)
 ScienceDataStorage = parser.get('FLI','ScienceDataStorage')
 TemporaryDataStorage = parser.get('FLI','TemporaryDataStorage')
 
-#  TODO read from config
-address = '127.0.0.1'
-port = '9080'
+address = parser.get('FLI','IP')
+port = parser.get('FLI','Port')
+
+# check if config value format is right
+if port.isdigit():
+    port = int(port)
+else:
+    print("Error: wrong values format for 'Port' in kalao.config file ")
+    return
 
 def take_science_exposure(dit=0.05, filepath=None):
 
