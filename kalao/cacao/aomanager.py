@@ -207,6 +207,9 @@ def do_calibration(conf):
 def close_loop():
 	pass
 
+def check_loop():
+	pass
+
 #################################
 
 if __name__ == "__main__":

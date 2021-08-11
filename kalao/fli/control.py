@@ -50,17 +50,17 @@ def take_image(dit=0.05, filepath=None):
     if dit < 0:
         database.store_obs_log({'fli_log': 'Abort before exposure started.'})
         return 0
-    # TODO move to file_handling (47-51)
+    # TODO move to file_handling (54-57)
     if filepath is None:
         filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
-        # filename = kalao_time.get_start_of_night() + os.sep + filename
+        filename = kalao_time.get_start_of_night() + os.sep + filename
         filepath = TemporaryDataStorage+os.sep+filename
     params = {'exptime': dit, 'filepath': filepath}
     req = send_request('acquire', params)
 
     # Logging exposure command into database
     log(req)
-    database.store_obs_log({'fli_temporary_image_path': filepath})
+    log_temporary_image_path(filepath)
 
     if req.status_code == 200:
         return 0
