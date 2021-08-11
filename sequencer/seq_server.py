@@ -146,6 +146,9 @@ def cast_args(args):
                 database.store_obs_log({'sequencer_log': "Error: {} value cannot be convert in float".format(k)})
                 return 1
         elif k in arg_string:
+            # If filterposition arg is not a digit, then he must be a name
+            # Get the int id from the dict Id_filter
+            # If filterposition arg is a digit, cast it in int
             if k == 'filterposition' and not v.isdigit():
                 args[k] = int(Id_filter[v])
             elif k == 'filterposition' and v.isdigit():
