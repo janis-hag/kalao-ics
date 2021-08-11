@@ -204,6 +204,9 @@ def do_calibration(conf):
 
 	run_process("compsCM-{conf['CACAO_LOOPNUMBER']}", False)
 
+def close_loop():
+	pass
+
 #################################
 
 if __name__ == "__main__":
