@@ -14,7 +14,7 @@ import requests
 import requests.exceptions
 import os
 
-from kalao.utils import database, kalao_time
+from kalao.utils import database, kalao_time, file_handling
 from configparser import ConfigParser
 from pathlib import Path
 import os
@@ -53,6 +53,7 @@ def take_image(dit=0.05, filepath=None):
         return 0
     # TODO move to file_handling (54-57)
     if filepath is None:
+        file_handling.create_night_folder()
         filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
         filename = kalao_time.get_start_of_night() + os.sep + filename
         filepath = TemporaryDataStorage+os.sep+filename
