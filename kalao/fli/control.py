@@ -33,7 +33,8 @@ port = parser.get('FLI','Port')
 
 # check if config value format is right
 if port.isdigit():
-    port = int(port)
+    # Converting int to string
+    port = str(port)
 else:
     print("Error: wrong values format for 'Port' in kalao.config file ")
     # return
