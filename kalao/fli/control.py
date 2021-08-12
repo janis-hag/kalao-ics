@@ -36,7 +36,7 @@ if port.isdigit():
     port = int(port)
 else:
     print("Error: wrong values format for 'Port' in kalao.config file ")
-    return
+    # return
 
 def take_science_exposure(dit=0.05, filepath=None):
 
