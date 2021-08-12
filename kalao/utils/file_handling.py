@@ -23,7 +23,7 @@ from kalao.utils import kalao_time
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 
 # Read config file and create a dict for each section where keys is parameter
 parser = ConfigParser()
