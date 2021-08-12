@@ -15,7 +15,8 @@ def datetime_is_naive(d):
     return d.tzinfo is None or d.tzinfo.utcoffset(d) is None
 
 
-def get_start_of_night(dt):
+def get_start_of_night(dt=None):
+    dt = now()
     if datetime_is_naive(dt):
         raise TypeError("Datetime must not be naive")
 

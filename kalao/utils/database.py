@@ -49,7 +49,7 @@ def convert_database_definition():
 
 def get_db(dt):
     client = MongoClient("127.0.0.1")
-    return client[kalao_time.get_start_of_night(dt)]
+    return client[kalao_time.get_start_of_night(dt=dt)]
 
 
 def store_monitoring(data):
