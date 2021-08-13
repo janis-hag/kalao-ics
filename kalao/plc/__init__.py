@@ -1,4 +1,4 @@
-__all__ = ["core", "calib_unit", "flip_mirror", "shutter", "laser", "tungsten"]
+__all__ = ["core", "calib_unit", "flip_mirror", "shutter", "laser", "tungsten", "adc"]
 from .core import *
 from .shutter import *
 from .calib_unit import *
