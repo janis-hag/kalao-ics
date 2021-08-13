@@ -46,7 +46,6 @@ def create_night_folder():
         os.mkdir(Science_night_folder)
 
     for folder in os.listdir(Tmp_folder):
-        print(folder, Tmp_night_folder, os.listdir(tmp_path) )
         if folder != Tmp_night_folder and len(os.listdir(folder)) == 0:
             os.rmdir(folder)
 
