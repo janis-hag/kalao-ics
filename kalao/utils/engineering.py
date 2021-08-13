@@ -56,11 +56,11 @@ def scan_adc(scan_range, dit=0.001):
     print('')
     print('Starting measures')
     for ang in scan_range:
-        adc.rotate(1, -ang )
+        adc.rotate(1, 360-ang )
         adc.rotate(2, ang)
 
         print(ang)
-        sleep(12)
+        sleep(5)
 
         control.take_image(dit=dit)
 
@@ -69,6 +69,9 @@ def scan_adc(scan_range, dit=0.001):
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         print(image_path)
         file_handling.update_header(image_path)
+        file_handling.add_comment(image_path, 'adc1: '+str(360-ang)+', adc2: '+str(ang) )
+
+    return 0
 
 
 def focus():
