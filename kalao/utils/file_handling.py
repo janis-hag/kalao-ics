@@ -96,7 +96,7 @@ def add_comment(image_path, comment_string):
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
         header = hdul[0].header
-        hdu.header['COMMENT'] = comment_string
+        header['COMMENT'] = comment_string
         hdul.flush()
 
     return 0
