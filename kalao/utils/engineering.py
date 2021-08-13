@@ -57,7 +57,7 @@ def scan_adc(scan_range, dit=0.05):
     print('Starting measures')
     for ang in scan_range:
         adc.rotate(1, ang)
-        adc.rotate(1, ang+90)
+        adc.rotate(2, ang+90)
 
         print(ang)
         sleep(2)
