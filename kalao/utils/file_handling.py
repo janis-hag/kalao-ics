@@ -82,11 +82,12 @@ def update_header(image_path):
         dt = datetime.fromisoformat(header['DATE-OBS'])
         keys = {'shutter', 'tungsten', 'laser'}
         monitoring_status = database.get_monitoring(keys, 1, dt=dt)
-        hdul.set('LASER', monitoring_status['laser']['values'], 'short description fro database_definition')
-        hdul.set('SHUTTER', monitoring_status['shutter']['values'], 'short description fro database_definition')
-        hdul.set('TUNGSTEN', monitoring_status['tungsten']['values'], 'short description fro database_definition')
-        hdul.set('ADC1', monitoring_status['adc1']['values'], 'short description fro database_definition')
-        hdul.set('ADC2', monitoring_status['adc2']['values'], 'short description fro database_definition')
+        header.set('LASER', monitoring_status['laser']['values'], 'short description fro database_definition')
+        header.set('SHUTTER', monitoring_status['shutter']['values'], 'short description fro database_definition')
+        header.set('TUNGSTEN', monitoring_status['tungsten']['values'], 'short description fro database_definition')
+        header.set('ADC1', monitoring_status['adc1']['values'], 'short description fro database_definition')
+        header.set('ADC2', monitoring_status['adc2']['values'], 'short description fro database_definition')
+
         hdul.flush()  # changes are written back to original.fits
 
     return 0
