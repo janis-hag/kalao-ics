@@ -41,7 +41,7 @@ def scan_calib(scan_range, dit=0.05):
 def scan_adc(scan_range, dit=0.001):
 
     #tungsten.on()
-    adc.rotate(1, -scan_range[0])
+    adc.rotate(1, 360 - scan_range[0])
     adc.rotate(2, scan_range[0])
 
     start = time()
@@ -60,7 +60,7 @@ def scan_adc(scan_range, dit=0.001):
         adc.rotate(2, ang)
 
         print(ang)
-        sleep(2)
+        sleep(12)
 
         control.take_image(dit=dit)
 
