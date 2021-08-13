@@ -148,7 +148,7 @@ def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None, motor_b
     # Check if init, if not do init
     if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.bInitialised").get_value() or force_init:
         send_init(motor_nCommand, motor_bExecute)
-        print('Initalising ADC motor' + str(adc_id)
+        print('Initalising ADC motor' + str(adc_id))
         sleep(15)
         while beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.sStatus").get_value() == 'INITIALISING':
             print('.')

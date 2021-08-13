@@ -80,7 +80,7 @@ def update_header(image_path):
         # Change something in hdul.
         header = hdul[0].header
         dt = datetime.fromisoformat(header['DATE-OBS'])
-        keys = {'shutter', 'tungsten', 'laser'}
+        keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
         monitoring_status = database.get_monitoring(keys, 1, dt=dt)
         header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
         header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
