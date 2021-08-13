@@ -60,7 +60,7 @@ def scan_adc(scan_range, dit=0.05):
         adc.rotate(1, ang+90)
 
         print(ang)
-        sleep(5)
+        sleep(2)
 
         control.take_image()
 
@@ -68,7 +68,7 @@ def scan_adc(scan_range, dit=0.05):
 
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         print(image_path)
-        file_handling.update_header(image_path[0])
+        file_handling.update_header(image_path)
 
 
 def focus():
