@@ -15,6 +15,7 @@ from . import calib_unit
 from . import flip_mirror
 from . import laser
 from . import tungsten
+from . import adc
 from kalao.utils import database
 
 from opcua import Client
