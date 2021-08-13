@@ -71,8 +71,8 @@ def scan_adc(scan_range, dit=0.05):
 
 def focus():
     # Focus sequence like coralie
-
+    pass
 
 def create_mosaic():
     # create a 5x5 image grid for initial star centering
-
+    pass
