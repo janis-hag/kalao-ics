@@ -41,8 +41,8 @@ def scan_calib(scan_range, dit=0.05):
 def scan_adc(scan_range, dit=0.001):
 
     #tungsten.on()
-    adc.rotate(1, scan_range[0])
-    adc.rotate(1, scan_range[0] + 90)
+    adc.rotate(1, -scan_range[0])
+    adc.rotate(2, scan_range[0])
 
     start = time()
     while not (adc.status(1)['sStatus'] == 'STANDING' and adc.status(1)['sStatus'] == 'STANDING'):
@@ -56,7 +56,7 @@ def scan_adc(scan_range, dit=0.001):
     print('')
     print('Starting measures')
     for ang in scan_range:
-        adc.rotate(1, ang + 90)
+        adc.rotate(1, -ang )
         adc.rotate(2, ang)
 
         print(ang)
