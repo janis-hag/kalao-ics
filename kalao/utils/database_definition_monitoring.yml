@@ -60,6 +60,14 @@ tungsten:
   short: tungsten status
   long: Tungsten calibration lamp status
   unit: ""
+adc1:
+  short: adc1 angle
+  long: Angle of first ADC prism
+  unit: deg
+adc2:
+  short: adc2 angle
+  long: Angle of second ADC prism
+  unit: deg
 
 # AO loop status
 

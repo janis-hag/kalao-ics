@@ -78,7 +78,7 @@ def rotate(adc_id, position=0):
 
 def status(adc_id, beck=None):
     """
-    Query the status of the calibration unit.
+    Query the status of the ADC motor.
 
     :return: complete status of calibration unit
     """
@@ -115,7 +115,7 @@ def check_error(adc_id, beck):
 
 def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None, motor_bExecute=None):
     """
-    Initialise the calibration unit.
+    Initialise the ADC motor.
 
     :param motor_bExecute:
     :param adc_id:
@@ -148,7 +148,7 @@ def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None, motor_b
     # Check if init, if not do init
     if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.bInitialised").get_value() or force_init:
         send_init(motor_nCommand, motor_bExecute)
-        print('Starting calib_unit init.')
+        print('Initalising ADC motor' + str(adc_id)
         sleep(15)
         while beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.sStatus").get_value() == 'INITIALISING':
             print('.')

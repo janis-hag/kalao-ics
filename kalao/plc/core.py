@@ -74,7 +74,10 @@ def plc_status():
                          'temp_water_in': temps['temp_water_in'],
                          'temp_water_out': temps['temp_water_out'],
                          'laser': laser.status(),
-                         'tungsten': tungsten.status()['sStatus']}
+                         'tungsten': tungsten.status()['sStatus'],
+                         'adc1': adc.status(1)['lrPosActual'],
+                         'adc2': adc.status(2)['lrPosActual']
+                         }
 
     plc_status_text = {'shutter': shutter.status()['sErrorText'],
                        'flip_mirror': flip_mirror.status()['sErrorText'],
@@ -84,7 +87,10 @@ def plc_status():
                        'temp_water_in': temps['temp_water_in'],
                        'temp_water_out': temps['temp_water_out'],
                        'laser': laser.status(),
-                       'tungsten': tungsten.status()['sStatus']}
+                       'tungsten': tungsten.status()['sStatus'],
+                       'adc1': adc.status(1)['sStatus'],
+                       'adc2': adc.status(2)['sStatus']
+                       }
 
 
     return plc_status_values, plc_status_text

@@ -83,15 +83,15 @@ def store_data(collection_name, data, definition):
 
 
 def get_monitoring(keys, nb_of_point, dt=None):
-    return get_data('monitoring', keys, nb_of_point, dt=None)
+    return get_data('monitoring', keys, nb_of_point, dt=dt)
 
 
 def get_obs_log(keys, nb_of_point, dt=None):
-    return get_data('obs_log', keys, nb_of_point, dt=None)
+    return get_data('obs_log', keys, nb_of_point, dt=dt)
 
 
 def get_telemetry(keys, nb_of_point, dt=None):
-    return get_data('telemetry', keys, nb_of_point, dt=None)
+    return get_data('telemetry', keys, nb_of_point, dt=dt)
 
 
 def get_telemetry_series(realData=True):

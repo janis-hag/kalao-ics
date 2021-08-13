@@ -19,7 +19,10 @@ import os
 from pathlib import Path
 import time
 from configparser import ConfigParser
-from kalao.utils import kalao_time
+from datetime import datetime
+from astropy.io import fits
+
+from kalao.utils import kalao_time, database
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -67,5 +70,19 @@ def save_tmp_picture(image_path):
         return -1
 
 def update_header(image_path):
+    # Read DATE-OBS in header
+    # Search start values in log
+    # Search end values in log using DATE-OBS and TEXP
+    # Compute median values for specific keywords
+    # Add HEADER values for start, end, and median.
+
+    with fits.open(image_path, mode='update') as hdul:
+        # Change something in hdul.
+        header = hdul[0].header
+        dt = datetime.fromisoformat(header['DATE-OBS'])
+        keys = {'shutter', 'tungsten', 'laser'}
+        monitoring_status = database.get_monitoring(keys, 1, dt=dt)
+        hdul['LASER'] = (monitoring_status['laser']['values'], 'short description fro database_definition')
+        hdul.flush()  # changes are written back to original.fits
 
     return 0
