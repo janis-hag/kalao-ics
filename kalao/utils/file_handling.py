@@ -37,8 +37,8 @@ def create_night_folder():
     # check if folder exists
     # remove temporary folder of previous night if empty
 
-    Tmp_night_folder = Tmp_folder+os.sep+kalao_time.get_start_of_night()
-    Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
+    Tmp_night_folder = os.path.join(Tmp_folder, kalao_time.get_start_of_night())
+    Science_night_folder = os.path.join(Science_folder, kalao_time.get_start_of_night())
 
     if not os.path.exists(Tmp_night_folder):
         os.mkdir(Tmp_night_folder)
@@ -46,9 +46,9 @@ def create_night_folder():
         os.mkdir(Science_night_folder)
 
     for folder in os.listdir(Tmp_folder):
-        tmp_path = os.path.abspath(folder)
-        if tmp_path != Tmp_night_folder and len(os.listdir(tmp_path)) == 0:
-            os.rmdir(tmp_path)
+        print(folder, Tmp_night_folder, os.listdir(tmp_path) )
+        if folder != Tmp_night_folder and len(os.listdir(folder)) == 0:
+            os.rmdir(folder)
 
     return Tmp_night_folder
 
