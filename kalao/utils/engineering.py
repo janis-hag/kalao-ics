@@ -11,11 +11,12 @@ com_tools.py is part of the KalAO Instrument Control Software
 """
 
 from kalao.interface import star_centering
-from kalao.plc import calib_unit, tungsten
+from kalao.plc import calib_unit, tungsten, adc
 from kalao.fli import control
+from kalao.utils import database, file_handling
 
 from astropy.io import fits
-from time import sleep
+from time import sleep, time
 
 def scan_calib(scan_range, dit=0.05):
 
@@ -36,6 +37,36 @@ def scan_calib(scan_range, dit=0.05):
             print(filename)
 
     tungsten.off()
+
+def scan_adc(scan_range, dit=0.05):
+
+    #tungsten.on()
+    adc.rotate(1, scan_range[0])
+    adc.rotate(1, scan_range[0] + 90)
+
+    start = time()
+    while not (adc.status(1)['sStatus'] == 'STANDING' and adc.status(1)['sStatus'] == 'STANDING'):
+        # Timeout after 5 minutes
+        print('.', end='')
+        if start - time() > 5*60:
+            print('')
+            print("TIMEOUT")
+            return -1
+
+    print('')
+    print('Starting measures')
+    for ang in scan_range:
+        adc.rotate(1, ang)
+        adc.rotate(1, ang+90)
+
+        print(ang)
+        sleep(5)
+
+        control.take_image()
+
+        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
+
+        file_handling.update_header(image_path[0])
 
 
 def focus():
