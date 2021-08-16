@@ -84,7 +84,7 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def dark_abort(**kwargs):
+def dark_abort():
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -92,17 +92,19 @@ def dark_abort(**kwargs):
     # two cancel are done to avoid concurrency problems
     rValue = control.cancel()
     if(rValue != 0):
+        # TODO handle error
         print(rValue)
 
     time.sleep(1)
 
     rValue = control.cancel()
     if(rValue != 0):
+        # TODO handle error
         print(rValue)
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
+def tungsten_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
     """
     1. Close shutter
     2. Move flip mirror up
@@ -131,7 +133,7 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, filter_
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    tungsten.on(beck = beck)
+    tungsten.on()
 
     if filter_control.set_position(filter_arg) == -1:
         print("Error: problem with filter selection")
@@ -154,18 +156,19 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, filter_
 
         if rValue != 0:
             print(rValue)
-            tungsten.off(beck = beck)
+            tungsten.off()
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return
 
         # block for each picture and check if an abort was requested
         if check_abort(q, dit) == -1:
+            tungsten.off()
             return -1
 
-    tungsten.off(beck = beck)
+    tungsten.off()
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def tungsten_FLAT_abort(beck = None, **kwargs):
+def tungsten_FLAT_abort():
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -173,15 +176,16 @@ def tungsten_FLAT_abort(beck = None, **kwargs):
     # two cancel are done to avoid concurrency problems
     rValue = control.cancel()
     if(rValue != 0):
+        # TODO handle error
         print(rValue)
 
     time.sleep(1)
 
     rValue = control.cancel()
     if(rValue != 0):
+        # TODO handle error
         print(rValue)
 
-    tungsten.off(beck = beck)
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
@@ -278,11 +282,11 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg, **k
 
     aomanager.close_loop()
 
-    #Monitor AO and cancel exposure if needed
-
     temporary_path = file_handling.create_night_folder()
 
     rValue = control.take_image(dit = dit, filepath = filepath)
+
+    #Monitor AO and cancel exposure if needed
 
     image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
     file_handling.save_tmp_picture(image_path)
@@ -293,15 +297,13 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg, **k
         return
 
     # block for each picture and check if an abort was requested
+    # TODO check abort and AO loop
     if check_abort(q, dit) == -1:
         return -1
 
-    if shutter.close() != 'CLOSE':
-        print("Error: failed to close the shutter")
-
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def target_observation_abort(**kwargs):
+def target_observation_abort():
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -316,9 +318,6 @@ def target_observation_abort(**kwargs):
     rValue = control.cancel()
     if(rValue != 0):
         print(rValue)
-
-    if shutter.close() != 'CLOSE':
-        print("Error: failed to close the shutter")
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
@@ -352,7 +351,7 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def check_abort(q, dit):
+def check_abort(q, dit, AO = False):
     """
     Blocking function for exposition time
     Check every sec if Queue object q is empty
@@ -370,6 +369,8 @@ def check_abort(q, dit):
         print(".")
         if q != None and not q.empty():
             q.get()
+            return -1
+        if AO and aomanager.check_loop() == -1:
             return -1
     return 0
 
