@@ -208,6 +208,7 @@ def close_loop():
 	pass
 
 def check_loop():
+	# TODO check if loop is running. If loop broken return -1
 	pass
 
 #################################
