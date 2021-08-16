@@ -13,6 +13,7 @@ shutter.py is part of the KalAO Instrument Control Software
 from . import core
 from opcua import ua
 from time import sleep
+from kalao.utils import database
 
 
 def status(beck=None):
@@ -64,8 +65,11 @@ def position():
     error_code = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
     if error_code != 0:
         #someting went wrong
+        error_text = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
+        database.store_obs_log({'shutter_log': 'ERROR' + str(error_code) + ': '+ s tr(error_text) })
+
         beck.disconnect()
-        return beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
+        return error_text
     else:
         if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value():
             bStatus = 'CLOSE'
