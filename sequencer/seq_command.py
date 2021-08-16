@@ -62,7 +62,7 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
     # Check if an abort was requested before taking image was send
     if q != None and not q.empty():
         q.get()
-        return
+        return -1
 
     temporary_path = file_handling.create_night_folder()
 
@@ -76,14 +76,15 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
         if rValue != 0:
             print(rValue)
             database.store_obs_log({'sequencer_status': 'ERROR'})
-            return
+            return -1
 
-        # Check if an abort was requested and send abort to fli cam
-        check_abort(q, dit)
+        # block for each picture and check if an abort was requested
+        if check_abort(q, dit) == -1:
+            return -1
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def dark_abort():
+def dark_abort(**kwargs):
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -157,7 +158,29 @@ def tungsten_FLAT(q = None, beck = None, dit = ExpTime, filepath = None, filter_
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return
 
-    check_abort(q,dit)
+        # block for each picture and check if an abort was requested
+        if check_abort(q, dit) == -1:
+            return -1
+
+    tungsten.off(beck = beck)
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
+def tungsten_FLAT_abort(beck = None, **kwargs):
+    """
+    Send abort instruction to fli camera and change sequencer status to 'WAITING'.
+    :return: nothing
+    """
+    # two cancel are done to avoid concurrency problems
+    rValue = control.cancel()
+    if(rValue != 0):
+        print(rValue)
+
+    time.sleep(1)
+
+    rValue = control.cancel()
+    if(rValue != 0):
+        print(rValue)
+
     tungsten.off(beck = beck)
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
@@ -269,13 +292,35 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg, **k
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    check_abort(q,dit)
+    # block for each picture and check if an abort was requested
+    if check_abort(q, dit) == -1:
+        return -1
 
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
+def target_observation_abort(**kwargs):
+    """
+    Send abort instruction to fli camera and change sequencer status to 'WAITING'.
+    :return: nothing
+    """
+    # two cancel are done to avoid concurrency problems
+    rValue = control.cancel()
+    if(rValue != 0):
+        print(rValue)
+
+    time.sleep(1)
+
+    rValue = control.cancel()
+    if(rValue != 0):
+        print(rValue)
+
+    if shutter.close() != 'CLOSE':
+        print("Error: failed to close the shutter")
+
+    database.store_obs_log({'sequencer_status': 'WAITING'})
 
 def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     """
@@ -325,13 +370,16 @@ def check_abort(q, dit):
         print(".")
         if q != None and not q.empty():
             q.get()
-            break
+            return -1
+    return 0
 
 commandDict = {
-    "kal_dark":                 dark,
-    "kal_dark_abort":           dark_abort,
-    "kal_tungsten_FLAT":        tungsten_FLAT,
-    "kal_sky_FLAT":             sky_FLAT,
-    "kal_target_observation":   target_observation,
-    "kal_AO_loop_calibration":  AO_loop_calibration
+    "kal_dark":                     dark,
+    "kal_dark_abort":               dark_abort,
+    "kal_tungsten_FLAT":            tungsten_FLAT,
+    "kal_tungsten_FLAT_abort":      tungsten_FLAT_abort,
+    "kal_sky_FLAT":                 sky_FLAT,
+    "kal_target_observation":       target_observation,
+    "kal_target_observation_abort": target_observation_abort,
+    "kal_AO_loop_calibration":      AO_loop_calibration
 }

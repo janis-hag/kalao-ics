@@ -87,7 +87,7 @@ def seq_server():
         # and start abort func
         if(commandList[0] == preCommand + '_abort'):
             q.put(1)
-            seq_command.commandDict[commandList[0]]()
+            seq_command.commandDict[commandList[0]](args)
             th.join()
             while not q.empty():
                 q.get()
