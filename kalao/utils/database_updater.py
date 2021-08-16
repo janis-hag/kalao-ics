@@ -32,6 +32,7 @@ parser.read(config_path)
 
 PLC_Disabled = parser.get('PLC','Disabled').split(',')
 
+
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
@@ -39,43 +40,49 @@ def handler(signal_received, frame):
     exit(0)
 
 
+def update_plc_monitoring():
+    values = {}
+
+    # get monitoring from plc and store
+    plc_values, plc_status_text = plc.core.plc_status()
+
+    # Do not log status of disabled devices.
+    if PLC_Disabled == 'None':
+        for device_name in PLC_Disabled:
+            plc_status_values.pop(device_name)
+            plc_status_text.pop(device_name)
+    values.update(plc_values)
+
+    # get RTC data and update
+    rtc_temperatures = rtc.temperatures.read_all()
+    values.update(rtc_temperatures)
+
+    # FLI science camera status
+    fli_server_status = fli.control.check_server_status()
+    if fli_server_status == 'OK':
+        fli_status = {'fli_temp_CCD': fli.control.get_temperature(), 'fli_status': fli_server_status}
+        values.update(fli_status)
+    else:
+        values.update({'fli_status': fli_server_status})
+
+    if not values == {}:
+        database.store_monitoring(values)
+q
+
 if __name__ == "__main__":
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)
 
     counter = 0
     while (True):
-        values = {}
-        # Get monitoring from and cacao
+        # Get monitoring and cacao
         #cacao.telemetry.telemetry_save()
         counter +=1
         sleep(10)
 
         if counter > 5:
             #TODO counter should be time based
-            #get monitoring from plc and store
-            plc_values, plc_status_text = plc.core.plc_status()
 
-            # Do not log status of disabled devices.
-            if PLC_Disabled == 'None':
-                for device_name in PLC_Disabled:
-                    plc_status_values.pop(device_name)
-                    plc_status_text.pop(device_name)
-            values.update(plc_values)
-
-            # get RTC data and update
-            rtc_temperatures = rtc.temperatures.read_all()
-            values.update(rtc_temperatures)
-
-            # FLI science camera status
-            fli_server_status = fli.control.check_server_status()
-            if fli_server_status == 'OK':
-                fli_status = {'fli_temp_CCD': fli.control.get_temperature(), 'fli_status': fli_server_status}
-                values.update(fli_status)
-            else:
-                values.update({'fli_status': fli_server_status})
+            update_plc()
 
             counter = 0
-
-        if not values == {}:
-            database.store_monitoring(values)

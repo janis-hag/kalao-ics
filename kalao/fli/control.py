@@ -14,7 +14,7 @@ import requests
 import requests.exceptions
 import os
 
-from kalao.utils import database, kalao_time, file_handling
+from kalao.utils import database, database_updater, kalao_time, file_handling
 from configparser import ConfigParser
 from pathlib import Path
 import os
@@ -51,12 +51,16 @@ def take_image(dit=0.05, filepath=None):
     if dit < 0:
         database.store_obs_log({'fli_log': 'Abort before exposure started.'})
         return 0
+
     # TODO move to file_handling (54-57)
     if filepath is None:
         file_handling.create_night_folder()
         filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
         filename = kalao_time.get_start_of_night() + os.sep + filename
         filepath = TemporaryDataStorage+os.sep+filename
+
+    # Store monitoring status at start of exposure
+    database_updater.update_plc_monitoring()
     params = {'exptime': dit, 'filepath': filepath}
     req = send_request('acquire', params)
 
