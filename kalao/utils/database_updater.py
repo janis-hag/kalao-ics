@@ -44,13 +44,13 @@ def update_plc_monitoring():
     values = {}
 
     # get monitoring from plc and store
-    plc_values, plc_status_text = plc.core.plc_status()
+    plc_values, plc_text = plc.core.plc_status()
 
     # Do not log status of disabled devices.
     if PLC_Disabled == 'None':
         for device_name in PLC_Disabled:
-            plc_status_values.pop(device_name)
-            plc_status_text.pop(device_name)
+            plc_values.pop(device_name)
+            plc_text.pop(device_name)
     values.update(plc_values)
 
     # get RTC data and update
@@ -67,7 +67,7 @@ def update_plc_monitoring():
 
     if not values == {}:
         database.store_monitoring(values)
-q
+
 
 if __name__ == "__main__":
     # Tell Python to run the handler() function when SIGINT is recieved
@@ -83,6 +83,6 @@ if __name__ == "__main__":
         if counter > 5:
             #TODO counter should be time based
 
-            update_plc()
+            update_plc_monitoring()
 
             counter = 0

@@ -17,7 +17,7 @@ import os
 from kalao.utils import database, database_updater, kalao_time, file_handling
 from configparser import ConfigParser
 from pathlib import Path
-import os
+
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 
@@ -25,8 +25,8 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-ScienceDataStorage = parser.get('FLI','ScienceDataStorage')
-TemporaryDataStorage = parser.get('FLI','TemporaryDataStorage')
+ScienceDataStorage = parser.get('FLI', 'ScienceDataStorage')
+TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
 
 address = parser.get('FLI','IP')
 port = parser.get('FLI','Port')

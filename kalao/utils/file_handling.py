@@ -76,17 +76,30 @@ def update_header(image_path):
     # Compute median values for specific keywords
     # Add HEADER values for start, end, and median.
 
+    fits_header_config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'fits_header.config')
+    header_config = ConfigParser()
+    header_config.read(fits_header_config_path)
+
+    keys = list(Config.items('Section'))
+
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
         header = hdul[0].header
         dt = datetime.fromisoformat(header['DATE-OBS'])
-        keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
+        # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
+
         monitoring_status = database.get_monitoring(keys, 1, dt=dt)
-        header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
-        header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
-        header.set('TUNGSTEN', monitoring_status['tungsten']['values'][0], 'short description fro database_definition')
-        header.set('ADC1', monitoring_status['adc1']['values'][0], 'short description fro database_definition')
-        header.set('ADC2', monitoring_status['adc2']['values'][0], 'short description fro database_definition')
+        for key in keys:
+            if key in monitoring_status.keys():
+                header.set(key.upper(), monitoring_status[key]['values'][0], '') # TODO get comment from databse definition
+            else:
+                header.set(key.upper(), '','')
+
+        # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
+        # header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
+        # header.set('TUNGSTEN', monitoring_status['tungsten']['values'][0], 'short description fro database_definition')
+        # header.set('ADC1', monitoring_status['adc1']['values'][0], 'short description fro database_definition')
+        # header.set('ADC2', monitoring_status['adc2']['values'][0], 'short description fro database_definition')
 
         hdul.flush()  # changes are written back to original.fits
 
