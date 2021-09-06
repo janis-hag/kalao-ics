@@ -22,8 +22,8 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-MAX_ALLOWED_LASER_INTENSITY = parser.getfloat('PLC','LaserMaxAllowed')
-LASER_SWITCH_WAIT = parser.getfloat('PLC','LaserSwitchWait')
+MAX_ALLOWED_LASER_INTENSITY = parser.getfloat('PLC', 'LaserMaxAllowed')
+LASER_SWITCH_WAIT = parser.getfloat('PLC', 'LaserSwitchWait')
 
 
 def status(beck=None):
@@ -42,7 +42,7 @@ def status(beck=None):
     if beck.get_node('ns = 4;s = MAIN.Laser.Status').get_value():
         laser_status = beck.get_node('ns = 4;s = MAIN.Laser.Current').get_value()
     else:
-        laser_status =  'OFF'
+        laser_status = 'OFF'
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -90,6 +90,7 @@ def unlock():
     """
     laser_status = switch('bUnlock')
     return laser_status
+
 
 def set_intensity(intensity=0.04):
     """
@@ -150,6 +151,7 @@ def switch(action_name):
 
     beck.disconnect()
     return laser_status
+
 
 def initialise():
     return 0

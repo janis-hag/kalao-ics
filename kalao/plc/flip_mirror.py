@@ -28,6 +28,7 @@ def status(beck=None):
 
     return status_dict
 
+
 def down():
     """
     Move the flip mirror down
@@ -103,6 +104,7 @@ def position():
             flip_position = 'DOWN'
         beck.disconnect()
         return flip_position
+
 
 def initialise():
     return 0

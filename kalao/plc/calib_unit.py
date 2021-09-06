@@ -12,7 +12,7 @@ calib_unit.py is part of the KalAO Instrument Control Software
 
 from . import core
 import numbers
-from opcua import Client, ua
+from opcua import ua
 from time import sleep
 from configparser import ConfigParser
 from pathlib import Path
@@ -23,8 +23,8 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-LASER_POSITION = parser.getfloat('PLC','LaserPosition')
-TUNGSTEN_POSITION = parser.getfloat('PLC','TungstenPosition')
+LASER_POSITION = parser.getfloat('PLC', 'LaserPosition')
+TUNGSTEN_POSITION = parser.getfloat('PLC', 'TungstenPosition')
 
 # TODO store errors in obs_log
 

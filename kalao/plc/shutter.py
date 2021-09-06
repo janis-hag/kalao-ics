@@ -66,7 +66,7 @@ def position():
     if error_code != 0:
         #someting went wrong
         error_text = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
-        database.store_obs_log({'shutter_log': 'ERROR' + str(error_code) + ': '+ s tr(error_text) })
+        database.store_obs_log({'shutter_log': 'ERROR' + str(error_code) + ': '+ str(error_text)})
 
         beck.disconnect()
         return error_text
