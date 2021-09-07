@@ -20,18 +20,8 @@ parser = ConfigParser()
 parser.read(config_path)
 
 Science_storage = parser.get('FLI','ScienceDataStorage')
-
-ExpTime = parser.get('FLI','ExpTime')
-TimeSup = parser.get('FLI','TimeSup')
-
-if ExpTime.replace('.', '', 1).isdigit() and TimeSup.isdigit():
-    ExpTime = float(ExpTime)
-    TimeSup = int(TimeSup)
-else:
-    print("Error: wrong values format for 'ExpTime' or 'TimeSup' in kalao.config file ")
-    ExpTime = 0
-    TimeSup = 0
-
+ExpTime = parser.getfloat('FLI','ExpTime')
+TimeSup = parser.getint('FLI','TimeSup')
 
 def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
     """
@@ -367,8 +357,10 @@ def check_abort(q, dit, AO = False):
         t += 1
         time.sleep(1)
         print(".")
+        # Check if an abort is required
         if q != None and not q.empty():
             q.get()
+            # TODO add update_plc_monitoring
             return -1
         if AO and aomanager.check_loop() == -1:
             return -1

@@ -1,17 +1,16 @@
 # test_server.py
 #
+import os
 import sys
 import time
 import socket
-from os import path
+from pathlib import Path
 from configparser import ConfigParser
 
-from pathlib import Path
-import os
-
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+parser.read(config_path)
 
-sys.path.append(path.dirname(path.abspath(path.dirname(__file__))))
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.interface import status
 
@@ -22,11 +21,12 @@ import tcs_srv_gop
 #
 # Initialise Gop (Geneva Observatory Protocol)
 #
+# TODO read from kalao.config
 gop = tcs_srv_gop.gop()
-socketName = "test_server"
-socketPort = 18234  # only for inet connection
+socketName = parser.get('GOP','IP')
+socketPort = parser.getint('GOP','Port')  # only for inet connection
 #
-verbosity = 3
+verbosity = parser.getint('GOP','Verbosity')
 gop.processesRegistration(socketName)
 
 print("%.6f" % (time.time()), "Initialize new gop connection. Wait for client ...")
@@ -70,8 +70,6 @@ while (True):
 
     # Check if its a KalAO command and send it
     if (commandList[0][:3] == "kal"):
-        parser = ConfigParser()
-        parser.read(config_path)
 
         host = parser.get('SEQ', 'IP')
         port = parser.getint('SEQ', 'Port')

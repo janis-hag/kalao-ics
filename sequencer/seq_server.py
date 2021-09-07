@@ -34,14 +34,7 @@ def seq_server():
     """
 
     host = parser.get('SEQ','IP')
-    port = parser.get('SEQ','Port')
-
-    # check if config value format is right
-    if port.isdigit():
-        port = int(port)
-    else:
-        print("Error: wrong values format for 'Port' in kalao.config file ")
-        return
+    port = parser.getint('SEQ','Port')
 
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socketSeq.bind((host, port))
@@ -86,6 +79,7 @@ def seq_server():
         # if abort commande, stop last command with Queue object q
         # and start abort func
         if(commandList[0] == preCommand + '_abort'):
+            # adds 1 to the q object to communicate the abort instruction
             q.put(1)
             seq_command.commandDict[commandList[0]]()
             th.join()

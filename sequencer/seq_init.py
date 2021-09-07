@@ -135,16 +135,8 @@ def initialisation():
     config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
     parser = ConfigParser()
     parser.read(config_path)
-    nbTry   = parser.get('PLC','InitNbTry')
-    timeout = parser.get('PLC','InitTimeout')
-
-    # check if config values is right format
-    if nbTry.isdigit() and timeout.isdigit():
-        nbTry = int(nbTry)
-        timeout = int(timeout)
-    else:
-        print("Error: wrong values format for 'InitNbTry' or 'InitTimeout' in kalao.config file ")
-        return
+    nbTry   = parser.getint('PLC','InitNbTry')
+    timeout = parser.getint('PLC','InitTimeout')
 
     # dict where keys is string name of object <function> and values is object <function>
     init_dict = {

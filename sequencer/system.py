@@ -32,6 +32,7 @@ def check_kalao_config():
     PLCSection = parser._sections['PLC']
     FLISection = parser._sections['FLI']
     SEQSection = parser._sections['SEQ']
+    GOPSection = parser._sections['GOP']
     FilterPositionSection = parser._sections['FilterPosition']
 
     if not PLCSection['IP'].replace('.','',3).isdigit():
@@ -78,6 +79,17 @@ def check_kalao_config():
     if not SEQSection['Port'].isdigit():
         print_and_log("Error: wrong values format for SEQ 'Port' in kalao.config file ")
         error = True
+
+    if not GOPSection['IP'].replace('.','',3).isdigit():
+        print_and_log("Error: wrong values format for GOP 'IP' in kalao.config file ")
+        error = True
+    if not GOPSection['Port'].isdigit():
+        print_and_log("Error: wrong values format for GOP 'Port' in kalao.config file ")
+        error = True
+    if not GOPSection['Verbosity'].isdigit():
+        print_and_log("Error: wrong values format for GOP 'Verbosity' in kalao.config file ")
+        error = True
+
 
     if error:
         database.store_obs_log({'sequencer_status': 'ERROR'})
