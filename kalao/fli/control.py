@@ -52,12 +52,8 @@ def take_image(dit=0.05, filepath=None):
         database.store_obs_log({'fli_log': 'Abort before exposure started.'})
         return 0
 
-    # TODO move to file_handling (54-57)
     if filepath is None:
-        file_handling.create_night_folder()
-        filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
-        filename = kalao_time.get_start_of_night() + os.sep + filename
-        filepath = TemporaryDataStorage+os.sep+filename
+        filepath = file_handling.create_night_filepath()
 
     # Store monitoring status at start of exposure
     database_updater.update_plc_monitoring()
