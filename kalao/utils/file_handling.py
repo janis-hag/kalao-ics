@@ -35,6 +35,13 @@ parser.read(config_path)
 Tmp_folder = parser.get('FLI','TemporaryDataStorage')
 Science_folder = parser.get('FLI','ScienceDataStorage')
 
+def create_night_filepath():
+    file_handling.create_night_folder()
+    filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
+    filename = kalao_time.get_start_of_night() + os.sep + filename
+    filepath = TemporaryDataStorage+os.sep+filename
+    return filepath
+
 def create_night_folder():
     # Prepare temporary and science folder
     # check if folder exists
