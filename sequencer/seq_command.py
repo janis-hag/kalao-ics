@@ -6,12 +6,14 @@ from pathlib import Path
 import time
 from configparser import ConfigParser
 
+# add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.plc import control, core, tungsten, laser, flip_mirror, shutter
 from kalao.utils import file_handling, database
 from kalao.filterwheel import filter_control
 from kalao.cacao import aomanager
+import starfinder
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
@@ -94,7 +96,7 @@ def dark_abort():
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def tungsten_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
+def tungsten_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
     """
     1. Close shutter
     2. Move flip mirror up
@@ -178,7 +180,7 @@ def tungsten_FLAT_abort():
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
+def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -230,7 +232,7 @@ def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg, **kwargs):
+def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -268,7 +270,10 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg, **k
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    #TODO add centre on target
+    if starfinder.centre_on_target() == -1:
+        print("Error: problem with centre on target")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
 
     aomanager.close_loop()
 

@@ -1,8 +1,46 @@
+import os
+import sys
+import math
+import time
+
+# add the necessary path to find the folder kalao for import
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from kalao.plc import control
+
 import numpy as np
 from astropy.io import fits
 from matplotlib import pyplot as plt
-import math
-import time
+from configparser import ConfigParser
+
+
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+parser = ConfigParser()
+parser.read(config_path)
+ExpTime = parser.getfloat('FLI','ExpTime')
+
+
+def centre_on_target():
+
+    while True:
+        rValue = control.take_image(dit = ExpTime)
+        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
+        file_handling.save_tmp_picture(image_path)
+
+        if rValue != 0:
+            # print(rValue)
+            # database.store_obs_log({'sequencer_status': 'ERROR'})
+            return -1
+
+        x, y = find_star(image_path)
+
+        if x != -1 and y != -1:
+            # ? TODO send offset to telescope ?
+            return 0
+
+        # TODO set manual_align = True
+        # TODO wait for observer input
+        # TODO send gop message
+        # TODO send offset to telescope
 
 
 def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
@@ -127,3 +165,4 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     y_star = y + y_f - mid
 
     return x_star, y_star
+
