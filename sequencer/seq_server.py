@@ -72,7 +72,7 @@ def seq_server():
         # try to cast every values of args dict in type needed
         check = cast_args(args)
         if check != 0:
-            print(check)
+            print("Error: castïng of args went wrong")
             database.store_obs_log({'sequencer_status': 'ERROR'})
             continue
 
@@ -87,6 +87,7 @@ def seq_server():
                 q.get()
             database.store_obs_log({'sequencer_status': 'WAITING'})
             continue
+        # if not abort, but a thread exist, wait for the thread end
         elif(th != None):
             th.join()
 

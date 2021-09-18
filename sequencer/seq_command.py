@@ -291,8 +291,6 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg = No
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    # block for each picture and check if an abort was requested
-    # TODO check abort and AO loop
     if check_abort(q, dit) == -1:
         return -1
 

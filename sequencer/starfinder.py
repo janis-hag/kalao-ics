@@ -90,9 +90,9 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
 
     # create x,y component for gaussian calculation.
     # corresponds to the coordinates of the picture
-    x_gauss, y_gauss = np.mgrid[0:spot_size, 0:spot_size]
-    x_mean = np.average(y_gauss, weights=star_spot)
-    y_mean = np.average(x_gauss, weights=star_spot)
+    y_gauss, x_gauss = np.mgrid[0:spot_size, 0:spot_size]
+    x_mean = np.average(x_gauss, weights=star_spot)
+    y_mean = np.average(y_gauss, weights=star_spot)
 
     # standard deviation of the spot selected
     # from g(x,y) = A * e^(− a(x−x_mean)² − b(x−x_mean)(y−y_mean) − c(y−y_mean)²)
@@ -106,7 +106,7 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     # then σ = sqrt( ((x−x_mean)² - (y−y_mean)²) / (2 * ln(g(x,y)/A))
     # nomina = (x−x_mean)² - (y−y_mean)²
     # denomi = 2*ln(g(x,y)/A)
-    nomina = -(np.power(x_gauss - mid, 2) + np.power(y_gauss - mid, 2))
+    nomina = -(np.power(y_gauss - mid, 2) + np.power(x_gauss - mid, 2))
     denomi = 2 * np.log(np.divide(star_spot, star_spot[mid, mid]))
     denomi[mid, mid] = 1
     result = np.divide(nomina, denomi)
@@ -131,11 +131,11 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
             a_c = 0.5 / ((sigma + i) ** 2)
 
             for j in np.linspace(-rng_step / 2, rng_step / 2, nb_step * 2 + 1)[1::2]:
-                xdiff = (x_gauss - (y_mean + j)) ** 2
+                ydiff = (y_gauss - (y_mean + j)) ** 2
 
                 for k in np.linspace(-rng_step / 2, rng_step / 2, nb_step * 2 + 1)[1::2]:
-                    ydiff = (y_gauss - (x_mean + k)) ** 2
-                    gauss = ampl * np.exp(-((a_c * xdiff) + (a_c * ydiff)))
+                    xdiff = (x_gauss - (x_mean + k)) ** 2
+                    gauss = ampl * np.exp(-((a_c * ydiff) + (a_c * xdiff)))
                     ratio = np.mean(np.abs(star_spot - gauss)) / mean
 
                     if opti > ratio:
