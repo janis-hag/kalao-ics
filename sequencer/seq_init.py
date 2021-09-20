@@ -130,6 +130,8 @@ def initialisation():
     :return:
     """
 
+    # TODO system.check_status()
+
     # read config file
 
     config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')

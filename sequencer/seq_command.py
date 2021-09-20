@@ -265,6 +265,7 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg = No
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
+    # TODO check filer_arg value != None
     if filter_control.set_position(filter_arg) == -1:
         print("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})

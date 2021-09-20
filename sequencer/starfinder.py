@@ -37,6 +37,7 @@ def centre_on_target():
             # ? TODO send offset to telescope ?
             return 0
 
+        # TODO start timeout (value in kalao.config)
         # TODO set manual_align = True
         # TODO wait for observer input
         # TODO send gop message

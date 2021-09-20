@@ -32,14 +32,14 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-Tmp_folder = parser.get('FLI','TemporaryDataStorage')
+TemporaryDataStorage = parser.get('FLI','TemporaryDataStorage')
 Science_folder = parser.get('FLI','ScienceDataStorage')
 
 def create_night_filepath():
-    file_handling.create_night_folder()
+    Tmp_night_folder = file_handling.create_night_folder()
     filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
     filename = kalao_time.get_start_of_night() + os.sep + filename
-    filepath = TemporaryDataStorage+os.sep+filename
+    filepath = Tmp_night_folder+os.sep+filename
     return filepath
 
 def create_night_folder():
@@ -47,7 +47,7 @@ def create_night_folder():
     # check if folder exists
     # remove temporary folder of previous night if empty
 
-    Tmp_night_folder = os.path.join(Tmp_folder, kalao_time.get_start_of_night())
+    Tmp_night_folder = os.path.join(TemporaryDataStorage, kalao_time.get_start_of_night())
     Science_night_folder = os.path.join(Science_folder, kalao_time.get_start_of_night())
 
     # Check if tmp and science folders exist
@@ -57,8 +57,8 @@ def create_night_folder():
         os.mkdir(Science_night_folder)
 
     # Remove empty folder in tmp except for current night folder
-    for folder in os.listdir(Tmp_folder):
-        folder = os.path.join(Tmp_folder, folder)
+    for folder in os.listdir(TemporaryDataStorage):
+        folder = os.path.join(TemporaryDataStorage, folder)
         if folder != Tmp_night_folder and len(os.listdir(folder)) == 0:
             os.rmdir(folder)
 

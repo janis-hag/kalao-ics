@@ -12,6 +12,8 @@ system.py is part of the KalAO Instrument Control Software
 
 def check_status():
     check_kalao_config()
+    # TODO camera service check
+    # TODO database service check
 
 def camera_service():
     # TODO status, stop, start
