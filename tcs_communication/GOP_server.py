@@ -7,6 +7,8 @@ import socket
 from pathlib import Path
 from configparser import ConfigParser
 
+# Read config file
+parser = ConfigParser()
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 parser.read(config_path)
 
