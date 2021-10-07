@@ -36,7 +36,7 @@ TemporaryDataStorage = parser.get('FLI','TemporaryDataStorage')
 Science_folder = parser.get('FLI','ScienceDataStorage')
 
 def create_night_filepath():
-    Tmp_night_folder = file_handling.create_night_folder()
+    Tmp_night_folder = create_night_folder()
     filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
     filename = kalao_time.get_start_of_night() + os.sep + filename
     filepath = Tmp_night_folder+os.sep+filename
@@ -87,7 +87,7 @@ def update_header(image_path):
     header_config = ConfigParser()
     header_config.read(fits_header_config_path)
 
-    keys = list(Config.items('Section'))
+    keys = list(header_config.items('Section'))
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.

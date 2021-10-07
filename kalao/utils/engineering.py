@@ -10,13 +10,17 @@ com_tools.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
+import numpy as np
+
+from astropy.io import fits
+from time import sleep, time
+
 from kalao.interface import star_centering
 from kalao.plc import calib_unit, tungsten, adc
 from kalao.fli import control
 from kalao.utils import database, file_handling
 
-from astropy.io import fits
-from time import sleep, time
+
 
 def scan_calib(scan_range, dit=0.05):
 
@@ -38,11 +42,11 @@ def scan_calib(scan_range, dit=0.05):
 
     tungsten.off()
 
-def scan_adc(scan_range, dit=0.001):
+def scan_adc(scan_range1, scan_range2, dit=0.001):
 
     #tungsten.on()
-    adc.rotate(1, 360 - scan_range[0])
-    adc.rotate(2, scan_range[0])
+    adc.rotate(1, scan_range1[0])
+    adc.rotate(2, scan_range2[0])
 
     start = time()
     while not (adc.status(1)['sStatus'] == 'STANDING' and adc.status(1)['sStatus'] == 'STANDING'):
@@ -55,9 +59,11 @@ def scan_adc(scan_range, dit=0.001):
 
     print('')
     print('Starting measures')
-    for ang in scan_range:
-        adc.rotate(1, 360-ang )
-        adc.rotate(2, ang)
+    for i in np.min(len(scan_range1), len(scan_range2)):
+        ang1 = scan_range1[i]
+        ang2 = scan_range1[i]
+        adc.rotate(1, ang1)
+        adc.rotate(2, ang2)
 
         print(ang)
         sleep(5)
@@ -69,7 +75,7 @@ def scan_adc(scan_range, dit=0.001):
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         print(image_path)
         file_handling.update_header(image_path)
-        file_handling.add_comment(image_path, 'adc1: '+str(360-ang)+', adc2: '+str(ang) )
+        file_handling.add_comment(image_path, 'adc1: '+str(ang1)+', adc2: '+str(ang2))
 
     return 0
 

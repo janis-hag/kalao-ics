@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# @Filename : system.py
+# @Date : 2021-08-16-13-33
+# @Project: KalAO-ICS
+# @AUTHOR : Janis Hagelberg
+
+"""
+seq_init.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).
+"""
+
 from sys import path as SysPath
 from os  import path as OsPath
 # methode dirname return parent directory and methode abspath return absolut path

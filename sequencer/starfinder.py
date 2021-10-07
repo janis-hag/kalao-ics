@@ -2,10 +2,13 @@ import os
 import sys
 import math
 import time
+from pathlib import Path
 
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from kalao.plc import control
+from kalao.fli import control
+from kalao.filterwheel import filter_control
+from kalao.utils import database, file_handling
 
 import numpy as np
 from astropy.io import fits
@@ -19,8 +22,9 @@ parser.read(config_path)
 ExpTime = parser.getfloat('FLI','ExpTime')
 
 
-def centre_on_target():
+def centre_on_target(filter_arg='clear'):
 
+    filter_control.set_position(filter_arg)
     while True:
         rValue = control.take_image(dit = ExpTime)
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']

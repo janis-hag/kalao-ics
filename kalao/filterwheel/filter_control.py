@@ -10,10 +10,17 @@ control.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
+import sys
+import os
 from microscope.filterwheels import thorlabs
 import time
 from configparser import ConfigParser
+from pathlib import Path
 
+# add the necessary path to find the folder kalao for import
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
+from kalao.utils import database
 
 # clear griz, hole
 # 0 clear

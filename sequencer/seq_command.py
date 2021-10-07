@@ -9,7 +9,8 @@ from configparser import ConfigParser
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from kalao.plc import control, core, tungsten, laser, flip_mirror, shutter
+from kalao.plc import core, tungsten, laser, flip_mirror, shutter
+from kalao.fli import control
 from kalao.utils import file_handling, database
 from kalao.filterwheel import filter_control
 from kalao.cacao import aomanager
@@ -24,6 +25,7 @@ parser.read(config_path)
 Science_storage = parser.get('FLI','ScienceDataStorage')
 ExpTime = parser.getfloat('FLI','ExpTime')
 TimeSup = parser.getint('FLI','TimeSup')
+
 
 def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
     """
@@ -76,6 +78,7 @@ def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
+
 def dark_abort():
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
@@ -96,7 +99,8 @@ def dark_abort():
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
-def tungsten_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
+
+def tungsten_FLAT(q = None, dit = ExpTime, nbPic=1, filepath = None, filter_arg = None, **kwargs):
     """
     1. Close shutter
     2. Move flip mirror up
@@ -160,6 +164,7 @@ def tungsten_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg = None, *
     tungsten.off()
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
+
 def tungsten_FLAT_abort():
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
@@ -179,6 +184,7 @@ def tungsten_FLAT_abort():
         print(rValue)
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
+
 
 def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
     """
@@ -232,6 +238,7 @@ def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwar
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
+
 def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
     """
     1. Turn off lamps
@@ -265,14 +272,14 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg = No
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    # TODO check filer_arg value != None
-    if filter_control.set_position(filter_arg) == -1:
-        print("Error: problem with filter selection")
+    if starfinder.centre_on_target() == -1:
+        print("Error: problem with centre on target")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    if starfinder.centre_on_target() == -1:
-        print("Error: problem with centre on target")
+    # TODO check filer_arg value != None
+    if filter_control.set_position(filter_arg) == -1:
+        print("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
@@ -297,6 +304,7 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg = No
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
+
 def target_observation_abort():
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
@@ -314,6 +322,7 @@ def target_observation_abort():
         print(rValue)
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
+
 
 def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     """

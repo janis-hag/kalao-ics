@@ -23,7 +23,6 @@ import tcs_srv_gop
 #
 # Initialise Gop (Geneva Observatory Protocol)
 #
-# TODO read from kalao.config
 gop = tcs_srv_gop.gop()
 socketName = parser.get('GOP','IP')
 socketPort = parser.getint('GOP','Port')  # only for inet connection
@@ -47,6 +46,7 @@ while (True):
     command = ""
     controlRead = ""
     while '#' not in controlRead:
+        #  '#' signe used to signify end of command
         controlRead = gop.read()
 
         if (controlRead == -1):
@@ -106,7 +106,7 @@ while (True):
         message = "/OK"
         print("%.6f" % (time.time()), "Send acknowledge and quit: ", message)
         gop.write(message)
-        print("%.6f" % (time.time()), "Acknowledge sended")
+        print("%.6f" % (time.time()), "Acknowledge sent")
         break
     elif commandList[0] == "status":
         message = status.kalao_status()
@@ -117,7 +117,7 @@ while (True):
         print("%.6f" % (time.time()), "Send acknowledge: ", message)
         gop.write(message)
 #
-# in case of break, we disconnect all serveurs
+# in case of break, we disconnect all servers
 #
 print("%.6f" % (time.time()), socketName, " close gop connection and exit")
 gop.closeConnection()
