@@ -1,0 +1,8 @@
+[Added Associations]
+image/fits=saods9.desktop;
+image/x-portable-graymap=lximage-qt.desktop;
+application/x-compress=saods9.desktop;
+
+[Default Applications]
+image/fits=saods9.desktop
+image/x-portable-graymap=lximage-qt.desktop
