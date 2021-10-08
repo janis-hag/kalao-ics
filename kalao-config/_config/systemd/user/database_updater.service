@@ -1,0 +1,16 @@
+
+[Unit]
+Description=KalAO monitoring service
+
+[Service]
+Type=simple
+ExecStart=/home/kalao/kalao-ics/scripts/launch-database_updater.sh
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+#WantedBy=default.target
+WantedBy=multi-user.target

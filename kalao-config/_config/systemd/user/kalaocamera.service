@@ -1,0 +1,15 @@
+
+[Unit]
+Description=KalAO Camera control service
+
+[Service]
+Type=simple
+ExecStart=/home/kalao/kalao-fli/launch-KalAOCamera.sh
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+#WantedBy=default.target
+WantedBy=multi-user.target

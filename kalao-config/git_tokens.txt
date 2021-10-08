@@ -1,0 +1,2 @@
+git clone https://gitlab+deploy-token-U121LXcgXFyh2YsLJA43:U121LXcgXFyh2YsLJA43@gitlab.unige.ch/kalao/kalao-ics.git
+

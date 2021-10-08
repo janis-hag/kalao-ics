@@ -1,0 +1,23 @@
+export XAUTHORITY=~/.Xauthority
+
+export CUDADIR=/usr/local/cuda
+export PATH=${PATH}:/usr/local/cuda/bin
+export OPENBLASDIR=/usr/lib/x86_64-linux-gnu/openblas-pthread
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/magma/lib/pkgconfig
+
+export MILK_SHM_DIR=/tmp/milk
+mkdir -p $MILK_SHM_DIR
+
+export PAGER=less
+
+export MILK_ROOT=${HOME}/kalao-cacao/src/milk
+export MILK_INSTALLDIR=/usr/local/milk
+export PATH=${PATH}:${MILK_INSTALLDIR}/bin
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:${MILK_INSTALLDIR}/lib/pkgconfig
+
+export CACAO_ROOT=${HOME}/kalao-cacao/src/cacao
+export CACAO_INSTALLDIR=/usr/local/cacao
+export PATH=${PATH}:${CACAO_INSTALLDIR}/bin
+
+#export CLI_ADD_LIBS="/usr/local/cacao/lib/libcacaoKalAONuvu.so /usr/local/cacao/lib/libcacaoKalAOBMC.so /usr/local/cacao/lib/libcacaoKalAOSHWFS.so"
+export MILKCLI_ADD_LIBS="cacaoKalAONuvu,cacaoKalAOBMC,cacaoKalAOSHWFS"
