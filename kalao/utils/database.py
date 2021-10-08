@@ -141,6 +141,7 @@ def get_latest_record(collection_name):
 
     return latest_record
 
+
 def read_mongo_to_pandas(dt, collection='monitoring', no_id=True):
     """ Read from Mongo and Store into DataFrame """
 

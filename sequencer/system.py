@@ -61,6 +61,18 @@ def check_kalao_config():
     if not PLCSection['TungstenPosition'].isdigit():
         print_and_log("Error: wrong values format for PLC 'TungstenPosition' in kalao.config file ")
         error = True
+    if not PLCSection['TempBenchAirOffset'].isdigit():
+        print_and_log("Error: wrong values format for PLC 'TempBenchAirOffset' in kalao.config file ")
+        error = True
+    if not PLCSection['TempBenchBoardOffset'].isdigit():
+        print_and_log("Error: wrong values format for PLC 'TempBenchBoardOffset' in kalao.config file ")
+        error = True
+    if not PLCSection['TempWaterInOffset'].isdigit():
+        print_and_log("Error: wrong values format for PLC 'TempWaterInOffset' in kalao.config file ")
+        error = True
+    if not PLCSection['TempWaterOutOffset'].isdigit():
+        print_and_log("Error: wrong values format for PLC 'TempWaterOutOffset' in kalao.config file ")
+        error = True
 
     if not FLISection['ExpTime'].replace('.', '', 1).isdigit():
         print_and_log("Error: wrong values format for FLI 'ExpTime' in kalao.config file ")
