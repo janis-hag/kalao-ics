@@ -18,7 +18,7 @@ def datetime_is_naive(d):
 def get_start_of_night(dt=None):
     if dt is None:
         dt = now()
-    elif dt not isinstance(dt, datetime.datetime):
+    elif type(dt) is not datetime.datetime:
         raise TypeError('Invalid type for parameter "date" - expecting datetime')
 
     if datetime_is_naive(dt):
