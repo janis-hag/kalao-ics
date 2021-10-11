@@ -34,15 +34,20 @@ parser = ConfigParser()
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 parser.read(config_path)
 
-TLFW = parser.get('FLI','ThorlabsFilterWheel')
+DEVICEPORT = parser.get('FilterWheel','DevicePort')
+ENABLEWAIT = parser.getfloat('FilterWheel','EnableWait')
+INITIALIZATIONWAIT = parser.getfloat('FilterWheel','InitializationWait')
+POSITIONCHANGEWAIT = parser.getfloat('FilterWheel','PositionChangeWait')
 
 # Create bidirect dict with filter id (str and int)
 Id_filter = parser._sections['FilterPosition']
 revd = dict( [reversed(i) for i in Id_filter.items()] )
 Id_filter.update(revd)
 
+
 def create_filter_id():
     return Id_filter
+
 
 def set_position(filter_arg):
 
@@ -56,13 +61,13 @@ def set_position(filter_arg):
         else:
             filter_arg = Id_filter[filter_arg]
 
-    fw = thorlabs.ThorlabsFilterWheel(com=TLFW)
-    fw.enable()
-    time.sleep(2)
-    fw.initialize()
-    time.sleep(2)
+    fw = thorlabs.ThorlabsFilterWheel(com=DEVICEPORT)
+    # fw.enable()
+    # time.sleep(ENABLEWAIT)
+    # fw.initialize()
+    # time.sleep(INITIALIZATIONWAIT)
     fw.set_position(filter_arg) # Same name of parent func ?
-    time.sleep(6)
+    time.sleep(POSITIONCHANGEWAIT)
     position = fw.get_position()
 
     if position == filter_arg:
@@ -72,24 +77,25 @@ def set_position(filter_arg):
         database.store_obs_log({'filterwheel_log': "Error: filter position expected {}, but got {}".format(filter_arg, position )})
         return -1
 
+
 def get_position():
-    fw = thorlabs.ThorlabsFilterWheel(com=TLFW)
-    fw.enable()
-    time.sleep(2)
-    fw.initialize()
-    time.sleep(6)
-    fw.get_position()
+    fw = thorlabs.ThorlabsFilterWheel(com=DEVICEPORT)
+    # fw.enable()
+    # time.sleep(ENABLEWAIT)
+    # fw.initialize()
+    # time.sleep(INITIALIZATIONWAIT)
+    position = fw.get_position()
 
     return position
 
 
 def init():
 
-    fw = thorlabs.ThorlabsFilterWheel(com=TLFW)
+    fw = thorlabs.ThorlabsFilterWheel(com=DEVICEPORT)
     fw.enable()
-    time.sleep(2)
+    time.sleep(ENABLEWAIT)
     fw.initialize()
-    time.sleep(2)
+    time.sleep(INITIALIZATIONWAIT)
 
     database.store_obs_log({'filterwheel_log': "initialize filerwheel"})
 
