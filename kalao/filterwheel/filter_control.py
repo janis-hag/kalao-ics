@@ -40,13 +40,17 @@ INITIALIZATIONWAIT = parser.getfloat('FilterWheel','InitializationWait')
 POSITIONCHANGEWAIT = parser.getfloat('FilterWheel','PositionChangeWait')
 
 # Create bidirect dict with filter id (str and int)
-Id_filter = parser._sections['FilterPosition']
-revd = dict( [reversed(i) for i in Id_filter.items()] )
-Id_filter.update(revd)
+# Id_filter = parser._sections['FilterPosition']
+# revd = dict( [reversed(i) for i in Id_filter.items()] )
+# Id_filter.update(revd)
 
+Id_filter_dict = {}
+for key, val in parser.items( 'FilterPosition'):
+    Id_filter_dict[key] = int(val)
+    Id_filter_dict[int(val)] = key
 
 def create_filter_id():
-    return Id_filter
+    return Id_filter_dict
 
 
 def set_position(filter_arg):
@@ -55,11 +59,11 @@ def set_position(filter_arg):
         database.store_obs_log({'filterwheel_log': "Error: wrong filter id got ({})".format(filter_arg)})
         return -1
     elif type(filter_arg) == str:
-        if filter_arg not in Id_filter.keys():
+        if filter_arg not in Id_filter_dict.keys():
             database.store_obs_log({'filterwheel_log': "Error: wrong filter name (got {})".format(filter_arg)})
             return -1
         else:
-            filter_arg = Id_filter[filter_arg]
+            filter_arg = Id_filter_dict[filter_arg]
 
     fw = thorlabs.ThorlabsFilterWheel(com=DEVICEPORT)
     # fw.enable()
@@ -68,10 +72,10 @@ def set_position(filter_arg):
     # time.sleep(INITIALIZATIONWAIT)
     fw.set_position(filter_arg) # Same name of parent func ?
     time.sleep(POSITIONCHANGEWAIT)
-    position = fw.get_position()
+    position, filter_name = fw.get_position()
 
     if position == filter_arg:
-        database.store_obs_log({'filterwheel_status': "Filterwheel on {}".format(Id_filter[filter_arg])})
+        database.store_obs_log({'filterwheel_status': "Filterwheel on {}".format(Id_filter_dict[filter_arg])})
         return 0
     else:
         database.store_obs_log({'filterwheel_log': "Error: filter position expected {}, but got {}".format(filter_arg, position )})
@@ -85,8 +89,9 @@ def get_position():
     # fw.initialize()
     # time.sleep(INITIALIZATIONWAIT)
     position = fw.get_position()
+    filter_name = Id_filter_dict[position]
 
-    return position
+    return position, filter_name
 
 
 def init():

@@ -22,6 +22,14 @@ fli_temp_heatsink:
   short: FLI HS Temp.
   long: Temperature of the FLI heatsink
   unit: °C
+fli_filter_position:
+  short: Filter number
+  long: Current filter position number
+  unit: ""
+fli_filter_name:
+  short: Filter name
+  long: Current filter name
+  unit: ""
 
 # PLC
 shutter:

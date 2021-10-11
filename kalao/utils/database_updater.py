@@ -19,6 +19,7 @@ from kalao import plc
 from kalao import rtc
 from kalao import fli
 from kalao.utils import database
+from kalao.filterwheel import filter_control
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -58,6 +59,10 @@ def update_plc_monitoring():
     values.update(rtc_temperatures)
 
     # FLI science camera status
+    filter_number, filter_name = filter_control.get_position()
+    filter_status = {'fli_filter_position': filter_number, 'fli_filter_name': filter_name}
+    values.update(filter_status)
+
     fli_server_status = fli.control.check_server_status()
     if fli_server_status == 'OK':
         fli_status = {'fli_temp_CCD': fli.control.get_temperature(), 'fli_status': fli_server_status}
