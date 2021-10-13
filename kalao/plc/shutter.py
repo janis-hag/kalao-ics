@@ -69,14 +69,17 @@ def position():
         database.store_obs_log({'shutter_log': 'ERROR' + str(error_code) + ': '+ str(error_text)})
 
         beck.disconnect()
+
         return error_text
     else:
         if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value():
-            bStatus = 'CLOSE'
+            bStatus = 'CLOSED'
         else:
             bStatus = 'OPEN'
         beck.disconnect()
+
         return bStatus
+
 
 def initialise():
     """
@@ -132,7 +135,7 @@ def switch(action_name):
     sleep(1)
 
     if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value():
-        bStatus = 'CLOSE'
+        bStatus = 'CLOSED'
     else:
         bStatus = 'OPEN'
 
