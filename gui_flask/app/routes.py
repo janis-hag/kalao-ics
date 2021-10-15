@@ -201,5 +201,7 @@ def plcCalibUnitMove():
     print(k_calib_unit.move(options["move"]))
     return k_calib_unit.move(options["move"])
 
-app.run(host="0.0.0.0", port="80");
+#app.run(host="0.0.0.0", port="80");
 #app.run(host= '10.194.67.128')
+from waitress import serve
+    serve(app, host="0.0.0.0", port=8080)
