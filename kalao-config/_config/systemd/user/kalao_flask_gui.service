@@ -1,9 +1,9 @@
 [Unit]
-Description=KalAO monitoring service
+Description=KalAO Flask GUI service
 
 [Service]
 Type=simple
-ExecStart=/home/kalao/kalao-ics/scripts/launch-database_updater.sh
+ExecStart=/home/kalao/kalao-ics/scripts/launch-kalao_flask_gui.sh
 Restart=always
 RestartSec=30
 StandardOutput=journal
@@ -12,4 +12,3 @@ Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=default.target
-#WantedBy=multi-user.target
