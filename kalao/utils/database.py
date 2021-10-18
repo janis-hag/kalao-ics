@@ -7,7 +7,7 @@
 from pymongo import MongoClient
 from pymongo import ASCENDING, DESCENDING
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import yaml
 import json
 import os
@@ -142,21 +142,28 @@ def get_latest_record(collection_name):
     return latest_record
 
 
-def read_mongo_to_pandas(dt, collection='monitoring', no_id=True):
+def read_mongo_to_pandas(dt, days=1, collection='monitoring', no_id=True):
     """ Read from Mongo and Store into DataFrame """
+
+    appended_df = []
 
     # Connect to MongoDB
     if dt is None:
         dt = datetime.now(timezone.utc)
-    db = get_db(dt)
 
-    # Make a query to the specific DB and Collection
-    #cursor = db[collection].find(query)
-    cursor = db[collection].find()
+    for day_number in range(days):
+        # Loop of days
+        db = get_db(dt - timedelta(days=1) - 1)
+
+        # Make a query to the specific DB and Collection
+        #cursor = db[collection].find(query)
+        cursor = db[collection].find()
 
 
-    # Expand the cursor and construct the DataFrame
-    df =  pd.DataFrame(list(cursor))
+        # Expand the cursor and construct the DataFrame
+        appended_df.append(pd.DataFrame(list(cursor)))
+
+    df = pd.concat(appended_df)
 
     # Delete the _id
     if no_id:
