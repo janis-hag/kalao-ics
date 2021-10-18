@@ -5,6 +5,33 @@ time_utc:
   long: UTC time
   unit: python datetime object
 
+#Observing
+obs_type:
+  short:
+  long: k_lmpflt/k_aocal/k_trgobs/k_dark/k_skyflt
+  unit:
+target:
+  short: Target name
+  long: Name of current target
+  unit:
+target_magnitude:
+  short: Target magnitude
+  long: Magnitude of the current target
+  unit: I
+target_dec:
+  short:
+  long:
+  unit:
+target_ra:
+  short:
+  long:
+  unit:
+tracking:
+  short:
+  long: TRACKING/CENTERING/IDLE
+  unit:
+
+
 # PI Tip/Tilt
 pi_log:
   short: Tip tilt status
