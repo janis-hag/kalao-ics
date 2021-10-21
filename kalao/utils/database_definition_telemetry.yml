@@ -4,77 +4,77 @@ time_utc:
   short: UTC time
   long: UTC time
   unit: python datetime object
-  main_gui: False
+  main_gui: 0 # main_gui: 2
 
 # PI Tip/Tilt
 pi_tip:
   short: Tip
   long: Tip on Tip-Tilt platform
   unit: mrad
-  main_gui: False
+  main_gui: 0 # main_gui: 2
 
 pi_tilt:
   short: Tilt
   long: Tilt on Tip-Tilt platform
   unit: mrad
-  main_gui: False
+  main_gui: 0 # main_gui: 2
 
 # Nüvü camera (temperatures)
 nuvu_temp_ccd:
   short: EMCCD Temp.
   long: Temperature of the EMCCD
   unit: °C
-  main_gui: False
+  main_gui: 0 # main_gui: 2
 
 nuvu_temp_controller:
   short: CTRL Temp.
   long: Temperature of the Nüvü controller
   unit: °C
-  main_gui: False
+  main_gui: 0 # main_gui: 2
 
 nuvu_temp_power_supply:
   short: PSU Temp.
   long: Temperature of the Nüvü power supply
   unit: °C
-  main_gui: False
+  main_gui: 0 # main_gui: 2
 
 nuvu_temp_fpga:
   short: FPGA Temp.
   long: Temperature of the Nüvü FPGA
   unit: °C
-  main_gui: False
+  main_gui: 0 # main_gui: 2
 
 nuvu_temp_heatsink:
   short: HS Temp.
   long: Temperature of the Nüvü heatsink
   unit: °C
-  main_gui: False
+  main_gui: 0 # main_gui: 2
 
 # Nüvü camera (exposure)
 nuvu_emgain:
   short: EM Gain
   long: Gain of the EMCCD
   unit: '-'
-  main_gui: True
+  main_gui: 0 # main_gui: 3
 
 nuvu_exposuretime:
   short: Exp. time
   long: Exposure time of the EMCCD
   unit: ms
-  main_gui: True
+  main_gui: 0 # main_gui: 3
 
 # Shack-Hartmann WFS
 slopes_flux_subaperture:
   short: Max. flux
   long: Maximum flux in a subaperture
   unit: ADU
-  main_gui: True
+  main_gui: 0 # main_gui: 3
 
 slopes_residual:
   short: Slopes residual
   long: Slopes residual
   unit: N/A
-  main_gui: False
+  main_gui: 0 # main_gui: 2
 
 # AO loop status
 
