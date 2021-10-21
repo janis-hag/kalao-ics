@@ -93,6 +93,14 @@ sequencer_log:
   short: sequencer log
   long: Log output of the sequencer
   unit: text
+database_log:
+  short: database log
+  long: Log output of the databse system
+  unit: text
+flask_log:
+  short: flask log
+  long: Log output of the flask server
+  unit: text
 
 # FilterWheel
 filterwheel_status:

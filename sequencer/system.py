@@ -14,36 +14,35 @@ from configparser import ConfigParser
 from pathlib import Path
 import os
 import dbus
+from datetime import datetime
 
 from kalao.utils import database
 
+# Read config file
+parser = ConfigParser()
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+parser.read(config_path)
 
 
 def check_active(unit_name):
     #unit_name = 'kalao_database_updater.service'
 
-    bus = dbus.SessionBus()
-    systemd = bus.get_object(
-        'org.freedesktop.systemd1',
-        '/org/freedesktop/systemd1'
-    )
+    bus, systemd, manager = connect_dbus()
 
-    manager = dbus.Interface(
-        systemd,
-        'org.freedesktop.systemd1.Manager'
-    )
+    service = bus.get_object('org.freedesktop.systemd1', object_path = manager.GetUnit(unit_name))
 
-    service = bus.get_object('org.freedesktop.systemd1',
-         object_path = manager.GetUnit(unit_name))
+    interface = dbus.Interface(service, dbus_interface='org.freedesktop.DBus.Properties')
+    active_state = str(interface.Get('org.freedesktop.systemd1.Unit', 'ActiveState'))
 
-    interface = dbus.Interface(service,
-        dbus_interface='org.freedesktop.DBus.Properties')
-    active_state = interface.Get('org.freedesktop.systemd1.Unit', 'ActiveState')
-    if str(active_state) == 'active':
+    if active_state == 'active':
         active_entertimestamp = interface.Get('org.freedesktop.systemd1.Unit', 'ActiveEnterTimestamp')
     else:
-        active_entertimestamp  = interface.Get('org.freedesktop.systemd1.Unit', 'ActiveExitTimestamp')
-    active_substate = interface.Get('org.freedesktop.systemd1.Unit', 'SubState')
+        active_entertimestamp = interface.Get('org.freedesktop.systemd1.Unit', 'ActiveExitTimestamp')
+
+    active_substate = str(interface.Get('org.freedesktop.systemd1.Unit', 'SubState'))
+
+    # Convert Unix microseconds timestamp into datetime object
+    active_entertimestamp = datetime.utcfromtimestamp(int(active_entertimestamp)*10**(-6))
 
     return active_state, active_substate, active_entertimestamp
 
@@ -51,40 +50,70 @@ def check_active(unit_name):
 def check_enabled(unit_name):
     #unit_name = 'kalao_database_updater.service'
 
-    bus = dbus.SessionBus()
-    systemd = bus.get_object(
-        'org.freedesktop.systemd1',
-        '/org/freedesktop/systemd1'
-    )
-
-    manager = dbus.Interface(
-        systemd,
-        'org.freedesktop.systemd1.Manager'
-    )
+    bus, systemd, manager = connect_dbus()
 
     enabled_state = manager.GetUnitFileState(unit_name)
 
     return enabled_state
 
 
-def restart_unit(unit_name):
+def unit_control(unit_name, action):
+    bus, systemd, manager = connect_dbus()
 
+    if action is 'RESTART':
+        job = manager.RestartUnit(unit_name, 'replace')
+    elif action is 'START':
+       job = manager.StartUnit(unit_name, 'replace')
+    elif action is 'STOP':
+       job = manager.StopUnit(unit_name)
+    elif action is 'STATUS':
+        # Status is always returned as long as the action keyword is correct
+        pass
+    else:
+        error_string = ("ERROR: system.unit_control unknown action: "+str(action))
+        print(error_string)
+        database.store_obs_log({'sequencer_log': error_string})
+        return -1
+
+    return check_active(unit_name)
+
+# def restart_unit(unit_name):
+#
+#     bus, systemd, manager = connect_dbus()
+#     #manager.EnableUnitFiles([‘picockpit - client.service’], False, True)
+#     #manager.Reload()
+#     job = manager.RestartUnit(unit_name, 'replace')
+#
+#     return job
+#
+#
+# def start_unit(unit_name):
+#
+#     bus, systemd, manager = connect_dbus()
+#     #manager.EnableUnitFiles([‘picockpit - client.service’], False, True)
+#     #manager.Reload()
+#     job = manager.StartUnit(unit_name, 'replace')
+#
+#     return job
+#
+#
+# def stop_unit(unit_name):
+#
+#     bus, systemd, manager = connect_dbus()
+#     #manager.EnableUnitFiles([‘picockpit - client.service’], False, True)
+#     #manager.Reload()
+#     job = manager.StopUnit(unit_name)
+#
+#     return job
+
+
+def connect_dbus():
     bus = dbus.SessionBus()
-    systemd = bus.get_object(
-        'org.freedesktop.systemd1',
-        '/org/freedesktop/systemd1'
-    )
+    systemd = bus.get_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
 
-    manager = dbus.Interface(
-        systemd,
-        'org.freedesktop.systemd1.Manager'
-    )
+    manager = dbus.Interface(systemd, 'org.freedesktop.systemd1.Manager')
 
-    #manager.EnableUnitFiles([‘picockpit - client.service’], False, True)
-    #manager.Reload()
-    job = manager.RestartUnit(unit_name, 'replace')
-
-    return job
+    return bus, systemd, manager
 
 
 def check_status():
@@ -93,14 +122,29 @@ def check_status():
     # TODO database service check
 
 
-def camera_service():
+def camera_service(action):
     # TODO status, stop, start
-    pass
+    database.store_obs_log({'fli_log': 'Sending '+action+' command to FLI camera server.'})
+    unit_name = parser.get('SystemD', 'camera_service')
+    status = unit_control(unit_name, action)
+    return status
 
 
-def database_service():
+def database_service(action):
     # TODO status, stop, start
-    pass
+    database.store_obs_log({'database_log': 'Sending '+action+' command to database system.'})
+    unit_name = parser.get('SystemD', 'database_updater')
+    status = unit_control(unit_name, action)
+    return status
+
+
+def flask_service(action):
+    # TODO status, stop, start
+    database.store_obs_log({'flask_log': 'Sending '+action+' command to flask server.'})
+    unit_name = parser.get('SystemD', 'flask_gui')
+    status = unit_control(unit_name, action)
+
+    return status
 
 
 def check_kalao_config():
