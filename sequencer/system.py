@@ -60,13 +60,13 @@ def check_enabled(unit_name):
 def unit_control(unit_name, action):
     bus, systemd, manager = connect_dbus()
 
-    if action is 'RESTART':
+    if action == 'RESTART':
         job = manager.RestartUnit(unit_name, 'replace')
-    elif action is 'START':
+    elif action == 'START':
        job = manager.StartUnit(unit_name, 'replace')
-    elif action is 'STOP':
+    elif action == 'STOP':
        job = manager.StopUnit(unit_name)
-    elif action is 'STATUS':
+    elif action == 'STATUS':
         # Status is always returned as long as the action keyword is correct
         pass
     else:
