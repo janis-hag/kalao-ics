@@ -13,8 +13,78 @@ system.py is part of the KalAO Instrument Control Software
 from configparser import ConfigParser
 from pathlib import Path
 import os
+import dbus
 
 from kalao.utils import database
+
+
+
+def check_active(unit_name):
+    #unit_name = 'kalao_database_updater.service'
+
+    bus = dbus.SessionBus()
+    systemd = bus.get_object(
+        'org.freedesktop.systemd1',
+        '/org/freedesktop/systemd1'
+    )
+
+    manager = dbus.Interface(
+        systemd,
+        'org.freedesktop.systemd1.Manager'
+    )
+
+    service = bus.get_object('org.freedesktop.systemd1',
+         object_path = manager.GetUnit(unit_name))
+
+    interface = dbus.Interface(service,
+        dbus_interface='org.freedesktop.DBus.Properties')
+    active_state = interface.Get('org.freedesktop.systemd1.Unit', 'ActiveState')
+    if str(active_state) == 'active':
+        active_entertimestamp = interface.Get('org.freedesktop.systemd1.Unit', 'ActiveEnterTimestamp')
+    else:
+        active_entertimestamp  = interface.Get('org.freedesktop.systemd1.Unit', 'ActiveExitTimestamp')
+    active_substate = interface.Get('org.freedesktop.systemd1.Unit', 'SubState')
+
+    return active_state, active_substate, active_entertimestamp
+
+
+def check_enabled(unit_name):
+    #unit_name = 'kalao_database_updater.service'
+
+    bus = dbus.SessionBus()
+    systemd = bus.get_object(
+        'org.freedesktop.systemd1',
+        '/org/freedesktop/systemd1'
+    )
+
+    manager = dbus.Interface(
+        systemd,
+        'org.freedesktop.systemd1.Manager'
+    )
+
+    enabled_state = manager.GetUnitFileState(unit_name)
+
+    return enabled_state
+
+
+def restart_unit(unit_name):
+
+    bus = dbus.SessionBus()
+    systemd = bus.get_object(
+        'org.freedesktop.systemd1',
+        '/org/freedesktop/systemd1'
+    )
+
+    manager = dbus.Interface(
+        systemd,
+        'org.freedesktop.systemd1.Manager'
+    )
+
+    #manager.EnableUnitFiles([‘picockpit - client.service’], False, True)
+    #manager.Reload()
+    job = manager.RestartUnit(unit_name, 'replace')
+
+    return job
 
 
 def check_status():

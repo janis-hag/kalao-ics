@@ -26,15 +26,16 @@ La taille des message vers KalAO est limitée ainsi on a défini que le caractè
 
  
 
-La configuration des parametres de pose se fait dans $THOME/config/general/edp_poses_definition.cfg
+La configuration des parametres de pose se fait dans **$THOME/config/general/edp_poses_definition.cfg**
 
-Lorsqu'il n'y a plus de poses dans la liste EDP, EDP envoie un status "Nothing" au synchro qui arrête la procedure d'acquisition KalAO.
+Lorsqu'il n'y a plus de poses dans la liste EDP, EDP envoie un status **"Nothing"** au synchro qui arrête la procedure d'acquisition KalAO.
 
  
 ## acquisition_kalao.prc
 
 C'est la procédure qui tourne sur le Synchro. Elle gère l'envoi des paramètres de poses sur KalAO et reste en écoute du statut KalAO à intervalle constant, certainement une fois par seconde (TBC).
-Paramètres de poses
+
+### Paramètres de poses
 
 Les paramètres de poses sont les ceux indiqués sur l'EDP. 
 
@@ -62,7 +63,7 @@ Le statut de KalAO est une commande, le premier caractère est le delimiteur. La
  
 ## AO et guidage en offset
 
-L'AO a une connexion permanente avec l'Inter-T120 et lui permet d'envoyer des commandes en offset, même si aucune pose n'est à disposition sur l'EDP
+L'AO a une **connexion permanente** avec l'Inter-T120 et lui permet d'envoyer des commandes en offset, même si aucune pose n'est à disposition sur l'EDP
 
 La communication se fait à travers ipcsrv (par GOP) qui gère les aspect de communication à travers la mémoire partagée et sémaphore.
 
