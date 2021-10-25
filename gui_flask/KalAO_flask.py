@@ -10,6 +10,7 @@ import json
 import sys
 import random
 import math
+import yaml
 
 import logging
 
@@ -29,6 +30,8 @@ from kalao.plc import flip_mirror as k_flip_mirror
 from kalao.plc import tungsten as k_tungsten
 from kalao.plc import calib_unit as k_calib_unit
 
+from sequencer import system as s_system
+
 def create_app():
 
     logging.getLogger("waitress").setLevel(logging.ERROR)
@@ -46,19 +49,46 @@ def create_app():
     @app.route('/metaData', methods=['GET'])
     def metaData():
         projectPath = path.dirname(path.dirname(path.abspath(path.dirname(__file__))))
-        json_file = open(projectPath+"/kalao/utils/database_definition_monitoring.json")
+
+        monitoringMetaData = {}
+        obsLogMetaData = {}
+        telemetryMetaData = {}
+
+        # Read parameters.yml
+        file_path = projectPath+'/kalao-ics/kalao/utils/database_definition_monitoring.yml'
+        with open(file_path, 'r') as param:
+            try:
+                monitoringMetaData = yaml.safe_load(param)
+            except yaml.YAMLError as exc:
+                print("Error while trying to load parametersfrom "+file_path+" file")
+
+        file_path = projectPath+'/kalao-ics/kalao/utils/database_definition_obs_log.yml'
+        with open(file_path, 'r') as param:
+            try:
+                obsLogMetaData = yaml.safe_load(param)
+            except yaml.YAMLError as exc:
+                print("Error while trying to load parametersfrom "+file_path+" file")
+
+        file_path = projectPath+'/kalao-ics/kalao/utils/database_definition_telemetry.yml'
+        with open(file_path, 'r') as param:
+            try:
+                telemetryMetaData = yaml.safe_load(param)
+            except yaml.YAMLError as exc:
+                print("Error while trying to load parametersfrom "+file_path+" file")
+
+        '''
+        json_file = open(projectPath+"/kalao-ics/kalao/utils/database_definition_monitoring.json")
         monitoringMetaData = json.load(json_file)
         json_file.close()
 
-        projectPath = path.dirname(path.dirname(path.abspath(path.dirname(__file__))))
-        json_file = open(projectPath+"/kalao/utils/database_definition_obs_log.json")
+        json_file = open(projectPath+"/kalao-ics/kalao/utils/database_definition_obs_log.json")
         obsLogMetaData = json.load(json_file)
         json_file.close()
 
-        projectPath = path.dirname(path.dirname(path.abspath(path.dirname(__file__))))
-        json_file = open(projectPath+"/kalao/utils/database_definition_telemetry.json")
+        json_file = open(projectPath+"/kalao-ics/kalao/utils/database_definition_telemetry.json")
         telemetryMetaData = json.load(json_file)
         json_file.close()
+        '''
 
         return {
             "monitoring": monitoringMetaData,
@@ -204,7 +234,21 @@ def create_app():
     @app.route('/plcCalibUnitMove', methods=['POST'])
     def plcCalibUnitMove():
         options = request.get_json()
-        print(k_calib_unit.move(options["move"]))
         return k_calib_unit.move(options["move"])
+
+    @app.route('/systemStatus', methods=['GET'])
+    def systemFStatus():
+
+        return json.dumps({
+            "camera": {
+                "status": s_system.camera_service("STATUS")
+            },
+            "database": {
+                "position": s_system.database_service("STATUS")
+            },
+            "flask": {
+                "position": s_system.flask_service("STATUS")
+            }
+        })
 
     return app
