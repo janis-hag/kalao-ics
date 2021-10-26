@@ -166,7 +166,7 @@ def create_app():
         random = bool(request.args.get('random', default = "", type = str))
         return k_status.cacao_measurements(random)
 
-    @app.route('/plcStatus', methods=['GET'])
+    @app.route('/plc/status', methods=['GET'])
     def plcStatus():
 
         return json.dumps({
@@ -186,59 +186,71 @@ def create_app():
                 "status": k_calib_unit.status()}
             })
 
-    @app.route('/plcLaserEnable', methods=['GET'])
+    @app.route('/plc/laser/enable', methods=['GET'])
     def plcLaserEnable():
         return k_laser.enable();
 
-    @app.route('/plcLaserDisable', methods=['GET'])
+    @app.route('/plc/laser/disable', methods=['GET'])
     def plcLaserDisable():
         return k_laser.disable();
 
-    @app.route('/plcShutterOpen', methods=['GET'])
-    def plcShutterOpen():
-        return k_shutter.open();
-
-    @app.route('/plcShutterClose', methods=['GET'])
-    def plcShutterClose():
-        return k_shutter.close();
-
-    @app.route('/plcFlipMirrorUp', methods=['GET'])
-    def plcFlipMirrorUp():
-        return k_flip_mirror.up();
-
-    @app.route('/plcFlipMirrorDown', methods=['GET'])
-    def plcFlipMirrorDown():
-        return k_flip_mirror.down();
-
-    @app.route('/plcTungstenOn', methods=['GET'])
-    def plcTungstenOn():
-        return k_tungsten.on();
-
-    @app.route('/plcTungstenOff', methods=['GET'])
-    def plcTungstenOff():
-        return k_tungsten.off();
-
-    @app.route('/plcCalibUnitLaser', methods=['GET'])
-    def plcCalibUnitLaser():
-        return k_calib_unit.laser();
-
-    @app.route('/plcCalibUnitTungsten', methods=['GET'])
-    def plcCalibUnitTungsten():
-        return k_calib_unit.tungsten();
-
-    @app.route('/plcLaserIntensity', methods=['POST'])
+    @app.route('/plc/laser/intensity', methods=['POST'])
     def plcLaserIntensity():
         options = request.get_json()
         return k_laser.set_intensity(options["intensity"])
 
-    @app.route('/plcCalibUnitMove', methods=['POST'])
+    @app.route('/plc/shutter/open', methods=['GET'])
+    def plcShutterOpen():
+        return k_shutter.open();
+
+    @app.route('/plc/shutter/close', methods=['GET'])
+    def plcShutterClose():
+        return k_shutter.close();
+
+    @app.route('/plc/flipMirror/up', methods=['GET'])
+    def plcFlipMirrorUp():
+        return k_flip_mirror.up();
+
+    @app.route('/plc/flipMirror/down', methods=['GET'])
+    def plcFlipMirrorDown():
+        return k_flip_mirror.down();
+
+    @app.route('/plc/tungsten/on', methods=['GET'])
+    def plcTungstenOn():
+        return k_tungsten.on();
+
+    @app.route('/plc/tungsten/off', methods=['GET'])
+    def plcTungstenOff():
+        return k_tungsten.off();
+
+    @app.route('/plc/calibUnit/laser', methods=['GET'])
+    def plcCalibUnitLaser():
+        return k_calib_unit.laser();
+
+    @app.route('/plc/calibUnit/tungsten', methods=['GET'])
+    def plcCalibUnitTungsten():
+        return k_calib_unit.tungsten();
+
+    @app.route('/plc/calibUnit/move', methods=['POST'])
     def plcCalibUnitMove():
         options = request.get_json()
         return k_calib_unit.move(options["move"])
 
-    @app.route('/systemStatus', methods=['GET'])
+    @app.route('/system/status', methods=['GET'])
     def systemFStatus():
+        return json.dumps({
+            "camera": {
+                "status": 'OK'
+            },
+            "database": {
+                "status": 'OK'
+            },
+            "flask": {
+                "status": 'OK'
+            }
+        })
 
+        '''
         return json.dumps({
             "camera": {
                 "status": s_system.camera_service("STATUS")
@@ -249,6 +261,26 @@ def create_app():
             "flask": {
                 "position": s_system.flask_service("STATUS")
             }
-        })
+        })'''
+
+    @app.route('/system/camera/start', methods=['GET'])
+    def systemCameraStart():
+        return s_system.camera_service("RESTART")
+
+    @app.route('/system/camera/stop', methods=['GET'])
+    def systemCameraStop():
+        return s_system.camera_service("STOP")
+
+    @app.route('/system/database/start', methods=['GET'])
+    def systemDatabaseStart():
+        return s_system.database_service("RESTART")
+
+    @app.route('/system/database/stop', methods=['GET'])
+    def systemDatabaseStop():
+        return s_system.database_service("STOP")
+
+    @app.route('/system/flask/start', methods=['GET'])
+    def systemFlaskStart():
+        return s_system.flask_service("RESTART")
 
     return app
