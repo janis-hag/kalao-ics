@@ -20,6 +20,7 @@ def _get_stream(name, min, max):
 
 	return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min, "max": max}
 
+
 def streams(realData=True):
 	if not realData:
 		# Returning fake streams for testing purposes
@@ -34,6 +35,7 @@ def streams(realData=True):
 		#streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) #TODO: uncomment when modal control is working
 
 		return streams
+
 
 def telemetry_save():
 	telemetry = {}

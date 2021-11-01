@@ -7,6 +7,7 @@
 import numpy as np
 from astropy.nddata.blocks import block_reduce
 
+
 def get_roi_and_subapertures(data):
 	roi = None
 	subapertures = None
@@ -27,6 +28,7 @@ def get_roi_and_subapertures(data):
 
 	return roi, subapertures
 
+
 def get_actuator_2d(i):
 	if i is None or i < 0 or i >= 140:
 		return (None, None)
@@ -36,6 +38,7 @@ def get_actuator_2d(i):
 		return ((i+2) // 12, (i+2) % 12)
 	elif i < 140:
 		return ((i+3) // 12, (i+3) % 12)
+
 
 def get_actuator_1d(x, y):
 	if x is None or y is None or \
@@ -53,11 +56,13 @@ def get_actuator_1d(x, y):
 	elif x < 12:
 		return x * 12 + y - 3
 
+
 def get_subaperture_2d(i):
 	if i is None or i < 0 or i >= 121:
 		return (None, None)
 	else:
 		return (i // 11, i % 11)
+
 
 def get_subaperture_1d(x, y):
 	if x is None or y is None or \
@@ -66,6 +71,7 @@ def get_subaperture_1d(x, y):
 		return None
 	else:
 		return x * 11 + y
+
 
 def get_subapertures_around_actuator(i):
 	if i is None:
@@ -77,6 +83,7 @@ def get_subapertures_around_actuator(i):
 	        get_subaperture_1d(x-1,y  ),
 	        get_subaperture_1d(x  ,y-1),
 	        get_subaperture_1d(x  ,y  ))
+
 
 def get_wfs_flux_map(upsampling = 4):
 	size = 56 * upsampling
@@ -110,6 +117,7 @@ def get_wfs_flux_map(upsampling = 4):
 			flux[i,j] = np.sum(subap_tmp * pupil) / (side_real)**2
 
 	return flux
+
 
 if __name__ == "__main__":
 	import matplotlib.pyplot as plt

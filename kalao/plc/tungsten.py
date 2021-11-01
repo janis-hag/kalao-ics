@@ -15,8 +15,12 @@ tungsten.py is part of the KalAO Instrument Control Software
 from . import core
 from opcua import ua
 from time import sleep
+import pandas as pd
+
+from kalao.utils import database
 
 node_path = 'Tungsten'
+
 
 def check_error(beck):
     if beck.get_node("ns=4; s=MAIN.Tungsten.stat.sErrorText").get_value() == 0:
@@ -27,26 +31,30 @@ def check_error(beck):
 
 
 def on(beck=None):
-    '''
+    """
     Turn off tungsten lamp
 
     :param beck: handle to for the beckhoff connection
     :return: status of the lamp
-    '''
+    """
 
     state = send_command(beck, 3)
+    update_db(beck=beck)
+
     return state
 
 
 def off(beck=None):
-    '''
+    """
     Turn off tungsten lamp
 
     :param beck: handle to for the beckhoff connection
     :return: status of the lamp
-    '''
+    """
 
     state = send_command(beck, 2)
+    update_db(beck=beck)
+
     return state
 
 
@@ -87,15 +95,14 @@ def send_command(beck, nCommand_value):
     return state
 
 
-
 def initialise(beck=None, tungsten_nCommand=None):
-    '''
+    """
     Initialise the calibration unit.
 
     :param beck: the handle for the plc connection
     :param tungsten_nCommand: handle to send commands to the motor
     :return: returns 0 on success and error code on failure
-    '''
+    """
     if beck is None:
         # Connect to OPCUA server
         disconnect_on_exit = True
@@ -119,6 +126,8 @@ def initialise(beck=None, tungsten_nCommand=None):
             tungsten_status = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
     else:
         tungsten_status = 0
+
+    update_db(beck=beck)
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -165,6 +174,28 @@ def status(beck=None):
         beck.disconnect()
 
     return device_status_dict
+
+
+def get_switch_time():
+    """
+    Looks up the time when the tungsten lamp as last been put into current state (ON/OFF/ERROR)
+
+    :return:  switch_time a datetime object
+    """
+    # Update db to make sure the latest data point is valid
+    update_db()
+    # Load tungsten log into dataframe
+    df = pd.DataFrame(database.get_monitoring({'tungsten'}, 100)['tungsten'])
+
+    # Search for last occurence of current status
+    switch_time = df.loc[df[df['values'] != status()['sStatus']].first_valid_index() - 1]['time_utc']
+
+    return switch_time
+
+
+def update_db(beck=None):
+
+    database.store_monitoring({'tungsten': status(beck=beck)['sStatus']})
 
 
 def switch(action_name):
