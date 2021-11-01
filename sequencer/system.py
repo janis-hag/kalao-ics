@@ -118,12 +118,22 @@ def connect_dbus():
 
 def check_status():
     check_kalao_config()
-    # TODO camera service check
-    # TODO database service check
+    # TODO verify if anything else needs to be done if check_kalao_config fails
+
+    camera_status = camera_service('status')
+    if not camera_status[0] == 'active':
+        database.store_obs_log({'fli_log': 'WARNING: Camera service down!'})
+
+    database_status = database_service('status')
+    if not database_status[0] == 'active':
+        database.store_obs_log({'database_log': 'WARNING: Database service down!'})
+
+    flask_status = flask_service('status')
+    if not flask_status[0] == 'active':
+        database.store_obs_log({'flask_log': 'WARNING: Flask GUI server down!'})
 
 
 def camera_service(action):
-    # TODO status, stop, start
     database.store_obs_log({'fli_log': 'Sending '+action+' command to FLI camera server.'})
     unit_name = parser.get('SystemD', 'camera_service')
     status = unit_control(unit_name, action)
@@ -131,7 +141,6 @@ def camera_service(action):
 
 
 def database_service(action):
-    # TODO status, stop, start
     database.store_obs_log({'database_log': 'Sending '+action+' command to database system.'})
     unit_name = parser.get('SystemD', 'database_updater')
     status = unit_control(unit_name, action)
@@ -139,13 +148,16 @@ def database_service(action):
 
 
 def flask_service(action):
-    # TODO status, stop, start
     database.store_obs_log({'flask_log': 'Sending '+action+' command to flask server.'})
     unit_name = parser.get('SystemD', 'flask_gui')
     status = unit_control(unit_name, action)
 
     return status
 
+def initialize_services():
+    flask_service('restart')
+    database_service('restart')
+    camera_service('restart')
 
 def check_kalao_config():
 

@@ -48,7 +48,7 @@ def update_plc_monitoring():
     plc_values, plc_text = plc.core.plc_status()
 
     # Do not log status of disabled devices.
-    if PLC_Disabled == 'None':
+    if not PLC_Disabled == 'None':
         for device_name in PLC_Disabled:
             plc_values.pop(device_name)
             plc_text.pop(device_name)
