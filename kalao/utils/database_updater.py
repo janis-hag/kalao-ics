@@ -10,9 +10,10 @@ database_updater.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
-from signal import signal, SIGINT
+from signal import signal, SIGINT, SIGTERM
 from sys import exit
 from time import sleep
+import schedule
 
 from kalao import cacao  #.telemetry
 from kalao import plc
@@ -20,6 +21,7 @@ from kalao import rtc
 from kalao import fli
 from kalao.utils import database
 from kalao.filterwheel import filter_control
+from sequencer import system
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -36,9 +38,14 @@ PLC_Disabled = parser.get('PLC','Disabled').split(',')
 
 def handler(signal_received, frame):
     # Handle any cleanup here
-    print('\nSIGINT or CTRL-C detected. Exiting.')
-    # TODO it should restart using systemd framework
-    exit(0)
+    if signal_received == SIGTERM:
+        # Restarting using systemd framework
+        print('\nSIGTERM received. Restarting.')
+        system.database_service('RESTART')
+    elif signal_received == SIGINT:
+        print('\nSIGINT or CTRL-C detected. Exiting.')
+        exit(0)
+
 
 
 def update_plc_monitoring():
@@ -76,18 +83,13 @@ def update_plc_monitoring():
 
 if __name__ == "__main__":
     # Tell Python to run the handler() function when SIGINT is recieved
+    signal(SIGTERM, handler)
     signal(SIGINT, handler)
 
-    counter = 0
+    # Get monitoring and cacao
+    # schedule.every(60).seconds.do(cacao.telemetry.telemetry_save())
+    schedule.every(60).seconds.do(update_plc_monitoring)
+
     while (True):
-        # Get monitoring and cacao
-        #cacao.telemetry.telemetry_save()
-        counter +=1
-        sleep(10)
-
-        if counter > 5:
-            #TODO counter should be time based
-
-            update_plc_monitoring()
-
-            counter = 0
+        schedule.run_pending()
+        sleep(5)
