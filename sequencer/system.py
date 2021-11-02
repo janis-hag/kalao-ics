@@ -65,7 +65,7 @@ def unit_control(unit_name, action):
     elif action == 'START':
        job = manager.StartUnit(unit_name, 'replace')
     elif action == 'STOP':
-       job = manager.StopUnit(unit_name)
+       job = manager.StopUnit(unit_name, 'replace')
     elif action == 'STATUS':
         # Status is always returned as long as the action keyword is correct
         pass
