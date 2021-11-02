@@ -142,7 +142,7 @@ def get_latest_record(collection_name):
     return latest_record
 
 
-def read_mongo_to_pandas(dt, days=1, collection='monitoring', no_id=True):
+def read_mongo_to_pandas(dt, days=1, collection_name='monitoring', no_id=True):
     """ Read from Mongo and Store into DataFrame """
 
     appended_df = []
@@ -157,13 +157,13 @@ def read_mongo_to_pandas(dt, days=1, collection='monitoring', no_id=True):
 
         # Make a query to the specific DB and Collection
         #cursor = db[collection].find(query)
-        cursor = db[collection].find()
+        cursor = db[collection_name].find()
 
 
         # Expand the cursor and construct the DataFrame
         appended_df.append(pd.DataFrame(list(cursor)))
 
-    df = pd.concat(appended_df, ignore_index=True)
+    df = pd.concat(appended_df).sort_values(by='time_utc').reindex()
 
     # Delete the _id
     if no_id:
