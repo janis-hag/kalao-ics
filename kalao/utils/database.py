@@ -163,7 +163,7 @@ def read_mongo_to_pandas(dt, days=1, collection_name='monitoring', no_id=True):
         # Expand the cursor and construct the DataFrame
         appended_df.append(pd.DataFrame(list(cursor)))
 
-    df = pd.concat(appended_df).sort_values(by='time_utc').reindex()
+    df = pd.concat(appended_df).sort_values(by='time_utc', ignore_index=True)
 
     # Delete the _id
     if no_id:
