@@ -119,6 +119,8 @@ def tungsten_FLAT(q = None, dit = ExpTime, nbPic=1, filepath = None, filter_arg 
     :return: nothing
     """
 
+    tungsten.on()
+
     if shutter.close() != 'CLOSE':
         print("Error: failed to close the shutter")
         database.store_obs_log({'sequencer_status': 'ERROR'})
@@ -128,8 +130,6 @@ def tungsten_FLAT(q = None, dit = ExpTime, nbPic=1, filepath = None, filter_arg 
         print("Error: flip mirror did not go up")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
-
-    tungsten.on()
 
     if filter_control.set_position(filter_arg) == -1:
         print("Error: problem with filter selection")
@@ -141,7 +141,10 @@ def tungsten_FLAT(q = None, dit = ExpTime, nbPic=1, filepath = None, filter_arg 
         q.get()
         return
 
+    # TODO, use temporary_path variable
     temporary_path = file_handling.create_night_folder()
+
+    # TODO check if lamp is on for enough time using kalao.config value and plc.tungsten.get_switch_time() function
 
     # Take nbPic image
     for _ in range(nbPic):
@@ -161,6 +164,7 @@ def tungsten_FLAT(q = None, dit = ExpTime, nbPic=1, filepath = None, filter_arg 
             tungsten.off()
             return -1
 
+    # TODO move tungsen.off() to start of other commands so that the lamp stays on if needed
     tungsten.off()
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
