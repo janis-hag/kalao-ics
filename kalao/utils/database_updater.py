@@ -83,8 +83,8 @@ def update_plc_monitoring():
 
 if __name__ == "__main__":
     # Tell Python to run the handler() function when SIGINT is recieved
-    signal(SIGTERM, handler)
-    signal(SIGINT, handler)
+    # signal(SIGTERM, handler)
+    # signal(SIGINT, handler)
 
     # Get monitoring and cacao
     # schedule.every(60).seconds.do(cacao.telemetry.telemetry_save())
