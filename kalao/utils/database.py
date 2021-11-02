@@ -153,7 +153,7 @@ def read_mongo_to_pandas(dt, days=1, collection='monitoring', no_id=True):
 
     for day_number in range(days):
         # Loop of days
-        db = get_db(dt - timedelta(days=1) - 1)
+        db = get_db(dt - timedelta(days= day_number - 1))
 
         # Make a query to the specific DB and Collection
         #cursor = db[collection].find(query)
