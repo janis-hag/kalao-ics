@@ -8,15 +8,15 @@ La taille des message vers KalAO est limitée ainsi on a défini que le caractè
 
 ### Liste de poses:
 
-| Nom	| Autre nom	| Commentaire   |
-|-------|-----------|---------------|
-|  k_dark     |           |               |		
-|  k_lpmflt     |           |               |		
-|  k_aocal     |           |               |		
-|  k_trgobs     |           |               |		
-|  status     |           |               |		
-|  abort     |           |               |		
-|  end      |           |               |		
+| Nom	| Autre nom	| Arguments | Commentaire   |
+|-------|-----------|-----------|----|
+|  k_dark     |           |       |        |		
+|  k_lpmflt     |           | filter_list     |         |		
+|  k_aocal     |           |        |       |		
+|  k_trgobs     |           |        |       |		
+|  status     |           |           |    |		
+|  abort     |           |            |   |		
+|  end      |           |            |   |		
 		
 		
 		
