@@ -16,10 +16,32 @@ from . import core
 from opcua import ua
 from time import sleep
 import pandas as pd
+from configparser import ConfigParser
+from pathlib import Path
+import os
 
 from kalao.utils import database
+from kalao.filterwheel import filter_control
+
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+# Read config file
+parser = ConfigParser()
+parser.read(config_path)
+
+TungstenSwitchWait = parser.getfloat('PLC', 'TungstenSwitchWait')
 
 node_path = 'Tungsten'
+
+
+def get_flat_dits():
+    Id_filter_dict = filter_control.create_filter_id()
+    Flat_dit_dict = {}
+    for key, val in parser.items('LampFlat'):
+        # Create dit dictionary based on named filters
+        Flat_dit_dict[key] = float(val)
+        # Create dit dictionary based on numbered filters
+        Flat_dit_dict[Id_filter_dict[key]] = float(val)
+    return Flat_dit_dict
 
 
 def check_error(beck):
@@ -39,7 +61,6 @@ def on(beck=None):
     """
 
     state = send_command(beck, 3)
-    update_db(beck=beck)
 
     return state
 
@@ -53,7 +74,6 @@ def off(beck=None):
     """
 
     state = send_command(beck, 2)
-    update_db(beck=beck)
 
     return state
 
@@ -87,7 +107,11 @@ def send_command(beck, nCommand_value):
     # Execute
     send_execute(beck)
 
+    sleep(TungstenSwitchWait)
     state = beck.get_node("ns=4; s=MAIN.Tungsten.stat.nStatus").get_value()
+
+    # Store new status in database
+    update_db(beck=beck)
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -142,13 +166,6 @@ def send_execute(beck):
         ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, tungsten_bExecute.get_data_type_as_variant_type())))
 
 
-# def send_init(beck, tungsten_nCommand):
-#     tungsten_nCommand.set_attribute(ua.AttributeIds.Value,
-#                                  ua.DataValue(ua.Variant(int(1), tungsten_nCommand.get_data_type_as_variant_type())))
-#     # Execute
-#     send_execute(beck)
-
-
 def status(beck=None):
     """
     Query the status of the tungsten lamp.
@@ -198,23 +215,33 @@ def update_db(beck=None):
     database.store_monitoring({'tungsten': status(beck=beck)['sStatus']})
 
 
-def switch(action_name):
-    """
-     Open or Close the shutter depending on action_name
+# def switch(action_name):
+#     """
+#      Open or Close the shutter depending on action_name
+#
+#     :param action_name: bClose_Shutter or
+#     :return: position of flipmirror
+#     """
+#     # Connect to OPCUA server
+#     beck = core.connect()
+#
+#     tungsten_switch = beck.get_node("ns = 4; s = MAIN.Tungsten." + action_name)
+#     tungsten_switch.set_attribute(
+#         ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, tungsten_switch.get_data_type_as_variant_type())))
+#
+#     sleep(1)
+#     tungsten_status = beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sStatus").get_value()
+#
+#     # Store new status in database
+#     update_db(beck=beck)
+#
+#     beck.disconnect()
+#
+#
+#     return tungsten_status
 
-    :param action_name: bClose_Shutter or
-    :return: position of flipmirror
-    """
-    # Connect to OPCUA server
-    beck = core.connect()
-
-    tungsten_switch = beck.get_node("ns = 4; s = MAIN.Tungsten." + action_name)
-    tungsten_switch.set_attribute(
-        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, tungsten_switch.get_data_type_as_variant_type())))
-
-    sleep(1)
-    tungsten_status = beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sStatus").get_value()
-    beck.disconnect()
-
-    return tungsten_status
-
+# def send_init(beck, tungsten_nCommand):
+#     tungsten_nCommand.set_attribute(ua.AttributeIds.Value,
+#                                  ua.DataValue(ua.Variant(int(1), tungsten_nCommand.get_data_type_as_variant_type())))
+#     # Execute
+#     send_execute(beck)

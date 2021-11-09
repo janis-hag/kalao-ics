@@ -70,6 +70,7 @@ def create_night_folder():
 
     return Tmp_night_folder
 
+
 def save_tmp_picture(image_path):
     Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
     target_name = Science_night_folder+os.sep+os.path.basename(image_path)
@@ -81,6 +82,7 @@ def save_tmp_picture(image_path):
     else:
         # TODO add log error
         return -1
+
 
 def update_header(image_path):
     # Read DATE-OBS in header
@@ -117,6 +119,7 @@ def update_header(image_path):
         hdul.flush()  # changes are written back to original.fits
 
     return 0
+
 
 def add_comment(image_path, comment_string):
     with fits.open(image_path, mode='update') as hdul:

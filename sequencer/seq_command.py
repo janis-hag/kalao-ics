@@ -25,9 +25,12 @@ parser.read(config_path)
 Science_storage = parser.get('FLI','ScienceDataStorage')
 ExpTime = parser.getfloat('FLI','ExpTime')
 TimeSup = parser.getint('FLI','TimeSup')
+TungstenStabilisationTime = parser.getint('PLC','TungstenStabilisationTime')
+TungstenWaitSleep = parser.getint('PLC','TungstenWaitSleep')
+DefaultFlatList = parser.getint('Calib','DefaultFlatList')
 
 
-def dark(q = None, dit = ExpTime, nbPic = 1, filepath = None, **kwargs):
+def dark(q=None, dit=ExpTime, nbPic=1, filepath=None, **kwargs):
     """
     1. Turn off lamps
     2. Close shutter
@@ -100,7 +103,7 @@ def dark_abort():
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def tungsten_FLAT(q = None, dit = ExpTime, nbPic=1, filepath = None, filter_arg = None, **kwargs):
+def tungsten_FLAT(q = None, filepath = None, filter_list = None, **kwargs):
     """
     1. Close shutter
     2. Move flip mirror up
@@ -121,18 +124,26 @@ def tungsten_FLAT(q = None, dit = ExpTime, nbPic=1, filepath = None, filter_arg 
 
     tungsten.on()
 
+    if filter_list is None:
+        filter_list = DefaultFlatList
+
+    if tungsten.on() != 2:
+        database.store_obs_log({'sequencer_log': "Error: failed to turn on tungsten lamp"})
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
     if shutter.close() != 'CLOSE':
-        print("Error: failed to close the shutter")
+        database.store_obs_log({'sequencer_log': "Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
     if flip_mirror.up() != 'UP':
-        print("Error: flip mirror did not go up")
+        database.store_obs_log({'sequencer_log': 'Error: flip mirror did not go up'})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    if filter_control.set_position(filter_arg) == -1:
-        print("Error: problem with filter selection")
+    if filter_control.set_position(filter_list[0]) == -1:
+        database.store_obs_log({'sequencer_log': 'Error: problem with filter selection'})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
@@ -143,11 +154,31 @@ def tungsten_FLAT(q = None, dit = ExpTime, nbPic=1, filepath = None, filter_arg 
 
     # TODO, use temporary_path variable
     temporary_path = file_handling.create_night_folder()
+    if filepath is None:
+        filepath = temporary_path
 
-    # TODO check if lamp is on for enough time using kalao.config value and plc.tungsten.get_switch_time() function
+    while(tungsten.get_switch_time() < TungstenStabilisationTime):
+        # Wait for tungsten to warm up
+        # Check if an abort was requested
+        # block for each picture and check if an abort was requested
+        if check_abort(q,1) == -1:
+            return -1
 
-    # Take nbPic image
-    for _ in range(nbPic):
+        # Check if lamp is still on
+        if tungsten.status()['nStatus'] != 2:
+            database.store_obs_log({'sequencer_log': 'Tungsten lamp unexpectedly turned off.'})
+            database.store_obs_log({'sequencer_status': 'ERROR'})
+            return -1
+
+        time.sleep(TungstenWaitSleep)
+
+    for filter_name in filter_list:
+
+        filter_control.set_position(filter_name)
+
+        # Take nbPic image
+        #for _ in range(nbPic):
+        dit = tungsten.get_flat_dits()[filter_name]
         rValue = control.take_image(dit = dit, filepath = filepath)
 
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
@@ -155,17 +186,17 @@ def tungsten_FLAT(q = None, dit = ExpTime, nbPic=1, filepath = None, filter_arg 
 
         if rValue != 0:
             print(rValue)
-            tungsten.off()
+            #tungsten.off()
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return
 
         # block for each picture and check if an abort was requested
         if check_abort(q, dit) == -1:
-            tungsten.off()
+            #tungsten.off()
             return -1
 
     # TODO move tungsen.off() to start of other commands so that the lamp stays on if needed
-    tungsten.off()
+    #tungsten.off()
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
@@ -382,6 +413,7 @@ def check_abort(q, dit, AO = False):
         if AO and aomanager.check_loop() == -1:
             return -1
     return 0
+
 
 commandDict = {
     "kal_dark":                     dark,
