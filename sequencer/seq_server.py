@@ -5,6 +5,8 @@ from os  import path as OsPath
 # methode dirname return parent directory and methode abspath return absolut path
 SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
+from pathlib import Path
+
 from sequencer import seq_command
 
 from kalao.utils import database
@@ -12,6 +14,7 @@ from kalao.filterwheel import control
 
 import socket
 import time
+import os
 
 from itertools      import zip_longest
 from configparser   import ConfigParser
@@ -46,7 +49,7 @@ def seq_server():
 
     while True:
         socketSeq.listen()
-        print("%.6f"%(time.time()), "Waiting on connection..")
+        database.store_obs_log({'sequencer_log': "Waiting on connection."})
         conn, address = socketSeq.accept()
 
         command = (conn.recv(4096)).decode("utf8")
@@ -72,11 +75,11 @@ def seq_server():
         # try to cast every values of args dict in type needed
         check = cast_args(args)
         if check != 0:
-            print("Error: castïng of args went wrong")
+            print("Error: casting of args went wrong")
             database.store_obs_log({'sequencer_status': 'ERROR'})
             continue
 
-        # if abort commande, stop last command with Queue object q
+        # if abort command, stop last command with Queue object q
         # and start abort func
         if(commandList[0] == preCommand + '_abort'):
             # adds 1 to the q object to communicate the abort instruction
@@ -93,6 +96,7 @@ def seq_server():
 
         # Start a subThread with received command
         # commandDict is a dict with keys = "kal_****" and values is function object
+        # it may need to be kwargs = **args as we are passing a dictionary
         th = Thread(target = seq_command.commandDict[commandList[0]], kwargs = args)
         th.start()
 
