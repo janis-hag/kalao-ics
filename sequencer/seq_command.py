@@ -30,7 +30,7 @@ TungstenWaitSleep = parser.getint('PLC','TungstenWaitSleep')
 DefaultFlatList = parser.getint('Calib','DefaultFlatList')
 
 
-def dark(q=None, dit=ExpTime, nbPic=1, filepath=None, **kwargs):
+def dark(**seq_args):
     """
     1. Turn off lamps
     2. Close shutter
@@ -46,22 +46,32 @@ def dark(q=None, dit=ExpTime, nbPic=1, filepath=None, **kwargs):
     :return: nothing
     """
 
-    if core.lamps_off() != 0:
-        print("Error: failed to turn off lamps")
+    q=seq_args.get('q')
+    dit=seq_args.get('dit')
+    nbPic=seq_args.get('nbPic')
+
+    if None in (q, dit, nbPic):
+        database.store_obs_log({'sequencer_log': 'Missing keyword in dark function call'})
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
+
+    if core.lamps_off() != 0:
+        database.store_obs_log({'sequencer_log':"Error: failed to turn off lamps"})
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
 
     if shutter.close() != 'CLOSE':
-        print("Error: failed to close the shutter")
+        database.store_obs_log({'sequencer_log':"Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     # Check if an abort was requested before taking image was send
     if q != None and not q.empty():
         q.get()
         return -1
 
-    temporary_path = file_handling.create_night_folder()
+
+    filepath = file_handling.create_night_filepath()
 
     # Take nbPic image
     for _ in range(nbPic):
@@ -71,7 +81,7 @@ def dark(q=None, dit=ExpTime, nbPic=1, filepath=None, **kwargs):
         file_handling.save_tmp_picture(image_path)
 
         if rValue != 0:
-            print(rValue)
+            database.store_obs_log({'sequencer_log':rValue})
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return -1
 
@@ -91,19 +101,19 @@ def dark_abort():
     rValue = control.cancel()
     if(rValue != 0):
         # TODO handle error
-        print(rValue)
+        database.store_obs_log({'sequencer_log':rValue})
 
     time.sleep(1)
 
     rValue = control.cancel()
     if(rValue != 0):
         # TODO handle error
-        print(rValue)
+        database.store_obs_log({'sequencer_log':rValue})
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def tungsten_FLAT(q = None, filepath = None, filter_list = None, **kwargs):
+def tungsten_FLAT(**seq_args):
     """
     1. Close shutter
     2. Move flip mirror up
@@ -124,38 +134,48 @@ def tungsten_FLAT(q = None, filepath = None, filter_list = None, **kwargs):
 
     tungsten.on()
 
+    q = seq_args.get('q')
+    filter_list = seq_args.get('filter_list')
+    filepath = seq_args.get('filepath')
+
+    if None in (q):
+        database.store_obs_log({'sequencer_log': 'Missing keyword in target_observation function call'})
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
     if filter_list is None:
         filter_list = DefaultFlatList
 
     if tungsten.on() != 2:
         database.store_obs_log({'sequencer_log': "Error: failed to turn on tungsten lamp"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if shutter.close() != 'CLOSE':
         database.store_obs_log({'sequencer_log': "Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if flip_mirror.up() != 'UP':
         database.store_obs_log({'sequencer_log': 'Error: flip mirror did not go up'})
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if filter_control.set_position(filter_list[0]) == -1:
         database.store_obs_log({'sequencer_log': 'Error: problem with filter selection'})
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     # Check if an abort was requested
     if q != None and not q.empty():
         q.get()
         return
 
-    # TODO, use temporary_path variable
-    temporary_path = file_handling.create_night_folder()
     if filepath is None:
-        filepath = temporary_path
+        filepath = file_handling.create_night_filepath()
+    else:
+        # TODO, verify that temporary_path is in the filepath
+        temporary_path = file_handling.create_night_folder()
 
     while(tungsten.get_switch_time() < TungstenStabilisationTime):
         # Wait for tungsten to warm up
@@ -174,21 +194,26 @@ def tungsten_FLAT(q = None, filepath = None, filter_list = None, **kwargs):
 
     for filter_name in filter_list:
 
-        filter_control.set_position(filter_name)
+        if filter_control.set_position(filter_name) == -1:
+            database.store_obs_log({'sequencer_log': 'Error: problem with filter selection'})
+            database.store_obs_log({'sequencer_status': 'ERROR'})
+            return -1
 
         # Take nbPic image
-        #for _ in range(nbPic):
         dit = tungsten.get_flat_dits()[filter_name]
-        rValue = control.take_image(dit = dit, filepath = filepath)
 
-        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
+        image_path = file_handling.create_night_filepath()
+
+        rValue = control.take_image(dit=dit, filepath=image_path)
+
+        #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
         file_handling.save_tmp_picture(image_path)
 
         if rValue != 0:
-            print(rValue)
+            database.store_obs_log({'sequencer_log':rValue})
             #tungsten.off()
             database.store_obs_log({'sequencer_status': 'ERROR'})
-            return
+            return -1
 
         # block for each picture and check if an abort was requested
         if check_abort(q, dit) == -1:
@@ -209,19 +234,19 @@ def tungsten_FLAT_abort():
     rValue = control.cancel()
     if(rValue != 0):
         # TODO handle error
-        print(rValue)
+        database.store_obs_log({'sequencer_log':rValue})
 
     time.sleep(1)
 
     rValue = control.cancel()
     if(rValue != 0):
         # TODO handle error
-        print(rValue)
+        database.store_obs_log({'sequencer_log':rValue})
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
+def sky_FLAT(**seq_args):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -236,23 +261,38 @@ def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwar
     :param kwargs: supports additional arguments
     :return: nothing
     """
+
+    q = seq_args.get('q')
+    filter_list = seq_args.get('filter_list')
+    filepath = seq_args.get('filepath')
+    dit = seq_args.get('dit')
+
+    if None in (q, dit, filepath):
+        # TODO verify which arguments are actually needed.
+        database.store_obs_log({'sequencer_log': 'Missing keyword in dark function call'})
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
+    if filter_list is None:
+        filter_list = DefaultFlatList
+
     if core.lamps_off() != 0:
-        print("Error: failed to turn off lamps")
+        database.store_obs_log({'sequencer_log':"Error: failed to turn off lamps"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
     if flip_mirror.down() != 'DOWN':
-        print("Error: flip mirror did not go down")
+        database.store_obs_log({'sequencer_log':"Error: flip mirror did not go down"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
     if shutter.open() != 'OPEN':
-        print("Error: failed to open the shutter")
+        database.store_obs_log({'sequencer_log':"Error: failed to open the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    if filter_control.set_position(filter_arg) == -1:
-        print("Error: problem with filter selection")
+    if filter_control.set_position(filter_list[0]) == -1:
+        database.store_obs_log({'sequencer_log':"Error: problem with filter selection"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
     # Check if an abort was requested
@@ -260,21 +300,40 @@ def sky_FLAT(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwar
         q.get()
         return
 
-    rValue = control.take_image(dit = dit, filepath = filepath)
-    if rValue != 0:
-        print(rValue)
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+    for filter_name in filter_list:
 
-    check_abort(q,dit)
+        if filter_control.set_position(filter_name) == -1:
+            database.store_obs_log({'sequencer_log': 'Error: problem with filter selection'})
+            database.store_obs_log({'sequencer_status': 'ERROR'})
+            return -1
+
+        # Take nbPic image
+        dit = tungsten.get_flat_dits()[filter_name]
+
+        image_path = file_handling.create_night_filepath()
+
+        rValue = control.take_image(dit=dit, filepath=image_path)
+
+        #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
+        file_handling.save_tmp_picture(image_path)
+
+        if rValue != 0:
+            database.store_obs_log({'sequencer_log':rValue})
+            database.store_obs_log({'sequencer_status': 'ERROR'})
+            return -1
+
+        # block for each picture and check if an abort was requested
+        if check_abort(q, dit) == -1:
+            return -1
+
 
     if shutter.close() != 'CLOSE':
-        print("Error: failed to close the shutter")
+        database.store_obs_log({'sequencer_log':"Error: failed to close the shutter"})
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
+def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -292,29 +351,43 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg = No
     :param kwargs: supports additional arguments
     :return: nothing
     """
+
+    q = seq_args.get('q')
+    filter_arg = seq_args.get('filter_arg')
+    filepath = seq_args.get('filepath')
+    dit = seq_args.get('dit')
+
+    if None in (q, dit):
+        database.store_obs_log({'sequencer_log': 'Missing keyword in target_observation function call'})
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
     if core.lamps_off() != 0:
-        print("Error: failed to turn off lamps")
+        database.store_obs_log({'sequencer_log':"Error: failed to turn off lamps"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
     if flip_mirror.down() != 'DOWN':
-        print("Error: flip mirror did not go down")
+        database.store_obs_log({'sequencer_log':"Error: flip mirror did not go down"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
     if shutter.open() != 'OPEN':
-        print("Error: failed to open the shutter")
+        database.store_obs_log({'sequencer_log':"Error: failed to open the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
     if starfinder.centre_on_target() == -1:
-        print("Error: problem with centre on target")
+        database.store_obs_log({'sequencer_log':"Error: problem with centre on target"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    # TODO check filer_arg value != None
+    if filter_arg is None:
+        database.store_obs_log({'sequencer_log':"Warning: no filter specified for take image, using clear"})
+        filter_arg = 'clear'
+
     if filter_control.set_position(filter_arg) == -1:
-        print("Error: problem with filter selection")
+        database.store_obs_log({'sequencer_log':"Error: problem with filter selection"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
@@ -330,7 +403,7 @@ def target_observation(q = None, dit = ExpTime, filepath = None, filter_arg = No
     file_handling.save_tmp_picture(image_path)
 
     if rValue != 0:
-        print(rValue)
+        database.store_obs_log({'sequencer_log':rValue})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
@@ -348,13 +421,13 @@ def target_observation_abort():
     # two cancel are done to avoid concurrency problems
     rValue = control.cancel()
     if(rValue != 0):
-        print(rValue)
+        database.store_obs_log({'sequencer_log':rValue})
 
     time.sleep(1)
 
     rValue = control.cancel()
     if(rValue != 0):
-        print(rValue)
+        database.store_obs_log({'sequencer_log':rValue})
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
@@ -374,12 +447,12 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     """
 
     if shutter.close() != 'CLOSE':
-        print("Error: failed to close the shutter")
+        database.store_obs_log({'sequencer_log':"Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
     if flip_mirror.up() != 'UP':
-        print("Error: flip mirror did not go up")
+        database.store_obs_log({'sequencer_log':"Error: flip mirror did not go up"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 

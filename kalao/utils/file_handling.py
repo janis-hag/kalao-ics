@@ -11,7 +11,6 @@ file_handling.py is part of the KalAO Instrument Control Software
 """
 
 # TODO create functions:
-# - def update_fits_header
 # - update_temporary_folder( current_folder, temporary_folder)
 
 import sys
@@ -45,6 +44,7 @@ def create_night_filepath():
     Tmp_night_folder = create_night_folder()
     filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
     filepath = Tmp_night_folder+os.sep+filename
+
     return filepath
 
 
@@ -80,11 +80,13 @@ def save_tmp_picture(image_path):
         os.rename(image_path, target_name)
         return target_name
     else:
-        # TODO add log error
+        database.store_obs_log({'sequencer_log': 'ERROR: unable to save '+image_path+' to '+target_name})
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+
         return -1
 
 
-def update_header(image_path):
+def update_header(image_path, keyword_list=None):
     # Read DATE-OBS in header
     # Search start values in log
     # Search end values in log using DATE-OBS and TEXP
@@ -95,7 +97,9 @@ def update_header(image_path):
     header_config = ConfigParser()
     header_config.read(fits_header_config_path)
 
-    keys = list(header_config.items('Section'))
+    monitoring_cards = dict(header_config.items('Monitoring'))
+    for k in monitoring_cards.keys():
+        monitoring_cards[k] = monitoring_cards[k].split(',')
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -103,12 +107,12 @@ def update_header(image_path):
         dt = datetime.fromisoformat(header['DATE-OBS'])
         # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
 
-        monitoring_status = database.get_monitoring(keys, 1, dt=dt)
-        for key in keys:
+        monitoring_status = database.get_monitoring(monitoring_cards.keys(), 1, dt=dt)
+        for key, type_comment in monitoring_cards:
             if key in monitoring_status.keys():
-                header.set(key.upper(), monitoring_status[key]['values'][0], '') # TODO get comment from databse definition
+                header.set(key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
             else:
-                header.set(key.upper(), '','')
+                header.set(key.upper(), '', type_comment[1].strip())
 
         # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
         # header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
