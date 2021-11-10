@@ -15,6 +15,7 @@ from pathlib import Path
 import os
 import dbus
 from datetime import datetime
+import time
 
 from kalao.utils import database
 
@@ -120,17 +121,24 @@ def check_status():
     check_kalao_config()
     # TODO verify if anything else needs to be done if check_kalao_config fails
 
+    return_status = {'camera_service': True, 'database_service': True, 'flask_service': True}
+
     camera_status = camera_service('status')
     if not camera_status[0] == 'active':
         database.store_obs_log({'fli_log': 'WARNING: Camera service down!'})
+        return_status['camera_service'] = False
 
     database_status = database_service('status')
     if not database_status[0] == 'active':
         database.store_obs_log({'database_log': 'WARNING: Database service down!'})
+        return_status['database_service'] = False
 
     flask_status = flask_service('status')
     if not flask_status[0] == 'active':
         database.store_obs_log({'flask_log': 'WARNING: Flask GUI server down!'})
+        return_status['flask_service'] = False
+
+    return return_status
 
 
 def camera_service(action):
@@ -154,10 +162,23 @@ def flask_service(action):
 
     return status
 
-def initialize_services():
+
+def initialise_services():
+    ServiceRestartWait = parser.getint('SystemD','ServiceRestartWait')
+
     flask_service('restart')
     database_service('restart')
     camera_service('restart')
+
+    time.sleep(ServiceRestartWait)
+
+    # Loop as long as not all systems are active.
+    if not all(check_status().values()):
+        database.store_obs_log({'sequencer_log': 'ERROR: a service is not running! '+str(check_status())})
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
+
 
 def check_kalao_config():
 

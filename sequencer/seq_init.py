@@ -19,6 +19,7 @@ from threading          import Thread
 from multiprocessing    import Process, Queue
 from configparser       import ConfigParser
 
+import time
 from pathlib import Path
 import os
 
@@ -28,7 +29,9 @@ from kalao.plc import flip_mirror
 from kalao.plc import laser
 from kalao.plc import tungsten
 from kalao.fli import control
+from kalao.utils import database
 
+from sequencer import system
 from sequencer import seq_server
 from sequencer import seq_command
 
@@ -46,6 +49,7 @@ class ThreadWithReturnValue(Thread):
     def join(self, *args):
         Thread.join(self, *args)
         return self._return
+
 
 # Multi-thread fonction: take array of func objects
 # Create a thread for each function and start the function
@@ -90,6 +94,7 @@ def initBenchComponents(q, init_foncs):
         else:
             print(th.getName(), "OK")
 
+
 def startThread(q, timeout, init_foncs):
     """
     Create a thread and block until its end or until the allowed time is exceeded.
@@ -114,6 +119,7 @@ def startThread(q, timeout, init_foncs):
     else:
         print("All subthreads returned")
 
+
 def startProcess(startThread, q, timeout, init_foncs):
     """
     Create a sub-process and block it until the end.
@@ -132,6 +138,7 @@ def startProcess(startThread, q, timeout, init_foncs):
     p.join()
     print("Subprocess OK")
 
+
 def initialisation():
     """
     Read the configuration file.
@@ -140,18 +147,19 @@ def initialisation():
     :return:
     """
 
-    # TODO system.check_status()
 
     # read config file
 
     config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
     parser = ConfigParser()
     parser.read(config_path)
+
     nbTry   = parser.getint('PLC','InitNbTry')
     timeout = parser.getint('PLC','InitTimeout')
 
     # dict where keys is string name of object <function> and values is object <function>
     init_dict = {
+        "system.initialise_services"     : system.initialise_services,
         "control.initialise"    : control.initialise,
         "calib_unit.initialise" : calib_unit.initialise,
         "flip_mirror.initialise": flip_mirror.initialise,
