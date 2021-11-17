@@ -1,6 +1,8 @@
 from flask_cors import CORS
-from flask import Flask,request
+from flask import Flask,request,Blueprint
 
+from rest.plc import plc_bp
+from rest.system import system_bp
 from datetime import datetime, timedelta, timezone
 
 from numpy.random import seed
@@ -11,6 +13,7 @@ import sys
 import random
 import math
 import yaml
+import time as time_lib
 
 import logging
 
@@ -24,27 +27,17 @@ from kalao.cacao import telemetry as k_telemetry
 from kalao.interface import status as k_status
 from kalao.interface import star_centering as k_star_centering
 from kalao.utils import database as k_database
-from kalao.plc import laser as k_laser
-from kalao.plc import shutter as k_shutter
-from kalao.plc import flip_mirror as k_flip_mirror
-from kalao.plc import tungsten as k_tungsten
-from kalao.plc import calib_unit as k_calib_unit
-
-from sequencer import system as s_system
 
 def create_app():
 
     logging.getLogger("waitress").setLevel(logging.ERROR)
-    # Create and configure app
+
     app = Flask(__name__)
 
-    CORS(app)
+    app.register_blueprint(plc_bp)
+    app.register_blueprint(system_bp)
 
-    @app.route('/')
-    @app.route('/time', methods=['GET'])
-    def time():
-        dt = datetime.now(timezone.utc)
-        return {"time": dt}
+    CORS(app)
 
     @app.route('/metaData', methods=['GET'])
     def metaData():
@@ -101,20 +94,20 @@ def create_app():
         realData = not bool(request.args.get('random', default = "", type = str))
         return k_telemetry.streams(realData)
 
-    @app.route('/status', methods=['GET'])
-    def status():
+    @app.route('/data', methods=['GET'])
+    def data():
         realData = not bool(request.args.get('random', default = "", type = str))
-        return k_status.latest_obs_log_entry(realData)
+        status = k_status.latest_obs_log_entry(realData)
+        monitoring = k_database.get_all_last_monitoring()
+        telemetry = k_database.get_all_last_telemetry(realData)
+        time = datetime.now(timezone.utc)
 
-    @app.route('/monitoring', methods=['GET'])
-    def monitoring():
-        realData = not bool(request.args.get('random', default = "", type = str))
-        return k_database.get_all_last_monitoring()
-
-    @app.route('/telemetry', methods=['GET'])
-    def telemetry():
-        realData = not bool(request.args.get('random', default = "", type = str))
-        return k_database.get_all_last_telemetry(realData)
+        return {
+            "time": time,
+            "status": status,
+            "monitoring": monitoring,
+            "telemetry": telemetry
+        }, 200
 
     @app.route('/centeringImage', methods=['GET'])
     def centeringImage():
@@ -166,121 +159,43 @@ def create_app():
         random = bool(request.args.get('random', default = "", type = str))
         return k_status.cacao_measurements(random)
 
-    @app.route('/plc/status', methods=['GET'])
-    def plcStatus():
+    @app.route('/timeSeries/<t_start>/<t_end>', methods=['GET'])
+    def timeSeries(t_start,t_end):
+        #print(t_start,t_end)
+        #def read_mongo_to_pandas(dt, days=1, collection='monitoring', no_id=True):
+        data = k_database.read_mongo_to_pandas(None, days=1,"monitoring", False) #.to_json(orient="split")*/
 
-        return json.dumps({
-            "laser": {
-                "status": k_laser.status()
-            },
-            "shutter": {
-                "position": k_shutter.position()
-            },
-            "flip_mirror": {
-                "position": k_flip_mirror.position()
-            },
-            "tungsten": {
-                "status": k_tungsten.status()
-            },
-            "calib_unit": {
-                "status": k_calib_unit.status()}
-            })
+        ts = {}
+        time_values = [time_lib.mktime(d.timetuple()) for d in data["time_utc"].tolist()]
+        for col in data.columns:
+            if col != "time_utc":
+                values = data[col].tolist()
+                ts[col] = {
+                    "time": time_values,
+                    "values": values
+                }
+        return json.dumps(ts);
+        #print(data)
 
-    @app.route('/plc/laser/enable', methods=['GET'])
-    def plcLaserEnable():
-        return k_laser.enable();
+        random = bool(request.args.get('random', default = "", type = str))
+        series = k_status.telemetry_series(random)
+        limit = 100
+        obj = {}
+        for serie_name in series:
+            obj[serie_name] = {"time": [],"values": []}
+            nb = 0
+            for time in series[serie_name]["time_utc"]:
+                if nb < limit:
+                    obj[serie_name]["time"].append(round(datetime.timestamp(time),1))
+                nb+=1
+            nb = 0
+            for values in series[serie_name]["values"]:
+                if nb < limit:
+                    obj[serie_name]["values"].append(values["values"][0])
+                nb+=1
 
-    @app.route('/plc/laser/disable', methods=['GET'])
-    def plcLaserDisable():
-        return k_laser.disable();
+        return obj,200
 
-    @app.route('/plc/laser/intensity', methods=['POST'])
-    def plcLaserIntensity():
-        options = request.get_json()
-        return k_laser.set_intensity(options["intensity"])
-
-    @app.route('/plc/shutter/open', methods=['GET'])
-    def plcShutterOpen():
-        return k_shutter.open();
-
-    @app.route('/plc/shutter/close', methods=['GET'])
-    def plcShutterClose():
-        return k_shutter.close();
-
-    @app.route('/plc/flipMirror/up', methods=['GET'])
-    def plcFlipMirrorUp():
-        return k_flip_mirror.up();
-
-    @app.route('/plc/flipMirror/down', methods=['GET'])
-    def plcFlipMirrorDown():
-        return k_flip_mirror.down();
-
-    @app.route('/plc/tungsten/on', methods=['GET'])
-    def plcTungstenOn():
-        return k_tungsten.on();
-
-    @app.route('/plc/tungsten/off', methods=['GET'])
-    def plcTungstenOff():
-        return k_tungsten.off();
-
-    @app.route('/plc/calibUnit/laser', methods=['GET'])
-    def plcCalibUnitLaser():
-        return k_calib_unit.laser();
-
-    @app.route('/plc/calibUnit/tungsten', methods=['GET'])
-    def plcCalibUnitTungsten():
-        return k_calib_unit.tungsten();
-
-    @app.route('/plc/calibUnit/move', methods=['POST'])
-    def plcCalibUnitMove():
-        options = request.get_json()
-        return k_calib_unit.move(options["move"])
-
-    @app.route('/system/status', methods=['GET'])
-    def systemFStatus():
-        return json.dumps({
-            "camera": {
-                "status": 'OK'
-            },
-            "database": {
-                "status": 'OK'
-            },
-            "flask": {
-                "status": 'OK'
-            }
-        })
-
-        '''
-        return json.dumps({
-            "camera": {
-                "status": s_system.camera_service("STATUS")
-            },
-            "database": {
-                "position": s_system.database_service("STATUS")
-            },
-            "flask": {
-                "position": s_system.flask_service("STATUS")
-            }
-        })'''
-
-    @app.route('/system/camera/start', methods=['GET'])
-    def systemCameraStart():
-        return s_system.camera_service("RESTART")
-
-    @app.route('/system/camera/stop', methods=['GET'])
-    def systemCameraStop():
-        return s_system.camera_service("STOP")
-
-    @app.route('/system/database/start', methods=['GET'])
-    def systemDatabaseStart():
-        return s_system.database_service("RESTART")
-
-    @app.route('/system/database/stop', methods=['GET'])
-    def systemDatabaseStop():
-        return s_system.database_service("STOP")
-
-    @app.route('/system/flask/start', methods=['GET'])
-    def systemFlaskStart():
-        return s_system.flask_service("RESTART")
+        #return data,200
 
     return app
