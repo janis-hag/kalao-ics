@@ -25,6 +25,14 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser.read(config_path)
 
 
+def _isDigit(x):
+    try:
+        float(x)
+        return True
+    except ValueError:
+        return False
+
+
 def check_active(unit_name):
     #unit_name = 'kalao_database_updater.service'
 
@@ -206,92 +214,93 @@ def check_kalao_config():
 
     # PLC section
     if not PLCSection['ip'].replace('.', '', 3).isdigit():
-        print_and_log("Error: wrong values format for PLC 'IP' in kalao.config file")
+        print_and_log("Error: wrong values format for PLC 'IP' in kalao.config file: "+str(PLCSection['ip']))
         error = True
     if not PLCSection['port'].isdigit():
-        print_and_log("Error: wrong values format for PLC 'Port' in kalao.config file ")
+        print_and_log("Error: wrong values format for PLC 'Port' in kalao.config file: "+str(PLCSection['port']))
         error = True
     if not PLCSection['initnbtry'].isdigit():
-        print_and_log("Error: wrong values format for PLC 'InitNbTry' in kalao.config file ")
+        print_and_log("Error: wrong values format for PLC 'InitNbTry' in kalao.config file: "+str(PLCSection['initnbtry']))
         error = True
     if not PLCSection['inittimeout'].isdigit():
-        print_and_log("Error: wrong values format for PLC 'InitTimeout' in kalao.config file ")
+        print_and_log("Error: wrong values format for PLC 'InitTimeout' in kalao.config file: "+str(PLCSection['inittimeout']))
         error = True
     if not PLCSection['lasermaxallowed'].replace('.', '', 1).isdigit():
-        print_and_log("Error: wrong values format for PLC 'LaserMaxAllowed' in kalao.config file ")
+        print_and_log("Error: wrong values format for PLC 'LaserMaxAllowed' in kalao.config file: "+str(PLCSection['lasermaxallowed']))
         error = True
     if not PLCSection['laserswitchwait'].isdigit():
-        print_and_log("Error: wrong values format for PLC 'LaserSwitchWait' in kalao.config file ")
+        print_and_log("Error: wrong values format for PLC 'LaserSwitchWait' in kalao.config file: "+str(PLCSection['laserswitchwait']))
         error = True
     if not PLCSection['laserposition'].replace('.', '', 1).isdigit():
-        print_and_log("Error: wrong values format for PLC 'LaserPosition' in kalao.config file ")
+        print_and_log("Error: wrong values format for PLC 'LaserPosition' in kalao.config file: "+str(PLCSection['laserposition']))
         error = True
-    if not PLCSection['tungstenposition'].isdigit():
-        print_and_log("Error: wrong values format for PLC 'TungstenPosition' in kalao.config file ")
+    if not PLCSection['tungstenposition'].replace('.', '', 1).isdigit():
+        print_and_log("Error: wrong values format for PLC 'TungstenPosition' in kalao.config file: "+str(PLCSection['tungstenposition']))
         error = True
-    if not PLCSection['tempbenchairoffset'].isdigit():
-        print_and_log("Error: wrong values format for PLC 'TempBenchAirOffset' in kalao.config file ")
+    if not PLCSection['tempbenchairoffset'].replace('.', '', 1).replace('-', '', 1).isdigit():
+        print_and_log("Error: wrong values format for PLC 'TempBenchAirOffset' in kalao.config file: "+str(PLCSection['tempbenchairoffset']))
         error = True
-    if not PLCSection['tempbenchboardoffset'].isdigit():
-        print_and_log("Error: wrong values format for PLC 'TempBenchBoardOffset' in kalao.config file ")
+    if not PLCSection['tempbenchboardoffset'].replace('.', '', 1).replace('-', '', 1).isdigit():
+        print_and_log("Error: wrong values format for PLC 'TempBenchBoardOffset' in kalao.config file: "+str(PLCSection['tempbenchboardoffset']))
         error = True
-    if not PLCSection['tempwaterinoffset'].isdigit():
-        print_and_log("Error: wrong values format for PLC 'TempWaterInOffset' in kalao.config file ")
+    if not PLCSection['tempwaterinoffset'].replace('.', '', 1).replace('-', '', 1).isdigit():
+        print_and_log("Error: wrong values format for PLC 'TempWaterInOffset' in kalao.config file: "+str(PLCSection['tempwaterinoffset']))
         error = True
-    if not PLCSection['tempwateroutoffset'].isdigit():
-        print_and_log("Error: wrong values format for PLC 'TempWaterOutOffset' in kalao.config file ")
+    if not PLCSection['tempwateroutoffset'].replace('.', '', 1).replace('-', '', 1).isdigit():
+        print_and_log("Error: wrong values format for PLC 'TempWaterOutOffset' in kalao.config file: "+str(PLCSection['tempwateroutoffset']))
         error = True
 
     ################
     # FLI section
     ###############
     if not FLISection['exptime'].replace('.', '', 1).isdigit():
-        print_and_log("Error: wrong values format for FLI 'ExpTime' in kalao.config file ")
+        print_and_log("Error: wrong values format for FLI 'ExpTime' in kalao.config file: "+str(FLISection['exptime']))
         error = True
     if not FLISection['timesup'].isdigit():
-        print_and_log("Error: wrong values format for FLI 'TimeSup' in kalao.config file ")
+        print_and_log("Error: wrong values format for FLI 'TimeSup' in kalao.config file: "+str(FLISection['timesup']))
         error = True
     if not FLISection['ip'].replace('.', '', 3).isdigit():
-        print_and_log("Error: wrong values format for FLI 'IP' in kalao.config file ")
+        print_and_log("Error: wrong values format for FLI 'IP' in kalao.config file: "+str(FLISection['ip']))
         error = True
     if not FLISection['port'].isdigit():
-        print_and_log("Error: wrong values format for FLI 'Port' in kalao.config file ")
+        print_and_log("Error: wrong values format for FLI 'Port' in kalao.config file: "+str(FLISection['port']))
         error = True
 
     ###############
     # FilterWheel section
     ###############
-    if not FilterWheelSection['enablewait'].isdigit():
-        print_and_log("Error: wrong values format for FilterWheel 'EnableWait' in kalao.config file ")
+    if not _isDigit(FilterWheelSection['enablewait']):
+        print_and_log("Error: wrong values format for FilterWheel 'EnableWait' in kalao.config file: "+str(FilterWheelSection['enablewait']))
         error = True
-    if not FilterWheelSection['initializationwait'].isdigit():
-        print_and_log("Error: wrong values format for FilterWheel 'InitializationWait' in kalao.config file ")
+    if not _isDigit(FilterWheelSection['initializationwait']):
+        print_and_log("Error: wrong values format for FilterWheel 'InitializationWait' in kalao.config file: "+str(FilterWheelSection['initializationwait']))
         error = True
-    if not FilterWheelSection['positionchangewait'].isdigit():
-        print_and_log("Error: wrong values format for FilterWheel 'PositionChangeWait' in kalao.config file ")
+    if not _isDigit(FilterWheelSection['positionchangewait']):
+        print_and_log("Error: wrong values format for FilterWheel 'PositionChangeWait' in kalao.config file: "+str(FilterWheelSection['positionchangewait']))
         error = True
 
     ################
     # SEQ section
     ###############
     if not SEQSection['ip'].replace('.', '', 3).isdigit():
-        print_and_log("Error: wrong values format for SEQ 'IP' in kalao.config file ")
+        print_and_log("Error: wrong values format for SEQ 'IP' in kalao.config file: "+str(SEQSection['ip']))
         error = True
     if not SEQSection['port'].isdigit():
-        print_and_log("Error: wrong values format for SEQ 'Port' in kalao.config file ")
+        print_and_log("Error: wrong values format for SEQ 'Port' in kalao.config file: "+str(SEQSection['port']))
         error = True
 
     ################
     # GOP section
     ###############
-    if not GOPSection['ip'].replace('.','',3).isdigit():
-        print_and_log("Error: wrong values format for GOP 'IP' in kalao.config file ")
+    if not GOPSection['ip'].replace('.','',3).isdigit() or GOPSection['ip'].isprintable():
+        # IP can be number or hostname
+        print_and_log("Error: wrong values format for GOP 'IP' in kalao.config file: "+str(GOPSection['ip']))
         error = True
     if not GOPSection['port'].isdigit():
-        print_and_log("Error: wrong values format for GOP 'Port' in kalao.config file ")
+        print_and_log("Error: wrong values format for GOP 'Port' in kalao.config file: "+str(GOPSection['port']))
         error = True
     if not GOPSection['verbosity'].isdigit():
-        print_and_log("Error: wrong values format for GOP 'Verbosity' in kalao.config file ")
+        print_and_log("Error: wrong values format for GOP 'Verbosity' in kalao.config file: "+str(GOPSection['verbosity']))
         error = True
 
 
