@@ -219,5 +219,5 @@ gpu_free_memory:
 gpu_load:
   short: GPU load
   long: Current load on the GPU
-  unit: \%
+  unit: '%'
   main_gui: 2
