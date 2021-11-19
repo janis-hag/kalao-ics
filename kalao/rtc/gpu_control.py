@@ -44,5 +44,7 @@ def status():
     status_dict['gpu_power_draw'] = full_dict['Power Draw'].split(' ')[0]
     status_dict['gpu_used_memory'] = full_dict['Used'].split(' ')[0]
     status_dict['gpu_free_memory'] = full_dict['Free'].split(' ')[0]
+    status_dict['gpu_load'] = full_dict['Gpu'].split(' ')[0]
+
 
     return status_dict

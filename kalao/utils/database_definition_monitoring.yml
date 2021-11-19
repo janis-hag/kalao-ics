@@ -144,8 +144,8 @@ coretemp_isa-Package_id_0:
   main_gui: 2
 
 coretemp_isa-Core_0:
-  short: Core 0 temp.
-  long:  Core 0 of 8 temperature
+  short: Core 8 temp.
+  long:  Core 8 of 8 temperature
   unit: °C
   main_gui: 2
 
@@ -181,7 +181,7 @@ coretemp_isa-Core_5:
 
 coretemp_isa-Core_6:
   short: Core 6 temp.
-  long:  Core 67 of 8 temperature
+  long:  Core 6 of 8 temperature
   unit: °C
   main_gui: 2
 
@@ -189,4 +189,35 @@ coretemp_isa-Core_7:
   short: Core 7 temp.
   long: Core 7 of 8 temperature
   unit: °C
+  main_gui: 2
+
+#GPU
+gpu_current_temp:
+  short: GPU temperature
+  long: Current temperature of the GPU
+  unit: °C
+  main_gui: 2
+
+gpu_power_draw:
+  short: GPU power draw
+  long: Current power draw by the GPU
+  unit: W
+  main_gui: 2
+
+gpu_used_memory:
+  short: GPU memory used
+  long: Current used by the GPU
+  unit: MiB
+  main_gui: 2
+
+gpu_free_memory:
+  short: GPU free memory
+  long: Current free memory on the GPU
+  unit: MiB
+  main_gui: 2
+
+gpu_load:
+  short: GPU load
+  long: Current load on the GPU
+  unit: %
   main_gui: 2
