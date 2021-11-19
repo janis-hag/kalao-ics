@@ -30,7 +30,7 @@ def read_all():
     finally:
         sensors.cleanup()
 
-    gpu_temp = gpu_control.status()['GPU Current Temp'].split(' ')[0]
+    temperatures['gpu_current_temp'] = gpu_control.get_temp()
 
     return temperatures
 
