@@ -57,11 +57,11 @@ def get_mjd(dt):
     return julian_datetime
 
 
-def get_isotime(now=None):
-    if now is None:
-        return datetime.now().isoformat(timespec='milliseconds')
+def get_isotime(now_time=None):
+    if now_time is None:
+        return now().isoformat(timespec='milliseconds')
     else:
-        return now.isoformat(timespec='milliseconds')
+        return now_time.isoformat(timespec='milliseconds')
 
 def now():
     return datetime.now(timezone.utc)

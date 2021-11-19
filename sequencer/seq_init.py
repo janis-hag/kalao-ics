@@ -19,7 +19,6 @@ from threading          import Thread
 from multiprocessing    import Process, Queue
 from configparser       import ConfigParser
 
-import time
 from pathlib import Path
 import os
 
@@ -29,11 +28,8 @@ from kalao.plc import flip_mirror
 from kalao.plc import laser
 from kalao.plc import tungsten
 from kalao.fli import control
-from kalao.utils import database
 
 from sequencer import system
-from sequencer import seq_server
-from sequencer import seq_command
 
 class ThreadWithReturnValue(Thread):
     """
@@ -75,7 +71,7 @@ def initBenchComponents(q, init_foncs):
         th.daemon = True
 
         name = fonc.__module__.split(".")[-1] + "." + fonc.__name__
-        print(name, "starded..")
+        system.print_and_log(str(name)+" starded..")
         # name last_module_name.func_name (ex: control.initialise)
 
         th.start()
@@ -88,11 +84,11 @@ def initBenchComponents(q, init_foncs):
     for th in threads:
         rValue = th.join()
         if rValue != 0:
-            print("Error:",th.getName(), "return", rValue)
+            system.print_and_log("ERROR: "+str(th.getName())+" return "+str(rValue))
             q.put(th.getName())
             # add func's name who got an error to Queue object for retry
         else:
-            print(th.getName(), "OK")
+            system.print_and_log(str(th.getName())+" initialised.")
 
 
 def startThread(q, timeout, init_foncs):

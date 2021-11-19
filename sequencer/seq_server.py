@@ -7,13 +7,13 @@ SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
 from pathlib import Path
 
-from sequencer import seq_command
+from sequencer import seq_command, system
 
-from kalao.utils import database
+from kalao.utils import database, kalao_time
 from kalao.plc import filterwheel
 
 import socket
-import time
+#import time
 import os
 
 from itertools      import zip_longest
@@ -41,7 +41,7 @@ def seq_server():
 
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socketSeq.bind((host, port))
-    print("%.6f"%(time.time()), "Server on")
+    system.print_and_log("Server on: "+str(kalao_time.now()))
 
     q = Queue()
     th = None
@@ -105,7 +105,7 @@ def seq_server():
     # in case of break, we disconnect the socket
     conn.close()
     socketSeq.close()
-    print("%.6f"%(time.time()), 'Seq server off')
+    system.print_and_log("Server off: "+str(kalao_time.now()))
 
 
 def cast_args(args):
