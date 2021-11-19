@@ -163,7 +163,19 @@ def read_mongo_to_pandas(dt, days=1, collection_name='monitoring', no_id=True):
         # Expand the cursor and construct the DataFrame
         appended_df.append(pd.DataFrame(list(cursor)))
 
-    df = pd.concat(appended_df).sort_values(by='time_utc', ignore_index=True)
+    # Check if the databse is empty for the given days
+    if all([df.empty for df in appended_df]):
+        # Search one more day back in time to look for database content
+        db = get_db(dt - timedelta(days=days))
+        df = pd.DataFrame(list(db[collection_name].find()))
+
+        # If it did not succeed return a NaN database with column names
+        if df.empty:
+            df = pd.DataFrame(columns=list(definitions['monitoring'].keys()), index=[0])
+            no_id = False # Set to False because the '_id' column does not exist in this df
+
+    else:
+        df = pd.concat(appended_df).sort_values(by='time_utc', ignore_index=True)
 
     # Delete the _id
     if no_id:
