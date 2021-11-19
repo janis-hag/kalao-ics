@@ -27,12 +27,11 @@ ExpTime = parser.getfloat('FLI','ExpTime')
 TimeSup = parser.getint('FLI','TimeSup')
 TungstenStabilisationTime = parser.getint('PLC','TungstenStabilisationTime')
 TungstenWaitSleep = parser.getint('PLC','TungstenWaitSleep')
-DefaultFlatList = parser.getint('Calib','DefaultFlatList')
-
+DefaultFlatList = parser.get('Calib','DefaultFlatList').replace(' ','').replace('\n','').split(',')
 
 def dark(**seq_args):
     """
-    1. Turn off lamps
+    1. Turn off lamps   
     2. Close shutter
     3. Take 'nbPic' dark picture of 'dit' exposure time.
 
