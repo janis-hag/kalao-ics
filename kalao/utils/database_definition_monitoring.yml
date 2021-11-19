@@ -9,7 +9,7 @@ time_utc:
 # FLI
 fli_status:
   short: FLI camera status
-  long: Logging FLI status
+  long: FLI camera status
   unit: ""
   main_gui: 3
 
@@ -45,67 +45,67 @@ fli_filter_name:
 
 # PLC
 shutter:
-  short: position
+  short: Shutter position
   long: Shutter position
   unit:
   main_gui: 3
 
 flip_mirror:
-  short: position
-  long: Flipmirror position
+  short: Flip mirror position
+  long: Flip mirror position
   unit:
   main_gui: 3
 
 calib_unit:
-  short: position
+  short: Calib unit position
   long: Calibration unit position
   unit: mm
   main_gui: 2
 
 temp_bench_air:
-  short: bench  air temeperature
+  short: Bench air temp.
   long: Temperature inside the KalAO enclosure
   unit: °C
   main_gui: 2
 
 temp_bench_board:
-  short: bench board temperature
+  short: Bench board temp.
   long: Temperature of the aluminum bench
   unit: °C
   main_gui: 2
 
 temp_water_in:
-  short: enclosure temperature
-  long: Temperature inside the KalAO enclosure
+  short: Water in temp.
+  long: Temperature of the arriving cooling water
   unit: °C
   main_gui: 2
 
 temp_water_out:
-  short: enclosure temperature
-  long: Temperature inside the KalAO enclosure
+  short: Water out temp.
+  long: Temperature of the leaving cooling water
   unit: °C
   main_gui: 2
 
 laser:
-  short: laser power
+  short: Laser power
   long: Laser calibration lamp power
   unit: mW
   main_gui: 3
 
 tungsten:
-  short: tungsten status
+  short: Tungsten status
   long: Tungsten calibration lamp status
   unit: ""
   main_gui: 3
 
 adc1:
-  short: adc1 angle
+  short: ADC1 angle
   long: Angle of first ADC prism
   unit: deg
   main_gui: 2
 
 adc2:
-  short: adc2 angle
+  short: ADC2 angle
   long: Angle of second ADC prism
   unit: deg
   main_gui: 2
@@ -114,79 +114,79 @@ adc2:
 
 # RTC status
 nvme_pci-Composite:
-  short: SSD mean temperature
+  short: SSD mean temp.
   long:  SSD mean temperature
   unit: °C
   main_gui: 2
 
 nvme_pci-Sensor_1:
-  short: SSD 1 temperature
+  short: SSD 1 temp.
   long:  SSD 1 temperature
   unit: °C
   main_gui: 2
 
 nvme_pci-Sensor_2:
-  short: SSD 2 temperature
+  short: SSD 2 temp.
   long:  SSD 2 temperature
   unit: °C
   main_gui: 2
 
 acpitz_acpi-temp1:
-  short: mainboard temperature
+  short: mainboard temp.
   long:  mainboard temperature
   unit: °C
   main_gui: 2
 
 coretemp_isa-Package_id_0:
-  short: CPU mean temperature
+  short: CPU mean temp.
   long:  CPU mean temperature
   unit: °C
   main_gui: 2
 
 coretemp_isa-Core_0:
-  short: Core 0 temperature
+  short: Core 0 temp.
   long:  Core 0 of 8 temperature
   unit: °C
   main_gui: 2
 
 coretemp_isa-Core_1:
-  short: Core 1 temperature
+  short: Core 1 temp.
   long:  Core 1 of 8 temperature
   unit: °C
   main_gui: 2
 
 coretemp_isa-Core_2:
-  short: Core 2 temperature
+  short: Core 2 temp.
   long:  Core 2 of 8 temperature
   unit: °C
   main_gui: 2
 
 coretemp_isa-Core_3:
-  short: Core 3 temperature
+  short: Core 3 temp.
   long:  Core 3 of 8 temperature
   unit: °C
   main_gui: 2
 
 coretemp_isa-Core_4:
-  short: Core 4 temperature
+  short: Core 4 temp.
   long:  Core 4 of 8 temperature
   unit: °C
   main_gui: 2
 
 coretemp_isa-Core_5:
-  short: Core 5 temperature
+  short: Core 5 temp.
   long:  Core 5 of 8 temperature
   unit: °C
   main_gui: 2
 
 coretemp_isa-Core_6:
-  short: Core 6 temperature
+  short: Core 6 temp.
   long:  Core 67 of 8 temperature
   unit: °C
   main_gui: 2
 
 coretemp_isa-Core_7:
-  short: Core 7 temperature
+  short: Core 7 temp.
   long: Core 7 of 8 temperature
   unit: °C
   main_gui: 2

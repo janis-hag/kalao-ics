@@ -69,6 +69,7 @@ def latest_obs_log_entry(realData=True):
     else:
         return fake_data.fake_latest_obs_log_entry()
 
+
 def kalao_status():
     # TODO return sequencer_status, alt/az offset, focus offset
     sequencer_status = database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['values']
