@@ -10,5 +10,5 @@ __init__.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 __all__ = ['database', 'kalao_time']
-from .database import *
-from .kalao_time import *
+#from .database import *
+#from .kalao_time import *
