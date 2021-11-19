@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : temperatures.py
+# @Filename : sensors.py
 # @Date : 2021-02-24-10-32
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 
 """
-temperatures.py is part of the KalAO Instrument Control Software
+sensors.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
@@ -16,7 +16,7 @@ from kalao.rtc import gpu_control
 
 def read_all():
 
-    temperatures = {}
+    rtc_sensors = {}
     sensors.init()
 
     try:
@@ -26,13 +26,13 @@ def read_all():
                 #print '  %s: %.2f' % (feature.label, feature.get_value())
                 chipname = '_'.join(str(chip).split('-')[:-1])
                 sensor_name = chipname + '-' + feature.label
-                temperatures[sensor_name.replace(' ', '_')] = feature.get_value()
+                rtc_sensors[sensor_name.replace(' ', '_')] = feature.get_value()
     finally:
         sensors.cleanup()
 
-    temperatures['gpu_current_temp'] = gpu_control.get_temp()
+    rtc_sensors.update(gpu_control.status())
 
-    return temperatures
+    return rtc_sensors
 
 
 def database_update():

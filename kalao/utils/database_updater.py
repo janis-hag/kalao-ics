@@ -61,7 +61,7 @@ def update_plc_monitoring():
     values.update(plc_values)
 
     # get RTC data and update
-    rtc_temperatures = rtc.temperatures.read_all()
+    rtc_temperatures = rtc.sensors.read_all()
     values.update(rtc_temperatures)
 
     # FLI science camera status

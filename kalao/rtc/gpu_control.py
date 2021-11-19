@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : temperatures.py
+# @Filename : sensors.py
 # @Date : 2021-02-24-10-32
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
@@ -12,7 +12,7 @@ gpu_control.py is part of the KalAO Instrument Control Software
 import subprocess
 import pprint
 
-def status():
+def full_status():
     '''
     Reads the status of the nvidia GPU using the nvidia-smi command and returns it as a dictionary
 
@@ -34,10 +34,15 @@ def status():
 
     return status_dict
 
-def get_temp():
-    '''
-    Reads the gpu status and extracts the current temperature values stripped of the C unit
 
-    :return: current gpu temperature
-    '''
-    return status()['GPU Current Temp'].split(' ')[0]
+def status():
+
+    status_dict = {}
+    full_dict = full_status()
+
+    status_dict['gpu_current_temp'] = full_dict['GPU Current Temp'].split(' ')[0]
+    status_dict['gpu_power_draw'] = full_dict['Power Draw'].split(' ')[0]
+    status_dict['gpu_used_memory'] = full_dict['Used'].split(' ')[0]
+    status_dict['gpu_free_memory'] = full_dict['Free'].split(' ')[0]
+
+    return status_dict
