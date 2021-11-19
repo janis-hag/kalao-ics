@@ -147,10 +147,17 @@ def initialisation():
     :return:
     """
 
+    system.print_and_log('Starting initalisation')
 
     # read config file
 
     config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+
+    #Verify that config file exists
+    if not Path(config_path).is_file():
+        system.print_and_log('kalao.config file not found at: '+config_path)
+        return -1
+
     parser = ConfigParser()
     parser.read(config_path)
 

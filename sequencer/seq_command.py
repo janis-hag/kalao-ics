@@ -31,7 +31,7 @@ DefaultFlatList = parser.get('Calib','DefaultFlatList').replace(' ','').replace(
 
 def dark(**seq_args):
     """
-    1. Turn off lamps   
+    1. Turn off lamps
     2. Close shutter
     3. Take 'nbPic' dark picture of 'dit' exposure time.
 

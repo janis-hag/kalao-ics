@@ -164,6 +164,11 @@ def flask_service(action):
 
 
 def initialise_services():
+    '''
+    Initialise all system services and run sanity checks
+
+    :return:
+    '''
     ServiceRestartWait = parser.getint('SystemD','ServiceRestartWait')
 
     flask_service('restart')
@@ -178,6 +183,7 @@ def initialise_services():
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
+    return 0
 
 
 def check_kalao_config():
