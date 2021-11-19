@@ -132,7 +132,10 @@ def tungsten_FLAT(**seq_args):
     :return: nothing
     """
 
-    tungsten.on()
+    rValue = tungsten.on()
+    if(rValue != 0):
+        database.store_obs_log({'sequencer_log': 'Could not turn on tungsten lamp: '+tungsten.status()['sErrorText']})
+        return -1
 
     q = seq_args.get('q')
     filter_list = seq_args.get('filter_list')
@@ -457,9 +460,55 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
         return
 
     laser.set_intensity(intensity)
+
+    # TODO core AO part missing
     #cacao.start_calib()
-    laser.set_intensity(0)
+
+    laser.disable()
+
     database.store_obs_log({'sequencer_status': 'WAITING'})
+
+
+def lamp_on():
+    """
+    Turn tungsten lamp on
+    :return: nothing
+    """
+
+    rValue = tungsten.on()
+    if(rValue != 0):
+        # TODO handle error
+        database.store_obs_log({'sequencer_log':rValue})
+
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
+
+def end():
+    """
+    End of instrument operation, go into standby mode
+    :return: nothing
+    """
+    # two cancel are done to avoid concurrency problems
+
+    rValue = tungsten.off()
+    if (rValue != 0):
+        # TODO handle error
+        database.store_obs_log({'sequencer_log': rValue})
+
+    rValue = laser.disable()
+    if (rValue != 0):
+        # TODO handle error
+        database.store_obs_log({'sequencer_log': rValue})
+
+    rValue = shutter.close()
+    if (rValue != 0):
+        # TODO handle error
+        database.store_obs_log({'sequencer_log': rValue})
+
+    database.store_obs_log({'sequencer_log': 'END received moving into standby.'})
+
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
 
 
 def check_abort(q, dit, AO = False):

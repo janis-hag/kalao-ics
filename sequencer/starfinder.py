@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import control
 from kalao.filterwheel import filter_control
 from kalao.utils import database, file_handling
+from kalao.cacao import telemetry
 
 import numpy as np
 from astropy.io import fits
@@ -20,12 +21,17 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 ExpTime = parser.getfloat('FLI','ExpTime')
+CenteringTimeout = parser.getfloat('SEQ','CenteringTimeout')
 
 
 def centre_on_target(filter_arg='clear'):
 
+    # Add loop timeout
     filter_control.set_position(filter_arg)
-    while True:
+
+    timeout_time = time.time()+CenteringTimeout
+
+    while(time.time() < timeout_time):
         rValue = control.take_image(dit = ExpTime)
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
         file_handling.save_tmp_picture(image_path)
@@ -38,14 +44,24 @@ def centre_on_target(filter_arg='clear'):
         x, y = find_star(image_path)
 
         if x != -1 and y != -1:
-            # ? TODO send offset to telescope ?
-            return 0
-
-        # TODO start timeout (value in kalao.config)
-        # TODO set manual_align = True
-        # TODO wait for observer input
-        # TODO send gop message
-        # TODO send offset to telescope
+            # Found star
+            # TODO send offset to telescope
+            # TODO verify if SHWFS enough illuminated
+            telemetry.wfs_illumination()
+            # if shwfs ok:
+            #    return 0
+            pass
+        else:
+            # Start manual centering
+            # TODO start timeout (value in kalao.config)
+            # TODO set manual_align = True
+            # TODO wait for observer input
+            # TODO send gop message
+            # TODO send offset to telescope
+            # TODO verify if SHWFS enough illuminated
+            # if shwfs ok:
+            #    return 0
+            pass
 
 
 def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
