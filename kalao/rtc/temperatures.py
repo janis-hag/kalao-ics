@@ -12,7 +12,7 @@ temperatures.py is part of the KalAO Instrument Control Software
 
 import sensors
 from kalao.utils import database
-
+from kalao.rtc import gpu_control
 
 def read_all():
 
@@ -30,7 +30,10 @@ def read_all():
     finally:
         sensors.cleanup()
 
+    gpu_temp = gpu_control.status()['GPU Current Temp'].split(' ')[0]
+
     return temperatures
+
 
 def database_update():
     values = read_all()
