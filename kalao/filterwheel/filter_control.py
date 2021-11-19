@@ -10,12 +10,13 @@ control.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
-import sys
 import os
-from microscope.filterwheels import thorlabs
+import sys
 import time
 from configparser import ConfigParser
 from pathlib import Path
+
+from microscope.filterwheels import thorlabs
 
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -78,7 +79,8 @@ def set_position(filter_arg):
         database.store_obs_log({'filterwheel_status': "Filterwheel on {}".format(Id_filter_dict[filter_arg])})
         return 0
     else:
-        database.store_obs_log({'filterwheel_log': "Error: filter position expected {}, but got {}".format(filter_arg, position )})
+        database.store_obs_log({
+            'filterwheel_log': "Error: filter position expected {}, but got {}".format(filter_arg, position)})
         return -1
 
 
@@ -102,6 +104,6 @@ def init():
     fw.initialize()
     time.sleep(INITIALIZATIONWAIT)
 
-    database.store_obs_log({'filterwheel_log': "initialize filerwheel"})
+    database.store_obs_log({'filterwheel_log': "Initialising filterwheel"})
 
     return 0

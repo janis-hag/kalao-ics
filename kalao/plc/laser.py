@@ -10,12 +10,14 @@ laser.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from . import core
-from opcua import ua
-from time import sleep
+import os
 from configparser import ConfigParser
 from pathlib import Path
-import os
+from time import sleep
+
+from opcua import ua
+
+from . import core
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
