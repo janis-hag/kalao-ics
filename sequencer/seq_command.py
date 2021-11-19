@@ -9,10 +9,9 @@ from configparser import ConfigParser
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from kalao.plc import core, tungsten, laser, flip_mirror, shutter
+from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel
 from kalao.fli import control
 from kalao.utils import file_handling, database
-from kalao.filterwheel import filter_control
 from kalao.cacao import aomanager
 import starfinder
 
@@ -163,7 +162,7 @@ def tungsten_FLAT(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if filter_control.set_position(filter_list[0]) == -1:
+    if filterwheel.set_position(filter_list[0]) == -1:
         database.store_obs_log({'sequencer_log': 'Error: problem with filter selection'})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
@@ -196,7 +195,7 @@ def tungsten_FLAT(**seq_args):
 
     for filter_name in filter_list:
 
-        if filter_control.set_position(filter_name) == -1:
+        if filterwheel.set_position(filter_name) == -1:
             database.store_obs_log({'sequencer_log': 'Error: problem with filter selection'})
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return -1
@@ -293,7 +292,7 @@ def sky_FLAT(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    if filter_control.set_position(filter_list[0]) == -1:
+    if filterwheel.set_position(filter_list[0]) == -1:
         database.store_obs_log({'sequencer_log':"Error: problem with filter selection"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
@@ -304,7 +303,7 @@ def sky_FLAT(**seq_args):
 
     for filter_name in filter_list:
 
-        if filter_control.set_position(filter_name) == -1:
+        if filterwheel.set_position(filter_name) == -1:
             database.store_obs_log({'sequencer_log': 'Error: problem with filter selection'})
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return -1
@@ -388,7 +387,7 @@ def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, f
         database.store_obs_log({'sequencer_log':"Warning: no filter specified for take image, using clear"})
         filter_arg = 'clear'
 
-    if filter_control.set_position(filter_arg) == -1:
+    if filterwheel.set_position(filter_arg) == -1:
         database.store_obs_log({'sequencer_log':"Error: problem with filter selection"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return

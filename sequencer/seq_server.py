@@ -10,7 +10,7 @@ from pathlib import Path
 from sequencer import seq_command
 
 from kalao.utils import database
-from kalao.filterwheel import control
+from kalao.plc import filterwheel
 
 import socket
 import time
@@ -122,7 +122,7 @@ def cast_args(args):
     parser.read(config_path)
 
     # Create bidirect dict with filter id (str and int)
-    Id_filter = control.create_filter_id()
+    Id_filter = filterwheel.create_filter_id()
 
     # Create a list from a string
     # from: "xxx, yyy, zzz" -> to: ['xxx', 'yyy', 'zzz']

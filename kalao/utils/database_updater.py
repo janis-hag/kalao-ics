@@ -10,17 +10,16 @@ database_updater.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
-from signal import signal, SIGINT, SIGTERM
+from signal import SIGINT, SIGTERM
 from sys import exit
 from time import sleep
 import schedule
 
-from kalao import cacao  #.telemetry
 from kalao import plc
 from kalao import rtc
 from kalao import fli
 from kalao.utils import database
-from kalao.filterwheel import filter_control
+from kalao.plc import filterwheel
 from sequencer import system
 
 from configparser import ConfigParser
@@ -66,7 +65,7 @@ def update_plc_monitoring():
     values.update(rtc_temperatures)
 
     # FLI science camera status
-    filter_number, filter_name = filter_control.get_position()
+    filter_number, filter_name = filterwheel.get_position()
     filter_status = {'fli_filter_position': filter_number, 'fli_filter_name': filter_name}
     values.update(filter_status)
 

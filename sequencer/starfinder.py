@@ -1,19 +1,17 @@
 import os
 import sys
-import math
 import time
 from pathlib import Path
 
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import control
-from kalao.filterwheel import filter_control
+from kalao.plc import filterwheel
 from kalao.utils import database, file_handling
 from kalao.cacao import telemetry
 
 import numpy as np
 from astropy.io import fits
-from matplotlib import pyplot as plt
 from configparser import ConfigParser
 
 
@@ -27,7 +25,7 @@ CenteringTimeout = parser.getfloat('SEQ','CenteringTimeout')
 def centre_on_target(filter_arg='clear'):
 
     # Add loop timeout
-    filter_control.set_position(filter_arg)
+    filterwheel.set_position(filter_arg)
 
     timeout_time = time.time()+CenteringTimeout
 

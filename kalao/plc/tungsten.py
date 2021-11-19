@@ -12,7 +12,7 @@ tungsten.py is part of the KalAO Instrument Control Software
 """
 
 
-from . import core
+from . import core, filterwheel
 from opcua import ua
 from time import sleep
 import pandas as pd
@@ -21,7 +21,6 @@ from pathlib import Path
 import os
 
 from kalao.utils import database
-from kalao.filterwheel import filter_control
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
@@ -34,7 +33,7 @@ node_path = 'Tungsten'
 
 
 def get_flat_dits():
-    Id_filter_dict = filter_control.create_filter_id()
+    Id_filter_dict = filterwheel.create_filter_id()
     Flat_dit_dict = {}
     for key, val in parser.items('LampFlat'):
         # Create dit dictionary based on named filters
