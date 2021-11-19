@@ -206,11 +206,11 @@ def check_kalao_config():
 
     #PLCSection = parser._sections['PLC']
     PLCSection = dict(parser.items('PLC'))
-    FLISection = parser._sections['FLI']
-    SEQSection = parser._sections['SEQ']
-    GOPSection = parser._sections['GOP']
-    FilterWheelSection = parser._sections['FilterWheel']
-    FilterPositionSection = parser._sections['FilterPosition']
+    FLISection = dict(parser.items('FLI'))
+    SEQSection = dict(parser.items('SEQ'))
+    GOPSection = dict(parser.items('GOP'))
+    FilterWheelSection = dict(parser.items('FilterWheel'))
+    FilterPositionSection = dict(parser.items('FilterPosition'))
 
     # PLC section
     if not PLCSection['ip'].replace('.', '', 3).isdigit():
@@ -292,7 +292,7 @@ def check_kalao_config():
     ################
     # GOP section
     ###############
-    if not GOPSection['ip'].replace('.','',3).isdigit() or GOPSection['ip'].isprintable():
+    if not (GOPSection['ip'].replace('.','',3).isdigit() or GOPSection['ip'].isprintable()):
         # IP can be number or hostname
         print_and_log("Error: wrong values format for GOP 'IP' in kalao.config file: "+str(GOPSection['ip']))
         error = True
