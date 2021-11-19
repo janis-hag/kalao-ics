@@ -35,10 +35,6 @@ definition_names = [('monitoring', monitoring_definition_yaml, monitoring_defini
 
 definitions = {}
 
-for def_name, def_yaml, definition_json in definition_names:
-    with open(definition_json) as file:
-        definitions[def_name] = json.load(file)
-
 
 def convert_database_definition():
     for def_name, def_yaml, def_json in definition_names:
@@ -187,3 +183,7 @@ def read_mongo_to_pandas(dt, days=1, collection_name='monitoring', no_id=True):
 if __name__ == "__main__":
     print("Converting database definition")
     convert_database_definition()
+else:
+    for def_name, def_yaml, definition_json in definition_names:
+        with open(definition_json) as file:
+            definitions[def_name] = json.load(file)
