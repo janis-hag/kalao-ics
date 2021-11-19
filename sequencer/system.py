@@ -21,7 +21,7 @@ from kalao.utils import database
 
 # Read config file
 parser = ConfigParser()
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[0], 'kalao.config')
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 parser.read(config_path)
 
 
@@ -192,9 +192,9 @@ def check_kalao_config():
 
     error = False
 
-    config_path = os.path.join(Path(os.path.abspath(__file__)).parents[0], 'kalao.config')
-    parser = ConfigParser()
-    parser.read(config_path)
+    #config_path = os.path.join(Path(os.path.abspath(__file__)).parents[0], 'kalao.config')
+    #parser = ConfigParser()
+    #parser.read(config_path)
 
     PLCSection = parser._sections['PLC']
     FLISection = parser._sections['FLI']
