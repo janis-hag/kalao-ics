@@ -71,8 +71,8 @@ def update_plc_monitoring():
 
     fli_server_status = fli.control.check_server_status()
     if fli_server_status == 'OK':
-        fli_status = {'fli_temp_CCD': fli.control.get_temperature(), 'fli_status': fli_server_status}
-        values.update(fli_status)
+        fli_temperatures = fli.control.get_temperatures()
+        values.update(fli_temperatures)
     else:
         values.update({'fli_status': fli_server_status})
 
