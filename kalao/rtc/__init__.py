@@ -9,5 +9,5 @@
 __init__.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
-__all__ = ["sensors.py"]
-from .sensors import *
+__all__ = ["device_status.py"]
+from .device_status import *

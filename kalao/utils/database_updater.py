@@ -16,7 +16,7 @@ from time import sleep
 import schedule
 
 from kalao import plc
-from kalao import rtc
+from kalao.rtc import device_status
 from kalao import fli
 from kalao.utils import database
 from kalao.plc import filterwheel
@@ -61,7 +61,7 @@ def update_plc_monitoring():
     values.update(plc_values)
 
     # get RTC data and update
-    rtc_temperatures = rtc.sensors.read_all()
+    rtc_temperatures = device_status.read_all()
     values.update(rtc_temperatures)
 
     # FLI science camera status
