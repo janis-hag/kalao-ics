@@ -1,0 +1,25 @@
+# Setting up kalaocamera systemd service
+systemctl --user enable kalaocamera.service
+systemctl --user daemon-reload
+systemctl --user start kalaocamera
+
+# Setting up database_updater systemd service
+systemctl --user enable database_updater.service
+systemctl --user daemon-reload
+systemctl --user start database_updater
+
+
+# CACAO+Milk
+git clone https://github.com/milk-org/milk.git -b dev
+cd milk
+source ~/venv_cream/bin/activate
+./fetch_cacao_dev.sh
+compile.sh $PWD/tmp/local
+
+# pyMilk
+cd pyMilk/
+git checkout v0.0.01
+git submodule update
+rmdir ImageStreamIO
+ln -s ../milk/src/ImageStreamIO
+pip install -e .

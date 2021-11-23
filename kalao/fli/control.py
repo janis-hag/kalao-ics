@@ -13,6 +13,7 @@ control.py is part of the KalAO Instrument Control Software
 import requests
 import requests.exceptions
 import os
+import json
 
 from kalao.utils import database, database_updater, kalao_time, file_handling
 from configparser import ConfigParser
@@ -38,6 +39,7 @@ if port.isdigit():
 else:
     print("Error: wrong values format for 'Port' in kalao.config file ")
     # return
+
 
 def take_science_exposure(dit=0.05, filepath=None):
 
@@ -96,17 +98,19 @@ def cancel():
 def database_update():
     # fli_temp_heatsink
     # fli_temp_CCD
-    values = {'fli_temp_CCD': get_temperature()}
+    values = get_temperatures()
     database.store_monitoring(values)
 
 
-def get_temperature():
+def get_temperatures():
 
     req = send_request('temperature', 'GET')
 
     if req.status_code == 200:
-        temperature = req.text
-        return temperature
+        temperatures = json.loads(req.text)
+        temperatures['fli_temp_CCD'] = temperatures.pop('ccd')
+        temperatures['fli_temp_heatsink'] = temperatures.pop('heatsink')
+        return temperatures
 
     return req.text
 

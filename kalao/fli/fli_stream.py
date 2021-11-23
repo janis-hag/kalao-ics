@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     cam = FLI.USBCamera.find_devices()[0]
     pprint(dict(cam.get_info()))
-    print('Temperature: '+str(cam.get_temperature()))
+    print('Temperature: ' + str(cam.get_temperature()))
     cam.set_temperature(-30)
     cam.set_exposure(dit)
     run(cam)
