@@ -64,4 +64,5 @@ def get_isotime(now_time=None):
         return now_time.isoformat(timespec='milliseconds')
 
 def now():
-    return datetime.now(timezone.utc)
+    #return datetime.now(timezone.utc)
+    return datetime.utcnow()
