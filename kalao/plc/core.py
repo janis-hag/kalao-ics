@@ -173,7 +173,7 @@ def check_beck(beck):
     # Connect to OPCUA server
     if beck is None:
         disconnect_on_exit = True
-        beck = core.connect()
+        beck = connect()
     else:
         disconnect_on_exit = False
 
