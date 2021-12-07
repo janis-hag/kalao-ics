@@ -17,7 +17,7 @@ from time import sleep
 
 from opcua import ua
 
-from . import core
+from kalao.plc import core
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
