@@ -166,3 +166,15 @@ def temperatures(beck=None):
         beck.disconnect()
 
     return temp_values
+
+
+def check_beck(beck):
+
+    # Connect to OPCUA server
+    if beck is None:
+        disconnect_on_exit = True
+        beck = core.connect()
+    else:
+        disconnect_on_exit = False
+
+    return beck, disconnect_on_exit

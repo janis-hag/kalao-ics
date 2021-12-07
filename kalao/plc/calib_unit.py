@@ -128,9 +128,12 @@ def initialise(force_init=False, beck=None, motor_nCommand=None):
     :param motor_nCommand: handle to send commands to the motor
     :return: returns 0 on success and error code on failure
     '''
-    if beck is None:
-        # Connect to OPCUA server
-        beck = core.connect()
+    #if beck is None:
+    #    # Connect to OPCUA server
+    #    beck = core.connect()
+
+    beck, disconnect_on_exit = core.check_beck(beck)
+
     if motor_nCommand is None:
         # define commands
         motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
@@ -147,6 +150,10 @@ def initialise(force_init=False, beck=None, motor_nCommand=None):
             ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, motor_bEnable.get_data_type_as_variant_type())))
         if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value():
             error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value())
+
+            if disconnect_on_exit:
+                beck.disconnect()
+
             return error
 
     # Check if init, if not do init
@@ -159,7 +166,15 @@ def initialise(force_init=False, beck=None, motor_nCommand=None):
             sleep(15)
         if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value():
             error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value())
+
+            if disconnect_on_exit:
+                beck.disconnect()
+
             return error
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
     return 0
 
 

@@ -35,11 +35,13 @@ def status(beck=None):
     :return: intensity of laser
     """
     # Connect to OPCUA server
-    if beck is None:
-        disconnect_on_exit = True
-        beck = core.connect()
-    else:
-        disconnect_on_exit = False
+    # if beck is None:
+    #     disconnect_on_exit = True
+    #     beck = core.connect()
+    # else:
+    #     disconnect_on_exit = False
+
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     if beck.get_node('ns = 4;s = MAIN.Laser.Status').get_value():
         laser_status = beck.get_node('ns = 4;s = MAIN.Laser.Current').get_value()
