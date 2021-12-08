@@ -100,7 +100,7 @@ pg.mkQApp()
 ##### FLI window
 fli_window = pg.GraphicsLayoutWidget(title="FLI alignment")
 fli_window.keyPressEvent = keyPressed
-fli_window.setGeometry(100, 100, 800, 1200)
+fli_window.setGeometry(100, 100, 1200, 800)
 fli_window.show()
 
 fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True, enableMouse=True)
