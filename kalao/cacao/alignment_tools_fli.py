@@ -291,8 +291,8 @@ while loop:
 	fli_image = fli_stream.get_data(check=True)
 	fli_imageitem_full.setImage(fli_image)
 
-	fli_imageitem_zoom.setImage(fli_image[fli_x_pos-5*fli_circle_radius:fli_x_pos+5*fli_circle_radius,
-								1024-fli_y_pos-5*fli_circle_radius:1024-fli_y_pos+5*fli_circle_radius])
+	fli_imageitem_zoom.setImage(fli_image[1024-fli_x_pos-5*fli_circle_radius:1024-fli_x_pos+5*fli_circle_radius,
+								fli_y_pos-5*fli_circle_radius:fli_y_pos+5*fli_circle_radius])
 
 
 	# Do not poke actuators
