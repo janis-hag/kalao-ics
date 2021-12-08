@@ -100,8 +100,15 @@ fli_viewbox = fli_window.addViewBox(row=0, col=0, invertY=True)
 fli_viewbox.setAspectLocked(True)
 fli_imageitem = pg.ImageItem()
 fli_viewbox.addItem(fli_imageitem)
-roi_circle = pg.CircleROI([517, 664], [120, 120], pen=pg.mkPen(BLUE,width=2), movable=False)
+roi_circle = pg.CircleROI([517, 664], [33, 33], pen=pg.mkPen(BLUE,width=2), movable=False)
+roi_circle2 = pg.CircleROI([664, 517], [33, 33], pen=pg.mkPen(GREEN,width=2), movable=False)
+roi_circle3 = pg.CircleROI([1024-517, 1024-664], [33, 33], pen=pg.mkPen(ORANGE,width=2), movable=False)
+roi_circle4 = pg.CircleROI([1024-664, 1024-517], [33, 33], pen=pg.mkPen(RED,width=2), movable=False)
+
 fli_viewbox.addItem(roi_circle)
+fli_viewbox.addItem(roi_circle2)
+fli_viewbox.addItem(roi_circle3)
+fli_viewbox.addItem(roi_circle4)
 
 ##### Pupil window
 pupil_window = pg.GraphicsLayoutWidget(title="Pupil alignment")
