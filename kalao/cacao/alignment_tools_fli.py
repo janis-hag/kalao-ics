@@ -100,9 +100,10 @@ pg.mkQApp()
 ##### FLI window
 fli_window = pg.GraphicsLayoutWidget(title="FLI alignment")
 fli_window.keyPressEvent = keyPressed
+fli_window.setGeometry(100, 100, 600, 500)
 fli_window.show()
 
-fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True)
+fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True, enableMouse=True)
 fli_viewbox_full.setAspectLocked(True)
 fli_imageitem_full = pg.ImageItem()
 fli_viewbox_full.addItem(fli_imageitem_full)
@@ -290,8 +291,8 @@ while loop:
 	fli_image = fli_stream.get_data(check=True)
 	fli_imageitem_full.setImage(fli_image)
 
-	fli_imageitem_zoom.setImage(fli_image[fli_x_pos-fli_circle_radius:fli_x_pos+fli_circle_radius,
-								fli_y_pos-fli_circle_radius:fli_y_pos+fli_circle_radius])
+	fli_imageitem_zoom.setImage(fli_image[fli_x_pos-5*fli_circle_radius:fli_x_pos+5*fli_circle_radius,
+								fli_y_pos-5*fli_circle_radius:fli_y_pos+5*fli_circle_radius])
 
 
 	# Do not poke actuators
