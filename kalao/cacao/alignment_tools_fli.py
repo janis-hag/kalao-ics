@@ -118,7 +118,7 @@ fli_viewbox_full.addItem(roi_circle)
 
 fli_text_line_1 = pg.LabelItem("", color=BLUE, bold=True)
 fli_window.addItem(fli_text_line_1, row=1, col=0)
-fli_text_line_1.setText(f"Mouse scroll to zoom")
+fli_text_line_1.setText(f"Mouse scroll on image to zoom")
 
 ##### Pupil window
 pupil_window = pg.GraphicsLayoutWidget(title="Pupil alignment")

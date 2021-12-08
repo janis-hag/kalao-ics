@@ -16,13 +16,15 @@ from time import sleep
 from signal import signal, SIGINT
 from sys import exit
 from pprint import pprint
+from sequencer import system
 
-dit = 1
+dit = 0.1
 
 
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
+    system.camera_service('start')
     exit(0)
 
 
@@ -42,11 +44,13 @@ def run(cam):
         cam.set_exposure(dit)
         img = cam.take_photo()
         shm.set_data(img)
-        sleep(0.2)
+        sleep(0.3)
 
 if __name__ == '__main__':
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)
+
+    system.camera_service('stop')
 
     cam = FLI.USBCamera.find_devices()[0]
     pprint(dict(cam.get_info()))
