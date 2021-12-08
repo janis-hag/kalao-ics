@@ -116,6 +116,10 @@ fli_viewbox_zoom.addItem(fli_imageitem_zoom)
 roi_circle = pg.CircleROI([fli_x_pos-fli_circle_radius, fli_y_pos-fli_circle_radius], [2*fli_circle_radius, 2*fli_circle_radius], pen=pg.mkPen(BLUE,width=2), movable=False)
 fli_viewbox_full.addItem(roi_circle)
 
+fli_text_line_1 = pg.LabelItem("", color=BLUE, bold=True)
+fli_window.addItem(fli_text_line_1, row=1, col=0)
+fli_text_line_1.setText(f"Mouse scroll to zoom")
+
 ##### Pupil window
 pupil_window = pg.GraphicsLayoutWidget(title="Pupil alignment")
 pupil_window.keyPressEvent = keyPressed
@@ -291,8 +295,8 @@ while loop:
 	fli_image = fli_stream.get_data(check=True)
 	fli_imageitem_full.setImage(fli_image)
 
-	fli_imageitem_zoom.setImage(fli_image[fli_y_pos-5*fli_circle_radius:fli_y_pos+5*fli_circle_radius,
-								fli_x_pos-5*fli_circle_radius:fli_x_pos+5*fli_circle_radius])
+	fli_imageitem_zoom.setImage(fli_image[fli_y_pos-3*fli_circle_radius:fli_y_pos+3*fli_circle_radius,
+								fli_x_pos-3*fli_circle_radius:fli_x_pos+3*fli_circle_radius])
 
 
 	# Do not poke actuators
