@@ -18,7 +18,7 @@ from sys import exit
 from pprint import pprint
 from sequencer import system
 
-dit = 0.1
+dit = 1
 
 
 def handler(signal_received, frame):
