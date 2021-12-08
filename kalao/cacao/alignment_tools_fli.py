@@ -46,6 +46,12 @@ dm_subap_indexes = ()
 for i in dm_actuators_poke:
 	dm_subap_indexes += get_subapertures_around_actuator(i)
 
+# FLI PSF position
+# Position in ginga 516 409
+fli_x_pos = 516
+fli_y_pos = 409
+fli_circle_radius = 16
+
 ##### General configuration
 
 FLAT = 0
@@ -96,19 +102,18 @@ fli_window = pg.GraphicsLayoutWidget(title="FLI alignment")
 fli_window.keyPressEvent = keyPressed
 fli_window.show()
 
-fli_viewbox = fli_window.addViewBox(row=0, col=0, invertY=True)
-fli_viewbox.setAspectLocked(True)
-fli_imageitem = pg.ImageItem()
-fli_viewbox.addItem(fli_imageitem)
-roi_circle = pg.CircleROI([516, 407], [33, 33], pen=pg.mkPen(BLUE,width=2), movable=False)
-roi_circle2 = pg.CircleROI([407, 516], [33, 33], pen=pg.mkPen(GREEN,width=2), movable=False)
-roi_circle3 = pg.CircleROI([1024-516, 1024-407], [33, 33], pen=pg.mkPen(ORANGE,width=2), movable=False)
-roi_circle4 = pg.CircleROI([1024-664, 1024-517], [33, 33], pen=pg.mkPen(RED,width=2), movable=False)
+fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True)
+fli_viewbox_full.setAspectLocked(True)
+fli_imageitem_full = pg.ImageItem()
+fli_viewbox_full.addItem(fli_imageitem_full)
 
-fli_viewbox.addItem(roi_circle)
-fli_viewbox.addItem(roi_circle2)
-fli_viewbox.addItem(roi_circle3)
-fli_viewbox.addItem(roi_circle4)
+fli_viewbox_zoom = fli_window.addViewBox(row=0, col=1, invertY=True)
+fli_viewbox_zoom.setAspectLocked(True)
+fli_imageitem_zoom = pg.ImageItem()
+fli_viewbox_zoom.addItem(fli_imageitem_zoom)
+
+roi_circle = pg.CircleROI([fli_x_pos-fli_circle_radius, fli_y_pos-fli_circle_radius], [2*fli_circle_radius, 2*fli_circle_radius], pen=pg.mkPen(BLUE,width=2), movable=False)
+fli_viewbox_full.addItem(roi_circle)
 
 ##### Pupil window
 pupil_window = pg.GraphicsLayoutWidget(title="Pupil alignment")
@@ -282,7 +287,11 @@ elif nuvu_stream.shape == (64,64):
 
 while loop:
 	#FLI window
-	fli_imageitem.setImage(fli_stream.get_data(check=True))
+	fli_image = fli_stream.get_data(check=True)
+	fli_imageitem_full.setImage(fli_image)
+
+	fli_imageitem_zoom.setImage(fli_image[fli_x_pos-fli_circle_radius:fli_x_pos+fli_circle_radius,
+								fli_y_pos-fli_circle_radius:fli_y_pos+fli_circle_radius])
 
 
 	# Do not poke actuators
