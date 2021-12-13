@@ -67,15 +67,11 @@ def plc_status(beck=None):
     :return: device status dictionary
     """
     # Connect to OPCUA server
-    if beck is None:
-        disconnect_on_exit = True
-        beck = connect()
-    else:
-        disconnect_on_exit = False
+    beck, disconnect_on_exit = check_beck(beck)
 
     # TODO check if all initialised
 
-    temps = temperature_control.get_temperatures()
+    temps = temperature_control.get_temperatures(beck=beck)
 
     plc_status_values = {'shutter': shutter.position(beck=beck),
                          'flip_mirror': flip_mirror.position(beck=beck),
@@ -116,11 +112,7 @@ def device_status(node_path, beck=None):
     :return: complete status of calibration unit
     """
     # Connect to OPCUA server
-    if beck is None:
-        disconnect_on_exit = True
-        beck = connect()
-    else:
-        disconnect_on_exit = False
+    beck, disconnect_on_exit = check_beck(beck)
 
     device_status_dict = dict(sStatus=beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sStatus").get_value(),
                               sErrorText=beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sErrorText").get_value(),
