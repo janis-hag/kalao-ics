@@ -58,7 +58,7 @@ def dark(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if shutter.close() != 'CLOSE':
+    if shutter.shutter_close() != 'CLOSE':
         database.store_obs_log({'sequencer_log':"Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
@@ -152,7 +152,7 @@ def tungsten_FLAT(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if shutter.close() != 'CLOSE':
+    if shutter.shutter_close() != 'CLOSE':
         database.store_obs_log({'sequencer_log': "Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
@@ -287,7 +287,7 @@ def sky_FLAT(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    if shutter.open() != 'OPEN':
+    if shutter.shutter_open() != 'OPEN':
         database.store_obs_log({'sequencer_log':"Error: failed to open the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
@@ -328,7 +328,7 @@ def sky_FLAT(**seq_args):
             return -1
 
 
-    if shutter.close() != 'CLOSE':
+    if shutter.shutter_close() != 'CLOSE':
         database.store_obs_log({'sequencer_log':"Error: failed to close the shutter"})
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
@@ -373,7 +373,7 @@ def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, f
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
-    if shutter.open() != 'OPEN':
+    if shutter.shutter_open() != 'OPEN':
         database.store_obs_log({'sequencer_log':"Error: failed to open the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
@@ -447,7 +447,7 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     :return: nothing
     """
 
-    if shutter.close() != 'CLOSE':
+    if shutter.shutter_close() != 'CLOSE':
         database.store_obs_log({'sequencer_log':"Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
@@ -498,7 +498,7 @@ def end():
         # TODO handle error
         database.store_obs_log({'sequencer_log': rValue})
 
-    rValue = shutter.close()
+    rValue = shutter.shutter_close()
     if (rValue != 0):
         # TODO handle error
         database.store_obs_log({'sequencer_log': rValue})
