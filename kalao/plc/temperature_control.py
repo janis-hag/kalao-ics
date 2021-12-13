@@ -41,7 +41,7 @@ def get_temperatures(beck=None):
     BENCHAIROFFSET = parser.getfloat('PLC', 'TempBenchAirOffset')
     BENCHBOARDOFFSET = parser.getfloat('PLC', 'TempBenchBoardOffset')
     WATERINOFFSET = parser.getfloat('PLC', 'TempWaterInOffset')
-    WATEROUTOFFSET= parser.getfloat('PLC', 'TempWaterOutOffset')
+    WATEROUTOFFSET = parser.getfloat('PLC', 'TempWaterOutOffset')
 
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
@@ -63,7 +63,7 @@ def status(relay_name, beck=None):
     """
     Open or Close the shutter depending on action_name
 
-    :param action_name: bClose_Shutter or
+    :param relay_name: bClose_Shutter or
     :return: position of flip_mirror
     """
     # Connect to OPCUA server
@@ -111,8 +111,8 @@ def pump_on(beck=None):
     :param beck: handle to the beckhoff connection
     :return: status of the pump
     """
-    pump_status = switch(pump_node, True, beck=beck)
-    return pump_status
+    pump_switch_status = switch(pump_node, True, beck=beck)
+    return pump_switch_status
 
 
 def pump_off(beck=None):
@@ -122,8 +122,8 @@ def pump_off(beck=None):
     :param beck: handle to the beckhoff connection
     :return: status of the pump
     """
-    pump_status = switch(pump_node, False, beck=beck)
-    return pump_status
+    pump_switch_status = switch(pump_node, False, beck=beck)
+    return pump_switch_status
 
 
 def pump_status(beck=None):
@@ -144,8 +144,8 @@ def heater_on(beck=None):
     :param beck: handle to the beckhoff connection
     :return: status of the heater
     """
-    heater_status = switch(heater_node, True, beck=beck)
-    return heater_status
+    heater_switch_status = switch(heater_node, True, beck=beck)
+    return heater_switch_status
 
 
 def heater_off(beck=None):
@@ -155,8 +155,8 @@ def heater_off(beck=None):
     :param beck: handle to the beckhoff connection
     :return: status of the heater
     """
-    heater_status = switch(heater_node, False, beck=beck)
-    return heater_status
+    heater_switch_status = switch(heater_node, False, beck=beck)
+    return heater_switch_status
 
 
 def heater_status(beck=None):
@@ -177,8 +177,8 @@ def fan_on(beck=None):
     :param beck: handle to the beckhoff connection
     :return: status of the fan
     """
-    fan_status = switch(fan_node, True, beck=beck)
-    return fan_status
+    fan_switch_status = switch(fan_node, True, beck=beck)
+    return fan_switch_status
 
 
 def fan_off(beck=None):
@@ -188,8 +188,8 @@ def fan_off(beck=None):
     :param beck: handle to the beckhoff connection
     :return: status of the fan
     """
-    fan_status = switch(fan_node, False, beck=beck)
-    return fan_status
+    fan_switch_status = switch(fan_node, False, beck=beck)
+    return fan_switch_status
 
 
 def fan_status(beck=None):
@@ -201,5 +201,4 @@ def fan_status(beck=None):
     """
 
     return status(fan_node, beck=beck)
-
 
