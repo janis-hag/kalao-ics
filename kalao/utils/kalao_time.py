@@ -77,14 +77,14 @@ def check_time_format(dt):
     return dt
 
 def get_isotime(now_time=None):
-    '''
+    """
     Takes an datetime object or otherwise the current UTC time and returns a string in ISO 8601 format format such as
     YYYY-MM-DDTHH.MM.SS.mmm = %Y-%m-%dT%H:%M:%S[.fff]
     leaving out the UTC offset information.
 
     :param now_time: datetime object
     :return: datetime string in iso format
-    '''
+    """
 
     if now_time is None:
         return now().replace(tzinfo=None).isoformat(timespec='milliseconds')
@@ -93,9 +93,9 @@ def get_isotime(now_time=None):
         return now_time.replace(tzinfo=None).isoformat(timespec='milliseconds')
 
 def now():
-    '''
+    """
     Gets the current UTC time as a timezone aware datetime object
 
     :return: datetime object
-    '''
+    """
     return datetime.now(timezone.utc)
