@@ -36,11 +36,11 @@ Science_folder = parser.get('FLI','ScienceDataStorage')
 
 
 def create_night_filepath():
-    '''
+    """
     Creates a full filepath including filename. If the destination folder does not exist it is created.
 
     :return: the generated filepath
-    '''
+    """
     Tmp_night_folder = create_night_folder()
     filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
     filepath = Tmp_night_folder+os.sep+filename
