@@ -101,10 +101,12 @@ def position(beck=None):
         flip_position = error_text
 
     else:
-        if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Flip").get_value():
+        if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Up_Flip").get_value():
             flip_position = 'UP'
-        else:
+        elif beck.get_node("ns=4;s=MAIN.Flip.bStatus_Down_Flip").get_value():
             flip_position = 'DOWN'
+        else:
+            flip_position = 'ERROR'
 
     if disconnect_on_exit:
         beck.disconnect()
