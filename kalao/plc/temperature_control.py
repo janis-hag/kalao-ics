@@ -59,39 +59,6 @@ def get_temperatures(beck=None):
     return temp_values
 
 
-def pump_on(beck=None):
-    """
-    Convenience function to turn on the water pump
-
-    :param beck: handle to the beckhoff connection
-    :return: status of the pump
-    """
-    pump_status = switch(pump_node, True, beck=beck)
-    return pump_status
-
-
-def pump_off(beck=None):
-    """
-    Convenience function to turn off the water pump
-
-    :param beck: handle to the beckhoff connection
-    :return: status of the pump
-    """
-    pump_status = switch(pump_node, False, beck=beck)
-    return pump_status
-
-
-def pump_status(beck=None):
-    """
-    Convenience function to query the status of the water pump
-
-    :param beck: handle to the beckhoff connection
-    :return: status of the pump
-    """
-
-    return status(pump_node, beck=beck)
-
-
 def status(relay_name, beck=None):
     """
     Open or Close the shutter depending on action_name
@@ -135,3 +102,104 @@ def switch(relay_name, action, beck=None):
         beck.disconnect()
 
     return relay_status
+
+
+def pump_on(beck=None):
+    """
+    Convenience function to turn on the water pump
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the pump
+    """
+    pump_status = switch(pump_node, True, beck=beck)
+    return pump_status
+
+
+def pump_off(beck=None):
+    """
+    Convenience function to turn off the water pump
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the pump
+    """
+    pump_status = switch(pump_node, False, beck=beck)
+    return pump_status
+
+
+def pump_status(beck=None):
+    """
+    Convenience function to query the status of the water pump
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the pump
+    """
+
+    return status(pump_node, beck=beck)
+
+
+def heater_on(beck=None):
+    """
+    Convenience function to turn on the water heater
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the heater
+    """
+    heater_status = switch(heater_node, True, beck=beck)
+    return heater_status
+
+
+def heater_off(beck=None):
+    """
+    Convenience function to turn off the water heater
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the heater
+    """
+    heater_status = switch(heater_node, False, beck=beck)
+    return heater_status
+
+
+def heater_status(beck=None):
+    """
+    Convenience function to query the status of the water heater
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the heater
+    """
+
+    return status(heater_node, beck=beck)
+
+
+def fan_on(beck=None):
+    """
+    Convenience function to turn on the water fan
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the fan
+    """
+    fan_status = switch(fan_node, True, beck=beck)
+    return fan_status
+
+
+def fan_off(beck=None):
+    """
+    Convenience function to turn off the water fan
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the fan
+    """
+    fan_status = switch(fan_node, False, beck=beck)
+    return fan_status
+
+
+def fan_status(beck=None):
+    """
+    Convenience function to query the status of the water fan
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the fan
+    """
+
+    return status(fan_node, beck=beck)
+
+
