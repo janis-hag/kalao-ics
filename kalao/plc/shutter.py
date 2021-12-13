@@ -23,7 +23,13 @@ def status(beck=None):
     :return: complete status of shutter
     """
 
+    # Connect to OPCUA server
+    beck, disconnect_on_exit = core.check_beck(beck)
+
     status_dict = core.device_status('Shutter.Shutter', beck=beck)
+
+    if disconnect_on_exit:
+        beck.disconnect()
 
     return status_dict
 
@@ -52,73 +58,81 @@ def status(beck=None):
 #     beck.disconnect()
 
 
-def position():
+def position(beck=None):
     """
     Query the single string status of the shutter.
 
     :return: single string status of shutter
     """
     # Connect to OPCUA server
-    beck = core.connect()
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     # Check error status
     error_code = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
     if error_code != 0:
         #someting went wrong
         error_text = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
-        database.store_obs_log({'shutter_log': 'ERROR' + str(error_code) + ': '+ str(error_text)})
+        database.store_obs_log({'shutter_log': 'ERROR' + str(error_code) + ': ' + str(error_text)})
 
         beck.disconnect()
 
-        return error_text
+        position_status = error_text
+
     else:
-        if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value():
+        if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Closed_Shutter").get_value():
             bStatus = 'CLOSED'
         else:
             bStatus = 'OPEN'
         beck.disconnect()
 
-        return bStatus
+        position_status = bStatus
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return position_status
 
 
-def initialise():
+def initialise(beck=None):
     """
     Initialise the shutter.
 
     :return: status of shutter
     """
     # Connect to OPCUA server
-    beck = core.connect()
+    beck, disconnect_on_exit = core.check_beck(beck)
 
-    status = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
+    init_status = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
 
-    beck.disconnect()
+    if disconnect_on_exit:
+        beck.disconnect()
 
-    return status
+    return init_status
 
 
-def open():
+def shutter_open(beck=None):
     """
     Open the shutter.
 
     :return: status of shutter
     """
-    bStatus = switch('bOpen_Shutter')
+    bStatus = switch('bOpen_Shutter', beck=beck)
 
     return bStatus
 
 
-def close():
+def shutter_close(beck=None):
     """
     Close the shutter.
 
     :return: status of shutter
     """
-    bStatus = switch('bClose_Shutter')
+    bStatus = switch('bClose_Shutter', beck=beck)
+
     return bStatus
 
 
-def switch(action_name):
+def switch(action_name, beck=None):
     """
      Open or Close the shutter depending on action_name
 
@@ -126,7 +140,7 @@ def switch(action_name):
     :return: status of shutter
     """
     # Connect to OPCUA server
-    beck = core.connect()
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     shutter_switch = beck.get_node("ns = 4; s = MAIN.Shutter." + action_name)
     shutter_switch.set_attribute(
@@ -134,10 +148,12 @@ def switch(action_name):
 
     sleep(1)
 
-    if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Shutter").get_value():
+    if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Closed_Shutter").get_value():
         bStatus = 'CLOSED'
     else:
         bStatus = 'OPEN'
 
-    beck.disconnect()
+    if disconnect_on_exit:
+        beck.disconnect()
+
     return bStatus

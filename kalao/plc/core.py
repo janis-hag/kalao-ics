@@ -16,6 +16,7 @@ from . import flip_mirror
 from . import laser
 from . import tungsten
 from . import adc
+from . import temperature_control
 from kalao.utils import database
 
 from opcua import Client
@@ -47,15 +48,12 @@ def lamps_off():
     if tungsten_status == 'OFF' and laser_status == 'OFF':
         return 0
     else:
-        database.store_obs_log({'tungsten_log': 'WARNING: Unknown return status: '+str(tungsten_status) })
+        database.store_obs_log({'tungsten_log': 'WARNING: Unknown return status: '+str(tungsten_status)})
         return 1
 
 
 def disabled_device_list():
-    config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-
     # Read config file
-    parser = ConfigParser()
     parser.read(config_path)
 
     PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
@@ -71,7 +69,7 @@ def plc_status():
 
     # TODO check if all initialised
 
-    temps = temperatures()
+    temps = temperature_control.get_temperatures()
 
     plc_status_values = {'shutter': shutter.position(),
                          'flip_mirror': flip_mirror.position(),
@@ -133,39 +131,6 @@ def device_status(node_path, beck=None):
 def database_update():
     values, text = plc_status()
     database.store_monitoring(values)
-
-
-def temperatures(beck=None):
-    """
-    Query the current intensity of the laser
-
-    :return: intensity of laser
-    """
-
-    # Read calibrated temperature offset
-    BENCHAIROFFSET = parser.getfloat('PLC', 'TempBenchAirOffset')
-    BENCHBOARDOFFSET = parser.getfloat('PLC', 'TempBenchBoardOffset')
-    WATERINOFFSET = parser.getfloat('PLC', 'TempWaterInOffset')
-    WATEROUTOFFSET= parser.getfloat('PLC', 'TempWaterOutOffset')
-
-
-    # Connect to OPCUA server
-    if beck is None:
-        disconnect_on_exit = True
-        beck = connect()
-    else:
-        disconnect_on_exit = False
-
-    temp_values = {'temp_bench_air': BENCHAIROFFSET + beck.get_node('ns=4;s=MAIN.Temp_Bench_Air').get_value()/10,
-              'temp_bench_board': BENCHBOARDOFFSET + beck.get_node('ns=4;s=MAIN.Temp_Bench_Board').get_value()/10,
-              'temp_water_in': WATERINOFFSET + beck.get_node('ns=4;s=MAIN.Temp_Water_In').get_value()/10,
-              'temp_water_out': WATEROUTOFFSET + beck.get_node('ns=4;s=MAIN.Temp_Water_Out').get_value()/10
-              }
-
-    if disconnect_on_exit:
-        beck.disconnect()
-
-    return temp_values
 
 
 def check_beck(beck):

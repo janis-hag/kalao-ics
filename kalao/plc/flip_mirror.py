@@ -49,7 +49,7 @@ def up():
     return flip_position
 
 
-def switch(action_name):
+def switch(action_name, beck=None):
     """
      Open or Close the shutter depending on action_name
 
@@ -57,23 +57,27 @@ def switch(action_name):
     :return: position of flip_mirror
     """
     # Connect to OPCUA server
-    beck = core.connect()
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     shutter_switch = beck.get_node("ns = 4; s = MAIN.Flip." + action_name)
     shutter_switch.set_attribute(
         ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
 
     sleep(1)
-    if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Flip").get_value():
+    if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Up_Flip").get_value():
         flip_position = 'UP'
-    else:
+    elif beck.get_node("ns=4;s=MAIN.Flip.bStatus_Down_Flip").get_value():
         flip_position = 'DOWN'
+    else:
+        flip_position = 'ERROR'
 
-    beck.disconnect()
+    if disconnect_on_exit:
+        beck.disconnect()
+
     return flip_position
 
 
-def position():
+def position(beck=None):
     """
     Query the single string status of the shutter.
 
@@ -83,7 +87,7 @@ def position():
         return 1
 
     # Connect to OPCUA server
-    beck = core.connect()
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     # TODO check if initialised and not disabled
 
@@ -93,17 +97,19 @@ def position():
         #someting went wrong
         # Logging error
         error_text = beck.get_node("ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
-
         database.store_obs_log({'flip_mirror_log': 'ERROR' + str(error_code) + ': '+error_text})
-        beck.disconnect()
-        return error_text
+        flip_position = error_text
+
     else:
         if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Flip").get_value():
             flip_position = 'UP'
         else:
             flip_position = 'DOWN'
+
+    if disconnect_on_exit:
         beck.disconnect()
-        return flip_position
+
+    return flip_position
 
 
 def initialise():
