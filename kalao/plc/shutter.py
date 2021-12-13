@@ -74,8 +74,6 @@ def position(beck=None):
         error_text = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
         database.store_obs_log({'shutter_log': 'ERROR' + str(error_code) + ': ' + str(error_text)})
 
-        beck.disconnect()
-
         position_status = error_text
 
     else:
@@ -83,7 +81,6 @@ def position(beck=None):
             bStatus = 'CLOSED'
         else:
             bStatus = 'OPEN'
-        beck.disconnect()
 
         position_status = bStatus
 
