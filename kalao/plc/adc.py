@@ -29,10 +29,10 @@ adc_name = {
     2: 'ADC2_Newport_PR50PP'}
 
 
-def rotate(adc_id, position=0):
-
+def rotate(adc_id, position=0, beck=None):
     # Connect to OPCUA server
-    beck = core.connect()
+    beck, disconnect_on_exit = core.check_beck(beck)
+
     # define commands
     motor_nCommand = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".ctrl.nCommand")
     motor_bExecute = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".ctrl.bExecute")
@@ -70,8 +70,9 @@ def rotate(adc_id, position=0):
         print('Expected position to be a number, received: ' + str(position))
         new_position = -1
 
-    # Disconnect from OPCUA server
-    beck.disconnect()
+
+    if disconnect_on_exit:
+        beck.disconnect()
 
     return new_position
 
@@ -82,12 +83,8 @@ def status(adc_id, beck=None):
 
     :return: complete status of calibration unit
     """
-    # # Connect to OPCUA server
-    # if beck is None:
-    #     disconnect_on_exit = True
-    #     beck = core.connect()
-    # else:
-    #     disconnect_on_exit = False
+    # Connect to OPCUA server
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     status_dict = core.device_status(adc_name[adc_id], beck=beck)
     # status_dict = {'sStatus': beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.sStatus").get_value(),
@@ -98,19 +95,25 @@ def status(adc_id, beck=None):
     #                'lrPosActual': beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.lrPosActual").get_value(),
     #                'lrPosition': beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".ctrl.lrPosition").get_value()}
 
-    # if disconnect_on_exit:
-    #     beck.disconnect()
+    if disconnect_on_exit:
+        beck.disconnect()
 
     return status_dict
 
 
-def check_error(adc_id, beck):
-
+def check_error(adc_id, beck=None):
+    # Connect to OPCUA server
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     if beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.sErrorText").get_value() == 0:
-        return 0
+        adc_status =  0
     else:
-        return 'ERROR'
+        adc_status = 'ERROR'
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return adc_status
 
 
 def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None, motor_bExecute=None):
@@ -124,10 +127,10 @@ def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None, motor_b
     :param motor_nCommand: handle to send commands to the motor
     :return: returns 0 on success and error code on failure
     """
+    # Connect to OPCUA server
+    beck, disconnect_on_exit = core.check_beck(beck)
 
-    if beck is None:
-        # Connect to OPCUA server
-        beck = core.connect()
+    init_status = 0
 
     if motor_nCommand is None:
         # define commands
@@ -143,7 +146,7 @@ def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None, motor_b
             ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, motor_bEnable.get_data_type_as_variant_type())))
         if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.bEnabled").get_value():
             error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.nErrorCode").get_value())
-            return error
+            init_status = error
 
     # Check if init, if not do init
     if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.bInitialised").get_value() or force_init:
@@ -155,8 +158,12 @@ def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None, motor_b
             sleep(15)
         if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.bInitialised").get_value():
             error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.nErrorCode").get_value())
-            return error
-    return 0
+            init_status = error
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return init_status
 
 
 def send_execute(motor_bExecute):

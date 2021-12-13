@@ -29,23 +29,23 @@ def status(beck=None):
     return status_dict
 
 
-def down():
+def down(beck=None):
     """
     Move the flip mirror down
 
     :return: status of the flip_mirror
     """
-    flip_position = switch('bDown_Flip')
+    flip_position = switch('bDown_Flip', beck=beck)
     return flip_position
 
 
-def up():
+def up(beck=None):
     """
     Move the flip mirror up
 
     :return: status of the flip_mirror
     """
-    flip_position = switch('bUp_Flip')
+    flip_position = switch('bUp_Flip', beck=beck)
     return flip_position
 
 

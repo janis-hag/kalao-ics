@@ -61,42 +61,50 @@ def disabled_device_list():
     return PLC_Disabled
 
 
-def plc_status():
+def plc_status(beck=None):
     """
     Query status of all PLC connected devices
     :return: device status dictionary
     """
+    # Connect to OPCUA server
+    if beck is None:
+        disconnect_on_exit = True
+        beck = connect()
+    else:
+        disconnect_on_exit = False
 
     # TODO check if all initialised
 
     temps = temperature_control.get_temperatures()
 
-    plc_status_values = {'shutter': shutter.position(),
-                         'flip_mirror': flip_mirror.position(),
-                         'calib_unit': calib_unit.status()['lrPosActual'],
+    plc_status_values = {'shutter': shutter.position(beck=beck),
+                         'flip_mirror': flip_mirror.position(beck=beck),
+                         'calib_unit': calib_unit.status(beck=beck)['lrPosActual'],
                          'temp_bench_air': temps['temp_bench_air'],
                          'temp_bench_board': temps['temp_bench_board'],
                          'temp_water_in': temps['temp_water_in'],
                          'temp_water_out': temps['temp_water_out'],
-                         'laser': laser.status(),
-                         'tungsten': tungsten.status()['sStatus'],
+                         'laser': laser.status(beck=beck),
+                         'tungsten': tungsten.status(beck=beck)['sStatus'],
                          'adc1': adc.status(1)['lrPosActual'],
                          'adc2': adc.status(2)['lrPosActual']
                          }
 
-    plc_status_text = {'shutter': shutter.status()['sErrorText'],
-                       'flip_mirror': flip_mirror.status()['sErrorText'],
-                       'calib_unit': calib_unit.status()['sStatus'],
+    plc_status_text = {'shutter': shutter.status(beck=beck)['sErrorText'],
+                       'flip_mirror': flip_mirror.status(beck=beck)['sErrorText'],
+                       'calib_unit': calib_unit.status(beck=beck)['sStatus'],
                        'temp_bench_air': temps['temp_bench_air'],
                        'temp_bench_board': temps['temp_bench_board'],
                        'temp_water_in': temps['temp_water_in'],
                        'temp_water_out': temps['temp_water_out'],
-                       'laser': laser.status(),
-                       'tungsten': tungsten.status()['sStatus'],
+                       'laser': laser.status(beck=beck),
+                       'tungsten': tungsten.status(beck=beck)['sStatus'],
                        'adc1': adc.status(1)['sStatus'],
                        'adc2': adc.status(2)['sStatus']
                        }
 
+    if disconnect_on_exit:
+        beck.disconnect()
 
     return plc_status_values, plc_status_text
 
