@@ -39,10 +39,10 @@ def laser_position():
     return new_position
 
 
-def move(position=23.36):
-
+def move(position=23.36, beck=None):
     # Connect to OPCUA server
-    beck = core.connect()
+    beck, disconnect_on_exit = check_beck(beck)
+
     # define commands
     motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
 
@@ -79,7 +79,8 @@ def move(position=23.36):
         new_position = -99
 
     # Disconnect from OPCUA server
-    beck.disconnect()
+    if disconnect_on_exit:
+        beck.disconnect()
 
     return new_position
 

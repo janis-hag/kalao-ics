@@ -54,49 +54,49 @@ def status(beck=None):
     return laser_status
 
 
-def disable():
+1def disable(beck=None):
     """
     Power off laser source
 
     :return: status of the laser
     """
 
-    set_intensity(0)
-    laser_status = switch('bDisable')
+    set_intensity(0, beck=beck)
+    laser_status = switch('bDisable', beck=beck)
     return laser_status
 
 
-def enable():
+def enable(beck=None):
     """
     Power on laser source
 
     :return: status of the laser
     """
-    laser_status = switch('bEnable')
+    laser_status = switch('bEnable', beck=beck)
     return laser_status
 
 
-def lock():
+def lock(beck=None):
     """
     Lock laser into software only control
 
     :return: status of the laser lock
     """
-    laser_status = switch('bLock')
+    laser_status = switch('bLock', beck=beck)
     return laser_status
 
 
-def unlock():
+def unlock(beck=None):
     """
     Lock laser into software only control
 
     :return: status of the laser lock
     """
-    laser_status = switch('bUnlock')
+    laser_status = switch('bUnlock', beck=beck)
     return laser_status
 
 
-def set_intensity(intensity=0.04):
+def set_intensity(intensity=0.4, beck=None):
     """
     Set light intensity of the laser source
 
@@ -105,7 +105,7 @@ def set_intensity(intensity=0.04):
     :return: value of the new intensity
     """
     # Connect to OPCUA server
-    beck = core.connect()
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     # Limit intensity to protect the WFS
     if intensity > MAX_ALLOWED_LASER_INTENSITY:
@@ -128,12 +128,13 @@ def set_intensity(intensity=0.04):
     sleep(LASER_SWITCH_WAIT)
     current = beck.get_node("ns=4;s=MAIN.Laser.Current").get_value()
 
-    beck.disconnect()
+    if disconnect_on_exit:
+        beck.disconnect()
 
     return current
 
 
-def switch(action_name):
+def switch(action_name, beck=None):
     """
      Enable or Disable the laser depending on action_name
 
@@ -141,7 +142,7 @@ def switch(action_name):
     :return: status of laser
     """
     # Connect to OPCUA server
-    beck = core.connect()
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     laser_switch = beck.get_node("ns = 4; s = MAIN.Laser." + action_name)
     laser_switch.set_attribute(
@@ -153,7 +154,10 @@ def switch(action_name):
     else:
         laser_status = 'OFF'
 
-    beck.disconnect()
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
     return laser_status
 
 

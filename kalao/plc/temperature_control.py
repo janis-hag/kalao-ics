@@ -201,4 +201,3 @@ def fan_status(beck=None):
     """
 
     return status(fan_node, beck=beck)
-

@@ -128,8 +128,8 @@ def device_status(node_path, beck=None):
     return device_status_dict
 
 
-def database_update():
-    values, text = plc_status()
+def database_update(beck=None):
+    values, text = plc_status(beck=beck)
     database.store_monitoring(values)
 
 
