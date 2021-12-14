@@ -44,7 +44,7 @@ def run(cam):
         cam.set_exposure(dit)
         img = cam.take_photo()
         shm.set_data(img)
-        sleep(0.3)
+        sleep(0.00001)
 
 if __name__ == '__main__':
     # Tell Python to run the handler() function when SIGINT is recieved
