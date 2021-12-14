@@ -86,6 +86,24 @@ temp_water_out:
   unit: °C
   main_gui: 2
 
+pump_status:
+  short: Water pump status
+  long: Status of the water cooling system pump
+  unit: On/Off
+  main_gui: 2
+
+heater_status:
+  short: Water heater status
+  long: Status of the water cooling system heater
+  unit: On/Off
+  main_gui: 2
+
+fan_status:
+  short: Water cooling fan status
+  long: Status of the water cooling system radiator fan
+  unit: On/Off
+  main_gui: 2
+
 laser:
   short: Laser power
   long: Laser calibration lamp power
