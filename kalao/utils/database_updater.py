@@ -69,9 +69,9 @@ def update_plc_monitoring():
     filter_status = {'fli_filter_position': filter_number, 'fli_filter_name': filter_name}
     values.update(filter_status)
 
-    fli_server_status = fli.control.check_server_status()
+    fli_server_status = fli.camera.check_server_status()
     if fli_server_status == 'OK':
-        fli_temperatures = fli.control.get_temperatures()
+        fli_temperatures = fli.camera.get_temperatures()
         values.update(fli_temperatures)
     else:
         values.update({'fli_status': fli_server_status})

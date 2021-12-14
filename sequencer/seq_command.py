@@ -10,7 +10,7 @@ from configparser import ConfigParser
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel
-from kalao.fli import control
+from kalao.fli import camera
 from kalao.utils import file_handling, database
 from kalao.cacao import aomanager
 import starfinder
@@ -73,7 +73,7 @@ def dark(**seq_args):
 
     # Take nbPic image
     for _ in range(nbPic):
-        rValue = control.take_image(dit = dit, filepath = filepath)
+        rValue = camera.take_image(dit = dit, filepath = filepath)
 
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
         file_handling.save_tmp_picture(image_path)
@@ -96,14 +96,14 @@ def dark_abort():
     :return: nothing
     """
     # two cancel are done to avoid concurrency problems
-    rValue = control.cancel()
+    rValue = camera.cancel()
     if(rValue != 0):
         # TODO handle error
         database.store_obs_log({'sequencer_log':rValue})
 
     time.sleep(1)
 
-    rValue = control.cancel()
+    rValue = camera.cancel()
     if(rValue != 0):
         # TODO handle error
         database.store_obs_log({'sequencer_log':rValue})
@@ -205,7 +205,7 @@ def tungsten_FLAT(**seq_args):
 
         image_path = file_handling.create_night_filepath()
 
-        rValue = control.take_image(dit=dit, filepath=image_path)
+        rValue = camera.take_image(dit=dit, filepath=image_path)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
         file_handling.save_tmp_picture(image_path)
@@ -232,14 +232,14 @@ def tungsten_FLAT_abort():
     :return: nothing
     """
     # two cancel are done to avoid concurrency problems
-    rValue = control.cancel()
+    rValue = camera.cancel()
     if(rValue != 0):
         # TODO handle error
         database.store_obs_log({'sequencer_log':rValue})
 
     time.sleep(1)
 
-    rValue = control.cancel()
+    rValue = camera.cancel()
     if(rValue != 0):
         # TODO handle error
         database.store_obs_log({'sequencer_log':rValue})
@@ -313,7 +313,7 @@ def sky_FLAT(**seq_args):
 
         image_path = file_handling.create_night_filepath()
 
-        rValue = control.take_image(dit=dit, filepath=image_path)
+        rValue = camera.take_image(dit=dit, filepath=image_path)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
         file_handling.save_tmp_picture(image_path)
@@ -396,7 +396,7 @@ def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, f
 
     temporary_path = file_handling.create_night_folder()
 
-    rValue = control.take_image(dit = dit, filepath = filepath)
+    rValue = camera.take_image(dit = dit, filepath = filepath)
 
     #Monitor AO and cancel exposure if needed
 
@@ -420,13 +420,13 @@ def target_observation_abort():
     :return: nothing
     """
     # two cancel are done to avoid concurrency problems
-    rValue = control.cancel()
+    rValue = camera.cancel()
     if(rValue != 0):
         database.store_obs_log({'sequencer_log':rValue})
 
     time.sleep(1)
 
-    rValue = control.cancel()
+    rValue = camera.cancel()
     if(rValue != 0):
         database.store_obs_log({'sequencer_log':rValue})
 

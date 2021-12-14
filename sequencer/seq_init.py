@@ -27,7 +27,7 @@ from kalao.plc import calib_unit
 from kalao.plc import flip_mirror
 from kalao.plc import laser
 from kalao.plc import tungsten
-from kalao.fli import control
+from kalao.fli import camera
 
 from sequencer import system
 
@@ -163,7 +163,7 @@ def initialisation():
     # dict where keys is string name of object <function> and values is object <function>
     init_dict = {
         "system.initialise_services"     : system.initialise_services,
-        "control.initialise"    : control.initialise,
+        "control.initialise"    : camera.initialise,
         "calib_unit.initialise" : calib_unit.initialise,
         "flip_mirror.initialise": flip_mirror.initialise,
         "shutter.initialise"    : shutter.initialise,

@@ -5,7 +5,7 @@ from pathlib import Path
 
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from kalao.fli import control
+from kalao.fli import camera
 from kalao.plc import filterwheel
 from kalao.utils import database, file_handling
 from kalao.cacao import telemetry
@@ -30,7 +30,7 @@ def centre_on_target(filter_arg='clear'):
     timeout_time = time.time()+CenteringTimeout
 
     while(time.time() < timeout_time):
-        rValue = control.take_image(dit = ExpTime)
+        rValue = camera.take_image(dit = ExpTime)
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
         file_handling.save_tmp_picture(image_path)
 

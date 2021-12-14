@@ -17,7 +17,7 @@ from time import sleep, time
 
 from kalao.interface import star_centering
 from kalao.plc import calib_unit, tungsten, adc
-from kalao.fli import control
+from kalao.fli import camera
 from kalao.utils import database, file_handling
 
 
@@ -28,7 +28,7 @@ def scan_calib(scan_range, dit=0.05):
     for pos in scan_range:
         calib_unit.move(pos)
 
-        control.take_image()
+        camera.take_image()
 
         sleep(10)
 
@@ -68,7 +68,7 @@ def scan_adc(scan_range1, scan_range2, dit=0.001):
         print(ang)
         sleep(5)
 
-        control.take_image(dit=dit)
+        camera.take_image(dit=dit)
 
         sleep(1)
 
