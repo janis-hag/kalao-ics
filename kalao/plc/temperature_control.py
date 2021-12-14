@@ -32,9 +32,10 @@ heater_node = 'bWaterHeater'
 
 def get_temperatures(beck=None):
     """
-    Query the current intensity of the laser
+    Query all the temperature sensors.
 
-    :return: intensity of laser
+    :param beck: handle of the beckhoff connection
+    :return: dictionary of temperatures
     """
 
     # Read calibrated temperature offset
@@ -57,6 +58,28 @@ def get_temperatures(beck=None):
         beck.disconnect()
 
     return temp_values
+
+
+def get_cooling_status(beck=None):
+    """
+    Query status of the cooling system.
+
+    :param beck: handle of the beckhoff connection
+    :return:
+    """
+    # Connect to OPCUA server
+    beck, disconnect_on_exit = core.check_beck(beck)
+
+    cooling_status = {
+        'pump_status': pump_status(beck),
+        'heater_status': heater_status(beck),
+        'fan_status': fan_status(beck)
+    }
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return cooling_status
 
 
 def status(relay_name, beck=None):
@@ -201,4 +224,3 @@ def fan_status(beck=None):
     """
 
     return status(fan_node, beck=beck)
-

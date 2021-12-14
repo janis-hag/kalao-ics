@@ -90,13 +90,8 @@ def send_command(beck, nCommand_value):
     :param nCommand_value: 1, 2, or 3
     :return:
     """
-
     # Connect to OPCUA server
-    if beck is None:
-        disconnect_on_exit = True
-        beck = core.connect()
-    else:
-        disconnect_on_exit = False
+    beck, disconnect_on_exit = core.check_beck(beck)
 
     tungsten_nCommand = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.nCommand")
 

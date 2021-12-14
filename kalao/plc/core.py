@@ -73,6 +73,8 @@ def plc_status(beck=None):
 
     temps = temperature_control.get_temperatures(beck=beck)
 
+    cooling_system = temperature_control.get_cooling_status(beck=beck)
+
     plc_status_values = {'shutter': shutter.position(beck=beck),
                          'flip_mirror': flip_mirror.position(beck=beck),
                          'calib_unit': calib_unit.status(beck=beck)['lrPosActual'],
@@ -83,7 +85,10 @@ def plc_status(beck=None):
                          'laser': laser.status(beck=beck),
                          'tungsten': tungsten.status(beck=beck)['sStatus'],
                          'adc1': adc.status(1)['lrPosActual'],
-                         'adc2': adc.status(2)['lrPosActual']
+                         'adc2': adc.status(2)['lrPosActual'],
+                         'pump_status': cooling_system['pump_status'],
+                         'heater_status': cooling_system['heater_status'],
+                         'fan_status': cooling_system['fan_status']
                          }
 
     plc_status_text = {'shutter': shutter.status(beck=beck)['sErrorText'],
@@ -96,7 +101,10 @@ def plc_status(beck=None):
                        'laser': laser.status(beck=beck),
                        'tungsten': tungsten.status(beck=beck)['sStatus'],
                        'adc1': adc.status(1)['sStatus'],
-                       'adc2': adc.status(2)['sStatus']
+                       'adc2': adc.status(2)['sStatus'],
+                       'pump_status': cooling_system['pump_status'],
+                       'heater_status': cooling_system['heater_status'],
+                       'fan_status': cooling_system['fan_status']
                        }
 
     if disconnect_on_exit:
@@ -128,8 +136,8 @@ def device_status(node_path, beck=None):
     return device_status_dict
 
 
-def database_update():
-    values, text = plc_status()
+def database_update(beck=None):
+    values, text = plc_status(beck=beck)
     database.store_monitoring(values)
 
 

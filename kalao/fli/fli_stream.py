@@ -25,6 +25,7 @@ def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
     system.camera_service('start')
+    print('Restarted kalao_camera service')
     exit(0)
 
 
@@ -51,6 +52,9 @@ if __name__ == '__main__':
     signal(SIGINT, handler)
 
     system.camera_service('stop')
+    print('Stopped kalao_camera service')
+
+    sleep(2)
 
     cam = FLI.USBCamera.find_devices()[0]
     pprint(dict(cam.get_info()))
