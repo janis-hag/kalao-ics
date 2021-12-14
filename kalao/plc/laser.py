@@ -54,7 +54,7 @@ def status(beck=None):
     return laser_status
 
 
-1def disable(beck=None):
+def disable(beck=None):
     """
     Power off laser source
 
