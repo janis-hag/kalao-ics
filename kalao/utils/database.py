@@ -155,7 +155,6 @@ def read_mongo_to_pandas(dt, days=1, collection_name='monitoring', no_id=True):
         #cursor = db[collection].find(query)
         cursor = db[collection_name].find()
 
-
         # Expand the cursor and construct the DataFrame
         appended_df.append(pd.DataFrame(list(cursor)))
 
