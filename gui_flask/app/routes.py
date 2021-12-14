@@ -160,11 +160,11 @@ def plcLaserDisable():
 
 @app.route('/plcShutterOpen', methods=['GET'])
 def plcShutterOpen():
-    return k_shutter.open();
+    return k_shutter.shutter_open();
 
 @app.route('/plcShutterClose', methods=['GET'])
 def plcShutterClose():
-    return k_shutter.close();
+    return k_shutter.shutter_close();
 
 @app.route('/plcFlipMirrorUp', methods=['GET'])
 def plcFlipMirrorUp():
