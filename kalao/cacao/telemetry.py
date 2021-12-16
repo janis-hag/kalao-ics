@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 from pyMilk.interfacing.isio_shmlib import SHM
-import pyMilk.interfacing import isio_shmlib
+from pyMilk.interfacing import isio_shmlib
 
 from CacaoProcessTools import fps, FPS_status
 
@@ -100,7 +100,7 @@ def telemetry_save():
 			telemetry["nuvu_exposuretime"]      = fps_nuvu["nuvu_accquire.exposuretime"]
 
 	else:
-		pass #Return empty streams
+		pass # Return empty streams
 
 	#check if fps exists and is running
 	shwfs_exists, shwfs_fps_path = check_fps("shwfs_process")
@@ -108,6 +108,7 @@ def telemetry_save():
 	if shwfs_exists:
 		fps_slopes = fps("shwfs_process")
 
+		# Check if it's running
 		if fps_slopes.RUNrunning==1:
 			telemetry["slopes_flux_subaperture"] = fps_slopes["shwfs_process.flux_subaperture"]
 			telemetry["slopes_residual"]         = fps_slopes["shwfs_process.residual"]
@@ -115,13 +116,17 @@ def telemetry_save():
 	#check if fps exists and is running
 	tt_exists, tt_fps_path = check_fps("dm02disp")
 
-	tt_stream = SHM("dm02disp")
-	if tt_stream.RUNrunning==1:
+	if tt_exists:
 
-		tt_data = tt_stream.get_data(check=True)
+		tt_stream = SHM("dm02disp")
 
-		telemetry["pi_tip"] = tt_data[0]
-		telemetry["pi_tilt"] = tt_data[1]
+		# Check if it's running
+		if tt_stream.RUNrunning==1:
+
+			tt_data = tt_stream.get_data(check=True)
+
+			telemetry["pi_tip"] = tt_data[0]
+			telemetry["pi_tilt"] = tt_data[1]
 
 	database.store_telemetry(telemetry)
 
