@@ -83,6 +83,7 @@ def streams(realData=True):
 def telemetry_save():
 	telemetry = {}
 
+	# NUVU process
 	#check if fps exists and is running
 	nuvu_exists, nuvu_fps_path = check_fps("nuvu_acquire")
 
@@ -102,6 +103,7 @@ def telemetry_save():
 	else:
 		pass # Return empty streams
 
+	# SHWFS process
 	#check if fps exists and is running
 	shwfs_exists, shwfs_fps_path = check_fps("shwfs_process")
 
@@ -113,20 +115,19 @@ def telemetry_save():
 			telemetry["slopes_flux_subaperture"] = fps_slopes["shwfs_process.flux_subaperture"]
 			telemetry["slopes_residual"]         = fps_slopes["shwfs_process.residual"]
 
+
+	# Tip/tilt stream
 	#check if fps exists and is running
-	tt_exists, tt_fps_path = check_fps("dm02disp")
+	tt_exists, tt_fps_path = check_stream("dm02disp")
 
 	if tt_exists:
 
 		tt_stream = SHM("dm02disp")
 
-		# Check if it's running
-		if tt_stream.RUNrunning==1:
+		tt_data = tt_stream.get_data(check=True)
 
-			tt_data = tt_stream.get_data(check=True)
-
-			telemetry["pi_tip"] = tt_data[0]
-			telemetry["pi_tilt"] = tt_data[1]
+		telemetry["pi_tip"] = tt_data[0]
+		telemetry["pi_tilt"] = tt_data[1]
 
 	database.store_telemetry(telemetry)
 
