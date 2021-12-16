@@ -56,7 +56,8 @@ def _get_stream(name, min, max):
 
 	if exists:
 		stream = SHM(name)
-		data = stream.get_data(check=True)
+		# Check turned off to prevent timeout. Data may be obsolete
+		data = stream.get_data(check=False)
 
 		return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min, "max": max}
 
@@ -124,7 +125,8 @@ def telemetry_save():
 
 		tt_stream = SHM("dm02disp")
 
-		tt_data = tt_stream.get_data(check=True)
+		# Check turned off to prevent timeout. Data may be obsolete
+		tt_data = tt_stream.get_data(check=False)
 
 		telemetry["pi_tip"] = tt_data[0]
 		telemetry["pi_tilt"] = tt_data[1]
