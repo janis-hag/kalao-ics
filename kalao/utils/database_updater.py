@@ -19,8 +19,8 @@ from kalao import plc
 from kalao.rtc import device_status
 from kalao import fli
 from kalao.utils import database
-from kalao.plc import filterwheel
 from sequencer import system
+from kalao.cacao import telemetry
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -65,9 +65,12 @@ def update_plc_monitoring():
     values.update(rtc_temperatures)
 
     # FLI science camera status
-    filter_number, filter_name = filterwheel.get_position()
-    filter_status = {'fli_filter_position': filter_number, 'fli_filter_name': filter_name}
-    values.update(filter_status)
+    try:
+        filter_number, filter_name = plc.filterwheel.get_position()
+        filter_status = {'fli_filter_position': filter_number, 'fli_filter_name': filter_name}
+        values.update(filter_status)
+    except Exception as e:
+        print(e)
 
     fli_server_status = fli.camera.check_server_status()
     if fli_server_status == 'OK':
@@ -86,7 +89,7 @@ if __name__ == "__main__":
     # signal(SIGINT, handler)
 
     # Get monitoring and cacao
-    schedule.every(10).seconds.do(cacao.telemetry.telemetry_save())
+    schedule.every(10).seconds.do(telemetry.telemetry_save())
     schedule.every(60).seconds.do(update_plc_monitoring)
 
     while (True):
