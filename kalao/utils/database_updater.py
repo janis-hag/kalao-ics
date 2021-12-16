@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # signal(SIGINT, handler)
 
     # Get monitoring and cacao
-    # schedule.every(60).seconds.do(cacao.telemetry.telemetry_save())
+    schedule.every(10).seconds.do(cacao.telemetry.telemetry_save())
     schedule.every(60).seconds.do(update_plc_monitoring)
 
     while (True):

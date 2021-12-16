@@ -128,8 +128,8 @@ def telemetry_save():
 		# Check turned off to prevent timeout. Data may be obsolete
 		tt_data = tt_stream.get_data(check=False)
 
-		telemetry["pi_tip"] = tt_data[0]
-		telemetry["pi_tilt"] = tt_data[1]
+		telemetry["pi_tip"] = float(tt_data[0])
+		telemetry["pi_tilt"] = float(tt_data[1])
 
 	database.store_telemetry(telemetry)
 
