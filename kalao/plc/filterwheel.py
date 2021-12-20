@@ -50,6 +50,7 @@ for key, val in parser.items( 'FilterPosition'):
     Id_filter_dict[key] = int(val)
     Id_filter_dict[int(val)] = key
 
+
 def create_filter_id():
     return Id_filter_dict
 
@@ -73,11 +74,12 @@ def set_position(filter_arg):
     # time.sleep(INITIALIZATIONWAIT)
     fw.set_position(filter_arg) # Same name of parent func ?
     time.sleep(POSITIONCHANGEWAIT)
-    position, filter_name = fw.get_position()
+    position = fw.get_position()
+    filter_name = Id_filter_dict[position]
 
     if position == filter_arg:
         database.store_obs_log({'filterwheel_status': "Filterwheel on {}".format(Id_filter_dict[filter_arg])})
-        return 0
+        return position, filter_name
     else:
         database.store_obs_log({
             'filterwheel_log': "Error: filter position expected {}, but got {}".format(filter_arg, position)})
