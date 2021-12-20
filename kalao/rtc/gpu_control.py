@@ -14,7 +14,7 @@ import io
 import pandas as pd
 
 
-def tatus():
+def status():
     '''
     Reads the status of the nvidia GPU using the nvidia-smi command with csv output and returns it as a dictionary
 
