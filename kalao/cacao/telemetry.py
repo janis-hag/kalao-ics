@@ -6,8 +6,8 @@
 
 import os
 from pathlib import Path
-from contextlib import redirect_stdout
 import io
+import sys
 
 from pyMilk.interfacing.isio_shmlib import SHM
 from pyMilk.interfacing import isio_shmlib
@@ -87,7 +87,7 @@ def telemetry_save():
 	telemetry = {}
 
 	# Create the in-memory "file"
-	temp_out = StringIO()
+	temp_out = io.StringIO()
 
 	# NUVU process
 	#check if fps exists and is running
