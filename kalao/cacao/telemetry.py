@@ -86,14 +86,17 @@ def streams(realData=True):
 def telemetry_save():
 	telemetry = {}
 
+	# Create the in-memory "file"
+	temp_out = StringIO()
+
 	# NUVU process
 	#check if fps exists and is running
 	nuvu_exists, nuvu_fps_path = check_fps("nuvu_acquire")
 
 	if nuvu_exists:
-		f = io.StringIO()
-		with redirect_stdout(f):
-			fps_nuvu = fps("nuvu_acquire")
+		sys.stdout = temp_out
+		fps_nuvu = fps("nuvu_acquire")
+		sys.stdout = sys.__stdout__
 
 		# Check if it's running
 		if fps_nuvu.RUNrunning==1:
@@ -113,9 +116,9 @@ def telemetry_save():
 	shwfs_exists, shwfs_fps_path = check_fps("shwfs_process")
 
 	if shwfs_exists:
-		f = io.StringIO()
-		with redirect_stdout(f):
-			fps_slopes = fps("shwfs_process")
+		sys.stdout = temp_out
+		fps_slopes = fps("shwfs_process")
+		sys.stdout = sys.__stdout__
 
 		# Check if it's running
 		if fps_slopes.RUNrunning==1:
