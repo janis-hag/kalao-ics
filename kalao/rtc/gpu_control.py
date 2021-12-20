@@ -11,7 +11,8 @@ gpu_control.py is part of the KalAO Instrument Control Software
 """
 import subprocess
 import io
-import pprint
+import pandas as pd
+
 
 def full_status():
     '''
