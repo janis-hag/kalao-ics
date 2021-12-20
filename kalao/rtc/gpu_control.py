@@ -14,7 +14,7 @@ import io
 import pandas as pd
 
 
-def full_status():
+def tatus():
     '''
     Reads the status of the nvidia GPU using the nvidia-smi command with csv output and returns it as a dictionary
 
@@ -63,10 +63,10 @@ def full_status_parse():
     return status_dict
 
 
-def status():
+def status_parse():
 
     status_dict = {}
-    full_dict = full_status()
+    full_dict = full_status_parse()
 
     status_dict['gpu_current_temp'] = full_dict['GPU Current Temp'].split(' ')[0]
     status_dict['gpu_power_draw'] = full_dict['Power Draw'].split(' ')[0]
