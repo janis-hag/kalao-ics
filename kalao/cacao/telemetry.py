@@ -6,6 +6,8 @@
 
 import os
 from pathlib import Path
+from contextlib import redirect_stdout
+import io
 
 from pyMilk.interfacing.isio_shmlib import SHM
 from pyMilk.interfacing import isio_shmlib
@@ -89,7 +91,9 @@ def telemetry_save():
 	nuvu_exists, nuvu_fps_path = check_fps("nuvu_acquire")
 
 	if nuvu_exists:
-		fps_nuvu = fps("nuvu_acquire")
+		f = io.StringIO()
+		with redirect_stdout(f):
+			fps_nuvu = fps("nuvu_acquire")
 
 		# Check if it's running
 		if fps_nuvu.RUNrunning==1:
@@ -109,7 +113,9 @@ def telemetry_save():
 	shwfs_exists, shwfs_fps_path = check_fps("shwfs_process")
 
 	if shwfs_exists:
-		fps_slopes = fps("shwfs_process")
+		f = io.StringIO()
+		with redirect_stdout(f):
+			fps_slopes = fps("shwfs_process")
 
 		# Check if it's running
 		if fps_slopes.RUNrunning==1:
@@ -122,7 +128,6 @@ def telemetry_save():
 	tt_exists, tt_fps_path = check_stream("dm02disp")
 
 	if tt_exists:
-
 		tt_stream = SHM("dm02disp")
 
 		# Check turned off to prevent timeout. Data may be obsolete
