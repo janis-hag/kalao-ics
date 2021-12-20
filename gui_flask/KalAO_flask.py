@@ -4,6 +4,8 @@ from flask import Flask,request,Blueprint
 from rest.plc import plc_bp
 from rest.system import system_bp
 from datetime import datetime, timedelta, timezone
+import pytz
+
 
 from numpy.random import seed
 from numpy.random import randint
@@ -163,20 +165,43 @@ def create_app():
     def timeSeries(t_start,t_end):
         #print(t_start,t_end)
         #def read_mongo_to_pandas(dt, days=1, collection='monitoring', no_id=True):
-        data = k_database.read_mongo_to_pandas(None, days=1,"monitoring", False) #.to_json(orient="split")*/
 
+        startDay = datetime.fromtimestamp(int(t_start))
+        endDay = datetime.fromtimestamp(int(t_end))
+        #startDay = datetime.fromisoformat(t_start)
+        #endDay = datetime.fromisoformat(t_end)
+        startDay = startDay.astimezone(timezone.utc)
+        endDay = endDay.astimezone(timezone.utc)
+        #startDay = current_tz.localize(datetime.strptime(t_start, '%a, %d %b %Y %H:%M:%S'))
+        #endDay = current_tz.localize(datetime.strptime(t_end, '%a, %d %b %Y %H:%M:%S'))
+        #startDay = datetime.fromtimestamp(int(t_start))
+        #endDay = datetime.fromtimestamp(int(t_end))
+        data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay) #.to_json(orient="split")*/
         ts = {}
-        time_values = [time_lib.mktime(d.timetuple()) for d in data["time_utc"].tolist()]
+        ts_full = []
+        time_list = data["time_utc"].tolist()
+        if len(time_list) <= 1:
+            time_list = []
+        time_values = [time_lib.mktime(d.timetuple()) for d in time_list]
+
         for col in data.columns:
             if col != "time_utc":
                 values = data[col].tolist()
+                if len(values) <= 1:
+                    values = []
+
                 ts[col] = {
-                    "time": time_values,
-                    "values": values
+                    "time": [],
+                    "values": []
                 }
+                for i in range(len(values)):
+                    if time_values[i] >= float(t_start) and time_values[i] <= float(t_end) :
+                        ts[col]["time"].append(time_values[i])
+                        ts[col]["values"].append(values[i])
+
         return json.dumps(ts);
         #print(data)
-
+        '''
         random = bool(request.args.get('random', default = "", type = str))
         series = k_status.telemetry_series(random)
         limit = 100
@@ -194,7 +219,7 @@ def create_app():
                     obj[serie_name]["values"].append(values["values"][0])
                 nb+=1
 
-        return obj,200
+        return obj,200'''
 
         #return data,200
 
