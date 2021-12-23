@@ -135,22 +135,34 @@ def create_app():
         jsonObject = json.dumps({"selection": selection, "image": imageObject})
         return jsonObject;
 
-    @app.route('/plots', methods=['GET'])
-    def plot():
+    @app.route('/plots/<nb_points>', methods=['GET'])
+    def plot(nb_points):
+        nb_points = int(nb_points)
         random = bool(request.args.get('random', default = "", type = str))
-        series = k_status.telemetry_series(random)
-        limit = 100
+        if random:
+            series = k_status.telemetry_series(random)
+        else:
+            series = k_database.get_telemetry(['pi_tip', 'pi_tilt'], nb_points)
+
+            for serie_name in series:
+                time_arr = []
+                for time in series[serie_name]["time_utc"]:
+                    time_arr.append(round(datetime.timestamp(time),1))
+                series[serie_name]["time"] = time_arr
+                series[serie_name].pop("time_utc")
+
+            return series
         obj = {}
         for serie_name in series:
             obj[serie_name] = {"time": [],"values": []}
             nb = 0
             for time in series[serie_name]["time_utc"]:
-                if nb < limit:
+                if nb < nb_points:
                     obj[serie_name]["time"].append(round(datetime.timestamp(time),1))
                 nb+=1
             nb = 0
             for values in series[serie_name]["values"]:
-                if nb < limit:
+                if nb < nb_points:
                     obj[serie_name]["values"].append(values["values"][0])
                 nb+=1
 
@@ -163,19 +175,13 @@ def create_app():
 
     @app.route('/timeSeries/<t_start>/<t_end>', methods=['GET'])
     def timeSeries(t_start,t_end):
-        #print(t_start,t_end)
-        #def read_mongo_to_pandas(dt, days=1, collection='monitoring', no_id=True):
 
         startDay = datetime.fromtimestamp(int(t_start))
         endDay = datetime.fromtimestamp(int(t_end))
-        #startDay = datetime.fromisoformat(t_start)
-        #endDay = datetime.fromisoformat(t_end)
+
         startDay = startDay.astimezone(timezone.utc)
         endDay = endDay.astimezone(timezone.utc)
-        #startDay = current_tz.localize(datetime.strptime(t_start, '%a, %d %b %Y %H:%M:%S'))
-        #endDay = current_tz.localize(datetime.strptime(t_end, '%a, %d %b %Y %H:%M:%S'))
-        #startDay = datetime.fromtimestamp(int(t_start))
-        #endDay = datetime.fromtimestamp(int(t_end))
+
         data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay) #.to_json(orient="split")*/
         ts = {}
         ts_full = []
@@ -200,27 +206,5 @@ def create_app():
                         ts[col]["values"].append(values[i])
 
         return json.dumps(ts);
-        #print(data)
-        '''
-        random = bool(request.args.get('random', default = "", type = str))
-        series = k_status.telemetry_series(random)
-        limit = 100
-        obj = {}
-        for serie_name in series:
-            obj[serie_name] = {"time": [],"values": []}
-            nb = 0
-            for time in series[serie_name]["time_utc"]:
-                if nb < limit:
-                    obj[serie_name]["time"].append(round(datetime.timestamp(time),1))
-                nb+=1
-            nb = 0
-            for values in series[serie_name]["values"]:
-                if nb < limit:
-                    obj[serie_name]["values"].append(values["values"][0])
-                nb+=1
-
-        return obj,200'''
-
-        #return data,200
 
     return app
