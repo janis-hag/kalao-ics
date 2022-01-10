@@ -152,21 +152,24 @@ def check_status():
 
 
 def camera_service(action):
-    database.store_obs_log({'fli_log': 'Sending '+action+' command to FLI camera server.'})
+    if not action.upper() == 'STATUS':
+        database.store_obs_log({'fli_log': 'Sending '+action+' command to FLI camera server.'})
     unit_name = parser.get('SystemD', 'camera_service')
     status = unit_control(unit_name, action)
     return status
 
 
 def database_service(action):
-    database.store_obs_log({'database_log': 'Sending '+action+' command to database system.'})
+    if not action.upper() == 'STATUS':
+        database.store_obs_log({'database_log': 'Sending '+action+' command to database system.'})
     unit_name = parser.get('SystemD', 'database_updater')
     status = unit_control(unit_name, action)
     return status
 
 
 def flask_service(action):
-    database.store_obs_log({'flask_log': 'Sending '+action+' command to flask server.'})
+    if not action.upper() == 'STATUS':
+        database.store_obs_log({'flask_log': 'Sending '+action+' command to flask server.'})
     unit_name = parser.get('SystemD', 'flask_gui')
     status = unit_control(unit_name, action)
 
