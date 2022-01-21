@@ -3,7 +3,7 @@ Description=KalAO monitoring service
 
 [Service]
 Type=simple
-ExecStart=/home/kalao/kalao-ics/scripts/launch-database_updater.sh
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_database-updater.sh
 Restart=always
 RestartSec=30
 StandardOutput=journal

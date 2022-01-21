@@ -1,9 +1,9 @@
 [Unit]
-Description=KalAO Flask GUI service
+Description=KalAO monitoring service
 
 [Service]
 Type=simple
-ExecStart=/home/kalao/kalao-ics/scripts/kalao_flask-gui.sh
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_sequencer.sh
 Restart=always
 RestartSec=30
 StandardOutput=journal
@@ -12,3 +12,4 @@ Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=default.target
+#WantedBy=multi-user.target
