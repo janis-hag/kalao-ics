@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+from signal import SIGINT, SIGTERM
 from sys import path as SysPath
 from os  import path as OsPath
 # methode dirname return parent directory and methode abspath return absolut path
@@ -27,6 +29,10 @@ parser = ConfigParser()
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 parser.read(config_path)
 
+
+
+
+
 def seq_server():
     """
     receive commands in string form through a socket.
@@ -42,6 +48,31 @@ def seq_server():
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socketSeq.bind((host, port))
     system.print_and_log("Server on: "+str(kalao_time.now()))
+
+    conn = None
+
+    def handler(signal_received, frame):
+        # Handle any cleanup here
+        if signal_received == SIGTERM:
+            # Restarting using systemd framework
+            print('\nSIGTERM received. Restarting.')
+            try:
+                if conn is not None:
+                    conn.close()
+                socketSeq.close()
+            system.print_and_log("Sequencer server off: " + str(kalao_time.now()))
+            #system.se_Server_service('RESTART')
+        elif signal_received == SIGINT:
+            print('\nSIGINT or CTRL-C detected. Exiting.')
+            try:
+                if conn is not None:
+                    conn.close()
+                socketSeq.close()
+            system.print_and_log("Sequencer server off: " + str(kalao_time.now()))
+            exit(0)
+
+    signal(SIGTERM, handler)
+    signal(SIGINT, handler)
 
     q = Queue()
     th = None
@@ -62,7 +93,7 @@ def seq_server():
         #
         # 'command' is commandList[0], 'arguments' are commandList[1:]
         #
-        print("%.6f"%(time.time()), " command=>", commandList[0], "< arg=",commandList[1:], sep="")
+        print("%s"%(kalao_time.now()), " command=>", commandList[0], "< arg=",commandList[1:], sep="")
 
         if commandList[0] == 'exit':
             break
@@ -105,7 +136,7 @@ def seq_server():
     # in case of break, we disconnect the socket
     conn.close()
     socketSeq.close()
-    system.print_and_log("Server off: "+str(kalao_time.now()))
+    system.print_and_log("Sequencer server off: "+str(kalao_time.now()))
 
 
 def cast_args(args):
