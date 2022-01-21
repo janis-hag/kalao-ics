@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from signal import SIGINT, SIGTERM
+#from signal import SIGINT, SIGTERM
+import signal
 from sys import path as SysPath
 from os  import path as OsPath
 # methode dirname return parent directory and methode abspath return absolut path
@@ -53,26 +54,24 @@ def seq_server():
 
     def handler(signal_received, frame):
         # Handle any cleanup here
-        if signal_received == SIGTERM:
+        if signal_received == signal.SIGTERM:
             # Restarting using systemd framework
             print('\nSIGTERM received. Restarting.')
-            try:
-                if conn is not None:
-                    conn.close()
-                socketSeq.close()
+            if conn is not None:
+                conn.close()
+            socketSeq.close()
             system.print_and_log("Sequencer server off: " + str(kalao_time.now()))
             #system.se_Server_service('RESTART')
-        elif signal_received == SIGINT:
+        elif signal_received == signal.SIGINT:
             print('\nSIGINT or CTRL-C detected. Exiting.')
-            try:
-                if conn is not None:
-                    conn.close()
-                socketSeq.close()
+            if conn is not None:
+                conn.close()
+            socketSeq.close()
             system.print_and_log("Sequencer server off: " + str(kalao_time.now()))
             exit(0)
 
-    signal(SIGTERM, handler)
-    signal(SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+    signal.signal(signal.SIGINT, handler)
 
     q = Queue()
     th = None
