@@ -71,7 +71,7 @@ def initBenchComponents(q, init_foncs):
         th.daemon = True
 
         name = fonc.__module__.split(".")[-1] + "." + fonc.__name__
-        system.print_and_log(str(name)+" starded..")
+        system.print_and_log(str(name)+" started..")
         # name last_module_name.func_name (ex: control.initialise)
 
         th.start()
