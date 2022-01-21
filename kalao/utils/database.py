@@ -11,6 +11,7 @@ from datetime import datetime, timezone, timedelta
 import yaml
 import json
 import os
+import math
 
 import pandas as pd
 
@@ -137,6 +138,45 @@ def get_latest_record(collection_name):
 
     return latest_record
 
+def read_mongo_to_pandas_by_timestamp(dt_start,dt_end):
+    """ Read from Mongo and Store into DataFrame """
+    dt_range = dt_end-dt_start
+    dt = dt_start
+    days=int(math.ceil(dt_range.days)) + 1
+    collection_name='monitoring'
+    no_id=True
+    appended_df = []
+
+    for day_number in range(days):
+        # Loop of days
+        db = get_db(dt - timedelta(days= day_number))
+
+        # Make a query to the specific DB and Collection
+        #cursor = db[collection].find(query)
+        cursor = db[collection_name].find()
+
+        # Expand the cursor and construct the DataFrame
+        appended_df.append(pd.DataFrame(list(cursor)))
+
+    # Check if the databse is empty for the given days
+    if all([df.empty for df in appended_df]):
+        # Search one more day back in time to look for database content
+        db = get_db(dt - timedelta(days=days))
+        df = pd.DataFrame(list(db[collection_name].find()))
+
+        # If it did not succeed return a NaN database with column names
+        if df.empty:
+            df = pd.DataFrame(columns=list(definitions['monitoring'].keys()), index=[0])
+            no_id = False # Set to False because the '_id' column does not exist in this df
+
+    else:
+        df = pd.concat(appended_df).sort_values(by='time_utc', ignore_index=True)
+
+    # Delete the _id
+    if no_id:
+        del df['_id']
+
+    return df
 
 def read_mongo_to_pandas(dt, days=1, collection_name='monitoring', no_id=True):
     """ Read from Mongo and Store into DataFrame """
