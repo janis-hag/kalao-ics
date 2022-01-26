@@ -30,7 +30,8 @@ La taille des message vers KalAO est limitée ainsi on a défini que le caractè
 
 | Nom    | Description |
 |--------|-------------|
-| status | Demande le status de KalAO |		
+| status | Demande le status de KalAO |
+| stopao | Open AO loop |
 | abort  | Interromp la sequence en cours |
 | end    | Signale la fin d'utilisation de KalAO  |		
 		
@@ -56,18 +57,6 @@ Le statut de KalAO est une commande, le premier caractère est le delimiteur. La
 * **BUSY** KalAO est en cours de pose, aucune action 
 * **ERROR** KalAO est en erreur, sortie de la procedure acquisition_KalAO.prc
 * **WAITING** KalAO est prêt à recevoir les paramètres d'une pose
-
-	
-	
-	
-	
-	
-	
-	
-
- 
-
- 
 
  
 ## AO et guidage en offset
