@@ -101,6 +101,11 @@ flask_log:
   short: flask log
   long: Log output of the flask server
   unit: text
+gop_log:
+  short: gop log
+  long: Log output of the GOP server
+  unit: text
+
 
 # FilterWheel
 filterwheel_status:

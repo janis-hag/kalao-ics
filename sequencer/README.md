@@ -8,23 +8,32 @@ La taille des message vers KalAO est limitée ainsi on a défini que le caractè
 
 ### Liste de poses:
 
-| Nom	| Autre nom	| Arguments | Commentaire   |
-|-------|-----------|-----------|----|
-|  k_dark     |           |       |        |		
-|  k_lpmflt     |           | filter_list     |         |		
-|  k_aocal     |           |        |       |		
-|  k_trgobs     |           |        |       |		
-|  status     |           |           |    |		
-|  abort     |           |            |   |		
-|  end      |           |            |   |		
-		
-		
-		
-		
-		
-		
+| Nom	   | Autre nom	| Arguments | Commentaire   |
+|----------|-----------|-----------|----|
+| k_trgobs |           |  expotype, pointing, program, kalCode, mv,       |       |		
+| k_dark   |           |  expotype, kalcode, texp     |        |		
+| l_lampon |           | ?? | |
+| k_lpmflt |           | flatlist     |         |
 
- 
+
+### Listes des poses à implementer éventuellement:
+
+| Nom	    | Autre nom	| Arguments | Commentaire   |
+|-----------|-----------|-----------|----|
+|  k_skyflt |           | flatlist     |         |		
+|  k_aocal  |           |        |       |
+|  k_rmatrx |           |        |       |
+
+
+		
+### Listes des commandes
+
+| Nom    | Description |
+|--------|-------------|
+| status | Demande le status de KalAO |		
+| abort  | Interromp la sequence en cours |
+| end    | Signale la fin d'utilisation de KalAO  |		
+		
 
 La configuration des parametres de pose se fait dans **$THOME/config/general/edp_poses_definition.cfg**
 

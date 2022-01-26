@@ -14,3 +14,14 @@ The KalAO Instrument Control Software
 - CACAO python control
 - EULER Telescope inter-process communication
 - Stand-alone filterwheel driver
+
+---
+# System deployment
+- Pull into '~/kalao-ics/'
+
+
+## Enabling services
+- 'systemctl --user enable kalao_sequencer.service' 
+- 'systemctl --user enable kalao_camera.service' 
+- 'systemctl --user enable kalao_database_updater.service' 
+- 'systemctl --user enable kalao_flask_gui.service'
