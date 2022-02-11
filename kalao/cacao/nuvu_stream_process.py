@@ -30,15 +30,16 @@ def run():
     cam = SHM('nuvu_raw')
 
     # Get initial data
-    data = cam.get_data(check=True)[:, ::8]
+    data = cam.get_data(check=True)[6:, ::8].astype(np.int16)
 
     # Create stream
     nuvu_out_stream = SHM('nuvu_proc_stream', data, # 30x30 int16 np.array
                  location=-1, # CPU
                  shared=True, # Shared
                 )
+
     while True:
-        data = cam.get_data(check=True)[:, ::8]
+        data = cam.get_data(check=True)[6:, ::8].astype(np.int16)
         # Get new data and refresh stream
         nuvu_out_stream.set_data(data)
 
