@@ -33,13 +33,15 @@ def run():
     data = cam.get_data(check=True)[:, ::8]
 
     # Create stream
-    nuvu_out = SHM('nuvu_stream', data, # 30x30 int16 np.array
+    nuvu_out_stream = SHM('nuvu_proc_stream', data, # 30x30 int16 np.array
                  location=-1, # CPU
                  shared=True, # Shared
                 )
     while True:
+        data = cam.get_data(check=True)[:, ::8]
         # Get new data and refresh stream
-        nuvu_out.set_data(cam.get_data(check=True)[:, ::8])
+        nuvu_out_stream.set_data(data)
+
 
 if __name__ == '__main__':
     # Tell Python to run the handler() function when SIGINT is recieved
