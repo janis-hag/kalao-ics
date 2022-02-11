@@ -14,7 +14,7 @@ from pyMilk.interfacing.isio_shmlib import SHM
 from time import sleep
 from signal import signal, SIGINT
 from sys import exit
-
+import numpy as np
 
 def handler(signal_received, frame):
     # Handle any cleanup here
