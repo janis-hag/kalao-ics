@@ -30,7 +30,7 @@ def run():
     cam = SHM('nuvu_raw')
 
     # Get initial data
-    data = cam.get_data(check=True)[0:, ::8].astype(np.int16)
+    data = cam.get_data(check=True)[4:-2, ::8].astype(np.int16)
 
     # Create stream
     nuvu_out_stream = SHM('nuvu_proc_stream', data, # 30x30 int16 np.array
