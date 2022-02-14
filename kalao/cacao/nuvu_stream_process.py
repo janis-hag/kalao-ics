@@ -38,6 +38,7 @@ def run():
                  shared=True, # Shared
                 )
 
+
     while True:
         data = cam.get_data(check=True)[0:, ::8].astype(np.int16)
         # Get new data and refresh stream
