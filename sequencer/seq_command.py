@@ -13,7 +13,7 @@ from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel
 from kalao.fli import camera
 from kalao.utils import file_handling, database
 from kalao.cacao import aomanager
-import starfinder
+from sequencer import starfinder
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
