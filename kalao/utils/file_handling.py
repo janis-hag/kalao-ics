@@ -108,11 +108,12 @@ def update_header(image_path, keyword_list=None):
         # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
 
         monitoring_status = database.get_monitoring(monitoring_cards.keys(), 1, dt=dt)
-        for key, type_comment in monitoring_cards:
-            if key in monitoring_status.keys():
-                header.set(key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
+        for key, type_comment in monitoring_cards.items():
+            # Check if key exists and value not empty
+            if key in monitoring_status.keys() and monitoring_status[key]['values']:
+                header.set('HIERARCH '+key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
             else:
-                header.set(key.upper(), '', type_comment[1].strip())
+                header.set('HIERARCH '+key.upper(), '', type_comment[1].strip())
 
         # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
         # header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
