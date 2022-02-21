@@ -58,7 +58,7 @@ def dark(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if shutter.shutter_close() != 'CLOSE':
+    if shutter.shutter_close() != 'CLOSED':
         database.store_obs_log({'sequencer_log':"Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
@@ -152,7 +152,7 @@ def tungsten_FLAT(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if shutter.shutter_close() != 'CLOSE':
+    if shutter.shutter_close() != 'CLOSED':
         database.store_obs_log({'sequencer_log': "Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
@@ -328,7 +328,7 @@ def sky_FLAT(**seq_args):
             return -1
 
 
-    if shutter.shutter_close() != 'CLOSE':
+    if shutter.shutter_close() != 'CLOSED':
         database.store_obs_log({'sequencer_log':"Error: failed to close the shutter"})
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
@@ -447,7 +447,7 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     :return: nothing
     """
 
-    if shutter.shutter_close() != 'CLOSE':
+    if shutter.shutter_close() != 'CLOSED':
         database.store_obs_log({'sequencer_log':"Error: failed to close the shutter"})
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
