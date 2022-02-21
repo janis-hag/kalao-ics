@@ -28,7 +28,7 @@ parser.read(config_path)
 
 ScienceDataStorage = parser.get('FLI', 'ScienceDataStorage')
 TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
-RequestTimeout = parser.get('FLI', 'RequestTimeout')
+RequestTimeout = parser.getfloat('FLI', 'RequestTimeout')
 
 address = parser.get('FLI','IP')
 port = parser.get('FLI','Port')
