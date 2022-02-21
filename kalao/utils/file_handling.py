@@ -16,9 +16,9 @@ file_handling.py is part of the KalAO Instrument Control Software
 import sys
 import os
 from pathlib import Path
-import time
+#import time
 from configparser import ConfigParser
-from datetime import datetime
+from datetime import datetime, timezone
 from astropy.io import fits
 
 from kalao.utils import kalao_time, database
@@ -104,7 +104,7 @@ def update_header(image_path, keyword_list=None):
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
         header = hdul[0].header
-        dt = datetime.fromisoformat(header['DATE-OBS'])
+        dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
         # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
 
         monitoring_status = database.get_monitoring(monitoring_cards.keys(), 1, dt=dt)
