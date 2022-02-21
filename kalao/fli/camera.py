@@ -28,6 +28,7 @@ parser.read(config_path)
 
 ScienceDataStorage = parser.get('FLI', 'ScienceDataStorage')
 TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
+RequestTimeout = parser.get('FLI', 'RequestTimeout')
 
 address = parser.get('FLI','IP')
 port = parser.get('FLI','Port')
@@ -130,9 +131,9 @@ def send_request(type, params):
 
     url = 'http://'+address+':'+port+'/'+type
     if params == 'GET':
-        req = requests.get(url)
+        req = requests.get(url, timeout=RequestTimeout)
     else:
-        req = requests.post(url, json = params)
+        req = requests.post(url, json = params, timeout=RequestTimeout)
 
     return req
 

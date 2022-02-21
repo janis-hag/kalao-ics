@@ -75,7 +75,7 @@ def dark(**seq_args):
     for _ in range(nbPic):
         rValue = camera.take_image(dit = dit, filepath = filepath)
 
-        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
+        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         file_handling.save_tmp_picture(image_path)
 
         if rValue != 0:
