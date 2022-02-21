@@ -102,7 +102,7 @@ def send_command(beck, nCommand_value):
     send_execute(beck)
 
     sleep(TungstenSwitchWait)
-    state = beck.get_node("ns=4; s=MAIN.Tungsten.stat.nStatus").get_value()
+    state = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
 
     # Store new status in database
     update_db(beck=beck)
