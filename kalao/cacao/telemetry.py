@@ -30,7 +30,7 @@ def check_stream(stream_name):
 	stream_name = isio_shmlib._checkSHMName(stream_name)+'.im.shm'
 	stream_path = os.path.join(stream_path, stream_name)
 
-	if stream_path.exists():
+	if os.path.exists(stream_path):
 		return True, stream_path
 	else:
 		return False, stream_path
