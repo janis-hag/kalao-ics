@@ -24,44 +24,50 @@ nuvu_temp_ccd:
   short: EMCCD Temp.
   long: Temperature of the EMCCD
   unit: °C
-  main_gui: 0 # main_gui: 2
+  main_gui: 2 # main_gui: 2
 
 nuvu_temp_controller:
-  short: CTRL Temp.
+  short: CNTRLR Temp.
   long: Temperature of the Nüvü controller
   unit: °C
-  main_gui: 0 # main_gui: 2
+  main_gui: 2 # main_gui: 2
 
 nuvu_temp_power_supply:
   short: PSU Temp.
   long: Temperature of the Nüvü power supply
   unit: °C
-  main_gui: 0 # main_gui: 2
+  main_gui: 2 # main_gui: 2
 
 nuvu_temp_fpga:
   short: FPGA Temp.
   long: Temperature of the Nüvü FPGA
   unit: °C
-  main_gui: 0 # main_gui: 2
+  main_gui: 2 # main_gui: 2
 
 nuvu_temp_heatsink:
   short: HS Temp.
   long: Temperature of the Nüvü heatsink
   unit: °C
-  main_gui: 0 # main_gui: 2
+  main_gui: 2 # main_gui: 2
 
 # Nüvü camera (exposure)
 nuvu_emgain:
   short: EM Gain
   long: Gain of the EMCCD
   unit: '-'
-  main_gui: 0 # main_gui: 3
+  main_gui: 2 # main_gui: 3
+
+nuvu_detgain:
+  short: Detector gain
+  long: Analogic detector gain
+  unit: '-'
+  main_gui: 2 # main_gui: 3
 
 nuvu_exposuretime:
   short: Exp. time
   long: Exposure time of the EMCCD
   unit: ms
-  main_gui: 0 # main_gui: 3
+  main_gui: 2 # main_gui: 3
 
 # Shack-Hartmann WFS
 slopes_flux_subaperture:
