@@ -59,7 +59,7 @@ def _get_stream(name, min, max):
 	exists, stream_path = check_stream(name)
 
 	if exists:
-		stream = SHM(stream_path) #name)
+		stream = SHM(str(stream_path)) #name)
 		# Check turned off to prevent timeout. Data may be obsolete
 		data = stream.get_data(check=False)
 
