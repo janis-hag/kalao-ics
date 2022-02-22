@@ -69,6 +69,13 @@ nuvu_exposuretime:
   unit: ms
   main_gui: 2 # main_gui: 3
 
+nuvu_mframerate:
+  short: Framerate
+  long: Measured frame rate
+  unit: Hz
+  main_gui: 2 # main_gui: 3
+
+
 # Shack-Hartmann WFS
 slopes_flux_subaperture:
   short: Max. flux
