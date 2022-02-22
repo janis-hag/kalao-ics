@@ -137,7 +137,7 @@ def telemetry_save():
 		# Check if it's running
 		#if fps_nuvu.RUNrunning==1:
 		telemetry["nuvu_temp_ccd"]          = stream_keywords['T_CCD']
-		telemetry["nuvu_temp_controller"]   = stream_keywords['T_CNTRLT']
+		telemetry["nuvu_temp_controller"]   = stream_keywords['T_CNTRLR']
 		telemetry["nuvu_temp_power_supply"] = stream_keywords['T_PSU']
 		telemetry["nuvu_temp_fpga"]         = stream_keywords['T_FPGA']
 		telemetry["nuvu_temp_heatsink"]     = stream_keywords['T_HSINK']
