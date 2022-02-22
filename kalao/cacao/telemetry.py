@@ -9,6 +9,8 @@ from pathlib import Path
 import io
 import sys
 
+import libtmux
+
 from pyMilk.interfacing.isio_shmlib import SHM
 from pyMilk.interfacing import isio_shmlib
 
