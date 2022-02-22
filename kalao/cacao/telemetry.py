@@ -26,11 +26,11 @@ def check_stream(stream_name):
 	:return: boolean, stream_full_path
 	"""
 	#stream_path = Path(os.environ["MILK_SHM_DIR"])
-	stream_path = '/tmp/milk'
+	stream_path = Path('/tmp/milk')
 	stream_name = isio_shmlib._checkSHMName(stream_name)+'.im.shm'
-	stream_path = os.path.join(stream_path, stream_name)
+	stream_path = stream_path / stream_name
 
-	if os.path.exists(stream_path):
+	if stream_path.exists():
 		return True, stream_path
 	else:
 		return False, stream_path
@@ -43,7 +43,8 @@ def check_fps(fps_name):
 	:param fps_name: fps to check existence
 	:return: boolean, stream_full_path
 	"""
-	fps_path = Path(os.environ["MILK_SHM_DIR"])
+	#fps_path = Path(os.environ["MILK_SHM_DIR"])
+	fps_path = Path('/tmp/milk')
 	fps_name = isio_shmlib._checkSHMName(fps_name)+'.fps.shm'
 	fps_path = fps_path / fps_name
 
