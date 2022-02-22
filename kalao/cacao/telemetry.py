@@ -28,7 +28,7 @@ def check_stream(stream_name):
 	#stream_path = Path(os.environ["MILK_SHM_DIR"])
 	stream_path = '/tmp/milk'
 	stream_name = isio_shmlib._checkSHMName(stream_name)+'.im.shm'
-	stream_path = stream_path / stream_name
+	stream_path = stream_path+os.sep+stream_name
 
 	if stream_path.exists():
 		return True, stream_path
