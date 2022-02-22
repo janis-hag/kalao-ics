@@ -25,7 +25,8 @@ def check_stream(stream_name):
 	:param stream_name: stream to check existence
 	:return: boolean, stream_full_path
 	"""
-	stream_path = Path(os.environ["MILK_SHM_DIR"])
+	#stream_path = Path(os.environ["MILK_SHM_DIR"])
+	stream_path = '/tmp/milk'
 	stream_name = isio_shmlib._checkSHMName(stream_name)+'.im.shm'
 	stream_path = stream_path / stream_name
 
