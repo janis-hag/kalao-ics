@@ -88,7 +88,7 @@ def streams(realData=True):
 
 
 def telemetry_save():
-	telemetry = {}
+	telemetry_data = {}
 
 	# Create the in-memory "file"
 	temp_out = io.StringIO()
@@ -136,15 +136,15 @@ def telemetry_save():
 
 		# Check if it's running
 		#if fps_nuvu.RUNrunning==1:
-		telemetry["nuvu_temp_ccd"]          = stream_keywords['T_CCD']
-		telemetry["nuvu_temp_controller"]   = stream_keywords['T_CNTRLR']
-		telemetry["nuvu_temp_power_supply"] = stream_keywords['T_PSU']
-		telemetry["nuvu_temp_fpga"]         = stream_keywords['T_FPGA']
-		telemetry["nuvu_temp_heatsink"]     = stream_keywords['T_HSINK']
-		telemetry["nuvu_emgain"]            = stream_keywords['EMGAIN']
-		telemetry["nuvu_detgain"]            = stream_keywords['DETGAIN']
-		telemetry["nuvu_exposuretime"]      = stream_keywords['EXPTIME']
-		telemetry["nuvu_mframerate"] 		= stream_keywords['MFRATE']
+		telemetry_data["nuvu_temp_ccd"]          = stream_keywords['T_CCD']
+		telemetry_data["nuvu_temp_controller"]   = stream_keywords['T_CNTRLR']
+		telemetry_data["nuvu_temp_power_supply"] = stream_keywords['T_PSU']
+		telemetry_data["nuvu_temp_fpga"]         = stream_keywords['T_FPGA']
+		telemetry_data["nuvu_temp_heatsink"]     = stream_keywords['T_HSINK']
+		telemetry_data["nuvu_emgain"]            = stream_keywords['EMGAIN']
+		telemetry_data["nuvu_detgain"]            = stream_keywords['DETGAIN']
+		telemetry_data["nuvu_exposuretime"]      = stream_keywords['EXPTIME']
+		telemetry_data["nuvu_mframerate"] 		= stream_keywords['MFRATE']
 
 	else:
 		pass # Return empty streams
@@ -163,9 +163,9 @@ def telemetry_save():
 
 		# Check if it's running
 		if fps_slopes.RUNrunning==1:
-			telemetry["slopes_flux_subaperture"] = fps_slopes["shwfs_process.flux_subaperture"]
-			telemetry["slopes_residual_pix"]         = fps_slopes["shwfs_process.residual"]
-			telemetry["slopes_residual_arcsec"]         = float(fps_slopes["shwfs_process.residual"])*pixel_scale
+			telemetry_data["slopes_flux_subaperture"] = fps_slopes.get_param_value_float('flux_subaperture')
+			telemetry_data["slopes_residual_pix"]     = fps_slopes.get_param_value_float('residual')
+			telemetry_data["slopes_residual_arcsec"]  = fps_slopes.get_param_value_float('residual')*pixel_scale
 
 	# Tip/tilt stream
 	#check if fps exists and is running
@@ -177,10 +177,10 @@ def telemetry_save():
 		# Check turned off to prevent timeout. Data may be obsolete
 		tt_data = tt_stream.get_data(check=False)
 
-		telemetry["pi_tip"] = float(tt_data[0])
-		telemetry["pi_tilt"] = float(tt_data[1])
+		telemetry_data["pi_tip"] = float(tt_data[0])
+		telemetry_data["pi_tilt"] = float(tt_data[1])
 
-	database.store_telemetry(telemetry)
+	database.store_telemetry(telemetry_data)
 
 
 def wfs_illumination():
