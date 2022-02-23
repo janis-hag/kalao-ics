@@ -134,7 +134,11 @@ def get_all_last_telemetry(realData=True):
 def get_latest_record(collection_name):
     dt = datetime.now(timezone.utc)
     db = get_db(dt)
-    latest_record = list(db[collection_name].find().limit(1).sort([('$natural',-1)]))[0]
+    last_logs = get_data(collection_name, definitions[collection_name].keys(), 1, dt=None)
+    if last_logs['time_utc'].get('values'):
+        latest_record = list(db[collection_name].find().limit(1).sort([('$natural',-1)]))[0]
+    else:
+        latest_record = None
 
     return latest_record
 
