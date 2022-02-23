@@ -65,6 +65,8 @@ def _get_stream(name, min, max):
 		# Check turned off to prevent timeout. Data may be obsolete
 		data = stream.get_data(check=False)
 
+		stream.close()
+
 		return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min, "max": max}
 
 	else:
@@ -130,9 +132,11 @@ def telemetry_save():
 		session.attached_pane.send_keys('\ncam.GetTemperature()')
 
 	if nuvu_exists and session:
-		stream = SHM("nuvu_raw")
+		nuvu_stream = SHM("nuvu_raw")
 
-		stream_keywords = stream.get_keywords()
+		stream_keywords = nuvu_stream.get_keywords()
+
+		nuvu_stream.close()
 
 		# Check if it's running
 		#if fps_nuvu.RUNrunning==1:
@@ -177,8 +181,11 @@ def telemetry_save():
 		# Check turned off to prevent timeout. Data may be obsolete
 		tt_data = tt_stream.get_data(check=False)
 
+		tt_stream.close()
+
 		telemetry_data["pi_tip"] = float(tt_data[0])
 		telemetry_data["pi_tilt"] = float(tt_data[1])
+
 
 	database.store_telemetry(telemetry_data)
 
@@ -194,6 +201,8 @@ def wfs_illumination():
 
 	stream = SHM("nuvu_acquire")
 	frame, subapertures = toolbox.get_roi_and_subapertures(stream.get_data(check=True))
+
+	stream.close()
 
 	subapertures_flux = subapertures.sum(axis=(1, 2))
 
