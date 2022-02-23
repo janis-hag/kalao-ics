@@ -154,6 +154,8 @@ def telemetry_save():
 	#check if fps exists and is running
 	shwfs_exists, shwfs_fps_path = check_fps("shwfs_process")
 
+	pixel_scale =	5.7929690265142/5 # APO-Q-P240-R8,6 FOV per subap / pixels_per_subap
+
 	if shwfs_exists:
 		sys.stdout = temp_out
 		fps_slopes = fps("shwfs_process")
@@ -162,8 +164,8 @@ def telemetry_save():
 		# Check if it's running
 		if fps_slopes.RUNrunning==1:
 			telemetry["slopes_flux_subaperture"] = fps_slopes["shwfs_process.flux_subaperture"]
-			telemetry["slopes_residual"]         = fps_slopes["shwfs_process.residual"]
-
+			telemetry["slopes_residual_pix"]         = fps_slopes["shwfs_process.residual"]
+			telemetry["slopes_residual_arcsec"]         = float(fps_slopes["shwfs_process.residual"])*pixel_scale
 
 	# Tip/tilt stream
 	#check if fps exists and is running
@@ -198,3 +200,5 @@ def wfs_illumination():
 	#TODO reject subaps out of centering zone
 
 	return subapertures_flux
+
+

@@ -16,6 +16,7 @@ from signal import signal, SIGINT
 from sys import exit
 import numpy as np
 
+
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')

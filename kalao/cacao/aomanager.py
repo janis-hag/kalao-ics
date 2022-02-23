@@ -13,6 +13,7 @@ import sys
 
 from CacaoProcessTools import fps, FPS_status
 
+
 def source_conf(confname):
 	vars = {}
 
@@ -43,8 +44,10 @@ def wait_loop(message, test):
 	print(" DONE", flush=True)
 	time.sleep(0.1)
 
+
 def wait_stream(stream):
 	wait_loop(f"Waiting {stream}", lambda : not os.path.exists(f"{os.environ['MILK_SHM_DIR']}/{stream}.im.shm"))
+
 
 def wait_file(file):
 	wait_loop(f"Waiting {file}", lambda : not os.path.exists(file))
@@ -108,8 +111,10 @@ def clean():
 	subprocess.run(["rm /dev/shm/sem..tmp.milk.*"], shell=True)
 	subprocess.run(["rm step.aolaunch.*"], shell=True)
 
+
 def init_loop(confname):
 	subprocess.run(["cacao-task-manager", "-X", "4", confname])
+
 
 def init_hardware(workdir):
 	os.makedirs(workdir, exist_ok=True)
@@ -126,6 +131,7 @@ def init_hardware(workdir):
 	os.chdir(cwd)
 
 	shutil.copytree("hardware-conf", workdir, dirs_exist_ok=True)
+
 
 def configure_hardware(dm_conf, ttm_conf):
 	fps_bmc = fps("bmc_display")
@@ -150,10 +156,12 @@ def configure_hardware(dm_conf, ttm_conf):
 	fps_shwfs["shwfs_process.spotcoords"] = "spots.txt"
 	fps_shwfs["shwfs_process.outWFS"] = f"{dm_conf['CACAO_WFSSTREAM']}"
 
+
 def start_hardware():
 	run_process("bmc_display", False)
 
 	run_process("nuvu_acquire", False)
+
 
 def load_dm_flat(conf):
 	wait_stream(f"dm{conf['CACAO_DMINDEX']}disp00")
@@ -171,10 +179,12 @@ def load_dm_flat(conf):
 
 	os.chdir(cwd)
 
+
 def start_shwfs():
 	wait_stream(f"nuvu_stream")
 
 	run_process("shwfs_process", False)
+
 
 def do_calibration(conf):
 	run_process(f"acquWFS-{conf['CACAO_LOOPNUMBER']}", False)
