@@ -89,11 +89,11 @@ def streams(realData=True):
 		return streams
 
 
-def telemetry_save():
+def telemetry_save(stream_list):
 	telemetry_data = {}
 
 	# Create the in-memory "file"
-	temp_out = io.StringIO()
+	#temp_out = io.StringIO()
 
 	# # NUVU process
 	# #check if fps exists and is running
@@ -132,11 +132,15 @@ def telemetry_save():
 		session.attached_pane.send_keys('\ncam.GetTemperature()')
 
 	if nuvu_exists and session:
-		nuvu_stream = SHM("nuvu_raw")
+		if stream_list['nuvu_stream'] is None:
+			close_nuvu_stream = True
+			stream_list['nuvu_stream'] = SHM("nuvu_raw")
 
-		stream_keywords = nuvu_stream.get_keywords()
+		stream_keywords = stream_list['nuvu_stream'].get_keywords()
 
-		nuvu_stream.close()
+
+		if close_nuvu_stream:
+			stream_list['nuvu_stream'].close()
 
 		# Check if it's running
 		#if fps_nuvu.RUNrunning==1:
@@ -161,27 +165,29 @@ def telemetry_save():
 	pixel_scale =	5.7929690265142/5 # APO-Q-P240-R8,6 FOV per subap / pixels_per_subap
 
 	if shwfs_exists:
-		sys.stdout = temp_out
-		fps_slopes = fps("shwfs_process")
-		sys.stdout = sys.__stdout__
+		if stream_list['fps_slopes'] is None:
+			stream_list['fps_slopes'] = fps("shwfs_process")
 
 		# Check if it's running
-		if fps_slopes.RUNrunning==1:
-			telemetry_data["slopes_flux_subaperture"] = fps_slopes.get_param_value_float('flux_subaperture')
-			telemetry_data["slopes_residual_pix"]     = fps_slopes.get_param_value_float('residual')
-			telemetry_data["slopes_residual_arcsec"]  = fps_slopes.get_param_value_float('residual')*pixel_scale
+		if stream_list['fps_slopes'].RUNrunning==1:
+			telemetry_data["slopes_flux_subaperture"] = stream_list['fps_slopes'].get_param_value_float('flux_subaperture')
+			telemetry_data["slopes_residual_pix"]     = stream_list['fps_slopes'].get_param_value_float('residual')
+			telemetry_data["slopes_residual_arcsec"]  = stream_list['fps_slopes'].get_param_value_float('residual')*pixel_scale
 
 	# Tip/tilt stream
 	#check if fps exists and is running
 	tt_exists, tt_fps_path = check_stream("dm02disp")
 
 	if tt_exists:
-		tt_stream = SHM("dm02disp")
+		if stream_list['tt_stream'] is None:
+			close_tt_stream = True
+			stream_list['tt_stream'] = SHM("dm02disp")
 
 		# Check turned off to prevent timeout. Data may be obsolete
-		tt_data = tt_stream.get_data(check=False)
+		tt_data = stream_list['tt_stream'].get_data(check=False)
 
-		tt_stream.close()
+		if close_tt_stream:
+			stream_list['tt_stream'].close()
 
 		telemetry_data["pi_tip"] = float(tt_data[0])
 		telemetry_data["pi_tilt"] = float(tt_data[1])
@@ -189,7 +195,7 @@ def telemetry_save():
 
 	database.store_telemetry(telemetry_data)
 
-	temp_out.close()
+	#return nuvu_stream, tt_stream, fps_slopes
 
 
 def wfs_illumination():
