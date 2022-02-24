@@ -59,10 +59,9 @@ def _get_stream(name, min_value, max_value):
 	exists, stream_path = check_stream(name)
 
 	if exists:
-		#shm_stream = SHM(str(stream_path)) #name)
+		shm_stream = SHM(str(stream_path)) #name)
 		# Check turned off to prevent timeout. Data may be obsolete
-		with SHM(str(stream_path)) as shm_stream:
-			data = shm_stream.get_data(check=False)
+		data = shm_stream.get_data(check=False)
 
 		#stream.close()
 
@@ -73,7 +72,8 @@ def _get_stream(name, min_value, max_value):
 
 
 def streams(realData=True):
-	if not realData:
+	# TODO remove dirty debug hack
+	if True:  #not realData:
 		# Returning fake streams for testing purposes
 		return fake_data.fake_streams()
 	else:
