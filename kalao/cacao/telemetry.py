@@ -4,10 +4,8 @@
 @author: Nathanaël Restori
 """
 
-import os
 from pathlib import Path
-import io
-import sys
+
 
 import libtmux
 
@@ -56,38 +54,38 @@ def check_fps(fps_name):
 		return False, fps_path
 
 
-def _get_stream(name, min, max):
+def _get_stream(name, min_value, max_value):
 
 	exists, stream_path = check_stream(name)
 
 	if exists:
-		stream = SHM(str(stream_path)) #name)
+		shm_stream = SHM(str(stream_path)) #name)
 		# Check turned off to prevent timeout. Data may be obsolete
-		data = stream.get_data(check=False)
+		data = shm_stream.get_data(check=False)
 
 		#stream.close()
 
-		return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min, "max": max}
+		return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min_value, "max": max_value}
 
 	else:
 		return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
 
 
 def streams(realData=True):
-	# TODO remove this dirty testing hack!
-	if True: #not realData:
+	if not realData:
 		# Returning fake streams for testing purposes
 		return fake_data.fake_streams()
 	else:
-		streams = {}
 
-		streams["nuvu_stream"] = _get_stream("nuvu_stream", 0, 2**16-1)
-		streams["shwfs_slopes"] = _get_stream("shwfs_slopes", -2, 2)
-		streams["dm01disp"] = _get_stream("dm01disp", -1.75, 1.75)
-		streams["shwfs_slopes_flux"] = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
-		#streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) #TODO: uncomment when modal control is working
+		stream_list = {}
 
-		return streams
+		stream_list["nuvu_stream"] = _get_stream("nuvu_stream", 0, 2**16-1)
+		stream_list["shwfs_slopes"] = _get_stream("shwfs_slopes", -2, 2)
+		stream_list["dm01disp"] = _get_stream("dm01disp", -1.75, 1.75)
+		stream_list["shwfs_slopes_flux"] = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
+		##streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) #TODO: uncomment when modal control is working
+
+		return stream_list
 
 
 def telemetry_save(stream_list):
@@ -135,10 +133,8 @@ def telemetry_save(stream_list):
 	if nuvu_exists and session:
 		if stream_list['nuvu_stream'] is None:
 			stream_list['nuvu_stream'] = SHM("nuvu_raw")
-			stream_keywords = stream_list['nuvu_stream'].get_keywords()
-			#stream_list['nuvu_stream'].close()
-		else:
-			stream_keywords = stream_list['nuvu_stream'].get_keywords()
+
+		stream_keywords = stream_list['nuvu_stream'].get_keywords()
 
 		# Check if it's running
 		#if fps_nuvu.RUNrunning==1:
@@ -180,8 +176,8 @@ def telemetry_save(stream_list):
 		if stream_list['tt_stream'] is None:
 			stream_list['tt_stream'] = SHM("dm02disp")
 			#stream_list['tt_stream'].close()
-		else:
-			stream_list['tt_stream'] = SHM("dm02disp")
+		#else:
+			#stream_list['tt_stream'] = SHM("dm02disp")
 
 		# Check turned off to prevent timeout. Data may be obsolete
 		tt_data = stream_list['tt_stream'].get_data(check=False)
