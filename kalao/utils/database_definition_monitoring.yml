@@ -3,7 +3,7 @@
 time_utc:
   short: UTC time
   long: UTC time
-  unit: python datetime object
+  unit: ""
   main_gui: 3
 
 # FLI
@@ -47,13 +47,13 @@ fli_filter_name:
 shutter:
   short: Shutter position
   long: Shutter position
-  unit:
+  unit: ""
   main_gui: 3
 
 flip_mirror:
   short: Flip mirror position
   long: Flip mirror position
-  unit:
+  unit: ""
   main_gui: 3
 
 calib_unit:
