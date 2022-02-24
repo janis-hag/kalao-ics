@@ -133,14 +133,11 @@ def telemetry_save(stream_list):
 
 	if nuvu_exists and session:
 		if stream_list['nuvu_stream'] is None:
-			close_nuvu_stream = True
 			stream_list['nuvu_stream'] = SHM("nuvu_raw")
-
-		stream_keywords = stream_list['nuvu_stream'].get_keywords()
-
-
-		if close_nuvu_stream:
+			stream_keywords = stream_list['nuvu_stream'].get_keywords()
 			stream_list['nuvu_stream'].close()
+		else:
+			stream_keywords = stream_list['nuvu_stream'].get_keywords()
 
 		# Check if it's running
 		#if fps_nuvu.RUNrunning==1:
@@ -180,14 +177,14 @@ def telemetry_save(stream_list):
 
 	if tt_exists:
 		if stream_list['tt_stream'] is None:
-			close_tt_stream = True
+			stream_list['tt_stream'] = SHM("dm02disp")
+			stream_list['tt_stream'].close()
+		else:
 			stream_list['tt_stream'] = SHM("dm02disp")
 
 		# Check turned off to prevent timeout. Data may be obsolete
 		tt_data = stream_list['tt_stream'].get_data(check=False)
 
-		if close_tt_stream:
-			stream_list['tt_stream'].close()
 
 		telemetry_data["pi_tip"] = float(tt_data[0])
 		telemetry_data["pi_tilt"] = float(tt_data[1])
