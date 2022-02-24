@@ -74,7 +74,8 @@ def _get_stream(name, min, max):
 
 
 def streams(realData=True):
-	if not realData:
+	# TODO remove this dirty testing hack!
+	if True: #not realData:
 		# Returning fake streams for testing purposes
 		return fake_data.fake_streams()
 	else:
