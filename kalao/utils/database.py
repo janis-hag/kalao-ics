@@ -43,9 +43,12 @@ def convert_database_definition():
             yaml_object = yaml.safe_load(yaml_in)
             json.dump(yaml_object, json_out)
 
-
-def get_db(dt):
+def connect_db():
     client = MongoClient("127.0.0.1")
+    return client
+
+
+def get_db(client, dt):
     return client[kalao_time.get_start_of_night(dt=dt)]
 
 
@@ -63,23 +66,25 @@ def store_telemetry(data):
 
 def store_data(collection_name, data, definition):
     now_utc = kalao_time.now()
-    db = get_db(now_utc)
-    #with get_db(now_utc) as db:
 
-    data['time_utc'] = now_utc
-    #data['time_utc'] = kalao_time.get_isotime(now_utc)
-    # data['time_utc'] = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ") # ISO 8601: YYYY-MM-DDThh:mm:ssZ
-    #data['time_mjd'] = kalao_time.get_mjd(now_utc)
+    with connect_db() as client:
+        db = get_db(client, now_utc)
+        #with get_db(now_utc) as db:
 
-    collection = db[collection_name]
+        data['time_utc'] = now_utc
+        #data['time_utc'] = kalao_time.get_isotime(now_utc)
+        # data['time_utc'] = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ") # ISO 8601: YYYY-MM-DDThh:mm:ssZ
+        #data['time_mjd'] = kalao_time.get_mjd(now_utc)
 
-    for key in data.keys():
-        if not key in definition:
-            raise KeyError(f'Inserting unknown key "{key}" in database')
+        collection = db[collection_name]
 
-    insertion_return = collection.insert_one(data)
+        for key in data.keys():
+            if not key in definition:
+                raise KeyError(f'Inserting unknown key "{key}" in database')
 
-    db.close()
+        insertion_return = collection.insert_one(data)
+
+    #db.close()
 
     return insertion_return
 
@@ -104,23 +109,25 @@ def get_data(collection_name, keys, nb_of_point, dt=None):
     # If dt is None, get db for today, otherwise get db for the day/night specified  by dt
     if dt is None:
         dt = kalao_time.now()
-    db = get_db(dt)
 
-    #with get_db(dt) as db:
-    #collection = db[collection_name]
+    with connect_db() as client:
 
-    data = {}
+        db = get_db(client, dt)
 
-    for key in keys:
-        cursor = db[collection_name].find({key: {'$exists': True}}, {'time_utc': True, key: True}, sort=[('time_utc', DESCENDING)], limit=nb_of_point)
+        #collection = db[collection_name]
 
-        data[key] = {'time_utc': [], 'values': []}
+        data = {}
 
-        for doc in cursor:
-            data[key]['time_utc'].append(doc['time_utc'])
-            data[key]['values'].append(doc[key])
+        for key in keys:
+            cursor = db[collection_name].find({key: {'$exists': True}}, {'time_utc': True, key: True}, sort=[('time_utc', DESCENDING)], limit=nb_of_point)
 
-    db.close()
+            data[key] = {'time_utc': [], 'values': []}
+
+            for doc in cursor:
+                data[key]['time_utc'].append(doc['time_utc'])
+                data[key]['values'].append(doc[key])
+
+    #client.close()
 
     return data
 
@@ -141,15 +148,19 @@ def get_all_last_telemetry(realData=True):
 
 def get_latest_record(collection_name):
     dt = datetime.now(timezone.utc)
-    db = get_db(dt)
-    #with get_db(dt) as db:
-    last_logs = get_data(collection_name, definitions[collection_name].keys(), 1, dt=None)
-    if last_logs['time_utc'].get('values'):
-        latest_record = list(db[collection_name].find().limit(1).sort([('$natural',-1)]))[0]
-    else:
-        latest_record = None
 
-    db.close()
+    with connect_db() as client:
+
+        db = get_db(client, dt)
+        #db = get_db(dt)
+
+        last_logs = get_data(collection_name, definitions[collection_name].keys(), 1, dt=None)
+        if last_logs['time_utc'].get('values'):
+            latest_record = list(db[collection_name].find().limit(1).sort([('$natural',-1)]))[0]
+        else:
+            latest_record = None
+
+    #client.close()
 
     return latest_record
 
@@ -162,34 +173,36 @@ def read_mongo_to_pandas_by_timestamp(dt_start,dt_end):
     no_id=True
     appended_df = []
 
-    for day_number in range(days):
-        # Loop of days
-        db = get_db(dt - timedelta(days= day_number))
+    with connect_db() as client:
 
-        # Make a query to the specific DB and Collection
-        #cursor = db[collection].find(query)
-        cursor = db[collection_name].find()
+        for day_number in range(days):
+            # Loop of days
+            db = get_db(client, dt - timedelta(days= day_number))
 
-        # Expand the cursor and construct the DataFrame
-        appended_df.append(pd.DataFrame(list(cursor)))
+            # Make a query to the specific DB and Collection
+            #cursor = db[collection].find(query)
+            cursor = db[collection_name].find()
 
-    # Check if the databse is empty for the given days
-    if all([df.empty for df in appended_df]):
-        # Search one more day back in time to look for database content
-        db = get_db(dt - timedelta(days=days))
-        df = pd.DataFrame(list(db[collection_name].find()))
+            # Expand the cursor and construct the DataFrame
+            appended_df.append(pd.DataFrame(list(cursor)))
 
-        # If it did not succeed return a NaN database with column names
-        if df.empty:
-            df = pd.DataFrame(columns=list(definitions['monitoring'].keys()), index=[0])
-            no_id = False # Set to False because the '_id' column does not exist in this df
+        # Check if the databse is empty for the given days
+        if all([df.empty for df in appended_df]):
+            # Search one more day back in time to look for database content
+            db = get_db(client, dt - timedelta(days=days))
+            df = pd.DataFrame(list(db[collection_name].find()))
 
-    else:
-        df = pd.concat(appended_df).sort_values(by='time_utc', ignore_index=True)
+            # If it did not succeed return a NaN database with column names
+            if df.empty:
+                df = pd.DataFrame(columns=list(definitions['monitoring'].keys()), index=[0])
+                no_id = False # Set to False because the '_id' column does not exist in this df
 
-    # Delete the _id
-    if no_id:
-        del df['_id']
+        else:
+            df = pd.concat(appended_df).sort_values(by='time_utc', ignore_index=True)
+
+        # Delete the _id
+        if no_id:
+            del df['_id']
 
     return df
 
@@ -198,38 +211,40 @@ def read_mongo_to_pandas(dt, days=1, collection_name='monitoring', no_id=True):
 
     appended_df = []
 
-    # Connect to MongoDB
     if dt is None:
         dt = datetime.now(timezone.utc)
 
-    for day_number in range(days):
-        # Loop of days
-        db = get_db(dt - timedelta(days= day_number))
+    # Connect to MongoDB
+    with connect_db() as client:
 
-        # Make a query to the specific DB and Collection
-        #cursor = db[collection].find(query)
-        cursor = db[collection_name].find()
+        for day_number in range(days):
+            # Loop of days
+            db = get_db(client, dt - timedelta(days= day_number))
 
-        # Expand the cursor and construct the DataFrame
-        appended_df.append(pd.DataFrame(list(cursor)))
+            # Make a query to the specific DB and Collection
+            #cursor = db[collection].find(query)
+            cursor = db[collection_name].find()
 
-    # Check if the databse is empty for the given days
-    if all([df.empty for df in appended_df]):
-        # Search one more day back in time to look for database content
-        db = get_db(dt - timedelta(days=days))
-        df = pd.DataFrame(list(db[collection_name].find()))
+            # Expand the cursor and construct the DataFrame
+            appended_df.append(pd.DataFrame(list(cursor)))
 
-        # If it did not succeed return a NaN database with column names
-        if df.empty:
-            df = pd.DataFrame(columns=list(definitions['monitoring'].keys()), index=[0])
-            no_id = False # Set to False because the '_id' column does not exist in this df
+        # Check if the databse is empty for the given days
+        if all([df.empty for df in appended_df]):
+            # Search one more day back in time to look for database content
+            db = get_db(client, dt - timedelta(days=days))
+            df = pd.DataFrame(list(db[collection_name].find()))
 
-    else:
-        df = pd.concat(appended_df).sort_values(by='time_utc', ignore_index=True)
+            # If it did not succeed return a NaN database with column names
+            if df.empty:
+                df = pd.DataFrame(columns=list(definitions['monitoring'].keys()), index=[0])
+                no_id = False # Set to False because the '_id' column does not exist in this df
 
-    # Delete the _id
-    if no_id:
-        del df['_id']
+        else:
+            df = pd.concat(appended_df).sort_values(by='time_utc', ignore_index=True)
+
+        # Delete the _id
+        if no_id:
+            del df['_id']
 
     return df
 
