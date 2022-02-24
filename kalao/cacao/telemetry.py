@@ -189,6 +189,8 @@ def telemetry_save():
 
 	database.store_telemetry(telemetry_data)
 
+	temp_out.close()
+
 
 def wfs_illumination():
 	"""
