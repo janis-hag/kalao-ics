@@ -65,7 +65,7 @@ def _get_stream(name, min, max):
 		# Check turned off to prevent timeout. Data may be obsolete
 		data = stream.get_data(check=False)
 
-		stream.close()
+		#stream.close()
 
 		return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min, "max": max}
 
@@ -135,7 +135,7 @@ def telemetry_save(stream_list):
 		if stream_list['nuvu_stream'] is None:
 			stream_list['nuvu_stream'] = SHM("nuvu_raw")
 			stream_keywords = stream_list['nuvu_stream'].get_keywords()
-			stream_list['nuvu_stream'].close()
+			#stream_list['nuvu_stream'].close()
 		else:
 			stream_keywords = stream_list['nuvu_stream'].get_keywords()
 
@@ -178,7 +178,7 @@ def telemetry_save(stream_list):
 	if tt_exists:
 		if stream_list['tt_stream'] is None:
 			stream_list['tt_stream'] = SHM("dm02disp")
-			stream_list['tt_stream'].close()
+			#stream_list['tt_stream'].close()
 		else:
 			stream_list['tt_stream'] = SHM("dm02disp")
 
@@ -207,7 +207,7 @@ def wfs_illumination():
 	stream = SHM("nuvu_acquire")
 	frame, subapertures = toolbox.get_roi_and_subapertures(stream.get_data(check=True))
 
-	stream.close()
+	#stream.close()
 
 	subapertures_flux = subapertures.sum(axis=(1, 2))
 
