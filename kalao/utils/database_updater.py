@@ -35,7 +35,7 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-PLC_Disabled = parser.get('PLC','Disabled').split(',')
+PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
 
 
 def handler(signal_received, frame):
@@ -113,9 +113,9 @@ if __name__ == "__main__":
     sl = {'nuvu_stream': None, 'tt_stream': None, 'fps_slopes': None}
 
     # Get monitoring and cacao
-    schedule.every(10).seconds.do(telemetry.update_telemetry, stream_list=sl)
+    schedule.every(10).seconds.do(update_telemetry, stream_list=sl)
     schedule.every(60).seconds.do(update_plc_monitoring)
 
-    while (True):
+    while True:
         schedule.run_pending()
         sleep(5)
