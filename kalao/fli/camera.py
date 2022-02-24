@@ -45,6 +45,8 @@ else:
 def take_science_exposure(dit=0.05, filepath=None):
 
     req_result = take_image(dit, filepath)
+    image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
+    file_handling.save_tmp_picture(image_path)
 
     return req_result
 
