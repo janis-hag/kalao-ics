@@ -20,7 +20,6 @@ from sequencer import system
 
 dit = 1
 
-
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')

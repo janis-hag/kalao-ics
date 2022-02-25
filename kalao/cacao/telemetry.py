@@ -53,6 +53,15 @@ def check_fps(fps_name):
 	else:
 		return False, fps_path
 
+def create_shm_stream(name):
+
+	exists, stream_path = check_stream(name)
+
+	if exists:
+		return SHM(str(stream_path))
+	else:
+		return None
+	
 
 def _get_stream(name, min_value, max_value):
 
@@ -60,6 +69,7 @@ def _get_stream(name, min_value, max_value):
 
 	if exists:
 		shm_stream = SHM(str(stream_path)) #name)
+		#shm_stream = SHM(name) #name)
 		# Check turned off to prevent timeout. Data may be obsolete
 		data = shm_stream.get_data(check=False)
 
@@ -70,6 +80,11 @@ def _get_stream(name, min_value, max_value):
 	else:
 		return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
 
+def get_stream_data(shm_stream, min_value, max_value):
+
+	data = shm_stream.get_data(check=False)
+
+	return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min_value, "max": max_value}
 
 def streams(realData=True):
 	# TODO remove dirty debug hack
@@ -212,5 +227,3 @@ def wfs_illumination():
 	#TODO reject subaps out of centering zone
 
 	return subapertures_flux
-
-
