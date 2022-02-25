@@ -177,7 +177,7 @@ def read_mongo_to_pandas_by_timestamp(dt_start,dt_end):
 
         for day_number in range(days):
             # Loop of days
-            db = get_db(client, dt - timedelta(days= day_number))
+            db = get_db(client, dt + timedelta(days= day_number))
 
             # Make a query to the specific DB and Collection
             #cursor = db[collection].find(query)
@@ -189,7 +189,7 @@ def read_mongo_to_pandas_by_timestamp(dt_start,dt_end):
         # Check if the databse is empty for the given days
         if all([df.empty for df in appended_df]):
             # Search one more day back in time to look for database content
-            db = get_db(client, dt - timedelta(days=days))
+            db = get_db(client, dt + timedelta(days=days))
             df = pd.DataFrame(list(db[collection_name].find()))
 
             # If it did not succeed return a NaN database with column names
