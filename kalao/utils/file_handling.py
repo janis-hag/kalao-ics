@@ -123,9 +123,9 @@ def update_header(image_path, keyword_list=None):
         for key, type_comment in telemetry_cards.items():
             # Check if key exists and value not empty
             if key in telemetry_status.keys() and telemetry_status[key]['values']:
-                header.set('HIERARCH KAL AO'+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
+                header.set('HIERARCH KAL AO '+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
             else:
-                header.set('HIERARCH KAL AO'+key.upper(), '', type_comment[1].strip())
+                header.set('HIERARCH KAL AO '+key.upper(), '', type_comment[1].strip())
 
         # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
         # header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
