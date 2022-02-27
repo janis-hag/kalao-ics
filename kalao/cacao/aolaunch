@@ -200,7 +200,8 @@ sendFPScmd "setval nuvu_acquire.procinfo.RTprio 10"
 sendFPScmd "setval nuvu_acquire.procinfo.loopcntMax -1"
 sendFPScmd "setval nuvu_acquire.procinfo.triggermode 3"
 sendFPScmd "setval nuvu_acquire.procinfo.triggersname nuvu_raw"
-
+# Ignoring SDK bias
+sendFPScmd "setval nuvu_acquire.bias "
 
 ##sendFPScmd "setval nuvu_acquire.readoutmode 1"
 #sendFPScmd "setval nuvu_acquire.readoutmode 4"
@@ -276,6 +277,8 @@ fi
 # =====================================================================
 # Temporary manual parameter setting
 # =====================================================================
+#DM_LOOPNUMBER=1
+
 sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.RTprio 0"
 sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.loopcntMax 1"
 sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.triggermode 0"
@@ -299,7 +302,7 @@ sendFPScmd "confwupdate compsCM-${DM_LOOPNUMBER}"
 #sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.procinfo.triggermode 3"
 #sendFPScmd "setval bmc_display.procinfo.triggersname dm${DM_DMINDEX}disp"
 
-
+#sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.AOloop 1"
 sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.procinfo.loopcntMax -1"
 sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.procinfo.triggermode 3"
 #sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.procinfo.triggermode 3"
