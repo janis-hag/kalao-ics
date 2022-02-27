@@ -219,7 +219,7 @@ def telemetry_save(stream_list):
 			stream_list['loopRUN'] = fps("loopRUN-1")
 
 		# Check if it's running
-		if stream_list['looprun'].RUNrunning==1:
+		if stream_list['loopRUN'].RUNrunning==1:
 			telemetry_data["loop_gain"] = stream_list['loopRUN-1'].get_param_value_float('loopgain')
 			telemetry_data["loop_mult"]     = stream_list['loopRUN-1'].get_param_value_float('loopmult')
 			# loopOn 0 = OFF, 1 = ON
