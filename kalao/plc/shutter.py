@@ -10,7 +10,7 @@ shutter.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
 
-from . import core
+from kalao.plc import core
 from opcua import ua
 from time import sleep
 from kalao.utils import database
@@ -101,14 +101,14 @@ def initialise(beck=None):
 
     init_status = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
 
-    initial_position = shutter.position(beck=beck)
+    initial_position = position(beck=beck)
 
     # Do the shutter gym
-    if initial_position = 'OPEN':
+    if initial_position == 'OPEN':
         shutter_close(beck)
         sleep(3)
         shutter_open(beck)
-    elif initial_position = 'CLOSED':
+    elif initial_position == 'CLOSED':
         shutter_open(beck)
         sleep(3)
         shutter_close(beck)
