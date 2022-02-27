@@ -109,7 +109,7 @@ loop_mult:
   unit: ''
   main_gui: 2 # main_gui: 2
 
-loop_ON:
+loop_on:
   short: AO loop ON/OFF
   long: AO loop ON/OFF
   unit: ''
