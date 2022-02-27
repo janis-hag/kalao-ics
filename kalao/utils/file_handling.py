@@ -73,21 +73,21 @@ def create_night_folder():
 
 def save_tmp_picture(image_path):
     Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
-    target_name = Science_night_folder+os.sep+os.path.basename(image_path)
+    target_path_name = Science_night_folder+os.sep+os.path.basename(image_path)
 
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
         update_header(image_path)
-        os.rename(image_path, target_name)
-        return target_name
+        os.rename(image_path, target_path_name)
+        return target_path_name
     else:
-        database.store_obs_log({'sequencer_log': 'ERROR: unable to save '+image_path+' to '+target_name})
+        database.store_obs_log({'sequencer_log': 'ERROR: unable to save '+image_path+' to '+target_path_name})
         database.store_obs_log({'sequencer_status': 'ERROR'})
 
         return -1
 
 
 def update_header(image_path, keyword_list=None):
-    # Read DATE-OBS in header
+    # Read DATE-OBS in headers
     # Search start values in log
     # Search end values in log using DATE-OBS and TEXP
     # Compute median values for specific keywords
