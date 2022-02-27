@@ -101,6 +101,10 @@ def update_header(image_path, keyword_list=None):
     for k in monitoring_cards.keys():
         monitoring_cards[k] = monitoring_cards[k].split(',')
 
+    telemetry_cards = dict(header_config.items('Telemetry'))
+    for k in telemetry_cards.keys():
+        telemetry_cards[k] = telemetry_cards[k].split(',')
+
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
         header = hdul[0].header
@@ -112,6 +116,14 @@ def update_header(image_path, keyword_list=None):
             # Check if key exists and value not empty
             if key in monitoring_status.keys() and monitoring_status[key]['values']:
                 header.set('HIERARCH '+key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
+            else:
+                header.set('HIERARCH '+key.upper(), '', type_comment[1].strip())
+
+        telemetry_status = database.get_telemetry(telemetry_cards.keys(), 1, dt=dt)
+        for key, type_comment in telemetry_cards.items():
+            # Check if key exists and value not empty
+            if key in telemetry_status.keys() and telemetry_status[key]['values']:
+                header.set('HIERARCH '+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
             else:
                 header.set('HIERARCH '+key.upper(), '', type_comment[1].strip())
 
