@@ -36,8 +36,8 @@ parser = ConfigParser()
 parser.read(config_path)
 
 PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
-Telemetry_update_interval = parser.getint('Database', 'Telemetry_update_interval').split(',')
-PLC_update_interval = parser.getint('Database', 'PLC_monitoring_update_interval').split(',')
+Telemetry_update_interval = parser.getint('Database', 'Telemetry_update_interval')
+PLC_update_interval = parser.getint('Database', 'PLC_monitoring_update_interval')
 
 
 def handler(signal_received, frame):

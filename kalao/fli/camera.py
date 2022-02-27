@@ -15,7 +15,7 @@ import requests.exceptions
 import os
 import json
 
-from kalao.utils import database, database_updater, kalao_time, file_handling
+from kalao.utils import database, database_updater, file_handling
 from configparser import ConfigParser
 from pathlib import Path
 
