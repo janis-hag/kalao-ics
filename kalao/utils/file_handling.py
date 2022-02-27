@@ -115,17 +115,17 @@ def update_header(image_path, keyword_list=None):
         for key, type_comment in monitoring_cards.items():
             # Check if key exists and value not empty
             if key in monitoring_status.keys() and monitoring_status[key]['values']:
-                header.set('HIERARCH '+key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
+                header.set('HIERARCH KAL'+key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
             else:
-                header.set('HIERARCH '+key.upper(), '', type_comment[1].strip())
+                header.set('HIERARCH KAL'+key.upper(), '', type_comment[1].strip())
 
         telemetry_status = database.get_telemetry(telemetry_cards.keys(), 1, dt=dt)
         for key, type_comment in telemetry_cards.items():
             # Check if key exists and value not empty
             if key in telemetry_status.keys() and telemetry_status[key]['values']:
-                header.set('HIERARCH '+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
+                header.set('HIERARCH KAL AO'+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
             else:
-                header.set('HIERARCH '+key.upper(), '', type_comment[1].strip())
+                header.set('HIERARCH KAL AO'+key.upper(), '', type_comment[1].strip())
 
         # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
         # header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
