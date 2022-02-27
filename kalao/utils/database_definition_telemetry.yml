@@ -83,7 +83,6 @@ slopes_flux_subaperture:
   unit: ADU
   main_gui: 3
 
-
 slopes_residual_pix:
   short: WFS rms error (pix)
   long: WFS rms residuals in pixels
@@ -96,5 +95,22 @@ slopes_residual_arcsec:
   unit: arcsec
   main_gui: 2 # main_gui: 2
 
-# AO loop status
 
+# AO loop status
+loop_loopgain:
+  short: AO loop gain
+  long: AO loop gain
+  unit: ''
+  main_gui: 2 # main_gui: 2
+
+loop_loopmult:
+  short: AO loop mult coeff
+  long: AO loop mult coeff
+  unit: ''
+  main_gui: 2 # main_gui: 2
+
+loop_loopON:
+  short: AO loop ON/OFF
+  long: AO loop ON/OFF
+  unit: ''
+  main_gui: 2 # main_gui: 2

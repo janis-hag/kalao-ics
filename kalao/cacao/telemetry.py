@@ -210,6 +210,24 @@ def telemetry_save(stream_list):
 		telemetry_data["pi_tip"] = float(tt_data[0])
 		telemetry_data["pi_tilt"] = float(tt_data[1])
 
+	# looopRUN process
+	#check if fps exists and is running
+	looprun_exists, looprun_fps_path = check_fps("loopRUN-1")
+
+	if looprun_exists:
+		if stream_list['loopRUN'] is None:
+			stream_list['loopRUN'] = fps("loopRUN-1")
+
+		# Check if it's running
+		if stream_list['looprun'].RUNrunning==1:
+			telemetry_data["loop_loopgain"] = stream_list['loopRUN-1'].get_param_value_float('loopgain')
+			telemetry_data["loop_loopmult"]     = stream_list['loopRUN-1'].get_param_value_float('loopmult')
+			# loopOn 0 = OFF, 1 = ON
+			telemetry_data["loop_loopON"]  = stream_list['loopRUN-1'].get_param_value_int('loopON')
+			if telemetry_data["loop_loopON"] == 1:
+				telemetry_data["loop_loopON"] = 'ON'
+			elif telemetry_data["loop_loopON"] == 0:
+				telemetry_data["loop_loopON"] = 'OFF'
 
 	database.store_telemetry(telemetry_data)
 
