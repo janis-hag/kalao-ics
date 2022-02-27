@@ -101,6 +101,18 @@ def initialise(beck=None):
 
     init_status = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
 
+    initial_position = shutter.position(beck=beck)
+
+    # Do the shutter gym
+    if initial_position = 'OPEN':
+        shutter_close(beck)
+        sleep(3)
+        shutter_open(beck)
+    elif initial_position = 'CLOSED':
+        shutter_open(beck)
+        sleep(3)
+        shutter_close(beck)
+
     if disconnect_on_exit:
         beck.disconnect()
 

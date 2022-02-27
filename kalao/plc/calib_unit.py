@@ -121,7 +121,7 @@ def check_error(beck):
         return
 
 
-def initialise(force_init=False, beck=None, motor_nCommand=None):
+def initialise(force_init=True, beck=None, motor_nCommand=None):
     '''
     Initialise the calibration unit.
 

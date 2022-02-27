@@ -36,6 +36,8 @@ parser = ConfigParser()
 parser.read(config_path)
 
 PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
+Telemetry_update_interval = parser.getint('Database', 'Telemetry_update_interval').split(',')
+PLC_update_interval = parser.getint('Database', 'PLC_monitoring_update_interval').split(',')
 
 
 def handler(signal_received, frame):
@@ -113,8 +115,8 @@ if __name__ == "__main__":
     sl = {'nuvu_stream': None, 'tt_stream': None, 'fps_slopes': None}
 
     # Get monitoring and cacao
-    schedule.every(10).seconds.do(update_telemetry, stream_list=sl)
-    schedule.every(60).seconds.do(update_plc_monitoring)
+    schedule.every(Telemetry_update_interval).seconds.do(update_telemetry, stream_list=sl)
+    schedule.every(PLC_update_interval).seconds.do(update_plc_monitoring)
 
     while True:
         schedule.run_pending()

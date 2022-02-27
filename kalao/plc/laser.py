@@ -63,16 +63,19 @@ def disable(beck=None):
 
     set_intensity(0, beck=beck)
     laser_status = switch('bDisable', beck=beck)
+
     return laser_status
 
 
 def enable(beck=None):
     """
-    Power on laser source
+    Power on laser source and set to default intensity
 
     :return: status of the laser
     """
     laser_status = switch('bEnable', beck=beck)
+    laser_status = set_intensity(beck=beck)
+
     return laser_status
 
 
