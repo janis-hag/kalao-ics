@@ -53,7 +53,7 @@ nuvu_temp_heatsink:
 # Nüvü camera (exposure)
 nuvu_emgain:
   short: EM Gain
-  long: Gain of the EMCCD
+  long: EM gain of the EMCCD
   unit: '-'
   main_gui: 3
 
