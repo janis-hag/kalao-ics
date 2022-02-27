@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # signal(SIGTERM, handler)
     # signal(SIGINT, handler)
 
-    sl = {'nuvu_stream': None, 'tt_stream': None, 'fps_slopes': None}
+    sl = {'nuvu_stream': None, 'tt_stream': None, 'fps_slopes': None, 'loopRUN': None}
 
     # Get monitoring and cacao
     schedule.every(Telemetry_update_interval).seconds.do(update_telemetry, stream_list=sl)

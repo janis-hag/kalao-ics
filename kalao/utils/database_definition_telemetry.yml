@@ -97,19 +97,19 @@ slopes_residual_arcsec:
 
 
 # AO loop status
-loop_loopgain:
+loop_gain:
   short: AO loop gain
   long: AO loop gain
   unit: ''
   main_gui: 2 # main_gui: 2
 
-loop_loopmult:
+loop_mult:
   short: AO loop mult coeff
   long: AO loop mult coeff
   unit: ''
   main_gui: 2 # main_gui: 2
 
-loop_loopON:
+loop_ON:
   short: AO loop ON/OFF
   long: AO loop ON/OFF
   unit: ''
