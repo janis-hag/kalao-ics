@@ -1,5 +1,5 @@
 from flask_cors import CORS
-from flask import Flask,request,Blueprint
+from flask import Flask,request,Blueprint,session
 
 from rest.plc import plc_bp
 from rest.system import system_bp
@@ -22,7 +22,6 @@ import logging
 from os import path
 
 #sys.path.append('../includes/kalao-ics')
-print("PATH:"+path.dirname(path.dirname(path.abspath(path.dirname(__file__)))))
 sys.path.append(path.dirname(path.dirname(path.abspath(path.dirname(__file__)))))
 
 from kalao.cacao import telemetry as k_telemetry
@@ -35,7 +34,9 @@ def create_app():
     logging.getLogger("waitress").setLevel(logging.ERROR)
 
     app = Flask(__name__)
-
+    app.config['SECRET_KEY'] = 'kalaoSECRETkeyFORstreams'
+    #app.config['SESSION_TYPE'] = 'filesystem'
+    #app.secret_key = 'kalaoSECRETkeyFORstreams'
     app.register_blueprint(plc_bp)
     app.register_blueprint(system_bp)
 
@@ -71,20 +72,6 @@ def create_app():
             except yaml.YAMLError as exc:
                 print("Error while trying to load parametersfrom "+file_path+" file")
 
-        '''
-        json_file = open(projectPath+"/kalao-ics/kalao/utils/database_definition_monitoring.json")
-        monitoringMetaData = json.load(json_file)
-        json_file.close()
-
-        json_file = open(projectPath+"/kalao-ics/kalao/utils/database_definition_obs_log.json")
-        obsLogMetaData = json.load(json_file)
-        json_file.close()
-
-        json_file = open(projectPath+"/kalao-ics/kalao/utils/database_definition_telemetry.json")
-        telemetryMetaData = json.load(json_file)
-        json_file.close()
-        '''
-
         return {
             "monitoring": monitoringMetaData,
             "telemetry": telemetryMetaData,
@@ -93,8 +80,28 @@ def create_app():
 
     @app.route('/pixelImages', methods=['GET'])
     def pixelImages():
+
+        if 'shm_streams' in app.config:
+            shm_streams = app.config['shm_streams']
+        else:
+            shm_streams = {
+                "nuvu_stream" : k_telemetry.create_shm_stream("nuvu_stream"),
+                "shwfs_slopes" : k_telemetry.create_shm_stream("shwfs_slopes"),
+                "dm01disp" : k_telemetry.create_shm_stream("dm01disp"),
+                "shwfs_slopes_flux" : k_telemetry.create_shm_stream("shwfs_slopes_flux")
+            }
+            app.config['shm_streams'] = shm_streams
+
         realData = not bool(request.args.get('random', default = "", type = str))
-        return k_telemetry.streams(realData)
+        stream_list = {}
+
+        stream_list["nuvu_stream"] = k_telemetry.get_stream_data(shm_streams["nuvu_stream"], "nuvu_stream", 0, 2**16-1)
+        stream_list["shwfs_slopes"] = k_telemetry.get_stream_data(shm_streams["shwfs_slopes"], "shwfs_slopes", -2, 2)
+        stream_list["dm01disp"] = k_telemetry.get_stream_data(shm_streams["dm01disp"], "dm01disp", -1.75, 1.75)
+        stream_list["shwfs_slopes_flux"] = k_telemetry.get_stream_data(shm_streams["shwfs_slopes_flux"], "shwfs_slopes_flux", 0, 4*(2**16-1))
+
+        #return k_telemetry.streams(shm_streams, realData)
+        return stream_list
 
     @app.route('/data', methods=['GET'])
     def data():
@@ -173,6 +180,39 @@ def create_app():
         random = bool(request.args.get('random', default = "", type = str))
         return k_status.cacao_measurements(random)
 
+    @app.route('/timeSeries2/<t_start>/<t_end>', methods=['GET'])
+    def timeSeries2(t_start,t_end):
+
+        startDay = datetime.fromtimestamp(int(t_start))
+        endDay = datetime.fromtimestamp(int(t_end))
+
+        startDay = startDay.astimezone(timezone.utc)
+        endDay = endDay.astimezone(timezone.utc)
+        print("###",startDay, endDay)
+        data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay) #.to_json(orient="split")*/
+        ts = {}
+        ts_full = []
+        time_list = data["time_utc"].tolist()
+        if len(time_list) <= 1:
+            time_list = []
+        time_values = [time_lib.mktime(d.timetuple()) for d in time_list]
+
+        for col in data.columns:
+            if col != "time_utc":
+                values = data[col].tolist()
+                if len(values) <= 1:
+                    values = []
+
+                ts[col] = {
+                    "time": [],
+                    "values": []
+                }
+                for i in range(len(values)):
+                    if time_values[i] >= float(t_start) and time_values[i] <= float(t_end) :
+                        ts[col]["time"].append(time_values[i])
+                        ts[col]["values"].append(values[i])
+
+        return json.dumps(ts);
     @app.route('/timeSeries/<t_start>/<t_end>', methods=['GET'])
     def timeSeries(t_start,t_end):
 
@@ -181,7 +221,6 @@ def create_app():
 
         startDay = startDay.astimezone(timezone.utc)
         endDay = endDay.astimezone(timezone.utc)
-
         data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay) #.to_json(orient="split")*/
         ts = {}
         ts_full = []

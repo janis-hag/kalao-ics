@@ -61,7 +61,7 @@ def create_shm_stream(name):
 		return SHM(str(stream_path))
 	else:
 		return None
-	
+
 
 def _get_stream(name, min_value, max_value):
 
@@ -80,11 +80,19 @@ def _get_stream(name, min_value, max_value):
 	else:
 		return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
 
-def get_stream_data(shm_stream, min_value, max_value):
+def get_stream_data(shm_stream, name, min_value, max_value):
 
-	data = shm_stream.get_data(check=False)
+	exists, stream_path = check_stream(name)
 
-	return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min_value, "max": max_value}
+	if exists:
+		try:
+			data = shm_stream.get_data(check=False)
+			list = data.flatten().tolist()
+			return {"data": list, "width": data.shape[1], "height": data.shape[0], "min": min(list), "max": max(list)}
+		except:
+			return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
+	else:
+		return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
 
 def streams(realData=True):
 	# TODO remove dirty debug hack
