@@ -276,14 +276,14 @@ fi
 # =====================================================================
 # Temporary manual parameter setting
 # =====================================================================
-sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.RTprio 0"
-sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.loopcntMax 1"
-sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.triggermode 0"
-sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.triggersname "
-sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.semindexrequested 0"
-sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.triggerdelay 0"
-sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.triggertimeout 0"
-sendFPScmd "confwupdate acqlin-zRM-${DM_LOOPNUMBER}"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.RTprio 0"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.loopcntMax 1"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.triggermode 0"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.triggersname "
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.semindexrequested 0"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.triggerdelay 0"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.triggertimeout 0"
+sendFPScmd "confwupdate acqlin_zRM-${DM_LOOPNUMBER}"
 
 sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.procinfo.RTprio 0"
 sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.procinfo.loopcntMax 1"
