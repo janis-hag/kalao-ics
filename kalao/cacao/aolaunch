@@ -99,7 +99,7 @@ cacao-task-manager -X 3 "${DM_CONFNAME}"
 cacao-task-manager -X 3 "${TTM_CONFNAME}"
 
 touch ${stepFile}
-exit
+#exit
 else
 echo "found ${stepFile} -> skipping"
 fi
@@ -139,7 +139,7 @@ sendFPScmd "setval DMcomb-${TTM_DMINDEX}.conf.taskset 0"
 
 
 touch ${stepFile}
-exit
+#exit
 else
 echo "found ${stepFile} -> skipping"
 fi
@@ -164,8 +164,8 @@ sendFPScmd "setval bmc_display.procinfo.triggermode 0"
 #sendFPScmd "setval bmc_display.procinfo.triggermode 3"
 #sendFPScmd "setval bmc_display.procinfo.triggersname dm${DM_DMINDEX}disp"
 
-sendFPScmd "setval bmc_display.ttm_tip_offset -0.05"
-sendFPScmd "setval bmc_display.ttm_tilt_offset 0.0"
+sendFPScmd "setval bmc_display.ttm_tip_offset 0.13"
+sendFPScmd "setval bmc_display.ttm_tilt_offset -0.14"
 #sendFPScmd "setval bmc_display.ttm_tip_offset -0.850"
 #sendFPScmd "setval bmc_display.ttm_tilt_offset 0.500"
 #sendFPScmd "setval bmc_display.ttm_tip_offset -0.380"

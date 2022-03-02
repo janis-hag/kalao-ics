@@ -45,7 +45,7 @@ TTM_LOOPNUMBER=$CACAO_LOOPNUMBER
 
 if [ $DM_WORKDIR != $TTM_WORKDIR ]
 then
-	echo "DM et TTM workdir should be the same"
+	echo "DM and TTM workdir should be the same"
 	exit 1
 fi
 
@@ -111,11 +111,32 @@ fi
 stepFile="step.aolaunch.DMCOMB"
 if [ ! -f "$stepFile" ]; then
 
+#DMch2disp
+sendFPScmd "setval DMcomb-${DM_DMINDEX}.DMindex ${DM_DMINDEX}"
+sendFPScmd "setval DMcomb-${DM_DMINDEX}.DMxsize 12"
+sendFPScmd "setval DMcomb-${DM_DMINDEX}.DMysize 12"
+sendFPScmd "setval DMcomb-${DM_DMINDEX}.procinfo.loopcntMax -1"
+sendFPScmd "setval DMcomb-${DM_DMINDEX}.procinfo.triggermode 4"
+sendFPScmd "setval DMcomb-${DM_DMINDEX}.procinfo.triggersname dm${DM_DMINDEX}disp00"
+
+sendFPScmd "setval DMcomb-${DM_DMINDEX}.procinfo.RTprio 8"
+sendFPScmd "setval DMcomb-${DM_DMINDEX}.conf.taskset 0"
+
 sendFPScmd "confwupdate DMcomb-${DM_DMINDEX}"
 sendFPScmd "runstart DMcomb-${DM_DMINDEX}"
 
 sendFPScmd "confwupdate DMcomb-${TTM_DMINDEX}"
 sendFPScmd "runstart DMcomb-${TTM_DMINDEX}"
+
+sendFPScmd "setval DMcomb-${TTM_DMINDEX}.DMindex ${TTM_DMINDEX}"
+sendFPScmd "setval DMcomb-${TTM_DMINDEX}.procinfo.loopcntMax -1"
+sendFPScmd "setval DMcomb-${TTM_DMINDEX}.procinfo.triggermode 4"
+sendFPScmd "setval DMcomb-${TTM_DMINDEX}.procinfo.triggersname dm${TTM_DMINDEX}disp00"
+
+sendFPScmd "setval DMcomb-${TTM_DMINDEX}.procinfo.RTprio 4"
+sendFPScmd "setval DMcomb-${TTM_DMINDEX}.conf.taskset 0"
+
+
 
 touch ${stepFile}
 exit
@@ -138,8 +159,17 @@ sendFPScmd "confstart shwfs_process"
 
 sendFPScmd "setval bmc_display.DMin dm${DM_DMINDEX}disp"
 sendFPScmd "setval bmc_display.TTMin dm${TTM_DMINDEX}disp"
-sendFPScmd "setval bmc_display.ttm_tip_offset -0.380"
-sendFPScmd "setval bmc_display.ttm_tilt_offset 0.220"
+sendFPScmd "setval bmc_display.procinfo.loopcntMax -1"
+sendFPScmd "setval bmc_display.procinfo.triggermode 0"
+#sendFPScmd "setval bmc_display.procinfo.triggermode 3"
+#sendFPScmd "setval bmc_display.procinfo.triggersname dm${DM_DMINDEX}disp"
+
+sendFPScmd "setval bmc_display.ttm_tip_offset -0.05"
+sendFPScmd "setval bmc_display.ttm_tilt_offset 0.0"
+#sendFPScmd "setval bmc_display.ttm_tip_offset -0.850"
+#sendFPScmd "setval bmc_display.ttm_tilt_offset 0.500"
+#sendFPScmd "setval bmc_display.ttm_tip_offset -0.380"
+#sendFPScmd "setval bmc_display.ttm_tilt_offset 0.220"
 #sendFPScmd "setval bmc_display.ttm_tip_offset 0.300"
 #sendFPScmd "setval bmc_display.ttm_tilt_offset -0.090"
 #sendFPScmd "setval bmc_display.ttm_tip_offset 0.270"
@@ -147,18 +177,54 @@ sendFPScmd "setval bmc_display.ttm_tilt_offset 0.220"
 #sendFPScmd "setval bmc_display.ttm_tip_offset 0.600"
 #sendFPScmd "setval bmc_display.ttm_tilt_offset -0.250"
 
+sendFPScmd "setval bmc_display.procinfo.RTprio 8"
+sendFPScmd "setval bmc_display.conf.taskset 1"
 
-sendFPScmd "setval nuvu_acquire.readoutmode 4"
-sendFPScmd "setval nuvu_acquire.emgain 1"
-#sendFPScmd "setval nuvu_acquire.emgain 20"
+
+# Nuvu sdk driver setting
+##sendFPScmd "setval nuvu_acquire.procinfo.RTprio 10"
+#sendFPScmd "setval nuvu_acquire.procinfo.loopcntMax -1"
+#sendFPScmd "setval nuvu_acquire.procinfo.triggermode 0" 
+
+##sendFPScmd "setval nuvu_acquire.readoutmode 1"
+#sendFPScmd "setval nuvu_acquire.readoutmode 4"
+#sendFPScmd "setval nuvu_acquire.emgain 1"
+##sendFPScmd "setval nuvu_acquire.emgain 20"
+#sendFPScmd "setval nuvu_acquire.exposuretime 0"
+#sendFPScmd "setval nuvu_acquire.autogain_params autogain_params.txt"
+
+#sendFPScmd "setval nuvu_acquire.conf.taskset 3-7"
+
+# Camstack setting
+sendFPScmd "setval nuvu_acquire.procinfo.RTprio 10"
+sendFPScmd "setval nuvu_acquire.procinfo.loopcntMax -1"
+sendFPScmd "setval nuvu_acquire.procinfo.triggermode 3"
+sendFPScmd "setval nuvu_acquire.procinfo.triggersname nuvu_raw"
+# Ignoring SDK bias
+sendFPScmd "setval nuvu_acquire.bias "
+
+##sendFPScmd "setval nuvu_acquire.readoutmode 1"
+#sendFPScmd "setval nuvu_acquire.readoutmode 4"
+#sendFPScmd "setval nuvu_acquire.emgain 1"
+##sendFPScmd "setval nuvu_acquire.emgain 20"
 sendFPScmd "setval nuvu_acquire.exposuretime 0"
 sendFPScmd "setval nuvu_acquire.autogain_params autogain_params.txt"
+
+#sendFPScmd "setval nuvu_acquire.conf.taskset 3"
+
+
+
+
+sendFPScmd "setval shwfs_process.procinfo.loopcntMax -1"
+sendFPScmd "setval shwfs_process.procinfo.triggermode 3"
+sendFPScmd "setval shwfs_process.procinfo.triggersname nuvu_stream"
 
 sendFPScmd "setval shwfs_process.rawWFSin nuvu_stream"
 sendFPScmd "setval shwfs_process.spotcoords spots.txt"
 sendFPScmd "setval shwfs_process.outWFS ${DM_WFSSTREAM}"
 
-sendFPScmd "setval nuvu_acquire.conf.taskset 12-15"
+#sendFPScmd "setval nuvu_acquire.conf.taskset 3-7"
+#sendFPScmd "setval shwfs_process.conf.taskset 2"
 
 
 ##### Start hardware
@@ -207,6 +273,63 @@ exit
 else
 echo "found ${stepFile} -> skipping"
 fi
+
+# =====================================================================
+# Temporary manual parameter setting
+# =====================================================================
+<<<<<<< HEAD
+#DM_LOOPNUMBER=1
+
+sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.RTprio 0"
+sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.loopcntMax 1"
+sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.triggermode 0"
+sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.triggersname "
+sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.semindexrequested 0"
+sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.triggerdelay 0"
+sendFPScmd "setval acqlin-zRM-${DM_LOOPNUMBER}.procinfo.triggertimeout 0"
+sendFPScmd "confwupdate acqlin-zRM-${DM_LOOPNUMBER}"
+=======
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.RTprio 0"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.loopcntMax 1"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.triggermode 0"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.triggersname "
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.semindexrequested 0"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.triggerdelay 0"
+sendFPScmd "setval acqlin_zRM-${DM_LOOPNUMBER}.procinfo.triggertimeout 0"
+sendFPScmd "confwupdate acqlin_zRM-${DM_LOOPNUMBER}"
+>>>>>>> e5a0155a5c4b4682c4674826ab2caf0de72c67e9
+
+sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.procinfo.RTprio 0"
+sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.procinfo.loopcntMax 1"
+sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.procinfo.triggermode 0"
+sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.procinfo.triggersname " # Find out how to set empty
+sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.procinfo.semindexrequested 0"
+sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.procinfo.triggerdelay 0"
+sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.procinfo.triggertimeout 0"
+sendFPScmd "setval compsCM-${DM_LOOPNUMBER}.SVDlim 0.01"
+sendFPScmd "confwupdate compsCM-${DM_LOOPNUMBER}"
+
+
+#sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.procinfo.triggermode 3"
+#sendFPScmd "setval bmc_display.procinfo.triggersname dm${DM_DMINDEX}disp"
+
+#sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.AOloop 1"
+sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.procinfo.loopcntMax -1"
+sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.procinfo.triggermode 3"
+#sendFPScmd "setval acquWFS-${DM_LOOPNUMBER}.procinfo.triggermode 3"
+#sendFPScmd "setval bmc_display.procinfo.triggersname dm${DM_DMINDEX}disp"
+
+#sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.procinfo.RTprio 0"
+sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.procinfo.loopcntMax -1"
+sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.procinfo.triggermode 3"
+sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.procinfo.triggersname aol1_imWFS1"
+sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.procinfo.semindexrequested 0"
+sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.procinfo.triggerdelay 0"
+sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.procinfo.triggertimeout 0"
+sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.loopgain 0.11"
+sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.loopmult 0.96"
+sendFPScmd "setval loopRUN-${DM_LOOPNUMBER}.maxlim 0.5"
+#sendFPScmd "confwupdate loopRUN-${DM_LOOPNUMBER}"
 
 # ======================================================================
 # Acquire WFS image from camera
