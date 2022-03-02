@@ -30,8 +30,8 @@ ScienceDataStorage = parser.get('FLI', 'ScienceDataStorage')
 TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
 RequestTimeout = parser.getfloat('FLI', 'RequestTimeout')
 
-address = parser.get('FLI','IP')
-port = parser.get('FLI','Port')
+address = parser.get('FLI', 'IP')
+port = parser.get('FLI', 'Port')
 
 # check if config value format is right
 if port.isdigit():
@@ -53,6 +53,7 @@ def take_science_exposure(dit=0.05, filepath=None):
 
     else:
         return req_result
+
 
 def take_image(dit=0.05, filepath=None):
 
@@ -79,14 +80,14 @@ def take_image(dit=0.05, filepath=None):
 
 
 def log(req):
-   database.store_obs_log({'fli_log': req.text+' ('+str(req.status_code)+')'})
+    database.store_obs_log({'fli_log': req.text+' ('+str(req.status_code)+')'})
 
 
-def log_last_image_path( fli_image_path):
+def log_last_image_path(fli_image_path):
     database.store_obs_log({'fli_last_image_path': fli_image_path})
 
 
-def log_temporary_image_path( fli_image_path):
+def log_temporary_image_path(fli_image_path):
     database.store_obs_log({'fli_temporary_image_path': fli_image_path})
 
 
@@ -132,13 +133,13 @@ def set_temperature(temperature):
         return req.text
 
 
-def send_request(type, params):
+def send_request(request_type, params):
 
-    url = 'http://'+address+':'+port+'/'+type
+    url = 'http://'+address+':'+port+'/'+request_type
     if params == 'GET':
         req = requests.get(url, timeout=RequestTimeout)
     else:
-        req = requests.post(url, json = params, timeout=RequestTimeout)
+        req = requests.post(url, json=params, timeout=RequestTimeout)
 
     return req
 

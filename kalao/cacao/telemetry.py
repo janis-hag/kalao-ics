@@ -180,7 +180,7 @@ def telemetry_save(stream_list):
 	#check if fps exists and is running
 	shwfs_exists, shwfs_fps_path = check_fps("shwfs_process")
 
-	pixel_scale =	5.7929690265142/5 # APO-Q-P240-R8,6 FOV per subap / pixels_per_subap
+	pixel_scale = 5.7929690265142/5 # APO-Q-P240-R8,6 FOV per subap / pixels_per_subap
 
 	if shwfs_exists:
 		if stream_list['fps_slopes'] is None:

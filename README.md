@@ -34,6 +34,9 @@ The KalAO Instrument Control Software
 - turn on the laser
 - run mlat
 - verifying output with gnuplot
+- _cd ~/kalao-cacao/workdir/kalao-workdir/dmloop-workdir/fps.mlat-1.datadir_
+- _gnuplot_
+- gnuplot> _plot  "hardwlatency.dat" u 2:3_
 
 ## acqlin_zRM
 ## compsCM-1
