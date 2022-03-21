@@ -31,7 +31,7 @@ parser = ConfigParser()
 parser.read(config_path)
 
 PLC_IP = parser.get('PLC', 'IP')
-PLC_PORT = parser.get('PLC', 'Port')
+PLC_PORT = parser.getint('PLC', 'Port')
 
 def connect(addr=PLC_IP, port=PLC_PORT):
     beck = Client("opc.tcp://%s:%d" % (addr, port))
