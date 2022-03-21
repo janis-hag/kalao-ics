@@ -30,8 +30,8 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-PLC_IP = parser.getfloat('PLC', 'IP')
-PLC_PORT = parser.getfloat('PLC', 'Port')
+PLC_IP = parser.get('PLC', 'IP')
+PLC_PORT = parser.get('PLC', 'Port')
 
 def connect(addr=PLC_IP, port=PLC_PORT):
     beck = Client("opc.tcp://%s:%d" % (addr, port))
