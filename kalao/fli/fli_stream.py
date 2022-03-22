@@ -53,7 +53,9 @@ def cut_image(img):
             c = [img.shape[0]/2, img.shape[1]/2]
         else:
             c = center
-        img = float(img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw])
+        img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
+
+    img = img.astyoe(np.float)
 
     return img
 
