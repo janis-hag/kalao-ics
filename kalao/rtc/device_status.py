@@ -32,6 +32,8 @@ def read_all():
 
     try:
         rtc_sensors.update(gpu_control.status())
+    finally:
+        pass
 
     return rtc_sensors
 
