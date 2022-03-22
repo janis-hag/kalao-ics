@@ -30,10 +30,8 @@ def read_all():
     finally:
         sensors.cleanup()
 
-    try:
-        rtc_sensors.update(gpu_control.status())
-    finally:
-        pass
+    # rtc_sensors.update(gpu_control.status())
+
 
     return rtc_sensors
 
