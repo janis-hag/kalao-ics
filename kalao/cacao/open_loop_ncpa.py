@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Filename : open_loop_ncpa.py
+# @Date : 2022-03-19-15-33
+# @Project: KalAO-ICS
+# @AUTHOR : Janis Hagelberg
+
+"""
+open_loop_ncpa.py is part of the KalAO Instrument Control Software
+(KalAO-ICS). 
+"""
+
+import argparse
+import sys
+
+from time import sleep
+from signal import signal, SIGINT
+from sys import exit
+from pprint import pprint
+
+from sequencer import system
+from kalao.plc import filterwheel
+
+import FLI
+from pyMilk.interfacing.isio_shmlib import SHM
+
+parser = argparse.ArgumentParser(
+        description='Run open-loop NCPA optimisation.')
+parser.add_argument('-d', action="store",  dest="dit", type=int, default=1, help="Science camera integration time")
+parser.add_argument('-o', action="store", dest="orders_to_correct", default=10, type=int,
+                    help='Numbers of orders to correct')
+parser.add_argument('-s', action="store", dest="steps", default=50, type=int,
+                    help='Number of steps')
+parser.add_argument('-i', action="store", dest="steps", default=10, type=int,
+                    help='Number of iterations')
+parser.add_argument('-max', action="store", dest="max_flux",  default=2**15, type=float,
+                    help='Maximum flux to have on the FLI')
+parser.add_argument('-min_flux', action="store", dest="min_flux", default=1000, type=int,
+                    help='Minimum flux to have on the FLI')
+parser.add_argument('-max_dit', action="store", dest="max_dit", default=20, type=int,
+                    help='Maximum dit of the FLI')
+parser.add_argument('-filter', action="store", dest="filter_name", default='nd',
+                    help='Filter name to use')
+parser.add_argument('-min_step', action="store", dest="min_step", default=0.01, type=float,
+                    help='Minimum step size for convergence')
+
+args = parser.parse_args()
+dit = args.dit
+orders_to_correct = args.orders_to_correct
+steps = args.steps
+iterations = args.iterations
+max_flux = args.max_flux
+min_flux = args.min_flux
+max_dit = args.max_dit
+filter_name = args.filter_name
+min_step = args.min_step
+
+
+def handler(signal_received, frame):
+    # Handle any cleanup here
+    print('\nSIGINT or CTRL-C detected. Exiting.')
+    system.camera_service('start')
+    print('Restarted kalao_camera service')
+    exit(0)
+
+
+def run(cam):
+    # initialise stream
+
+    while(True):
+        # Search optimal dit
+        cam.set_exposure(dit)
+        img = cam.take_photo()
+
+        if img.max() >= max_flux:
+            dit = 0.8 * dit
+            if dit <= 1:
+                print("Above max permitted valued: " + str(max_flux))
+                sys.exit(1)
+            continue
+        elif img.max() <= min_flux:
+            dit = 1.2 * dit
+            if dit >= 1:
+                print("Below minumum permitted valued: " + str(max_flux))
+                sys.exit(1)
+            continue
+        else:
+            break
+
+    cam.set_exposure(dit)
+    img = cam.take_photo()
+
+    peak_value = img.max()
+
+    # Creating a brand new stream
+    shm = SHM('fli_stream', img,
+                 location=-1,  # CPU
+                 shared=True,  # Shared
+                 )
+
+    # bmc_zernike_coeff OSA sorted orders
+
+    # Order 0 piston
+
+    zernike_array = np.zeros(orders_to_correct)
+
+    zernike_direction = np.ones(orders_to_correct)
+
+    # Initial step size
+    zernike_step = np.ones(orders_to_correct)*7/steps
+
+    zernike_stream = SHM('bmc_zernike_coeff')
+
+    for i in range(iterations):
+        zernike_step = np.ones(orders_to_correct) * 7 / steps
+
+        for order in range(orders_to_correct):
+
+            if zernike_step[order] < min_step:
+                # Stop search if step get too small for this order
+                continue
+
+            for step in range(steps):
+                zernike_stream[order] = zernike_array[order] + zernike_step[order] * zernike_direction[order]
+
+                cam.set_exposure(dit)
+                img = cam.take_photo()
+                if img.max() > peak_value:
+                    # Good direction update peak_value and zernike array
+                    peak_value = img.max()
+                    zernike_array[order] =zernike_stream[order]
+
+                else:
+                    #change direction and decrease step size to go half way back
+                    zernike_direction[order] = -1*zernike_direction[order]
+                    zernike_step[order] = zernike_step[order]/2
+
+                shm.set_data(img)
+                sleep(0.00001)
+
+        zernike_step[order] = zernike_stream[order]/steps
+
+
+if __name__ == '__main__':
+    # Tell Python to run the handler() function when SIGINT is recieved
+    signal(SIGINT, handler)
+
+    system.camera_service('stop')
+    print('Stopped kalao_camera service')
+
+    if filterwheel.set_position(filter_name) == -1:
+        print("Error with filter selection")
+    sleep(2)
+
+    cam = FLI.USBCamera.find_devices()[0]
+    pprint(dict(cam.get_info()))
+    print('Temperature: ' + str(cam.get_temperature()))
+    cam.set_temperature(-30)
+    cam.set_exposure(dit)
+    run(cam)
