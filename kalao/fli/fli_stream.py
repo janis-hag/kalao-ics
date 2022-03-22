@@ -53,7 +53,7 @@ def cut_image(img):
             c = [img.shape[0]/2, img.shape[1]/2]
         else:
             c = center
-        img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
+        img = float(img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw])
 
     return img
 
