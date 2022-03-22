@@ -53,6 +53,7 @@ def check_fps(fps_name):
 	else:
 		return False, fps_path
 
+
 def create_shm_stream(name):
 
 	exists, stream_path = check_stream(name)
@@ -80,6 +81,7 @@ def _get_stream(name, min_value, max_value):
 	else:
 		return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
 
+
 def get_stream_data(shm_stream, name, min_value, max_value):
 
 	exists, stream_path = check_stream(name)
@@ -93,6 +95,7 @@ def get_stream_data(shm_stream, name, min_value, max_value):
 			return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
 	else:
 		return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
+
 
 def streams(realData=True):
 	# TODO remove dirty debug hack
