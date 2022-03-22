@@ -34,7 +34,7 @@ parser.add_argument('-w', action="store", dest="window_size", default=None, type
 args = parser.parse_args()
 dit = args.dit
 center = args.center
-window = args.window
+window = args.window_size
 
 
 def handler(signal_received, frame):
@@ -51,6 +51,8 @@ def cut_image(img):
         hw = int(np.round(window/2))
         if center is None:
             c = [img.shape[0]/2, img.shape[1]/2]
+        else:
+            c = center
         img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
 
     return img
@@ -73,6 +75,7 @@ def run(cam):
     while True:
         cam.set_exposure(dit)
         img = cam.take_photo()
+        img = cut_image(img)
         shm.set_data(img)
         sleep(0.00001)
 
