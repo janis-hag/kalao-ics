@@ -54,7 +54,7 @@ def move(position=23.36, beck=None):
     # Set velocity to 1 in case is has been changed
     motor_lrVelocity = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrVelocity")
     motor_lrVelocity.set_attribute(ua.AttributeIds.Value,
-                                   ua.DataValue(ua.Variant(float(1), motor_lrVelocity.get_data_type_as_variant_type())))
+                                   ua.DataValue(ua.Variant(float(0.5), motor_lrVelocity.get_data_type_as_variant_type())))
     motor_lrPosition = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
 
     if isinstance(position, numbers.Number):

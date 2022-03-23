@@ -17,6 +17,8 @@ from time import sleep
 from signal import signal, SIGINT
 from sys import exit
 from pprint import pprint
+import numpy as np
+import pandas as pd
 
 from sequencer import system
 from kalao.plc import filterwheel
@@ -43,6 +45,11 @@ parser.add_argument('-filter', action="store", dest="filter_name", default='nd',
                     help='Filter name to use')
 parser.add_argument('-min_step', action="store", dest="min_step", default=0.01, type=float,
                     help='Minimum step size for convergence')
+parser.add_argument('-c', action="store", dest="center",  default=[512,512], nargs='+', type=int,
+                    help='x y position of the window center')
+parser.add_argument('-w', action="store", dest="window_size", default=100, type=int,
+                    help='Size of the window to cut out. ')
+
 
 args = parser.parse_args()
 dit = args.dit
@@ -54,7 +61,8 @@ min_flux = args.min_flux
 max_dit = args.max_dit
 filter_name = args.filter_name
 min_step = args.min_step
-
+center = args.center
+window = args.window_size
 
 def handler(signal_received, frame):
     # Handle any cleanup here
@@ -64,6 +72,21 @@ def handler(signal_received, frame):
     exit(0)
 
 
+def cut_image(img):
+
+    if window is not None:
+        hw = int(np.round(window/2))
+        if center is None:
+            c = [img.shape[0]/2, img.shape[1]/2]
+        else:
+            c = center
+        img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
+
+    img = img.astyoe(np.float)
+
+    return img
+
+
 def run(cam):
     # initialise stream
 
@@ -71,6 +94,7 @@ def run(cam):
         # Search optimal dit
         cam.set_exposure(dit)
         img = cam.take_photo()
+        img = cut_image(img)
 
         if img.max() >= max_flux:
             dit = 0.8 * dit
@@ -89,6 +113,7 @@ def run(cam):
 
     cam.set_exposure(dit)
     img = cam.take_photo()
+    img = cut_image(img)
 
     peak_value = img.max()
 
@@ -125,6 +150,8 @@ def run(cam):
 
                 cam.set_exposure(dit)
                 img = cam.take_photo()
+                img = cut_image(img)
+
                 if img.max() > peak_value:
                     # Good direction update peak_value and zernike array
                     peak_value = img.max()
@@ -148,9 +175,12 @@ if __name__ == '__main__':
     system.camera_service('stop')
     print('Stopped kalao_camera service')
 
+    laser.set_intensity(3)
+
     if filterwheel.set_position(filter_name) == -1:
         print("Error with filter selection")
     sleep(2)
+
 
     cam = FLI.USBCamera.find_devices()[0]
     pprint(dict(cam.get_info()))
