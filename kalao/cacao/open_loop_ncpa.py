@@ -152,7 +152,7 @@ if __name__ == '__main__':
                         help='Numbers of orders to correct')
     parser.add_argument('-s', action="store", dest="steps", default=50, type=int,
                         help='Number of steps')
-    parser.add_argument('-i', action="store", dest="steps", default=10, type=int,
+    parser.add_argument('-i', action="store", dest="iterations", default=10, type=int,
                         help='Number of iterations')
     parser.add_argument('-max', action="store", dest="max_flux", default=2 ** 15, type=float,
                         help='Maximum flux to have on the FLI')
