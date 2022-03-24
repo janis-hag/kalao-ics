@@ -137,7 +137,7 @@ def run(cam, args):
                 continue
 
             for step in range(steps):
-                print('Step '+str(step))
+                print('Step '+str(step)+' '+str(zernike_array[order]))
 
                 zernike_array[order] = zernike_array[order] + zernike_step[order] * zernike_direction[order]
 
