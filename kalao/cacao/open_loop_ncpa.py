@@ -71,16 +71,17 @@ def run(cam, args):
         img = cam.take_photo()
         img = cut_image(img, window, center)
 
+        print(dit, img.max())
         if img.max() >= max_flux:
             dit = 0.8 * dit
             if dit <= 1:
-                print("Above max permitted valued: " + str(max_flux))
+                print('Max flux '+str(img.max())+' sbove max permitted value ' + str(max_flux))
                 sys.exit(1)
             continue
         elif img.max() <= min_flux:
             dit = 1.2 * dit
             if dit >= 1:
-                print("Below minumum permitted valued: " + str(max_flux))
+                print('Max flux '+str(img.max())+' below minumum permitted value: ' + str(max_flux))
                 sys.exit(1)
             continue
         else:
@@ -171,7 +172,7 @@ if __name__ == '__main__':
                         help='Number of iterations')
     parser.add_argument('-max', action="store", dest="max_flux", default=2 ** 15, type=float,
                         help='Maximum flux to have on the FLI')
-    parser.add_argument('-min_flux', action="store", dest="min_flux", default=1000, type=int,
+    parser.add_argument('-min_flux', action="store", dest="min_flux", default=2**15, type=int,
                         help='Minimum flux to have on the FLI')
     parser.add_argument('-max_dit', action="store", dest="max_dit", default=20, type=int,
                         help='Maximum dit of the FLI')
