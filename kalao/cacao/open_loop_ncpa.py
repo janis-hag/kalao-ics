@@ -106,16 +106,21 @@ def run(cam, args):
 
     # Order 0 piston
 
+    zernike_shm = SHM('bmc_zernike_coeff')
+    zernike_array =  zernike_shm.get_data(check=False)
+
+    if orders_to_correct > len(zernike_array):
+        print("Correcting maximum number of orders: "+str(len(zernike_array)) )
+        orders_to_correct = len(zernike_array)
+
     # -1.75 1.75
-    zernike_array = np.zeros(orders_to_correct)
+    zernike_array[:] = 0
 
     df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step']+np.arange(orders_to_correct).tolist())
 
     zernike_direction = np.ones(orders_to_correct)
 
     # Initial step size
-
-    zernike_shm = SHM('bmc_zernike_coeff')
 
     # Initialise values to zero
     zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
