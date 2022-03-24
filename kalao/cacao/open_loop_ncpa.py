@@ -175,7 +175,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', action="store", dest="dit", type=int, default=1, help="Science camera integration time")
     parser.add_argument('-o', action="store", dest="orders_to_correct", default=10, type=int,
                         help='Numbers of orders to correct')
-    parser.add_argument('-s', action="store", dest="steps", default=50, type=int,
+    parser.add_argument('-s', action="store", dest="steps", default=25, type=int,
                         help='Number of steps')
     parser.add_argument('-i', action="store", dest="iterations", default=10, type=int,
                         help='Number of iterations')
