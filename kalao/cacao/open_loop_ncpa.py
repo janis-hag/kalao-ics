@@ -116,7 +116,7 @@ def run(cam, args):
     # -1.75 1.75
     zernike_array[:] = 0
 
-    df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step']+np.arange(orders_to_correct).tolist())
+    df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step']+np.arange( len(zernike_array)).tolist())
 
     zernike_direction = np.ones(orders_to_correct)
 
