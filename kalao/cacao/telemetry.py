@@ -98,12 +98,10 @@ def get_stream_data(shm_stream, name, min_value, max_value):
 
 
 def streams(realData=True):
-	# TODO remove dirty debug hack
-	if True:  #not realData:
+	if not realData:
 		# Returning fake streams for testing purposes
 		return fake_data.fake_streams()
 	else:
-
 		stream_list = {}
 
 		stream_list["nuvu_stream"] = _get_stream("nuvu_stream", 0, 2**16-1)
