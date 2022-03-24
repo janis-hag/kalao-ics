@@ -36,7 +36,7 @@ def handler(signal_received, frame):
     exit(0)
 
 
-def cut_image(img):
+def cut_image(img, window, center):
 
     if window is not None:
         hw = int(np.round(window/2))
@@ -46,19 +46,30 @@ def cut_image(img):
             c = center
         img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
 
-    img = img.astyoe(np.float)
+    img = img.astype(np.float)
 
     return img
 
 
-def run(cam):
+def run(cam, args):
     # initialise stream
+    dit = args.dit
+    orders_to_correct = args.orders_to_correct
+    steps = args.steps
+    iterations = args.iterations
+    max_flux = args.max_flux
+    min_flux = args.min_flux
+    max_dit = args.max_dit
+    filter_name = args.filter_name
+    min_step = args.min_step
+    center = args.center
+    window = args.window_size
 
     while(True):
         # Search optimal dit
         cam.set_exposure(dit)
         img = cam.take_photo()
-        img = cut_image(img)
+        img = cut_image(img, window, center)
 
         if img.max() >= max_flux:
             dit = 0.8 * dit
@@ -77,7 +88,7 @@ def run(cam):
 
     cam.set_exposure(dit)
     img = cam.take_photo()
-    img = cut_image(img)
+    img = cut_image(img, window, center)
 
     peak_value = img.max()
 
@@ -122,7 +133,7 @@ def run(cam):
 
                 cam.set_exposure(dit)
                 img = cam.take_photo()
-                img = cut_image(img)
+                img = cut_image(img, window, center)
 
                 df = df.append(pd.Series(np.concatenate((np.array([img.max(),i, order, step]), zernike_array)),
                                          index=df.columns), ignore_index=True)
@@ -200,4 +211,4 @@ if __name__ == '__main__':
     print('Temperature: ' + str(cam.get_temperature()))
     cam.set_temperature(-30)
     cam.set_exposure(dit)
-    run(cam)
+    run(cam, args)
