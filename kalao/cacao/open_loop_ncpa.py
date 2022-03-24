@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from sequencer import system
-from kalao.plc import filterwheel, laser
+#from kalao.plc import filterwheel, laser
 from kalao.utils import kalao_time
 
 from kalao.fli import FLI
@@ -75,13 +75,13 @@ def run(cam, args):
 
         print(new_dit, img.max())
         if img.max() >= max_flux:
-            new_dit = 0.8 * new_dit
+            new_dit = int(np.floor(0.8 * new_dit))
             if new_dit <= 1:
                 print('Max flux '+str(img.max())+' above max permitted value ' + str(max_flux))
                 sys.exit(1)
             continue
         elif img.max() <= min_flux:
-            new_dit = 1.2 * new_dit
+            new_dit = int(np.ceil(1.2 * new_dit))
             if new_dit >= max_dit:
                 print('Max flux '+str(img.max())+' below minimum permitted value: ' + str(max_flux))
                 sys.exit(1)
