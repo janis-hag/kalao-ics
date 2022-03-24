@@ -137,7 +137,7 @@ def run(cam, args):
                 continue
 
             for step in range(steps):
-                print('Step '+str(step)+' '+str(zernike_array[order]))
+                print('Step '+str(step)+'. Zernike amplitude '+str(zernike_array[order])+'. Max flux: '+str(img.max()))
 
                 zernike_array[order] = zernike_array[order] + zernike_step[order] * zernike_direction[order]
 
@@ -163,6 +163,7 @@ def run(cam, args):
                 sleep(0.00001)
 
             zernike_step[order] = zernike_array[order]/steps
+
             print(zernike_array)
 
     df.to_pickle('ncpa_scan_'+kalao_time.get_isotime()+'.pickle')
