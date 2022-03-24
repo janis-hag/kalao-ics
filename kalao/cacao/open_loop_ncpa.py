@@ -127,37 +127,52 @@ def run(cam, args):
 
     for i in range(iterations):
         print('Iteration: '+str(i))
-        zernike_step = np.ones(orders_to_correct) * 1.75 / steps
+        zernike_step = 1.75 #/ steps
 
         for order in range(1, orders_to_correct):
             print('Optimising order: '+str(order))
 
-            if zernike_step[order] < min_step:
+            if zernike_step < min_step:
                 # Stop search if step get too small for this order
                 continue
 
             for step in range(steps):
                 print('Step '+str(step)+'. Zernike amplitude '+str(zernike_array[order])+'. Max flux: '+str(img.max()))
 
-                zernike_array[order] = zernike_array[order] + zernike_step[order] * zernike_direction[order]
+                up =  zernike_array[order] + zernike_step
+                down = zernike_array[order] - zernike_step
+
+                # Test up
+                zernike_array[order] = up
 
                 zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
 
-                cam.set_exposure(dit)
+                #cam.set_exposure(dit)
                 img = cam.take_photo()
                 img = cut_image(img, window, center)
+
+                peak_up = img.max()
+
+                # Test down
+                zernike_array[order] = down
+
+                zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
+
+                #cam.set_exposure(dit)
+                img = cam.take_photo()
+                img = cut_image(img, window, center)
+
+                peak_down = img.max()
+
+                if peak_down < peak_up:
+                    zernike_array[order] = up
+                    img = cam.take_photo()
+                    img = cut_image(img, window, center)
 
                 df = df.append(pd.Series(np.concatenate((np.array([img.max(),i, order, step]), zernike_array)),
                                          index=df.columns), ignore_index=True)
 
-                if img.max() > peak_value:
-                    # Good direction update peak_value and zernike array
-                    peak_value = img.max()
-
-                else:
-                    #change direction and decrease step size to go half way back
-                    zernike_direction[order] = -1*zernike_direction[order]
-                    zernike_step[order] = zernike_step[order]/2
+                zernike_step = zernike_step/2
 
                 shm.set_data(img)
                 sleep(0.00001)
