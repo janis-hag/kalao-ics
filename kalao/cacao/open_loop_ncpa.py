@@ -46,7 +46,7 @@ def cut_image(img, window, center):
             c = center
         img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
 
-    img = img.astype(np.float)
+    img = img.astype(float)
 
     return img
 
