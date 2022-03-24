@@ -86,6 +86,7 @@ def run(cam, args):
         else:
             break
 
+    print('Setting DIT to: '+str(dit))
     cam.set_exposure(dit)
     img = cam.take_photo()
     img = cut_image(img, window, center)
@@ -118,9 +119,11 @@ def run(cam, args):
 
 
     for i in range(iterations):
+        print('Iteration: '+str(i))
         zernike_step = np.ones(orders_to_correct) * 1.75 / steps
 
         for order in range(1, orders_to_correct):
+            print('Optimising order: '+str(order))
 
             if zernike_step[order] < min_step:
                 # Stop search if step get too small for this order
@@ -151,6 +154,7 @@ def run(cam, args):
                 sleep(0.00001)
 
             zernike_step[order] = zernike_array[order]/steps
+            print(zernike_array)
 
     df.to_pickle('ncpa_scan_'+kalao_time.get_isotime()+'.pickle')
 
