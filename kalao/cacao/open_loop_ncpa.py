@@ -24,7 +24,7 @@ from sequencer import system
 from kalao.plc import filterwheel, laser
 from kalao.utils import kalao_time
 
-import FLI
+from kalao.fli import FLI
 from pyMilk.interfacing.isio_shmlib import SHM
 
 
