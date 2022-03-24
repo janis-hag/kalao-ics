@@ -205,7 +205,7 @@ if __name__ == '__main__':
     system.camera_service('stop')
     print('Stopped kalao_camera service')
 
-    laser.set_intensity(3)
+    #laser.set_intensity(0.3)
 
     if filterwheel.set_position(filter_name) == -1:
         print("Error with filter selection")
