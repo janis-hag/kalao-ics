@@ -207,9 +207,9 @@ if __name__ == '__main__':
 
     #laser.set_intensity(0.3)
 
-    if filterwheel.set_position(filter_name) == -1:
-        print("Error with filter selection")
-    sleep(2)
+    #if filterwheel.set_position(filter_name) == -1:
+    #    print("Error with filter selection")
+    #sleep(2)
 
 
     cam = FLI.USBCamera.find_devices()[0]
