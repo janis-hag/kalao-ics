@@ -65,30 +65,32 @@ def run(cam, args):
     center = args.center
     window = args.window_size
 
+    new_dit = dit
+
     while(True):
         # Search optimal dit
-        cam.set_exposure(dit)
+        cam.set_exposure(new_dit)
         img = cam.take_photo()
         img = cut_image(img, window, center)
 
-        print(dit, img.max())
+        print(new_dit, img.max())
         if img.max() >= max_flux:
-            dit = 0.8 * dit
-            if dit <= 1:
+            new_dit = 0.8 * new_dit
+            if new_dit <= 1:
                 print('Max flux '+str(img.max())+' above max permitted value ' + str(max_flux))
                 sys.exit(1)
             continue
         elif img.max() <= min_flux:
-            dit = 1.2 * dit
-            if dit >= 1:
-                print('Max flux '+str(img.max())+' below minumum permitted value: ' + str(max_flux))
+            new_dit = 1.2 * new_dit
+            if new_dit >= max_dit:
+                print('Max flux '+str(img.max())+' below minimum permitted value: ' + str(max_flux))
                 sys.exit(1)
             continue
         else:
             break
 
-    print('Setting DIT to: '+str(dit))
-    cam.set_exposure(dit)
+    print('Setting DIT to: '+str(new_dit))
+    cam.set_exposure(new_dit)
     img = cam.take_photo()
     img = cut_image(img, window, center)
 
@@ -117,7 +119,6 @@ def run(cam, args):
 
     # Initialise values to zero
     zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
-
 
     for i in range(iterations):
         print('Iteration: '+str(i))
@@ -187,16 +188,16 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     dit = args.dit
-    orders_to_correct = args.orders_to_correct
-    steps = args.steps
-    iterations = args.iterations
-    max_flux = args.max_flux
-    min_flux = args.min_flux
-    max_dit = args.max_dit
+    # orders_to_correct = args.orders_to_correct
+    # steps = args.steps
+    # iterations = args.iterations
+    # max_flux = args.max_flux
+    # min_flux = args.min_flux
+    # max_dit = args.max_dit
     filter_name = args.filter_name
-    min_step = args.min_step
-    center = args.center
-    window = args.window_size
+    # min_step = args.min_step
+    # center = args.center
+    # window = args.window_size
 
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)
