@@ -27,44 +27,6 @@ from kalao.utils import kalao_time
 import FLI
 from pyMilk.interfacing.isio_shmlib import SHM
 
-parser = argparse.ArgumentParser(
-        description='Run open-loop NCPA optimisation.')
-parser.add_argument('-d', action="store",  dest="dit", type=int, default=1, help="Science camera integration time")
-parser.add_argument('-o', action="store", dest="orders_to_correct", default=10, type=int,
-                    help='Numbers of orders to correct')
-parser.add_argument('-s', action="store", dest="steps", default=50, type=int,
-                    help='Number of steps')
-parser.add_argument('-i', action="store", dest="steps", default=10, type=int,
-                    help='Number of iterations')
-parser.add_argument('-max', action="store", dest="max_flux",  default=2**15, type=float,
-                    help='Maximum flux to have on the FLI')
-parser.add_argument('-min_flux', action="store", dest="min_flux", default=1000, type=int,
-                    help='Minimum flux to have on the FLI')
-parser.add_argument('-max_dit', action="store", dest="max_dit", default=20, type=int,
-                    help='Maximum dit of the FLI')
-parser.add_argument('-filter', action="store", dest="filter_name", default='nd',
-                    help='Filter name to use')
-parser.add_argument('-min_step', action="store", dest="min_step", default=0.01, type=float,
-                    help='Minimum step size for convergence')
-parser.add_argument('-c', action="store", dest="center",  default=[512,512], nargs='+', type=int,
-                    help='x y position of the window center')
-parser.add_argument('-w', action="store", dest="window_size", default=100, type=int,
-                    help='Size of the window to cut out. ')
-
-
-args = parser.parse_args()
-dit = args.dit
-orders_to_correct = args.orders_to_correct
-steps = args.steps
-iterations = args.iterations
-max_flux = args.max_flux
-min_flux = args.min_flux
-max_dit = args.max_dit
-filter_name = args.filter_name
-min_step = args.min_step
-center = args.center
-window = args.window_size
-
 
 def handler(signal_received, frame):
     # Handle any cleanup here
@@ -129,6 +91,7 @@ def run(cam):
 
     # Order 0 piston
 
+    # -1.75 1.75
     zernike_array = np.zeros(orders_to_correct)
 
     df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step']+np.arange(orders_to_correct).tolist())
@@ -136,32 +99,37 @@ def run(cam):
     zernike_direction = np.ones(orders_to_correct)
 
     # Initial step size
-    zernike_step = np.ones(orders_to_correct)*7/steps
 
-    zernike_stream = SHM('bmc_zernike_coeff')
+    zernike_shm = SHM('bmc_zernike_coeff')
+
+    # Initialise values to zero
+    zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
+
 
     for i in range(iterations):
-        zernike_step = np.ones(orders_to_correct) * 7 / steps
+        zernike_step = np.ones(orders_to_correct) * 1.75 / steps
 
-        for order in range(orders_to_correct):
+        for order in range(1, orders_to_correct):
 
             if zernike_step[order] < min_step:
                 # Stop search if step get too small for this order
                 continue
 
             for step in range(steps):
-                zernike_stream[order] = zernike_array[order] + zernike_step[order] * zernike_direction[order]
+                zernike_array[order] = zernike_array[order] + zernike_step[order] * zernike_direction[order]
+
+                zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
 
                 cam.set_exposure(dit)
                 img = cam.take_photo()
                 img = cut_image(img)
 
-                df = df.append(pd.Series(np.concatenate((np.array([img.max(),i, order, step]), zernike_stream)) , index=df.columns), ignore_index=True)
+                df = df.append(pd.Series(np.concatenate((np.array([img.max(),i, order, step]), zernike_array)),
+                                         index=df.columns), ignore_index=True)
 
                 if img.max() > peak_value:
                     # Good direction update peak_value and zernike array
                     peak_value = img.max()
-                    zernike_array[order] =zernike_stream[order]
 
                 else:
                     #change direction and decrease step size to go half way back
@@ -171,11 +139,49 @@ def run(cam):
                 shm.set_data(img)
                 sleep(0.00001)
 
-            zernike_step[order] = zernike_stream[order]/steps
+            zernike_step[order] = zernike_array[order]/steps
 
     df.to_pickle('ncpa_scan_'+kalao_time.get_isotime()+'.pickle')
 
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Run open-loop NCPA optimisation.')
+    parser.add_argument('-d', action="store", dest="dit", type=int, default=1, help="Science camera integration time")
+    parser.add_argument('-o', action="store", dest="orders_to_correct", default=10, type=int,
+                        help='Numbers of orders to correct')
+    parser.add_argument('-s', action="store", dest="steps", default=50, type=int,
+                        help='Number of steps')
+    parser.add_argument('-i', action="store", dest="steps", default=10, type=int,
+                        help='Number of iterations')
+    parser.add_argument('-max', action="store", dest="max_flux", default=2 ** 15, type=float,
+                        help='Maximum flux to have on the FLI')
+    parser.add_argument('-min_flux', action="store", dest="min_flux", default=1000, type=int,
+                        help='Minimum flux to have on the FLI')
+    parser.add_argument('-max_dit', action="store", dest="max_dit", default=20, type=int,
+                        help='Maximum dit of the FLI')
+    parser.add_argument('-filter', action="store", dest="filter_name", default='nd',
+                        help='Filter name to use')
+    parser.add_argument('-min_step', action="store", dest="min_step", default=0.01, type=float,
+                        help='Minimum step size for convergence')
+    parser.add_argument('-c', action="store", dest="center", default=[512, 512], nargs='+', type=int,
+                        help='x y position of the window center')
+    parser.add_argument('-w', action="store", dest="window_size", default=100, type=int,
+                        help='Size of the window to cut out. ')
+
+    args = parser.parse_args()
+    dit = args.dit
+    orders_to_correct = args.orders_to_correct
+    steps = args.steps
+    iterations = args.iterations
+    max_flux = args.max_flux
+    min_flux = args.min_flux
+    max_dit = args.max_dit
+    filter_name = args.filter_name
+    min_step = args.min_step
+    center = args.center
+    window = args.window_size
+
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)
 
