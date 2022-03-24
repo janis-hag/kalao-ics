@@ -83,7 +83,7 @@ def run(cam, args):
         elif img.max() <= min_flux:
             new_dit = int(np.ceil(1.2 * new_dit))
             if new_dit >= max_dit:
-                print('Max flux '+str(img.max())+' below minimum permitted value: ' + str(max_flux))
+                print('Max flux '+str(img.max())+' below minimum permitted value: ' + str(min_flux))
                 sys.exit(1)
             continue
         else:
@@ -171,9 +171,9 @@ if __name__ == '__main__':
                         help='Number of steps')
     parser.add_argument('-i', action="store", dest="iterations", default=10, type=int,
                         help='Number of iterations')
-    parser.add_argument('-max', action="store", dest="max_flux", default=2 ** 15, type=float,
+    parser.add_argument('-max', action="store", dest="max_flux", default=2**15, type=float,
                         help='Maximum flux to have on the FLI')
-    parser.add_argument('-min_flux', action="store", dest="min_flux", default=2**15, type=int,
+    parser.add_argument('-min_flux', action="store", dest="min_flux", default=2**11, type=int,
                         help='Minimum flux to have on the FLI')
     parser.add_argument('-max_dit', action="store", dest="max_dit", default=20, type=int,
                         help='Maximum dit of the FLI')
