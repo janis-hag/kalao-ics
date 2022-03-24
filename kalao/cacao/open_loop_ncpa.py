@@ -75,7 +75,7 @@ def run(cam, args):
         if img.max() >= max_flux:
             dit = 0.8 * dit
             if dit <= 1:
-                print('Max flux '+str(img.max())+' sbove max permitted value ' + str(max_flux))
+                print('Max flux '+str(img.max())+' above max permitted value ' + str(max_flux))
                 sys.exit(1)
             continue
         elif img.max() <= min_flux:
