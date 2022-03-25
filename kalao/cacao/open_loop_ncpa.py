@@ -127,7 +127,7 @@ def run(cam, args):
 
     for i in range(iterations):
         print('Iteration: '+str(i))
-        zernike_step = 1.75 #/ steps
+        zernike_step = 1.75/2 #/ steps
 
         for order in range(1, orders_to_correct):
             print('Optimising order: '+str(order))
