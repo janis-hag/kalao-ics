@@ -142,7 +142,7 @@ def run(cam, args):
             img = cam.take_photo()
             img = cut_image(img, window, center)
 
-            peak_array = np.zeros(3,2)
+            peak_array = np.zeros((3,2))
 
             peak_array[1][0] = img.max()
             peak_array[1][1] = zernike_array[order]
