@@ -150,7 +150,7 @@ def run(cam, args):
             for step in range(steps):
                 print('Step '+str(step)+'. Zernike amplitude '+str(zernike_array[order])+'. Max flux: '+str(img.max()))
 
-                up =  zernike_array[order] + zernike_step
+                up = zernike_array[order] + zernike_step
                 down = zernike_array[order] - zernike_step
 
                 # Test up
@@ -198,7 +198,7 @@ def run(cam, args):
                 peak_array[1][0] = peak_array[:,0].max()
                 peak_array[1][1] = zernike_array[order]
 
-            zernike_step[order] = zernike_array[order]/steps
+            zernike_step = zernike_array[order]/steps
 
             print(zernike_array)
 
