@@ -146,7 +146,7 @@ def run(cam, args):
             for step in range(steps):
                 if zernike_step < min_step:
                     # Stop search if step get too small for this order
-                    continue
+                    break
 
                 print('Step '+str(step)+'. Zernike amplitude '+str(zernike_array[order])+'. Max flux: '+str(img.max()))
 
