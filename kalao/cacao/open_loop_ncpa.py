@@ -130,7 +130,7 @@ def run(cam, args):
 
         for order in range(1, orders_to_correct):
             print('Optimising order: '+str(order))
-            zernike_step = 1.75 / 2  # / steps
+            zernike_step = 0.5 / 2  # / steps
 
             # Reset value to zero before starting search
             zernike_array[order] = 0

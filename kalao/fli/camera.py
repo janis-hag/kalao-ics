@@ -44,7 +44,7 @@ else:
 
 def take_science_exposure(dit=0.05, filepath=None):
 
-    req_result = take_image(dit, filepath)
+    req_result = take_image(dit, filepath, obscategory='SCIENCE')
     if req_result == 0:
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         target_path_name = file_handling.save_tmp_picture(image_path)
@@ -55,7 +55,7 @@ def take_science_exposure(dit=0.05, filepath=None):
         return req_result
 
 
-def take_image(dit=0.05, filepath=None):
+def take_image(dit=0.05, filepath=None, obscategory='TECHNICAL', obstype='Unknown'):
 
     if dit < 0:
         database.store_obs_log({'fli_log': 'Abort before exposure started.'})
@@ -74,7 +74,11 @@ def take_image(dit=0.05, filepath=None):
     log_temporary_image_path(filepath)
 
     if req.status_code == 200:
-        return 0
+
+        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
+        target_path_name = file_handling.save_tmp_picture(image_path)
+
+        return target_path_name
     else:
         return req.text
 
