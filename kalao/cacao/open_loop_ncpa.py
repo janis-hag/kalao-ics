@@ -179,7 +179,7 @@ def run(cam, args):
                 peak_array[0][1] = zernike_array[order]
 
                 #get zernike value of max flux
-                zernike_array[order] = peak_array[peak_array[:, 1].argmax(), 0]
+                zernike_array[order] = peak_array[peak_array[:, 0].argmax(), 1]
 
                 # if peak_down < peak_up:
                 #     zernike_array[order] = up
@@ -195,7 +195,7 @@ def run(cam, args):
                 sleep(0.00001)
 
                 # Set new value of center
-                peak_array[1][0] = peak_array[:,1].max()
+                peak_array[1][0] = peak_array[:,0].max()
                 peak_array[1][1] = zernike_array[order]
 
             zernike_step[order] = zernike_array[order]/steps
