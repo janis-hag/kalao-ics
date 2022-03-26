@@ -110,15 +110,15 @@ def run(cam, args):
     zernike_array =  zernike_shm.get_data(check=False)
 
     if orders_to_correct > len(zernike_array):
-        print("Correcting maximum number of orders: "+str(len(zernike_array)) )
         orders_to_correct = len(zernike_array)
+        print("Correcting maximum number of orders: "+str(len(zernike_array)) )
+    else:
+        print('Correcting '+str(orders_to_correct)+' orders.')
 
     # -1.75 1.75
     zernike_array[:] = 0
 
     df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step']+np.arange( len(zernike_array)).tolist())
-
-    zernike_direction = np.ones(orders_to_correct)
 
     # Initial step size
 
@@ -132,10 +132,6 @@ def run(cam, args):
         for order in range(1, orders_to_correct):
             print('Optimising order: '+str(order))
 
-            if zernike_step < min_step:
-                # Stop search if step get too small for this order
-                continue
-
             # Reset value to zero before starting search
             zernike_array[order] = 0
 
@@ -148,6 +144,10 @@ def run(cam, args):
             peak_array[1][1] = zernike_array[order]
 
             for step in range(steps):
+                if zernike_step < min_step:
+                    # Stop search if step get too small for this order
+                    continue
+
                 print('Step '+str(step)+'. Zernike amplitude '+str(zernike_array[order])+'. Max flux: '+str(img.max()))
 
                 up = zernike_array[order] + zernike_step
