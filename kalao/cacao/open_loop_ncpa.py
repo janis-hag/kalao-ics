@@ -127,10 +127,10 @@ def run(cam, args):
 
     for i in range(iterations):
         print('Iteration: '+str(i))
-        zernike_step = 1.75/2 #/ steps
 
         for order in range(1, orders_to_correct):
             print('Optimising order: '+str(order))
+            zernike_step = 1.75 / 2  # / steps
 
             # Reset value to zero before starting search
             zernike_array[order] = 0
@@ -198,7 +198,7 @@ def run(cam, args):
                 peak_array[1][0] = peak_array[:,0].max()
                 peak_array[1][1] = zernike_array[order]
 
-            zernike_step = zernike_array[order]/steps
+            #zernike_step = zernike_array[order]/steps
 
             print(zernike_array)
 
