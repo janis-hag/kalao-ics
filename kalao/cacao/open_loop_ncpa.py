@@ -136,6 +136,17 @@ def run(cam, args):
                 # Stop search if step get too small for this order
                 continue
 
+            # Reset value to zero before starting search
+            zernike_array[order] = 0
+
+            img = cam.take_photo()
+            img = cut_image(img, window, center)
+
+            peak_array = np.zeros(3,2)
+
+            peak_array[1][0] = img.max()
+            peak_array[1][1] = zernike_array[order]
+
             for step in range(steps):
                 print('Step '+str(step)+'. Zernike amplitude '+str(zernike_array[order])+'. Max flux: '+str(img.max()))
 
@@ -151,7 +162,8 @@ def run(cam, args):
                 img = cam.take_photo()
                 img = cut_image(img, window, center)
 
-                peak_up = img.max()
+                peak_array[2][0] = img.max()
+                peak_array[2][1] = zernike_array[order]
 
                 # Test down
                 zernike_array[order] = down
@@ -162,20 +174,29 @@ def run(cam, args):
                 img = cam.take_photo()
                 img = cut_image(img, window, center)
 
-                peak_down = img.max()
+                # Down value
+                peak_array[0][0] = img.max()
+                peak_array[0][1] = zernike_array[order]
 
-                if peak_down < peak_up:
-                    zernike_array[order] = up
-                    img = cam.take_photo()
-                    img = cut_image(img, window, center)
+                #get zernike value of max flux
+                zernike_array[order] = peak_array[peak_array[:, 1].argmax(), 0]
 
-                df = df.append(pd.Series(np.concatenate((np.array([img.max(),i, order, step]), zernike_array)),
+                # if peak_down < peak_up:
+                #     zernike_array[order] = up
+                #     img = cam.take_photo()
+                #     img = cut_image(img, window, center)
+
+                df = df.append(pd.Series(np.concatenate((np.array([peak_array.max(),i, order, step]), zernike_array)),
                                          index=df.columns), ignore_index=True)
 
                 zernike_step = zernike_step/2
 
                 shm.set_data(img)
                 sleep(0.00001)
+
+                # Set new value of center
+                peak_array[1][0] = peak_array[:,1].max()
+                peak_array[1][1] = zernike_array[order]
 
             zernike_step[order] = zernike_array[order]/steps
 
@@ -233,7 +254,6 @@ if __name__ == '__main__':
     #if filterwheel.set_position(filter_name) == -1:
     #    print("Error with filter selection")
     #sleep(2)
-
 
     cam = FLI.USBCamera.find_devices()[0]
     pprint(dict(cam.get_info()))
