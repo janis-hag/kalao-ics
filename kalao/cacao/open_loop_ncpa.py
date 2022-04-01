@@ -128,11 +128,11 @@ def run(cam, args):
     zernike_shm = SHM('bmc_zernike_coeff')
     zernike_array =  zernike_shm.get_data(check=False)
 
-    if orders_to_correct+2 > len(zernike_array):
-        orders_to_correct= len(zernike_array)
+    if orders_to_correct > len(zernike_array)-3:
+        orders_to_correct = len(zernike_array)-3
         print("Correcting maximum number of orders: "+str(len(zernike_array)))
     else:
-        print('Correcting '+str(orders_to_correct+2)+' orders.')
+        print('Correcting '+str(orders_to_correct)+' orders.')
 
     # -1.75 1.75
     zernike_array[:] = 0
@@ -148,7 +148,7 @@ def run(cam, args):
         print('=========================================')
         print('Iteration: '+str(i+1)+'/'+str(iterations))
 
-        for order in range(2, orders_to_correct+2):
+        for order in range(3, orders_to_correct+3):
             print('Iteration: '+str(i+1)+'/'+str(iterations)+' Optimising order: '+str(order))
 
             zernike_step = 0.3 / 2  # / steps
