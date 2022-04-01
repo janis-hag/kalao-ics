@@ -20,9 +20,13 @@ from pprint import pprint
 import numpy as np
 import pandas as pd
 
+import subprocess
+from subprocess import PIPE, STDOUT
+
 from sequencer import system
 #from kalao.plc import filterwheel, laser
 from kalao.utils import kalao_time
+from kalao.plc import laser
 
 from kalao.fli import FLI
 from pyMilk.interfacing.isio_shmlib import SHM
@@ -49,6 +53,21 @@ def cut_image(img, window, center):
     img = img.astype(float)
 
     return img
+
+
+def save_stream_to_fits(stream_name, fits_file):
+
+    milk_input = f"""
+    readshmim "{stream_name}"
+    saveFITS "{stream_name}" "{fits_file}"
+    exitCLI
+    """
+
+    cp = subprocess.run(["milk"], input=milk_input, encoding='utf8', stdout=PIPE, stderr=STDOUT)
+    print("=========================== STDOUT")
+    print(cp.stdout)
+    print("=========================== STDERR")
+    print(cp.stderr)
 
 
 def run(cam, args):
@@ -109,16 +128,16 @@ def run(cam, args):
     zernike_shm = SHM('bmc_zernike_coeff')
     zernike_array =  zernike_shm.get_data(check=False)
 
-    if orders_to_correct > len(zernike_array):
-        orders_to_correct = len(zernike_array)
-        print("Correcting maximum number of orders: "+str(len(zernike_array)) )
+    if orders_to_correct+2 > len(zernike_array):
+        orders_to_correct+2 = len(zernike_array)
+        print("Correcting maximum number of orders: "+str(len(zernike_array)))
     else:
-        print('Correcting '+str(orders_to_correct)+' orders.')
+        print('Correcting '+str(orders_to_correct+2)+' orders.')
 
     # -1.75 1.75
     zernike_array[:] = 0
 
-    df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step']+np.arange( len(zernike_array)).tolist())
+    df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step']+np.arange(len(zernike_array)).tolist())
 
     # Initial step size
 
@@ -128,9 +147,9 @@ def run(cam, args):
     for i in range(iterations):
         print('Iteration: '+str(i))
 
-        for order in range(1, orders_to_correct):
+        for order in range(2, orders_to_correct+2):
             print('Optimising order: '+str(order))
-            zernike_step = 0.5 / 2  # / steps
+            zernike_step = 0.3 / 2  # / steps
 
             # Reset value to zero before starting search
             zernike_array[order] = 0
@@ -202,7 +221,21 @@ def run(cam, args):
 
             print(zernike_array)
 
-    df.to_pickle('ncpa_scan_'+kalao_time.get_isotime()+'.pickle')
+    time_name = kalao_time.get_isotime()
+
+    df.to_pickle('ncpa_scan_'+time_name+'.pickle')
+
+    max_row = df.iloc[df.peak_flux.idxmax()]
+
+    print(max_row[0:orders_to_correct+2])
+
+    zernike_array = max_row[:-len(zernike_array)]
+
+    zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
+
+    # TODO save dm01disp shwfs_slopes
+    save_stream_to_fits('dm01disp', 'dmflat_ncpa_time_name.fits')
+    save_stream_to_fits('shwfs_slopes', 'slopes_ncpa_time_name.fits')
 
 
 if __name__ == '__main__':
@@ -223,12 +256,14 @@ if __name__ == '__main__':
                         help='Maximum dit of the FLI')
     parser.add_argument('-filter', action="store", dest="filter_name", default='nd',
                         help='Filter name to use')
-    parser.add_argument('-min_step', action="store", dest="min_step", default=0.01, type=float,
+    parser.add_argument('-min_step', action="store", dest="min_step", default=0.001, type=float,
                         help='Minimum step size for convergence')
     parser.add_argument('-c', action="store", dest="center", default=[512, 512], nargs='+', type=int,
                         help='x y position of the window center')
     parser.add_argument('-w', action="store", dest="window_size", default=100, type=int,
                         help='Size of the window to cut out. ')
+    parser.add_argument('-l', action="store", dest="laser_int", default=0.8, type=float,
+                        help='Laser intensity.')
 
     args = parser.parse_args()
     dit = args.dit
@@ -242,7 +277,9 @@ if __name__ == '__main__':
     # min_step = args.min_step
     # center = args.center
     # window = args.window_size
+    laser_intensity = args.laser_int
 
+    laser.set_intensity(laser_int)
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)
 
