@@ -145,10 +145,12 @@ def run(cam, args):
     zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
 
     for i in range(iterations):
-        print('Iteration: '+str(i))
+        print('=========================================')
+        print('Iteration: '+str(i+1)+'/'+str(iterations))
 
         for order in range(2, orders_to_correct+2):
-            print('Optimising order: '+str(order))
+            print('Iteration: '+str(i+1)+'/'+str(iterations)+' Optimising order: '+str(order))
+
             zernike_step = 0.3 / 2  # / steps
 
             # Reset value to zero before starting search
