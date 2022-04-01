@@ -26,7 +26,7 @@ from subprocess import PIPE, STDOUT
 from sequencer import system
 #from kalao.plc import filterwheel, laser
 from kalao.utils import kalao_time
-from kalao.plc import laser
+from kalao.plc import laser, filterwheel
 
 from kalao.fli import FLI
 from pyMilk.interfacing.isio_shmlib import SHM
@@ -129,7 +129,7 @@ def run(cam, args):
     zernike_array =  zernike_shm.get_data(check=False)
 
     if orders_to_correct+2 > len(zernike_array):
-        orders_to_correct+2 = len(zernike_array)
+        orders_to_correct= len(zernike_array)
         print("Correcting maximum number of orders: "+str(len(zernike_array)))
     else:
         print('Correcting '+str(orders_to_correct+2)+' orders.')
@@ -254,7 +254,7 @@ if __name__ == '__main__':
                         help='Minimum flux to have on the FLI')
     parser.add_argument('-max_dit', action="store", dest="max_dit", default=20, type=int,
                         help='Maximum dit of the FLI')
-    parser.add_argument('-filter', action="store", dest="filter_name", default='nd',
+    parser.add_argument('-filter', action="store", dest="filter_name", default='clear',
                         help='Filter name to use')
     parser.add_argument('-min_step', action="store", dest="min_step", default=0.001, type=float,
                         help='Minimum step size for convergence')
@@ -262,7 +262,7 @@ if __name__ == '__main__':
                         help='x y position of the window center')
     parser.add_argument('-w', action="store", dest="window_size", default=100, type=int,
                         help='Size of the window to cut out. ')
-    parser.add_argument('-l', action="store", dest="laser_int", default=0.8, type=float,
+    parser.add_argument('-l', action="store", dest="laser_int", default=0.03, type=float,
                         help='Laser intensity.')
 
     args = parser.parse_args()
@@ -277,7 +277,7 @@ if __name__ == '__main__':
     # min_step = args.min_step
     # center = args.center
     # window = args.window_size
-    laser_intensity = args.laser_int
+    laser_int = args.laser_int
 
     laser.set_intensity(laser_int)
     # Tell Python to run the handler() function when SIGINT is recieved
@@ -288,9 +288,9 @@ if __name__ == '__main__':
 
     #laser.set_intensity(0.3)
 
-    #if filterwheel.set_position(filter_name) == -1:
-    #    print("Error with filter selection")
-    #sleep(2)
+    if filterwheel.set_position(filter_name) == -1:
+       print("Error with filter selection")
+    sleep(2)
 
     cam = FLI.USBCamera.find_devices()[0]
     pprint(dict(cam.get_info()))
