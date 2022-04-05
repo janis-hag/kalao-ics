@@ -231,7 +231,7 @@ def run(cam, args):
 
     print(max_row[0:orders_to_correct+2])
 
-    zernike_array = max_row[:-len(zernike_array)]
+    zernike_array  = max_row[-len(zernike_array):].to_numpy()
 
     zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
 
@@ -258,13 +258,13 @@ if __name__ == '__main__':
                         help='Maximum dit of the FLI')
     parser.add_argument('-filter', action="store", dest="filter_name", default='clear',
                         help='Filter name to use')
-    parser.add_argument('-min_step', action="store", dest="min_step", default=0.001, type=float,
+    parser.add_argument('-min_step', action="store", dest="min_step", default=0.0001, type=float,
                         help='Minimum step size for convergence')
     parser.add_argument('-c', action="store", dest="center", default=[512, 512], nargs='+', type=int,
                         help='x y position of the window center')
     parser.add_argument('-w', action="store", dest="window_size", default=100, type=int,
                         help='Size of the window to cut out. ')
-    parser.add_argument('-l', action="store", dest="laser_int", default=0.03, type=float,
+    parser.add_argument('-l', action="store", dest="laser_int", default=0.045, type=float,
                         help='Laser intensity.')
 
     args = parser.parse_args()
