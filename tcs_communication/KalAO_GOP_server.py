@@ -28,7 +28,8 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser.read(config_path)
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
+#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))+os.path(pymod_libgop))
+sys.path.append('/home/kalao/kalao-ics/tcs_communication/pymod_libgop')
 
 def gop_print_and_log(log_text):
     '''
