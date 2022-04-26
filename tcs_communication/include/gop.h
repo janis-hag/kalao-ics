@@ -1,1 +1,0 @@
-../libgop/gop.h

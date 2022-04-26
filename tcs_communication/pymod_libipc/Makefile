@@ -4,7 +4,7 @@
 
 #ld -shared libipc.o ../gop/libgop.a pymod_libipc_wrap.o -o _pymod_libipc.so
 
-PYTHON_INCLUDE = /home/weber/anaconda3/include/python3.6m
+PYTHON_INCLUDE = /usr/include/python3.8/
 
 _pymod_libipc.so: pymod_libipc_wrap.o
 	ld -shared libipc.o ../libgop/libgop_${OPSYS}.a pymod_libipc_wrap.o -o _pymod_libipc.so
