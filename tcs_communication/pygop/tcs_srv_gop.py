@@ -4,7 +4,7 @@
 import sys
 import logging
 import time
-import .pymod_libgop
+from pygop import pymod_libgop
 #
 # This class interface few fonctionnalities of GOP
 # GOP is written in C and the wrapper made by swig

@@ -20,7 +20,7 @@ from configparser import ConfigParser
 
 from kalao.interface import status
 from kalao.utils import database, kalao_time
-from tcs_communication.pymod_libgop import tcs_srv_gop
+from tcs_communication.pygop import tcs_srv_gop
 
 # Read config file
 parser = ConfigParser()
