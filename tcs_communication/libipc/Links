@@ -1,0 +1,4 @@
+# Link file pour libipc (weber)
+#
+$LIB_DIR libipc_$OPSYS.a libipc.a
+$INC_DIR ipcdef.h

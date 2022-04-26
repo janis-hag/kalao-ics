@@ -1,0 +1,44 @@
+{type} {type de connection.}
+ {Ex: {\tt GOP\_SOCKET, GOP\_SOCKET\_UNIX, ou GOP\_TPU}.}
+{name} {nom lié à la connection.}
+ {C'est dire le host pour {\tt GOP\_SOCKET}, le nom de la socket pour {\tt GOP\_SOCKET\_UNIX} ou le nom du fichier d'initialisation pour {\tt GOP\_TPU}}
+{port} {port de communication.}
+ {~}
+{cd_init} {channel descriptor initial.}
+ {~}
+{cd} {channel descriptor actif.}
+ {~}
+{maxpacket} {taille maximum des paquets sur {\tt cd} en bytes.}
+ {~}
+{from} {nom symbolique de l'expéditeur.}
+ {~}
+{to} {nom symbolique du destinataire.}
+ {~}
+{msize} {taille message en bytes.}
+ {~}
+{psize} {taille paquet en bytes.}
+ {~}
+{cont} {flag de continuation}
+ {{\tt TRUE} pour {\tt CONT == 'T'}.}
+{stamp} {flag pour écrire la date dans le \edm.}
+ {{\tt TRUE} pour poser la date.}
+{hsync} {Flag pour la synchronisation du \edm.}
+ {{\tt TRUE} pour {\tt HSYNC == 'T'}.}
+{dsync} {Flag pour la synchronisation de la \sdd.}
+ {{\tt TRUE} pour {\tt DSYNC == 'T'}.}
+{stat} {status du système.}
+ {Ex: {\tt GOP\_STAT\_OPOK, GOP\_STAT\_WARN, ...} .}
+{mode} {niveau de debug.}
+ {Ex: {\tt GOP\_PACKET, GOP\_IO, ...} .}
+{timeout} {timeout pour l'opération en cours.}
+ {~}
+{datatype} {type de données dans la \sdd.}
+ {Ex: {\tt GOP\_CHAR, GOP\_SHORT, GOP\_FLOAT, ...} .}
+{class} {Classe du message.}
+ {Ex: {\tt GOP\_CLASS\_COMD, GOP\_CLASS\_DATA, ...} .}
+{xdr} {indique si la \sdd est codée en XDR}
+ {{\tt TRUE} == codage XDR.}
+{need_xdr} {indique si le cannal a besoin du codage en XDR}
+ {{\tt TRUE} == besoin de codage XDR}
+{header} {header original.}
+ {~}

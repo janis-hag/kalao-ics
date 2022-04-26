@@ -1,0 +1,297 @@
+%\documentstyle[11pt,a4wide,twoside,longtable,supertab,epsf,html,fancybox,french]{report}
+
+\documentclass[11pt,a4paper]{report}
+\usepackage{alltt}
+\usepackage{epsfig}
+\usepackage{times}
+\usepackage{html}
+\usepackage{fancybox}
+\usepackage{longtable}
+\usepackage{supertab}
+\usepackage[francais]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[isolatin]{inputenc}
+
+
+\pagestyle{headings}
+%\setlength{\topmargin}{0pt}
+\hoffset -1in
+%\voffset -1in
+\setlength{\oddsidemargin}{2.5cm}
+\setlength{\evensidemargin}{1.5cm}
+%\setlength{\headheight}{0pt}
+%\setlength{\headsep}{0pt}
+%\setlength{\footheight}{2cm}
+%\setlength{\footskip}{2cm}
+\setlength{\parindent}{0pt}
+
+\setlength{\fboxsep}{1cm}
+\newlength{\myboxwidth}
+\addtolength{\myboxwidth}{-2cm}
+
+
+%
+% nouvelle indentation de la table des matieres
+%
+\makeatletter
+\setlength{\@tempdima}{20mm}
+\makeatother
+%
+\makeatletter
+\newcommand{\fctint}[4]{{#1}{\dotfill}&{#2}
+			  \def\argiii{#3}%
+                          \ifx\argiii\@empty%
+                              \else{#3}%
+                          \fi%
+                          \def\argiv{#4}%
+                          \ifx\argiv\@empty\\%
+                              \else\\&Exemple: {\tt #4}\\%
+                          \fi%
+                          }
+\newcommand{\ftitre}[1]{\\ \bf\underline {#1} \\ \\}
+\makeatother
+%
+%------------------------+
+% MACRO POUR LA COMMANDE |
+%------------------------+
+% encadre la commande
+%\newcommand{\titre}[1] {\begin{flushright}
+%                           {\Large\bf\fbox{\fbox{#1}}\\[10mm]}
+%                        \end{flushright}}
+\newcommand{\titre}[1] {\section{#1}}
+%
+% ecrit la commande 
+\newcommand{\cmda}[1]    {{\large\bf #1 \\[4mm]}}
+%
+
+%
+% format de la commande
+\newcommand{\fmtcmd}[2] {{\rm Format: \\[2mm] 
+                          \hspace{2cm} \bf #1\hspace{3mm} #2 \\[8mm]}}
+%
+% commande complete
+%
+%
+%--------------------------+
+% MACRO POUR LES EXEMPLES  |
+%--------------------------+
+%
+\newcommand{\exemple}[1]  {{Ex: \hspace{10mm} #1}}%
+%
+%---------------------------------+
+% MACRO POUR LES TITRES SOULIGNES |
+%---------------------------------+
+\newcommand{\titreunderl}[1]{{\rm 
+                             \underline{#1}
+                             \\[4mm]}}
+
+%-------------------------+
+% MACRO POUR LES KEYWORDS |
+%-------------------------+
+%
+\def\keywordlabel#1{\bf #1\hfil\sl}
+\def\keyword{\list{}{\leftmargin 4.7truecm
+                     \labelwidth 3.3truecm\advance\labelwidth-\labelsep
+                     \let\makelabel\keywordlabel}}
+\let\endkeyword\endlist
+\def\keywordlabelshort#1{\bf #1\hfil\sl}
+\def\keywordshort{\list{}{\leftmargin 2truecm
+                     \labelwidth 2truecm\advance\labelwidth-\labelsep
+                     \let\makelabel\keywordlabelshort}}
+\let\endkeywordshort\endlist
+%--------------------------+
+% MACRO POUR LES REMARQUES |
+%--------------------------+
+%\font\mathi=ammi10 at 12pt
+%
+\newcommand{\remarque}[1] {\vspace{8mm}{\normalsize\rm\underline {Remarque:}\nopagebreak
+                             \\[3mm]\it #1 }}
+\newcommand{\remarques}[1] {\vspace{8mm}{\normalsize\rm\underline {Remarques:}\nopagebreak
+                             \\[3mm]\it #1 }}
+
+%-------------------------------------------------+
+% LOGO                                            |
+%-------------------------------------------------+
+
+\def\applic{{\sl Application}}
+\def\applics{{\sl Applications}}
+\def\cmd{{\sl Commande}}
+
+
+%-------------------------------------------------+
+% SEPARATIONS                                 
+%-------------------------------------------------+
+
+
+\def\separation{\vskip.5\baselineskip%
+\penalty-5000%
+}
+\def\bigseparation{\vskip\baselineskip%
+\penalty10000%
+\penalty-5000%
+\penalty10000%
+}
+
+
+%-------------------------------------------------+
+% Parametres                                 
+%-------------------------------------------------+
+
+\newcommand {\docbeginparams} {\separation \subsubsection*{PARAMETRES:} \rm \begin{list}{}{\leftmargin=5.5cm\labelsep=.5cm\labelwidth=3cm\listparindent=0cm}}
+\newcommand {\docbeginparam} {\separation \subsubsection*{PARAMETRE:} \rm \begin{list}{}{\leftmargin=5.5cm\labelsep=.5cm\labelwidth=3cm\listparindent=0cm}}
+
+\newcommand {\docendparam}  {\end{list}}
+\newcommand {\docendparams} {\end{list}}
+
+\newcommand {\itemparam} [2] {\item[{\bf#1\hfill}] {#2}}
+
+
+%-------------------------------------------------+
+% sujet                                 
+%-------------------------------------------------+
+
+\newcommand {\sujet}  [1] {\bigseparation \subsection*{#1}\noindent\par}
+
+%-------------------------------------------------+
+% subsujet                                 
+%-------------------------------------------------+
+
+\newcommand {\subsujet}  [1] {\separation \subsection*{#1}\par}
+
+%-------------------------------------------------+
+% exemple                                 
+%-------------------------------------------------+
+
+\newcommand {\docexemples}  {\separation \subsubsection*{EXEMPLES:}}
+
+%-------------------------------------------------+
+% exemple                                 
+%-------------------------------------------------+
+
+\newcommand {\docexemple}  {\separation \subsubsection*{EXEMPLE:}}
+
+%-------------------------------------------------+
+% indentation                                 
+%-------------------------------------------------+
+
+\newcommand{\docindent}[1]{%
+\begin{list}{}{\leftmargin=2cm}\item {#1}\end{list}}%
+\newcommand{\docindentbold}[1]{%
+\begin{list}{}{\leftmargin=2cm}\item {\bf#1}\end{list}}%
+
+%-------------------------------------------------+
+% variables importantes                                 
+%-------------------------------------------------+
+
+\newcommand {\docbeginvints} {\separation \subsubsection*{VARIABLES INTERACTIVES PRINCIPALES:} \rm \begin{list}{}{\leftmargin=4.5cm\labelsep=.5cm\labelwidth=2cm\listparindent=0cm}}
+\newcommand {\docbeginvress} {\separation \subsubsection*{VARIABLES RESULTATS PRINCIPALES:} \rm \begin{list}{}{\leftmargin=4.5cm\labelsep=.5cm\labelwidth=2cm\listparindent=0cm}}
+\newcommand {\docbeginvint} {\separation \subsubsection*{VARIABLE INTERACTIVE PRINCIPALE:} \rm \begin{list}{}{\leftmargin=4.5cm\labelsep=.5cm\labelwidth=2cm\listparindent=0cm}}
+\newcommand {\docbeginvres} {\separation \subsubsection*{VARIABLE RESULTAT PRINCIPALE:} \rm \begin{list}{}{\leftmargin=4.5cm\labelsep=.5cm\labelwidth=2cm\listparindent=0cm}}
+
+
+\newcommand {\itemvar} [3] {\item[{\bf#1\hfill}] {#2}{#3}}
+\newcommand {\itemvarup} [1] {\item[{\bf#1\hfill}] {Voir plus haut sous "VARIABLES INTERACTIVES PRINCIPALES"}}
+
+\newcommand {\docendvar}  {\end{list}}
+\newcommand {\docendvars} {\end{list}}
+
+%-------------------------------------------------+
+% remarque                                 
+%-------------------------------------------------+
+
+\newcommand {\docremarque} [1] {\separation \subsubsection*{REMARQUE:} {\begin{list}{}{\setlength{\leftmargin}{2cm}}\item{\rm {#1}}\end{list}}}
+
+%-------------------------------------------------+
+% remarques                                 
+%-------------------------------------------------+
+
+\newcommand {\docremarques} [1] {\separation \subsubsection*{REMARQUES:} {\begin{list}{}{\setlength{\leftmargin}{2cm}}\item{\rm {#1}}\end{list}}}
+
+%-------------------------------------------------+
+% description breve                                 
+%-------------------------------------------------+
+
+%\newcommand {\descriptionbreve}  [1] {\rm{#1}}
+\newcommand {\descriptionbreve}  [1] {{\begin{list}{}{\setlength{\leftmargin}{2cm}}\item{\rm {#1}}\end{list}}}
+
+%-------------------------------------------------+
+% description                                  
+%-------------------------------------------------+
+
+\newcommand{\descriptionlongue}[1]{\separation \subsubsection*{DESCRIPTION:}{\begin{list}{}{\setlength{\leftmargin}{2cm}}\item{\rm {#1}}\end{list}}}
+
+\newcommand{\indentdescription}[1]{%
+\begin{list}{}{\leftmargin=2cm}%
+		\item {#1}%
+\end{list}}%
+
+%-------------------------------------------------+
+% Syntaxe                                 
+%-------------------------------------------------+
+
+\newcommand {\docbeginsyntaxe}  {\separation \subsubsection*{SYNTAXE:}  \rm \begin{list}{}{\setlength{\leftmargin}{2cm}}}
+
+\newcommand {\docbeginsyntaxes} {\separation \subsubsection*{SYNTAXES:} \rm \begin{list}{}{\setlength{\leftmargin}{2cm}}}
+
+\newcommand {\itemsyntaxe} [1] {\item {#1}}
+
+\newcommand {\docendsyntaxe}  {\end{list}}
+\newcommand {\docendsyntaxes} {\end{list}}
+
+%
+%--------------------------------+
+% Macro pour les  qualificateurs 
+%--------------------------------+
+
+\def\titrquas{\separation \subsubsection*{QUALIFICATEURS A DISPOSITION:}}
+\def\titrqua{\separation \subsubsection*{QUALIFICATEUR A DISPOSITION:}}
+
+\newlength{\largqual}%
+\addtolength{\largqual}{-2cm}%
+
+\newcommand{\qualif}[2]{%
+\begin{list}{}{\leftmargin=2cm\topsep=2pt%
+		\partopsep=0pt}%
+		\penalty-1000\item {\bf #1}\penalty10000%
+\end{list}%
+\begin{list}{}{\leftmargin=3cm\topsep=1pt%
+		\partopsep=0pt}%
+		\penalty10000\item {    #2}%
+\end{list}}%
+
+\newcommand{\indentqualif}[1]{%
+\begin{list}{}{\leftmargin=3cm\topsep=1pt%
+		\partopsep=0pt}%
+		\penalty10000\item {    #1}%
+\end{list}}%
+
+
+%-------------------------------------------------+
+% MACRO POUR LES PARAMETRES DE LA SECTION GLOBALE |
+%-------------------------------------------------+
+%
+\newcommand {\lkw} [3] {{#1} & {#2} & {#3}\\ \hline}
+\newcommand {\shortvar} [6] {{#1} & {#2} & {#3} & {#4} & {#5} & {#6}\\ \hline}
+\def\titrpar{\rm \large \underline{Variables du bloc utilisées par cette commande}}
+\newcommand{\titrtabpar}{\multicolumn{1}{l}{\large Variables} 
+                  &\multicolumn{1}{c}{\large Mode} 
+                  &\multicolumn{1}{l}{\large Description} \\[1mm] \hline}
+\newcommand{\titrtabparsh}{\multicolumn{1}{l}{\large Variables} 
+                  &\multicolumn{1}{c}{\large Mode}
+		  &\multicolumn{1}{l}{\large Variables} 
+                  &\multicolumn{1}{c}{\large Mode}
+		  &\multicolumn{1}{l}{\large Variables} 
+                  &\multicolumn{1}{c}{\large Mode} \\[1mm] \hline}
+
+\makeatletter
+\newcommand{\titrevar}{%
+	\@startsection%
+		{section}%
+		{1}%
+		{0pt}%
+		{10ex plus 1ex}%
+		{2ex plus .2ex}%
+		{\raggedright\large\bf}}
+\makeatother
+
+

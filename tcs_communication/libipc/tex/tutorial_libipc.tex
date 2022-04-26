@@ -1,0 +1,653 @@
+\input cmd
+%\font\titr=cmr10 scaled 4233
+%\font\auteur=cmr10 at 17.28pt
+%\font\dat=cmr10 at 14.4pt
+
+\title{\Huge "libipc.a" \\[10mm]Le tutorial}
+\author{\LARGE Synchronisation Client-Serveur\hfil}
+\date{Luc Weber\\Observatoire de Genève\\ \today}
+
+\begin{document}
+
+\raggedbottom
+\maketitle
+
+\setcounter{page}{0}\thispagestyle{empty}~\cleardoublepage
+\tableofcontents
+\cleardoublepage
+
+\chapter{INTRODUCTION}
+Le but de ce manuel est de comprendre le fonctionnement de la synchronisation de Inter en mode Client--Serveur et de montrer l'utilisation de la librairie "libipc.a" pour la fabrication de serveurs.
+
+\medskip
+La méthode de synchronisation est basée sur le système de communication interprocess décrit dans le manuel Sun: "Programmer's Overview Utilities \& Libraries" au chapitre "System V Interprocess Communication Facilities". Cet ouvrage sert de référence à ce tutorial.
+
+\medskip
+Les outils utilisés sont les sémaphores pour la synchronisation, la mémoire partagée (shared memory) pour le passages des commandes avec leurs paramètres, le retour des résultats de ces commandes et la mise en commun de zone de donnée (binaire réel sur 4 bytes). Les alarmes sont gérées au moyen de la fonction kill().
+
+\medskip
+La librairie "libipc.a" est construite à partir de "libipc.c" qui contient tout les appels de base, en C, permettant de construire un système de communication entre un client et un serveur et de libipcf.c qui est la couche interface entre le fortran et le C. Cette couche est plus évoluée car elle comporte plusieurs macro--fonctions, notament pour les phases d'initialisations et peut ainsi servir d'exemple pour la construction de client et serveur en C.
+
+\medskip
+Les fonctions sont décrites sans leurs arguments, la description plus détaillées se trouvant dans le code.
+
+\chapter{PRINCIPES DE BASE}
+
+\section{Fonctionnement des sémaphores}
+Le sémaphore est un objet informatique se présentant (en schématisant) sous la forme d'une variable commune aux process s'y intéressant. Cet objet à deux compteurs associés \verb#NCNT# et \verb#ZCNT#. 
+
+\medskip
+Un sémaphore est créé en donnant un identificateur (de type entier) puis est accédé au moyen du descripteur (de type entier) retourné lors de sa création.
+
+\medskip
+Les propriétés des sémaphores sont les suivantes:
+\begin{itemize}
+\item Un sémaphore supporte les opérations d'initialisations à une valeur plus grande ou égale à zéro, ainsi que les opérations d'incrémentations et de décrémentations.
+\item Si la valeur d'un sémaphore est décrémentée alors que le sémaphore vaut zéro, le process exécutant cette opération est mis en attente jusqu'a moment où un autre process incrémente le sémaphore. En cas de mise en attente, le compteur NCNT est incrémenté. Il totalise le nombre de process en attente.
+\item Un process peut être en attente sur la valeur zéro d'un sémaphore. Dans ce cas c'est le compteur ZCNT qui totalise le nombre de process en attente.
+\item Les process en attente sont réactivés dans leurs ordres d'arrivée (FIFO)
+\item Un process en attente est réactivé lorsque le sémaphore à une valeur supérieur ou égales à zéro ou lorsque le process reçoit un signal ou lorsque que le sémaphore est détruit.
+\end{itemize}
+
+\section{Fonctionnement de la mémoire partagée}
+La mémoire partagée est une zone de mémoire commune allouée dynamiquement au run--time par un ensemble de process. Chaque process peut y lire ou y écrire des données. 
+
+ 
+\medskip
+La mémoire partagée est allouée en donnant un identificateur et une taille, puis est accédée au moyen du pointeur (de type char) retourné lors de sa création. 
+
+\medskip
+La taille de la zone allouée doit être la même sur tous les process.
+
+
+
+\section{Fonctionnement des signaux}
+
+Les signaux sont émis au moyen de la fonction "kill()" ou de la commande "kill". Ils sont émis vers des process dont on connaît le Process IDentifier (PID), ou sur le process lui--même lors de l'utilisation de Timers (gestion des time--out). Les process désirant réagir aux signaux doivent enregistrer un "handler de signaux" dans leur code au moyen de la fonction "signal()". Le "handler de signaux" est une fonction qui est appelée lorsqu'un signal survient. Une fois cette fonction terminée, le process continue là où il avait été interrompu.
+
+\medskip
+La fonction "kill()" utilisée avec le signal 0, permet de tester si un process est vivant ou non.
+
+\chapter{UTILISATION DE LA LIBRAIRIE}
+
+\section{Utilisation de la mémoire partagée pour le passage des commandes}
+
+La librairie libipc.a utilise une zone de mémoire partagée. Elle est décrite dans le fichier "ipcdef.h" (Actuellement sous \$INTERHOME/../incl). Elle définis la structure nommé "block" dans "libipc.c" et "libipcf.c". Nous appellerons cette zone: "le bloc de communication".
+
+Son contenu est le suivant:
+
+\begin{verbatim}
+#define NB_KW_MAX               100
+#define KW_SIZE                 12
+#define CONTENT_SIZE            128
+
+struct key_rec  {
+        char    key[KW_SIZE];
+        char    content[CONTENT_SIZE];
+        };
+
+struct  block_kw{
+        int             pid_server;
+        int             pid_client;
+        int             ackno;
+        int             stat_server;
+        int             err_server;
+        char            err_code[80];
+        char            current_cmd[20];
+        char            err_str_server[256];
+        struct key_rec  line[NB_KW_MAX];
+        };
+\end{verbatim}
+
+Il est utilisé:
+ 
+\begin{enumerate}
+\item pour passer des commandes et des paramètres entre un client et un serveur (\verb#block->line#).
+\item pour recevoir les résultats facultatifs des commandes provenant du serveur(\verb#block->line#).
+\item pour mémoriser les PID des intervenants, c'est à dire le client courant et le serveur \\
+(\verb#block->pid_client# et \verb#block->pid_server#).
+\item pour indiquer le type de communication: avec ou sans attente (1 ou 0 dans \verb#block->ackno#).
+\item pour retourner le status d'une commande ainsi que le message d'erreur (s'il y en a un) depuis serveur vers son client (\verb#block->err_server# et \verb#block->err_str_server#). Le code de l'erreur se trouve dans {\tt block->err\_code}, le nom de la commande courante (inter) se trouve dans {\tt block->current\_cmd}
+\item pour tester la survie d'un même serveur entre le début et la fin d'une exécution de commande (\verb#block->stat_server#).
+\end{enumerate}
+
+La structure "\verb#line#" est composée de 2 éléments, le mot--clé "\verb#line->key#" et son contenu "\verb#line->content#", leur nombre et leur taille sont limités de manière statique pour assurer l'intégrité de la taille du bloc de communication avec tout les programmes qui l'utilise. 
+Le nombre de mots--clé est limité à "\verb#NB_KW_MAX#". Le nom des mots--clé est libre, il ne doit pas comporter plus de "\verb#KW_SIZE#" caractères (NULL compris), seul le mot--clé contenant le nom de la commande est réservé, il doit s'appeler "COMMAND". Le contenu des mots--clé est uniquement de type caractère et leur longueur ne doit pas excéder "\verb#CONTENT_SIZE#" (NULL compris).
+
+\medskip
+Un bloc de communication est créé pour chaque serveur. Du point de vue d'un client, le bloc de communication et le serveur sont considérés comme une ressource unique. Le système de synchronisation basé sur les sémaphores permet d'empêcher l'accès d'une ressource par plusieurs client (voir plus bas).
+
+\medskip
+Le principe d'envoi de commande est le suivant:
+\begin{enumerate}
+\item le client vide le bloc de communication.  
+\item le client place la commande destinée au serveur sous le mot--clé réservé "\verb#COMMAND#".
+\item le client place les paramètres facultatifs.
+\item le client passe la main au serveur (voir plus bas sous "Modes de synchronisation").
+\item Le serveur cherche le mot--clé "\verb#COMMAND#" et considère son contenu comme une commande qu'il exécute.
+\item Le serveur cherche les mots--clé facultatifs.\\[5mm]
+Ensuite, lorsque le serveur à terminé et si le client est en attente de résultats:\\
+\item Le serveur vide le bloc de communication et y place les résultats sous la forme de mots--clé avec leur contenu. 
+\item Le serveur passe la main au client (voir plus bas sous "Modes de synchronisation")
+\item Le client récupère les résultats.
+\end{enumerate}
+
+\section{Opérations de base sur le bloc de communication}
+
+\verb#ini_shm_block_kw()# vidage du bloc
+
+\verb#put_shm_block_kw()# stockage d'un mot--clé avec son contenu
+
+\verb#get_shm_block_kw()# lecture du contenu d'un mot--clé 
+
+\section{Principe de la synchronisation}
+Les sémaphores permettent de synchroniser l'accès à une ressource en bloquant les process désirant l'utiliser. Il faut toutefois remarquer qu'un process peut accéder une ressource sans utiliser ce mode de synchronisation. Cela peut être utile pour communiquer avec un process exécutant une tache en arrière plan (voir plus loin sous "communication asynchrone"), mais dans la plupart des cas les accès asynchrones généreront des situations illégales difficile à contrôler ou à identifier. 
+
+\bigskip
+La synchronisation utilise 3 sémaphores que l'on appelle \verb:SEM0:, \verb:SEM1: et \verb:SEM2:. Ils ont les fonctions suivantes:
+
+\subsection{Fonctionnalités de SEM0}
+\verb:SEM0: permet de gérer l'accès à la ressource. Il est initialisé à 1 par le serveur, indiquant par là que la ressource est libre. Chaque client voulant accéder la ressource doit commencer par décrémenter ce sémaphore avant de d'effectuer une quelconque opération sur le bloc de communication ou sur les autres sémaphores. Si la ressource est occupée, le client et mis en attente et \verb:NCNT0: est incrémenté d'une unité. 
+
+Selon le mode de synchronisation, en fin de travail, c'est le serveur ou le client qui incrémente \verb:SEM0: pour libérer l'accès à la ressource pour le client suivant.
+
+\subsection{Fonctionnalités de SEM1}
+\verb:SEM1: bloque le serveur tant que le bloc de communication ne contient rien de valide. Il est initialisé à zéro par le serveur qui se met tout de suite en attente par une décrémentation (dans ce cas \verb:NCNT1=1:). C'est le client qui incrémente ce sémaphore lorsqu'il a obtenu l'accès à la ressource et remplis le bloc de communication. 
+
+Le serveur se remet en attente automatiquement en décrémentant \verb:SEM1: en fin de travail
+
+\subsection{Fonctionnalités de SEM2}
+\verb:SEM2: indique si le serveur est en cours d'exécution. Lorsqu'il vaut zéro, le serveur ne travaille pas, lorsqu'il vaut 1, il travaille. C'est toujours le client qui le pose à 1 avant d'ordonner l'exécution d'une commande au serveur en incrémentant le \verb:SEM1:. C'est le serveur qui le pose à zéro à la fin d'une exécution. Si le client veut attendre la fin d'une exécution, il se met en attente de valeur zéro sur ce sémaphore (dans ce cas \verb:ZCNT2=1:). 
+
+Ce sémaphore est utilisé lors des opérations d'initialisation d'un serveur où un serveur peut savoir s'il a été tué durant l'exécution d'une commande (\verb:SEM2=1:) et ainsi le signaler au client qui peut être toujours en attente.
+
+
+\section{Opérations de base sur les sémaphores}
+Les fonctions des bases sont les suivantes:
+
+\verb#inc_sem()# incrémentation d'un sémaphore
+
+\verb#dec_sem()# décrémentation d'un sémaphore
+
+\verb#dec_sem_zero()# décrémentation du sémaphore 0 (pour le client)
+
+\verb#setval_sem()# initialisation de la valeur d'un sémaphore
+
+\verb#get_cmd_sem()# lit la valeur d'un sémaphore ou d'un compteur
+
+\verb#wait_for_sem()# attente sur la valeur zéro d'un sémaphore
+
+\verb#send_command()# permet d'envoyer une commande sans argument de manière simplifiée.
+
+\section{Initialisation des sémaphores et du bloc de communication}
+
+L'initialisation se fait avec la fonction "\verb#init_sem_block()#" qui retourne un pointeur sur le block de communication et un descripteur de sémaphore. C'est au serveur de fournir les identificateurs nécessaires pour cette initialisation. Ils sont déclarés de manière globale dans libipc.c et donc le serveur doit les déclarer de manière externe et les initialiser avant l'appel à la fonction.
+
+Le code serveur ressemble à:
+
+\begin{verbatim}
+#include <stdio.h>
+#include <ipcdef.h>
+
+int             semid;        /* descripteur semaphore */
+struct block_kw *block;       /* pointeur sur bloc de communication*/
+
+extern int      sem_key;      /* identificateur de semaphore */
+extern int      block_key;    /* identificateur de memoire pour bloc */
+...
+main()
+{
+      ...
+      sem_key   = 1001;
+      block_key = 1002;
+      if(init_sem_block(&semid, &block) < 0){
+         ...
+      }
+      ...
+}
+\end{verbatim}
+
+
+
+\section{Partage de données, Matrice partagée}
+En plus du bloc de communication, une zone de mémoire partagée peut être allouée pour mettre en commun entre les clients et les serveurs un tableau de nombres flottants que l'on appelle la matrice partagée. 
+
+\subsection{Initialisation de la matrice partagée}
+
+L'initialisation se fait avec la fonction "\verb#alloc_matrix_shm()#" qui demande une taille en pixels (1[pixel]$=$4[bytes]) et retourne un pointeur de type flottant.  
+
+\medskip
+Cette zone est allouée indifféremment par le client ou le serveur. Mais toutefois, il faut que la taille de la zone soit donnée identique des 2 côtés. Dans le cas ou le client ne connaît pas au préalable la taille de la zone, il peut questionner le serveur pour la connaître. Dans ce cas l'initialisation se fait avec la fonction "\verb#ask_and_init_shm()#". Le block de communication et les sémaphores doivent être déjà initialisés.
+
+Le code serveur ressemble à:
+
+\begin{verbatim}
+#include <stdio.h>
+#include <ipcdef.h>
+
+float           *ptr;         /* pointeur sur matrice partagee */
+int             size;         /* taille de la matrice partagee */
+
+extern int      matrix_key;   /* identificateur de memoire pour matrice */
+...
+main()
+{
+      ...
+      matrix_key = 1000;
+      if ((int)(ptr=(float *)alloc_matrix_shm(size))==-1){
+         ...
+      }
+      ...
+}
+\end{verbatim}
+
+\medskip
+Remarque: la fonction initialise la matrice partagée par segments de 1[MB]. Par exemple, si on désire une matrice partagée de 1[Mpixels], 4 segments de mémoires partagées contigus seront alloués. Dans ce cas, il faut donner 4 identificateurs. La fonction \verb#alloc_matrix_shm()# s'en charge de manière automatique en décrémentant la valeur de l'identificateur de base d'une unité pour chaque segment. Dans cette exemple, les identificateurs seront: 1000, 999, 998 et 997. On remarque donc que l'identificateur du bloc de communication doit être choisi de telle sorte qu'il n'interfère pas avec les identificateurs calculés automatiquement.
+
+
+\section{Modes de synchronisations}
+
+Les modes des synchronisation sont les suivants. Pour plus de clarté les status de retours ne sont pas testés.
+
+\subsection{Communication synchrone sans attente}
+Ce mode permet de lancer une commande au serveur sans attendre la fin de son exécution. Les étapes sont les suivantes:
+
+\bigskip
+Le client se met en attente sur la ressource
+
+\verb#          dec_sem_zero(semid, block, timeout);	#
+
+il remplis le bloc de communication
+
+\verb#          ini_shm_block_kw(block);	#
+
+\verb#          put_shm_block_kw(block, "COMMAND", cmd);	#
+
+\verb#          put_shm_block_kw(block, key, content);	#
+
+il signale qu'il ne reste pas en attente sur la fin de l'exécution mais que le serveur devra rendra la main
+
+\verb#          block->ackno = 0;		#
+
+il ordonne au serveur d'exécuter la commande "cmd"
+
+\verb#          setval_sem(semid, 2, 1);	#
+
+\verb#          inc_sem(semid, 1);	#
+
+\subsubsection{Appel équivalent simplifié}
+L'appel équivalent simplifié pour une commande sans paramètre est:
+
+\bigskip
+\verb#          send_command(semid, block, cmd, NO_FORK_PROCESS,#
+
+\verb#                              NO_WAIT_FOR_ANSWER, timeout);#
+
+
+
+\subsection{Communication synchrone avec attente}
+Ce mode permet de lancer une commande au serveur puis attendre la fin de son exécution et pouvoir récupérer des résultats facultatifs. Les étapes sont les suivantes:
+
+\bigskip
+Le client se met en attente sur la ressource
+
+\verb#          dec_sem_zero(semid, block, timeout);	#
+
+il remplis le bloc de communication
+
+\verb#          ini_shm_block_kw(block);	#
+
+\verb#          put_shm_block_kw(block, "COMMAND", cmd);	#
+
+\verb#          put_shm_block_kw(block, key, content);	#
+
+il signale qu'il reste en attente sur la fin de l'exécution, donc le serveur ne devra pas rendre la main
+
+\verb#          block->ackno = 1;		#
+
+il ordonne au serveur d'exécuter la commande "cmd"
+
+\verb#          setval_sem(semid, 2, 1);	#
+
+\verb#          inc_sem(semid, 1);	#
+
+il se met en attente sur la fin de l'exécution
+
+\verb#          wait_for_sem(semid, 2, timeout);	#
+
+il récupère (facultativement) des paramètres en retour
+
+\verb#          get_shm_block_kw(block, key, content);	#
+
+il libère la ressource
+
+\verb#          inc_sem(semid, 0);#
+
+
+\subsubsection{Appel équivalent simplifié}
+L'appel équivalent simplifié pour une commande sans paramètre est:
+
+\bigskip
+\verb#          send_command(semid, block, cmd, NO_FORK_PROCESS,#
+
+\verb#                              WAIT_FOR_ANSWER, timeout);#
+
+puis le client se met en attente sur la fin de l'exécution
+
+\verb#          wait_for_sem(semid, 2, timeout);	#
+
+il récupère (facultativement) des paramètres en retour
+
+\verb#          get_shm_block_kw(block, key, content);	#
+
+il libère la ressource
+
+\verb#           inc_sem(semid,0);#
+
+\subsection{Communication asynchrone}
+Ce mode est à utilisé avec la plus grande prudence. Il consiste à envoyer des paramètres à un serveur exécutant une tache en arrière plan sans utiliser les sémaphores.
+
+Par exemple, on peut imaginer un serveur recevant un ordre sans attente qui va le faire exécuter une boucle illimitée. Un contrôle de sa tache peut être fait si le serveur lit le bloc de communication durant son processus. Ainsi un ou plusieurs clients (attention, cela se passe sans synchronisation) peut écrire des valeurs dans le bloc de communication permettant d'influencer le comportement du serveur.
+
+Dans l'exemple qui suit, on voit l'initialisation du processus, où on lance la commande "\verb#do_for_ever#" avec le flag "\verb#OK#". Le serveur recevant cette commande partira et l'exécutera tant que flag sera égal à "\verb#OK#"
+\begin{verbatim}
+          dec_sem_zero(semid,block,timeout);	
+          ini_shm_block_kw(block);	
+          put_shm_block_kw(block,"COMMAND","do_for_ever");	
+          put_shm_block_kw(block,"FLAG","OK");	
+          block->ackno = 0;		
+          setval_sem(semid, 2, 1);	
+          inc_sem(semid, 1);	
+\end{verbatim}
+plus tard, pour terminer le processus bouclant, le client, ou un autre client, exécute par exemple:
+\begin{verbatim}
+          ini_shm_block_kw(block);	
+          put_shm_block_kw(block,"FLAG","STOP");	
+\end{verbatim}
+
+\section{Status de retour}
+
+D'une manière générale, les fonctions de libipc.c retournent (pour plus de détails, regarder directement le code):
+\begin{itemize}
+\item un status supérieur ou égal à zéro en cas de succès.
+\item un status égal à -1 en cas de problème système (ex: sémaphore détruit) ou problème d'initialisation (ex: bloc de communication inexistant).
+\item un status égal à -2 en cas de time--out lors d'une attente dans les fonctions gérant le time--out. 
+\end{itemize}
+
+\medskip
+De plus:
+
+\medskip
+Le client peut détecter si le serveur a été interrompu par une erreur en testant si la valeur de \verb#block->err_server# vaut 1. Dans ce cas, le message contenu dans \verb#block->err_str_server# est celui qui a été affiché sur le serveur.
+
+\medskip
+Le client peut détecter si le serveur a été tué durant l'exécution d'une commande en testant si la valeur de \verb#block->stat_server# vaut 2.
+
+\medskip
+Le client peut détecter si la commande en cours d'exécution sur le serveur a été interrompue par un $<$CTRL$>$--C  en testant si la valeur de \verb#block->err_server# vaut 3.
+
+\section{Time--Out}
+Les time--out permettent de ne pas laisser un process bloqué en attente indéfiniment. Pour que le système fonctionne, il faut que le serveur déclare un handler pour le signal d'alarme. Par exemple:
+
+\begin{verbatim}
+#include <stdio.h>
+#include <signal.h>
+
+...
+
+void
+my_handler(sig)
+int     sig;
+{
+        fprintf(stderr,"timeout\n");
+}
+
+main()
+{
+	int    timeout = 4;
+
+        signal(SIGALRM, my_handler);
+        ...
+        dec_sem_zero(semid, block, timeout);
+        ...
+}
+\end{verbatim}
+
+Les fonctions suivantes gèrent les time--out, ce sont:
+
+\medskip
+\verb#wait_for_sem()#, \verb#dec_sem_zero()#, \verb#dec_sem()#, \verb#get_server_value()#, \verb#ask_and_init_shm()#, et\\ \verb#send_command()#.
+
+\medskip
+Ces fonctions possèdent un ou deux arguments indiquant la ou les valeurs de time--out. Un time--out indique, en secondes (entières), le temps maximum que passe un client à attendre soit que le client est prêt, soit que le client finisse d'exécuter sa commande. 
+
+Par exemple, "\verb#dec_sem_zero()#" et "\verb#dec_sem()#" ont un time--out qui indique le temps d'attente pour qu'une ressource soit accessible, le time--out de "\verb#wait_for_sem()#" indique le temps d'attente pour la fin d'une exécution, et pour "\verb#get_server_value()#", "\verb#ask_and_init_shm()#" et "\verb#send_command()#" le premier time--out indique l'attente maximum pour la ressource et le deuxième le temps d'attente pour l'exécution.
+
+Dans le dernier cas et en cas d'erreur, on ne sait pas si c'est le premier time--out qui a fonctionné ou le second.
+
+\subsection{Stabilisation de la synchronisation après un time--out}
+Le problème est délicat lorsqu'un client est en attente de fin d'exécution et que survient un time--out, il ne sait pas si le serveur est mort ou ralenti (stoppé par exemple). Puisque dans un cas d'attente, c'est le client qui doit libérer le serveur (incrémentation du SEM0), il faut que cette opération soit exécutée seulement sous certaines conditions pour ne pas générer de situations illégales (SEMn$>$1).
+
+\medskip
+S'il est mort, il n'y a pas de problème, on ne libère pas le serveur, car le serveur se réinitialisera correctement lors de sa remise en marche.
+
+\medskip
+S'il n'est pas mort, il faut faire terminer le serveur pour qu'il se retrouve dans un état stable, prêt à accepter une nouvelle commande. 
+Le meilleur moyen à disposition pour réaliser ceci est de lui envoyer un signal d'interruption (dans ce cas le serveur doit être capable de gérer ce signal) puis s'assurer que le client soit bien le client qui avait envoyé la commande (test de concordance des PIDs) et enfin, libérer le serveur uniquement si le SEM0 est bien à zéro. 
+Cet ensemble de tests permet de gérer les interactions extérieures que pourrait avoir effectué l'utilisateur sur les sémaphores (reset par exemple).
+
+\medskip
+Le code correspondant à l'interruption du client par un time--out est par exemple:
+\begin{verbatim}
+          timeout=30.;
+          if((stat=wait_for_sem(semid, 2, timeout))==-2){
+              if(kill(block->pid_server, 0)==0){
+                  kill(block->pid_server, SIGINT);
+                  if(getpid()==block->pid_client){
+                      if(get_cmd_sem(semid, 0, GETVAL)==0)inc_sem(semid, 0);
+                  }
+              }
+              break;
+          }
+\end{verbatim}
+
+\section{Attentes non bloquantes}
+Les attentes non bloquantes permettent de tester si une ressource est accessible sans stopper le process demandeur. Elles retournent un status négatif si la ressource est inaccessible. Ce sont:
+
+\bigskip
+\verb#wait_for_sem_nowait()# utilisée comme \verb#wait_for_sem()#
+
+\verb#dec_sem_nowait()# utilisée comme \verb#dec_sem()#
+
+\section{Déconnection}
+Les fonctions suivantes permettent de déconnecter les objets liés à la communication:
+
+\bigskip
+\verb#discard_semaphore_and_shm()# détruit les sémaphore et le bloc de communication.
+
+\verb#kill_matrix_shm()# détruit la matrice partagée.
+
+\section{Autres fonctions}
+
+\verb#get_server_value()# permet de trouver le résultat d'une expression lancée sur le serveur.
+
+\verb#send_ctrlc()# envoie un $<$ctrl$>$--C au serveur.
+
+\verb#send_command_ready()# envoie une commande au serveur alors que le client à déjà la main.
+
+\verb#show_shm_block_kw()# affiche le contenu du bloc de communication.
+
+\section{Garde--fous}
+Le fait d'incrémenter un sémaphore alors que sa valeur vaut déjà 1 génère un situation illégale, car dans ce cas, 2 clients peuvent se partager simultanément la ressource.
+
+Ainsi les commandes effectuant des incrémentations de sémaphores refuse de faire passer un sémaphore à une valeur supérieure à 1. Dans ce cas, un message est envoyé à l'écran et aucune erreur n'est générée.
+
+\bigskip
+Un autre garde--fou est activé lorsque le client essaye de libérer son serveur alors que celui--ci n'est pas en attente, s'il est mort par exemple. Dans ce cas un message est envoyé qui demande l'aide manuelle de l'utilisateur pour analyser le problème.
+
+\section{Utilisation dans le système}
+Les clients, les serveurs et la librairie libipc doivent utiliser le même fichier include "\verb#ipcdef.h#".
+
+\bigskip
+Les clients et les serveurs se link avec la librairie \verb#libipc.a#.
+
+\bigskip
+La commande système \verb#ipcs# permet de contrôler le status des sémaphores et du bloc de communication
+
+\bigskip
+L'utilitaire \verb#ipcstat# permet de visualiser l'état des sémaphores et le contenu du bloc de communication.
+
+\section{Exemple}
+Dans l'exemple ci-dessous, le client se connecte sur un inter serveur standard (key=1000) et lui ordonne de remplir la matrice 1 qui est commune.
+A la fin de l'exécution, le client affiche une partie du contenu de la matrice partagée avant de libérer la ressource.
+
+\begin{verbatim}
+#include <stdio.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
+#include "ipcdef.h"
+
+float           *ptr;           /* pointeur sur matrice partagee */
+int             semid;          /* descripteur semaphore */
+struct block_kw *block;         /* pointeur sur bloc de communication */
+
+extern int      sem_key;        /* identificateur de semaphore */
+extern int      block_key;      /* identificateur de memoire pour bloc */
+extern int      matrix_key;     /* identificateur de memoire pour matrice */
+
+void
+my_handler(sig)
+int        sig;
+{
+        fprintf(stderr,"timeout\n");
+}
+main()
+{
+        int         i;
+        int         timeout = 4;
+        int         stat;
+
+        signal(SIGALRM, my_handler);
+
+        sem_key = 1001;
+        block_key = 1002;
+        if (init_sem_block(&semid, &block) < 0) {
+                printf("erreur allocation semaphore ou bloc");
+                exit();
+        }
+
+        matrix_key = 1000;
+        if (ask_and_init_shm(semid,block,&ptr,0,0) == -1) {
+                printf("erreur allocation matrice partagée");
+                exit();
+        }
+        dec_sem_zero(semid, block, timeout);
+        ini_shm_block_kw(block);
+        put_shm_block_kw(block, "COMMAND", "[1](:,:)=setv(1,nx*ny)");
+        block->ackno = 1;
+        setval_sem(semid, 2, 1);
+        inc_sem(semid, 1);
+
+        if ((stat = wait_for_sem(semid, 2, timeout)) == -2) {
+                if (kill(block->pid_server, 0) == 0) {
+                        kill(block->pid_server, SIGINT);
+                        if (getpid() == block->pid_client) {
+                                if (get_cmd_sem(semid, 0, GETVAL) == 0)
+                                        inc_sem(semid, 0);
+                        }
+                }
+                exit();
+        }
+
+        for(i=0;i<10;i++)printf("%f\n",*(ptr+i));
+        inc_sem(semid, 0);
+}
+\end{verbatim}
+
+\chapter{MANUEL DE RÉFÉRENCE}
+
+\newpage\input {tmp/alloc_block_shm.tex}
+\newpage\input {tmp/alloc_matrix_shm.tex}
+\newpage\input {tmp/ask_and_init_shm.tex}
+\newpage\input {tmp/ask_and_init_shm_.tex}
+\newpage\input {tmp/create_semaphore.tex}
+\newpage\input {tmp/dec_sem.tex}
+\newpage\input {tmp/dec_sem_nowait.tex}
+\newpage\input {tmp/dec_sem_zero.tex}
+\newpage\input {tmp/decremente_sem_.tex}
+\newpage\input {tmp/dettach_mat_shm_.tex}
+\newpage\input {tmp/dettach_matrix_shm.tex}
+\newpage\input {tmp/discard_semaphore_and_shm.tex}
+\newpage\input {tmp/discard_semaphore_and_shm_.tex}
+\newpage\input {tmp/get_block_shm.tex}
+\newpage\input {tmp/get_cmd_sem.tex}
+\newpage\input {tmp/get_key_.tex}
+\newpage\input {tmp/get_ncount_sem_.tex}
+\newpage\input {tmp/get_sem_block.tex}
+\newpage\input {tmp/get_semaphore.tex}
+\newpage\input {tmp/get_server_value.tex}
+\newpage\input {tmp/get_shm_ackno_.tex}
+\newpage\input {tmp/get_shm_block_kw.tex}
+\newpage\input {tmp/get_shm_current_cmd_.tex}
+\newpage\input {tmp/get_shm_err_.tex}
+\newpage\input {tmp/get_shm_err_code_.tex}
+\newpage\input {tmp/get_shm_kw_.tex}
+\newpage\input {tmp/get_shm_pid_client_.tex}
+\newpage\input {tmp/get_shm_stat_.tex}
+\newpage\input {tmp/get_shm_str_err_.tex}
+\newpage\input {tmp/get_val_sem_.tex}
+\newpage\input {tmp/inc_sem.tex}
+\newpage\input {tmp/incremente_sem_.tex}
+\newpage\input {tmp/ini_shm_block_kw.tex}
+\newpage\input {tmp/ini_shm_kw_.tex}
+\newpage\input {tmp/init_ipc_client_.tex}
+\newpage\input {tmp/init_ipc_remote_client_.tex}
+\newpage\input {tmp/init_ipc_server_.tex}
+\newpage\input {tmp/init_sem_block.tex}
+\newpage\input {tmp/init_shm_.tex}
+\newpage\input {tmp/ipc_alive_.tex}
+\newpage\input {tmp/kill_block_shm.tex}
+\newpage\input {tmp/kill_mat_shm_.tex}
+\newpage\input {tmp/kill_matrix_shm.tex}
+\newpage\input {tmp/kill_semaphore.tex}
+\newpage\input {tmp/my_getdate.tex}
+\newpage\input {tmp/print_delay.tex}
+\newpage\input {tmp/put_shm_block_kw.tex}
+\newpage\input {tmp/put_shm_current_cmd_.tex}
+\newpage\input {tmp/put_shm_err_.tex}
+\newpage\input {tmp/put_shm_err_code_.tex}
+\newpage\input {tmp/put_shm_kw_.tex}
+\newpage\input {tmp/put_shm_stat_.tex}
+\newpage\input {tmp/put_shm_str_err_.tex}
+\newpage\input {tmp/select_for_remote_.tex}
+\newpage\input {tmp/select_key_semid_block.tex}
+\newpage\input {tmp/select_matrix_key_.tex}
+\newpage\input {tmp/select_semid_block_.tex}
+\newpage\input {tmp/send_cmd_.tex}
+\newpage\input {tmp/send_cmd_no_wait_.tex}
+\newpage\input {tmp/send_command.tex}
+\newpage\input {tmp/send_command_ready.tex}
+\newpage\input {tmp/send_ctrlc.tex}
+\newpage\input {tmp/send_signal_.tex}
+\newpage\input {tmp/server_free_ressource.tex}
+\newpage\input {tmp/server_free_ressource_.tex}
+\newpage\input {tmp/set_sem_.tex}
+\newpage\input {tmp/setval_sem.tex}
+\newpage\input {tmp/shm_ack_.tex}
+\newpage\input {tmp/shm_cont_.tex}
+\newpage\input {tmp/shm_free_.tex}
+\newpage\input {tmp/shm_wack_.tex}
+\newpage\input {tmp/shm_wait_.tex}
+\newpage\input {tmp/sho_shm_kw_.tex}
+\newpage\input {tmp/show_shm_block_kw.tex}
+\newpage\input {tmp/test_inc_sem.tex}
+\newpage\input {tmp/wait_for_sem.tex}
+\newpage\input {tmp/wait_for_sem_nowait.tex}
+\newpage\input {tmp/write_read_to_ipc_server.tex}
+\newpage\input {tmp/write_to_ipc_server.tex}
+
+
+\end{document}

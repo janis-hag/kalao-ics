@@ -1,0 +1,648 @@
+\documentstyle[11pt,a4wide,fancybox,11pt,french]{article}
+\def\inter{{\bf Inter}}
+\def\iserver{{\bf Iserver}}
+\def\oserver{{\bf Oserver}}
+\def\idebug{{\bf Idebug}}
+\def\repar{{\bf répartiteur}}
+\addtolength{\topmargin}{-10mm}
+\addtolength{\textheight}{15mm}
+\addtolength{\oddsidemargin}{-5mm}
+%\addtolength{\textwidth}{25mm}
+\setlength{\textwidth}{17cm}
+\begin{document}
+
+\def\paquet#1{\fbox{\parbox{50mm}{\centering{#1}}}}
+
+%\title{{\bf Communication Inter--oserver--transputer}\\
+
+
+\title{{\bf Geneva Observatory Protocol\\"GOP"\\\&\\Application à OSERVER}\\
+       {\large modifié d'après la réunion du 12 Avril 1994 et 20 Avril 1994}\\
+       {}}
+\author{G.~ Simond -- L.~ Weber\\Observatoire de Genève}
+\maketitle
+\vspace{1cm}
+\tableofcontents
+
+\vspace{1cm}\hrule\vspace{2cm}
+
+\section{INTRODUCTION}
+Le protocole de communication décrit ci-dessous a pour but de permettre l'envoi de courts messages aussi bien que de grandes quantités de données entre deux processus s'exécutant soit sur la même machine, soit entre deux machines reliée par réseau.\\
+
+\noindent
+Il est basé sur des protocoles bas niveau sûr (TCP/IP sur internet et SP sur Transputer).\\
+
+\noindent
+La librairie qui implémente ce protocole permet de se distancer des appels bas niveau spécifiques.\\
+
+\noindent
+Les caractéristiques principales de ce protocole sont:
+\begin{itemize}
+\item encapsulation des données
+\item gestion des communications synchrones ou asynchrones en mode client--serveur.
+\item transparence lors du passage de données entre plusieurs types de protocoles bas niveau.
+\item interruption du transfert de données en cours de communication
+\item adressage symbolique des interlocuteurs
+\item passage de données annexes durant une communication (message d'information, de debugging,~...)
+\item gestion des timeouts
+\item connection multiple sur serveur
+\end{itemize}
+
+\noindent
+Ce protocole est utilisé pour la communication de machines unix entre elles (WorkStation et PC) ou sur une même machine (communication InterProcess ou avec Transputer)
+
+\section{MESSAGES}
+
+Un échange de données se fait à l'aide de messages structurés. Un message est constitué physiquement d'une suite d'octets délimitée et composé logiquement de 2 parties:\\
+
+une entête de message (EDM) et une section de données (SDD).\\
+
+\noindent
+On peut par exemple différencier les messages de commande et les messages d'acquisition, mais utiliser une entête identique pour les 2 classes de messages.
+
+\noindent
+\begin{minipage}[t]{76mm}
+\mbox{}
+\begin{center}
+\paquet{EDM}
+\paquet{SDD commande}
+\end{center}
+\end{minipage}\hfill\begin{minipage}[t]{76mm}
+\mbox{}
+\begin{center}
+\paquet{EDM}
+\paquet{SDD acquisition}
+\end{center}
+\end{minipage}\\[4mm]
+
+\noindent
+Les messages de commande étant les messages envoyés par un expéditeur (client) à un système (instrument) et les messages d'acquisitions ceux qui sont retournés par le destinataire (serveur) à son expéditeur.\\
+
+\noindent
+Le diagramme GOP--1 montre l'allure des principaux types de messages que l'on peut trouver lors d'une communication. Sur ce diagramme sont également représenté les acknowledges (ACK). Ce sont des paquets envoyés facultativement selon le mode choisi (synchrone ou asynchrone) qui permettent de réguler le transfert d'un message.\\
+
+\noindent
+Un message est transmis intégralement, mais peut toutefois être "raccourci" par l'envoi d'un paquet de fin de message ({\tt FDM}) à la place d'un paquet de données.\\
+
+\noindent
+Le diagramme GOP--2 montre quelques messages terminés anormalement avec un paquet fin de message {\tt FDM}.
+
+\vspace{8mm}
+\subsection{Mode de travail}
+On reconnaît trois modes de travail dans lesquels travaillent les interlocuteurs supportant ce protocole.
+\begin{enumerate}
+\item mode expéditeur, le mode de travail du client. C'est lui qui choisit de commencer une communication.
+\item mode destinataire, le mode de travail du serveur. C'est lui reçoit une communication.
+\item mode transmetteur, ce mode de travail est semblable à celui du serveur, mais comme ce serveur n'est pas un destinataire, chaque message reçu est directement transmis au véritable destinataire.
+\end{enumerate}
+
+\vspace{8mm}
+\section{DESCRIPTION DES ÉLÉMENTS COMPOSANT UN MESSAGE}
+
+\subsection{L'entête de message (EDM)}
+Elle a une structure et une taille fixe indépendante de la
+classe du message et des données contenues dans
+la partie section de données.\\
+L'entête ne peut-être reçue ou envoyée que complètement, elle
+doit être de taille raisonnable et ne contenir que des chaînes
+de caractères (aucune conversion nécessaire en fonction du type de machine utilisée). L'entête du message peut être validée par une quittance interne au protocole. Elle  indique que la transmission est bien établie et que le destinataire est prêt à recevoir le reste du message.\\
+
+\noindent
+\begin{minipage}[t]{76mm}
+\mbox{}
+\begin{tabular}{|p{16mm}|p{11mm}|p{36mm}|}%
+\hline \multicolumn{3}{|c|}{\large\bf EDM commande}\\[1mm]
+{} & {\bf Taille} {\small (octets)} & {\bf Contenu} \\ \hline
+\multicolumn{3}{c}{~}\\[-2mm] \hline
+{\small TYPE}     & 1   & {\tt 'H'}                \\[2mm]
+{\small VERSION}  & 2   & {\tt "A-Z"}              \\
+{\small CLASS}    & 5   & {\tt "COMD"}             \\
+{\small DATE}     & 15  & {\tt "0766578556.299"} \\
+{\small FROM}     & 9   &  nom symbolique          \\
+{\small TO}       & 9   &  nom symbolique          \\
+{\small HSYNC}     & 2   & {\tt "T"}                \\
+{\small DSYNC}     & 2   & {\tt "T"}                \\
+{\small MODE}     & 2   & {\tt "0"}                \\
+{\small MSIZE}    & 11  & {\tt "0000001024"}       \\
+{\small PSIZE}    & 11  & {\tt "0000001024"}       \\
+{\small CONT}     & 2   & {\tt "T"}                \\
+{\small STAT}     & 5   & {\tt "\ \ \ \ "}         \\[2mm]
+                  & 2   & {\tt "\verb|\n|"}        \\ \hline
+\end{tabular}
+\end{minipage}\hfill\begin{minipage}[t]{76mm}
+\mbox{}
+\begin{tabular}{|p{16mm}|p{11mm}|p{36mm}|}%
+\hline \multicolumn{3}{|c|}{\large\bf EDM acquisition}\\[1mm]
+{} & {\bf Taille} {\small (octets)} & {\bf Contenu} \\ \hline
+\multicolumn{3}{c}{~}\\[-2mm] \hline
+{\small TYPE}     & 1   & {\tt 'H'}                \\[2mm]
+{\small VERSION}  & 2   & {\tt "A-Z"}              \\
+{\small CLASS}    & 5   & {\tt "DATA"}             \\
+{\small DATE}     & 15  & {\tt "0766578556.299"} \\
+{\small FROM}     & 9   &  nom symbolique          \\
+{\small TO}       & 9   &  nom symbolique          \\
+{\small HSYNC}    & 2   & {\tt "T"}                \\
+{\small DSYNC}    & 2   & {\tt "F"}                \\
+{\small MODE}     & 2   & {\tt "0"}                \\
+{\small MSIZE}    & 11  & {\tt "0000240448"}       \\
+{\small PSIZE}    & 11  & {\tt "0000001024"}       \\
+{\small CONT}     & 2   & {\tt "F"}                \\
+{\small STAT}     & 5   & {\tt "OPOK"}             \\[2mm]
+                  & 2   & {\tt "\verb|\n|"}        \\ \hline
+\end{tabular}
+\end{minipage}\\[5mm]
+
+\noindent
+L'entête de message se termine par un retour chariot (caractère '${\backslash n}$' en langage {\tt C} et un caractère nul (comme toute chaîne de caractères en langage {\tt C}).\\[3mm]
+Les expressions entre double guillemets, par exemple {\tt "COMD"}, sont des chaînes de caractères au sens du langage {\tt C} (elles se terminent par un caractère nul supplémentaire).\\
+Les expressions entre simple guillemets, par exemple {\tt 'H'}, sont de simples  caractères (1 octet), en l'occurrence la lettre {\tt H}.\\[3mm]
+L'entête, comme elle est décrite par les tableaux ci--dessus a une taille totale
+de 80 octets.
+
+\subsubsection{TYPE -- Type du paquet:}
+Il permet de déterminer s'il s'agit d'un paquet d'entête, de données, de fin
+de message.
+Il peut prendre une des valeurs suivantes:\\
+
+{\tt 'H'}, {\tt 'D'}, {\tt 'E'}\\[3mm]
+Un message commence toujours par un paquet de type entête: {\tt TYPE = 'H'} 
+(partie EDM obligatoire) qui peut être suivi (ou non) par des paquets
+de type donnée: {\tt TYPE = 'D'} (qui forment la partie SDD). Celle--ci peut--être envoyée en un seul ou plusieurs paquets.\\
+Si l'expéditeur décide d'interrompre la transmission  du message il envoie un paquet de fin de message: {\tt TYPE = 'E'} suivit lui aussi facultativement d'aucun ou plusieurs paquets.
+
+\subsubsection{VERSION -- No de version du protocole:}
+Indique la version logicielle du protocole (définie par un caractère)
+qui est utilisée. 
+
+\subsubsection{CLASS -- Classe du message:}
+Indique le genre de service demandé pour les messages de commande et,
+de la même façon, le genre de service fourni pour les messages
+d'acquisition.
+Il peut prendre une des valeurs suivantes:\\
+
+{\tt "COMD"}\\[3mm]
+pour les messages de commande.\\
+
+{\tt "DATA"}, {\tt "STAT"},  {\tt "INFO"}, {\tt "DBUG"}, {\tt "ACKN"}\\[3mm]
+pour les messages d'acquisition: données, état, information, déboguage ou quittance respectivement. \\
+
+{\tt "ALRM"}\\[3mm]
+pour des messages d'acquisition d'alarme "hors communication" destinés par exemple à un serveur de status.
+
+\subsubsection{DATE -- Date d'envoi du message:}
+Elle est donnée de façon standard sous UNIX comme le nombre de secondes
+(entier de 32 bits) et de millisecondes (entier de 16 bits) depuis le
+1 Janvier 1970 à 00:00:00 GMT. Par exemple, elle est égale à:\\
+
+{\tt "0766578556.299"}\\[3mm]
+pour le 17 Avril 94 à 12:31:00 MET.
+
+\subsubsection{FROM -- Expéditeur du message:}
+C'est le nom symbolique de l'expéditeur du message codé avec 8 caractères.
+
+\subsubsection{TO -- Destinataire du message:}
+C'est le nom symbolique du destinataire du message codé avec 8 caractères.
+
+\subsubsection{HSYNC -- Transmission EDM synchrone ou non:}
+Indique si l'envoi de l'entête est à acquitter.\\
+Il peut prendre une des 2 valeurs suivantes:\\[3mm]
+\begin{tabular}{p{2cm}l@{~~=~~}l}
+& {\tt "T"} & TRUE (avec quittance)\\
+& {\tt "F"} & FALSE (sans quittance)
+\end{tabular}\\[3mm]
+
+\subsubsection{DSYNC -- Transmission SDD synchrone ou non:}
+Indique si la transmission des paquets formant le message s'effectue en mode synchrone ou non. En mode synchrone le protocole assure l'envoi d'une quittance pour chaque paquet transmis.\\
+Il peut prendre une des 2 valeurs suivantes:\\[3mm]
+\begin{tabular}{p{2cm}l@{~~=~~}l}
+& {\tt "T"} & TRUE (mode synchrone)\\
+& {\tt "F"} & FALSE (mode asynchrone)
+\end{tabular}\\[3mm]
+La synchronisation entre chaque paquets assure que tout les paquets
+transmis à une vitesse acceptable pour le destinataire, si cela est nécessaire.
+
+\subsubsection{MODE -- Mode d'opération du protocole:}
+C'est un caractère entre "0" et "9" qui indique le niveau de verbosité du deboguage du protocole.
+
+\noindent
+Sa signification est la suivante:\\[3mm]
+\begin{tabular}{p{2cm}l|l}
+&           & {\bf Signification}     \\[1mm] \cline{2-3}
+& {\tt 0} & pas de message	\\
+& {\tt 1} & affichage des champs {\tt TO} et {\tt FROM}	\\
+& {\tt 2} & affichage des entêtes complètes	\\
+& {\tt 3} & affichage des opérations du protocole	\\
+& {\tt 4} & affichage des read et write	\\
+& {\tt 5} & 	\\
+& {\tt 6} & 	\\
+\end{tabular}\\[3mm]
+
+\subsubsection{MSIZE -- Taille totale du message en octets.}
+~\\[-8mm]
+
+\subsubsection{PSIZE -- Taille des paquets composant le message en octets.}
+~\\[-8mm]
+
+\subsubsection{CONT -- Indicateur de continuation:}
+Il peut prendre un des valeurs suivantes:\\
+
+TRUE~~({\tt "T"})~~ou~~FALSE~~({\tt "F"}),\\[3mm]
+et indique si plusieurs messages vont être transmis. Ceci permet au destinataire de rester attentif au messages venant de cet expéditeur tant que la valeur de {\tt CONT} est égale à {\tt "T"}.
+
+\subsubsection{STAT -- État du système, Type d'erreur:}
+Il peut prendre une des valeurs suivantes:\\
+
+{\tt "WARN"}, {\tt "RCOV"}, {\tt "FTAL"}, {\tt "BUSY"}, {\tt "TIME"}, {\tt "OPOK"}\\[3mm]
+Selon qu'il s'agit respectivement d'un avertissement {\tt "WARN"}, d'une erreur récupérable {\tt "RCOV"}, d'une erreur fatale {\tt "FTAL"}, le système est occupé {\tt "BUSY"}, il y a eu un timeout {\tt "TIME"} ou il n'y a pas d'erreur {\tt "OPOK"}.\\
+Un avertissement indique que quelque chose d'anormal s'est produit durant
+l'exécution de la commande ou bien toute autre erreur que le système a pu
+corriger (ou a été capable de prendre en compte) pour terminer l'exécution de
+la commande.\\
+Une erreur récupérable est une erreur qui a interdit ou interrompu l'exécution
+de la commande en cours, mais le système reste opérationnel pour les commandes
+suivantes.\\
+Une erreur fatale (non récupérable) est une erreur qui a interdit ou interrompu
+l'exécution de la commande en cours, mais en plus le système n'est plus opérationnel et aucune autre commande ne pourra plus s'exécuter.
+
+
+\subsection{La section de données (SDD)}
+La partie SDD est facultative. Elle contient les données qui  sont constituée d'un flot d'octets sans structure a priori du point de vue du protocole de messages. Elle peut-être reçue ou envoyée par paquets de taille et nombre quelconque, mais sa taille totale, et celle des paquets sont spécifiées dans la partie EDM.\\
+Selon le mode de transmission choisi (synchrone ou non), chaque paquet peut--être validé par une quittance de réception (gérée par le protocole).\\[4mm]
+Exemple de SDD composée de 3 paquets:
+
+\begin{center}
+\begin{minipage}[t]{76mm}
+\mbox{}
+\begin{tabular}{|p{16mm}|p{11mm}|p{36mm}|}%
+\hline \multicolumn{3}{|c|}{\large\bf SDD}\\[1mm]
+{} & {\bf Taille} {\small (octets)} & {\bf Contenu} \\ \hline
+\multicolumn{3}{c}{~}\\[-2mm] \hline
+{\small TYPE} & 1     & {\tt 'D'}                \\
+data          & PSIZE & données\\
+\hline \multicolumn{3}{c}{~}\\[-2mm] \hline
+{\small TYPE} & 1     & {\tt 'D'}                \\
+data          & PSIZE & données\\
+\hline \multicolumn{3}{c}{~}\\[-2mm] \hline
+{\small TYPE} & 1     & {\tt 'D'}                \\
+data          & PSIZE & données\\ \hline
+\end{tabular}
+\end{minipage}
+\end{center}
+\vspace{5mm}
+		
+\noindent
+La partie SDD est transmise dans un format indépendant du type
+de machine (arrivée et départ) en utilisant le standard XDR
+(External Data Representation) qui fournit des fonctions de conversion pour
+tous les types de données courants.\\
+Elle utilise des paquets de type donnée: {\tt TYPE = 'D'} et
+la communication se termine lorsque la taille totale spécifiée dans
+l'entête a été reçue, ou lorsqu'un paquet de fin de message: {\tt TYPE = 'E'} a été reçu.\\
+
+\noindent
+Le denier paquet peut être de taille inférieur à {\tt PSIZE} si {\tt PSIZE} n'est pas un diviseur de {\tt MSIZE}. La taille du dernier paquet vaut:
+$$
+	if~(modulo(msize,psize) \neq 0)~~~lastsize = msize - (msize/psize)*psize
+$$
+
+\subsection{La fin de message (FDM)}
+Le paquet de fin de message: {\tt TYPE = 'E'}, permet de terminer la communication, si un
+problème intervient du coté expéditeur, avant sa fin normale.
+Comme le paquet d'entête il a une structure et une taille fixe et est composé
+de chaînes de caractères.\\
+Il peut être suivi par d'autres paquets contenant des informations supplémentaires, ces paquets sont déterminés par les champs {\tt CLASS}, {\tt MSIZE} et {\tt PSIZE}. Il n'y a pas de synchronisation lors de l'envoi de {\tt FDM}.
+
+\begin{center}
+\begin{minipage}[t]{76mm}
+\mbox{}
+\begin{tabular}{|p{16mm}|p{11mm}|p{36mm}|}%
+\hline \multicolumn{3}{|c|}{\large\bf FDM}\\[1mm]
+{} & {\bf Taille} {\small (octets)} & {\bf Contenu} \\
+\hline \multicolumn{3}{c}{~}\\[-2mm] \hline
+{\small TYPE}     & 1   & {\tt 'E'}                \\
+{\small VERSION}  & 2   & {\tt "A-Z"}                    \\
+{\small CLASS}    & 5   & {\tt "RCOV"}             \\
+{\small DATE}     & 15  & {\tt "0766578556.299"} \\
+{\small FROM}     & 9   &  nom symbolique          \\
+{\small TO}       & 9   &  nom symbolique          \\
+{\small MSIZE}    & 11  & {\tt "0000240448"}             \\
+{\small PSIZE}    & 11  & {\tt "0000001024"}             \\
+{\small STAT}     & 5   & {\tt "OPOK"}             \\[2mm]
+                  & 2   & {\tt "\verb|\n|"}            \\ \hline
+\end{tabular}
+\end{minipage}
+\end{center}
+
+\noindent
+Le paquet de fin de message, comme décrit ci--dessus a une taille totale
+de 72 octets.
+
+\subsection{L'acknowledge (ACK)}
+
+Les {\tt ACK} sont des minipaquets, composé d'une chaîne de caractères, qui permettent de synchroniser l'envoi et la réception de messages, mais aussi de remonter les erreurs du protocole ou les erreurs système. Ces chaînes des caractères sont formées de 3 caractères ASCII terminées par un caractère nul. Le premier caractère est "A" et il est suivit de deux caractères représentant une valeur de status. Ces minipaquets interviennent uniquement lors de communications déclarées synchrones par les mots--clés HSYNC et DSYNC.
+
+\begin{center}
+\begin{minipage}[t]{76mm}
+\mbox{}
+\begin{tabular}{|p{16mm}|p{11mm}|p{36mm}|}%
+\hline \multicolumn{3}{|c|}{\large\bf ACK}\\[1mm]
+{} & {\bf Taille} {\small (octets)} & {\bf Contenu} \\ \hline
+\multicolumn{3}{c}{~}\\[-2mm] \hline
+{\small TYPE}     & 1   & {\tt 'A'}                \\
+{\small CODE}     & 3   & {\tt "xx"}                    \\
+\hline 
+\end{tabular}
+\end{minipage}
+\end{center}
+\vspace{5mm}
+
+
+\subsection{Composition et synchronisation des messages}
+
+La composition d'un message, c'est à dire le nombre et la taille des paquets de la partie {\tt SDD} ainsi que la présence d'{\tt ACK} du header et des paquets de données sont déterminés par le contenu des mots--clés de l'entête. C'est à dire: {\tt MSIZE, PSIZE, HSYNC et DSYNC}.\\ 
+
+\noindent
+Les diagrammes GOP--3 et GOP--4 montrent les paquets d'un message de classe {\tt COMD} transitant entre un expéditeur et un destinataire via un transmetteur. On y remarque l'effet du mot--clé DSYNC.\\
+
+\noindent
+Les diagrammes GOP--5 et GOP--6 montrent les paquets d'un message de classe {\tt DATA} transitant entre un expéditeur et un destinataire via un transmetteur. On y remarque l'effet du mot--clé DSYNC.
+
+\section{COMMUNICATION}
+
+Une communication est toujours unidirectionnelle et ne peut être interrompue par d'autres communications. Elle est composée d'une suite de messages. Par exemple, un programme désirant envoyer une commande et des données enverra une entête de classe {\tt COMD} suivit d'un paquet contenant la commande, puis une entête de classe {\tt DATA} suivit d'un certain nombre de paquets de données.
+
+\medskip\noindent
+Les messages d'une communication sont liés entre-eux (font partie de la même communication) par la présence de {\tt CONT=T} dans les entêtes des premiers messages. La communication est terminée: 
+\begin{enumerate}
+\item lorsque le dernier paquet du message dont l'entête contient {\tt CONT=F} est reçu 
+\item lors de la réception d'un paquet fin de message ({\tt FDM}).
+\end{enumerate}
+
+\subsection{Synchronisation d'une communication}
+
+\medskip\noindent
+Un message d'une communication peut être acquitté par un message de classe {\tt ACKN}. Ce message est une quittance qui permet de synchroniser une communication composée de plusieurs messages. Par exemple, pour une communication de type commande + données, la commande (classe {\tt COMD}) peut être acquittée avant l'envoi des données (voir diagramme GOP--7). La fin de l'envoi des données peut également être acquitté. 
+
+\medskip\noindent
+Le message de classe {\tt ACKN} (quittance) ne fait donc pas partie du protocole c'est un message dont l'envoi et la réception ont été voulu par l'expéditeur et le destinataire. Dans un tel mode de fonctionnement, et uniquement dans ce mode, où l'on sait que l'expéditeur est en attente d'une quittance, le destinataire peut envoyer des message de classe {\tt STAT, INFO, DBUG}. La communication sera terminée par l'envoi de la quittance (voir diagramme GOP--8).
+
+\medskip\noindent
+La quittance peut être une quittance d'erreur (voir diagramme GOP--9) dans ce cas, le mot--clé {\tt STAT} ne vaut pas {\tt OPOK}.
+
+
+
+
+%
+%===========================================================================
+%===========================================================================
+%
+%   APPLICATION DE GOP A OSERVER
+%
+%===========================================================================
+%===========================================================================
+%
+
+\vspace{1cm}\hrule\vspace{2cm}
+
+\section{APPLICATION DE GOP: OSERVER}
+Cette section aborde l'application de GOP au système de contrôle du télescope.\\
+
+\noindent
+Il s'agit de décrire le protocole de communication (basé sur GOP) et de synchronisation entre \inter , le programme \iserver\ et le système de transputers.\\
+
+Dans la suite de ce document \iserver\ se référera au programme \iserver\ fournit par Volvox, et \oserver\ au programme réalisant les mêmes fonctions, mais modifié pour communiquer avec \inter. Le programme \oserver\ fonctionne en mode {\it serveur}: Il est activé par l'un des événements suivants:
+\begin{itemize}
+\item Arrivée d'une requête sur le canal de communication avec le système de transputers.
+\item Arrivée d'une commande sur un canal de communication avec \inter\ (plusieurs canaux peuvent être actifs).
+\item Timer de lecture de l'état du système de transputers sur le \repar .
+\end{itemize}
+
+\noindent
+Plusieurs \inter\ ayant chacun un canal de communication spécifique peuvent être pris en compte par le \oserver. Ceci doit être déterminé lors de  l'initialisation de \oserver .
+
+\noindent
+Chacune de ces fonctions met le \oserver\ en mode occupé du point
+de vue du ou des \inter , et toute nouvelle commande du ou des \inter\ est en attente.\\
+Si une erreur se produit pendant l'exécution d'une des trois fonctions,
+\oserver\ envoie un message d'alarme au moniteur d'état.\\
+
+
+\subsection{Exécution d'une commande INTER}
+\cornersize{5}
+\def\circle#1{\Ovalbox{\hbox{\footnotesize\tt #1}}}
+
+\subsubsection{Synchronisation avec instrument occupé}
+
+Le diagramme GOP--10 représente l'envoi d'une commande au transputer de réglage. Chaque flèche représente un message complet ({\tt EDM+SDD+ACK}). Dans la description ci--dessous, l'envoi et l'attente des {\tt ACK} n'est pas décrite.\\
+
+\noindent
+\inter\ est le client et il envoie un message de classe {\tt COMD} \circle{9} et se met en attente d'une quittance. Il doit pouvoir à tout moment traiter des messages d'information, de déboguage mais aussi d'erreur qui eux arrêteront la communication.\\
+
+\noindent
+\oserver\ reçoit le message et vérifie dans l'entête le mot--clé {\tt TO}, pour savoir si le message lui est destiné.\\
+
+\noindent
+Comme il n'est pas le destinataire, \oserver\ le transmet au \repar\ et se met en attente d'une quittance (Remarque: cette attente de quittance n'est pas une caractéristique de GOP, mais bien du protocole construit sur GOP par \oserver\ ). Pendant la période où le \oserver\ attend une quittance du système de transputers, les commandes venant d'un \inter\ ou celles de mise à jour du moniteur d'état sont désactivées \circle{2}.\\
+
+\noindent
+Le \repar\ reçoit le message et vérifie dans l'entête le mot--clé {\tt TO}, pour savoir si le message lui est destiné. Cela doit toujours être le cas, car sinon, il s'agit d'une erreur de \oserver.\\
+
+\noindent
+Comme il est le destinataire, le répartiteur lit le texte la commande dans la partie {\tt SDD}. La commande est décodée est l'ordre passe au transputer de réglage, le \repar\ se met en attente d'une quittance \circle{4} en provenance du transputer de réglage.\\
+
+\noindent
+L'ordre est vérifié et avant de l'exécuter, le transputer de réglage retourne une quittance \circle{11} au \repar\ qui contient l'ordre de mettre à jour la variable {\tt STATUS=busy} \circle{10} dans les table de status \circle{6}. L'instrument \circle{5} est maintenant {\tt busy}.\\
+
+\noindent
+Le \repar\ fabrique un message de classe {\tt ACKN} qu'il envoie à l'\inter expéditeur. Ce message transite à nouveau par \oserver\ qui le propage vers l'\inter\ expéditeur.\\
+
+\noindent
+\inter\ reçoit la quittance et il continue la procédure en cours. Ni le \oserver\ ni le système de transputers (via \oserver ) ne peuvent lui envoyer de messages.\\
+
+\noindent
+Lorsque \inter\ veut attendre la fin de l'exécution de la commande qu'il a envoyée. Il envoie un message de classe {\tt COMD} destiné à \oserver\ indiquant qu'il se met en attente sur la valeur de {\tt STATUS=ok} \circle{12}.\\
+
+\noindent
+\oserver\ reçoit le message et vérifie dans l'entête le mot--clé {\tt TO}, pour savoir si le message lui est destiné. Comme c'est le cas, il décode dans la partie {\tt SDD} la commande qui lui est destinée. Voyant que c'est une demande d'attente sur une variable, \oserver\ fait une demande de lecture \circle{13} de la table des status \circle{6}. Comme le status est {\tt busy}, \oserver\ mémorise la commande qu'il exécutera au prochain tic du timer de lecture \circle{1}.\\
+
+\noindent
+A chaque tic du timer de lecture \oserver\ lit \circle{8} la table de status \circle{6}, elle--même maintenue à jour jour à intervalles réguliers \circle{3} sur le \repar\ avec les demandes \circle{7}.\\
+
+\noindent
+Lorsque l'exécution de la commande prend fin sur le transputer de réglage, le {\tt STATUS=ok} est remonté par le répartiteur \circle{14}.\\
+
+\noindent
+Ce status est à son tour remonté vers \oserver\ \circle{15} qui peut alors envoyer la quittance \circle{16} à \inter.
+
+\subsubsection{Synchronisation avec instrument prêt}
+
+Le diagramme GOP--11 représente une situation équivalente mais avec l'instrument prêt au moment ou la demande d'attente sur {\tt STATUS=ok} \circle{1} est envoyée. La lecture de la table est effectuée \circle{2} et la quittance \circle{3} est immédiatement renvoyée à \inter.
+
+
+\subsection{Lecture de l'état du système de transputers}
+Cette fonction est exécutée à intervalle de temps fixe (déterminé par \inter),
+elle effectue une demande de status au système de transputers. (Voir GOP--10 point \circle{1})
+Elle déclenche la séquence suivante:
+\begin{itemize}
+\item[ a --] demander le status au système de transputers
+\item[ b --] attendre, récupérer le status
+\item[ c --] Tester les éventuelles conditions de status attendues par le ou
+	les \inter\ et envoyer une quittance pour les conditions remplies.
+\end{itemize}
+
+\noindent
+Le status peut aussi être demandé spécifiquement par une commande depuis \inter. Dans tout les cas il est remis à jour et sauvegardé périodiquement par le système de transputers (Voir GOP--10 point \circle{3}), et accessible par le programme \oserver lorsque le répartiteur n'est pas occupé.\\[2mm]
+
+\noindent
+Cette fonction effectue aussi la mise à jour du (ou des) moniteur(s) d'état à intervalle de temps fixe déterminé aussi par \inter\ (échantillonnage à partir de la fréquence de mise à jour de l'état du système de transputers).
+
+
+\vspace{1cm}\hrule\vspace{2cm}
+
+
+\section{DESCRIPTION DU PROTOCOLE DE COMMUNICATION BAS NIVEAU UTILISÉ PAR LES TRANSPUTERS}
+Du côté transputer la communication avec \oserver\ (ou \iserver ) est définie 
+par le protocole {\bf SP}. Celui--ci détermine complètement (format, structure et type de données) les messages qui
+passent sur le link entre le transputer et le SUN de manière transparente
+pour un programme occam qui communique sur un link déclaré de type {\bf SP}
+(\verb|CHAN OF SP| est l'expression consacrée).\\
+La notion de protocole associé à un link est fournie par le langage occam.\\
+L'utilisation de ce protocole pour la communication est nécessaire si on veut garder la compatibilité
+avec les programmes standards fournis par Volvox, en particulier les programmes
+\iserver\ et \idebug .\\
+En conséquence du côté \oserver\ (comme \iserver ), le format des messages envoyés doit
+correspondre au format défini par le protocole {\bf SP} (les messages reçus étant évidemment à ce format). Le programme \iserver\ contient le code C des fonctions utilisables avec le protocole {\bf SP} qui seront aussi utilisées dans le programme \oserver :
+
+\begin{verbatim}
+  	  SpOpen(), SpClose(), SpRead(), SpWrite(), SpPuts(),
+  	  SpGets(), SpFlush(), SpGetenv(), SpRemove(),
+  	  SpRename(), SpSeek()...
+\end{verbatim}
+
+\vspace{8mm}
+
+\noindent
+\subsection{Exécution d'une commande des transputers}
+L'arrivée d'une requête sur le canal de communication avec le système de
+transputers déclenche la séquence suivante: (Le déroulement des opérations
+décrit ci--dessous est déterminé par le protocole {\bf SP} et ne peut donc
+pas être modifié):\\
+
+\begin{itemize}
+\item[ a --] lire la commande avec la fonction \verb|GetRequest()|:
+\begin{verbatim}
+  	  Lire le 1er octet du message (OC1),
+  	  si OK: lire le 2ème octet du message (OC2),
+  	  si OK: la taille totale du message est donnée par:
+  	  	TC = OC1 + (256 * OC2)
+  	  il faut  6 < TC < MAXTRANSIZE
+  	  si OK: lecture des TC octets restants du message.
+  	  Tout le message est sauvé dans le tampon d'entrée.
+\end{verbatim}
+
+\item[ b --] décoder la commande:
+\begin{verbatim}
+ 	  Le type de la commande est déterminé par le 3ème octet du
+ 	  message (OC3) contenu dans le tampon d'entrée.
+\end{verbatim}
+\item[ c --] exécuter la commande, une des fonctions \verb|Sp...()|:
+\begin{verbatim}
+  	  Le résultat de la commande est sauvé dans le tampon de
+  	  sortie.
+  	  La taille du message résultat est sauvée dans les octets
+  	  OR1 et OR2 du tampon de sortie.
+\end{verbatim}
+\item[ d --] envoyer le résultat avec la fonction \verb|SendReply()|:
+\begin{verbatim}
+  	  La taille totale du message résultat est donnée par,
+  	  	TR = OR1 + (256 * OR2) + 2
+  	  Écriture des TR octets du message résultat.
+\end{verbatim}
+\end{itemize}
+
+Il y a deux types différents de commandes venant du système de transputers:
+\begin{itemize}
+\item Les commandes correspondant au mode de fonctionnement actuel
+	du programme \iserver\ dans lequel le système de transputers
+	est le seul client: C'est lui qui fait les requêtes et qui attends
+	les résultats. En principe il ne doit pas y avoir de communications
+	avec \inter\ car ce sont des requêtes qui concernent des ressources
+	du système UNIX: opérations sur des fichiers, lecture de variables
+	d'environnement, etc... rendues accessibles par le \iserver .
+\item Les commandes correspondant au mode de fonctionnement de \oserver .
+	Il s'agit de l'attente d'une commande \inter\ via \oserver\ (exécution
+	de la commande \verb|SpRead()|) ou de l'envoi d'une quittance ou de
+	résultats à \inter\ toujours via \oserver\ (exécution de la commande
+	\verb|SpWrite()|). Ces commandes s'effectuent sur un fichier spécifique
+	(ouvert préalablement avec la commande \verb|SpOpen()|), reconnu par
+	\oserver\ comme une communication concernant \inter . Ceci permet
+	de différencier les deux modes de fonctionnement de \oserver\ en
+	utilisant le protocole {\bf SP} sans modification.
+\end{itemize}
+
+
+\vspace{8mm}
+\subsection{Fonctionnement du système de transputers}
+Le comportement du système de transputers vu depuis la station SUN,
+c'est--à--dire le programme \oserver , est géré par le programme \repar\
+qui tourne sur le transputer de la carte Volvox du SUN.\\
+Ce programme, le \repar , est constitué de 2 processus actifs en parallèle:
+\begin{itemize}
+\item reception.commande
+\item envoie.commande (prioritaire)
+\end{itemize}
+
+\noindent
+{\bf reception.commande} se charge de la communication avec le \oserver .
+Il réagit aux commandes reçues sur le link {\bf DU.SUN}, qu'il passe à
+{\bf envoie.commande}. La séquence se déroule comme suit:\\
+\begin{itemize}
+\item[ a --] demande et attente de la commande sur le link {\bf DU.SUN}
+\item[ b --] décodage et écriture de la commande sur le link {\bf READ.COM}
+\item[ c --] attente de la fin de l'exécution sur le link {\bf WRITE.COM}
+\item[ d --] envoi du résultat sur le link {\bf VERS.SUN}
+\end{itemize}
+
+\noindent
+{\bf envoie.commande} s'occupe de la communication avec les autres transputers.
+Il réagit aux commandes envoyées par {\bf reception.commande} sur le link
+{\bf READ.COM}:\\
+
+\begin{itemize}
+\item[ a --] demande et attente de la commande sur le link {\bf READ.COM}
+\item[ b --] envoi au transputer concerné {\bf OPTIQUE}, {\bf REGLAGE} ou {\bf SERVICE}.
+\item[ c --] attente et envoi de la quittance sur le link {\bf WRITE.COM}
+\end{itemize}
+
+\noindent
+et à un compteur de temps de demande de status (Ce dernier est prioritaire):\\
+
+\begin{itemize}
+\item[ a --] demande de status à {\bf OPTIQUE}, {\bf REGLAGE} ou {\bf SERVICE}
+\item[ b --] récupération du status
+\end{itemize}
+
+\noindent
+{\bf envoie.commande} est prioritaire sur {\bf reception.commande} de cette
+façon on peut assurer que tout ce qui remonte des transputers de commande ainsi que la mise à jour de l'état est exécuté sans attente.
+
+
+\vspace{1cm}\hrule\vspace{2cm}
+
+\section{GLOSSAIRE}
+
+\begin{description}
+\item[acknowledge] minipaquet utilisé pour la synchronisation dans un message
+\item[communication] ensemble de messages liés entre eux
+\item[destinataire] celui qui reçoit un message
+\item[expéditeur] celui qui envoie un message
+\item[interlocuteur] expéditeur, transmetteur ou destinataire
+\item[message] ensemble logique constitué d'une entête et d'une partie donnée
+\item[paquet] composant d'un message, le plus petit élément non découpable 
+\item[quittance] message de confirmation utilisé pour la synchronisation dans une communication
+\item[transmetteur] celui qui transmet un message, interface entre un expéditeur et un destinataire
+\end{description}
+
+\end{document}
+
+

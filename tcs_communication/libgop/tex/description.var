@@ -1,0 +1,66 @@
+\newcommand{\GOPtype}{\itemvar{connect--$>$type} {type de connection.}
+ {Ex: {\tt GOP\_SOCKET, GOP\_SOCKET\_UNIX, ou GOP\_TPU}.}
+}
+\newcommand{\GOPname}{\itemvar{connect--$>$name} {nom lié à la connection.}
+ {C'est dire le host pour {\tt GOP\_SOCKET}, le nom de la socket pour {\tt GOP\_SOCKET\_UNIX} ou le nom du fichier d'initialisation pour {\tt GOP\_TPU}}
+}
+\newcommand{\GOPport}{\itemvar{connect--$>$port} {port de communication.}
+ {~}
+}
+\newcommand{\GOPcdXinit}{\itemvar{connect--$>$cd\_init}{channel descriptor initial.}
+ {~}
+}
+\newcommand{\GOPcd}{\itemvar{connect--$>$cd} {channel descriptor actif.}
+ {~}
+}
+\newcommand{\GOPmaxpacket}{\itemvar{connect--$>$maxpacket} {taille maximum des paquets sur {\tt cd} en bytes.}
+ {~}
+}
+\newcommand{\GOPfrom}{\itemvar{connect--$>$from} {nom symbolique de l'expéditeur.}
+ {~}
+}
+\newcommand{\GOPto}{\itemvar{connect--$>$to} {nom symbolique du destinataire.}
+ {~}
+}
+\newcommand{\GOPmsize}{\itemvar{connect--$>$msize} {taille message en bytes.}
+ {~}
+}
+\newcommand{\GOPpsize}{\itemvar{connect--$>$psize} {taille paquet en bytes.}
+ {~}
+}
+\newcommand{\GOPcont}{\itemvar{connect--$>$cont} {flag de continuation}
+ {{\tt TRUE} pour {\tt CONT == 'T'}.}
+}
+\newcommand{\GOPstamp}{\itemvar{connect--$>$stamp} {flag pour écrire la date dans le \edm.}
+ {{\tt TRUE} pour poser la date.}
+}
+\newcommand{\GOPhsync}{\itemvar{connect--$>$hsync} {Flag pour la synchronisation du \edm.}
+ {{\tt TRUE} pour {\tt HSYNC == 'T'}.}
+}
+\newcommand{\GOPdsync}{\itemvar{connect--$>$dsync} {Flag pour la synchronisation de la \sdd.}
+ {{\tt TRUE} pour {\tt DSYNC == 'T'}.}
+}
+\newcommand{\GOPstat}{\itemvar{connect--$>$stat} {status du système.}
+ {Ex: {\tt GOP\_STAT\_OPOK, GOP\_STAT\_WARN, ...} .}
+}
+\newcommand{\GOPmode}{\itemvar{connect--$>$mode} {niveau de debug.}
+ {Ex: {\tt GOP\_PACKET, GOP\_IO, ...} .}
+}
+\newcommand{\GOPtimeout}{\itemvar{connect--$>$timeout} {timeout pour l'opération en cours.}
+ {~}
+}
+\newcommand{\GOPdatatype}{\itemvar{connect--$>$datatype} {type de données dans la \sdd.}
+ {Ex: {\tt GOP\_CHAR, GOP\_SHORT, GOP\_FLOAT, ...} .}
+}
+\newcommand{\GOPclass}{\itemvar{connect--$>$class} {Classe du message.}
+ {Ex: {\tt GOP\_CLASS\_COMD, GOP\_CLASS\_DATA, ...} .}
+}
+\newcommand{\GOPxdr}{\itemvar{connect--$>$xdr} {indique si la \sdd est codée en XDR}
+ {{\tt TRUE} == codage XDR.}
+}
+\newcommand{\GOPneedXxdr}{\itemvar{connect--$>$need\_xdr}{indique si le cannal a besoin du codage en XDR}
+ {{\tt TRUE} == besoin de codage XDR}
+}
+\newcommand{\GOPheader}{\itemvar{connect--$>$header} {header original.}
+ {~}
+}

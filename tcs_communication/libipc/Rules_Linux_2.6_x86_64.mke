@@ -1,0 +1,19 @@
+#
+# definitions specifiques a l'operating system
+#
+T4INC	= $(T4HOME)/include
+
+INCLUDE_PATH =	-I .				\
+		-I $(INC_DIR) 			\
+		-I $(T4INC) 			\
+		-I $(OPENWINHOME)/include	\
+		-I /usr/local/include
+		
+
+CDEBUGFLAGS += -g
+
+CFLAGS	+= $(CDEBUGFLAGS) -fPIC -Wall -DUSE_STRERROR -DSYSV -DLINUX $(INCLUDE_PATH)
+
+RANLIB	= echo
+
+

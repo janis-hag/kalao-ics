@@ -1,0 +1,29 @@
+# Copies file for gop (weber)
+@mkdir tex
+Links
+libgop.c
+libsrvgop.c
+gop_wait.c
+gop_timer.c
+gop_timer.csh
+test_gop_timer.c
+fclient.f
+subclient.c
+client.c
+server.c
+transmitter.c
+demo.h
+gop.h
+srvgop.h
+torture_client.c
+test_f_libsrvgop.f
+test_c_libsrvgop.c
+Makefile
+Rules_$OPSYS.mke
+tex/gopref.tex
+tex/gopref.ps 
+tex/description.var 
+tex/gop.description.var 
+tex/gopcmd.tex 
+tex/t4protocole.tex
+tex/t4protocole.ps 

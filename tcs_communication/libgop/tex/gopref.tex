@@ -1,0 +1,3585 @@
+\input gopcmd
+\begin{document}
+\raggedbottom
+
+\newcommand{\edm}{Entête\_De\_Message }
+\newcommand{\sdd}{Section\_De\_Données }
+\newcommand{\fdm}{Fin\_De\_Message }
+
+\setlength{\fboxsep}{1cm}
+\newlength{\myboxwidth}
+\setlength{\myboxwidth}{\textwidth}
+\addtolength{\myboxwidth}{-2cm}
+
+\font\titr=cmr10 scaled 4233
+\font\auteur=cmr10 at 17.28pt
+\font\dat=cmr10 at 14.4pt
+
+\title{\titr "libgop.a" \\[5mm] Guide de l'utilisateur\\[5mm] Manuel de Référence\\[10mm]}
+\author{\auteur Luc Weber\hfil}
+\date{Observatoire de Genève\\ \today}
+
+\maketitle
+
+\setcounter{page}{0}\thispagestyle{empty}~\cleardoublepage
+\def\numberline#1{\hbox to11mm{#1\hfil}}
+\tableofcontents
+\cleardoublepage
+
+\chapter{Quick Référence}
+\subsection*{Initialisation Socket Internet (entre machine)}
+\subsubsection*{-- Client}
+\begin{verbatim}
+          gop_init_client_socket(connect, from, host, port, maxpacket, mode, timeout)
+\end{verbatim}
+\subsubsection*{-- Server}
+\begin{verbatim}
+          gop_init_server_socket(connect, from, port, maxpacket, mode, timeout)
+\end{verbatim}
+\subsection*{Initialisation Socket Unix (locale)}
+\subsubsection*{-- Client}
+\begin{verbatim}
+          gop_init_client_socket_unix(connect, from, name, maxpacket, mode, timeout)
+\end{verbatim}
+\subsubsection*{-- Server}
+\begin{verbatim}
+          gop_init_server_socket_unix(connect, from, name, maxpacket, mode, timeout)
+\end{verbatim}
+\subsection*{Connection}
+\subsubsection*{-- Client}
+\begin{verbatim}
+          gop_connection(connect)
+\end{verbatim}
+\subsubsection*{-- Server}
+\begin{verbatim}
+          gop_init_connection(connect)
+          gop_accept_connection(connect)
+\end{verbatim}
+\subsection*{Écriture}
+\begin{verbatim}
+          gop_write(connect, data, msize, psize, datatype)
+          gop_write_acknowledgement(connect, state, texte)
+          gop_write_command(connect, data)
+          gop_write_end_of_message(connect, data)
+          gop_write_matrix(connect, data, msize, psize, datatype, npix_x, dx, dy)
+\end{verbatim}
+\subsection*{Lecture}
+\begin{verbatim}
+          gop_read(connect, buf, sizeof_buf)
+          gop_read_end_of_message(connect, buf, sizeof_buf)
+          gop_handle_eom(connect, fct)
+          gop_read_matrix(connect, cmd, sizeof_cmd, npix_x, dx, dy)
+\end{verbatim}
+\subsection*{transmission}
+\begin{verbatim}
+          gop_forward(from_connect, to_connect)
+\end{verbatim}
+\subsection*{Utilitaires}
+\begin{verbatim}
+          gop_set_destination(connect)
+          gop_set_XXXX(connect)
+          gop_get_XXXX(connect)
+          gop_select_active_channel(list_active, list_ready)
+          gop_select_destination(from_connect, list, to_connect, buf_size)
+\end{verbatim}
+\subsection*{Déconnection}
+\begin{verbatim}
+          gop_close_connection(connect)
+          gop_close_init_connection(connect)
+          gop_close_active_connection(connect)
+\end{verbatim}
+
+
+\chapter{Introduction}
+
+Le protocole GOP (Geneva Observatory Protocol) permet la communication inter--process pour le passage de messages dans un schéma client--serveur, multi--machines et multi--protocoles.
+
+\bigskip
+Un message est composé d'une \edm suivit d'une \sdd. L'\edm contient tout les paramètre du message sous forme ASCII: taille du message, taille des paquets, modes de synchronisation, classe du message, etc... . La \sdd contient comme son nom l'indique les données du message: chaînes de caractères, vecteurs numériques binaires de tout types.
+
+\bigskip
+Un message peut être interrompu en cours de transfert par l'envoi d'un autre message nommé \fdm qui peut ou non comporter une \sdd. 
+
+\bigskip
+La synchronisation, qui est facultative, est réalisée par l'envoi de paquets nommés Acknowledge.
+
+\bigskip
+Les \edm, \sdd, Acknowledge  et \fdm sont composé de paquets. Chaque paquet est précédé d'un caractère qui indique la nature du paquet ('H' pour entête, 'D' pour data, 'A' pour acknowledge et 'E' pour entête de \fdm). Ce caractère permet de tester la bonne séquence des messages ainsi que l'interruption de transfert avec une \fdm.
+
+\bigskip
+Les messages contenant des données numériques binaires sont automatiquement codés sous le format XDR (eXternal Data Representation) si les interlocuteurs d'un canal de communication ne comprennent pas le même binaire. Remarque: ce codage fait grossir la taille de chaque paquet de la \sdd de 4 bytes. Cet augmentation de taille n'est pas traduite dans le paramètre de l'entête indiquant la taille des paquets ({\tt PSIZE}), mais le message est déclaré de type XDR.
+
+\section{Utilisation}
+
+Les programmes utilisant GOP inclusent dans leur code le fichier {\tt gop.h} qui est actuellement dans le directory {\tt /usr/local/include}.
+
+\medskip
+De plus, GOP supporte actuellement 2 protocoles, TCP/IP sur sockets (Internet ou Unix) et SP pour la communication avec les transputers. 
+
+\medskip
+Les programmes n'utilisant pas les transputers se compilent avec la commande:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim}
+cc prog.c -o prog -I/share/include [options] -lgop -ltpudummy 
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+Les programmes utilisant les transputers se compilent avec la commande:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim}
+cc prog.c -o prog -I/share/include [options] -lgop -ltpu 
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+
+\chapter{Mode client--serveur, le guide}
+
+\section{Initialisation}
+
+
+L'entité de base utilisée par GOP est le canal de communication. Toutes les caractéristiques de ce canal sont stockées dans une structure de type {\tt gop\_connect}. Chaque canal a une structure associée. Une telle structure est déclarée de la manière suivante:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+
+L'initialisation d'un canal de communication est vue différemment si l'on est un serveur ou un client. Dans notre cas, le serveur est le process qui est l'initiateur de la communication. Le client est le process qui effectue l'opération de connection sur le serveur. Un client peut se connecter sur un serveur uniquement si celui--ci est en attente d'une connection.
+
+\subsection{Initialisation d'un serveur}
+
+L'initialisation d'un canal de communication du côté serveur se réalise à l'aide de deux fonctions:
+\begin{description}
+\item[{\tt gop\_init\_connection()}] Cette fonction initialise un port de communication sur lequel se créera le canal de communication.
+\item[{\tt gop\_accept\_connection()}] Cette fonction crée un canal de communication sur un port initialisé. De plus, une fois le canal créé et qu'un client s'est connecté, les deux interlocuteur de ce canal s'échange un message qui permet de fixer certaines caractéristique de ce canal (nom symboliques, taille maximum des paquets, nécessité de XDR).
+\end{description}
+
+Pour initialiser un canal de communication, il faut impérativement préciser le type de protocle de transport utilisé. Selon le type de protocole choisi, les paramètres d'initialisations sont différents. On a:
+
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_SOCKET] pour les communications TCP/IP sur socket Internet. On donne le numéro de port.
+\item[GOP\_SOCKET\_UNIX] pour les communications TCP/IP sur socket Unix. On donne le nom de la socket.
+\item[GOP\_TPU] pour les communications sur transputer de type SP.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+Comme les fonctions d'initialisations donnent des informations de debugging, on précise également le niveau de debug à ce moment. Le niveau de debugging sera modifié lors de la réception du premier message, car les messages transportent cette information.
+
+On a donc pour une connection de type socket:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   gop_set_type(&connect, GOP_SOCKET);
+   gop_set_mode(&connect, debug_level);
+   gop_set_port(&connect, port);
+
+   if (gop_init_connection(&connect) != GOP_OK){...}
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+La création d'un port de communication ne permet pas de communiquer, pour le faire, il faut initialiser le canal de communication. C'est la deuxième phase d'initialisation d'un serveur. De nouveaux paramètres doivent imperativement être précisés avant l'appel à {\tt gop\_accept\_connection()}. Ce sont:
+
+\begin{description}
+\item[Le nom symbolique du serveur.] Il permettra au client d'associer un nom à la structure de communication. 
+\item[La taille maximum des paquets.] Il permet de définir la taille appropriée à la connection.
+\end{description}
+
+ 
+L'initialisation complète du serveur devient alors:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   gop_set_type(&connect, GOP_SOCKET);
+   gop_set_mode(&connect, debug_level);
+   gop_set_port(&connect, port);
+
+   if (gop_init_connection(&connect) != GOP_OK){...}
+
+   gop_set_from(&connect, my_name);
+   gop_set_maxpacket(&connect, maxsize);
+
+   if (gop_accept_connection(&connect) != GOP_OK){...}
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+La fonction {\tt gop\_accept\_connection()} est bloquante, elle se libère uniquement lorsqu'un client se connecte. 
+
+\medskip
+L'initialisation de la structure de communication peut être simplifiée par l'appel aux routines d'initialisation spécifiques au type de communication. Pour un serveur basé sur une communication de type socket, on a deux fonctions: {\tt gop\_init\_server\_socket()} et {\tt gop\_init\_server\_socket\_unix()}.
+
+L'initialisation ci-dessus devient:
+
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   gop_init_server_socket(&connect, from, port, maxpacket, mode, timeout)
+
+   if (gop_init_connection(&connect) != GOP_OK){...}
+
+   if (gop_accept_connection(&connect) != GOP_OK){...}
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+
+\subsection{Initialisation d'un client}
+
+L'initialisation d'un client se fait en une seule phase. La connection se fait sur un serveur en attente puis par un échange de message qui permet de fixer certaines caractéristique du canal. Les paramètres que demande la fonction {\tt gop\_connection()} dépendent à nouveau du type de protocole de transport choisi. Ce sont pour:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_SOCKET] les mêmes que pour le côté serveur avec en plus le nom de la machine oè se trouve le serveur (avec {\tt gop\_set\_name()}). Naturelement le numéro de port doit être identique de côté serveur et du côté client.
+\item[GOP\_SOCKET\_UNIX] les mêmes que pour le côté serveur.
+\item[GOP\_TPU] à définir ....
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+L'allure d'une connection d'un client de type socket est:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   gop_set_type(&connect, GOP_SOCKET);
+   gop_set_name(&connect, host);
+   gop_set_port(&connect, port);
+   gop_set_maxpacket(&connect, maxsize);
+   gop_set_from(&connect, my_name);
+   gop_set_mode(&connect, debug_level);
+
+   if (gop_connection(&connect) != GOP_OK){...}
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+Si le serveur n'est pas en attente de connection, la connection est refusée.
+
+\medskip
+L'initialisation de la structure de communication peut être simplifiée par l'appel aux routines d'initialisation spécifiques au type de communication. Pour un client basé sur une communication de type socket, on a deux fonctions: {\tt gop\_init\_client\_socket()} et {\tt gop\_init\_client\_socket\_unix()}.
+
+L'initialisation ci-dessus devient:
+
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   gop_init_client_socket(&connect, from, host, port, maxpacket, 
+                          mode, timeout)
+
+   if (gop_connection(&connect) != GOP_OK){...}
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+\subsection{Le niveau de debugging}
+
+Le niveau de debugging tel qu'il est utilisé plus haut avec {\tt gop\_set\_mode()} défini le niveau de verbosité des fonctions du protocole. Les niveaux se definissent en deux classes. 
+
+La première, où plus le niveau de debugging est élevé, plus les informations concernent un partie plus interne du protocole. On a dans ce cas:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_NOTHING] pas de message.
+\item[GOP\_CONNECTION] pour les opérations de connection et de select.
+\item[GOP\_MESSAGE] pour la réception ou l'envoi de messages.
+\item[GOP\_MESSAGE\_HEADER] pour l'affichage de l'entête.
+\item[GOP\_PACKET] pour la réception ou l'envoi de paquets.
+\item[GOP\_PACKET\_INFO] pour des informations concernant les paquets.
+\item[GOP\_IO] pour les opérations d'entrée--sortie bas niveau. 
+\item[GOP\_IO\_CONTENTS] pour le contenu des buffers transitant en entrée--sortie.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+La deuxième classe donne deux niveaux de debugging uniques:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_HEADER] pour l'affichage des entêtes.
+\item[GOP\_HEADER\_CONTENTS] pour l'affichage des entêtes et du contenus des messages de type {\tt GOP\_CHAR}.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+
+\section{Envoi d'un message}
+
+L'envoi de messages permet de faire transiter entre un client et un serveur des tableaux de données de type reconnus par GOP de n'importe quelle taille. Avant l'envoi d'un message les paramètres suivants sont à mettre à jour:
+
+\subsection{Nom symbolique du destinataire}
+
+Définis avec {\tt gop\_set\_to()} le nom du destinataire.
+
+\subsection{Synchronisation de l'entête}
+
+Définis, avec {\tt gop\_set\_hsync()}, si l'entête doit être aquitée. On a deux possibilités:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_SYNCHRO] avec quittance.
+\item[GOP\_ASYNCHRO] sans quittance.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+La quittance est le seul moyen qui permet de récupérer un éventuel status d'erreur dans le cas où: l'entête n'est pas acceptée (mauvaise version), si le serveur ne peut pas recevoir de tableau de taille trop élevée, etc...
+
+\subsection{Synchronisation des paquets de données}
+
+Définis, avec {\tt gop\_set\_dsync()}, si chaque paquets formant la \sdd doit être acquitté. On a deux possibilités:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_SYNCHRO] avec quittance.
+\item[GOP\_ASYNCHRO] sans quittance.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+La synchronisation à pour but de régulariser le transfert des donnés. Normallement, ce type de synchronisation n'est pas nécessaire avec les sockets car le protocole TCP/IP gère très efficacement ce type de synchronisation.
+
+ 
+\subsection{Datation du paquet}
+
+Définis, avec {\tt gop\_set\_stamp()}, si la date de l'entête doit est mise. On a deux possibilités:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_TRUE] pour mettre la date.
+\item[GOP\_FALSE] pour ne pas mettre la date.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+
+\subsection{Classe du message}
+
+Définis avec {\tt gop\_set\_class()} la classe du message. Cette information permet à l'interlocuteur de trier les messages qui lui sont addressé. Les classe sont:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_CLASS\_COMD] pour les commandes.
+\item[GOP\_CLASS\_DATA] pour les données.
+\item[GOP\_CLASS\_STAT] pour le status.
+\item[GOP\_CLASS\_INFO] pour les informations.
+\item[GOP\_CLASS\_DBUG] pour le debugging.
+\item[GOP\_CLASS\_ACKN] pour les quittances.
+\item[GOP\_CLASS\_ALRM] pour les alarmes.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+\subsection{Status du système}
+
+Définis avec {\tt gop\_set\_stat()} l'état du système. Cette information permet à l'interlocuteur de connaître l'état du système qui à envoyé le message. Les classe sont:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_STAT\_OPOK] système ok.
+\item[GOP\_STAT\_WARN] avertissement.
+\item[GOP\_STAT\_RCOV] erreur récupérable.
+\item[GOP\_STAT\_FTAL] erreur fatale.
+\item[GOP\_STAT\_BUSY] système est occupé.
+\item[GOP\_STAT\_TIME] timeout.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+
+Ainsi pour envoyer par exemple un tableau de données sur un client nommé "inter", en mode synchrone sur l'entête et asynchrone sur les données depuis un système OK avec la date dans l'entête, on initialisera l'envoi du message avec:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   gop_set_class(&connect, GOP_CLASS_DATA);
+   gop_set_stat(&connect, GOP_STAT_OPOK);
+   gop_set_stamp(&connect, GOP_TRUE);
+   gop_set_hsync(&connect, GOP_SYNCHRO);
+   gop_set_dsync(&connect, GOP_ASYNCHRO);
+   gop_set_to(&connect, "inter");
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+L'envoi des données se fait avec la fonction {\tt gop\_write()} où l'on précise la taille du tableau, la taille des paquets et le type de donnée.
+
+Les types de données reconnus sont:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_CHAR] 8 bits.
+\item[GOP\_USHORT] unsigned int 16 bits.
+\item[GOP\_SHORT] int 16 bits.
+\item[GOP\_UINT] unsigned int 32 bits.
+\item[GOP\_INT] int 32 bits.
+\item[GOP\_ULONG] unsigned int 64 bits.
+\item[GOP\_LONG] int 64 bits.
+\item[GOP\_FLOAT] real 32 bits.
+\item[GOP\_DOUBLE] real 64 bits.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+Si le canal de communication a besoin d'une convertion de type XDR, le protocole utilise ce paramètre pour la convertion. Il n'y a aucune convertion pour les données de type {\tt GOP\_CHAR}.
+
+\medskip
+Le code permettant l'envoi d'un tableau nommé {\tt buf} de 1000 entiers 16 bits non--signés par groupe de 100 élements est le suivant:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   gop_set_class(&connect, GOP_CLASS_DATA);
+   gop_set_stat(&connect, GOP_STAT_OPOK);
+   gop_set_stamp(&connect, GOP_TRUE);
+   gop_set_hsync(&connect, GOP_SYNCHRO);
+   gop_set_dsync(&connect, GOP_ASYNCHRO);
+   gop_set_to(&connect, "inter");
+
+   if (gop_write(&connect, buf, 2000, 200, GOP_USHORT) != GOP_OK){...}
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+Il faut toutefois remarquer que la taille des paquets sera réduite si on donne à {\tt gop\_write()} une taille de paquet supérieur à la taille maximum autorisée sur le canal (voir plus haut {\tt gop\_set\_maxpacket()}).
+
+\section{Réception d'un message}
+
+Un process qui reçoit un message sait à priori quel type de donnée il attend. La fonction {\tt gop\_read()} demande donc uniquement l'adresse d'un tableau et la taille de celui--ci. 
+
+Le code qui permet par exemple la lecture du tableau précédent ressemble à:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ushort buf[10000];
+   int    ilen;
+   ...
+   if ((ilen = gop_read(&connect, buf, sizeof(buf)) < 0){...};
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+La fonction {\tt gop\_read()} retourne le nombre de bytes effectivement lu (dans notre exemple, {\tt ilen} vaudra 2000).
+
+GOP permet à l'expéditeur de raccourcir la longueur des messages en cours de transmission. C'est à dire qu'un process qui par exemple s'attend à lire 2000 bytes peut en recevoir effectivement 1000. Dans ce genre de situation, la valeur retournée par {\tt gop\_read()} est négative et sa valeur absolue indique le nombre de bytes effectivement lu. De plus {\tt gop\_errno} est posé à {\tt GOP\_END\_OF\_MESSAGE} voir plus bas sous: "réception d'une \fdm".
+
+
+La récupération de la classe, du status, de la date, etc... se font avec les fonctions {\tt gop\_get\_XXXX}. Par exemple:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   char class[5], stat[5], date[17];
+   ...
+   if ((ilen = gop_read(&connect, buf, sizeof(buf)) < 0){...};
+   class = gop_get_class(&connect);
+   stat = gop_get_stat(&connect);
+   date = gop_get_date(&connect);
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+
+\section{Déconnection}
+
+Un canal de communication se déconnecte completement avec la fonction {\tt gop\_close\_connection()}. On peut déconnecter uniquement la socket active (connect.cd) avec {\tt gop\_close\_connection()} ou uniquement la socket d'initialisation (connect.cd\_init) avec {\tt gop\_close\_active\_connection()}. Par exemple:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   if (gop_close_connection(&connect) != GOP_OK){...}
+   /* ou */
+   if (gop_close_active_connection(&connect) != GOP_OK){...}
+   if (gop_close_init_connection(&connect) != GOP_OK){...}
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+
+\section{Timeout}
+
+Toutes les fonctions qui à un moment donné effectuent la lecture d'un paquet, peuvent le faire avec un timeout. Ce cas se présente dans toute les fonctions de lecture, mais aussi dans les fonctions d'écriture où l'on synchronise les messages avec la lecture d'un paquet d'Acknowledge.
+
+\medskip
+L'utilisation du timeout se décide en posant la valeur {\tt timeout} de la structure du canal de communication, sur lequel a lieu l'acces, à une valeur différente de zéro. Cette valeur donne le temps d'attente maximum pour une lecture en secondes (valeurs entières).
+
+Une fonction qui se termine sur un timeout retourne {\tt GOP\_KO} et pose {\tt gop\_errno} à {\tt GOP\_TIMEOUT}.
+
+\medskip
+Exemple:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   connect->timeout = 30;
+   if (gop_read(&connect, buf, sizeof(buf)) != GOP_OK){
+      if(gop_errno == GOP_TIMEOUT){
+         ...
+      } else {
+         ...
+      }
+  }
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+
+\section{Traitement des erreurs}
+
+La majorité des fonctions de la librarie GOP retournent un status. Si aucun problème ne c'est produit une fonction retourne {\tt GOP\_OK}. Si par contre, une erreur est survenue la fonction retourne {\tt GOP\_KO}. Le numéro de l'erreur est à recupérer dans la variable globale {\tt gop\_errno}, la fonction {\tt gop\_get\_error\_str()} permet de récupérer le texte sommaire concernant l'explication de l'erreur.
+
+\medskip
+Par exemple:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   ...
+   if (gop_init_connection(&connect) != GOP_OK){
+      fprintf(stderr, "Erreur GOP : gop_init_connection: %s\n",
+                      gop_get_error_str());
+      exit();
+   }
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+La liste des code d'erreur est la suivante:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_ERRNO] erreur système dont le code est dans errno.
+\item[GOP\_DISCONNECT] déconnection du client.
+\item[GOP\_INVALID\_VERSION] version de l'entête invalide.
+\item[GOP\_TIMEOUT] time out.
+\item[GOP\_TOBIG] message trop grand.
+\item[GOP\_BAD\_PROTOCOL] protocole de transport inconnu.
+\item[GOP\_NOT\_IMPLEMENTED] protocole de transport pas encore implémenté.
+\item[GOP\_BROKEN\_PIPE] broken pipe lors d'un IO.
+\item[GOP\_BAD\_SEQUENCE] réception d'un bloc illégal.
+\item[GOP\_RECEIVER\_UNKNOWN] destinataire inconnu.
+\item[GOP\_END\_OF\_MESSAGE] fin de message prématuré.
+\item[GOP\_ALLOC] problème d'allocation mémoire.
+\item[GOP\_BAD\_CHANNEL] mauvais canal d'initialisation.
+\item[GOP\_XDR\_FAILED] problème avec convertion XDR.
+\item[GOP\_REMOTE\_PROBLEM] problème côté destinataire.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+
+\section{Comportement en cas de déconnection}
+Durant une communication, lorsqu'un interlocuteur est tué, son partenaire termine sur une erreur lors de l'accès suivant. 
+
+Par exemple, lorsqu'un client est tué, le serveur (en attente sur un read()) se termine dans tout les cas par l'erreur: {\tt GOP\_DISCONNECT}.
+
+Par contre lorsqu'un serveur est tué, le client se termine de façon différente selon qu'il effectue un {\tt write()} ou un {\tt read()} et selon le protocole utilisé. C'est à dire:
+
+\begin{itemize}
+\item Avec les sockets unix, dans tout les cas le client se termine sur une erreur {\tt GOP\_BROKEN\_PIPE}.
+\item Avec les sockets internet, lors d'un {\tt write()}, le client se termine sur une erreur {\tt GOP\_BROKEN\_PIPE}.
+\item Avec les sockets internet, lors d'un {\tt read()} sous {\tt BSD}, le client se termine sur une erreur {\tt GOP\_DISCONNECT}.
+\item Avec les sockets internet, lors d'un {\tt read()} sous {\tt System V}, le client se termine sur une erreur {\tt GOP\_ERRNO} avec {\tt errno=ECONNRESET}.
+\end{itemize}
+
+Par exemple le problème sur le {\tt write()} à lieu lors d'un {\tt gop\_write\_command()} sans synchronisation (au moment de l'envoi de la \sdd, le premier {\tt write()} de la \edm se passe toujours sans erreur), tandis que le problème sur le {\tt read()} à lieu lors d'un {\tt gop\_write\_command()} avec synchronisation (au moment de la lecture de l'acknowledge)
+
+Si l'on souhaite gérer ce type de problème, il faut initialiser un handler de signaux pour SIGPIPE. Voir section "signaux" et la fonction {\tt gop\_sig\_init\_handler()}.
+
+
+\chapter{Mode multi--client, le guide}
+
+
+Un serveur peut posséder plusieurs canaux de communications vers différents clients. Le serveur peut travailler avec un port par client ou avec un port pour tous les clients (avec le type {\tt GOP\_SOCKET}, pour le cas d'un log--book par exemple). Quelque soit le type de communication, une difficulté apparaît si l'on autorise la connection des clients dans un ordre aléatoire. La fonction {\tt gop\_select\_active\_channel()} permet de gérer ce cas. Elle demande en entrée une liste de canaux sur lequels une connection peut survenir (canaux qui ont passé la première phase de leur initialisation avec {\tt gop\_init\_connection()}). 
+
+\section{Connection multi--clients multi--ports}
+
+L'exemple suivant montre la fabrication d'une liste (de type {\tt gop\_list}) de trois canaux.
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect_client_a;
+   struct gop_connect connect_client_b;
+   struct gop_connect connect_client_c;
+   struct gop_list    input_list, output_list;
+   ...
+   if (gop_init_connection(&connect_client_a) != GOP_OK){...}
+   if (gop_init_connection(&connect_client_b) != GOP_OK){...}
+   if (gop_init_connection(&connect_client_c) != GOP_OK){...}
+
+   input_list.nb=3;
+   input_list.gop[0] = &connect_client_a;
+   input_list.gop[1] = &connect_client_b;
+   input_list.gop[2] = &connect_client_c;
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+Cette liste est passée à {\tt gop\_select\_active\_channel()} qui se met en attente de connection et qui retourne une liste de cannaux sur lequels un client c'est manifesté:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_list    input_list, output_list;
+   ...
+   input_list.nb=3;
+   input_list.gop[0] = &connect_client_a;
+   ...
+   gop_select_active_channel(&input_list, &output_list)
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+Cette liste doit être balayée et chaque canal de {\tt output\_list} doit être connecté. La liste doit être reformée (en reduisant le nombre de client) et {\tt gop\_select\_active\_channel()} doit être renvoyée jusqu'à que tout les client soit connectés. La connection s'écrit dans ce cas:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_list    input_list, output_list;
+   ...
+   gop_select_active_channel(input_list, output_list)
+    for (i = 0; i < output_list.nb; i++) {
+      gop_accept_connection(output_list.gop[i]);
+      ...
+   }
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+Il faut toutefois prendre garde qu'un client peut commencer à envoyer des messages avant que tout les clients soient connectés. Ce cas est pris en charge par GOP qui sait reconnaître une structure de communication ({\tt gop\_connect})  en attente de connection d'une structure de communication en attente de message. En effet, la structure contient le numéro du "chanel descriptor" ({\tt cd}). Celui-ci vaut {\tt -1} tant que le canal n'est pas connecté. 
+
+\medskip
+Ainsi, si l'on veut gérer ce cas globalement, on garde une liste stable et l'action à entreprendre après un  {\tt gop\_select\_active\_channel()} dépend de la valeur de {\tt cd}.
+
+\bigskip
+Le traitement global devient par exemple:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_list    input_list, output_list;
+   ...
+   input_list.nb=3;
+   input_list.gop[0] = &connect_client_a;
+   ...
+   while(TRUE){
+      gop_select_active_channel(&input_list, &output_list)
+      for (i = 0; i < output_list.nb; i++) {
+         if(gop_get_cd(output_list.gop[i])==-1) {
+            gop_accept_connection(output_list.gop[i]);
+         } else {
+            gop_read(output_list.gop[i], buf, sizeof(buf));
+            ...
+         }
+      }
+   }
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+\section{Connection multi--clients mono--port}
+
+C'est le cas typique d'un utilitaire de type log--book. Un nombre indéfini de clients peuvent se connecter sur un port unique et y envoyer des messages. Comme on l'a vu dans l'exemple précédent, GOP reconnaît un structure de communication en attente de connection si le "channel descriptor" {\tt cd} vaut {\tt -1}. Une fois connecté, {\tt cd} à une valeur supérieur ou égale à {\tt 0}. 
+
+Dans le cas suivant, il est donc nécessaire de conserver une structure pour l'attente de connection et de créer une structure pour chaque nouveau client.
+
+L'exemple suivant montre ce type d'application:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   struct gop_list    input_list, output_list;
+   ...
+   if (gop_init_connection(&connect) != GOP_OK){...}
+   input_list.nb     = 1;
+   input_list.gop[0] = &connect;
+
+   while (TRUE) {
+      if(gop_select_active_channel(&input_list, &output_list)!=GOP_OK)
+         {...}
+      for (i = 0; i < output_list.nb; i++) {
+         if (gop_get_cd(output_list.gop[i]) == -1) {
+            input_list.gop[input_list.nb] = (struct gop_connect *)
+                               malloc(sizeof(struct gop_connect));
+            if (input_list.gop[input_list.nb] == NULL) {...}
+            memcpy(input_list.gop[input_list.nb], output_list.gop[i], 
+                              sizeof(struct gop_connect));
+
+            gop_accept_connection(input_list.gop[input_list.nb]);
+
+            input_list.nb = input_list.nb + 1;
+         } else {
+            if(gop_read(output_list.gop[i], buf, sizeof(buf)) < 0)
+               {...}
+            printf("recu >%s<\n", buf);
+            ....
+         }
+      }
+   }
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+\section{timeout sur select}
+La fonction {\tt gop\_select\_active\_channel()} peut travailler avec un timeout. Dans ce cas c'est la valeur de {\tt input\_list->timeout} qui est pris en compte. Si cette valeur est différente de zéro, la fonction travaille avec un timeout (exprimé en secondes entières), sinon, non.
+
+
+\chapter{Mode transmetteur, le guide}
+
+Le mode Client--Transmetteur--Serveur permet à un client d'adresser un serveur par l'intermédiaire d'un transmetteur. Ce schéma d'adressage est utilisé par exemple lorsque le client n'a pas la possibilité d'avoir un canal de communication direct avec le serveur (pas de protocole unique entre le serveur et le client). Le transmetteur a de cette façon les mêmes caractéristiques qu'un serveur et peut ainsi soit recevoir des messages qui lui sont destinés, soit transmettre les messages destiné au serveur. 
+
+\bigskip
+L'alternative à la fonction {\tt gop\_read()} est {\tt gop\_select\_destination()}. Cette fonction lit uniquement l'\edm d'un message et determine le canal de communication du destinataire d'après une liste de canaux actif. Si le message est destiné au process qui lancé {\tt gop\_select\_destination()}, le canal de destination est retourné comme {\tt NULL}. Sinon cette fonction retourne un des canaux de la liste. 
+
+\medskip
+Pour un message addressé au transmetteur, la \sdd du message reste donc à lire avec {\tt gop\_data\_section\_read()}  (l'\edm ayant déjà été lue par {\tt gop\_select\_destination()}). La fonction {\tt gop\_data\_section\_read()} retourne les mêmes valeurs que {\tt gop\_read()}.
+
+\medskip
+Par contre si le message est destiné au serveur, il faut transmettre l'\edm et la \sdd vers le destinataire final avec {\tt gop\_forward()}.
+
+\bigskip
+L'exemple suivant montre le code d'un programme travaillant en mode transmetteur:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect   connect_client;
+   struct gop_connect   connect_server;
+   struct gop_connect   *to_connect;
+   ...
+   list.nb = 1;
+   list.gop[0] = &connect_server;
+   gop_select_destination(&connect_client, &list, &to_connect, sizeof(cmd));
+
+   if (to_connect == NULL) {
+      /* on est le destinataire */
+      if (gop_data_section_read(&connect_client, cmd, sizeof(cmd)) < 0) {...}
+      ...
+   } else {
+      /* on est pas le destinataire */
+     gop_forward(&connect_client, to_connect);
+   }
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+\chapter{Fonctions supplémentaires, le guide}
+
+
+Quelques fonctions supplémentaires existent pour simplifier la programation.
+\section{Envoi de texte}
+La fonction {\tt gop\_write\_command()} facilite l'envoi d'une chaîne de caractère. L'exemple suivant montre l'appel standard équivalent et l'appel simplifié:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+main()
+{
+   struct gop_connect   connect;
+   char                 cmd[80];
+   ...
+   if(gop_write(&connect, cmd, strlen(cmd)+1, maxpacket, GOP_CHAR) != GOP_OK)
+     {...}
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+devient
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+main()
+{
+   struct gop_connect   connect;
+   char                 cmd[80];
+   ...
+   if(gop_write_command(&connect, cmd) != GOP_OK)
+     {...}
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+\section{Envoi d'une \fdm}
+Un client peut décider d'interrompre l'envoi d'un message en cours. Par exemple, on décide d'interrompre un message envoyé paquet par paquet, dont le nombre total de paquets est inconnu (interaction avec l'utilisateur par exemple).
+
+Pour faire cela, le client ne peut pas utiliser {\tt gop\_write} mais doit utiliser les appels de base qui le compose. 
+
+Dans l'exemple suivant le client envoi un message fourni par une fonction {\tt xxxx()} qui retourne une valeur {\tt GOP\_FALSE} indiquant si le message est le dernier. Le serveur s'attend au maximum a 100 messages et affichera le message envoyé avec le \fdm.
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect   connect;
+   char                 cmd[100]
+   ...
+   gop_set_msize = 100*sizeof(cmd);
+   gop_set_psize = sizeof(cmd);
+   gop_set_datatype = GOP_CHAR;
+   if(gop_header_fill(&connect)!=GOP_OK){...}
+   if(gop_header_write(&connect)!=GOP_OK){...}
+
+   while (xxxx(cmd)){
+      if(gop_d_packet_write(&connect, cmd, sizeof(cmd))!=GOP_OK){...}
+   }
+   if(gop_write_end_of_message(&connect, "fin d'acquisation")!=GOP_OK){...}
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+\section{Réception d'une \fdm}
+
+L'exemple précédent est maintenant vu du côté serveur. Le message est lu avec la fonction {\tt gop\_read()} qui se termine sur une erreur {\tt GOP\_END\_OF\_MESSAGE}. Le contenu de \fdm est lu avec la fonction {\tt gop\_read\_end\_of\_message()} qui est capable de lire un message dont le 1er byte de l'\edm à déjè été lu (cas de terminaison de message standard).
+
+Attention, la fonction {\tt gop\_read()} retourne un nombre négatif pour indiquer que la communication a été interrompue par une \fdm. La valeur absolue de ce nombre indique le nombre de bytes effectivement lus. Si cette valeur vaut {\tt -1}, cela indique non pas qu'un byte à été lu mais qu'une erreur c'est produite. Le code suivant indique la manière de traiter nomrmalement ce cas.
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect   connect;
+   char                 buf[10000], text[100];
+   ...
+   if((len = gop_read(&connect, buf, sizeof(buf))< 0){
+      if (gop_errno == GOP_END_OF_MESSAGE) {
+         if (gop_read_end_of_message(&connect_client, text, sizeof(text)) < 0) 
+              {...}
+         fprintf(stderr, "MESSAGE: >%s<\n", text);
+         if (len == -1)len = 0;
+         len = abs(len);
+      } else {
+         ... /* erreur communication */
+      }
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+\section{Communications}
+
+Une communication regroupe un ensemble de messages liés les uns aux autres. 
+
+Par exemple un client qui veut envoyer des données, envoye habituellement une commande au préhalable. Dans ce cas, le client envoye ces 2 messages sous la forme d'une communication unique, comprenant la commande puis les données.
+
+Le moyen d'indiquer à un process (travaillant en mode transmetteur) qu'un message est lié à un autre et donc que ce process doit rester en écoute du même canal jusqu'à la fin de la communication est donné par le paramètre {\tt CONT} de l'\edm. Ce paramètre indique par {\tt GOP\_TRUE} que le message courant est lié au message suivant.
+
+
+\medskip
+L'exemple suivant montre un client envoyant une communication comprenant une commande et des données.
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect   connect;
+   ...
+   gop_set_cont(&connect, GOP_TRUE);
+   if(gop_write_command(&connect, cmd) != GOP_OK)
+     {...}
+   gop_set_cont(&connect, GOP_FALSE);
+   if (gop_write(&connect, buf, msize, psize, data_type) != GOP_OK)
+     {...}
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+Le serveur (en mode transmetteur) a cette allure:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect   connect_client;
+   struct gop_connect   connect_server;
+   struct gop_connect   *to_connect;
+   ...
+   list.nb = 1;
+   list.gop[0] = &connect_server;
+   gop_select_destination(&connect_client, &list, &to_connect, sizeof(cmd));
+
+   if (to_connect == NULL) {
+      /* on est le destinataire */
+      if (gop_data_section_read(&connect_client, cmd, sizeof(cmd)) < 0) {...}
+      ...
+   } else {
+      /* on est pas le destinataire */
+     gop_forward(&connect_client, to_connect);
+     while(gop_get_cont(&connect)){
+        if(gop_h_read(&connect)!=GOP_OK){...}
+        if(gop_header_read(&connect)!=GOP_OK){...}
+        if(gop_forward(&connect_client, to_connect)!=GOP_OK){...}
+     }
+   }
+   ...
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+Dans l'exemple précédent on considère l'utilisation de {\tt CONT} pour un serveur en mode transmetteur. En effet, si le serveur est le destinataire final, le decodage de la commande qui lui est adressée lui indique que des données suivent la commande. Et donc ce type de serveur ne se soucie pas de la valeur de {\tt CONT}.
+
+\section{Redirection des messages de la librarie}
+Les messages de la librarie sortent par défaut sur {\tt stdout}. Il est possible de rediriger ces messages vers toutes autres sortie en enregistrant une fonction utilisateur. Cette fonction reçoit en argument la chaîne formatée et elle peut la renvoyer par exemple dans un fichier, sur le logbook sur {\tt stdout} ou encore simultanement sur plusieurs sorties possibles.
+
+Exemple:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+print_on_logbook(str)
+        char           *str;
+{
+        char            out[256];
+
+        sprintf(out, "my_name: %s", str);
+
+        if (log_book_status != -1) {
+                log_book_status = lbk_write_log_book(out);
+        } else {
+                print_on_stdout(out);
+        }
+}
+
+
+{...
+        gop_registration_for_printf(print_on_logbook);
+...}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+
+
+
+\chapter{Gestion des interruptions}
+
+GOP supporte l'interruption d'une communication chez le client. Le principe est simple:
+\begin{itemize}
+\item Si le client est interrompu (CTRL--C) lors d'un write ({\tt gop\_write()}), il envoie un bloc \fdm\ à la place d'un bloc standard  et la communication s'interrompt.
+\item Si le client est interrompu lors d'un read ({\tt gop\_read()}), il transmet un signal SIGURG au serveur (Out Of Band data sur socket internet ou kill() sur socket unix). A ce moment, le serveur envoie un bloc \fdm\ à la place d'un bloc standard et la communication s'interrompt.
+\end{itemize}
+
+Il est donc vital que le process qui recoit l'interruption sache s'il joue le rôle de client ou de serveur. Par défaut, le serveur est le processus qui initialise la connection avec {\tt gop\_init\_connection()} et {\tt gop\_accept\_connection()} et le client est  le processus qui initialise la connection avec {\tt gop\_connection()}. 
+Si les rôles sont interchangés ou si le processus est un transmetteur, une assignation du rôle doit être faite après la connection. Cette assignation se fait avec la fonction: {\tt gop\_set\_side()} à laquelle on fourni comme argument: le pointeur sur la structure de connection et le rôle selon les valeurs suivantes:
+
+\vspace{5mm}\doublebox{\begin{minipage}{\myboxwidth} 
+\begindefine
+\item[GOP\_SERVER\_SIDE] joue le rôle de serveur.
+\item[GOP\_CLIENT\_SIDE] joue le rôle de client.
+\item[GOP\_TRANSMIT\_SIDE] joue le rôle de transmetteur.
+\end{list}
+\end{minipage}}\vspace{5mm}
+
+GOP installe ses propres handlers de signaux durant chaque communication (SIGINT, SIGURG, SIGPIPE et SIGALRM). Si le processus possède déjà ces handlers, GOP les exécutera durant le traitement du signal et les réinstalle en fin de communication.
+
+\bigskip
+{\bf Remarque importante:} un CTRL--C durant une interruption n'interrompt donc plus le processus. Si ce comportement est désiré, il faut installer un handler spécifique. Deplus chaque interruption en cours de communication (côté client) fait terminer la communication par un \fdm. Il est donc {\bf indispensable} de détecter l'erreur {\tt GOP\_END\_OF\_MESSAGE} après un {\tt gop\_read()} et dans le cas échant effectuer un {\tt gop\_read\_end\_of\_message} si ce n'est pas fait, gop est desynchroniser et il faut alors jouer sur les timeout.
+
+Exemple:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   char   buf[100000];
+   /* ... */
+   if (gop_read(&connect, buf, sizeof(buf)) < 0) {
+      if (gop_errno == GOP_END_OF_MESSAGE) {
+         if (gop_read_end_of_message(&connect, buf, sizeof(buf)) < 0) {
+            manage_gop_error("gop_read_second");
+         }
+         printf("Recu fin de message: >%s<\n", buf);
+      } else {
+         manage_gop_error("gop_read");
+      }
+   }
+   /* ... */
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+ou, avec l'utilisation {\tt gop\_handle\_eom()}:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+main()
+{
+   struct gop_connect connect;
+   char   buf[100000];
+   /* ... */
+   if (gop_read(&connect, buf, sizeof(buf)) < 0) {
+         gop_handle_eom(&connect, NULL);
+         manage_gop_error("gop_read");
+   }
+   /* ... */
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+
+De son côté, si un client envoie une commande à un serveur et reste en attente de données en retour, une interruption peut survenir pendant l'attente du client sur les données alors que le serveur n'as pas encore commencé le {\tt gop\_write()} permettant de rapatrier les données. 
+Dans ce cas le serveur recoit un signal SIGURG qui n'est pas géré par GOP car le serveur n'est pas entrain de faire une communication. Le serveur doit donc posséder un handler de SIGURG et mémoriser si un interrupt a eu lieu. Dans le cas échant, le serveur doit explicitement envoyer une \fdm pour terminer la communication avec le client.
+   
+Exemple:
+
+\vspace{5mm}\ovalbox{\begin{minipage}{\myboxwidth}\begin{verbatim} 
+#include <gop.h>
+
+static int server_interrupt;
+
+void handler_sigurg(sig)
+   int             sig;
+{
+   server_interrupt = 1;
+}
+
+main()
+{
+   struct gop_connect connect;
+   char            buf[100000];
+   /* ... */
+   if (gop_read(&connect, buf, sizeof(buf)) < 0) {   /* ... */ }
+   server_interrupt = 0;
+   /* ... processing ... */
+   if (server_interrupt) {
+      if(gop_write_end_of_message(&connect, 
+                                  "Interrupted transmission")!= GOP_OK) 
+         { /* ... */ }
+   } else {
+      if (gop_write(&connect, buf, sizeof(buf), 4096, GOP_CHAR) != GOP_OK) 
+         { /* ... */ }
+   }
+   /* ... */
+}
+\end{verbatim}\end{minipage}}\vspace{5mm}
+
+
+
+
+
+\chapter{Exemple complet en mode Client--Transmetteur--Serveur}
+
+L'exemple suivant montre un aspect typique d'une transmission client serveur.
+Le client envoie une commande (sous forme ASCII) puis envoie ou recupère des données.
+
+Dans cet exemple, le client et le serveur travaillent par défaut sur des sockets unix (type:{\tt GOP\_SOCKET\_UNIX}) nommées {\tt "socket.server"} ou peuvent travailler avec des sockets internet (type:{\tt GOP\_SOCKET}) avec l'option {\tt -h $<$hostname$>$} donnée au sur le client. Dans ce cas le numéro de port est fixé à 1280.
+
+On peut interposer un transmetteur entre le client et le serveur avec l'option {\tt -t} donnée au client . Dans ce cas le transmetteur travaille par défaut sur les sockets nommées {\tt "socket.transmit"} ou sur le port 1281. Le transmetteur se connecte sur le serveur de la même manière que le client en mode client--serveur.
+
+Le client peut accéder soit le serveur, soit le transmetteur. Le serveur et le transmetteur se terminent si le client est tué.
+
+
+
+
+\bigskip
+Voir les fichiers sous \verb#~#{\tt weber/exemples/gop: client.c transmitter.c server.c}
+\newpage
+
+\section{Mode Client--Transmetteur--Serveur: Le Client}
+%inclure ici client.c et changer les tabulateur en 3 espaces
+\begin{verbatim}
+#include <stdio.h>
+#include <gop.h>
+#include <signal.h>
+#include <demo.h>
+
+static int      client_interrupt;
+
+static void
+handler_ctrlc(sig)
+   int             sig;
+{
+   signal(SIGINT, handler_ctrlc);
+   printf("handler_ctrlc: recu SIGINT \n");
+   client_interrupt = 1;
+}
+
+main(argc, argv)
+   int             argc;
+   char          **argv;
+{
+   struct gop_connect connect;
+   char            answer[128];
+   char            host_name[80];
+   char            socket_name[10];
+   int             port = 1280, maxpacket = 4096, mode = GOP_HEADER_CONTENTS;
+   int             socket_unix = GOP_TRUE, transmitter = GOP_FALSE;
+   char            from[10];
+   int             flag, status;
+
+   extern char    *optarg;
+   char            c;
+
+   signal(SIGINT, handler_ctrlc);
+
+
+   strcpy(socket_name, "server");
+   strcpy(from, *argv);
+
+   while ((c = getopt(argc, argv, "h:tm:")) != -1) {
+      switch (c) {
+      case 'h':
+         strcpy(host_name, optarg);
+         socket_unix = GOP_FALSE;
+         break;
+      case 't':
+         transmitter = GOP_TRUE;
+         port = 1281;
+         strcpy(socket_name, "transmit");
+         break;
+      case 'm':
+         sscanf(optarg, "%d", &mode);
+         break;
+      default:
+         fprintf(stderr, "Options: [-h <host_name>] [-t] [-m] <mode>\n");
+         exit(0);
+      }
+   }
+
+   if (socket_unix) {
+      gop_init_client_socket_unix(&connect, from, socket_name,
+                   maxpacket, mode, 0);
+   } else {
+
+      gop_init_client_socket(&connect, from, host_name,
+                   port, maxpacket, mode, 0);
+   }
+   gop_set_stamp(&connect, GOP_TRUE);
+
+   if (gop_connection(&connect) != GOP_OK) {
+      manage_gop_error("gop_connection");
+      exit(0);
+   }
+   gop_set_to(&connect, "server");
+
+   for (;;) {
+      client_interrupt = 0;
+      printf("TAPEZ r(ead)  lecture  de 500 [KB] en provenance du serveur\n");
+      printf("      w(rite) écriture de 500 [KB] sur le serveur\n");
+      printf("      R(EAD)  lecture  de 500 [KB] en provenance du transmetteur\n");
+      printf("      W(RITE) écriture de 500 [KB] sur le transmetteur\n");
+      printf("      si la 2eme lettre est un 'm' le transfert est en mode matrix\n");
+      printf("      0-9     choix du niveau de debug\n");
+      printf("      q(uit)  pour quitter:\n");
+      gets(answer);
+
+      if (*answer == 'q')
+         exit(0);
+
+      if (*answer >= '0' && *answer <= '9')
+         gop_set_mode(&connect, atoi(answer));
+
+      if (client_interrupt == 0 && (*answer == 'r' || *answer == 'w' ||
+               *answer == 'R' || *answer == 'W')) {
+
+         if (transmitter && (*answer == 'R' || *answer == 'W'))
+            gop_set_to(&connect, "transmit");
+         else
+            gop_set_to(&connect, "server");
+
+         printf("ENVOI COMMAND SUR >%s<\n", gop_get_to(&connect));
+
+         gop_set_class(&connect, GOP_CLASS_COMD);
+         gop_set_cont(&connect, GOP_TRUE);
+         gop_set_stat(&connect, GOP_STAT_OPOK);
+
+         *answer = *answer | 0x20;
+         if (*(answer + 1) != 0)
+            *(answer + 1) = *(answer + 1) | 0x20;
+         if (gop_write_command(&connect, answer) != GOP_OK)
+            manage_gop_error("gop_write_command");
+
+         flag = *(answer + 1) == 'm' || *(answer + 1) == 'M';
+
+         if (*answer == 'r') {
+            status = read_data(&connect, flag);
+         } else {
+            status = write_data_client(&connect, flag);
+         }
+         if (status < 0)
+            manage_gop_error("gop_write_command");
+      }
+   }
+}
+
+int
+write_data_client(connect, flag)
+   struct gop_connect *connect;
+   int             flag;
+{
+   int             buf[NPIX_X * NPIX_Y];
+   int             i;
+   int             status;
+
+   /* envoi des data */
+
+   printf("\n\n Préparation data ... \n");
+   for (i = 0; i < sizeof(buf) / sizeof(int); i++)
+      buf[i] = i;
+
+   printf(" Envoi de data..... \n\n");
+   gop_set_cont(connect, GOP_FALSE);
+   gop_set_class(connect, GOP_CLASS_DATA);
+
+   if (flag)
+      status = gop_write_matrix(connect, (char *) &buf, XSIZE * YSIZE * sizeof(int),
+               XSIZE * sizeof(int), GOP_INT, NPIX_X, DX, DY);
+   else
+      status = gop_write(connect, (char *) &buf, sizeof(buf), 4096, GOP_INT);
+
+
+   if (status != GOP_OK) {
+      if (gop_errno == GOP_INTERRUPTED_TRANSMISSION) {
+         printf("message incomplet\n");
+      } else {
+         manage_gop_error("gop_read");
+      }
+   }
+   return (status);
+}
+\end{verbatim}
+\newpage
+\section{Mode Client--Transmetteur--Serveur: Le Transmetteur}
+%inclure ici transmitter.c et changer les tabulateur en 3 espaces
+\begin{verbatim}
+#include <stdio.h>
+#include <signal.h>
+#include <gop.h>
+#include <demo.h>
+
+static int      server_interrupt;
+
+static void
+handler_sigurg(sig)
+   int             sig;
+{
+   signal(SIGURG, handler_sigurg);
+   fprintf(stderr, "handler_sigurg: recu   SIGURG (OOB) \n");
+   server_interrupt = 1;
+}
+
+main(argc, argv)
+   int             argc;
+   char          **argv;
+{
+   struct gop_connect connect_client_inet;
+   struct gop_connect connect_client_unix;
+   struct gop_connect connect_server;
+   struct gop_connect *to_connect;
+   struct gop_list active_list;
+   struct gop_list input_list, output_list;
+
+   char            cmd[128];
+   int             i, flag, status;
+   char            host_name[80];
+   char            socket_name_server[] = "server";
+   char            socket_name_client[] = "transmit";
+   int             port_server = 1280, port_client = 1281;
+   int             maxpacket = 4096, mode = GOP_CONNECTION;
+   int             socket_unix = GOP_TRUE;
+   char            from[] = "transmit";
+
+   extern char    *optarg;
+   char            c;
+
+
+   signal(SIGURG, handler_sigurg);
+
+
+   while ((c = getopt(argc, argv, "h:")) != -1) {
+      switch (c) {
+      case 'h':
+         strcpy(host_name, optarg);
+         socket_unix = GOP_FALSE;
+         break;
+      default:
+         fprintf(stderr, "Options: [-h <host_name>]\n");
+         exit(0);
+      }
+   }
+
+   if (socket_unix) {
+      gop_init_client_socket_unix(&connect_server, from, socket_name_server,
+                   maxpacket, mode, 0);
+   } else {
+
+      gop_init_client_socket(&connect_server, from, host_name,
+                   port_server, maxpacket, mode, 0);
+   }
+   gop_set_stamp(&connect_server, GOP_TRUE);
+
+   if (gop_connection(&connect_server) != GOP_OK) {
+      manage_gop_error("gop_connection");
+      exit(0);
+   }
+   gop_init_server_socket(&connect_client_inet, from, port_client, 
+                                maxpacket, mode, 0);
+   gop_init_server_socket_unix(&connect_client_unix, from, 
+                                socket_name_client, maxpacket, mode, 0);
+   gop_set_stamp(&connect_client_inet, GOP_TRUE);
+   gop_set_stamp(&connect_client_unix, GOP_TRUE);
+
+   if (gop_init_connection(&connect_client_inet) != GOP_OK) {
+      manage_gop_error("init sur socket internet");
+      exit(0);
+   }
+   if (gop_init_connection(&connect_client_unix) != GOP_OK) {
+      manage_gop_error("init sur socket unix");
+      exit(0);
+   }
+   input_list.timeout = 0;
+   input_list.nb = 3;
+   input_list.gop[0] = &connect_client_inet;
+   input_list.gop[1] = &connect_client_unix;
+   input_list.gop[2] = &connect_server;
+
+   active_list.nb = 1;
+   active_list.gop[0] = &connect_server;
+
+
+   while (1) {
+      if (gop_select_active_channel(&input_list, &output_list) != GOP_OK) {
+         manage_gop_error("gop_select_active_channel");
+      }
+      for (i = 0; i < output_list.nb; i++) {
+
+         if (gop_get_cd(output_list.gop[i]) == -1) {
+            if (gop_accept_connection(output_list.gop[i]) != GOP_OK) {
+               manage_gop_error("gop_accept_connection");
+               exit(0);
+            }
+            active_list.gop[active_list.nb] = output_list.gop[i];
+            active_list.nb = active_list.nb + 1;
+         } else {
+
+            if (gop_select_destination(output_list.gop[i], &active_list,
+                     &to_connect) != GOP_OK) {
+               manage_gop_error("gop_select_destination");
+            }
+            if (to_connect != NULL) {
+               printf("COMMUNICATION EN TRANSIT\n");
+
+               gop_set_side(output_list.gop[i], GOP_TRANSMIT_SIDE);
+
+               if (gop_forward(output_list.gop[i], to_connect) != GOP_OK) {
+                  manage_gop_error("gop_read");
+               }
+            } else {
+
+               printf("COMMUNICATION LOCALE\n");
+               gop_set_side(output_list.gop[i], GOP_SERVER_SIDE);
+               if (gop_read_data(output_list.gop[i], cmd, sizeof(cmd)) < 0) {
+                  manage_gop_error("gop_read");
+               }
+               printf("\n\n Recu: >%s<\n\n", cmd);
+               flag = *(cmd + 1) == 'm';
+               if (*cmd == 'r') {
+                  status = write_data_server(output_list.gop[i], flag);
+               } else {
+                  status = read_data(output_list.gop[i], flag);
+               }
+               if (status < GOP_OK)
+                  manage_gop_error("gop_write_command");
+
+            }
+         }
+      }
+   }
+}
+\end{verbatim}
+\newpage
+
+\section{Mode Client--Transmetteur--Serveur: Le Serveur}
+%inclure ici server.c et changer les tabulateur en 3 espaces
+\begin{verbatim}
+#include <stdio.h>
+#include <signal.h>
+#include <gop.h>
+#include <demo.h>
+
+static int      server_interrupt;
+
+static void
+handler_sigurg(sig)
+   int             sig;
+{
+   signal(SIGURG, handler_sigurg);
+   fprintf(stderr, "handler_sigurg: recu   SIGURG (OOB) \n");
+   server_interrupt = 1;
+}
+
+main()
+{
+   struct gop_connect connect_unix;
+   struct gop_connect connect_inet;
+   struct gop_list input_list, output_list;
+
+   char            cmd[128];
+   int             i, flag, status;
+   int             port = 1280, maxpacket = 1540, mode = GOP_CONNECTION;
+   int             timeout = 0;
+   char            from[] = "server", socket_name[] = "server";
+
+   signal(SIGURG, handler_sigurg);
+
+   gop_init_server_socket(&connect_inet, from, port, maxpacket, 
+                                mode, timeout);
+   gop_init_server_socket_unix(&connect_unix, from, socket_name,
+                                 maxpacket, mode, timeout);
+   gop_set_stamp(&connect_inet, GOP_TRUE);
+   gop_set_stamp(&connect_unix, GOP_TRUE);
+
+   if (gop_init_connection(&connect_inet) != GOP_OK) {
+      manage_gop_error("init sur socket internet");
+      exit(0);
+   }
+   if (gop_init_connection(&connect_unix) != GOP_OK) {
+      manage_gop_error("init sur socket unix");
+      exit(0);
+   }
+   input_list.timeout = 0;
+   input_list.nb = 2;
+   input_list.gop[0] = &connect_inet;
+   input_list.gop[1] = &connect_unix;
+
+   while (1) {
+      if (gop_select_active_channel(&input_list, &output_list) != GOP_OK) {
+         manage_gop_error("gop_select_active_channel");
+      }
+      for (i = 0; i < output_list.nb; i++) {
+         if (gop_get_cd(output_list.gop[i]) == -1) {
+            if (gop_accept_connection(output_list.gop[i]) != GOP_OK) {
+               manage_gop_error("gop_accept_connection");
+               exit(0);
+            }
+         } else {
+            if (gop_read(output_list.gop[i], cmd, sizeof(cmd)) < 0) {
+               manage_gop_error("gop_read");
+            }
+            printf("\n\n Recu: >%s<\n\n", cmd);
+            flag = *(cmd + 1) == 'm';
+            if (*cmd == 'r') {
+               status = write_data_server(output_list.gop[i], flag);
+            } else {
+               status = read_data(output_list.gop[i], flag);
+            }
+            if (status < GOP_OK)
+               manage_gop_error("gop_write_command");
+
+         }
+      }
+   }
+}
+
+\end{verbatim}
+
+\section{Mode Client--Transmetteur--Serveur: Le fonctions communes}
+%a faire a la main
+\begin{verbatim}
+static void
+manage_gop_error(txt)
+   char           *txt;
+{
+   fprintf(stderr, "manage_gop_error: Erreur GOP : %s: %s\n", txt, gop_get_error_str());
+   if (gop_errno == GOP_DISCONNECT)
+      exit(0);
+}
+
+int
+read_data(connect, flag)
+   struct gop_connect *connect;
+   int             flag;
+{
+   int             buf[NPIX_X * NPIX_Y];
+   int             status;
+
+   if (flag) {
+      if ((status = gop_read_matrix(connect, (char *) &buf, sizeof(buf),
+                 NPIX_X, DX, DY)) < 0)
+         gop_handle_eom(connect, NULL);
+   } else {
+      if ((status = gop_read(connect, (char *) &buf, sizeof(buf))) < 0)
+         gop_handle_eom(connect, NULL);
+   }
+
+   return (status);
+}
+
+int
+write_data_server(connect, flag)
+   struct gop_connect *connect;
+   int             flag;
+{
+   int             buf[NPIX_X * NPIX_Y];
+   int             i;
+   int             status;
+
+   server_interrupt = 0;
+
+   /* envoi des data */
+
+   printf("\n\n Préparation data  \n");
+   for (i = 0; i < sizeof(buf) / sizeof(int); i++)
+      buf[i] = i;
+
+   for (i = 0; i < 4; i++) {
+      sleep(1);
+      printf(".");
+      fflush(stdout);
+      if (server_interrupt)
+         break;
+   }
+   printf("\n");
+
+   gop_set_destination(connect);
+
+   if (server_interrupt) {
+      /*
+       * envoi de EOM si le serveur a ete interrompue hors
+       * communication
+       */
+      printf("!!!! Interrupt Détecté durant la péparation des data: \n");
+      printf("!!!!    ->  envoi de fin de message\n");
+      gop_write_end_of_message(connect, "Interrupted transmission");
+      return (GOP_KO);
+
+   } else {
+      /*
+       * envoi des data
+       */
+      printf(" Envoi data  \n\n");
+
+      gop_set_cont(connect, GOP_FALSE);
+      gop_set_class(connect, GOP_CLASS_DATA);
+      if (flag)
+         status = gop_write_matrix(connect, (char *) &buf, XSIZE * YSIZE * sizeof(int),
+               XSIZE * sizeof(int), GOP_INT, NPIX_X, DX, DY);
+      else
+         status = gop_write(connect, (char *) &buf, sizeof(buf), 4096, GOP_INT);
+
+      if (status != GOP_OK)
+         return (GOP_KO);
+
+   }
+   return (GOP_OK);
+}
+\end{verbatim}
+
+
+\chapter{Manuel de référence, Fonctions principales}
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_accept\_connection()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Etabli une connection côté serveur sur un port qui a déjà été initialisé avec \\{\tt gop\_init\_connection()}.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_accept_connection(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Une fois {\tt gop\_accept\_connection()} lancé, un client peut se connecter avec {\tt gop\_connection()}.
+
+Lorsque la connection est établie, {\tt gop\_accept\_connection()} attend un message en provenance de son interlocuteur. Ce message est envoyé automatiquement par {\tt gop\_connection()}.
+
+L'\edm doit contenir dans le champ {\tt header.psize} la taille maximum que le client est prêt à recevoir et le nom symbolique du client dans le champ {\tt header.from}. 
+
+{\tt gop\_accept\_connection()} determine la taille maximum des paquets pour cette connection selon le minimum de {\tt connect->maxpacket} et {\tt connect->header.psize}. Il met à jour {\tt connect->to} avec {\tt connect->header.from}.
+
+La \sdd contient des constantes de chaque type numérique reconnu par GOP (short, int, long, float et double). Ces constantes permettent de déterminer automatiquement si le canal de communication nécessite ou non l'utilisation de XDR. 
+
+{\tt gop\_accept\_connection()} met à jour {\tt connect->need\_xdr}.
+
+Une fois les données interprétées, {\tt gop\_accept\_connection()} envoie à son tour les mêmes indication à son interlocuteur, c'est à dire la taille maximum des paquets en réception, le nom symbolique du serveur et les constantes. }
+% VARIABLES EN ENTREE ------------------------------------------------------
+\docbeginvints
+\GOPtype
+\GOPcdXinit
+\GOPfrom
+\GOPmaxpacket
+\GOPmode
+\docendvars
+% VARIABLES EN SORTIE ------------------------------------------------------
+\docbeginvress
+\GOPcd
+\GOPto
+\GOPneedXxdr
+\GOPmaxpacket
+\GOPclass {Posé à {\tt GOP\_CLASS\_COMD.}}
+\GOPcont {Posé à {\tt GOP\_FALSE.}}
+\GOPstamp \\{Posé à {\tt GOP\_TRUE.}}
+\GOPhsync \\{Posé à {\tt GOP\_SYNCHRO.}}
+\GOPdsync {Posé à {\tt GOP\_SYNCHRO.}}
+\GOPstat {Posé à {\tt GOP\_STAT\_OPOK }}
+\GOPdatatype {Posé à {\tt GOP\_CHAR.}}
+\docendvars
+% REMARQUE -----------------------------------------------------------------
+%\docremarques{-- -- --}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   connect;
+          ...
+          if(gop_init_connection(&connect) != GOP_OK){...}      
+          if(gop_accept_connection(&connect) != GOP_OK){...}
+\end{verbatim}
+\eject
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_close\_connection()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Ferme completement un canal de communication (cd +cd\_init).}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_close_connection(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+\eject
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_close\_init\_connection()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Ferme la partie initialisation d'un canal de communication (cd\_init).}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_close_init_connection(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+\eject
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_close\_active\_connection()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Ferme la partie active d'un canal de communication (cd).}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_close_active_connection(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_connection()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Etabli une connection côté client.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_connection(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{{\tt gop\_connection()} se connecte sur un serveur qui a effectué un {\tt gop\_accept\_connection()}.
+
+Lorsque la connection est établie, {\tt gop\_connection()} envoie un message à son interlocuteur. 
+
+Le header du message doit contenir dans le champ {\tt connect->header.psize} la taille maximum que le client est prêt à recevoir ainsi que le nom symbolique du client dans le champ {\tt connect->header.from}. 
+
+La partie data contient des constantes de chaque type numérique reconnu par GOP (short, int, long, float et double). 
+
+Une fois envoyé, il se met en attente d'un message, en provenance du serveur, contenant les mêmes indications.
+
+{\tt gop\_connection()} determine la taille maximum des paquets pour cette connection selon le minimum de {\tt connect->maxpacket} et {\tt connect->header.psize}. Il met à jour {\tt connect->to} avec {\tt connect->header.from}. Les constantes reçus dans la partie data permettent de déterminer automatiquement si le canal de communication nécessite ou non l'utilisation de XDR. {\tt gop\_connection()} met à jour {\tt connect->need\_xdr}.}
+% VARIABLES EN ENTREE ------------------------------------------------------
+\docbeginvints
+\GOPtype
+\GOPfrom
+\GOPmaxpacket
+\GOPmode
+\itemvar{SOCKET:}{\hfil}{\hfil}
+\GOPname
+\GOPport
+\itemvar{SOCKET\_UNIX:}{\hfil}{\hfil}
+\GOPname
+\itemvar{TPU:}{\hfil}{\hfil}
+\docendvars
+% VARIABLES EN SORTIE ------------------------------------------------------
+\docbeginvress
+\GOPcd
+\GOPto
+\GOPneedXxdr
+\GOPmaxpacket
+\GOPclass {Posé à {\tt GOP\_CLASS\_COMD.}}
+\GOPcont {Posé à {\tt GOP\_FALSE.}}
+\GOPstamp \\{Posé à {\tt GOP\_TRUE.}}
+\GOPhsync \\{Posé à {\tt GOP\_SYNCHRO.}}
+\GOPdsync {Posé à {\tt GOP\_SYNCHRO.}}
+\GOPstat {Posé à {\tt GOP\_STAT\_OPOK }}
+\GOPdatatype {Posé à {\tt GOP\_CHAR.}}
+\docendvars
+% REMARQUE -----------------------------------------------------------------
+%\docremarques{-- -- --}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   connect;
+          if(gop_connection(&connect) != GOP_OK){...}      
+\end{verbatim}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_forward()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Transmet un message complet (\edm + \sdd)}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_forward(from_connect, to_connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {from\_connect} {structure associée à un canal de communication en réception}
+\itemparam {to\_connect} {structure associée à un canal de communication en émission}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{L'utilisation de cette fonction se fait après que l'\edm ait été lu. Ainsi l'\edm est transmis puis la \sdd est réceptionée et envoyée paquet par paquet. (voir {\tt gop\_header\_forward()} et {\tt gop\_data\_section\_forward()}.}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   from_connect;
+          struct gop_connect   *to_connect;
+          ...
+          gop_select_destination(&connect_client, &list, &to_connect, size);
+          if (to_connect == NULL) {
+             /* on est le destinataire */
+             ....
+          } else {
+             /* on est pas le destinataire */
+            gop_forward(&connect_client, to_connect); 
+          }
+\end{verbatim}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_get\_error\_str()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Retourne le texte du message d'erreur donné par {\tt gop\_errno}.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          char *
+          gop_get_error_str()
+\end{verbatim}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_get\_XXXX()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lecture d'un élément d'une structure de type gop\_connect}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          type_of_XXXX
+          gop_get_XXXX(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Les élément accessibles par cette serie de fonctions sont:
+
+\begin{tabular}{ll}
+class & avec: gop\_get\_class(connect)\\
+cd & avec: gop\_get\_cd(connect)\\
+cont & avec: gop\_get\_cont(connect)\\
+date & avec: gop\_get\_date(connect)\\
+datatype & avec: gop\_get\_datatype(connect)\\
+dsync & avec: gop\_get\_dsync(connect)\\
+from & avec: gop\_get\_from(connect)\\
+name & avec: gop\_get\_name(connect)\\
+hsync & avec: gop\_get\_hsync(connect)\\
+maxpacket & avec: gop\_get\_maxpacket(connect)\\
+mode & avec: gop\_get\_mode(connect)\\
+msize & avec: gop\_get\_msize(connect)\\
+port & avec: gop\_get\_port(connect)\\
+psize & avec: gop\_get\_psize(connect)\\
+side & avec: gop\_get\_side(connect)\\
+stamp & avec: gop\_get\_stamp(connect)\\
+stat & avec: gop\_get\_stat(connect)\\
+timeout & avec: gop\_get\_timeout(connect)\\
+to & avec: gop\_get\_to(connect)\\
+type & avec: gop\_get\_type(connect)\\
+\end{tabular}
+}
+\eject
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_handle\_eom()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Fonction d'aide au traitement du \fdm}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          void
+          gop_handle_eom(connect, fct)
+              struct gop_connect *connect
+              void                (*fct) ();
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {status}  {status courant}
+\itemparam {fct}     {fonction de gestion d'erreur}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Cette fonction est principalement utilisée après un {\tt gop\_read()} et permet de gérer la \fdm si le cas se présente (si le {\tt gop\_read()} se termine sur un {\tt GOP\_END\_OF\_MESSAGE}). Ce traitement permet de récupérer un texte de 256 caractères au maximum et de le passer à la fonction {\tt fct()}. 
+Si cette fonction est déclarée {\tt NULL}, le message est affiché à l'écran. {\tt gop\_errno} vaut {\tt GOP\_INTERRUPTED\_TRANSMISSION} s'il valait {\tt GOP\_END\_OF\_MESSAGE} ou vaut {\tt GOP\_EOM\_TOO\_BIG} s'il y a eu un {\tt GOP\_END\_OF\_MESSAGE} et que le message est plus grand que 256 caractères ou si les 256 caractères du message n'ont pas pu être alloués (malloc).}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+my_error_handler(txt)
+          char           *txt;
+{
+          fprintf(stderr, "Erreur GOP : %s: %s\n", txt, gop_get_error_str());
+          if (gop_errno == GOP_DISCONNECT)
+                    exit();
+}
+
+main()
+{
+          /* ... */
+          if ((status=gop_read(&connect, buf, sizeof(buf))) < 0) {
+                    gop_handle_eom(&connect, my_error_handler);
+                    my_error_handler("gop_read");
+          }
+          /* ... */
+}
+
+\end{verbatim}
+%\ej
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_init\_connection()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Initialise un canal de communication côté serveur}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_init_connection(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{{\tt gop\_init\_connection()} est la première phase d'initialisation du coté serveur, cette fonction doit être suivie par {\tt gop\_accept\_connection()}.}
+% VARIABLES EN ENTREE ------------------------------------------------------
+\docbeginvints
+\GOPtype
+\GOPmode
+\itemvar{SOCKET:}{\hfil}{\hfil}
+\GOPport
+\itemvar{SOCKET\_UNIX:}{\hfil}{\hfil}
+\GOPname
+\itemvar{TPU:}{\hfil}{\hfil}
+\docendvars
+% VARIABLES EN SORTIE ------------------------------------------------------
+\docbeginvress
+\itemvar{SOCKET:}{\hfil}{\hfil}
+\itemvar{SOCKET\_UNIX:}{\hfil}{\hfil}
+\GOPcdXinit
+\GOPcd {{\tt connect->cd} est posé à $-1$.}
+\itemvar{TPU:}{\hfil}{\hfil}
+\GOPcdXinit {{\tt connect->cd\_init} est posé à $-1$.}
+\GOPcd {{\tt connect->cd} est posé à $-1$.}
+\docendvars
+\eject
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_init\_server\_socket()}
+\titre 
+{gop\_init\_client\_socket()}
+\titre 
+{gop\_init\_server\_socket\_unix()}
+\titre 
+{gop\_init\_client\_socket\_unix()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Fonction d'initialisation spécifique au type de connection.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          void
+          gop_init_server_socket(connect, from, port, maxpacket, mode, timeout)
+
+          void
+          gop_init_client_socket(connect, from, host, port, maxpacket, mode, timeout)
+
+          void
+          gop_init_server_socket_unix(connect, from, name, maxpacket, mode, timeout)
+
+          void
+          gop_init_client_socket_unix(connect, from, name, maxpacket, mode, timeout)
+
+              struct gop_connect *connect;
+              char               *from;
+              char               *host;
+              int                port;
+              int                maxpacket;
+              int                mode;
+              int                timeout;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {from} {nom symbolique du prgramme lançanat cette fonction}
+\itemparam {host} {nom internet de la machine serveur}
+\itemparam {name} {nom du socket (sans le path) pour {\tt GOP\_SOCKET}}
+\itemparam {port} {No de port pour {\tt GOP\_SOCKET\_UNIX} }
+\itemparam {maxpacket} {taille maximum des paquets en réception}
+\itemparam {mode} {niveau de verbosité du protocole}
+\itemparam {timeout} {timeout pour les opération d'entrée--sortie}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Ces fonctions remplacent les suites d'appel aux fonctions {\tt gop\_set\_xxx()} utilisées pour initialiser les structure de communications.}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          gop_init_client_socket_unix(connect, 'aff', 'aff', 2048, GOP_NOTHING, 0);
+\end{verbatim}
+\eject
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_printf()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Fonction d'impression utilisée par la librairie. Cette fonction s'utilise comme le {\tt printf()}, mais est traitée par la fonction enregistrée par {\tt gop\_registration\_for\_printf()}}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int 
+          gop_printf(format, args, ...)
+              char              *format;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {format} {format (voir printf()}
+\itemparam {args} {arguments de tout types liés à ce format}
+
+\docendparam
+% EXEMPLES:  ---------------------------------------------------------------
+\eject
+
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_read()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lecture d'un message complet dont on se sait le destinataire}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_read(connect, buf, sizeof_buf)
+              struct gop_connect *connect
+              char               *buf
+              int                 sizeof_buf
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf} {tableau de destination}
+\itemparam {sizeof\_buf} {taille du tableau}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Retourne le nombre de bytes effectivement lu (voir {\tt gop\_data\_section\_read()}).}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   connect;
+          char  cmd[128];
+
+          gop_init_connection(&connect);
+          gop_accept_connection(&connect);
+
+          gop_read(&connect, cmd, sizeof(cmd)); 
+          .....
+\end{verbatim}
+\eject
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_read\_end\_of\_message()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Comme {\tt gop\_read()}, mais sans la lecture du premier byte d'\edm.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_read_end_of_message(connect, buf, sizeof_buf)
+              struct gop_connect *connect
+              char               *buf
+              int                 sizeof_buf
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf} {tableau de destination}
+\itemparam {sizeof\_buf} {taille du tableau}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Utilisé pour lire une \fdm alors que le premier byte ('E') à déjà été lu. Par {\tt gop\_data\_section\_read()} par exemple.}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   connect;
+          char  cmd[128];
+
+          .....
+          if(gop_errno == GOP_END_OF_MESSAGE){
+             gop_read_end_of_message(&connect, cmd, sizeof(cmd)); 
+             .....
+          }
+\end{verbatim}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_read\_matrix()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lecture de données dont la destination est une matrice incluse dans une matrice de taille supérieure ou égale.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int 
+          gop_read_matrix(connect, buf, sizeof_buf, npix_x, dx, dy)
+              struct gop_connect *connect;
+              char               *buf;
+              int                 sizeof_buf;
+              int                 npix_x;
+              int                 dx;
+              int                 dy;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf} {tableau de destination}
+\itemparam {sizeof\_buf} {taille totale du tableau en bytes}
+\itemparam {npix\_x} {taille du tableau selon X en pixel}
+\itemparam {dx} {offset du premier pixel selon X en pixel}
+\itemparam {dy} {offset du premier pixel selon Y en pixel}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Utilisé pour lire des parties d'image. {\tt dx} et {\tt dy} sont donnés selon l'origine de la matrice {\tt buf} avec une origine en $<$0;0$>$.}
+% EXEMPLES:  ---------------------------------------------------------------
+\eject
+
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_registration\_for\_printf()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Permet d'enregistrer un fonction utilisateur pour la redirection des message de la librairie.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int 
+          gop_registration_for_printf(fct)
+              void              (*fct) ();
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {fct} {fonction utilisateur}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{La fonction reçoit la chaîne formatée et l'imprime sur la sortie de son choix.}
+% EXEMPLES:  ---------------------------------------------------------------
+\eject
+
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_select\_active\_channel()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Se met en attente d'un message sur un canal actif.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_select_active_channel(list_active, list_ready)
+              struct gop_list *list_active;
+              struct gop_list *list_ready;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {list\_active} {liste des cannaux de communications actifs.}
+\itemparam {list\_ready}  {liste des cannaux ayant un message en attente.}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Cette fonction se met en attente aussi bien pour des réceptions de messages que pour des demandes de connections. 
+
+\medskip
+Pour une structure {\tt gop\_connect} dont l'adresse est donnée dans {\tt liste\_active} l'indication s'il s'agit d'une attente en connection ou d'une attente de message est donée par la variable {\tt connect->cd}. Si elle vaut {\tt -1}, cela signifie que le canal n'est pas actif. Dans ce cas, le select se fait sur {\tt connect->cd\_init}. Si {\tt connect->cd} est différent de {\tt -1}, c'est sur cette valeur que ce fera le select.
+
+\medskip
+Une fois le {\tt select} terminé, {\tt gop\_select\_active\_channel()} retourne la liste des cannaux en attente dans {\tt list\_ready}. Cette liste peut contenir plus d'un élément car plusieurs clients ont pu faire un accès avant que le serveur ne lance {\tt gop\_select\_active\_channel()} ou alors qu'il était occupé. Dans ce cas la priorité (position dans la liste) est conservée de la liste d'origine {\tt liste\_active}.
+
+\medskip
+Si {\tt connect->timeout} du premier canal de communication de {\tt list\_active} est différent de zéro, la fonction travaille avec un timeout (exprimé en secondes entières).}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_select\_destination()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lecture de \edm et determination du destinataire.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_select_destination(from_connect, list, to_connect, buf_size)
+              struct gop_connect  *connect
+              struct gop_list     *list;
+              struct gop_connect **to_connect;
+              int                  buf_size
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {from\_connect} {structure associée à un canal de communication en réception}
+\itemparam {list}         {liste des connections actives}
+\itemparam {to\_connect}   {structure associée à un canal de communication en émission}
+\itemparam {buf\_size}   {taille du buffer pour les communications locales}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{{\tt gop\_select\_destination()} lit l'\edm. La compatibilité de version est testée et la structure {\tt from\_connect} est mise à jour selon les indications du header.
+
+Si {\tt list} est valide (pas égal à {\tt NULL}) cela signifie que le programme exécutant\\ {\tt gop\_select\_destination()} peut travailler en mode transmetteur. Dans ce cas {\tt list} contient la liste des connections actives.
+
+Si le programme exécutant {\tt gop\_select\_destination()} est reconnu comme destinataire, {\tt to\_connect} est posé à {\tt NULL}.
+
+Si le programme exécutant {\tt gop\_select\_destination()} n'est pas reconnu comme destinataire, {\tt to\_connect} est mis à jour et pointe sur la structure reconnue comme destinatrice. Dans ce cas l'\edm est copié integralement dans {\tt connect->header}.}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   connect_a;
+          struct gop_connect   connect_b;
+          struct gop_connect   connect_c;
+          struct gop_connect   *to_connect;
+          ...
+          list.nb = 3;
+          list.gop[0] = &connect_a;
+          list.gop[1] = &connect_b;
+          list.gop[2] = &connect_c;
+          ...
+          gop_select_destination(&connect_a, &list, &to_connect, size);
+
+          if (to_connect == NULL) {
+             /* on est le destinataire */
+             ...
+          } else {
+             /* on est pas le destinataire */
+            gop_forward(&connect_a, to_connect);
+          }
+         ...
+
+\end{verbatim}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_set\_destination()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Inverse les noms de l'expéditeur et du destinataire avant l'envoi d'un message vers l'expéditeur du message courant.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          void 
+          gop_set_destination(connect)
+              struct gop_connect *connect;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+% EXEMPLES:  ---------------------------------------------------------------
+\eject
+
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_set\_XXXX()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Mis à jour d'un élément d'une structure de type gop\_connect}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          void
+          gop_set_XXXX(connect, XXXX)
+              struct gop_connect *connect
+              type_of_XXXX        XXXX
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {XXXX} {élément d'une structure de type gop\_connect}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Les élément accessibles par cette serie de fonctions sont:
+
+\begin{tabular}{ll}
+class & avec: gop\_set\_class(connect, class)\\
+cont & avec: gop\_set\_cont(connect, cont)\\
+datatype & avec: gop\_set\_datatype(connect, datatype)\\
+dsync & avec: gop\_set\_dsync(connect, dsync)\\
+from & avec: gop\_set\_from(connect, from)\\
+name & avec: gop\_set\_name(connect, name)\\
+his\_name & avec: gop\_his\_my\_name(connect, his\_name)\\
+hsync & avec: gop\_set\_hsync(connect, hsync)\\
+maxpacket & avec: gop\_set\_maxpacket(connect, maxpacket)\\
+mode & avec: gop\_set\_mode(connect, mode)\\
+msize & avec: gop\_set\_msize(connect, msize)\\
+my\_name & avec: gop\_set\_my\_name(connect, my\_name)\\
+port & avec: gop\_set\_port(connect, port)\\
+psize & avec: gop\_set\_psize(connect, psize)\\
+side & avec: gop\_set\_side(connect, side)\\
+stamp & avec: gop\_set\_stamp(connect, stamp)\\
+stat & avec: gop\_set\_stat(connect, stat)\\
+timeout & avec: gop\_set\_timeout(connect, timeout)\\
+to & avec: gop\_set\_to(connect, to)\\
+type & avec: gop\_set\_type(connect, type)\\
+\end{tabular}
+}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_write()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Envoi complet d'un message (\edm + \sdd).}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_write(connect, data, msize, psize, datatype)
+              struct gop_connect *connect
+              char               *data
+              int                 msize
+              int                 psize
+              int                 datatype
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf} {tableau}
+\itemparam {msize} {taille du message}
+\itemparam {psize} {taille des packet}
+\itemparam {datatype} {type de donnée}
+\docendparam
+% VARIABLES EN SORTIE ------------------------------------------------------
+\docbeginvress
+\GOPmsize {Posé à {\tt msize}.}
+\GOPpsize {Posé à {\tt psize}.}
+\GOPdatatype {Posé à {\tt datatype}.}
+\docendvars
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   connect;
+          char  cmd[128];
+
+          gop_init_connection(&connect);
+          gop_accept_connection(&connect);
+
+          strcpy(cmd,"commande");
+          gop_write(&connect, cmd, sizeof(cmd), connect.maxpacket, GOP_CHAR); 
+          .....
+\end{verbatim}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_write\_acknowledgement()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Envoi complet d'un message (\edm + \sdd) de classe ACKN.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_write_acknowledgement(connect, state, texte)
+              struct gop_connect *connect
+              char               *state
+              char               *texte
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {state} {état du système (voir {\tt GOP\_STAT\_XXXX}}
+\itemparam {texte} {tableau}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Cette fonction accepte des chaîne de caractères de longueur nulle.}
+% VARIABLES EN SORTIE ------------------------------------------------------
+\docbeginvress
+\GOPclass {Posé à {\tt GOP\_CLASS\_ACKN.}}
+\GOPstat {Posé à {\tt stat.}}
+\GOPmsize {Posé à {\tt sizeof(texte).}}
+\GOPpsize {Posé à {\tt connect->maxpacket.}}
+\GOPdatatype {Posé à {\tt GOP\_CHAR.}}
+\docendvars
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          gop_write_acknowledgement(&connect, GOP_STAT_RCOV, "Erreur synchro");
+          ...
+          gop_write_acknowledgement(&connect, GOP_STAT_OPOK, "");
+\end{verbatim}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_write\_command()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Envoi complet d'un message (\edm + \sdd) de classe COMD.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_write_command(connect, data)
+              struct gop_connect *connect
+              char               *data
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {data} {tableau}
+\docendparam
+% VARIABLES EN SORTIE ------------------------------------------------------
+\docbeginvress
+\GOPmsize {Posé à {\tt strlen(data)+1.}}
+\GOPpsize {Posé à {\tt connect->maxpacket.}}
+\GOPdatatype {Posé à {\tt GOP\_CHAR.}}
+\docendvars
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   connect;
+          char  cmd[128];
+
+          gop_init_connection(&connect);
+          gop_accept_connection(&connect);
+
+          strcpy(cmd,"initialisation");
+          gop_write_command(&connect, cmd);
+          .....
+\end{verbatim}
+\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_write\_end\_of\_message()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Envoi complet d'un \fdm.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_write_end_of_message(connect, data)
+              struct gop_connect *connect
+              char               *data
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {data} {tableau}
+\docendparam
+% VARIABLES EN SORTIE ------------------------------------------------------
+\docbeginvress
+\GOPmsize {Posé à {\tt sizeof(data).}}
+\GOPpsize {Posé à {\tt connect->maxpacket.}}
+\GOPhsync \\{Posé à {\tt GOP\_SYNCHRO.}}
+\GOPdsync {Posé à {\tt GOP\_SYNCHRO.}}
+\GOPcont {Posé à {\tt GOP\_FALSE.}}
+\GOPstamp \\{Posé à {\tt GOP\_TRUE.}}
+\GOPdatatype {Posé à {\tt GOP\_CHAR.}}
+\docendvars
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   connect;
+          char  cmd[128];
+
+          gop_init_connection(&connect);
+          gop_accept_connection(&connect);
+
+          strcpy(cmd,"fin de données");
+          gop_write_end_of_message(&connect, cmd);
+          .....
+\end{verbatim}
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_write\_matrix()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Envoi de données dont la source est une matrice incluse dans une matrice de taille supérieure ou égale.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int 
+          gop_write_matrix(connect, buf, msize, psize, datatype, npix_x, dx, dy)
+              struct gop_connect *connect;
+              char               *buf;
+              int                 sizeof_buf;
+              int                 npix_x;
+              int                 dx;
+              int                 dy;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf} {tableau de destination}
+\itemparam {msize} {taille de la matrice à transferer en bytes}
+\itemparam {psize} {nombre de bytes dans une ligne de cette matrice}
+\itemparam {datatype} {type de données}
+\itemparam {npix\_x} {taille du tableau selon X en pixel}
+\itemparam {dx} {offset du premier pixel selon X en pixel}
+\itemparam {dy} {offset du premier pixel selon Y en pixel}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Utilisé pour envoyer des parties d'image. {\tt dx} et {\tt dy} sont donnés selon l'origine de la matrice {\tt buf} avec une origine en $<$0;0$>$.}
+% EXEMPLES:  ---------------------------------------------------------------
+\eject
+
+
+
+\chapter{Manuel de référence, Fonctions internes}
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_acknow\_read()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lit un packet de type acknowledge}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_acknow_read(connect, remote_status)
+              struct gop_connect *connect
+              int                *remote_status
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {remote\_status} {status de l'interlocuteur}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Retourne dans {\tt remote\_status} le status d'erreur de l'interlocuteur. 
+
+Si ce status est différent de zéro, {\tt gop\_acknow\_read()} retourne {\tt GOP\_KO}.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_acknow\_write()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Écrit un packet de type acknowledge}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_acknow_write(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Code la valeur de {\tt gop\_errno} dans le packet acknowledge.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_alloc\_connect\_structure()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{allocation d'un structure de communication}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          struct gop_connect *
+          gop_alloc_connect_structure()
+\end{verbatim}
+% REMARQUE -----------------------------------------------------------------
+%\docremarques{-- -- --}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          program fgop
+          integer  connect_struct, status
+
+          call fortran_alloc(connect_struct, status)
+          ....
+          end
+
+          void
+          fortran_alloc_(connect, status)
+              struct gop_connect **connect;
+              int            *status;
+          {
+              *status = GOP_OK;
+              *connect = (struct gop_connect *) gop_alloc_connect_structure();
+
+              if (*connect == (struct gop_connect *) NULL) 
+                     *status = GOP_KO;
+              return;
+          }
+\end{verbatim}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_d\_packet\_read()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lit un seul paquet de la \sdd}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_d_packet_read(connect, buf, size, flag)
+              struct gop_connect *connect
+              char               *buf
+              int                 size
+              int                 flag 
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf} {adresse destination}
+\itemparam {size} {taille du paquet à lire en bytes}
+\itemparam {flag} {indique par GOP\_TRUE que la fonction gère l'acknoledgement (cas standard).}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Retourne {\tt GOP\_KO} et met {\tt GOP\_END\_OF\_MESSAGE} dans {\tt gop\_errno} en cas de réception d'un byte de header \fdm. Le header de \fdm reste à lire.
+
+Si le packet est de type XDR {\tt (connect->xdr == GOP\_TRUE)}, le buffer est converti à la réception.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_d\_packet\_write()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Écrit un seul paquet de la \sdd}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_d_packet_write(connect, buf, size)
+              struct gop_connect *connect
+              char               *buf
+              int                 size
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf} {adresse destination}
+\itemparam {size} {taille du paquet à écrire en bytes}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Si le canal de communication nécessite XDR {\tt (connect->need\_xdr == GOP\_TRUE)}, le buffer est converti avant l'envoi.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_data\_section\_forward()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Transmet la \sdd d'un message en provenance d'un canal d'entrée, sur un canal de sortie.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_data_section_forward(from_connect, to_connect)
+              struct gop_connect *from_connect
+              struct gop_connect *to_connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {from\_connect} {structure associée à un canal de communication en réception}
+\itemparam {to\_connect} {structure associée à un canal de communication en émission}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{{\tt gop\_data\_section\_forward()} se charge de la réception et de l'envoi de la \sdd vers son destinataire final. La convertion en XDR est faite automatiquement selon les besoin des canaux de communications.
+
+La transmission des packets se fait en ajustant la taille des packets émis à la taille maximum supportée par le canal de sortie ({\tt to\_connect->maxpacket}). Soit en les regroupant, soit en les explosant. 
+
+La transmission du message est arrêtée si un paquet \fdm est reçu. 
+
+Le \fdm est transmis à la place des données manquantes.}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          stat = gop_data_section_forward(&from_connect, &to_connect);
+\end{verbatim}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_data\_section\_read()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lit la \sdd d'un message}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_data_section_read(connect, buf, maxsize)
+              struct gop_connect *connect
+              char               *buf
+              int                 maxsize
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf} {adresse destination}
+\itemparam {maxsize} {taille de buf}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Lit la partie \sdd jusqu'à {\tt connect->msize} bytes ou jusqu'à la réception d'un byte de \fdm. 
+
+{\tt gop\_data\_section\_read()} retourne le nombre de bytes lu. Si le message a été interrompu par un \fdm, la fonction retourne le nombre de bytes lu à ce moment là en une valeur négative et pose {\tt gop\_errno} à {\tt GOP\_END\_OF\_MESSAGE}.
+
+Si la valeur retournée vaut --1 {(\tt GOP\_KO)}, c'est une autre d'erreur.
+
+Dans le cas d'une réception de \fdm, seul le premier byte (le 'E') a été lu. Le header et les data du \fdm reste à lire (avec {\tt gop\_read\_end\_of\_message()}).}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_data\_section\_write()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Écrit la partie \sdd d'un message}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_data_section_write(connect, buf)
+              struct gop_connect *connect
+              char               *buf
+              int                 maxsize
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf} {adresse destination}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Écrit la partie \sdd de taille {\tt connect->msize} bytes.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_fill\_bench\_xdr()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Remplis une structure de type {\tt gop\_bench\_xdr} avec une constante de chaque type (short, int, long, float et double).}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_fill_bench_xdr(test)
+              struct gop_bench_xdr *test
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {test} {structure utilisée pour le test de nécessité de XDR}
+\docendparam
+%\eject
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_header\_fill()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Rempli le header}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_header_fill(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Remplis le header {\tt connect->header} selon les valeur contenues dans {\tt connect}.
+
+La date ({\tt connect->header.date}) est mis à jour uniquement si {\tt header->stamp} vaut {\tt GOP\_TRUE}.}
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_first\_byte\_read()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lecture du premier byte d'un packet}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_first_byte_read(connect, value)
+              struct gop_connect *connect
+              char               *value
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {value} {le caractère lu}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Le premier caractère d'un paquet défini sa nature; 'H' pour \edm, 'D' pour \sdd, 'E' pour \fdm et 'A' pour acknowledge.}
+% REMARQUE -----------------------------------------------------------------
+\docremarque{La lecture de paquet de type acknowledge (4bytes) n'utilise pas cette fonction.}
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_first\_byte\_write()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Écriture du premier byte d'un packet}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_first_byte_write(connect, value)
+              struct gop_connect *connect
+              char               *value
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {value} {le caractère écrit}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Le premier caractère d'un paquet défini sa nature; 'H' pour \edm, 'D' pour \sdd, 'E' pour \fdm et 'A' pour acknowledge.}
+% REMARQUE -----------------------------------------------------------------
+\docremarque{L'écriture de paquet de type acknowledge (4bytes) n'utilise pas cette fonction.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_h\_read()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lecture explicite du premier byte d'un header ('H')}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_h_read(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Retourne {\tt GOP\_BAD\_SEQUENCE} pour toute autre valeur reçue.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_header\_forward()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Transmet un \edm sur le canal de communication donné. Et retourne un acknowledge vers le client selon le mode de synchronisation }
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_header_forward(from_connect, to_connect)
+              struct gop_connect *from_connect
+              struct gop_connect *to_connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {from\_connect} {structure associée à un canal de communication en réception}
+\itemparam {to\_connect} {structure associée à un canal de communication en émission}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Le header est écrit dans {\tt connect->header}. 
+
+La taille des paquets ({\tt connect->header.psize}) est ajustée à la taille maximum permise sur le canal de sortie ({\tt connect->maxpacket})}
+\docexemple
+\begin{verbatim}
+          struct gop_connect   from_connect;
+          struct gop_connect   *to_connect;
+          ...
+          gop_header_read(&from_connect, list, &to_connect)
+          if (to_connect == NULL) {
+             /* on est le destinataire */
+             ...
+          } else {
+             /* on est pas le destinataire */
+            gop_header_forward(from_connect, to_connect);
+            gop_data_section_forward(&from_connect, to_connect);
+          }
+\end{verbatim}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_header\_read()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Lecture de \edm}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_header_read(connect)
+              struct gop_connect  *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{{\tt gop\_header\_read()} lit l'\edm après que le 'H' aie été lu par {\tt gop\_h\_read()}. La compatibilité de version est testée et la structure {\tt from\_connect} est mise à jour selon les indications du header.
+
+La réception d'\edm est aquitée par un acknowledge si nécessaire\\ {\tt (connect->hsync == GOP\_TRUE)}.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_header\_read\_without\_acknow()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Comme {\tt gop\_header\_read()} mais sans acknowledge.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_header_read_without_acknow(connect)
+              struct gop_connect  *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication en réception}
+\docendparam
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_header\_write()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Envoi de \edm}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_header_write(connect)
+              struct gop_connect  *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{{\tt gop\_header\_write()} envoie le header ({\tt connect->header}).}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_io\_read()}
+\titre 
+{gop\_io\_write()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{fonction de lecture/écriture bas--niveau indépendante du type de protocole.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          gop_io_read(connect, buf, size)
+              struct gop_connect *connect;
+              char               *buf;
+              int                size;
+
+          gop_io__write(connect, buf, size)
+              struct gop_connect *connect;
+              char               *buf;
+              int                size;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf}     {adresse de destination}
+\itemparam {size}    {taille du tableau}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Ces fonctions lisent ou écrivent le nombre exact de bytes demandés.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_set\_struct\_standart()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Remplis une structure de type {\tt gop\_connect} avec des valeurs standard}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_set_struct_standart(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% VARIABLES EN SORTIE ------------------------------------------------------
+\docbeginvress
+\GOPclass {Posé à {\tt GOP\_CLASS\_COMD.}}
+\GOPcont {Posé à {\tt GOP\_FALSE.}}
+\GOPstamp \\{Posé à {\tt GOP\_TRUE.}}
+\GOPhsync \\{Posé à {\tt GOP\_SYNCHRO.}}
+\GOPdsync {Posé à {\tt GOP\_SYNCHRO.}}
+\GOPstat {Posé à {\tt GOP\_STAT\_OPOK }}
+\GOPdatatype {Posé à {\tt GOP\_CHAR.}}
+\docendvars
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_sig\_init\_handler()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Initialise un handler par défaut pour le signal ALRM et PIPE.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_sig_init_handler()
+\end{verbatim}
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{La deconnection (broken pipe) doit être géree par un handler de signal pour permettre à GOP de controller se type de situation.
+
+\medskip
+L'utilisation de timeout lors des opérations de lecture nécessite l'utilisation d'un handler pour la gestion du signal ALRM. Si un handler n'est pas précisé, le timeout se traduit par un arrêt du process.
+
+\medskip
+Les opérations de lecture se font avec un timeout lorsque que la valeur de {\tt connect->timeout} du canal de communication est différente de zéro. La durée de {\tt connect->timeout} exprime un temps d'attente maximum en seconde entières.
+
+\medskip
+Par exemple il définit l'attente maximum pour la réception d'un paquet lors de {\tt gop\_read*}, l'attente maximum pour un acknowledge lors de {\tt gop\_write*}.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_sig\_handler()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Handler pour le signal ALRM initialisé par {\tt gop\_sig\_init\_handler()}.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_sig_init_handler()
+\end{verbatim}
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Émet un message lors de la réception du signal ALRM (voit timeout).}
+%\eject
+
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_socket\_accept\_connection()}
+\titre 
+{gop\_socket\_connection()}
+\titre 
+{gop\_socket\_init\_connection()}
+\titre 
+{gop\_socket\_close\_connection()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Connections type socket}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_socket_accept_connection(connect)
+              struct gop_connect *connect
+
+          int
+          gop_socket_connection(connect)
+              struct gop_connect *connect
+
+          int
+          gop_socket_init_connection(connect)
+              struct gop_connect *connect
+
+          int
+          gop_socket_close_connection(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Ces fonctions sont les fonctions bas niveau pour des types de connections basées {\tt socket Internet}. 
+
+Voir plus haut sous {\tt gop\_accept\_connection()}, {\tt gop\_connection()}, \\{\tt gop\_init\_connection()} et{\tt gop\_close\_connection()} pour plus de détail.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_socket\_unix\_accept\_connection()}
+\titre 
+{gop\_socket\_unix\_connection()}
+\titre 
+{gop\_socket\_unix\_init\_connection()}
+\titre 
+{gop\_socket\_unix\_close\_connection()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Connections type socket}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_socket_unix_accept_connection(connect)
+              struct gop_connect *connect
+
+          int
+          gop_socket_unix_connection(connect)
+              struct gop_connect *connect
+
+          int
+          gop_socket_unix_init_connection(connect)
+              struct gop_connect *connect
+
+          int
+          gop_socket_unix_close_connection(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Ces fonctions sont les fonctions bas niveau pour des types de connections basées {\tt socket Unix}. 
+
+Voir plus haut sous {\tt gop\_accept\_connection()}, {\tt gop\_connection()}, \\{\tt gop\_init\_connection()} et{\tt gop\_close\_connection()} pour plus de détail.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_socket\_read()}
+\titre 
+{gop\_socket\_write()}
+
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Fonctions bas niveau de lecture/écriture sur {\tt socket}.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_socket_read(connect, buf, size)
+              struct gop_connect *connect
+              char               *buf;
+              int                 size;
+
+          int
+          gop_socket_write(connect, buf, size)
+              struct gop_connect *connect
+              char               *buf;
+              int                 size;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf}     {adresse de destination}
+\itemparam {size}    {taille du tableau}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Ces fonctions lisent ou écrivent le nombre exact de bytes demandés.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_test\_bench\_xdr()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Test une structure de type {\tt gop\_bench\_xdr} contenant des constante de chaque type (short, int, long, float et double).}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_test_bench_xdr(test)
+              struct gop_bench_xdr *test
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {test} {structure utilisée pour le test de nécessité de XDR}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Retourne {\tt GOP\_TRUE} si les constantes ont leurs vrais valeurs, {\tt GOP\_FALSE} sinon. La réponse de ce test indique si les valeurs passée sur un canal de communication ont besoin d'une conversion XDR.}
+%\eject
+
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_tpu\_accept\_connection()}
+\titre 
+{gop\_tpu\_connection()}
+\titre 
+{gop\_tpu\_init\_connection()}
+\titre 
+{gop\_tpu\_close\_connection()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Connection type tpu}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_tpu_accept_connection(connect)
+              struct gop_connect *connect
+
+          int
+          gop_tpu_connection(connect)
+              struct gop_connect *connect
+
+          int
+          gop_tpu_init_connection(connect)
+              struct gop_connect *connect
+
+          int
+          gop_tpu_close_connection(connect)
+              struct gop_connect *connect
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Ces fonctions sont les fonctions bas niveau pour des types de connections basées {\tt tpu}. 
+
+Voir plus haut sous {\tt gop\_accept\_connection()}, {\tt gop\_connection()}, \\{\tt gop\_init\_connection()} et {gop\_close\_connection()} pour plus de détail.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_tpu\_read()}
+\titre 
+{gop\_tpu\_write()}
+
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Fonctions bas niveau de lecture/écriture sur {\tt tpu}.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_tpu_read(connect, buf, size)
+              struct gop_connect *connect
+              char               *buf;
+              int                 size;
+
+          int
+          gop_tpu_write(connect, buf, size)
+              struct gop_connect *connect
+              char               *buf;
+              int                 size;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparams
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {buf}     {adresse de destination}
+\itemparam {size}    {taille du tableau}
+\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+\descriptionlongue
+{Ces fonctions lisent ou écrivent le nombre exact de bytes demandés.}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\titre 
+{gop\_update\_header()}
+% DESCRIPTION BREVE --------------------------------------------------------
+\descriptionbreve
+{Met à jour la structure associée à un canal de communication selon les paramètres contenu dans un header.}
+% SYNOPSIS -----------------------------------------------------------------
+\synopsis
+\begin{verbatim}
+          int
+          gop_update_header(connect,header)
+              struct gop_connect *connect
+              struct gop_header  *header;
+\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+\docbeginparam
+\itemparam {connect} {structure associée au canal de communication}
+\itemparam {header} {structure type header}
+\docendparam
+% VARIABLES EN SORTIE ------------------------------------------------------
+\docbeginvress
+\GOPmsize
+\GOPpsize
+\GOPmode
+\GOPhsync
+\GOPdsync
+\GOPcont
+\GOPxdr
+\GOPdatatype
+\GOPclass
+\GOPstat
+\docendvars
+% REMARQUE -----------------------------------------------------------------
+%\docremarques{-- -- --}
+% EXEMPLES:  ---------------------------------------------------------------
+\docexemple
+\begin{verbatim}
+          struct gop_connect   *connect;
+          ...
+          gop_update_header(connect, &(connect->header);)
+          ...
+\end{verbatim}
+%\eject
+
+%---------------------------------------------------------------------------
+% TITRE --------------------------------------------------------------------
+%---------------------------------------------------------------------------
+%%%\titre 
+%%%{~}
+% DESCRIPTION BREVE --------------------------------------------------------
+%%%\descriptionbreve
+%%%{~}
+% SYNOPSIS -----------------------------------------------------------------
+%%%\synopsis
+%%%\begin{verbatim}
+%%%          gop_connection(connect)
+%%%              struct gop_connect *connect
+%%%\end{verbatim}
+% PARAMETRES ---------------------------------------------------------------
+%%%\docbeginparam
+%%%\itemparam {connect} {structure associée au canal de communication}
+%%%\docendparam
+% DESCRIPTION LONGUE -------------------------------------------------------
+%%%\descriptionlongue
+%%%{~}
+% VARIABLES EN ENTREE ------------------------------------------------------
+%%%\docbeginvints
+%%%\GOPtype
+%%%\docendvars
+% VARIABLES EN SORTIE ------------------------------------------------------
+%%%\docbeginvress
+%%%\GOPtype
+%%%\docendvars
+% REMARQUE -----------------------------------------------------------------
+%\docremarques{-- -- --}
+% EXEMPLES:  ---------------------------------------------------------------
+%%%\docexemple
+%%%\begin{verbatim}
+%%%          struct gop_connect   connect;
+%%%\end{verbatim}
+%\eject
+
+\chapter{Conseils d'utilisations}
+Ce chapître renseigne l'utilisateur sur les critères qui permettent de choisir le mode de synchronisation et la taille des paquets en fonction du type de communication.
+\section{Socket Internet entre Suns}
+\begin{itemize}
+\item Le système gère complètement et efficacement des paquets de n'importe quelles tailles. 
+
+\item D'un manière génerale plus les paquets sont gros, moins l'influence de la synchronisation se fait sentir.
+
+\item Pour les messages de taille moyenne (entre 1460 et 5000[bytes]), la synchronisation fait perdre 50\% du temps de transfert.
+
+\item Pour les paquets de tailles inférieures à 1460[bytes], la non synchronisation est 10 à 25 fois plus rapide.
+
+\item Il faut absolument éviter l'envoi de paquets de tailles inférieures à 1460[Bytes] si on utilise une synchronisation. Le système perd environ 200[ms] pour l'envoi de ce type de paquet. Attention, si le dernier paquet d'un message a une taille inférieure à 1460[Bytes], on perd 200[ms].
+
+\item On peut atteindre des débits de 6[Mbits/s].
+\end{itemize}
+
+\section{Socket Unix entre Suns}
+\begin{itemize}
+\item Le système gère complètement et efficacement des paquets de n'importe quelle taille. 
+
+\item Les débits sont à peu près indépendants du type de synchronisation.
+
+\item Préférer des paquets de grosses tailles.
+
+\item On peut atteindre des débits de 10[MBits/s] sur un ELC. Cette valeur dépend du type de machine.
+\end{itemize}
+
+\end{document}

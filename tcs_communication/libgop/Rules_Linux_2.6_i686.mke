@@ -1,0 +1,31 @@
+#
+# definitions specifiques a l'operating system
+#
+T4INC   = $(T4HOME)/include
+T4LIB   = $(T4HOME)/lib/$(OPSYS)
+
+INCLUDE_PATH =  -I .                            \
+                -I $(INC_DIR)                   \
+                -I $(T4INC)                     \
+                -I $(OPENWINHOME)/include       \
+                -I /usr/local/include
+
+LIBRARY_PATH =  -L .                            \
+                -L $(LIB_DIR)                   \
+                -L $(T4LIB)                     \
+                -L $(OPENWINHOME)/lib           \
+                -L /usr/ccs/lib
+#               -L /usr/local/lib
+
+CDEBUGFLAGS += 
+FDEBUGFLAGS += 
+
+CFLAGS	+= $(CDEBUGFLAGS) -fPIC -Wall -DUSE_STRERROR -DSELECT_CALL -DSYSV -DLINUX $(INCLUDE_PATH)
+FFLAGS	+= $(FDEBUGFLAGS)
+
+LDFLAGS += $(LIBRARY_PATH)  
+
+##LDLIBS  = -lposix4 -lsocket -lnsl
+LDLIBS  = -lpthread
+
+RANLIB  = echo
