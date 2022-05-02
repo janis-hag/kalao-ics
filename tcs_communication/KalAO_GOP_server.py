@@ -76,6 +76,7 @@ def gop_server():
             controlRead = gop.read()
 
             if controlRead == -1:
+                gc = gop.closeConnection()
                 gop_print_and_log("Initialize new gop connection. Wait for client ...")
                 # gc = gop.initializeGopConnection(socketName, verbosity)
                 gc = gop.initializeInetGopConnection(socketName, socketPort, verbosity)
