@@ -13,10 +13,10 @@
 #	
 import sys
 import time
-sys.path.append("/home/weber/src/pymod_libipc/")
-sys.path.append("/home/weber/src/pymod_libgop/")
+#sys.path.append("/home/weber/src/pymod_libipc/")
+#sys.path.append("/home/weber/src/pymod_libgop/")
 import pymod_libipc as ipc
-import pymod_libgop as gop
+import pygop as gop
 
 timeout   = 2
 
