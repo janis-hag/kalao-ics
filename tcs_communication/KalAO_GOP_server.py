@@ -81,8 +81,10 @@ def gop_server():
                 # gc = gop.initializeGopConnection(socketName, verbosity)
                 gc = gop.initializeInetGopConnection(socketName, socketPort, verbosity)
                 break
-
-            command += controlRead  # concat input string
+            elif  controlRead[-1] == '#':
+                command += controlRead[:-1]  # concat input string
+            else:
+                command += controlRead  # concat input string
 
         if controlRead == -1:
             continue  # go to beginning
