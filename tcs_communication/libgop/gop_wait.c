@@ -6,7 +6,7 @@
 #include <time.h>
 #include <string.h>
 #include <gop.h>
-#include <logbook.h>
+// #include <logbook.h>
 
 char	my_name[16];
 
@@ -41,7 +41,8 @@ static void print_help()
 static void
 handler_sigint(int sig)
 {
-	lbk_info("gop_wait: handler_sigint: recu SIGINT %d\n",sig);
+	//lbk_info("gop_wait: handler_sigint: recu SIGINT %d\n",sig);
+	printf("gop_wait: handler_sigint: recu SIGINT %d\n",sig);
 	printf("\n");
 	//gop_process_unregistration(my_name);
 	exit(0);
@@ -49,7 +50,8 @@ handler_sigint(int sig)
 static void
 handler_sighup(int sig)
 {
-	lbk_info("gop_wait: handler_sigint: recu SIGHUP %d\n",sig);
+	//lbk_info("gop_wait: handler_sigint: recu SIGHUP %d\n",sig);
+	printf("gop_wait: handler_sigint: recu SIGHUP %d\n",sig);
 	printf("\n");
 	//gop_process_unregistration(my_name);
 	exit(0);
