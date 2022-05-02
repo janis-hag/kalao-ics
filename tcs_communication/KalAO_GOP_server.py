@@ -70,8 +70,8 @@ def gop_server():
         # read and concat until "#" char, then parse the input string
         #
         command = ""
-        controlRead = ""
-        while '#' not in controlRead:
+        controlRead = "#"
+        while '#' in controlRead:
             #  '#' signe used to signify end of command
             controlRead = gop.read()
 
