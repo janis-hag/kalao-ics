@@ -96,7 +96,7 @@ def gop_server():
         #
         #if len(commandList>1):
         #    gop_print_and_log(" command=> "+str(commandList[0])+" < arg="+commandList[1:].join(' '))
-        gop_print_and_log(" command=> " + str(commandList[0]) + " < arg=" + commandList[1:])
+        gop_print_and_log(" command=> " + str(commandList[0]) + " < arg=" + ' '.join(commandList[1:]))
 
         # Check if its a KalAO command and send it
         if commandList[0][:3] == "kal":
