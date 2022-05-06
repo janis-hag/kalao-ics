@@ -30,8 +30,8 @@ parser = ConfigParser()
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 parser.read(config_path)
 
-
-
+if not parser.has_section('PLC'):
+    system.print_and_log('kalao.config not found on path: '+str(config_path))
 
 
 def seq_server():
