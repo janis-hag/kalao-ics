@@ -168,13 +168,11 @@ def cast_args(args):
                 args[k] = int(v)
             else:
                 database.store_obs_log({'sequencer_log': "Error: {} value cannot be convert in int".format(k)})
-                return 1
         elif k in arg_float:
             if v.replace('.', '', 1).isdigit():
                 args[k] = float(v)
             else:
                 database.store_obs_log({'sequencer_log': "Error: {} value cannot be convert in float".format(k)})
-                return 1
         elif k in arg_string:
             # If filterposition arg is not a digit, then he must be a name
             # Get the int id from the dict Id_filter
@@ -183,9 +181,10 @@ def cast_args(args):
                 args[k] = int(Id_filter[v])
             elif k == 'filterposition' and v.isdigit():
                 args[k] = int(v)
-        else:
-            database.store_obs_log({'sequencer_log': "Error: {} not in arg list".format(k)})
-            return 1
+        # else:
+        #     ignored_args[k] = v
+        #     database.store_obs_log({'sequencer_log': "Error: {} not in arg list".format(k)})
+        #     return 1
 
     return 0
 
