@@ -25,14 +25,14 @@ from queue          import Queue
 from threading      import Thread
 
 
-# Read config file
-parser = ConfigParser()
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
-parser.read(config_path)
-
-if not parser.has_section('PLC'):
+if os.access(config_path, os.R_OK):
+    # Read config file
+    parser = ConfigParser()
+    parser.read(config_path)
+else:
     system.print_and_log('kalao.config not found on path: '+str(config_path))
-
+    sys.exit(1)
 
 def seq_server():
     """
