@@ -48,6 +48,9 @@ def dark(**seq_args):
     dit=seq_args.get('dit')
     nbPic=seq_args.get('nbPic')
 
+    if nbPic is None:
+        nbPic = 1
+
     if None in (q, dit, nbPic):
         database.store_obs_log({'sequencer_log': 'Missing keyword in dark function call'})
         database.store_obs_log({'sequencer_status': 'ERROR'})
@@ -527,7 +530,6 @@ def end():
     database.store_obs_log({'sequencer_log': 'END received moving into standby.'})
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
-
 
 
 def check_abort(q, dit, AO = False):
