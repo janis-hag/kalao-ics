@@ -481,6 +481,27 @@ def lamp_on():
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
+def lamp_off():
+    """
+    Turn tungsten lamp on
+    :return: nothing
+    """
+
+    rValue = shutter.shutter_close()
+    if rValue != 'CLOSED':
+        database.store_obs_log({'sequencer_log': "Error: failed to close the shutter "+str(rValue)})
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+    rValue = core.lamps_off()
+    if rValue != 0:
+        database.store_obs_log({'sequencer_log':"Error: failed to turn off lamps "+str(rValue)})
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
+
 def end():
     """
     End of instrument operation, go into standby mode
@@ -536,12 +557,22 @@ def check_abort(q, dit, AO = False):
 
 
 commandDict = {
-    "kal_dark":                     dark,
-    "kal_dark_abort":               dark_abort,
-    "kal_tungsten_FLAT":            tungsten_FLAT,
-    "kal_tungsten_FLAT_abort":      tungsten_FLAT_abort,
-    "kal_sky_FLAT":                 sky_FLAT,
-    "kal_target_observation":       target_observation,
-    "kal_target_observation_abort": target_observation_abort,
-    "kal_AO_loop_calibration":      AO_loop_calibration
+    "K_DARK":                     dark,
+    "K_DARK_ABORT":               dark_abort,
+    "K_LMPFLT":            tungsten_FLAT,
+    "K_LMPFLT_ABORT":      tungsten_FLAT_abort,
+    "K_SKFLT":                 sky_FLAT,
+    "K_TRGOBS":       target_observation,
+    "K_TRGOBS_ABORT": target_observation_abort,
+    "K_LAMPON":       lamp_on,
+    "K_LAMPOF":       lamp_off,
+    #"kal_AO_loop_calibration":      AO_loop_calibration
+    # "kal_dark":                     dark,
+    # "kal_dark_abort":               dark_abort,
+    # "kal_tungsten_FLAT":            tungsten_FLAT,
+    # "kal_tungsten_FLAT_abort":      tungsten_FLAT_abort,
+    # "kal_sky_FLAT":                 sky_FLAT,
+    # "kal_target_observation":       target_observation,
+    # "kal_target_observation_abort": target_observation_abort,
+    # "kal_AO_loop_calibration":      AO_loop_calibration
 }

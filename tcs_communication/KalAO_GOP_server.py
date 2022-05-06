@@ -107,8 +107,6 @@ def gop_server():
         # Check if its a KalAO command and send it
         if commandList[0][:1] == "K":
 
-            commandList[0] = commandList[0][2:].lower()
-
             hostSeq, portSeq = (sequencer_host, sequencer_port)
             socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
