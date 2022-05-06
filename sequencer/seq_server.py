@@ -24,6 +24,7 @@ from configparser   import ConfigParser
 from queue          import Queue
 from threading      import Thread
 
+#TODO clean config reading and loading procedure
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 if os.access(config_path, os.R_OK):
@@ -148,7 +149,7 @@ def cast_args(args):
     """
 
     parser = ConfigParser()
-    config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+    config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
     parser.read(config_path)
 
     # Create bidirect dict with filter id (str and int)
