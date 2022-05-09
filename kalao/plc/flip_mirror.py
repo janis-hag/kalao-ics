@@ -114,5 +114,18 @@ def position(beck=None):
     return flip_position
 
 
-def initialise():
+def initialise(beck=None):
+
+    # Connect to OPCUA server
+    beck, disconnect_on_exit = core.check_beck(beck)
+
+    down(beck)
+    sleep(1)
+    up(beck=beck)
+    sleep(1)
+    down(beck=beck)
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
     return 0

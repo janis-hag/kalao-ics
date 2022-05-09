@@ -6,6 +6,15 @@ Le nom des poses suit ce format K_xxxxxx. Les paramètres de poses sont envoyés
 
 La taille des message vers KalAO est limitée ainsi on a défini que le caractère de continuation est le "#" en dernier position.
 
+Pour tester edp_poses_definition.cfg en offline. Il faut aller sur *glslogin2* et lancer:
+
+**edp -c edp_poses_definition.cfg**
+
+La version originale du fichier config se trouve sur:
+
+**/opt/t4/beta/config/general/edp_poses_definition.cfg**
+
+Pour obtenir la ligne de de commande générée par un OB.
 ### Liste de poses:
 
 | Nom	   | Autre nom	| Arguments | Commentaire   |

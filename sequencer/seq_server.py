@@ -128,7 +128,7 @@ def seq_server():
         # Start a subThread with received command
         # commandDict is a dict with keys = "K_****" and values is function object
         # it may need to be kwargs = **args as we are passing a dictionary
-        th = Thread(target = seq_command.commandDict[commandList[0]], kwargs = args)
+        th = Thread(target=seq_command.commandDict[commandList[0]], kwargs = args)
         th.start()
 
         preCommand = commandList[0]
@@ -169,7 +169,7 @@ def cast_args(args):
     # Translate keyword if not already present
     for edp_arg, kalao_arg in edp_translation_dict.items():
         if edp_arg in args.keys() and not kalao_arg in args.keys():
-            args[kalao_arg]  = args.pop(edp_arg)
+            args[kalao_arg] = args.pop(edp_arg)
 
     # Check for each keys if the cast of the value is possible and cast it
     for k, v in args.items():

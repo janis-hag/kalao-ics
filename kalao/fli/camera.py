@@ -42,20 +42,27 @@ else:
     # return
 
 
-def take_science_exposure(dit=0.05, filepath=None):
+# Removing in order to only use take_image
+# def take_science_exposure(dit=0.05, filepath=None):
+#
+#     req_result = take_image(dit, filepath, obscategory='SCIENCE')
+#     if req_result == 0:
+#         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
+#         target_path_name = file_handling.save_tmp_image(image_path)
+#
+#         return target_path_name
+#
+#     else:
+#         return req_result
 
-    req_result = take_image(dit, filepath, obscategory='SCIENCE')
-    if req_result == 0:
-        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
-        target_path_name = file_handling.save_tmp_picture(image_path)
 
-        return target_path_name
+def take_image(dit=0.05, filepath=None, header_keydict=None): # obs_category='TEST', obs_type='LAMP'):
+    '''
 
-    else:
-        return req_result
-
-
-def take_image(dit=0.05, filepath=None, obscategory='TECHNICAL', obstype='Unknown'):
+    :param dit: Detector integration time to use
+    :param filepath: Path where the file should be stored
+    :return: path to the image
+    '''
 
     if dit < 0:
         database.store_obs_log({'fli_log': 'Abort before exposure started.'})
@@ -75,12 +82,25 @@ def take_image(dit=0.05, filepath=None, obscategory='TECHNICAL', obstype='Unknow
 
     if req.status_code == 200:
 
+        increment_image_counter()
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
-        target_path_name = file_handling.save_tmp_picture(image_path)
+        target_path_name = file_handling.save_tmp_image(image_path, header_keydict=header_keydict)
 
         return target_path_name
     else:
         return req.text
+
+
+def increment_image_counter():
+    '''
+    Increments the image counter by one
+
+    :return: new image counter value
+    '''
+    image_count = get_latest_record('obs_log', key='fli_image_count')['fli_image_count'] +1
+    database.store_obs_log({'fli_image_count': image_count
+
+    return image_count
 
 
 def log(req):
@@ -138,6 +158,10 @@ def set_temperature(temperature):
 
 
 def send_request(request_type, params):
+
+    if request_type is 'acquire':
+        database.store_obs_log({'fli_shutter_count': })
+
 
     url = 'http://'+address+':'+port+'/'+request_type
     if params == 'GET':
