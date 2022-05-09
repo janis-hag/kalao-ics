@@ -71,7 +71,14 @@ def create_night_folder():
     return Tmp_night_folder
 
 
-def save_tmp_picture(image_path, header_keydict=None):
+def save_tmp_image(image_path, header_keydict=None):
+    '''
+    Updates the temporary image header and saves into the archive.
+
+    :param image_path:
+    :param header_keydict:
+    :return:
+    '''
     Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
     target_path_name = Science_night_folder+os.sep+os.path.basename(image_path)
 
@@ -87,6 +94,14 @@ def save_tmp_picture(image_path, header_keydict=None):
 
 
 def update_header(image_path, header_keydict=None):
+    '''
+    Updates the image header with values from the observing, monitoring, and telemetry logs.
+
+    :param image_path: path to the image to update
+    :param header_keydict: dictionary of key:values to add
+    :return:
+    '''
+
     # Read DATE-OBS in headers
     # Search start values in log
     # Search end values in log using DATE-OBS and TEXP
@@ -156,8 +171,10 @@ def update_header(image_path, header_keydict=None):
 
         #header_keydict = update_default_header_keydict(default_cards, header_keydict)
 
-        for key, value in header_keydict:
-            header.set(key.upper(), value) #, type_comment[1].strip())
+        # Add key dictionary given as argument
+        if not header_keydict is None:
+            for key, value in header_keydict:
+                header.set(key.upper(), value) #, type_comment[1].strip())
 
 
         # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
