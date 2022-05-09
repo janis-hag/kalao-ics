@@ -147,7 +147,7 @@ def get_all_last_telemetry(realData=True):
     return get_data('telemetry', definitions['telemetry'].keys(), 1, dt=None)
 
 
-def get_latest_record(collection_name, key=None):
+def get_latest_record(collection_name, key=None, no_id=True):
     '''
     Searches for the last record in the database for a certain collection
 
@@ -162,7 +162,6 @@ def get_latest_record(collection_name, key=None):
     latest_record = None
     day_number = 0
     while(latest_record is None):
-        print(day_number)
         if key is None:
             last_logs = get_data(collection_name, definitions[collection_name].keys(), 1, dt= dt - timedelta(days=day_number))
 
@@ -175,11 +174,12 @@ def get_latest_record(collection_name, key=None):
             with connect_db() as client:
                 db = get_db(client, dt - timedelta(days=day_number))
                 latest_record = list(db[collection_name].find({key:{"$ne" : None}}).limit(1).sort([('$natural',-1)]))
-                print(latest_record)
                 if len(latest_record) == 0:
                     latest_record = None
                 else:
                     latest_record = latest_record[0]
+                    if no_id:
+                        del latest_record['_id']
         day_number += 1
 
         if day_number > 100:

@@ -82,7 +82,6 @@ def take_image(dit=0.05, filepath=None, header_keydict=None): # obs_category='TE
 
     if req.status_code == 200:
 
-        increment_image_counter()
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         target_path_name = file_handling.save_tmp_image(image_path, header_keydict=header_keydict)
 
@@ -97,8 +96,8 @@ def increment_image_counter():
 
     :return: new image counter value
     '''
-    image_count = get_latest_record('obs_log', key='fli_image_count')['fli_image_count'] +1
-    database.store_obs_log({'fli_image_count': image_count
+    image_count = database.get_latest_record('obs_log', key='fli_image_count')['fli_image_count'] +1
+    database.store_obs_log({'fli_image_count': image_count})
 
     return image_count
 
@@ -160,8 +159,7 @@ def set_temperature(temperature):
 def send_request(request_type, params):
 
     if request_type is 'acquire':
-        database.store_obs_log({'fli_shutter_count': })
-
+        increment_image_counter()
 
     url = 'http://'+address+':'+port+'/'+request_type
     if params == 'GET':
