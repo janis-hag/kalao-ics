@@ -132,6 +132,7 @@ def get_data(collection_name, keys, nb_of_point, dt=None):
     return data
 
 
+
 def get_all_last_monitoring(realData=True):
     return get_monitoring(definitions['monitoring'].keys(), 1)
 
@@ -146,23 +147,47 @@ def get_all_last_telemetry(realData=True):
     return get_data('telemetry', definitions['telemetry'].keys(), 1, dt=None)
 
 
-def get_latest_record(collection_name):
-    dt = datetime.now(timezone.utc)
+def get_latest_record(collection_name, key=None):
+    '''
+    Searches for the last record in the database for a certain collection
 
-    with connect_db() as client:
+    :param collection_name: the collection to search in 'obs_log', 'monitoring_log', 'telemetry_log'
+    :param key: optional key to search for the last record of a specific key
+    :return: last record
+    '''
 
-        db = get_db(client, dt)
-        #db = get_db(dt)
 
-        last_logs = get_data(collection_name, definitions[collection_name].keys(), 1, dt=None)
-        if last_logs['time_utc'].get('values'):
-            latest_record = list(db[collection_name].find().limit(1).sort([('$natural',-1)]))[0]
+    dt = kalao_time.now()
+
+    latest_record = None
+    day_number = 0
+    while(latest_record is None):
+        print(day_number)
+        if key is None:
+            last_logs = get_data(collection_name, definitions[collection_name].keys(), 1, dt= dt - timedelta(days=day_number))
+
+            if last_logs['time_utc'].get('values'):
+                with connect_db() as client:
+                    db = get_db(client, dt - timedelta(days=day_number))
+                    latest_record = list(db[collection_name].find().limit(1).sort([('$natural',-1)]))[0]
+
         else:
-            latest_record = None
+            with connect_db() as client:
+                db = get_db(client, dt - timedelta(days=day_number))
+                latest_record = list(db[collection_name].find({key:{"$ne" : None}}).limit(1).sort([('$natural',-1)]))
+                print(latest_record)
+                if len(latest_record) == 0:
+                    latest_record = None
+                else:
+                    latest_record = latest_record[0]
+        day_number += 1
 
+        if day_number > 100:
+            break
     #client.close()
 
     return latest_record
+
 
 def read_mongo_to_pandas_by_timestamp(dt_start,dt_end):
     """ Read from Mongo and Store into DataFrame """
@@ -205,6 +230,7 @@ def read_mongo_to_pandas_by_timestamp(dt_start,dt_end):
             del df['_id']
 
     return df
+
 
 def read_mongo_to_pandas(dt, days=1, collection_name='monitoring', no_id=True):
     """ Read from Mongo and Store into DataFrame """
