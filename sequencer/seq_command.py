@@ -76,10 +76,10 @@ def dark(**seq_args):
 
     # Take nbPic image
     for _ in range(nbPic):
-        rValue = camera.take_image(dit = dit, filepath = filepath)
+        rValue = camera.take_image(dit=dit, filepath=filepath)
 
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
-        file_handling.save_tmp_picture(image_path)
+        file_handling.save_tmp_image(image_path)
 
         if rValue != 0:
             database.store_obs_log({'sequencer_log':rValue})
@@ -211,7 +211,7 @@ def tungsten_FLAT(**seq_args):
         rValue = camera.take_image(dit=dit, filepath=image_path)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
-        file_handling.save_tmp_picture(image_path)
+        file_handling.save_tmp_image(image_path)
 
         if rValue != 0:
             database.store_obs_log({'sequencer_log':rValue})
@@ -319,7 +319,7 @@ def sky_FLAT(**seq_args):
         rValue = camera.take_image(dit=dit, filepath=image_path)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
-        file_handling.save_tmp_picture(image_path)
+        file_handling.save_tmp_image(image_path)
 
         if rValue != 0:
             database.store_obs_log({'sequencer_log':rValue})
@@ -404,7 +404,7 @@ def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, f
     #Monitor AO and cancel exposure if needed
 
     image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
-    file_handling.save_tmp_picture(image_path)
+    file_handling.save_tmp_image(image_path)
 
     if rValue != 0:
         database.store_obs_log({'sequencer_log':rValue})
