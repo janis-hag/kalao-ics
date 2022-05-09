@@ -49,10 +49,9 @@ def monitoring(realData=True):
         return fake_data.fake_telemetry()
 
 
-def telemetry_series(realData=True):
+def telemetry_series(nb_points, realData=True):
     if realData:
-        # Will be database.get_monitoring(keys, nb_of_point)
-        return fake_data.fake_telemetry_series() # TODO
+        return database.get_telemetry(['pi_tip', 'pi_tilt'], nb_points)
     else:
         return fake_data.fake_telemetry_series()
 
@@ -79,7 +78,8 @@ def kalao_status():
     if not sequencer_status:
         # If the status is not set assume that the sequencer is doww
         sequencer_status = 'DOWN'
-
+    else:
+        sequencer_status = sequencer_status[0]
     # TODO get alt/az and focus offset from cacao.telemetry and add to string
     status_string = '/status/'+sequencer_status
 
