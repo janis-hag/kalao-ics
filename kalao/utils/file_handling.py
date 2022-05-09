@@ -71,12 +71,12 @@ def create_night_folder():
     return Tmp_night_folder
 
 
-def save_tmp_picture(image_path):
+def save_tmp_picture(image_path, header_keydict=None):
     Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
     target_path_name = Science_night_folder+os.sep+os.path.basename(image_path)
 
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
-        update_header(image_path)
+        update_header(image_path, header_keydict=header_keydict)
         os.rename(image_path, target_path_name)
         return target_path_name
     else:
@@ -86,24 +86,34 @@ def save_tmp_picture(image_path):
         return -1
 
 
-def update_header(image_path, keyword_list=None):
+def update_header(image_path, header_keydict=None):
     # Read DATE-OBS in headers
     # Search start values in log
     # Search end values in log using DATE-OBS and TEXP
     # Compute median values for specific keywords
     # Add HEADER values for start, end, and median.
 
+    # :param obs_category: Observing category keyword.SCIENCE, CALIB, TECHNICAL, TEST, OTHER
+    # :param obs_type: Observing type.Can be comma separated list of the following keywords
+    # OBJECT, STD, ASTROMETRY, BIAS, DARK, FLAT, SKY, LAMP, FLUX, PSF-CALIBRATOR, FOCUS
+
     fits_header_config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'fits_header.config')
     header_config = ConfigParser()
     header_config.read(fits_header_config_path)
 
-    monitoring_cards = dict(header_config.items('Monitoring'))
-    for k in monitoring_cards.keys():
-        monitoring_cards[k] = monitoring_cards[k].split(',')
+    default_cards = read_header_cards(header_config, 'Obs_log_default')
 
-    telemetry_cards = dict(header_config.items('Telemetry'))
-    for k in telemetry_cards.keys():
-        telemetry_cards[k] = telemetry_cards[k].split(',')
+    obslog_cards = read_header_cards(header_config, 'Obs_log')
+
+    monitoring_cards = read_header_cards(header_config, 'Monitoring')
+    # monitoring_cards = dict(header_config.items('Monitoring'))
+    # for k in monitoring_cards.keys():
+    #     monitoring_cards[k] = monitoring_cards[k].split(',')
+
+    telemetry_cards = read_header_cards(header_config, 'Telemetry')
+    # telemetry_cards = dict(header_config.items('Telemetry'))
+    # for k in telemetry_cards.keys():
+    #     telemetry_cards[k] = telemetry_cards[k].split(',')
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -111,6 +121,22 @@ def update_header(image_path, keyword_list=None):
         dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
         # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
 
+        # TODO add default obs_log
+        for key, value_comment in default_cards.items():
+            header.set(key.upper(), value_comment[0].strip(), value_comment[1].strip())
+
+        # TODO add obs_log cards
+        # Storing monitoring
+        # obs_log = database.get_all_last_obs_log(obs_log_cards.keys(), 1, dt=dt)
+        # for key, type_comment in obs_log_cards.items():
+        #     # Check if key exists and value not empty
+        #     if key in obs_log_status.keys() and obs_log_status[key]['values']:
+        #         header.set('HIERARCH KAL '+key.upper(), obs_log_status[key]['values'][0], type_comment[1].strip())
+        #     else:
+        #         header.set('HIERARCH KAL '+key.upper(), '', type_comment[1].strip())
+        #
+
+        # Storing monitoring
         monitoring_status = database.get_monitoring(monitoring_cards.keys(), 1, dt=dt)
         for key, type_comment in monitoring_cards.items():
             # Check if key exists and value not empty
@@ -119,6 +145,7 @@ def update_header(image_path, keyword_list=None):
             else:
                 header.set('HIERARCH KAL '+key.upper(), '', type_comment[1].strip())
 
+        # Storing telemetry
         telemetry_status = database.get_telemetry(telemetry_cards.keys(), 1, dt=dt)
         for key, type_comment in telemetry_cards.items():
             # Check if key exists and value not empty
@@ -126,6 +153,12 @@ def update_header(image_path, keyword_list=None):
                 header.set('HIERARCH KAL AO '+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
             else:
                 header.set('HIERARCH KAL AO '+key.upper(), '', type_comment[1].strip())
+
+        #header_keydict = update_default_header_keydict(default_cards, header_keydict)
+
+        for key, value in header_keydict:
+            header.set(key.upper(), value) #, type_comment[1].strip())
+
 
         # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
         # header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
@@ -146,3 +179,17 @@ def add_comment(image_path, comment_string):
         hdul.flush()
 
     return 0
+
+
+def read_header_cards(header_config, items_name):
+
+    header_cards = dict(header_config.items(items_name))
+    for k in header_cards.keys():
+        header_cards[k] = header_cards[k].split(',')
+
+    return header_cards
+
+
+def update_default_header_keydict(default_cards, header_keydict):
+
+    return header_keydict
