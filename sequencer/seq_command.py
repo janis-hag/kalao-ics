@@ -121,7 +121,6 @@ def tungsten_FLAT(**seq_args):
     3. Turn tungsten lamp on
     4. Select filter
     5. Take picture
-    6. Turn off tungsten lamp
 
     If an error occurs, stores the status of the sequencer in 'ERROR', otherwise stores it in 'WAITING'
 
@@ -199,7 +198,7 @@ def tungsten_FLAT(**seq_args):
     for filter_name in filter_list:
 
         if filterwheel.set_position(filter_name) == -1:
-            database.store_obs_log({'sequencer_log': 'Error: problem with filter selection'})
+            database.store_obs_log({'sequencer_log': 'Error: problem with filter selection.'})
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return -1
 
@@ -472,7 +471,7 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
 
 def lamp_on():
     """
-    Turn tungsten lamp on
+    Turn lamp on
     :return: nothing
     """
 
@@ -486,15 +485,15 @@ def lamp_on():
 
 def lamp_off():
     """
-    Turn tungsten lamp on
+    Turn lamps off
     :return: nothing
     """
 
-    rValue = shutter.shutter_close()
-    if rValue != 'CLOSED':
-        database.store_obs_log({'sequencer_log': "Error: failed to close the shutter "+str(rValue)})
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+    # rValue = shutter.shutter_close()
+    # if rValue != 'CLOSED':
+    #     database.store_obs_log({'sequencer_log': "Error: failed to close the shutter "+str(rValue)})
+    #     database.store_obs_log({'sequencer_status': 'ERROR'})
+    #     return
 
     rValue = core.lamps_off()
     if rValue != 0:
