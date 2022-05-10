@@ -16,7 +16,7 @@ import time
 #sys.path.append("/home/weber/src/pymod_libipc/")
 #sys.path.append("/home/weber/src/pymod_libgop/")
 from tcs_communication.pyipc import pymod_libipc as ipc
-import pygop as gop
+#import tcs_communication.pygop as gop
 
 from kalao.utils import database
 
