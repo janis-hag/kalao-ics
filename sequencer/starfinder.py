@@ -9,6 +9,7 @@ from kalao.fli import camera
 from kalao.plc import filterwheel
 from kalao.utils import database, file_handling
 from kalao.cacao import telemetry
+from tcs_communication import t120
 
 import numpy as np
 from astropy.io import fits
@@ -32,7 +33,7 @@ def centre_on_target(filter_arg='clear'):
     while(time.time() < timeout_time):
         rValue = camera.take_image(dit = ExpTime)
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
-        file_handling.save_tmp_picture(image_path)
+        file_handling.save_tmp_image(image_path)
 
         if rValue != 0:
             # print(rValue)
@@ -43,7 +44,8 @@ def centre_on_target(filter_arg='clear'):
 
         if x != -1 and y != -1:
             # Found star
-            # TODO send offset to telescope
+            #TODO transform pixel x y into arcseconds
+            t120.send_offset(x,y)
             # TODO verify if SHWFS enough illuminated
             telemetry.wfs_illumination()
             # if shwfs ok:

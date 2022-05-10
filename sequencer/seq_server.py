@@ -18,6 +18,7 @@ from kalao.plc import filterwheel
 import socket
 #import time
 import os
+import sys
 
 from itertools      import zip_longest
 from configparser   import ConfigParser
@@ -34,6 +35,7 @@ if os.access(config_path, os.R_OK):
 else:
     system.print_and_log('kalao.config not found on path: '+str(config_path))
     sys.exit(1)
+
 
 def seq_server():
     """
