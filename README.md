@@ -25,7 +25,8 @@ The KalAO Instrument Control Software
 - _systemctl --user enable kalao_camera.service_
 - _systemctl --user enable kalao_database_updater.service_ 
 - _systemctl --user enable kalao_flask_gui.service_
-
+- _systemctl --user enable kalao_gop_server.service_
+- 
 ---
 # AO calibration and testing
 
@@ -47,7 +48,7 @@ Start milk sessions by typing '_milk_'
 
 
 - **Load turbulence file**
-- milk> _loadfits "cube12_12_60000_v10mps_1ms.fits" imc_
+- milk> _loadfits "cube12_12_60000_v10mps_1ms_clean.fits" imc_
 - **Open DM SHM channel** 
 - milk> _readshmim dm01disp04_
 - **Send turbulence on DM channel at 1000 microsecond refresh rate**

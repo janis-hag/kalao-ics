@@ -1,0 +1,15 @@
+[Unit]
+Description=KalAO GOP server
+
+[Service]
+Type=simple
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_gop-server.sh
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
+#WantedBy=multi-user.target
