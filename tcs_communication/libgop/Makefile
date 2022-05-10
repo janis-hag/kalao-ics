@@ -11,18 +11,18 @@ include Rules_${OPSYS}.mke
 # targets specifiques a l'operating system
 #
 LIBGOP		= libgop_${OPSYS}.a
-GOP_WAIT	= gop_wait_${OPSYS}
-GOP_TIMER	= gop_timer_${OPSYS}
-TEST_GOP_TIMER	= test_gop_timer_${OPSYS}
-CLIENT		= client_${OPSYS}
-TRANSMITTER	= transmitter_${OPSYS}
-SERVER		= server_${OPSYS}
-FCLIENT		= fclient_${OPSYS}
-TORTURE_CLIENT	= torture_client_${OPSYS}
-SUBCLIENT_O	= subclient_${OPSYS}.o
-LIBSRVGOP       = libsrvgop_${OPSYS}.a
-TEST_F_LIBSRVGOP= test_f_libsrvgop_${OPSYS}
-TEST_C_LIBSRVGOP= test_c_libsrvgop_${OPSYS}
+#GOP_WAIT	= gop_wait_${OPSYS}
+#GOP_TIMER	= gop_timer_${OPSYS}
+#TEST_GOP_TIMER	= test_gop_timer_${OPSYS}
+#CLIENT		= client_${OPSYS}
+#TRANSMITTER	= transmitter_${OPSYS}
+#SERVER		= server_${OPSYS}
+#FCLIENT		= fclient_${OPSYS}
+#TORTURE_CLIENT	= torture_client_${OPSYS}
+#SUBCLIENT_O	= subclient_${OPSYS}.o
+#LIBSRVGOP       = libsrvgop_${OPSYS}.a
+#TEST_F_LIBSRVGOP= test_f_libsrvgop_${OPSYS}
+#TEST_C_LIBSRVGOP= test_c_libsrvgop_${OPSYS}
 
 
 
