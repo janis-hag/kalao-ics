@@ -109,6 +109,10 @@ gop_log:
   short: gop log
   long: Log output of the GOP server
   unit: text
+t120_log:
+  short: gop log
+  long: Log output of the T120 client
+  unit: text
 
 
 # FilterWheel
