@@ -77,11 +77,10 @@ def update_plc_monitoring():
         print(e)
 
     fli_server_status = fli.camera.check_server_status()
+    values.update({'fli_status': fli_server_status})
     if fli_server_status == 'OK':
         fli_temperatures = fli.camera.get_temperatures()
         values.update(fli_temperatures)
-    else:
-        values.update({'fli_status': fli_server_status})
 
     if not values == {}:
         database.store_monitoring(values)
