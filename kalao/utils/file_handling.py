@@ -142,7 +142,7 @@ def update_header(image_path, header_keydict=None):
             header.set(key.upper(), value_comment[0].strip(), value_comment[1].strip())
 
         # Storing monitoring
-        obs_log_status = database.get_all_last_obs_log(obs_log_cards.keys(), 1, dt=dt)
+        obs_log_status = database.get_obs_log(obs_log_cards.keys(), 1, dt=dt)
         for key, type_comment in obs_log_cards.items():
             # Check if key exists and value not empty
             if key in obs_log_status.keys() and obs_log_status[key]['values']:
