@@ -25,7 +25,7 @@ def fli_view(binfactor=1, x=512, y=512, realData=True):
         # Returning fake fli_view for testing purposes
         return False, fake_data.fake_fli_view()
     else:
-        fli_image_path, file_date = get_temporary_image_path()
+        fli_image_path, file_date = get_last_image_path()
 
         if fli_image_path is not None and file_date is not None and os.path.isfile(fli_image_path):
             centering_image = fits.getdata(fli_image_path)
