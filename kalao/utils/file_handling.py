@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 from astropy.io import fits
 
 from kalao.utils import kalao_time, database
+from kalao.fli import camera
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -85,6 +86,7 @@ def save_tmp_image(image_path, header_keydict=None):
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
         update_header(image_path, header_keydict=header_keydict)
         os.rename(image_path, target_path_name)
+        camera.log_last_image_path(target_path_name)
         return target_path_name
     else:
         database.store_obs_log({'sequencer_log': 'ERROR: unable to save '+image_path+' to '+target_path_name})

@@ -43,7 +43,7 @@ def fli_view(binfactor=1, x=512, y=512, realData=True):
 
 def _get_image_path(image_type):
 
-    if image_type in ['latest', 'temporary']:
+    if image_type in ['last', 'temporary']:
         # READ mongodb to find latest filename
         last_image = database.get_obs_log(['fli_'+image_type+'_image_path'], 1)['fli_'+image_type+'_image_path']
         if last_image.get('values'):
@@ -59,7 +59,7 @@ def _get_image_path(image_type):
     return 1
 
 
-def get_latest_image_path():
+def get_last_image_path():
 
     filename, file_date = _get_image_path('latest')
 
