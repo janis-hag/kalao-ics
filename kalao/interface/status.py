@@ -60,7 +60,7 @@ def latest_obs_log_entry(realData=True):
     if realData:
         latest_record = database.get_latest_record('obs_log')
         if latest_record is None:
-             formated_entry_text = 'Obs logs empty'
+            formated_entry_text = 'Obs logs empty'
         else:
             time_string = latest_record['time_utc'].isoformat(timespec='milliseconds')
             key_name = list(latest_record.keys())[1]
@@ -74,7 +74,7 @@ def latest_obs_log_entry(realData=True):
 
 
 def kalao_status():
-    # TODO return sequencer_status, alt/az offset, focus offset
+    # TODO return sequencer_status, alt/az offset, focus offset, remaining_esposure_time 0 if not yet started
     sequencer_status = database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['values']
     if not sequencer_status:
         # If the status is not set assume that the sequencer is doww

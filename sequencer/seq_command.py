@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# @Filename : status.py
+# @Date : 2021-01-02-16-50
+# @Project: KalAO-ICS
+# @AUTHOR : Janis Hagelberg
+
+"""
+seq_command.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).
+"""
+
 import sys
 import os
 from pathlib import Path
@@ -21,12 +31,13 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-Science_storage = parser.get('FLI','ScienceDataStorage')
-ExpTime = parser.getfloat('FLI','ExpTime')
-TimeSup = parser.getint('FLI','TimeSup')
-TungstenStabilisationTime = parser.getint('PLC','TungstenStabilisationTime')
-TungstenWaitSleep = parser.getint('PLC','TungstenWaitSleep')
-DefaultFlatList = parser.get('Calib','DefaultFlatList').replace(' ','').replace('\n','').split(',')
+Science_storage = parser.get('FLI', 'ScienceDataStorage')
+ExpTime = parser.getfloat('FLI', 'ExpTime')
+TimeSup = parser.getint('FLI', 'TimeSup')
+TungstenStabilisationTime = parser.getint('PLC', 'TungstenStabilisationTime')
+TungstenWaitSleep = parser.getint('PLC', 'TungstenWaitSleep')
+DefaultFlatList = parser.get('Calib', 'DefaultFlatList').replace(' ', '').replace('\n', '').split(',')
+
 
 def dark(**seq_args):
     """
@@ -557,6 +568,29 @@ def check_abort(q, dit, AO = False):
     return 0
 
 
+def config(**seq_args):
+    """
+    Updates database with configuration parameters received from EDP.
+
+    :param seq_args: dictionary of paramaters received
+    :return:
+    """
+
+    q = seq_args.get('q')
+
+    if 'host' in seq_args:
+        database.store_obs_log({'t120_host': seq_args['host']})
+
+    if 'observer' in seq_args:
+        database.store_obs_log({'observer_name': seq_args['observer']})
+
+    if 'email' in seq_args:
+        database.store_obs_log({'observer_email': seq_args['email']})
+    # host, user, email...
+
+    return 0
+
+
 commandDict = {
     "K_DARK":                     dark,
     "K_DARK_ABORT":               dark_abort,
@@ -567,6 +601,7 @@ commandDict = {
     "K_TRGOBS_ABORT": target_observation_abort,
     "K_LAMPON":       lamp_on,
     "K_LAMPOF":       lamp_off,
+    "K_CONFIG":       config,
     #"kal_AO_loop_calibration":      AO_loop_calibration
     # "kal_dark":                     dark,
     # "kal_dark_abort":               dark_abort,

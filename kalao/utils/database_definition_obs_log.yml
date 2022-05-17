@@ -113,7 +113,18 @@ t120_log:
   short: gop log
   long: Log output of the T120 client
   unit: text
-
+t120_host:
+  short: T120 server hostname log
+  long: Hostname of the server where T120 is running
+  unit: text
+observer_name:
+  short: Observer name
+  long: Name of the current observer
+  unit: text
+observer_email:
+  short: Observer email
+  long: Email of the current observer
+  unit: text
 
 # FilterWheel
 filterwheel_status:
