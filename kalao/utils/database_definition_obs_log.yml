@@ -59,7 +59,7 @@ fli_temporary_image_path:
   unit: text
 fli_image_count:
   short: image number
-  long: counter giving the image number
+  long: Counter giving the image number
   unit:
 
 # PLC
