@@ -85,9 +85,9 @@ def take_image(dit=0.05, filepath=None, header_keydict=None): # obs_category='TE
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         target_path_name = file_handling.save_tmp_image(image_path, header_keydict=header_keydict)
 
-        return target_path_name
+        return 0, target_path_name
     else:
-        return req.text
+        return req.text, None
 
 
 def increment_image_counter():

@@ -31,13 +31,13 @@ def centre_on_target(filter_arg='clear'):
     timeout_time = time.time()+CenteringTimeout
 
     while(time.time() < timeout_time):
-        rValue = camera.take_image(dit = ExpTime)
-        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
-        file_handling.save_tmp_image(image_path)
+        rValue, image_path = camera.take_image(dit = ExpTime)
+        #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
+        #file_handling.save_tmp_image(image_path)
 
         if rValue != 0:
             # print(rValue)
-            # database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': 'ERROR'})
             return -1
 
         x, y = find_star(image_path)
