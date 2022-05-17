@@ -61,7 +61,7 @@ def _get_image_path(image_type):
 
 def get_last_image_path():
 
-    filename, file_date = _get_image_path('latest')
+    filename, file_date = _get_image_path('last')
 
     return filename, file_date
 
