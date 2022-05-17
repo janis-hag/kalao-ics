@@ -118,9 +118,9 @@ def update_header(image_path, header_keydict=None):
     header_config = ConfigParser()
     header_config.read(fits_header_config_path)
 
-    default_cards = read_header_cards(header_config, 'Obs_log_default')
+    default_cards = read_header_cards(header_config, 'Default_cards')
 
-    obslog_cards = read_header_cards(header_config, 'Obs_log')
+    obs_log_cards = read_header_cards(header_config, 'Obs_log')
 
     monitoring_cards = read_header_cards(header_config, 'Monitoring')
     # monitoring_cards = dict(header_config.items('Monitoring'))
@@ -138,20 +138,18 @@ def update_header(image_path, header_keydict=None):
         dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
         # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
 
-        # TODO add default obs_log
         for key, value_comment in default_cards.items():
             header.set(key.upper(), value_comment[0].strip(), value_comment[1].strip())
 
-        # TODO add obs_log cards
         # Storing monitoring
-        # obs_log = database.get_all_last_obs_log(obs_log_cards.keys(), 1, dt=dt)
-        # for key, type_comment in obs_log_cards.items():
-        #     # Check if key exists and value not empty
-        #     if key in obs_log_status.keys() and obs_log_status[key]['values']:
-        #         header.set('HIERARCH KAL '+key.upper(), obs_log_status[key]['values'][0], type_comment[1].strip())
-        #     else:
-        #         header.set('HIERARCH KAL '+key.upper(), '', type_comment[1].strip())
-        #
+        obs_log_status = database.get_all_last_obs_log(obs_log_cards.keys(), 1, dt=dt)
+        for key, type_comment in obs_log_cards.items():
+            # Check if key exists and value not empty
+            if key in obs_log_status.keys() and obs_log_status[key]['values']:
+                header.set('HIERARCH KAL '+key.upper(), obs_log_status[key]['values'][0], type_comment[1].strip())
+            else:
+                header.set('HIERARCH KAL '+key.upper(), '', type_comment[1].strip())
+
 
         # Storing monitoring
         monitoring_status = database.get_monitoring(monitoring_cards.keys(), 1, dt=dt)
