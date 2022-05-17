@@ -11,14 +11,14 @@
 #
 # sort 10 ligne de "show i" sur glslogin2
 #	
-import sys
-import time
+#import sys
+#import time
 #sys.path.append("/home/weber/src/pymod_libipc/")
 #sys.path.append("/home/weber/src/pymod_libgop/")
 from tcs_communication.pyipc import pymod_libipc as ipc
 #import tcs_communication.pygop as gop
 
-from kalao.utils import database
+from kalao.utils import database, kalao_time
 
 timeout   = 2
 
@@ -43,9 +43,9 @@ def _t120_print_and_log(log_text):
     database.store_obs_log({'t120_log': log_text})
 
 
-def send_offset(alt, az):
+def send_offset(delta_alt, delta_az):
 
-    print(f'Sending {alt} and {az} offsets')
+    _t120_print_and_log(f'Sending {delta_alt} and {delta_az} offsets')
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if(socketId <= 0):
