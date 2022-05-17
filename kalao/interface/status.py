@@ -65,7 +65,7 @@ def latest_obs_log_entry(realData=True):
             time_string = latest_record['time_utc'].isoformat(timespec='milliseconds')
             key_name = list(latest_record.keys())[1]
             record_text = latest_record[list(latest_record.keys())[1]]
-            formated_entry_text = time_string+' '+key_name+': '+record_text
+            formated_entry_text = time_string+' '+str(key_name)+': '+str(record_text)
 
         return formated_entry_text
     else:
