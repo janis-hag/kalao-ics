@@ -158,7 +158,7 @@ def set_temperature(temperature):
 
 def send_request(request_type, params):
 
-    if request_type is 'acquire':
+    if request_type == 'acquire':
         increment_image_counter()
 
     url = 'http://'+address+':'+port+'/'+request_type
