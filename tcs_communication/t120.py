@@ -45,6 +45,7 @@ def _t120_print_and_log(log_text):
 
 def send_offset(alt, az):
 
+    print(f'Sending {alt} and {az} offsets')
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if(socketId <= 0):
