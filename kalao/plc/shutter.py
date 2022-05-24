@@ -28,6 +28,9 @@ def status(beck=None):
 
     status_dict = core.device_status('Shutter.Shutter', beck=beck)
 
+    if status_dict['sStatus'] == 'STANDING':
+        status_dict['sStatus'] = position(beck=beck)
+
     if disconnect_on_exit:
         beck.disconnect()
 
