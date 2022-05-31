@@ -10,10 +10,12 @@ status.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
+import datetime
+
 from kalao.plc import core
 from kalao.cacao import fake_data, telemetry
 
-from kalao.utils import database
+from kalao.utils import database, kalao_time
 
 
 def short():
@@ -82,6 +84,24 @@ def kalao_status():
     else:
         sequencer_status = sequencer_status[0]
     # TODO get alt/az and focus offset from cacao.telemetry and add to string
+    sequencer_status = sequencer_status+'/'+elapsed_exposure_time()
+
     status_string = '/status/'+sequencer_status
 
     return status_string
+
+
+def elapsed_exposure_time():
+
+    #last_command_time = database.get_data('obs_log', ['sequencer_command_received'], 1)['sequencer_command_received']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+
+    last_exposure_start = database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+    last_exposure_end = database.get_data('obs_log', ['fli_log'], 1)['fli_log']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+
+    if last_exposure_start > last_exposure_end:
+        # An exposure is running
+        elapsed_time = (kalao_time.now()-last_exposure_start).total_seconds()
+    else:
+        elapsed_time = 0
+
+    return elapsed_time
