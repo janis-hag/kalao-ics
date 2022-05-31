@@ -100,8 +100,8 @@ def elapsed_exposure_seconds():
 
     if last_exposure_start > last_exposure_end:
         # An exposure is running
-        elapsed_time = (kalao_time.now()-last_exposure_start).strftime('%S.%f')[:-3]
+        elapsed_time = str((kalao_time.now()-last_exposure_start).total_seconds()).split('.')[0]
     else:
-        elapsed_time = (last_exposure_end - last_exposure_start).strftime('%S.%f')[:-3]
+        elapsed_time = str((last_exposure_end - last_exposure_start).total_seconds()).split('.')[0]
 
     return elapsed_time
