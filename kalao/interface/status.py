@@ -11,12 +11,20 @@ status.py is part of the KalAO Instrument Control Software
 """
 
 import datetime
+from configparser import ConfigParser
+from pathlib import Path
 
 from kalao.plc import core
 from kalao.cacao import fake_data, telemetry
 
 from kalao.utils import database, kalao_time
 
+config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+# Read config file
+parser = ConfigParser()
+parser.read(config_path)
+
+InitDuration = parser.getint('SEQ', 'InitDuration')
 
 def short():
     """
@@ -84,11 +92,18 @@ def kalao_status():
     else:
         sequencer_status = sequencer_status[0]
     # TODO get alt/az and focus offset from cacao.telemetry and add to string
-    sequencer_status = sequencer_status+'/'+elapsed_exposure_seconds()
+    sequencer_status = sequencer_status+'/'+elapsed_time(sequencer_status)
 
     status_string = '/status/'+sequencer_status
 
     return status_string
+
+def elapsed_time(sequencer_status):
+    if sequencer_status == 'INITIALISING':
+         status_time = database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+         return str(InitDuration - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
+    else:
+        return elapsed_exposure_seconds()
 
 
 def elapsed_exposure_seconds():
