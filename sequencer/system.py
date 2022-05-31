@@ -176,6 +176,15 @@ def flask_service(action):
     return status
 
 
+def gop_service(action):
+    if not action.upper() == 'STATUS':
+        database.store_obs_log({'gop_log': 'Sending '+action+' command to gop server.'})
+    unit_name = parser.get('SystemD', 'gop_server')
+    status = unit_control(unit_name, action)
+
+    return status
+
+
 def initialise_services():
     '''
     Initialise all system services and run sanity checks
@@ -187,6 +196,7 @@ def initialise_services():
     flask_service('restart')
     database_service('restart')
     camera_service('restart')
+    gop_service('restart')
 
     time.sleep(ServiceRestartWait)
 
