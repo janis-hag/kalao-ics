@@ -102,6 +102,6 @@ def elapsed_exposure_time():
         # An exposure is running
         elapsed_time = (kalao_time.now()-last_exposure_start).total_seconds()
     else:
-        elapsed_time = last_exposure_start - last_exposure_end
+        elapsed_time = (last_exposure_start - last_exposure_end).total_seconds()
 
     return elapsed_time
