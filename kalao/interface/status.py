@@ -84,7 +84,7 @@ def kalao_status():
     else:
         sequencer_status = sequencer_status[0]
     # TODO get alt/az and focus offset from cacao.telemetry and add to string
-    sequencer_status = sequencer_status+'/'+elapsed_exposure_time()
+    sequencer_status = sequencer_status+'/'+str(elapsed_exposure_time())
 
     status_string = '/status/'+sequencer_status
 
