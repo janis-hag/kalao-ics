@@ -93,7 +93,7 @@ def dark(**seq_args):
         #file_handling.save_tmp_image(image_path)
 
         if rValue != 0:
-            database.store_obs_log({'sequencer_log':rValue})
+            database.store_obs_log({'sequencer_log': rValue})
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return -1
 
