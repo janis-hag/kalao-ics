@@ -301,6 +301,12 @@ def check_kalao_config():
     if not SEQSection['port'].isdigit():
         print_and_log("Error: wrong values format for SEQ 'Port' in kalao.config file: "+str(SEQSection['port']))
         error = True
+    if not SEQSection['centeringtimeout'].isdigit():
+        print_and_log("Error: wrong values format for SEQ 'CenteringTimeout' in kalao.config file: "+str(SEQSection['centeringtimeout']))
+        error = True
+    if not SEQSection['initduration'].isdigit():
+        print_and_log("Error: wrong values format for SEQ 'InitDuration' in kalao.config file: "+str(SEQSection['initduration']))
+        error = True
 
     ################
     # GOP section
