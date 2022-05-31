@@ -582,7 +582,7 @@ def config(**seq_args):
         database.store_obs_log({'t120_host': seq_args['host']})
 
     if 'user' in seq_args:
-        database.store_obs_log({'observer_name': seq_args['observer']})
+        database.store_obs_log({'observer_name': seq_args['user']})
 
     if 'email' in seq_args:
         database.store_obs_log({'observer_email': seq_args['email']})
