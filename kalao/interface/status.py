@@ -96,7 +96,8 @@ def elapsed_exposure_seconds():
     #last_command_time = database.get_data('obs_log', ['sequencer_command_received'], 1)['sequencer_command_received']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
 
     last_exposure_start = database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-    last_exposure_end = database.get_data('obs_log', ['fli_log'], 1)['fli_log']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+    #last_exposure_end = database.get_data('obs_log', ['fli_log'], 1)['fli_log']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+    last_exposure_end = database.get_data('obs_log', ['fli_temporary_image_path'], 1)['fli_temporary_image_path']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
 
     if last_exposure_start > last_exposure_end:
         # An exposure is running
