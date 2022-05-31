@@ -80,6 +80,8 @@ def seq_server():
     th = None
     preCommand = ""
 
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
     while True:
         socketSeq.listen()
         database.store_obs_log({'sequencer_log': "Waiting on connection."})

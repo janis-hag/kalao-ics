@@ -15,6 +15,7 @@ This server is the communication interface between the Euler telescope software 
 import os
 import sys
 import socket
+from time import sleep
 from pathlib import Path
 from configparser import ConfigParser
 
@@ -104,6 +105,8 @@ def gop_server():
         #    gop_print_and_log(" command=> "+str(commandList[0])+" < arg="+commandList[1:].join(' '))
         gop_print_and_log(" command=> " + str(commandList[0]) + " < arg=" + ' '.join(commandList[1:]))
 
+        socket_connection_error = False
+
         # Check if its a KalAO command and send it
         if commandList[0][:1] == "K":
 
@@ -120,14 +123,13 @@ def gop_server():
 
             except ConnectionRefusedError:
                 gop_print_and_log("Error: connection to sequencer refused")
+                socket_connection_error = True
             finally:
                 socketSeq.close()
 
-        #
-        # Manage the command. 2 cases:
-        # - its a state machine (with a nodeId which starts with "ns=")
-        # - its a local command (test, exit, ...)
-        #
+        if socket_connection_error:
+                sleep(10)
+                continue
 
         if commandList[0] == "TEST":
             message = "/OK"

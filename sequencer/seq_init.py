@@ -144,7 +144,6 @@ def initialisation():
     """
 
     system.print_and_log('Starting initalisation')
-
     # read config file
 
     config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')

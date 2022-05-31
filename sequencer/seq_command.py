@@ -21,7 +21,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel
 from kalao.fli import camera
-from kalao.utils import file_handling, database
+from kalao.utils import file_handling, database, database_updater
 from kalao.cacao import aomanager
 from sequencer import starfinder
 
@@ -33,7 +33,7 @@ parser.read(config_path)
 
 Science_storage = parser.get('FLI', 'ScienceDataStorage')
 ExpTime = parser.getfloat('FLI', 'ExpTime')
-TimeSup = parser.getint('FLI', 'TimeSup')
+SetupTime = parser.getint('FLI', 'SetupTime')
 TungstenStabilisationTime = parser.getint('PLC', 'TungstenStabilisationTime')
 TungstenWaitSleep = parser.getint('PLC', 'TungstenWaitSleep')
 DefaultFlatList = parser.get('Calib', 'DefaultFlatList').replace(' ', '').replace('\n', '').split(',')
@@ -556,14 +556,15 @@ def check_abort(q, dit, AO = False):
 
     t = 0
 
-    while t < dit + TimeSup:
+    while t < dit + SetupTime:
         t += 1
         time.sleep(1)
         print(".")
         # Check if an abort is required
         if q != None and not q.empty():
             q.get()
-            # TODO add update_plc_monitoring
+            # Update database
+            database_updater.update_plc_monitoring()
             return -1
         if AO and aomanager.check_loop() == -1:
             return -1

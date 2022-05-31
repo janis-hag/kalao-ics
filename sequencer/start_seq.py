@@ -12,9 +12,11 @@ star_seq.py is part of the KalAO Instrument Control Software
 
 from sequencer import seq_init
 from sequencer import seq_server
-
+from kalao.utils import database
 
 if __name__ == '__main__':
+
+    database.store_obs_log({'sequencer_status': 'INITIALISING'})
 
     if seq_init.initialisation() == 0:
         print("Initialisation OK.")
