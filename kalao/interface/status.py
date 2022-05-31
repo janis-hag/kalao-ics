@@ -11,6 +11,7 @@ status.py is part of the KalAO Instrument Control Software
 """
 
 import datetime
+import os
 from configparser import ConfigParser
 from pathlib import Path
 
