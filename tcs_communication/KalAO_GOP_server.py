@@ -129,7 +129,7 @@ def gop_server():
         # - its a local command (test, exit, ...)
         #
 
-        if commandList[0] == "test":
+        if commandList[0] == "TEST":
             message = "/OK"
             gop_print_and_log("Send acknowledge: "+str(message))
             gop.write(message)
@@ -139,7 +139,7 @@ def gop_server():
             gop.write(message)
             gop_print_and_log("Acknowledge sent")
             break
-        elif commandList[0] == "status":
+        elif commandList[0] == "STATUS":
             message = status.kalao_status()
             gop_print_and_log("Send status: "+str(message))
             gop.write(message)
