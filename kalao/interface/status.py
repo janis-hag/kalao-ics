@@ -84,14 +84,14 @@ def kalao_status():
     else:
         sequencer_status = sequencer_status[0]
     # TODO get alt/az and focus offset from cacao.telemetry and add to string
-    sequencer_status = sequencer_status+'/'+str(elapsed_exposure_time())
+    sequencer_status = sequencer_status+'/'+elapsed_exposure_seconds()
 
     status_string = '/status/'+sequencer_status
 
     return status_string
 
 
-def elapsed_exposure_time():
+def elapsed_exposure_seconds():
 
     #last_command_time = database.get_data('obs_log', ['sequencer_command_received'], 1)['sequencer_command_received']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
 
@@ -100,8 +100,8 @@ def elapsed_exposure_time():
 
     if last_exposure_start > last_exposure_end:
         # An exposure is running
-        elapsed_time = (kalao_time.now()-last_exposure_start).total_seconds()
+        elapsed_time = (kalao_time.now()-last_exposure_start).total_seconds().strftime('%S.%f')[:-3]
     else:
-        elapsed_time = (last_exposure_start - last_exposure_end).total_seconds()
+        elapsed_time = (last_exposure_end - last_exposure_start).total_seconds().strftime('%S.%f')[:-3]
 
     return elapsed_time
