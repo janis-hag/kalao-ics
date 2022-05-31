@@ -269,7 +269,7 @@ def check_kalao_config():
     if not FLISection['exptime'].replace('.', '', 1).isdigit():
         print_and_log("Error: wrong values format for FLI 'ExpTime' in kalao.config file: "+str(FLISection['exptime']))
         error = True
-    if not FLISection['SetupTime'].isdigit():
+    if not FLISection['setuptime'].isdigit():
         print_and_log("Error: wrong values format for FLI 'SetupTime' in kalao.config file: "+str(FLISection['setuptime']))
         error = True
     if not FLISection['ip'].replace('.', '', 3).isdigit():
