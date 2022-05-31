@@ -99,6 +99,7 @@ def dark(**seq_args):
 
         # block for each picture and check if an abort was requested
         if check_abort(q, dit) == -1:
+            database.store_obs_log({'sequencer_status': 'WAITING'})
             return -1
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
@@ -554,6 +555,7 @@ def check_abort(q, dit, AO = False):
     """
 
     t = 0
+
     while t < dit + TimeSup:
         t += 1
         time.sleep(1)
