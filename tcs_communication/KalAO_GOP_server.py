@@ -136,9 +136,8 @@ def gop_server():
             gop_print_and_log("Send acknowledge: "+str(message))
             gop.write(message)
         elif commandList[0] == "ARCHIVE":
-            database.store_obs_log({'fli_header_path': command})
-            gop_print_and_log("Received fits header path: " + str(command))
-            gop.write(message)
+            database.store_obs_log({'fli_header_path': commandList[1]})
+            gop_print_and_log("Received fits header path: " + str(commandList[1]))
         elif (commandList[0] == "quit") or (commandList[0] == "exit"):
             message = "/OK"
             gop_print_and_log("Send acknowledge and quit: "+str(message))
