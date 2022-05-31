@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : database_updater.py
+# @Filename : KalAO_GOP_server.py
 # @Date : 2021-03-15-10-29
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
@@ -134,6 +134,10 @@ def gop_server():
         if commandList[0] == "TEST":
             message = "/OK"
             gop_print_and_log("Send acknowledge: "+str(message))
+            gop.write(message)
+        elif commandList[0] == "ARCHIVE":
+            database.store_obs_log({'fli_header_path': command})
+            gop_print_and_log("Received fits header path: " + str(command))
             gop.write(message)
         elif (commandList[0] == "quit") or (commandList[0] == "exit"):
             message = "/OK"
