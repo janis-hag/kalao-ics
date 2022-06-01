@@ -15,7 +15,7 @@ import os
 from configparser import ConfigParser
 from pathlib import Path
 
-from kalao.plc import core
+from kalao.plc import core, tungsten
 from kalao.cacao import fake_data, telemetry
 
 from kalao.utils import database, kalao_time
@@ -26,6 +26,8 @@ parser = ConfigParser()
 parser.read(config_path)
 
 InitDuration = parser.getint('SEQ', 'InitDuration')
+TungstenStabilisationTime = parser.getint('PLC', 'TungstenStabilisationTime')
+SetupTime = parser.getint('FLI', 'SetupTime')
 
 def short():
     """
@@ -99,10 +101,13 @@ def kalao_status():
 
     return status_string
 
+
 def elapsed_time(sequencer_status):
     if sequencer_status == 'INITIALISING':
          status_time = database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
          return str(InitDuration - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
+    elif sequencer_status == 'WAITLAMP':
+        return str(TungstenStabilisationTime - tungsten.get_switch_time())
     else:
         return elapsed_exposure_seconds()
 
@@ -111,7 +116,7 @@ def elapsed_exposure_seconds():
 
     #last_command_time = database.get_data('obs_log', ['sequencer_command_received'], 1)['sequencer_command_received']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
 
-    last_exposure_start = database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+    last_exposure_start = _last_exposure_start()
     #last_exposure_end = database.get_data('obs_log', ['fli_log'], 1)['fli_log']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
     last_exposure_end = database.get_data('obs_log', ['fli_temporary_image_path'], 1)['fli_temporary_image_path']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
 
@@ -122,3 +127,6 @@ def elapsed_exposure_seconds():
         elapsed_time = str((last_exposure_end - last_exposure_start).total_seconds()).split('.')[0]
 
     return elapsed_time
+
+def _last_exposure_start():
+    return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)

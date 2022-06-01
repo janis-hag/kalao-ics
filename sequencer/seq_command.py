@@ -196,6 +196,7 @@ def tungsten_FLAT(**seq_args):
         # Wait for tungsten to warm up
         # Check if an abort was requested
         # block for each picture and check if an abort was requested
+        database.store_obs_log({'sequencer_status': 'WAITLAMP'})
         if check_abort(q,1) == -1:
             return -1
 
@@ -206,6 +207,9 @@ def tungsten_FLAT(**seq_args):
             return -1
 
         time.sleep(TungstenWaitSleep)
+    else:
+        database.store_obs_log({'sequencer_status': 'BUSY'})
+
 
     for filter_name in filter_list:
 
