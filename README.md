@@ -26,7 +26,13 @@ The KalAO Instrument Control Software
 - _systemctl --user enable kalao_database_updater.service_ 
 - _systemctl --user enable kalao_flask_gui.service_
 - _systemctl --user enable kalao_gop_server.service_
-- 
+
+## Configure telescope header content
+
+Edit content of 
+- $THOME/config/ske_fits/generic_tele/kalao_descripteurs.ske
+- $THOME/config/ske_fits/generic_synchro/kalao_descripteurs.ske
+
 ---
 # AO calibration and testing
 

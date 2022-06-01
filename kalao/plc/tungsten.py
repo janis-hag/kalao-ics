@@ -11,8 +11,7 @@ tungsten.py is part of the KalAO Instrument Control Software
 
 """
 
-
-from . import core, filterwheel
+import datetime
 from opcua import ua
 from time import sleep
 import pandas as pd
@@ -20,7 +19,8 @@ from configparser import ConfigParser
 from pathlib import Path
 import os
 
-from kalao.utils import database
+from kalao.plc import core, filterwheel
+from kalao.utils import database, kalao_time
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
@@ -200,8 +200,9 @@ def get_switch_time():
 
     # Search for last occurence of current status
     switch_time = df.loc[df[df['values'] != status()['sStatus']].first_valid_index() - 1]['time_utc']
+    elapsed_time = (kalao_time.now() - switch_time.replace(tzinfo=datetime.timezone.utc)).total_seconds()
 
-    return switch_time
+    return elapsed_time
 
 
 def update_db(beck=None):
