@@ -55,7 +55,7 @@ def cut_image(img):
             c = center
         img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
 
-    img = img.astyoe(np.float)
+    img = img.astype(float)
 
     return img
 

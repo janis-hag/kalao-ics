@@ -244,7 +244,7 @@ popup_window.addItem(popup_manual, row=2, col=0)
 
 # Open needed streams
 nuvu_stream = SHM("nuvu_stream")
-dmdisp = SHM("dm01disp10")
+dmdisp = SHM("dm01disp09")
 
 dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
 
