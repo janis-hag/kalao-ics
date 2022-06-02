@@ -579,7 +579,7 @@ def check_abort(q, dit, AO = False):
 
         status_time = database.get_latest_record('obs_log', key='fli_temporary_image_path')['time_utc'].replace(tzinfo=datetime.timezone.utc)
 
-        if (kalao_time.now() - status_time).total_seconds() < 0:
+        if (t0 - status_time).total_seconds() < 0:
             # Image has been taken. Stop looping.
             break
 

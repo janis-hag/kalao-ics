@@ -104,12 +104,15 @@ def kalao_status():
 
 
 def elapsed_time(sequencer_status):
+
     if sequencer_status == 'INITIALISING':
          status_time = database.get_latest_record('obs_log', key='sequencer_status')['time_utc'].replace(tzinfo=datetime.timezone.utc)
          #database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
          return str(InitDuration - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
+
     elif sequencer_status == 'WAITLAMP':
         return str(TungstenStabilisationTime -tungsten.get_switch_time()).split('.')[0]
+
     else:
         return elapsed_exposure_seconds()
 
