@@ -124,7 +124,7 @@ def elapsed_time(sequencer_status):
         status_time = database.get_latest_record('obs_log', key='sequencer_status')['time_utc'].replace(
             tzinfo=datetime.timezone.utc)
 
-        return str(SetupTime - (kalao_time.now() - status_time)).split('.')[0]
+        return str(SetupTime - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == 'WAITLAMP':
         return str(TungstenStabilisationTime -tungsten.get_switch_time()).split('.')[0]
