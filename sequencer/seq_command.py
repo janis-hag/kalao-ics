@@ -559,6 +559,11 @@ def check_abort(q, dit, AO = False):
     :return: nothing
     """
 
+    # TODO completely remove function if it's not needed
+
+    if True:
+        return 0
+
     t = 0
     t0 = kalao_time.now()
 
