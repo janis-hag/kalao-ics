@@ -114,6 +114,9 @@ def update_header(image_path, header_keydict=None):
     # :param obs_type: Observing type.Can be comma separated list of the following keywords
     # OBJECT, STD, ASTROMETRY, BIAS, DARK, FLAT, SKY, LAMP, FLUX, PSF-CALIBRATOR, FOCUS
 
+    #TODO read telescope generated header and then remove it
+    #TODO remove write permission at the end
+
     fits_header_config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'fits_header.config')
     header_config = ConfigParser()
     header_config.read(fits_header_config_path)
@@ -210,3 +213,10 @@ def read_header_cards(header_config, items_name):
 def update_default_header_keydict(default_cards, header_keydict):
 
     return header_keydict
+
+def _get_last_telescope_header():
+    # TODO verify if latest_record['time_utc'] is recent enough
+    latest_record = database.get_latest_record('obs_log', key='tcs_header_path')
+    tcs_header_path = latest_record['tcs_header_path']
+
+    return tcs_header_path

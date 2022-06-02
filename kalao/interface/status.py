@@ -105,7 +105,8 @@ def kalao_status():
 
 def elapsed_time(sequencer_status):
     if sequencer_status == 'INITIALISING':
-         status_time = database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+         status_time = database.get_latest_record('obs_log', key='sequencer_status')['time_utc'].replace(tzinfo=datetime.timezone.utc)
+         #database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
          return str(InitDuration - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
     elif sequencer_status == 'WAITLAMP':
         return str(TungstenStabilisationTime -tungsten.get_switch_time()).split('.')[0]
@@ -119,7 +120,8 @@ def elapsed_exposure_seconds():
 
     last_exposure_start = _last_exposure_start()
     #last_exposure_end = database.get_data('obs_log', ['fli_log'], 1)['fli_log']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-    last_exposure_end = database.get_data('obs_log', ['fli_temporary_image_path'], 1)['fli_temporary_image_path']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+    last_exposure_end = database.get_latest_record('obs_log', key='fli_temporary_image_path')['time_utc'].replace(tzinfo=datetime.timezone.utc)
+    #database.get_data('obs_log', ['fli_temporary_image_path'], 1)['fli_temporary_image_path']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
 
     if last_exposure_start > last_exposure_end:
         # An exposure is running
@@ -130,4 +132,5 @@ def elapsed_exposure_seconds():
     return elapsed_time
 
 def _last_exposure_start():
-    return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+    #return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+    return database.get_latest_record('obs_log', key='fli_image_count')['time_utc'].replace(tzinfo=datetime.timezone.utc)
