@@ -133,6 +133,8 @@ def seq_server():
         # Start a subThread with received command
         # commandDict is a dict with keys = "K_****" and values is function object
         # it may need to be kwargs = **args as we are passing a dictionary
+
+        system.print_and_log("Starting "+commandList[0])
         th = Thread(target=seq_command.commandDict[commandList[0]], kwargs = args)
         th.start()
 

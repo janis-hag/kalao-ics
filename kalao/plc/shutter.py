@@ -128,6 +128,7 @@ def shutter_open(beck=None):
 
     :return: status of shutter
     """
+    database.store_obs_log({'shutter_log': 'Opening shutter'})
     bStatus = switch('bOpen_Shutter', beck=beck)
 
     return bStatus
@@ -139,6 +140,8 @@ def shutter_close(beck=None):
 
     :return: status of shutter
     """
+    database.store_obs_log({'shutter_log': 'Closing shutter'})
+
     bStatus = switch('bClose_Shutter', beck=beck)
 
     return bStatus

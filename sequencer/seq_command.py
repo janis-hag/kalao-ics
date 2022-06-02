@@ -609,6 +609,7 @@ commandDict = {
     "K_LAMPON":       lamp_on,
     "K_LAMPOF":       lamp_off,
     "K_CONFIG":       config,
+    "K_END":          end,
     #"kal_AO_loop_calibration":      AO_loop_calibration
     # "kal_dark":                     dark,
     # "kal_dark_abort":               dark_abort,
