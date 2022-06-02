@@ -85,6 +85,7 @@ def seq_server():
     while True:
         socketSeq.listen()
         database.store_obs_log({'sequencer_log': "Waiting on connection."})
+        database.store_obs_log({'sequencer_status': 'WAITING'})
         conn, address = socketSeq.accept()
 
         command = (conn.recv(4096)).decode("utf8")
@@ -134,7 +135,8 @@ def seq_server():
         # commandDict is a dict with keys = "K_****" and values is function object
         # it may need to be kwargs = **args as we are passing a dictionary
 
-        system.print_and_log("Starting "+commandList[0])
+        system.print_and_log("Starting "+commandList[0]+ "on "+str(kalao_time.now()))
+
         th = Thread(target=seq_command.commandDict[commandList[0]], kwargs = args)
         th.start()
 

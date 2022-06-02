@@ -189,12 +189,11 @@ def get_latest_record(collection_name, key=None, no_id=True):
     return latest_record
 
 
-def read_mongo_to_pandas_by_timestamp(dt_start,dt_end):
+def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, collection_name='monitoring'):
     """ Read from Mongo and Store into DataFrame """
     dt_range = dt_end-dt_start
     dt = dt_start
     days=int(math.ceil(dt_range.days)) + 1
-    collection_name='monitoring'
     no_id=True
     appended_df = []
 
