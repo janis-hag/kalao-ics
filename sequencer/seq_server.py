@@ -85,7 +85,6 @@ def seq_server():
     while True:
         socketSeq.listen()
         database.store_obs_log({'sequencer_log': "Waiting on connection."})
-        database.store_obs_log({'sequencer_status': 'WAITING'})
         conn, address = socketSeq.accept()
 
         command = (conn.recv(4096)).decode("utf8")
