@@ -15,13 +15,14 @@ import os
 from pathlib import Path
 import time
 from configparser import ConfigParser
+import datetime
 
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel
 from kalao.fli import camera
-from kalao.utils import file_handling, database, database_updater
+from kalao.utils import file_handling, database, database_updater, kalao_time
 from kalao.cacao import aomanager
 from sequencer import starfinder
 
@@ -559,6 +560,7 @@ def check_abort(q, dit, AO = False):
     """
 
     t = 0
+    t0 = kalao_time.now()
 
     while t < dit + SetupTime:
         t += 1
@@ -572,6 +574,15 @@ def check_abort(q, dit, AO = False):
             return -1
         if AO and aomanager.check_loop() == -1:
             return -1
+
+        #database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
+
+        status_time = database.get_latest_record('obs_log', key='fli_temporary_image_path')['time_utc'].replace(tzinfo=datetime.timezone.utc)
+
+        if (kalao_time.now() - status_time).total_seconds() < 0:
+            # Image has been taken. Stop looping.
+            break
+
     return 0
 
 
