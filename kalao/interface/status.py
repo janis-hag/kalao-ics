@@ -29,6 +29,7 @@ InitDuration = parser.getint('SEQ', 'InitDuration')
 TungstenStabilisationTime = parser.getint('PLC', 'TungstenStabilisationTime')
 SetupTime = parser.getint('FLI', 'SetupTime')
 
+
 def short():
     """
     Query short status of all KalAO devices
@@ -73,15 +74,15 @@ def latest_obs_log_entry(realData=True):
     if realData:
         latest_record = database.get_latest_record('obs_log')
         if latest_record is None:
-            formated_entry_text = 'Obs logs empty'
+            formatted_entry_text = 'Obs logs empty'
         else:
             time_string = latest_record['time_utc'].isoformat(timespec='milliseconds')
             key_name = list(latest_record.keys())[1]
             record_text = latest_record[list(latest_record.keys())[1]]
 
-            formated_entry_text = str(time_string)+' '+str(key_name)+': '+str(record_text)
+            formatted_entry_text = str(time_string)+' '+str(key_name)+': '+str(record_text)
 
-        return formated_entry_text
+        return formatted_entry_text
     else:
         return fake_data.fake_latest_obs_log_entry()
 
