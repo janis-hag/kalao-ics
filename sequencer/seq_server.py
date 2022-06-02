@@ -135,6 +135,7 @@ def seq_server():
         # it may need to be kwargs = **args as we are passing a dictionary
 
         system.print_and_log("Starting "+commandList[0]+ "on "+str(kalao_time.now()))
+        database.store_obs_log({'sequencer_status': 'SETUP'})
 
         th = Thread(target=seq_command.commandDict[commandList[0]], kwargs = args)
         th.start()

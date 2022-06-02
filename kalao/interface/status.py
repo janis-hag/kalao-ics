@@ -110,6 +110,22 @@ def elapsed_time(sequencer_status):
          #database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
          return str(InitDuration - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
 
+    elif sequencer_status == 'SETUP':
+        ktype = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']['ktype'][2:]
+
+        if ktype == 'DARK':
+            SetupTime = parser.getint('Timings', 'DARKsetup')
+        elif ktype == 'LMPFLT':
+            SetupTime = parser.getint('Timings', 'LMPFLTsetup')
+        else:
+            SetupTime = 0
+
+
+        status_time = database.get_latest_record('obs_log', key='sequencer_status')['time_utc'].replace(
+            tzinfo=datetime.timezone.utc)
+
+        return str(SetupTime - (kalao_time.now() - status_time)).split('.')[0]
+
     elif sequencer_status == 'WAITLAMP':
         return str(TungstenStabilisationTime -tungsten.get_switch_time()).split('.')[0]
 
