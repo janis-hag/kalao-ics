@@ -24,6 +24,8 @@ from astropy.io import fits
 from kalao.utils import kalao_time, database
 from kalao.fli import camera
 
+from sequencer import system
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
@@ -32,19 +34,23 @@ config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.co
 parser = ConfigParser()
 parser.read(config_path)
 
-TemporaryDataStorage = parser.get('FLI','TemporaryDataStorage')
-Science_folder = parser.get('FLI','ScienceDataStorage')
+TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
+Science_folder = parser.get('FLI', 'ScienceDataStorage')
+T4root = parser.get('SEQ', 't4root')
 
 
-def create_night_filepath():
+def create_night_filepath(tmp_night_folder=None):
     """
     Creates a full filepath including filename. If the destination folder does not exist it is created.
 
     :return: the generated filepath
     """
-    Tmp_night_folder = create_night_folder()
+
+    if tmp_night_folder is None:
+        tmp_night_folder = create_night_folder()
+
     filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
-    filepath = Tmp_night_folder+os.sep+filename
+    filepath = tmp_night_folder+os.sep+filename
 
     return filepath
 
@@ -86,7 +92,10 @@ def save_tmp_image(image_path, header_keydict=None):
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
         update_header(image_path, header_keydict=header_keydict)
         os.rename(image_path, target_path_name)
+        # TODO remove write permission
+
         camera.log_last_image_path(target_path_name)
+
         return target_path_name
     else:
         database.store_obs_log({'sequencer_log': 'ERROR: unable to save '+image_path+' to '+target_path_name})
@@ -115,7 +124,7 @@ def update_header(image_path, header_keydict=None):
     # OBJECT, STD, ASTROMETRY, BIAS, DARK, FLAT, SKY, LAMP, FLUX, PSF-CALIBRATOR, FOCUS
 
     #TODO read telescope generated header and then remove it
-    #TODO remove write permission at the end
+
 
     fits_header_config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'fits_header.config')
     header_config = ConfigParser()
@@ -143,6 +152,10 @@ def update_header(image_path, header_keydict=None):
 
         for key, value_comment in default_cards.items():
             header.set(key.upper(), value_comment[0].strip(), value_comment[1].strip())
+
+        telescope_header, header_path = _get_last_telescope_header()
+
+
 
         # Storing monitoring
         obs_log_status = database.get_obs_log(obs_log_cards.keys(), 1, dt=dt)
@@ -214,9 +227,22 @@ def update_default_header_keydict(default_cards, header_keydict):
 
     return header_keydict
 
+
 def _get_last_telescope_header():
+    """
+    Reads header file path from database base and returns the header content along with the path
+
+    :return:
+    """
+
     # TODO verify if latest_record['time_utc'] is recent enough
     latest_record = database.get_latest_record('obs_log', key='tcs_header_path')
-    tcs_header_path = latest_record['tcs_header_path']
+    tcs_header_path = os.path.join(T4root, latest_record['tcs_header_path'])
 
-    return tcs_header_path
+    if os.path.exists(tcs_header_path):
+        tcs_header = fits.getheader(tcs_header_path)
+    else:
+        system.print_and_log(('ERROR: header file not found: '+str(tcs_header_path)))
+        tcs_header = None
+
+    return tcs_header, tcs_header_path
