@@ -30,7 +30,7 @@ def save_wfs_image():
     file_path = file_handling.create_night_filepath(tmp_night_folder='/home/kalao/data/tmp/wfs')
 
     toolbox.save_stream_to_fits('nuvu_stream', file_path)
-    #file_handling.update_header(file_path)
+    file_handling.update_header(file_path)
 
     return 0
 
