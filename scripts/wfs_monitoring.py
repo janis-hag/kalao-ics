@@ -29,7 +29,7 @@ def save_wfs_image():
 
     file_path = file_handling.create_night_filepath(tmp_night_folder='/home/kalao/data/tmp/wfs')
 
-    cp = toolbox.save_stream_to_fits('/tmp/milk/nuvu_stream.im.shm', file_path)
+    cp = toolbox.save_stream_to_fits('milk/nuvu_stream', file_path)
 
     print("=========================== STDOUT")
     print(cp.stdout)
