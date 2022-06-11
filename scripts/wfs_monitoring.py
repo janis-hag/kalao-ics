@@ -14,6 +14,8 @@ import sys
 from kalao.cacao import toolbox
 from kalao.plc import laser, flip_mirror
 from kalao.utils import file_handling
+import schedule
+from time import sleep
 
 #turn on laser
 #get image from nuvu shm
@@ -41,6 +43,11 @@ def save_wfs_image():
 
     return 0
 
+
 if __name__ == '__main__':
-    save_wfs_image()
-    sys.exit(0)
+
+    schedule.every(600).seconds.do(save_wfs_image)
+
+    while True:
+        schedule.run_pending()
+        sleep(5)
