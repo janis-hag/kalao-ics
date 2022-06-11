@@ -46,8 +46,8 @@ def save_wfs_image():
 
 if __name__ == '__main__':
 
-    schedule.every(600).seconds.do(save_wfs_image)
+    schedule.every(2).seconds.do(save_wfs_image)
 
     while True:
         schedule.run_pending()
-        sleep(5)
+        sleep(1)
