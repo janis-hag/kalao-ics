@@ -147,7 +147,12 @@ def update_header(image_path, header_keydict=None):
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
         header = hdul[0].header
-        dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
+
+        if 'DATE-OBS' in header.keys():
+            dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
+        else:
+            dt = datetime.fromisoformat(header['DATE']).replace(tzinfo=timezone.utc)
+
         # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
 
         for key, value_comment in default_cards.items():
