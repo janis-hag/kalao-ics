@@ -130,7 +130,7 @@ def save_stream_to_fits(stream_name, fits_file):
     exitCLI
     """
 
-    cp = subprocess.run(["milk"], input=milk_input, encoding='utf8', stdout=PIPE, stderr=STDOUT)
+    cp = subprocess.run(["/usr/local/milk/bin/milk"], input=milk_input, encoding='utf8', stdout=PIPE, stderr=STDOUT)
 
     return cp
 
