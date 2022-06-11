@@ -158,7 +158,8 @@ def update_header(image_path, header_keydict=None):
         for key, value_comment in default_cards.items():
             header.set(key.upper(), value_comment[0].strip(), value_comment[1].strip())
 
-        telescope_header, header_path = _get_last_telescope_header()
+        # TODO uncomment and merge telescope header to actual header
+        #telescope_header, header_path = _get_last_telescope_header()
 
 
 
