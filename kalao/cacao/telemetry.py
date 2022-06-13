@@ -127,7 +127,7 @@ def streams(realData=True):
 		stream_list["shwfs_slopes"] = _get_stream("shwfs_slopes", -2, 2)
 		stream_list["dm01disp"] = _get_stream("dm01disp", -1.75, 1.75)
 		stream_list["shwfs_slopes_flux"] = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
-		stream_list["aol1_mgain"] = _get_stream("aol1_mgain", 0, 1)
+		stream_list["aol1_mgainfact"] = _get_stream("aol1_mgainfact", 0, 1)
 		##streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) #TODO: uncomment when modal control is working
 
 		return stream_list
