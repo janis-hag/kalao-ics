@@ -95,7 +95,7 @@ def _get_stream(name, min_value, max_value):
 
 def get_stream_data(shm_stream, name, min_value, max_value):
 	"""
-	Reads and already open shm_stream, after having verified that the strem with that name exists.
+	Reads and already open shm_stream, after having verified that the stream with that name exists.
 
 	:param shm_stream:
 	:param name:
@@ -109,7 +109,15 @@ def get_stream_data(shm_stream, name, min_value, max_value):
 		try:
 			data = shm_stream.get_data(check=False)
 			list = data.flatten().tolist()
-			return {"data": list, "width": data.shape[1], "height": data.shape[0], "min": min(list), "max": max(list)}
+					#stream.close()
+			if len(data.shape) == 1:
+				# One dimensional stream
+				width = 1
+				height = data.shape[0]
+			else:
+				width =  data.shape[1]
+				height = data.shape[0]
+			return {"data": list, "width": width, "height": height, "min": min(list), "max": max(list)}
 		except:
 			return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
 	else:
