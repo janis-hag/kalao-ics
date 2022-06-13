@@ -9,8 +9,7 @@ from astropy.nddata.blocks import block_reduce
 
 import subprocess
 from subprocess import PIPE, STDOUT
-from pyMilk.interfacing.isio_shmlib import SHM
-
+from CacaoProcessTools import fps, FPS_status
 
 def get_roi_and_subapertures(data):
     roi = None
@@ -134,6 +133,36 @@ def save_stream_to_fits(stream_name, fits_file):
 
     return cp
 
+
+def wfs_centering(tt_threshold):
+
+    tip_centered = False
+    tilt_centered = False
+
+    fps_slopes = fps("shwfs_process")
+    fps_bmc = fps("bmc_display")
+
+    #TODO add iterations limit to prevent infinite loop
+    while not (tip_centered and tilt_centered):
+
+        tilt = fps_slopes.get_param_value_float('slope_x')
+        tip = fps_slopes.get_param_value_float('slope_y')
+
+        tip_offset = fps_bmc.get_param_value_float("ttm_tip_offset")
+        tilt_offset = fps_bmc.get_param_value_float("ttm_tilt_offset")
+
+        if tip_offset - tip < tt_threshold:
+            tip_centered = True
+        else:
+            fps_bmc.set_param_value_float('ttm_tip_offset', str(tip_offset - tip / 2))
+
+        if tilt_offset - tip < tt_threshold:
+            tilt_centered = True
+        else:
+            fps_bmc.set_param_value_float('ttm_tilt_offset', str(tilt_offset - tilt / 2))
+
+    # TODO return 0 if centered, 1 if exceeded iterations
+    return 0
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt

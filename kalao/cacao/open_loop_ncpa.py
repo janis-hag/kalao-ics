@@ -126,7 +126,7 @@ def run(cam, args):
     # Order 0 piston
 
     zernike_shm = SHM('bmc_zernike_coeff')
-    zernike_array =  zernike_shm.get_data(check=False)
+    zernike_array = zernike_shm.get_data(check=False)
 
     if orders_to_correct > len(zernike_array)-3:
         orders_to_correct = len(zernike_array)-3
