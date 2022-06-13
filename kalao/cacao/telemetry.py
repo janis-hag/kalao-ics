@@ -82,8 +82,12 @@ def _get_stream(name, min_value, max_value):
 		data = shm_stream.get_data(check=False)
 
 		#stream.close()
-
-		return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min_value, "max": max_value}
+		if len(data.shape) == 1:
+			# One dimensional stream
+			return {"data": data.flatten().tolist(), "width": 1, "height": data.shape[0], "min": min_value,
+					"max": max_value}
+		else:
+			return {"data": data.flatten().tolist(), "width": data.shape[1], "height": data.shape[0], "min": min_value, "max": max_value}
 
 	else:
 		return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
