@@ -16,6 +16,7 @@ import shutil
 import time
 
 from CacaoProcessTools import fps, FPS_status
+from pyMilk.interfacing.isio_shmlib import SHM
 
 from kalao.cacao import telemetry
 

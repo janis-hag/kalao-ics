@@ -11,6 +11,7 @@ import subprocess
 from subprocess import PIPE, STDOUT
 from CacaoProcessTools import fps, FPS_status
 
+
 def get_roi_and_subapertures(data):
     roi = None
     subapertures = None
