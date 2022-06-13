@@ -65,7 +65,14 @@ def create_shm_stream(name):
 
 
 def _get_stream(name, min_value, max_value):
+	"""
+	Opens an existing stream after having verified it's existence.
 
+	:param name:
+	:param min_value:
+	:param max_value:
+	:return:
+	"""
 	exists, stream_path = check_stream(name)
 
 	if exists:
@@ -83,7 +90,15 @@ def _get_stream(name, min_value, max_value):
 
 
 def get_stream_data(shm_stream, name, min_value, max_value):
+	"""
+	Reads and already open shm_stream, after having verified that the strem with that name exists.
 
+	:param shm_stream:
+	:param name:
+	:param min_value:
+	:param max_value:
+	:return:
+	"""
 	exists, stream_path = check_stream(name)
 
 	if exists:
@@ -108,6 +123,7 @@ def streams(realData=True):
 		stream_list["shwfs_slopes"] = _get_stream("shwfs_slopes", -2, 2)
 		stream_list["dm01disp"] = _get_stream("dm01disp", -1.75, 1.75)
 		stream_list["shwfs_slopes_flux"] = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
+		stream_list["aol0_mgainfact"] = _get_stream("aol0_mgainfact", 0, 1)
 		##streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) #TODO: uncomment when modal control is working
 
 		return stream_list
@@ -235,7 +251,7 @@ def telemetry_save(stream_list):
 	#return nuvu_stream, tt_stream, fps_slopes
 
 
-def wfs_illumination():
+def wfs_illumination_count(wfs_threshold):
 	"""
 	Function reads the nuvu stream and return the summed flux in each subaperture
 
@@ -244,13 +260,14 @@ def wfs_illumination():
 
 	# TODO implement masking procdedure in order to only consider usfeul subaps
 
-	stream = SHM("nuvu_acquire")
-	frame, subapertures = toolbox.get_roi_and_subapertures(stream.get_data(check=True))
+ 	shwfs_stream = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
+
+	shwfs_array = np.array(shwfs_stream['data'])
+
+	illuminated_pupil_count = (shwfs_array > wfs_threshold).sum()
 
 	#stream.close()
 
-	subapertures_flux = subapertures.sum(axis=(1, 2))
-
 	#TODO reject subaps out of centering zone
 
-	return subapertures_flux
+	return illuminated_pupil_count
