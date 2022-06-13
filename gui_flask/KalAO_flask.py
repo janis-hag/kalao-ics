@@ -24,6 +24,7 @@ from os import path
 #sys.path.append('../includes/kalao-ics')
 sys.path.append(path.dirname(path.dirname(path.abspath(path.dirname(__file__)))))
 
+from kalao.cacao import aocontrol as k_aocontrol
 from kalao.cacao import telemetry as k_telemetry
 from kalao.interface import status as k_status
 from kalao.interface import star_centering as k_star_centering
@@ -88,7 +89,8 @@ def create_app():
                 "nuvu_stream" : k_telemetry.create_shm_stream("nuvu_stream"),
                 "shwfs_slopes" : k_telemetry.create_shm_stream("shwfs_slopes"),
                 "dm01disp" : k_telemetry.create_shm_stream("dm01disp"),
-                "shwfs_slopes_flux" : k_telemetry.create_shm_stream("shwfs_slopes_flux")
+                "shwfs_slopes_flux" : k_telemetry.create_shm_stream("shwfs_slopes_flux"),
+                "aol1_mgainfact" : k_telemetry.create_shm_stream("aol1_mgainfact")
             }
             app.config['shm_streams'] = shm_streams
 
@@ -99,6 +101,7 @@ def create_app():
         stream_list["shwfs_slopes"] = k_telemetry.get_stream_data(shm_streams["shwfs_slopes"], "shwfs_slopes", -2, 2)
         stream_list["dm01disp"] = k_telemetry.get_stream_data(shm_streams["dm01disp"], "dm01disp", -1.75, 1.75)
         stream_list["shwfs_slopes_flux"] = k_telemetry.get_stream_data(shm_streams["shwfs_slopes_flux"], "shwfs_slopes_flux", 0, 4*(2**16-1))
+        stream_list["aol1_mgainfact"] = k_telemetry.get_stream_data(shm_streams["aol1_mgainfact"], "aol1_mgainfact", 0, 1)
 
         #return k_telemetry.streams(shm_streams, realData)
         return stream_list
@@ -213,6 +216,7 @@ def create_app():
                         ts[col]["values"].append(values[i])
 
         return json.dumps(ts);
+
     @app.route('/timeSeries/<t_start>/<t_end>', methods=['GET'])
     def timeSeries(t_start,t_end):
 
@@ -245,5 +249,14 @@ def create_app():
                         ts[col]["values"].append(values[i])
 
         return json.dumps(ts);
+
+    @app.route('/modalGain', methods=['POST'])
+    def modalGain():
+
+        options = request.get_json()
+        k_aocontrol.set_modal_gain(options["key"],options["value"])
+        print(options)
+        print("SET",options["key"],options["value"])
+        return "ok"
 
     return app
