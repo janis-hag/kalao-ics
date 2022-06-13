@@ -5,7 +5,7 @@
 """
 
 from pathlib import Path
-
+import numpy as np
 
 import libtmux
 
@@ -15,7 +15,7 @@ from pyMilk.interfacing import isio_shmlib
 from CacaoProcessTools import fps, FPS_status
 
 from kalao.utils import database
-from kalao.cacao import fake_data, toolbox
+from kalao.cacao import fake_data
 
 
 def check_stream(stream_name):
@@ -258,9 +258,9 @@ def wfs_illumination_count(wfs_threshold):
 	:return:  subaprtures summed flux
 	"""
 
-	# TODO implement masking procdedure in order to only consider usfeul subaps
+	# TODO implement masking prodedure in order to only consider usfeul subaps
 
- 	shwfs_stream = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
+	shwfs_stream = _get_stream("shwfs_slopes_flux", 0, 4*(2**16-1))
 
 	shwfs_array = np.array(shwfs_stream['data'])
 
