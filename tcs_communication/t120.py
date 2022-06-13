@@ -73,7 +73,6 @@ def send_offset(delta_alt, delta_az):
     else:
         offset_cmd = '@offset '+str(delta_alt) +' '+str(delta_az)
         ipc.send_cmd(offset_cmd, timeout, timeout)
-        ipc.shm_free()
 
 # def get_status():
 #     _t120_print_and_log(f'Sending {delta_alt} and {delta_az} offsets')
