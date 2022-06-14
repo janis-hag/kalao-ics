@@ -45,7 +45,7 @@ def check_fps(fps_name):
 	"""
 	#fps_path = Path(os.environ["MILK_SHM_DIR"])
 	fps_path = Path('/tmp/milk')
-	fps_name = isio_shmlib._checkSHMName(fps_name)+'.fps.shm'
+	fps_name = isio_shmlib.check_SHM_name(fps_name)+'.fps.shm'
 	fps_path = fps_path / fps_name
 
 	if fps_path.exists():
