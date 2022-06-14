@@ -15,6 +15,8 @@ import os
 import shutil
 import time
 
+import numpy as np
+
 from CacaoProcessTools import fps, FPS_status
 from pyMilk.interfacing.isio_shmlib import SHM
 
@@ -45,6 +47,54 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
     else:
         return -1
 
+
+
+def linear_low_pass_modal_gain_filter(cut_off, last_mode=None ,keep_existing_flat=False, stream_name='aol1_mgainfact'):
+    """
+    Applies a linear low-pass filter to the ao modal gains. The gain is flat until the cut_off mode where it starts
+    decreasing down to zero for the last mode
+
+    :param cut_off: mode at which the gain starts decreasing
+    :param last_mode: modes higher than this mode are set to 0
+    :param keep_existing_flat: keep the existing gain values instead of setting them to 1
+    :param stream_name: name of the milk stream where the gain factor are stored
+    :return:
+    """
+
+    exists, stream_path = telemetry.check_stream(stream_name)
+
+    if exists:
+        mgainfact_shm = SHM(stream_name)
+        mgainfact_array = mgainfact_shm.get_data(check=False)
+
+
+        if not keep_existing_flat:
+            mgainfact_array = np.ones(len(mgainfact_array))
+
+        if cut_off > len(mgainfact_array):
+            # cut_off frequency has to be within the range of modes. If higher all values will be set to 1
+            cut_off = len(mgainfact_array)
+
+        if last_mode is None:
+            last_mode = len(mgainfact_array)-1
+        elif last_mode < cut_off:
+            last_mode = cut_off
+            mgainfact_array[last_mode:] = 0
+        else:
+            mgainfact_array[last_mode:] = 0
+
+        if not cut_off ==  last_mode:
+            #down = np.linspace(1, 0, len(mgainfact_array) - cut_off + 2 - (len(mgainfact_array) - last_mode) )[1:-1]
+            down = np.linspace(1, 0, last_mode - cut_off + 2)[1:-1]
+            mgainfact_array[cut_off:last_mode] = down
+
+
+        mgainfact_shm.set_data(mgainfact_array.astype(mgainfact_shm.nptype))
+
+        return 0
+
+    else:
+        return -1
 
 
 ##### Wait functions
