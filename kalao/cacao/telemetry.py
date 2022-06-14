@@ -263,7 +263,7 @@ def telemetry_save(stream_list):
 	#return nuvu_stream, tt_stream, fps_slopes
 
 
-def wfs_illumination_count(wfs_threshold):
+def wfs_illumination_fraction(wfs_threshold):
 	"""
 	Function reads the nuvu stream and return the summed flux in each subaperture
 
@@ -276,10 +276,10 @@ def wfs_illumination_count(wfs_threshold):
 
 	shwfs_array = np.array(shwfs_stream['data'])
 
-	illuminated_pupil_count = (shwfs_array > wfs_threshold).sum()
+	illuminated_pupil_fraction = (shwfs_array > wfs_threshold).sum() / len(shwfs_array)
 
 	#stream.close()
 
 	#TODO reject subaps out of centering zone
 
-	return illuminated_pupil_count
+	return illuminated_pupil_fraction

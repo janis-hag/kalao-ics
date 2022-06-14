@@ -7,9 +7,10 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import camera
 from kalao.plc import filterwheel
-from kalao.utils import database, file_handling
-from kalao.cacao import telemetry
+from kalao.utils import database
+from kalao.cacao import telemetry, aocontrol
 from tcs_communication import t120
+from sequencer import system
 
 import numpy as np
 from astropy.io import fits
@@ -19,9 +20,16 @@ from configparser import ConfigParser
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 parser = ConfigParser()
 parser.read(config_path)
-ExpTime = parser.getfloat('FLI','ExpTime')
-CenteringTimeout = parser.getfloat('SEQ','CenteringTimeout')
+ExpTime = parser.getfloat('FLI', 'ExpTime')
+CenterX = parser.getint('FLI', 'CenterX')
+CenterY = parser.getint('FLI', 'CenterY')
+PixScale = parser.getfloat('FLI', 'PixScale')
 
+CenteringTimeout = parser.getfloat('SEQ', 'CenteringTimeout')
+
+WFSilluminationThreshold = parser.getfloat('AO', 'WFSilluminationThreshold')
+WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
+TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 
 def centre_on_target(filter_arg='clear'):
 
@@ -30,7 +38,7 @@ def centre_on_target(filter_arg='clear'):
 
     timeout_time = time.time()+CenteringTimeout
 
-    while(time.time() < timeout_time):
+    while time.time() < timeout_time:
         rValue, image_path = camera.take_image(dit = ExpTime)
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         #file_handling.save_tmp_image(image_path)
@@ -44,13 +52,21 @@ def centre_on_target(filter_arg='clear'):
 
         if x != -1 and y != -1:
             # Found star
+            alt_offset = (x - CenterX)*PixScale
+            az_offset = (y - CenterY)*PixScale
+
             #TODO transform pixel x y into arcseconds
-            t120.send_offset(x,y)
-            # TODO verify if SHWFS enough illuminated
-            telemetry.wfs_illumination()
-            # if shwfs ok:
-            #    return 0
-            pass
+            t120.send_offset(alt_offset, az_offset)
+
+            # TODO verify if SHWFS is enough illuminated
+            illuminated_fraction = telemetry.wfs_illumination_fraction(WFSilluminationThreshold)
+
+            aocontrol.wfs_centering(TTSlopeThreshold)
+
+            if illuminated_fraction > WFSilluminationFraction:
+                system.print_and_log('WFS on target')
+                return 0
+
         else:
             # Start manual centering
             # TODO start timeout (value in kalao.config)
@@ -186,4 +202,3 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     y_star = y + y_f - mid
 
     return x_star, y_star
-
