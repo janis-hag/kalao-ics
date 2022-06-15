@@ -2029,7 +2029,7 @@ my_getdate(int semid /* semaphore ID */ )
 /*
  * Affiche a l'ecran le contenu du bloc de communication
  * 
- * RETURN: show_shm_block_kw() retourne normallement 0, -1 en cas d'erreur
+ * RETURN: show_shm_block_kw() retourne normallement le nb de keyword, -1 en cas d'erreur
  */
 
 int
@@ -2053,11 +2053,11 @@ show_shm_block_kw(struct block_kw * block /* communication bloc pointer */ )
 		i++;
 		if (i == NB_KW_MAX){
 			fflush(stdout);
-			return (0);
+			return (i);
 		}
 	}
 	fflush(stdout);
-	return (0);
+	return (i);
 }
 
 /*
@@ -2415,6 +2415,16 @@ init_ipc_remote_client( char *host,	/* remote server host */
 	int             nb_bytes;
 	char            answer[12];
 	char            client_host[40];
+	int		status;
+	
+	if(connect_ipc.cd != 0){
+		status = write_to_ipc_server("aliv");	
+		if(status == 0){
+			return(connect_ipc.cd);
+		}
+	}
+			
+	
         
 	gop_init_server_socket(&connect_ipc, symb_name, port, 4096,
 			       GOP_CONNECTION, 0);
