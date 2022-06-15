@@ -23,6 +23,21 @@ from pyMilk.interfacing.isio_shmlib import SHM
 from kalao.cacao import telemetry
 
 
+def set_loopgain(gain):
+
+    return 0
+
+
+def set_loopmult(mult):
+
+    return 0
+
+
+def set_looplimit(limit):
+
+    return 0
+
+
 def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
     """
     Function to change the gains of the AO control modes
@@ -33,6 +48,8 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
     :return:
     """
     exists, stream_path = telemetry.check_stream(stream_name)
+
+    mode = int(np.floort(mode))
 
     if exists:
         mgainfact_shm = SHM(stream_name)
