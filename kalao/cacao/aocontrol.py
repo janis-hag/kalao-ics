@@ -93,7 +93,7 @@ def linear_low_pass_modal_gain_filter(cut_off, last_mode=None ,keep_existing_fla
             cut_off = len(mgainfact_array)
 
         if last_mode is None:
-            last_mode = len(mgainfact_array)-1
+            last_mode = len(mgainfact_array)#-1
         elif last_mode < cut_off:
             last_mode = cut_off
             mgainfact_array[last_mode:] = 0
