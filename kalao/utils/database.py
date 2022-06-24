@@ -189,7 +189,7 @@ def get_latest_record(collection_name, key=None, no_id=True):
     return latest_record
 
 
-def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, collection_name='monitoring'):
+def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, sampling=1500, collection_name='monitoring'):
     """ Read from Mongo and Store into DataFrame """
     dt_range = dt_end-dt_start
     dt = dt_start
@@ -227,6 +227,11 @@ def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, collection_name='monitor
         # Delete the _id
         if no_id:
             del df['_id']
+
+    # Downsample using temporal binning
+    if sampling < len(df):
+        time_step = ((df['time_utc'][-1:]-df['time_utc'][0])/sampling).iat[0]
+        df = df.resample(time_step, on='time_utc').mean()
 
     return df
 

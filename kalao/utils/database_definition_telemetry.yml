@@ -24,7 +24,7 @@ nuvu_temp_ccd:
   short: EMCCD Temp.
   long: Temperature of the EMCCD
   unit: °C
-  main_gui: 2 # main_gui: 2
+  main_gui: 3 # main_gui: 2
 
 nuvu_temp_controller:
   short: CNTRLR Temp.
