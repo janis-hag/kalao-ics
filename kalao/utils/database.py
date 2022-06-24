@@ -232,7 +232,7 @@ def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, sampling=1500, collectio
     if sampling < len(df):
         time_step = ((df['time_utc'][-1:]-df['time_utc'][0])/sampling).iat[0]
         df = df.resample(time_step, on='time_utc').mean()
-        df['time_utc'] = df.index
+        #df['time_utc'] = df.index
         df.reset_index(inplace=True)
 
     return df
