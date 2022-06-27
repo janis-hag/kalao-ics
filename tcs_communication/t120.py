@@ -78,6 +78,23 @@ def send_offset(delta_alt, delta_az):
 
     return ipc
 
+
+def test_connection():
+
+    _t120_print_and_log(f'Sending show i')
+
+
+    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    #print ("ipc.init_remote_client, returns:",socketId)
+    if(socketId <= 0):
+        _t120_print_and_log('Error connecting to T120')
+        return -1
+
+    ipc.send_cmd('show i', timeout, timeout)
+
+    return ipc
+
+
 # def get_status():
 #     _t120_print_and_log(f'Sending {delta_alt} and {delta_az} offsets')
 #     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
