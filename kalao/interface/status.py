@@ -111,7 +111,7 @@ def elapsed_time(sequencer_status):
          return str(InitDuration - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == 'SETUP':
-        ktype = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']['ktype'][2:]
+        ktype = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']['type'][2:]
 
         if ktype == 'DARK':
             SetupTime = parser.getint('Timings', 'DARKsetup')
