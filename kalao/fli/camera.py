@@ -160,6 +160,7 @@ def send_request(request_type, params):
 
     if request_type == 'acquire':
         increment_image_counter()
+        database.store_obs_log({'sequencer_status': 'EXP'})
 
     url = 'http://'+address+':'+port+'/'+request_type
     if params == 'GET':
