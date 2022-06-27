@@ -14,10 +14,13 @@ import requests
 import requests.exceptions
 import os
 import json
+from astropy.io import fits
 
 from kalao.utils import database, database_updater, file_handling
 from configparser import ConfigParser
 from pathlib import Path
+
+from pyMilk.interfacing.isio_shmlib import SHM
 
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
@@ -100,6 +103,31 @@ def increment_image_counter():
     database.store_obs_log({'fli_image_count': image_count})
 
     return image_count
+
+
+def video_stream(dit=0.05):
+   # initialise stream
+
+    filepath = '/tmp/fli_image.fits'
+
+    req = send_request('acquire', {'exptime': dit, 'filepath': filepath})
+
+    img = fits.getdata(filepath)
+    #img = cut_image(img)
+
+    # Creating a brand new stream
+    shm = SHM('fli_stream', img,
+                 location=-1,  # CPU
+                 shared=True,  # Shared
+                 )
+
+    while req.status_code == 200:
+        req = send_request('acquire', {'exptime': dit, 'filepath': filepath})
+        img = fits.getdata(filepath)
+
+        #img = cut_image(img)
+        shm.set_data(img)
+        sleep(0.00001)
 
 
 def log(req):
