@@ -76,7 +76,7 @@ def send_offset(delta_alt, delta_az):
     offset_cmd = '@offset '+str(delta_alt) +' '+str(delta_az)
     ipc.send_cmd(offset_cmd, timeout, timeout)
 
-    return ipc
+    return socketId
 
 
 def test_connection():
@@ -92,7 +92,7 @@ def test_connection():
 
     ipc.send_cmd('show i', timeout, timeout)
 
-    return ipc
+    return socketId
 
 
 # def get_status():
