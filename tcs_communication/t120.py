@@ -62,16 +62,16 @@ def _t120_print_and_log(log_text):
     database.store_obs_log({'t120_log': log_text})
 
 
-def send_offset(delta_alt, delta_az, ipc=None):
+def send_offset(delta_alt, delta_az):
 
     _t120_print_and_log(f'Sending {delta_alt} and {delta_az} offsets')
 
-    if ipc is None:
-        socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
-        #print ("ipc.init_remote_client, returns:",socketId)
-        if(socketId <= 0):
-            _t120_print_and_log('Error connecting to T120')
-            return -1
+
+    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    #print ("ipc.init_remote_client, returns:",socketId)
+    if(socketId <= 0):
+        _t120_print_and_log('Error connecting to T120')
+        return -1
 
     offset_cmd = '@offset '+str(delta_alt) +' '+str(delta_az)
     ipc.send_cmd(offset_cmd, timeout, timeout)
