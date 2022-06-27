@@ -122,14 +122,18 @@ def video_stream(dit=0.05):
                  shared=True,  # Shared
                  )
 
-    while req.status_code == 200:
-        req = send_request('acquire', {'exptime': dit, 'filepath': filepath})
-        img = fits.getdata(filepath)
 
-        #img = cut_image(img)
-        shm.set_data(img)
-        sleep(0.00001)
+    try:
+        while req.status_code == 200:
+            req = send_request('acquire', {'exptime': dit, 'filepath': filepath})
+            img = fits.getdata(filepath)
 
+            #img = cut_image(img)
+            shm.set_data(img)
+            sleep(0.001)
+
+    except KeyboardInterrupt:
+        print('interrupted!')
 
 def log(req):
     database.store_obs_log({'fli_log': req.text+' ('+str(req.status_code)+')'})
