@@ -15,6 +15,7 @@ import requests.exceptions
 import os
 import json
 from astropy.io import fits
+from time import sleep
 
 from kalao.utils import database, database_updater, file_handling
 from configparser import ConfigParser
