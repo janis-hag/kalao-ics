@@ -99,7 +99,7 @@ def kalao_status():
         status_string = '/status/'+sequencer_status[0]
     else:
         #  TODO get alt/az and focus offset from cacao.telemetry and add to string
-        status_string = '/status/BUSY/'+elapsed_time(sequencer_status)+'/'+sequencer_status[0]
+        status_string = '/status/BUSY/'+elapsed_time(sequencer_status[0])+'/'+sequencer_status[0]
 
     #status_string = '/status/'+sequencer_status
 
