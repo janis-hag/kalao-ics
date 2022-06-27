@@ -92,13 +92,16 @@ def kalao_status():
     sequencer_status = database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['values']
     if not sequencer_status:
         # If the status is not set assume that the sequencer is doww
-        sequencer_status = 'DOWN'
+        status_string = '/status/ERROR/0/DOWN'
+    elif sequencer_status is 'WAITING':
+        status_string = '/status/'+sequencer_status[0]
+    elif sequencer_status is 'ERROR':
+        status_string = '/status/'+sequencer_status
     else:
-        sequencer_status = sequencer_status[0]
-    # TODO get alt/az and focus offset from cacao.telemetry and add to string
-    sequencer_status = sequencer_status+'/'+elapsed_time(sequencer_status)
+        #  TODO get alt/az and focus offset from cacao.telemetry and add to string
+        status_string = '/status/BUSY/'+elapsed_time(sequencer_status)+'/'+sequencer_status
 
-    status_string = '/status/'+sequencer_status
+    #status_string = '/status/'+sequencer_status
 
     return status_string
 
