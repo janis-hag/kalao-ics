@@ -93,9 +93,9 @@ def kalao_status():
     if not sequencer_status:
         # If the status is not set assume that the sequencer is doww
         status_string = '/status/ERROR/0/DOWN'
-    elif sequencer_status is 'WAITING':
+    elif sequencer_status[0] == 'WAITING':
         status_string = '/status/'+sequencer_status[0]
-    elif sequencer_status is 'ERROR':
+    elif sequencer_status[0] == 'ERROR':
         status_string = '/status/'+sequencer_status[0]
     else:
         #  TODO get alt/az and focus offset from cacao.telemetry and add to string
