@@ -46,7 +46,6 @@ port = parser.getint('T120', 'Port')  # only for inet connection
 semkey = parser.getint('T120', 'semkey')  # only for inet connection
 timeout = parser.getint('T120', 'timeout')  # only for inet connection
 
-
 #
 # The connection to ipcsrv on <host>:
 #
@@ -64,7 +63,7 @@ def _t120_print_and_log(log_text):
 
 def send_offset(delta_alt, delta_az):
 
-    _t120_print_and_log(f'Sending {delta_alt} and {delta_az} offsets')
+    host = database.get_latest_record('obs_log', key='t120_host')['t120_host']
 
 
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
@@ -72,6 +71,8 @@ def send_offset(delta_alt, delta_az):
     if(socketId <= 0):
         _t120_print_and_log('Error connecting to T120')
         return -1
+
+    _t120_print_and_log(f'Sending {delta_alt} and {delta_az} offsets')
 
     offset_cmd = '@offset '+str(delta_alt) +' '+str(delta_az)
     ipc.send_cmd(offset_cmd, timeout, timeout)
