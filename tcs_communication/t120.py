@@ -85,9 +85,9 @@ def send_offset(delta_alt, delta_az):
 
 def send_focus_offset(focus_offset):
 
-    # Verify offset value below limit
-    if focus_offset > focus_offset_limit:
-        system.print_and_log(f'ERROR, focus value {focus_offset} above limite {focus_offset_limit}')
+    #TODO Verify offset value below limit differentiate between offsets and absolute values
+    #if focus_offset > focus_offset_limit:
+    #    system.print_and_log(f'ERROR, focus value {focus_offset} above limite {focus_offset_limit}')
 
     host = database.get_latest_record('obs_log', key='t120_host')['t120_host']
 
