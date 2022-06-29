@@ -211,6 +211,8 @@ def focus(focus_points=6):
     focus_points = np.around(focus_points)
 
     initial_focus = t120.get_focus_value()
+    if initial_focus >30 or initial_focus<20:
+        print(f'Error received unexpected focus value: {initial_focus}')
 
     req, file_path = camera.take_image()
 
