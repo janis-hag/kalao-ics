@@ -213,7 +213,7 @@ def focus(focus_points=6):
     initial_focus = t120.get_focus_value()
 
     file_path = camera.take_image()
-    time.sleep(5)
+    time.sleep(15)
     file_handling.add_comment(file_path, "Focus sequence: 0")
 
     image = fits.getdata(file_path)
@@ -237,7 +237,7 @@ def focus(focus_points=6):
         time.sleep(10)
 
         file_path = camera.take_image()
-        time.sleep(5)
+        time.sleep(15)
         file_handling.add_comment(file_path, "Focus sequence: "+str(new_focus))
 
         image = fits.getdata(file_path)
