@@ -41,7 +41,7 @@ parser.read(config_path)
 #port      = 12345
 #semkey    = 1000
 
-host = parser.get('T120', 'Host')
+#host = parser.get('T120', 'Host')
 symb_name = parser.get('T120', 'symb_name')
 rcmd = parser.get('T120', 'rcmd')
 port = parser.getint('T120', 'Port')  # only for inet connection
@@ -66,7 +66,7 @@ def _t120_print_and_log(log_text):
 
 def send_offset(delta_alt, delta_az):
 
-    host = database.get_latest_record('obs_log', key='t120_host')['t120_host']
+    host = database.get_latest_record('obs_log', key='t120_host')['t120_host']+'.ls.eso.org'
 
 
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
@@ -108,7 +108,7 @@ def send_focus_offset(focus_offset):
 
 def get_focus_value():
 
-    host = database.get_latest_record('obs_log', key='t120_host')['t120_host']
+    host = database.get_latest_record('obs_log', key='t120_host')['t120_host']+'.ls.eso.org'
 
 
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
