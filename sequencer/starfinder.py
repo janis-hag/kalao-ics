@@ -233,6 +233,8 @@ def focus(focus_points=6):
 
         t120.send_focus_offset(new_focus)
 
+        time.sleep(10)
+
         file_path = camera.take_image()
         file_handling.add_comment(file_path, "Focus sequence: "+str(new_focus))
 
