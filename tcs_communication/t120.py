@@ -98,7 +98,7 @@ def send_focus_offset(focus_offset):
         _t120_print_and_log('Error connecting to T120')
         return -1
 
-    _t120_print_and_log(f'Sending {focus_offset}  offsets')
+    _t120_print_and_log(f'Sending focus {focus_offset}')
 
     offset_cmd = '@m2p '+str(focus_offset)
     ipc.send_cmd(offset_cmd, timeout, timeout)

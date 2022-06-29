@@ -250,7 +250,7 @@ def focus(focus_points=6):
     # Keep best focus
     best_focus = focus_flux.loc[focus_flux['flux'].idxmax(), 'focus']
 
-    database.store_obs_log({'tracking_loh': focus_flux})
+    database.store_obs_log({'tracking_log': focus_flux})
 
 
     t120.send_focus_offset(best_focus)
