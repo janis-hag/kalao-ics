@@ -136,6 +136,8 @@ def get_focus_value():
 
     print(returnList)
 
+    return returnList[1]
+
 
 def test_connection():
 
