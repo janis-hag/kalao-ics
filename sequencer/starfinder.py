@@ -214,7 +214,7 @@ def focus(focus_points=6):
 
     file_path = camera.take_image()
     time.sleep(20)
-    file_handling.add_comment(file_path, "Focus sequence: 0")
+    #file_handling.add_comment(file_path, "Focus sequence: 0")
 
     image = fits.getdata(file_path)
     flux= image[np.argpartition(image, -6)][-6:].sum()
@@ -237,8 +237,9 @@ def focus(focus_points=6):
         time.sleep(10)
 
         file_path = camera.take_image()
+
         time.sleep(20)
-        file_handling.add_comment(file_path, "Focus sequence: "+str(new_focus))
+        #file_handling.add_comment(file_path, "Focus sequence: "+str(new_focus))
 
         image = fits.getdata(file_path)
         flux = image[np.argpartition(image, -6)][-6:].sum()
