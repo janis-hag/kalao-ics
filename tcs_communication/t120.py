@@ -89,7 +89,7 @@ def send_focus_offset(focus_offset):
     #if focus_offset > focus_offset_limit:
     #    system.print_and_log(f'ERROR, focus value {focus_offset} above limite {focus_offset_limit}')
 
-    host = database.get_latest_record('obs_log', key='t120_host')['t120_host']
+    host = database.get_latest_record('obs_log', key='t120_host')['t120_host']+'.ls.eso.org'
 
 
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
