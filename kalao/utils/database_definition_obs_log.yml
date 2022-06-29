@@ -19,18 +19,21 @@ target_magnitude:
   long: Magnitude of the current target
   unit: I
 target_dec:
-  short:
-  long:
+  short: Target DEC
+  long: Target declination
   unit:
 target_ra:
-  short:
-  long:
+  short: Target RA
+  long: Target right ascension
   unit:
-tracking:
-  short:
+tracking_status:
+  short: Status of the tracking
   long: TRACKING/CENTERING/IDLE
   unit:
-
+tracking_log:
+  short: Log of the tacking
+  long:
+  unit:
 
 # PI Tip/Tilt
 pi_log:

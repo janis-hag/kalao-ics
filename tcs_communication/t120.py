@@ -25,6 +25,8 @@ from tcs_communication.pyipc import pymod_libipc as ipc
 #import tcs_communication.pygop as gop
 
 from kalao.utils import database, kalao_time
+from sequencer import system
+
 
 # Read config file
 parser = ConfigParser()
@@ -45,6 +47,7 @@ rcmd = parser.get('T120', 'rcmd')
 port = parser.getint('T120', 'Port')  # only for inet connection
 semkey = parser.getint('T120', 'semkey')  # only for inet connection
 timeout = parser.getint('T120', 'timeout')  # only for inet connection
+focus_offset_limit = parser.getint('T120', 'focus_offset_limit')  # only for inet connection
 
 #
 # The connection to ipcsrv on <host>:
@@ -75,6 +78,29 @@ def send_offset(delta_alt, delta_az):
     _t120_print_and_log(f'Sending {delta_alt} and {delta_az} offsets')
 
     offset_cmd = '@offset '+str(delta_alt) +' '+str(delta_az)
+    ipc.send_cmd(offset_cmd, timeout, timeout)
+
+    return socketId
+
+
+def send_focus_offset(focus_offset):
+
+    # Verify offset value below limit
+    if focus_offset > focus_offset_limit:
+        system.print_and_log(f'ERROR, focus value {focus_offset} above limite {focus_offset_limit}')
+
+    host = database.get_latest_record('obs_log', key='t120_host')['t120_host']
+
+
+    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    #print ("ipc.init_remote_client, returns:",socketId)
+    if(socketId <= 0):
+        _t120_print_and_log('Error connecting to T120')
+        return -1
+
+    _t120_print_and_log(f'Sending {focus_offset}  offsets')
+
+    offset_cmd = '@m2p '+str(focus_offset)
     ipc.send_cmd(offset_cmd, timeout, timeout)
 
     return socketId
