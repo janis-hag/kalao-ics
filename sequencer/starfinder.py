@@ -212,9 +212,10 @@ def focus(focus_points=6):
 
     initial_focus = t120.get_focus_value()
 
-    file_path = camera.take_image()
-    time.sleep(20)
-    #file_handling.add_comment(file_path, "Focus sequence: 0")
+    req, file_path = camera.take_image()
+
+    #time.sleep(5)
+    file_handling.add_comment(file_path, "Focus sequence: 0")
 
     image = fits.getdata(file_path)
     flux= image[np.argpartition(image, -6)][-6:].sum()
@@ -236,10 +237,10 @@ def focus(focus_points=6):
 
         time.sleep(10)
 
-        file_path = camera.take_image()
+        req, file_path = camera.take_image()
 
-        time.sleep(20)
-        #file_handling.add_comment(file_path, "Focus sequence: "+str(new_focus))
+        #time.sleep(20)
+        file_handling.add_comment(file_path, "Focus sequence: "+str(new_focus))
 
         image = fits.getdata(file_path)
         flux = image[np.argpartition(image, -6)][-6:].sum()
