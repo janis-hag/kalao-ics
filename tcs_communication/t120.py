@@ -134,9 +134,9 @@ def get_focus_value():
 
     ipc.shm_free()
 
-    print(returnList)
+    print(returnList[1])
 
-    return returnList[1]
+    return float(returnList[1])
 
 
 def test_connection():
