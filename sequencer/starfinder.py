@@ -224,7 +224,7 @@ def focus(focus_points=6):
     if (focus_points % 2) == 1:
         focus_points=focus_points+1
 
-    focus_sequence = (np.arange(focus_points+1) - focus_points / 2) * 0.05
+    focus_sequence = (np.arange(focus_points+1) - focus_points / 2) * 0.005
 
     for focus_offset in focus_sequence:
         if focus_offset == 0:
