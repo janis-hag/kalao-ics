@@ -106,6 +106,37 @@ def send_focus_offset(focus_offset):
     return socketId
 
 
+def get_focus_value():
+
+    host = database.get_latest_record('obs_log', key='t120_host')['t120_host']
+
+
+    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+
+    print ("wait");
+    status = ipc.shm_wait(timeout)
+    print ("ipc.shm_wait returns:", status)
+    if (status<0):
+        ipc.shm_free()
+        sys.exit(-1)
+
+
+    print ("ini_shm_kw");
+    ipc.ini_shm_kw()
+
+    print ("put_shm_kw 1");
+    ipc.put_shm_kw("COMMAND","@kal_getm2")
+
+    ipc.shm_ack()
+    ipc.shm_wack(timeout)
+
+    returnList = ipc.get_shm_kw("te.m2z")
+
+    ipc.shm_free()
+
+    print(returnList)
+
+
 def test_connection():
 
     _t120_print_and_log(f'Sending show i')

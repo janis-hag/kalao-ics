@@ -2,12 +2,13 @@ import os
 import sys
 import time
 from pathlib import Path
+import pandas as pd
 
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import camera
 from kalao.plc import filterwheel
-from kalao.utils import database
+from kalao.utils import database, file_handling
 from kalao.cacao import telemetry, aocontrol
 from tcs_communication import t120
 from sequencer import system
@@ -30,6 +31,7 @@ CenteringTimeout = parser.getfloat('SEQ', 'CenteringTimeout')
 WFSilluminationThreshold = parser.getfloat('AO', 'WFSilluminationThreshold')
 WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
+
 
 def centre_on_target(filter_arg='clear'):
 
@@ -109,7 +111,7 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     hist, bin_edges = np.histogram(image[~np.isnan(image)], bins=4096, range=(median - 10, median + 10))
     lumino = np.float32((hist * bin_edges[:-1]).sum() / hist.sum() * 10)
 
-    # for each pixel, check if he's brighter than lumino, then check index limite
+    # for each pixel, check if it's brighter than lumino, then check index limite
     # if all ok: divide spot around the pixel by the ponderation matrix
     # after that, score is a matrix with luminosity score of all pixel brighter than lumino
     shape = image.shape
@@ -202,3 +204,39 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     y_star = y + y_f - mid
 
     return x_star, y_star
+
+
+def focus(focus_points=6):
+
+    focus_points = np.around(focus_points)
+
+
+    file_path = camera.take_image()
+    file_handling.add_comment(file_path, "Focus sequence: 0")
+
+    image = fits.getdata(file_path)
+    flux= image[np.argpartition(image, -6)][-6:].sum()
+    focus_flux = pd.DataFrame({'focus': [0], 'flux': [flux]})
+
+    if (focus_points % 2) == 1:
+        focus_points=focus_points+1
+
+    focus_sequence = (np.arange(focus_points+1) - focus_points / 2) * 0.05
+
+    for focus in focus_sequence:
+        if focus == 0:
+            # skip focus zero as it was already taken
+            continue
+
+        file_path = camera.take_image()
+        file_handling.add_comment(file_path, "Focus sequence: "+str(focus))
+
+        image = fits.getdata(file_path)
+        flux = image[np.argpartition(image, -6)][-6:].sum()
+
+        focus_flux.loc[len(focus_flux.index)] = [focus, flux]
+
+    # Keep best focus
+    best_focus = focus_flux.loc[focus_flux['flux'].idxmax(), 'focus']
+
+    database.store_obs_log({'tracking_loh': focus_flux})

@@ -16,6 +16,7 @@ import os
 import json
 from astropy.io import fits
 from time import sleep
+import numpy as np
 
 from kalao.utils import database, database_updater, file_handling
 from configparser import ConfigParser
@@ -106,7 +107,7 @@ def increment_image_counter():
     return image_count
 
 
-def video_stream(dit=0.05):
+def video_stream(dit=0.05, window=None, center=None):
    # initialise stream
 
     filepath = '/tmp/fli_image.fits'
@@ -114,7 +115,9 @@ def video_stream(dit=0.05):
     req = send_request('acquire', {'exptime': dit, 'filepath': filepath})
 
     img = fits.getdata(filepath)
-    #img = cut_image(img)
+
+    if window is not None:
+        img = cut_image(img, window=window, center=center)
 
     # Creating a brand new stream
     shm = SHM('fli_stream', img,
@@ -122,18 +125,36 @@ def video_stream(dit=0.05):
                  shared=True,  # Shared
                  )
 
-
     try:
         while req.status_code == 200:
             req = send_request('acquire', {'exptime': dit, 'filepath': filepath})
             img = fits.getdata(filepath)
 
-            #img = cut_image(img)
+            if window is not None:
+                img = cut_image(img, window=window, center=center)
+
             shm.set_data(img)
             sleep(0.001)
 
     except KeyboardInterrupt:
         print('interrupted!')
+
+
+
+def cut_image(img, window=None, center=None):
+
+    if window is not None:
+        hw = int(np.round(window/2))
+        if center is None:
+            c = [img.shape[0]/2, img.shape[1]/2]
+        else:
+            c = center
+        img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
+
+    img = img.astype(float)
+
+    return img
+
 
 def log(req):
     database.store_obs_log({'fli_log': req.text+' ('+str(req.status_code)+')'})
