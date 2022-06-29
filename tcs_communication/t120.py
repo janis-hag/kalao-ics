@@ -118,7 +118,7 @@ def get_focus_value():
     print ("ipc.shm_wait returns:", status)
     if (status<0):
         ipc.shm_free()
-        sys.exit(-1)
+        return -1
 
 
     print ("ini_shm_kw");
