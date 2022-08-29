@@ -9,6 +9,7 @@
 camera.py is part of the KalAO Instrument Control Software
 (KalAO-ICS). 
 """
+import shutil
 
 import requests
 import requests.exceptions
@@ -34,6 +35,9 @@ parser.read(config_path)
 ScienceDataStorage = parser.get('FLI', 'ScienceDataStorage')
 TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
 RequestTimeout = parser.getfloat('FLI', 'RequestTimeout')
+DummyCamera = parser.getboolean('FLI', 'DummyCamera')
+DummyImagePath = parser.get('FLI', 'DummyImagePath')
+TemperatureWarnThreshold = parser.getfloat('TemperatureWarnThreshold')
 
 address = parser.get('FLI', 'IP')
 port = parser.get('FLI', 'Port')
@@ -74,12 +78,18 @@ def take_image(dit=0.05, filepath=None, header_keydict=None): # obs_category='TE
         return 0
 
     if filepath is None:
+        # Generate filename including path
         filepath = file_handling.create_night_filepath()
 
     # Store monitoring status at start of exposure
     database_updater.update_plc_monitoring()
     params = {'exptime': dit, 'filepath': filepath}
-    req = send_request('acquire', params)
+    req = _send_request('acquire', params)
+
+    if get_temperatures()['fli_temp_CCD'] > TemperatureWarnThreshold:
+        message = 'WARN: CCD temperature above threshold: '+str(get_temperatures()['fli_temp_CCD'])
+        print(message)
+        database.store_obs_log({'fli_log': message})
 
     # Logging exposure command into database
     log(req)
@@ -112,7 +122,7 @@ def video_stream(dit=0.05, window=None, center=None):
 
     filepath = '/tmp/fli_image.fits'
 
-    req = send_request('acquire', {'exptime': dit, 'filepath': filepath})
+    req = _send_request('acquire', {'exptime': dit, 'filepath': filepath})
 
     img = fits.getdata(filepath)
 
@@ -127,7 +137,7 @@ def video_stream(dit=0.05, window=None, center=None):
 
     try:
         while req.status_code == 200:
-            req = send_request('acquire', {'exptime': dit, 'filepath': filepath})
+            req = _send_request('acquire', {'exptime': dit, 'filepath': filepath})
             img = fits.getdata(filepath)
 
             if window is not None:
@@ -171,7 +181,7 @@ def log_temporary_image_path(fli_image_path):
 def cancel():
 
     params = {'cancelExposure': True}
-    req = send_request('cancelExposure', params)
+    req = _send_request('cancelExposure', params)
 
     if req.status_code == 200:
         return 0
@@ -188,7 +198,7 @@ def database_update():
 
 def get_temperatures():
 
-    req = send_request('temperature', 'GET')
+    req = _send_request('temperature', 'GET')
 
     if req.status_code == 200:
         temperatures = json.loads(req.text)
@@ -202,7 +212,7 @@ def get_temperatures():
 def set_temperature(temperature):
 
     params = {'temperature': temperature}
-    req = send_request('temperature', params)
+    req = _send_request('temperature', params)
 
     if req.status_code == 200:
         return 0
@@ -210,17 +220,29 @@ def set_temperature(temperature):
         return req.text
 
 
-def send_request(request_type, params):
+def _send_request(request_type, params):
 
     if request_type == 'acquire':
         increment_image_counter()
         database.store_obs_log({'sequencer_status': 'EXP'})
 
-    url = 'http://'+address+':'+port+'/'+request_type
-    if params == 'GET':
-        req = requests.get(url, timeout=RequestTimeout)
+    if DummyCamera:
+        if request_type == 'acquire':
+            shutil.copy(DummyImagePath, params['filepath'])
+
+        class Object(object):
+            pass
+
+        req = Object()
+        req.text = -1
+        req.status_code = 200
+
     else:
-        req = requests.post(url, json=params, timeout=RequestTimeout)
+        url = 'http://'+address+':'+port+'/'+request_type
+        if params == 'GET':
+            req = requests.get(url, timeout=RequestTimeout)
+        else:
+            req = requests.post(url, json=params, timeout=RequestTimeout)
 
     return req
 
