@@ -37,7 +37,7 @@ TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
 RequestTimeout = parser.getfloat('FLI', 'RequestTimeout')
 DummyCamera = parser.getboolean('FLI', 'DummyCamera')
 DummyImagePath = parser.get('FLI', 'DummyImagePath')
-TemperatureWarnThreshold = parser.getfloat('TemperatureWarnThreshold')
+TemperatureWarnThreshold = parser.getfloat('FLI', 'TemperatureWarnThreshold')
 
 address = parser.get('FLI', 'IP')
 port = parser.get('FLI', 'Port')
