@@ -63,9 +63,10 @@ Les paramètres de poses sont les ceux indiqués sur l'EDP.
 
 Le statut de KalAO est une commande, le premier caractère est le delimiteur. La liste des statuts est:
 
+* **WAITING** KalAO est prêt à recevoir les paramètres d'une pose
+* **SETUP** KalAO est en train de préparer la prochaine pose
 * **BUSY** KalAO est en cours de pose, aucune action 
 * **ERROR** KalAO est en erreur, sortie de la procedure acquisition_KalAO.prc
-* **WAITING** KalAO est prêt à recevoir les paramètres d'une pose
 
  
 ## AO et guidage en offset

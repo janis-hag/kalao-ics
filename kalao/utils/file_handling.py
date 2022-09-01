@@ -20,6 +20,7 @@ from pathlib import Path
 from configparser import ConfigParser
 from datetime import datetime, timezone
 from astropy.io import fits
+import pandas as pd
 
 from kalao.utils import kalao_time, database
 from kalao.fli import camera
@@ -123,8 +124,6 @@ def update_header(image_path, header_keydict=None):
     # :param obs_type: Observing type.Can be comma separated list of the following keywords
     # OBJECT, STD, ASTROMETRY, BIAS, DARK, FLAT, SKY, LAMP, FLUX, PSF-CALIBRATOR, FOCUS
 
-    #TODO read telescope generated header and then remove it
-
 
     fits_header_config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'fits_header.config')
     header_config = ConfigParser()
@@ -158,9 +157,9 @@ def update_header(image_path, header_keydict=None):
         for key, value_comment in default_cards.items():
             header.set(key.upper(), value_comment[0].strip(), value_comment[1].strip())
 
-        # TODO uncomment and merge telescope header to actual header
-        #telescope_header, header_path = _get_last_telescope_header()
-
+        # Adding telescope header
+        telescope_header, header_path = _get_last_telescope_header()
+        header.extend(telescope_header.cards, unique=True)
 
 
         # Storing monitoring
@@ -168,9 +167,9 @@ def update_header(image_path, header_keydict=None):
         for key, type_comment in obs_log_cards.items():
             # Check if key exists and value not empty
             if key in obs_log_status.keys() and obs_log_status[key]['values']:
-                header.set('HIERARCH KAL '+key.upper(), obs_log_status[key]['values'][0], type_comment[1].strip())
+                header.set('HIERARCH ESO INS '+key.upper(), obs_log_status[key]['values'][0], type_comment[1].strip())
             else:
-                header.set('HIERARCH KAL '+key.upper(), '', type_comment[1].strip())
+                header.set('HIERARCH ESO INS '+key.upper(), '', type_comment[1].strip())
 
 
         # Storing monitoring
@@ -178,18 +177,18 @@ def update_header(image_path, header_keydict=None):
         for key, type_comment in monitoring_cards.items():
             # Check if key exists and value not empty
             if key in monitoring_status.keys() and monitoring_status[key]['values']:
-                header.set('HIERARCH KAL '+key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
+                header.set('HIERARCH ESO INS '+key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
             else:
-                header.set('HIERARCH KAL '+key.upper(), '', type_comment[1].strip())
+                header.set('HIERARCH ESO INS '+key.upper(), '', type_comment[1].strip())
 
         # Storing telemetry
         telemetry_status = database.get_telemetry(telemetry_cards.keys(), 1, dt=dt)
         for key, type_comment in telemetry_cards.items():
             # Check if key exists and value not empty
             if key in telemetry_status.keys() and telemetry_status[key]['values']:
-                header.set('HIERARCH KAL AO '+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
+                header.set('HIERARCH ESO INS AO '+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
             else:
-                header.set('HIERARCH KAL AO '+key.upper(), '', type_comment[1].strip())
+                header.set('HIERARCH ESO INS AO '+key.upper(), '', type_comment[1].strip())
 
         #header_keydict = update_default_header_keydict(default_cards, header_keydict)
 
@@ -242,13 +241,24 @@ def _get_last_telescope_header():
     """
 
     # TODO verify if latest_record['time_utc'] is recent enough
-    latest_record = database.get_latest_record('obs_log', key='tcs_header_path')
-    tcs_header_path = os.path.join(T4root, latest_record['tcs_header_path'])
 
-    if os.path.exists(tcs_header_path):
+    tcs_header_path_record = database.get_latest_record('obs_log', key='tcs_header_path')
+
+    tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
+
+    if tcs_header_path.is_file():
         tcs_header = fits.getheader(tcs_header_path)
     else:
         system.print_and_log(('ERROR: header file not found: '+str(tcs_header_path)))
         tcs_header = None
 
     return tcs_header, tcs_header_path
+
+
+def _sort_header_keys(hdr):
+
+    hdr_df = pd.DataFrame.from_records(hdr.cards, columns=['keyword', 'value', 'comment'])
+
+    # Search for first HIERARCH keyword (i.e. longer than 8)
+    hdr_df.keyword.str.len().ge(9).idxmax()
+    d[d.keyword.str.contains('ESO')]
