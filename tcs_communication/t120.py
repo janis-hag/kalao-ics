@@ -87,9 +87,21 @@ def send_focus_offset(focus_offset):
 
     #TODO Verify offset value below limit differentiate between offsets and absolute values
     #if focus_offset > focus_offset_limit:
-    #    system.print_and_log(f'ERROR, focus value {focus_offset} above limite {focus_offset_limit}')
+    #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limite {focus_offset_limit}')
 
     host = database.get_latest_record('obs_log', key='t120_host')['t120_host']+'.ls.eso.org'
+
+    if type(focus_offset) is str:
+        if focus_offset[0]=='+' and float(focus_offset)>2:
+            print(f'Error set_focus value out of bounds: {focus_offset}')
+            return -1
+        elif focus_offset[0] == '-' and float(focus_offset) < -2:
+            print(f'Error set_focus value out of bounds: {focus_offset}')
+            return -1
+
+    if focus_offset >30 or focus_offset<20:
+        print(f'Error set_focus value out of bounds: {focus_offset}')
+        return -1
 
 
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
@@ -109,7 +121,6 @@ def send_focus_offset(focus_offset):
 def get_focus_value():
 
     host = database.get_latest_record('obs_log', key='t120_host')['t120_host']+'.ls.eso.org'
-
 
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
 

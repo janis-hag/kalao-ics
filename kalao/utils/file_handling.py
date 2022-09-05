@@ -144,19 +144,20 @@ def update_header(image_path, header_keydict=None):
                               log_status = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['keyword'].tolist(), 1, dt=dt),
                               keycode = 'OBS')
 
-        # Add montiro_log keys
+        # Add monitoring_log keys
         header = _fill_log_header_keys(header,
                               header_df = header_df.loc[header_df['keygroup'] == 'Monitoring'],
                               log_status = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
                               keycode = 'INS')
 
 
-        # Add montiro_log keys
+        # Add Telemetry keys
         header = _fill_log_header_keys(header,
                               header_df = header_df.loc[header_df['keygroup'] == 'Telemetry'],
                               log_status = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
                               keycode = 'INS AO')
 
+        # Add telescope header
 
         # Add key dictionary given as argument
         if not header_keydict is None:
@@ -313,12 +314,13 @@ def _get_last_telescope_header():
     tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
 
     if tcs_header_path.is_file():
-        tcs_header = fits.getheader(tcs_header_path)
+        tcs_header = _header_to_df(fits.getheader(tcs_header_path))
     else:
         system.print_and_log(('ERROR: header file not found: '+str(tcs_header_path)))
         tcs_header = None
 
-    tcs_header_path.unlink()
+    # TODO uncomment the unlink line in order to remove the tmp fits
+    #tcs_header_path.unlink()
 
     return tcs_header, str(tcs_header_path)
 
