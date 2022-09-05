@@ -129,7 +129,7 @@ comment: No comment
 #  comment: Site name
 
 keygroup: Obs_log
-keyword: exptime:
+keyword: exptime
 value: float
 comment: Exposure time
 
@@ -142,7 +142,7 @@ comment: FLI shutter count
 
 
 keygroup: Monitoring
-keyword: fli_filter_name:
+keyword: fli_filter_name
 value: string
 comment: Filter name
 
@@ -157,7 +157,7 @@ value: float
 comment: No comment
 
 keygroup: Monitoring
-keyword: fli_temp_heatsink:
+keyword: fli_temp_heatsink
 value: float
 comment: No comment
 
