@@ -117,7 +117,7 @@ Obs_log:
 # geo coordinates
 
 
-Monitoring
+Monitoring:
   - fli_filter_name:
     value: string
     comment: Filter name
