@@ -117,12 +117,7 @@ def update_header(image_path, header_keydict=None):
     :return:
     '''
 
-
     header_df = _read_fits_defintions()
-
-    # read header from telescope file
-
-    telescope_header, header_path = _get_last_telescope_header()
 
 
     with fits.open(image_path, mode='update') as hdul:
@@ -147,117 +142,28 @@ def update_header(image_path, header_keydict=None):
         # Add monitoring_log keys
         header = _fill_log_header_keys(header,
                               header_df = header_df.loc[header_df['keygroup'] == 'Monitoring'],
-                              log_status = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
+                              log_status = database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
                               keycode = 'INS')
 
 
         # Add Telemetry keys
         header = _fill_log_header_keys(header,
                               header_df = header_df.loc[header_df['keygroup'] == 'Telemetry'],
-                              log_status = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
+                              log_status = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
                               keycode = 'INS AO')
 
         # Add telescope header
 
-        # Add key dictionary given as argument
-        if not header_keydict is None:
-            for key, value in header_keydict:
-                header.set(key.upper(), value) #, type_comment[1].strip())
-
-
-        hdul.flush()  # changes are written back to original.fits
-
-    return 0
-
-
-def update_header_obsolete(image_path, header_keydict=None):
-    '''
-    OBSOLETE version, use update_header function instead.
-
-    Updates the image header with values from the observing, monitoring, and telemetry logs.
-
-    :param image_path: path to the image to update
-    :param header_keydict: dictionary of key:values to add
-    :return:
-    '''
-
-    # Read DATE-OBS in headers
-    # Search start values in log
-    # Search end values in log using DATE-OBS and TEXP
-    # Compute median values for specific keywords
-    # Add HEADER values for start, end, and median.
-
-    # :param obs_category: Observing category keyword.SCIENCE, CALIB, TECHNICAL, TEST, OTHER
-    # :param obs_type: Observing type.Can be comma separated list of the following keywords
-    # OBJECT, STD, ASTROMETRY, BIAS, DARK, FLAT, SKY, LAMP, FLUX, PSF-CALIBRATOR, FOCUS
-
-
-    fits_header_config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'fits_header.config')
-    header_config = ConfigParser()
-    header_config.read(fits_header_config_path)
-
-    default_cards = read_header_cards(header_config, 'Default_cards')
-
-    obs_log_cards = read_header_cards(header_config, 'Obs_log')
-
-    monitoring_cards = read_header_cards(header_config, 'Monitoring')
-    #monitoring_cards = dict(header_config.items('Monitoring'))
-    for k in monitoring_cards.keys():
-         monitoring_cards[k] = monitoring_cards[k].split(',')
-
-    telemetry_cards = read_header_cards(header_config, 'Telemetry')
-    #telemetry_cards = dict(header_config.items('Telemetry'))
-    for k in telemetry_cards.keys():
-        telemetry_cards[k] = telemetry_cards[k].split(',')
-
-    with fits.open(image_path, mode='update') as hdul:
-        # Change something in hdul.
-        header = hdul[0].header
-
-        if 'DATE-OBS' in header.keys():
-            dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
-        else:
-            dt = datetime.fromisoformat(header['DATE']).replace(tzinfo=timezone.utc)
-
-        # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
-
-        for key, value_comment in default_cards.items():
-            header.set(key.upper(), value_comment[0].strip(), value_comment[1].strip())
-
-        # Adding telescope header
         telescope_header, header_path = _get_last_telescope_header()
-        header.extend(telescope_header.cards, unique=True)
+        # Remove first part of header
+        # TODO set the cutoff keyword in kalao.config
+        telescope_header = telescope_header[(telescope_header.keyword == 'OBSERVER' ).idxmax():]
 
+        for card in telescope_header:
+            # TODO add the keywords into the header at the right position in order to keep it sorted.
+            # if key starts with ESO search last occurence with same beginning and add keyword afterwards
+            header.set(card.keyword.upper(), card.value, card.comment.strip())
 
-        # Storing monitoring
-        obs_log_status = database.get_obs_log(obs_log_cards.keys(), 1, dt=dt)
-        for key, type_comment in obs_log_cards.items():
-            # Check if key exists and value not empty
-            if key in obs_log_status.keys() and obs_log_status[key]['values']:
-                header.set('HIERARCH ESO INS '+key.upper(), obs_log_status[key]['values'][0], type_comment[1].strip())
-            else:
-                header.set('HIERARCH ESO INS '+key.upper(), '', type_comment[1].strip())
-
-
-        # Storing monitoring
-        monitoring_status = database.get_monitoring(monitoring_cards.keys(), 1, dt=dt)
-        for key, type_comment in monitoring_cards.items():
-            # Check if key exists and value not empty
-            if key in monitoring_status.keys() and monitoring_status[key]['values']:
-                header.set('HIERARCH ESO INS '+key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
-            else:
-                header.set('HIERARCH ESO INS '+key.upper(), '', type_comment[1].strip())
-
-        # Storing telemetry
-        telemetry_status = database.get_telemetry(telemetry_cards.keys(), 1, dt=dt)
-        for key, type_comment in telemetry_cards.items():
-            # Check if key exists and value not empty
-            if key in telemetry_status.keys() and telemetry_status[key]['values']:
-                header.set('HIERARCH ESO INS AO '+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
-            else:
-                header.set('HIERARCH ESO INS AO '+key.upper(), '', type_comment[1].strip())
-
-        #header_keydict = update_default_header_keydict(default_cards, header_keydict)
 
         # Add key dictionary given as argument
         if not header_keydict is None:
@@ -265,15 +171,115 @@ def update_header_obsolete(image_path, header_keydict=None):
                 header.set(key.upper(), value) #, type_comment[1].strip())
 
 
-        # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
-        # header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
-        # header.set('TUNGSTEN', monitoring_status['tungsten']['values'][0], 'short description fro database_definition')
-        # header.set('ADC1', monitoring_status['adc1']['values'][0], 'short description fro database_definition')
-        # header.set('ADC2', monitoring_status['adc2']['values'][0], 'short description fro database_definition')
-
         hdul.flush()  # changes are written back to original.fits
 
     return 0
+
+
+# def update_header_obsolete(image_path, header_keydict=None):
+#     '''
+#     OBSOLETE version, use update_header function instead.
+#
+#     Updates the image header with values from the observing, monitoring, and telemetry logs.
+#
+#     :param image_path: path to the image to update
+#     :param header_keydict: dictionary of key:values to add
+#     :return:
+#     '''
+#
+#     # Read DATE-OBS in headers
+#     # Search start values in log
+#     # Search end values in log using DATE-OBS and TEXP
+#     # Compute median values for specific keywords
+#     # Add HEADER values for start, end, and median.
+#
+#     # :param obs_category: Observing category keyword.SCIENCE, CALIB, TECHNICAL, TEST, OTHER
+#     # :param obs_type: Observing type.Can be comma separated list of the following keywords
+#     # OBJECT, STD, ASTROMETRY, BIAS, DARK, FLAT, SKY, LAMP, FLUX, PSF-CALIBRATOR, FOCUS
+#
+#
+#     fits_header_config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'fits_header.config')
+#     header_config = ConfigParser()
+#     header_config.read(fits_header_config_path)
+#
+#     default_cards = read_header_cards(header_config, 'Default_cards')
+#
+#     obs_log_cards = read_header_cards(header_config, 'Obs_log')
+#
+#     monitoring_cards = read_header_cards(header_config, 'Monitoring')
+#     #monitoring_cards = dict(header_config.items('Monitoring'))
+#     for k in monitoring_cards.keys():
+#          monitoring_cards[k] = monitoring_cards[k].split(',')
+#
+#     telemetry_cards = read_header_cards(header_config, 'Telemetry')
+#     #telemetry_cards = dict(header_config.items('Telemetry'))
+#     for k in telemetry_cards.keys():
+#         telemetry_cards[k] = telemetry_cards[k].split(',')
+#
+#     with fits.open(image_path, mode='update') as hdul:
+#         # Change something in hdul.
+#         header = hdul[0].header
+#
+#         if 'DATE-OBS' in header.keys():
+#             dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
+#         else:
+#             dt = datetime.fromisoformat(header['DATE']).replace(tzinfo=timezone.utc)
+#
+#         # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
+#
+#         for key, value_comment in default_cards.items():
+#             header.set(key.upper(), value_comment[0].strip(), value_comment[1].strip())
+#
+#         # Adding telescope header
+#         telescope_header, header_path = _get_last_telescope_header()
+#         header.extend(telescope_header.cards, unique=True)
+#
+#
+#         # Storing monitoring
+#         obs_log_status = database.get_obs_log(obs_log_cards.keys(), 1, dt=dt)
+#         for key, type_comment in obs_log_cards.items():
+#             # Check if key exists and value not empty
+#             if key in obs_log_status.keys() and obs_log_status[key]['values']:
+#                 header.set('HIERARCH ESO INS '+key.upper(), obs_log_status[key]['values'][0], type_comment[1].strip())
+#             else:
+#                 header.set('HIERARCH ESO INS '+key.upper(), '', type_comment[1].strip())
+#
+#
+#         # Storing monitoring
+#         monitoring_status = database.get_monitoring(monitoring_cards.keys(), 1, dt=dt)
+#         for key, type_comment in monitoring_cards.items():
+#             # Check if key exists and value not empty
+#             if key in monitoring_status.keys() and monitoring_status[key]['values']:
+#                 header.set('HIERARCH ESO INS '+key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
+#             else:
+#                 header.set('HIERARCH ESO INS '+key.upper(), '', type_comment[1].strip())
+#
+#         # Storing telemetry
+#         telemetry_status = database.get_telemetry(telemetry_cards.keys(), 1, dt=dt)
+#         for key, type_comment in telemetry_cards.items():
+#             # Check if key exists and value not empty
+#             if key in telemetry_status.keys() and telemetry_status[key]['values']:
+#                 header.set('HIERARCH ESO INS AO '+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
+#             else:
+#                 header.set('HIERARCH ESO INS AO '+key.upper(), '', type_comment[1].strip())
+#
+#         #header_keydict = update_default_header_keydict(default_cards, header_keydict)
+#
+#         # Add key dictionary given as argument
+#         if not header_keydict is None:
+#             for key, value in header_keydict:
+#                 header.set(key.upper(), value) #, type_comment[1].strip())
+#
+#
+#         # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
+#         # header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
+#         # header.set('TUNGSTEN', monitoring_status['tungsten']['values'][0], 'short description fro database_definition')
+#         # header.set('ADC1', monitoring_status['adc1']['values'][0], 'short description fro database_definition')
+#         # header.set('ADC2', monitoring_status['adc2']['values'][0], 'short description fro database_definition')
+#
+#         hdul.flush()  # changes are written back to original.fits
+#
+#     return 0
 
 
 def add_comment(image_path, comment_string):
