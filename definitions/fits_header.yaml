@@ -3,118 +3,118 @@
 #  value: value_type
 #  comment: comment
 
-keygroup: default_keys
 keyword: instrume
+keygroup: default_keys
 value: KalAO
 comment: Instrument used
 
-keygroup: default_keys
 keyword: telescop
+keygroup: default_keys
 value: EULER
 comment: Telescope name
 
-keygroup: default_keys
 keyword: site
+keygroup: default_keys
 value: La Silla
 comment: Observing site
 
-keygroup: default_keys
 keyword: ORIGIN
+keygroup: default_keys
 value: ESO-LASILLA
 comment: Observatory
 
-keygroup: default_keys
 keyword: BUNIT
+keygroup: default_keys
 value: adu
 comment: Physical unit of array values
 
-keygroup: default_keys
 keyword: BLANK
+keygroup: default_keys
 value: 0
 comment: Value used for NULL pixels
 
-keygroup: default_keys
 keyword: BZERO
+keygroup: default_keys
 value: 32768.0 
 comment: value = fits-value*BSCALE+BZERO
 
-keygroup: default_keys
 keyword: BSCALE
+keygroup: default_keys
 value: 1.0
 comment: value = fits-value*BSCALE+BZERO
 
-keygroup: Obs_log
 keyword: target
+keygroup: Obs_log
 value: string
 comment: Target name
 
-keygroup: Obs_log
 keyword: object
+keygroup: Obs_log
 value: string
 comment: Object name
 
-keygroup: Obs_log
 keyword: obscatg
+keygroup: Obs_log
 value: string
 comment: Category of observation/exposure
 
-keygroup: Obs_log
 keyword: obstype
+keygroup: Obs_log
 value: string
 comment: Type of observation/exposure
 
-keygroup: Obs_log
 keyword: prog_id
+keygroup: Obs_log
 value: string
 comment: Observing program ID
 
-keygroup: Obs_log
 keyword: observer
+keygroup: Obs_log
 value: string
 comment: Observer name
 
-keygroup: Obs_log
 keyword: date-obs
+keygroup: Obs_log
 value: string
 comment: No comment
 
-keygroup: Obs_log
 keyword: DATE
+keygroup: Obs_log
 value: string
 comment: Date the file was written
 
-keygroup: Obs_log
 keyword: mjd-obs
+keygroup: Obs_log
 value: float
 comment: No comment
 
-keygroup: Obs_log
 keyword: utc
+keygroup: Obs_log
 value: float
 comment: No comment
 
-keygroup: Obs_log
 keyword: lst
+keygroup: Obs_log
 value: float
 comment: No comment
 
-keygroup: Obs_log
 keyword: ra
+keygroup: Obs_log
 value: float
 comment: No comment
 
-keygroup: Obs_log
 keyword: dec
+keygroup: Obs_log
 value: float
 comment: No comment
 
-keygroup: Obs_log
 keyword: equinox
+keygroup: Obs_log
 value: float
 comment: No comment
 
-keygroup: Obs_log
 keyword: radecsys
+keygroup: Obs_log
 value: string
 comment: No comment
 
@@ -128,116 +128,116 @@ comment: No comment
 #  value: string
 #  comment: Site name
 
-keygroup: Obs_log
 keyword: exptime
+keygroup: Obs_log
 value: float
 comment: Exposure time
 
-keygroup: Obs_log
 keyword: fli_image_count
+keygroup: Obs_log
 value: int
 comment: FLI shutter count
 # WCS
 # geo coordinates
 
 
-keygroup: Monitoring
 keyword: fli_filter_name
+keygroup: Monitoring
 value: string
 comment: Filter name
 
-keygroup: Monitoring
 keyword: fli_filter_position
+keygroup: Monitoring
 value: int
 comment: Filter number
 
-keygroup: Monitoring
 keyword: fli_temp_CCD
+keygroup: Monitoring
 value: float
 comment: No comment
 
-keygroup: Monitoring
 keyword: fli_temp_heatsink
+keygroup: Monitoring
 value: float
 comment: No comment
 
-keygroup: Monitoring
 keyword: shutter
+keygroup: Monitoring
 value: string
 comment: No comment
 
-keygroup: Monitoring
 keyword: flip_mirror
+keygroup: Monitoring
 value: string
 comment: No comment
 
-keygroup: Monitoring
 keyword: calib_unit
+keygroup: Monitoring
 value: float
 comment: No comment
 
-keygroup: Monitoring
 keyword: temp_bench_air
+keygroup: Monitoring
 value: float
 comment: No comment
 
-keygroup: Monitoring
 keyword: temp_bench_board
+keygroup: Monitoring
 value: float
 comment: No comment
 
-keygroup: Monitoring
 keyword: temp_water_in
+keygroup: Monitoring
 value: float
 comment: No comment
 
-keygroup: Monitoring
 keyword: temp_water_out
+keygroup: Monitoring
 value: float
 comment: No comment
 
-keygroup: Monitoring
 keyword: laser
+keygroup: Monitoring
 value: float
 comment: No comment
 
-keygroup: Monitoring
 keyword: tungsten
+keygroup: Monitoring
 value: string
 comment: No comment
 
-keygroup: Monitoring
 keyword: adc1
-value: float
-comment: No comment
-
 keygroup: Monitoring
-keyword: adc2
 value: float
 comment: No comment
 
-keygroup: Telemetry
+keyword: adc2
+keygroup: Monitoring
+value: float
+comment: No comment
+
 keyword: loop_on
+keygroup: Telemetry
 value: string
 comment: AO loop ON/OFF
 
-keygroup: Telemetry
 keyword: loop_gain
+keygroup: Telemetry
 value: float
 comment: AO loop gain
 
-keygroup: Telemetry
 keyword: loop_mult
+keygroup: Telemetry
 value: float
 comment: AO loop mult coeff
 
-keygroup: Telemetry
 keyword: nuvu_exposuretime
+keygroup: Telemetry
 value: float
 comment: Exposure time of the EMCCD [ms]
 
-keygroup: Telemetry
 keyword: nuvu_emgain
+keygroup: Telemetry
 value: float
 comment: EM gain of the EMCCD
 
@@ -249,12 +249,12 @@ comment: EM gain of the EMCCD
 #TEL MOON RA:
 #  value: 314.878722 / [deg] 20:59:30.8 RA (J2000)
 
-keygroup: FLI
 keyword: DATAMAX
+keygroup: FLI
 value: float
 comment: Maximal pixel value
 
-keygroup: FLI
 keyword: DATAMIN
+keygroup: FLI
 value: float
 comment: Minimal pixel value
