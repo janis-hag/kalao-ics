@@ -178,7 +178,7 @@ Monitoring:
     value: float
     comment: No comment
 
-Telemetry
+Telemetry:
   - loop_on:
     value: string
     comment: AO loop ON/OFF
