@@ -33,15 +33,15 @@
   value: 0
   comment: Value used for NULL pixels
 
-- keyword: BZERO
-  keygroup: default_keys
-  value: 32768.0 
-  comment:   value = fits-  value*BSCALE+BZERO
-
-- keyword: BSCALE
-  keygroup: default_keys
-  value: 1.0
-  comment:   value = fits-  value*BSCALE+BZERO
+#- keyword: BZERO
+#  keygroup: default_keys
+#  value: 32768.0
+#  comment:   value = fits-  value*BSCALE+BZERO
+#
+#- keyword: BSCALE
+#  keygroup: default_keys
+#  value: 1.0
+#  comment:   value = fits-  value*BSCALE+BZERO
 
 - keyword: target
   keygroup: Obs_log

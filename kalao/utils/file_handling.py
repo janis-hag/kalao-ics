@@ -21,6 +21,7 @@ from configparser import ConfigParser
 from datetime import datetime, timezone
 from astropy.io import fits
 import pandas as pd
+import yaml
 
 from kalao.utils import kalao_time, database
 from kalao.fli import camera
@@ -38,6 +39,7 @@ parser.read(config_path)
 TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
 Science_folder = parser.get('FLI', 'ScienceDataStorage')
 T4root = parser.get('SEQ', 't4root')
+FitsHeaderFile = parser.get('SEQ', 'fits_header_file')
 
 
 def create_night_filepath(tmp_night_folder=None):
@@ -105,8 +107,72 @@ def save_tmp_image(image_path, header_keydict=None):
         return -1
 
 
+
 def update_header(image_path, header_keydict=None):
     '''
+    Updates the image header with values from the observing, monitoring, and telemetry logs.
+
+    :param image_path: path to the image to update
+    :param header_keydict: dictionary of key:values to add
+    :return:
+    '''
+
+
+    header_df = _read_fits_defintions()
+
+    # read header from telescope file
+
+    telescope_header, header_path = _get_last_telescope_header()
+
+
+    with fits.open(image_path, mode='update') as hdul:
+        # Change something in hdul.
+        header = hdul[0].header
+
+        if 'DATE-OBS' in header.keys():
+            dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
+        else:
+            dt = datetime.fromisoformat(header['DATE']).replace(tzinfo=timezone.utc)
+
+        # Add default keys
+        for card in header_df.loc[header_df['keygroup'] == 'default_keys'].itertuples(index=False):
+            header.set(card.keyword.upper(), card.value, card.comment.strip())
+
+        # Add obs_log keys
+        header = _fill_log_header_keys(header,
+                              header_df = header_df.loc[header_df['keygroup'] == 'Obs_log'],
+                              log_status = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['keyword'].tolist(), 1, dt=dt),
+                              keycode = 'OBS')
+
+        # Add montiro_log keys
+        header = _fill_log_header_keys(header,
+                              header_df = header_df.loc[header_df['keygroup'] == 'Monitoring'],
+                              log_status = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
+                              keycode = 'INS')
+
+
+        # Add montiro_log keys
+        header = _fill_log_header_keys(header,
+                              header_df = header_df.loc[header_df['keygroup'] == 'Telemetry'],
+                              log_status = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
+                              keycode = 'INS AO')
+
+
+        # Add key dictionary given as argument
+        if not header_keydict is None:
+            for key, value in header_keydict:
+                header.set(key.upper(), value) #, type_comment[1].strip())
+
+
+        hdul.flush()  # changes are written back to original.fits
+
+    return 0
+
+
+def update_header_obsolete(image_path, header_keydict=None):
+    '''
+    OBSOLETE version, use update_header function instead.
+
     Updates the image header with values from the observing, monitoring, and telemetry logs.
 
     :param image_path: path to the image to update
@@ -134,14 +200,14 @@ def update_header(image_path, header_keydict=None):
     obs_log_cards = read_header_cards(header_config, 'Obs_log')
 
     monitoring_cards = read_header_cards(header_config, 'Monitoring')
-    # monitoring_cards = dict(header_config.items('Monitoring'))
-    # for k in monitoring_cards.keys():
-    #     monitoring_cards[k] = monitoring_cards[k].split(',')
+    #monitoring_cards = dict(header_config.items('Monitoring'))
+    for k in monitoring_cards.keys():
+         monitoring_cards[k] = monitoring_cards[k].split(',')
 
     telemetry_cards = read_header_cards(header_config, 'Telemetry')
-    # telemetry_cards = dict(header_config.items('Telemetry'))
-    # for k in telemetry_cards.keys():
-    #     telemetry_cards[k] = telemetry_cards[k].split(',')
+    #telemetry_cards = dict(header_config.items('Telemetry'))
+    for k in telemetry_cards.keys():
+        telemetry_cards[k] = telemetry_cards[k].split(',')
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -252,7 +318,9 @@ def _get_last_telescope_header():
         system.print_and_log(('ERROR: header file not found: '+str(tcs_header_path)))
         tcs_header = None
 
-    return tcs_header, tcs_header_path
+    tcs_header_path.unlink()
+
+    return tcs_header, str(tcs_header_path)
 
 
 def _sort_header_keys(hdr):
@@ -261,4 +329,57 @@ def _sort_header_keys(hdr):
 
     # Search for first HIERARCH keyword (i.e. longer than 8)
     hdr_df.keyword.str.len().ge(9).idxmax()
-    d[d.keyword.str.contains('ESO')]
+    #d[d.keyword.str.contains('ESO')]
+
+
+def _read_fits_defintions():
+    '''
+    Reads the fits header file defintion and return a pandas dataframe
+
+    :return: pandas dataframe with the fits definitons
+    '''
+
+    with open(FitsHeaderFile, 'r') as f:
+        y = yaml.safe_load(f)
+
+    yaml_dic = pd.json_normalize(y)
+
+    # Put keygroup as first column
+    col = yaml_dic.pop('keygroup')
+    yaml_dic.insert(0, col.name, col)
+
+    return yaml_dic
+
+
+def _header_to_df(header):
+    '''
+    Reads a fits header and reformats it into a dataframe
+
+    :param header:
+    :return: header dataframe
+    '''
+    header_df = []
+
+    for keyword in header.keys():
+        header_df.append({
+            'keyword': keyword,
+            'value': header[keyword],
+            'comment': header.comments[keyword]})
+
+    header_df = pd.DataFrame(header_df)
+
+    return header_df
+
+
+def _fill_log_header_keys(header, header_df, log_status, keycode):
+
+
+    for card in header_df.itertuples(index=False):
+        #header.set(card.keyword.upper(), card.value, card.comment.strip())
+        if card.keyword in log_status.keys() and log_status[card.keyword]['values']:
+            header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), log_status[card.keyword]['values'][0],
+                       card.comment.strip())
+        else:
+            header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), '', card.comment.strip())
+
+    return header
