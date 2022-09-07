@@ -146,6 +146,7 @@ def get_focus_value():
     ipc.shm_free()
 
     print(returnList[1])
+    _t120_print_and_log(f'Received focus value {returnList[1]}')
 
     return float(returnList[1])
 
