@@ -159,7 +159,7 @@ def update_header(image_path, header_keydict=None):
         # TODO set the cutoff keyword in kalao.config
         telescope_header = telescope_header[(telescope_header.keyword == 'OBSERVER' ).idxmax():]
 
-        for card in telescope_header:
+        for card in telescope_header.itertuples(index=False):
             # TODO add the keywords into the header at the right position in order to keep it sorted.
             # if key starts with ESO search last occurence with same beginning and add keyword afterwards
             header.set(card.keyword.upper(), card.value, card.comment.strip())
