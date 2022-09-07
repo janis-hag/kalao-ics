@@ -155,6 +155,7 @@ def test_connection():
 
     _t120_print_and_log(f'Sending show i')
 
+    host = database.get_latest_record('obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
 
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
