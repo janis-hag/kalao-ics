@@ -25,6 +25,8 @@ from kalao.fli import camera
 from kalao.utils import file_handling, database, database_updater, kalao_time
 from kalao.cacao import aomanager
 from sequencer import starfinder, system
+from tcs_communication import t120
+
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
@@ -452,6 +454,101 @@ def target_observation_abort():
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
+
+
+def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
+    """
+    1. Turn off lamps
+    2. Move flip mirror down
+    3. Open shutter
+    4. Select filter
+    5. Center on target
+    6. Close cacao loop ?
+    7. Monitor AO and cancel exposure if needed
+    8. Take picture
+    9. Close shutter
+
+    :param q: Queue object for multithreads communication
+    :param dit: float for exposition time
+    :param filepath: If filepath is not None, store the picture to this path
+    :param kwargs: supports additional arguments
+    :return: nothing
+    """
+
+    q = seq_args.get('q')
+    filter_arg = seq_args.get('filter_arg')
+    filepath = seq_args.get('filepath')
+    dit = seq_args.get('dit')
+
+    if None in (q, dit):
+        system.print_and_log('Missing keyword in target_observation function call')
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
+    if core.lamps_off() != 0:
+        system.print_and_log("Error: failed to turn off lamps")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+    if flip_mirror.down() != 'DOWN':
+        system.print_and_log("Error: flip mirror did not go down")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+    if shutter.shutter_open() != 'OPEN':
+        system.print_and_log("Error: failed to open the shutter")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+    if starfinder.centre_on_target() == -1:
+        system.print_and_log("Error: problem with centre on target")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+    if filter_arg is None:
+        #system.print_and_log("Warning: no filter specified for take image, using clear")
+        filter_arg = 'clear'
+
+    if filterwheel.set_position(filter_arg) == -1:
+        system.print_and_log("Error: problem with filter selection")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+
+    rValue = t120.focus_sequence(focus_points=6)
+
+    if rValue != 0:
+        system.print_and_log(rValue)
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+    if check_abort(q, dit) == -1:
+        return -1
+
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
+
+def focusing_abort():
+    """
+    Send abort instruction to fli camera and change sequencer status to 'WAITING'.
+    :return: nothing
+    """
+
+    # TODO also send abort to focus_sequence not only to camera
+    # two cancel are done to avoid concurrency problems
+    rValue = camera.cancel()
+    if(rValue != 0):
+        system.print_and_log(rValue)
+
+    time.sleep(1)
+
+    rValue = camera.cancel()
+    if(rValue != 0):
+        system.print_and_log(rValue)
+
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
+
 def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     """
     1. Close shutter
@@ -616,17 +713,19 @@ def config(**seq_args):
 
 
 commandDict = {
-    "K_DARK":                     dark,
-    "K_DARK_ABORT":               dark_abort,
-    "K_LMPFLT":            tungsten_FLAT,
-    "K_LMPFLT_ABORT":      tungsten_FLAT_abort,
-    "K_SKFLT":                 sky_FLAT,
-    "K_TRGOBS":       target_observation,
-    "K_TRGOBS_ABORT": target_observation_abort,
-    "K_LAMPON":       lamp_on,
-    "K_LAMPOF":       lamp_off,
-    "K_CONFIG":       config,
-    "K_END":          end,
+    "K_DARK":           dark,
+    "K_DARK_ABORT":     dark_abort,
+    "K_LMPFLT":         tungsten_FLAT,
+    "K_LMPFLT_ABORT":   tungsten_FLAT_abort,
+    "K_SKFLT":          sky_FLAT,
+    "K_TRGOBS":         target_observation,
+    "K_TRGOBS_ABORT":   target_observation_abort,
+    "K_LAMPON":         lamp_on,
+    "K_LAMPOF":         lamp_off,
+    "K_FOCUS":          focusing,
+    "K_FOCUS_ABORT":    focusing_abort,
+    "K_CONFIG":         config,
+    "K_END":            end,
     #"kal_AO_loop_calibration":      AO_loop_calibration
     # "kal_dark":                     dark,
     # "kal_dark_abort":               dark_abort,
