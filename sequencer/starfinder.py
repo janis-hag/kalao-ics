@@ -206,13 +206,11 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     return x_star, y_star
 
 
-def focus(focus_points=6):
+def focus_sequence(focus_points=6):
 
     focus_points = np.around(focus_points)
 
     initial_focus = t120.get_focus_value()
-    if initial_focus >30 or initial_focus<20:
-        print(f'Error received unexpected focus value: {initial_focus}')
 
     req, file_path = camera.take_image()
 
@@ -221,8 +219,9 @@ def focus(focus_points=6):
 
     image = fits.getdata(file_path)
     flux= image[np.argpartition(image, -6)][-6:].sum()
-    focus_flux = pd.DataFrame({'focus': [initial_focus], 'flux': [flux]})
+    focus_flux = pd.DataFrame({'set_focus': [initial_focus], 'flux': [flux]})
 
+    # Get even number of focus_points in order to include 0 in the sequence.
     if (focus_points % 2) == 1:
         focus_points=focus_points+1
 
@@ -230,7 +229,7 @@ def focus(focus_points=6):
 
     for focus_offset in focus_sequence:
         if focus_offset == 0:
-            # skip focus zero as it was already taken
+            # skip set_focus zero as it was already taken
             continue
 
         new_focus = focus_offset + initial_focus
@@ -249,11 +248,12 @@ def focus(focus_points=6):
 
         focus_flux.loc[len(focus_flux.index)] = [new_focus, flux]
 
-    # Keep best focus
-    best_focus = focus_flux.loc[focus_flux['flux'].idxmax(), 'focus']
+    # Keep best set_focus
+    best_focus = focus_flux.loc[focus_flux['flux'].idxmax(), 'set_focus']
 
     database.store_obs_log({'tracking_log': focus_flux})
 
 
     t120.send_focus_offset(best_focus)
 
+    return 0
