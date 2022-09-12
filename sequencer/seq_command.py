@@ -148,7 +148,7 @@ def tungsten_FLAT(**seq_args):
     """
 
     rValue = tungsten.on()
-    if(rValue != 0):
+    if(rValue != 'ON'):
         system.print_and_log('Could not turn on tungsten lamp: '+tungsten.status()['sErrorText'])
         return -1
 
@@ -164,7 +164,7 @@ def tungsten_FLAT(**seq_args):
     if filter_list is None:
         filter_list = DefaultFlatList
 
-    if tungsten.on() != 2:
+    if tungsten.on() != 'OFF':
         system.print_and_log("Error: failed to turn on tungsten lamp")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
