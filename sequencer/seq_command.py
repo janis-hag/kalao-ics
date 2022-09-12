@@ -150,6 +150,7 @@ def tungsten_FLAT(**seq_args):
     rValue = tungsten.on()
     if(rValue != 'ON'):
         system.print_and_log('Could not turn on tungsten lamp: '+tungsten.status()['sErrorText'])
+        database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
     q = seq_args.get('q')
@@ -164,11 +165,6 @@ def tungsten_FLAT(**seq_args):
 
     if filter_list is None:
         filter_list = DefaultFlatList
-
-    if tungsten.on() != 'OFF':
-        system.print_and_log("Error: failed to turn on tungsten lamp")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return -1
 
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
