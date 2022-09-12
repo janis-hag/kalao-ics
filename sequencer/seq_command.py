@@ -156,10 +156,11 @@ def tungsten_FLAT(**seq_args):
     filter_list = seq_args.get('filter_list')
     filepath = seq_args.get('filepath')
 
-    if None in (q):
-        system.print_and_log('Missing keyword in target_observation function call')
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return -1
+    # Commented out as it is not clear what is meant to be checked
+    # if None in (q):
+    #     system.print_and_log('Missing keyword in target_observation function call')
+    #     database.store_obs_log({'sequencer_status': 'ERROR'})
+    #     return -1
 
     if filter_list is None:
         filter_list = DefaultFlatList
