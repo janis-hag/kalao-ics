@@ -83,6 +83,7 @@ def take_image(dit=0.05, filepath=None, header_keydict=None): # obs_category='TE
 
     # Store monitoring status at start of exposure
     database_updater.update_plc_monitoring()
+
     params = {'exptime': dit, 'filepath': filepath}
     req = _send_request('acquire', params)
 
@@ -225,6 +226,8 @@ def _send_request(request_type, params):
     if request_type == 'acquire':
         increment_image_counter()
         database.store_obs_log({'sequencer_status': 'EXP'})
+        if 'exptime' in params.keys():
+            database.store_obs_log({'fli_texp': params['exptime']})
 
     if DummyCamera:
         if request_type == 'acquire':
