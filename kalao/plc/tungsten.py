@@ -196,10 +196,11 @@ def get_switch_time():
     # Update db to make sure the latest data point is valid
     update_db()
     # Load tungsten log into dataframe
-    df = pd.DataFrame(database.get_monitoring({'tungsten'}, 100)['tungsten'])
+    df = pd.DataFrame(database.get_monitoring({'tungsten'}, 1500)['tungsten'])
 
     # Search for last occurence of current status
     switch_time = df.loc[df[df['values'] != status()['sStatus']].first_valid_index() - 1]['time_utc']
+
     elapsed_time = (kalao_time.now() - switch_time.replace(tzinfo=datetime.timezone.utc)).total_seconds()
 
     return elapsed_time
