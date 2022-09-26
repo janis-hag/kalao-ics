@@ -546,7 +546,7 @@ def focusing_abort():
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def AO_loop_calibration(q = None, intensity = 0, **kwargs):
+def AO_loop_calibration(**seq_args): #q = None, intensity = 0, **kwargs):
     """
     1. Close shutter
     2. Move flip mirror up
@@ -559,6 +559,9 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     :param kwargs: supports additional arguments
     :return: nothing
     """
+
+    q = seq_args.get('q')
+    intensity = seq_args.get('intensity')
 
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
@@ -580,11 +583,14 @@ def AO_loop_calibration(q = None, intensity = 0, **kwargs):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def lamp_on():
+def lamp_on(**seq_args):
     """
     Turn lamp on
     :return: nothing
     """
+
+    q=seq_args.get('q')
+
 
     rValue = tungsten.on()
     if(rValue != 0):
