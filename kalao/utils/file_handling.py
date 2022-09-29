@@ -120,21 +120,21 @@ def update_header(image_path, sequencer_arguments=None):
     header_df = _read_fits_defintions()
 
     dpr_values = {}
-    dpr_values['TECH'] = {'values': 'IMAGE'}
+    dpr_values['TECH'] = {'value': 'IMAGE'}
     if sequencer_arguments is not None:
         type = sequencer_arguments.get('type')
         if type == 'K_DARK':
-            dpr_values['CATG'] = {'values': 'CALIB'}
-            dpr_values['TYPE'] = {'values': 'DARK'}
+            dpr_values['CATG'] = {'value': 'CALIB'}
+            dpr_values['TYPE'] = {'value': 'DARK'}
         elif type == 'K_LMPFLT':
-            dpr_values['CATG'] = {'values': 'CALIB'}
-            dpr_values['TYPE'] = {'values': 'FLAT,LAMP'}
+            dpr_values['CATG'] = {'value': 'CALIB'}
+            dpr_values['TYPE'] = {'value': 'FLAT,LAMP'}
         elif type == 'K_TRGOBS':
-            dpr_values['CATG'] = {'values': 'SCIENCE'}
-            dpr_values['TYPE'] = {'values': 'OBJECT'}
+            dpr_values['CATG'] = {'value': 'SCIENCE'}
+            dpr_values['TYPE'] = {'value': 'OBJECT'}
     else:
-        dpr_values['CATG'] = {'values': 'TECHNICAL'}
-        dpr_values['TYPE'] = {'values': ''}
+        dpr_values['CATG'] = {'value': 'TECHNICAL'}
+        dpr_values['TYPE'] = {'value': ''}
 
 
     with fits.open(image_path, mode='update') as hdul:
