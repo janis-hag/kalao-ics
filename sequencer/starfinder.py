@@ -130,6 +130,7 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     # create x,y component for gaussian calculation.
     # corresponds to the coordinates of the picture
     y_gauss, x_gauss = np.mgrid[0:spot_size, 0:spot_size]
+    print(x_gauss.shape, star_spot.shape)
     x_mean = np.average(x_gauss, weights=star_spot)
     y_mean = np.average(y_gauss, weights=star_spot)
 
@@ -197,7 +198,7 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     print("-----------------------")
 
     if opti > estim_error:
-        print("That's not enough.. Humain intervention needed !")
+        print("That's not enough.. Human intervention needed !")
         return -1, -1
 
     x_star = x + x_f - mid
