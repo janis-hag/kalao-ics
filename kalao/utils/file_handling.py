@@ -81,7 +81,7 @@ def create_night_folder():
     return Tmp_night_folder
 
 
-def save_tmp_image(image_path, header_keydict=None):
+def save_tmp_image(image_path, sequencer_arguments=None):
     '''
     Updates the temporary image header and saves into the archive.
 
@@ -93,7 +93,7 @@ def save_tmp_image(image_path, header_keydict=None):
     target_path_name = Science_night_folder+os.sep+os.path.basename(image_path)
 
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
-        update_header(image_path, header_keydict=header_keydict)
+        update_header(image_path, sequencer_arguments=sequencer_arguments)
         os.rename(image_path, target_path_name)
         # TODO remove write permission
 
@@ -123,13 +123,13 @@ def update_header(image_path, sequencer_arguments=None):
     dpr_values['TECH']['values'] = 'IMAGE'
     if sequencer_arguments is not None:
         type = sequencer_arguments.get('type')
-        if type is 'K_DARK':
+        if type == 'K_DARK':
             dpr_values['CATG']['values'] = 'CALIB'
             dpr_values['TYPE']['values'] = 'DARK'
-        elif type is 'K_LMPFLT':
+        elif type == 'K_LMPFLT':
             dpr_values['CATG']['values'] = 'CALIB'
             dpr_values['TYPE']['values'] = 'FLAT,LAMP'
-        elif type is 'K_TRGOBS':
+        elif type == 'K_TRGOBS':
             dpr_values['CATG']['values'] = 'SCIENCE'
             dpr_values['TYPE']['values'] = 'OBJECT'
     else:
