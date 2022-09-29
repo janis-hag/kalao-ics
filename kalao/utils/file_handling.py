@@ -108,16 +108,33 @@ def save_tmp_image(image_path, header_keydict=None):
 
 
 
-def update_header(image_path, header_keydict=None):
+def update_header(image_path, sequencer_arguments=None):
     '''
     Updates the image header with values from the observing, monitoring, and telemetry logs.
 
     :param image_path: path to the image to update
-    :param header_keydict: dictionary of key:values to add
+    :param sequencer_arguments: argumetns received by the sequencer
     :return:
     '''
 
     header_df = _read_fits_defintions()
+
+    dpr_values = {}
+    dpr_values['TECH']['values'] = 'IMAGE'
+    if sequencer_arguments is not None:
+        type = sequencer_arguments.get('type')
+        if type is 'K_DARK':
+            dpr_values['CATG']['values'] = 'CALIB'
+            dpr_values['TYPE']['values'] = 'DARK'
+        elif type is 'K_LMPFLT':
+            dpr_values['CATG']['values'] = 'CALIB'
+            dpr_values['TYPE']['values'] = 'FLAT,LAMP'
+        elif type is 'K_TRGOBS':
+            dpr_values['CATG']['values'] = 'SCIENCE'
+            dpr_values['TYPE']['values'] = 'OBJECT'
+    else:
+        dpr_values['CATG']['values'] = 'TECHNICAL'
+        dpr_values['TYPE']['values'] = ''
 
 
     with fits.open(image_path, mode='update') as hdul:
@@ -129,47 +146,81 @@ def update_header(image_path, header_keydict=None):
         else:
             dt = datetime.fromisoformat(header['DATE']).replace(tzinfo=timezone.utc)
 
+        # TODO create header dataframe and fill all the headers at the end.
         # Add default keys
         for card in header_df.loc[header_df['keygroup'] == 'default_keys'].itertuples(index=False):
             header.set(card.keyword.upper(), card.value, card.comment.strip())
 
-        # Add obs_log keys
-        header = _fill_log_header_keys(header,
-                              header_df = header_df.loc[header_df['keygroup'] == 'Obs_log'],
-                              log_status = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['keyword'].tolist(), 1, dt=dt),
-                              keycode = 'OBS')
+        # TODO add dpr catg, tech, and tpye value along with comment (dpr_tech should always be 'image')
+        header_df.loc[header_df['keygroup'] == 'eso_dpr'] = _add_header_values(
+                              header_df=header_df.loc[header_df['keygroup'] == 'eso_dpr'],
+                              log_status=dpr_values,
+                              keycode='DPR')
 
         # Add monitoring_log keys
-        header = _fill_log_header_keys(header,
-                              header_df = header_df.loc[header_df['keygroup'] == 'Monitoring'],
-                              log_status = database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
-                              keycode = 'INS')
+        # header = _fill_log_header_keys(header,
+        #                       header_df = header_df.loc[header_df['keygroup'] == 'Monitoring'],
+        #                       log_status = database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
+        #                       keycode = 'INS')
 
+        header_df.loc[header_df['keygroup'] == 'Monitoring'] = _add_header_values(
+                              header_df=header_df.loc[header_df['keygroup'] == 'Monitoring'],
+                              log_status=database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
+                              keycode='INS')
 
         # Add Telemetry keys
-        header = _fill_log_header_keys(header,
-                              header_df = header_df.loc[header_df['keygroup'] == 'Telemetry'],
-                              log_status = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
-                              keycode = 'INS AO')
+        # header = _fill_log_header_keys(header,
+        #                       header_df = header_df.loc[header_df['keygroup'] == 'Telemetry'],
+        #                       log_status = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
+        #                       keycode = 'INS AO')
+
+        header_df.loc[header_df['keygroup'] == 'Telemetry'] = _add_header_values(
+                              header_df=header_df.loc[header_df['keygroup'] == 'Telemetry'],
+                              log_status=database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
+                              keycode='INS AO')
+
+        # Add obs_log keys
+        # header = _fill_log_header_keys(header,
+        #                       header_df = header_df.loc[header_df['keygroup'] == 'Obs_log'],
+        #                       log_status = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
+        #                       keycode = 'OBS')
+
+        header_df.loc[header_df['keygroup'] == 'Obs_log'] = _add_header_values(
+                              header_df=header_df.loc[header_df['keygroup'] == 'Obs_log'],
+                              log_status=database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['keyword'].tolist(), 1, dt=dt),
+                              keycode='OBS')
 
         # Add telescope header
 
-        telescope_header, header_path = _get_last_telescope_header()
+        telescope_header_df, header_path = _get_last_telescope_header()
         # Remove first part of header
         # TODO set the cutoff keyword in kalao.config
-        telescope_header = telescope_header[(telescope_header.keyword == 'OBSERVER' ).idxmax():]
+        telescope_header_df = telescope_header_df[(telescope_header_df.keyword == 'OBSERVER' ).idxmax():]
 
-        for card in telescope_header.itertuples(index=False):
+        for card in telescope_header_df.itertuples(index=False):
             # TODO add the keywords into the header at the right position in order to keep it sorted.
             # if key starts with ESO search last occurence with same beginning and add keyword afterwards
-            header.set(card.keyword.upper(), card.value, card.comment.strip())
+            if len(card.keyword) < 8:
+                card_keyword = card.keyword.upper()
+            else:
+                card_keyword = 'ESO TEL ' + card.keyword.upper()
+            #header_df.set(card_keyword, card.value, card.comment.strip())
+            header_df.append({'keyword': card_keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
 
 
-        # Add key dictionary given as argument
-        if not header_keydict is None:
-            for key, value in header_keydict:
-                header.set(key.upper(), value) #, type_comment[1].strip())
+        # # Add key dictionary given as argument
+        # if not header_keydict is None:
+        #     for key, value in header_keydict:
+        #         header.set(key.upper(), value) #, type_comment[1].strip())
 
+        header_df = _clean_sort_header(header_df)
+
+        # Remove all cards before updating
+        hdul.clear()
+        for card in header_df.itertuples(index=False):
+            header_df.set(card.keyword, card.value, card.comment.strip())
+
+        hdul.verify('silentfix+warn')
 
         hdul.flush()  # changes are written back to original.fits
 
@@ -320,25 +371,36 @@ def _get_last_telescope_header():
     tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
 
     if tcs_header_path.is_file():
-        tcs_header = _header_to_df(fits.getheader(tcs_header_path))
+        tcs_header_df = _header_to_df(fits.getheader(tcs_header_path))
     else:
         system.print_and_log(('ERROR: header file not found: '+str(tcs_header_path)))
-        tcs_header = None
+        tcs_header_df = None
 
     # TODO uncomment the unlink line in order to remove the tmp fits
     #tcs_header_path.unlink()
 
-    return tcs_header, str(tcs_header_path)
+    return tcs_header_df, str(tcs_header_path)
 
 
-def _sort_header_keys(hdr):
+def _clean_sort_header(hdr):
 
     hdr_df = pd.DataFrame.from_records(hdr.cards, columns=['keyword', 'value', 'comment'])
 
-    # Search for first HIERARCH keyword (i.e. longer than 8)
-    hdr_df.keyword.str.len().ge(9).idxmax()
-    #d[d.keyword.str.contains('ESO')]
+    # Remove cards with empty keywords
+    hdr_df = hdr_df[hdr_df['keyword'].str.strip().astype(bool)]
 
+
+    # Search for first HIERARCH keyword (i.e. longer than 8) and split in two header dataframes
+    first_hierarch_line = hdr_df.keyword.str.len().ge(9).idxmax()
+    header_head_df = hdr_df.iloc[:first_hierarch_line]
+    header_tail_df = hdr_df.iloc[first_hierarch_line:].sort_values(by=['keyword'])
+
+    header_df = header_head_df.append(header_tail_df, ignore_index=True)
+
+    # To be verified of HIERARCH keyword is needed
+    #header_tail_df['keyword'] = 'HIERARCH ' + header_tail_df['keyword'].astype(str)
+
+    return header_df
 
 def _read_fits_defintions():
     '''
@@ -379,8 +441,45 @@ def _header_to_df(header):
     return header_df
 
 
-def _fill_log_header_keys(header, header_df, log_status, keycode):
+def _add_header_values(header_df, log_status, keycode):
+    '''
+    Add hte values from the log to the header dataframe
 
+    :param header_df:
+    :return:
+    '''
+
+    for card in header_df.itertuples(index=False):
+        #header.set(card.keyword.upper(), card.value, card.comment.strip())
+        if card.keyword in log_status.keys() and log_status[card.keyword]['values']:
+            card.value = log_status[card.keyword]['values'][0]
+            card.commment = card.comment.strip()
+            card.keyword =  'ESO '+ keycode + ' ' + card.keyword.upper()
+            #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), log_status[card.keyword]['values'][0],
+            #           card.comment.strip())
+        else:
+            #card.value = log_status[card.keyword]['values'][0]
+            card.value = ''
+            card.commment = card.comment.strip()
+            card.keyword = 'ESO ' + keycode + ' ' + card.keyword.upper()
+
+            #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), '', card.comment.strip())
+
+
+    return header_df
+
+
+
+def _fill_log_header_keys(header, header_df, log_status, keycode):
+    '''
+    Fills the fits header with values from the log based of header keys defined in header_df
+
+    :param header:
+    :param header_df:
+    :param log_status:
+    :param keycode:
+    :return:
+    '''
 
     for card in header_df.itertuples(index=False):
         #header.set(card.keyword.upper(), card.value, card.comment.strip())

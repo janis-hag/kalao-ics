@@ -33,6 +33,22 @@
   value: 0
   comment: Value used for NULL pixels
 
+
+- keyword: TECH
+  keygroup: eso_dpr
+  value: IMAGE
+  comment: Observation technique
+
+- keyword: CATG
+  keygroup: eso_dpr
+  value: string
+  comment: Observation category
+
+- keyword: TYPE
+  keygroup: eso_dpr
+  value: string
+  comment: Observation type
+
 #- keyword: BZERO
 #  keygroup: default_keys
 #  value: 32768.0

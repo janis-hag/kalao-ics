@@ -65,7 +65,7 @@ else:
 #         return req_result
 
 
-def take_image(dit=0.05, filepath=None, header_keydict=None): # obs_category='TEST', obs_type='LAMP'):
+def take_image(dit=0.05, filepath=None, sequencer_arguments=None): # obs_category='TEST', obs_type='LAMP'):
     '''
 
     :param dit: Detector integration time to use
@@ -99,7 +99,7 @@ def take_image(dit=0.05, filepath=None, header_keydict=None): # obs_category='TE
     if req.status_code == 200:
 
         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
-        target_path_name = file_handling.save_tmp_image(image_path, header_keydict=header_keydict)
+        target_path_name = file_handling.save_tmp_image(image_path, sequencer_arguments=sequencer_arguments)
 
         return 0, target_path_name
     else:
