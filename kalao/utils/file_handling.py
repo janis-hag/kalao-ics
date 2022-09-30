@@ -214,7 +214,7 @@ def update_header(image_path, sequencer_arguments=None):
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
-        header = hdul[0].header
+        fits_header = hdul[0].header
 
         if 'DATE-OBS' in header.keys():
             dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
@@ -298,9 +298,9 @@ def update_header(image_path, sequencer_arguments=None):
         header_df = _clean_sort_header(header_df)
 
         # Remove all cards before updating
-        hdul.clear()
+        #fits_header.clear()
         for card in header_df.itertuples(index=False):
-            header_df.set(card.keyword, card.value, card.comment.strip())
+            fits_header.set(card.keyword, card.value, card.comment.strip())
 
         hdul.verify('silentfix+warn')
 
