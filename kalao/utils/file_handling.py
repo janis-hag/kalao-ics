@@ -464,18 +464,18 @@ def _get_last_telescope_header():
     return tcs_header_df, str(tcs_header_path)
 
 
-def _clean_sort_header(hdr):
+def _clean_sort_header(header_df):
 
-    hdr_df = pd.DataFrame.from_records(hdr.cards, columns=['keyword', 'value', 'comment'])
+    #hdr_df = pd.DataFrame.from_records(hdr.cards, columns=['keyword', 'value', 'comment'])
 
     # Remove cards with empty keywords
-    hdr_df = hdr_df[hdr_df['keyword'].str.strip().astype(bool)]
+    header_df = header_df[header_df['keyword'].str.strip().astype(bool)]
 
 
     # Search for first HIERARCH keyword (i.e. longer than 8) and split in two header dataframes
-    first_hierarch_line = hdr_df.keyword.str.len().ge(9).idxmax()
-    header_head_df = hdr_df.iloc[:first_hierarch_line]
-    header_tail_df = hdr_df.iloc[first_hierarch_line:].sort_values(by=['keyword'])
+    first_hierarch_line = header_df.keyword.str.len().ge(9).idxmax()
+    header_head_df = header_df.iloc[:first_hierarch_line]
+    header_tail_df = header_df.iloc[first_hierarch_line:].sort_values(by=['keyword'])
 
     header_df = header_head_df.append(header_tail_df, ignore_index=True)
 
