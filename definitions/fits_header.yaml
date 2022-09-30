@@ -245,7 +245,7 @@
 
 - keyword: ESO INS ADC1 angle
   keygroup: Monitoring
-  value: ac2
+  value: adc2
   comment: "[deg] ADC1 angle"
 
 - keyword: ESO AOS LOOP ST
