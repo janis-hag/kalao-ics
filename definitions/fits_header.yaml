@@ -243,10 +243,10 @@
   value: adc1
   comment: "[deg] ADC1 angle"
 
-- keyword: ESO INS ADC1 angle
+- keyword: ESO INS ADC2 angle
   keygroup: Monitoring
   value: adc2
-  comment: "[deg] ADC1 angle"
+  comment: "[deg] ADC2 angle"
 
 - keyword: ESO AOS LOOP ST
   keygroup: Telemetry
