@@ -108,6 +108,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
 
 
 
+
 def update_header(image_path, sequencer_arguments=None):
     '''
     Updates the image header with values from the observing, monitoring, and telemetry logs.
