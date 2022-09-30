@@ -38,17 +38,17 @@
   value: OBJECT
   comment: Object name
 
-- keyword: ESO DPR TECH
+- keyword: HIERARCH ESO DPR TECH
   keygroup: eso_dpr
   value: IMAGE
   comment: Observation technique
 
-- keyword: ESO DPR CATG
+- keyword: HIERARCH ESO DPR CATG
   keygroup: eso_dpr
   value: string
   comment: Observation category
 
-- keyword: ESO DPR TYPE
+- keyword: HIERARCH ESO DPR TYPE
   keygroup: eso_dpr
   value: string
   comment: Observation type
@@ -130,7 +130,7 @@
   value: exptime
   comment: Integration time
 
-- keyword: ESO OBS TARGET NAME
+- keyword: HIERARCH ESO OBS TARGET NAME
   keygroup: Obs_log
   value: target
   comment: Target name
@@ -145,129 +145,129 @@
 #  value: string
 #  comment: Type of observation/exposure
 
-- keyword: ESO PROG ID
+- keyword: HIERARCH ESO PROG ID
   keygroup: Obs_log
   value: prog_id
   comment: Euler program identification
 
-- keyword: ESO DET FRAM COUNT
+- keyword: HIERARCH ESO DET FRAM COUNT
   keygroup: Obs_log
   value: fli_image_count
   comment: FLI shutter count
 # WCS
 # geo coordinates
 
-- keyword: ESO INS DATE
+- keyword: HIERARCH ESO INS DATE
   keygroup: default_keys
   value: '2022-11-17'
   comment: Instrument release date (yyyy-mm-dd).
 
-- keyword: ESO DET ID
+- keyword: HIERARCH ESO DET ID
   keygroup: default_keys
   value: KalAO-FLI
   comment: Detector system Id
 
-- keyword: ESO DET NAME
+- keyword: HIERARCH ESO DET NAME
   keygroup: default_keys
   value: KalAO-FLI
   comment: Detector system NAME
 
-- keyword: ESO INS1 FILT ID
+- keyword: HIERARCH ESO INS1 FILT ID
   keygroup: Monitoring
   value: fli_filter_name
   comment: KalAO-FLI filter unique id.
 
-- keyword: ESO INS1 FILT NO
+- keyword: HIERARCH ESO INS1 FILT NO
   keygroup: Monitoring
   value: fli_filter_position
   comment: KalAO-FLI filter wheel position index
 
-- keyword: ESO DET CCD TEMP
+- keyword: HIERARCH ESO DET CCD TEMP
   keygroup: Monitoring
   value: fli_temp_CCD
   comment: "[C] CCD temperature"
 
-- keyword: ESO DET CCD TEMP
+- keyword: HIERARCH ESO DET CCD TEMP
   keygroup: Monitoring
   value: fli_temp_heatsink
   comment: "[C] HS temperature"
 
-- keyword: ESO INS SHUT ST
+- keyword: HIERARCH ESO INS SHUT ST
   keygroup: Monitoring
   value: shutter
   comment: Shutter open/closed
 
-- keyword: ESO INS FLIP MIR
+- keyword: HIERARCH ESO INS FLIP MIR
   keygroup: Monitoring
   value: flip_mirror
   comment: Flip mirror position
 
-- keyword: ESO INS CALIB POS
+- keyword: HIERARCH ESO INS CALIB POS
   keygroup: Monitoring
   value: calib_unit
   comment: "[mm] Position of the calibration unit"
 
-- keyword: ESO INS TEMP AIR
+- keyword: HIERARCH ESO INS TEMP AIR
   keygroup: Monitoring
   value: temp_bench_air
   comment: "[C] Enclosure air temperature"
 
-- keyword: ESO INS TEMP BENCH
+- keyword: HIERARCH ESO INS TEMP BENCH
   keygroup: Monitoring
   value: temp_bench_board
   comment: "[C] Bench air temperature"
 
-- keyword: ESO INS TEMP WATER IN
+- keyword: HIERARCH ESO INS TEMP WATER IN
   keygroup: Monitoring
   value: temp_water_in
   comment: "[C] Incoming cooling water temp"
 
-- keyword: ESO INS TEMP WATER OUT
+- keyword: HIERARCH ESO INS TEMP WATER OUT
   keygroup: Monitoring
   value: temp_water_out
   comment: "[C] Outgoing cooling water temp"
 
-- keyword: ESO INS LASER POWER
+- keyword: HIERARCH ESO INS LASER POWER
   keygroup: Monitoring
   value: laser
   comment: "[mW] Calibration laser power"
 
-- keyword: ESO INS TUNGSTEN ST
+- keyword: HIERARCH ESO INS TUNGSTEN ST
   keygroup: Monitoring
   value: tungsten
   comment: Calibration tungsten lamp state
 
-- keyword: ESO INS ADC1 angle
+- keyword: HIERARCH ESO INS ADC1 angle
   keygroup: Monitoring
   value: adc1
   comment: "[deg] ADC1 angle"
 
-- keyword: ESO INS ADC2 angle
+- keyword: HIERARCH ESO INS ADC2 angle
   keygroup: Monitoring
   value: adc2
   comment: "[deg] ADC2 angle"
 
-- keyword: ESO AOS LOOP ST
+- keyword: HIERARCH ESO AOS LOOP ST
   keygroup: Telemetry
   value: loop_on
   comment: AO loop ON/OFF
 
-- keyword: ESO AOS LOOP GAIN
+- keyword: HIERARCH ESO AOS LOOP GAIN
   keygroup: Telemetry
   value: loop_gain
   comment: AO loop gain
 
-- keyword: ESO AOS LOOP MULT
+- keyword: HIERARCH ESO AOS LOOP MULT
   keygroup: Telemetry
   value: loop_mult
   comment: AO loop mult coeff
 
-- keyword: ESO AOS WFS DIT
+- keyword: HIERARCH ESO AOS WFS DIT
   keygroup: Telemetry
   value: nuvu_exposuretime
   comment: "[ms] WFS EMCCD exposure time"
 
-- keyword: ESO AOS WFS EMGAIN
+- keyword: HIERARCH ESO AOS WFS EMGAIN
   keygroup: Telemetry
   value: nuvu_emgain
   comment: EMCCD EM gain
