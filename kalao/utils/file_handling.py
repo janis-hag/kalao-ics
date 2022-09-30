@@ -131,17 +131,17 @@ def update_header(image_path, sequencer_arguments=None):
     if sequencer_arguments is not None:
         type = sequencer_arguments.get('type')
         if type == 'K_DARK':
-            header_df['DPR CATG']['value'] = 'CALIB'
-            header_df['DPR TYPE']['value'] = 'DARK'
+            header_df['ESO DPR CATG']['value'] = 'CALIB'
+            header_df['ESO DPR TYPE']['value'] = 'DARK'
         elif type == 'K_LMPFLT':
-            header_df['DPR CATG']['value'] = 'CALIB'
-            header_df['DPR TYPE']['value'] = 'FLAT,LAMP'
+            header_df['ESO DPR CATG']['value'] = 'CALIB'
+            header_df['ESO DPR TYPE']['value'] = 'FLAT,LAMP'
         elif type == 'K_TRGOBS':
-            header_df['DPR CATG']['value'] = 'SCIENCE'
-            header_df['DPR TYPE']['value'] = 'OBJECT'
+            header_df['ESO DPR CATG']['value'] = 'SCIENCE'
+            header_df['ESO DPR TYPE']['value'] = 'OBJECT'
         else:
-            header_df['DPR CATG']['value'] = 'TECHNICAL'
-            header_df['DPR TYPE']['value'] = ''
+            header_df['ESO DPR CATG']['value'] = 'TECHNICAL'
+            header_df['ESO DPR TYPE']['value'] = ''
     #
     # dpr_values = {}
     # dpr_values['TECH'] = {'values': 'IMAGE'}
