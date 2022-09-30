@@ -527,6 +527,7 @@ def _add_header_values(header_df, log_status):
     '''
 
     for idx, card in header_df.iterrows():
+        print(card.keyword)
         #header.set(card.keyword.upper(), card.value, card.comment.strip())
         if card.value in log_status.keys() and log_status[card.value]['values']:
             header_df.loc[idx,'value'] = log_status[card.value]['values'][0]
