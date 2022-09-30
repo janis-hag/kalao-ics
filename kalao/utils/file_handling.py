@@ -233,14 +233,17 @@ def update_header(image_path, sequencer_arguments=None):
 
 
         # Gather all the logs
-        monitoring_log = database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['value'].tolist(), 1,
-                                             dt=dt)
         obs_log = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['value'].tolist(), 1,
                                           dt=dt)
+
+        monitoring_log = database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['value'].tolist(), 1,
+                                             dt=dt)
+
         telemetry_log = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['value'].tolist(), 1,
                                             dt=dt)
 
-        header_df = _add_header_values(header_df=header_df, log_status={**monitoring_log, **obs_log, **telemetry_log})
+        # obs_log needs to be first as it contains some non-hierarch keywords
+        header_df = _add_header_values(header_df=header_df, log_status={**obs_log, **monitoring_log, **telemetry_log})
 
         # # TODO add dpr catg, tech, and tpye value along with comment (dpr_tech should always be 'image')
         # header_df.loc[header_df['keygroup'] == 'eso_dpr'] = _add_header_values(

@@ -38,21 +38,6 @@
   value: OBJECT
   comment: Object name
 
-- keyword: HIERARCH ESO DPR TECH
-  keygroup: eso_dpr
-  value: IMAGE
-  comment: Observation technique
-
-- keyword: HIERARCH ESO DPR CATG
-  keygroup: eso_dpr
-  value: string
-  comment: Observation category
-
-- keyword: HIERARCH ESO DPR TYPE
-  keygroup: eso_dpr
-  value: string
-  comment: Observation type
-
 #- keyword: BZERO
 #  keygroup: default_keys
 #  value: 32768.0
@@ -271,6 +256,21 @@
   keygroup: Telemetry
   value: nuvu_emgain
   comment: EMCCD EM gain
+
+- keyword: HIERARCH ESO DPR TECH
+  keygroup: eso_dpr
+  value: IMAGE
+  comment: Observation technique
+
+- keyword: HIERARCH ESO DPR CATG
+  keygroup: eso_dpr
+  value: string
+  comment: Observation category
+
+- keyword: HIERARCH ESO DPR TYPE
+  keygroup: eso_dpr
+  value: string
+  comment: Observation type
 
 #Euler
 # TEL AZ:
