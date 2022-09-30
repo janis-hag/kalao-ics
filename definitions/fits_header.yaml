@@ -34,17 +34,17 @@
   comment: Value used for NULL pixels
 
 
-- keyword: DPR TECH
+- keyword: ESO DPR TECH
   keygroup: eso_dpr
   value: IMAGE
   comment: Observation technique
 
-- keyword: DPR CATG
+- keyword: ESO DPR CATG
   keygroup: eso_dpr
   value: string
   comment: Observation category
 
-- keyword: DPR TYPE
+- keyword: ESO DPR TYPE
   keygroup: eso_dpr
   value: string
   comment: Observation type
@@ -160,7 +160,7 @@
 
 - keyword: ESO INS DATE
   keygroup: default_keys
-  value: 2022-11-17
+  value: '2022-11-17'
   comment: Instrument release date (yyyy-mm-dd).
 
 - keyword: ESO DET ID
