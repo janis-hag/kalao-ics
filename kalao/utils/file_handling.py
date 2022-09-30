@@ -528,8 +528,8 @@ def _add_header_values(header_df, log_status):
 
     for idx, card in header_df.iterrows():
         #header.set(card.keyword.upper(), card.value, card.comment.strip())
-        if card.keyword in log_status.keys() and log_status[card.keyword]['values']:
-            header_df.loc[idx,'value'] = log_status[card.keyword]['values'][0]
+        if card.value in log_status.keys() and log_status[card.value]['values']:
+            header_df.loc[idx,'value'] = log_status[card.value]['values'][0]
             header_df.loc[idx,'commment'] = card.comment.strip()
             #card.keyword =  'ESO '+ keycode + ' ' + card.keyword.upper()
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), log_status[card.keyword]['values'][0],
