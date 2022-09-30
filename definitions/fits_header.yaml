@@ -186,12 +186,12 @@
 - keyword: ESO DET CCD TEMP
   keygroup: Monitoring
   value: fli_temp_CCD
-  comment: [C] CCD temperature
+  comment: "[C] CCD temperature"
 
 - keyword: ESO DET CCD TEMP
   keygroup: Monitoring
   value: fli_temp_heatsink
-  comment: [C] HS temperature
+  comment: "[C] HS temperature"
 
 - keyword: ESO INS SHUT ST
   keygroup: Monitoring
@@ -206,32 +206,32 @@
 - keyword: ESO INS CALIB POS
   keygroup: Monitoring
   value: calib_unit
-  comment: [mm] Position of the calibration unit
+  comment: "[mm] Position of the calibration unit"
 
 - keyword: ESO INS TEMP AIR
   keygroup: Monitoring
   value: temp_bench_air
-  comment: [C] Enclosure air temperature
+  comment: "[C] Enclosure air temperature"
 
 - keyword: ESO INS TEMP BENCH
   keygroup: Monitoring
   value: temp_bench_board
-  comment: [C] Bench air temperature
+  comment: "[C] Bench air temperature"
 
 - keyword: ESO INS TEMP WATER IN
   keygroup: Monitoring
   value: temp_water_in
-  comment: [C] Incoming cooling water temp
+  comment: "[C] Incoming cooling water temp"
 
 - keyword: ESO INS TEMP WATER OUT
   keygroup: Monitoring
   value: temp_water_out
-  comment: [C] Outgoing cooling water temp
+  comment: "[C] Outgoing cooling water temp"
 
 - keyword: ESO INS LASER POWER
   keygroup: Monitoring
   value: laser
-  comment: [mW] Calibration laser power
+  comment: "[mW] Calibration laser power"
 
 - keyword: ESO INS TUNGSTEN ST
   keygroup: Monitoring
@@ -241,12 +241,12 @@
 - keyword: ESO INS ADC1 angle
   keygroup: Monitoring
   value: adc1
-  comment: [deg] ADC1 angle
+  comment: "[deg] ADC1 angle"
 
 - keyword: ESO INS ADC1 angle
   keygroup: Monitoring
   value: ac2
-  comment: [deg] ADC1 angle
+  comment: "[deg] ADC1 angle"
 
 - keyword: ESO AOS LOOP ST
   keygroup: Telemetry
@@ -266,7 +266,7 @@
 - keyword: ESO AOS WFS DIT
   keygroup: Telemetry
   value: nuvu_exposuretime
-  comment: [ms] WFS EMCCD exposure time
+  comment: "[ms] WFS EMCCD exposure time"
 
 - keyword: ESO AOS WFS EMGAIN
   keygroup: Telemetry
