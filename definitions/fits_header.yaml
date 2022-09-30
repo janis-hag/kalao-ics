@@ -33,6 +33,10 @@
   value: 0
   comment: Value used for NULL pixels
 
+- keyword: OBJECT
+  keygroup: Obs_log
+  value: OBJECT
+  comment: Object name
 
 - keyword: ESO DPR TECH
   keygroup: eso_dpr
@@ -58,31 +62,6 @@
 #  keygroup: default_keys
 #  value: 1.0
 #  comment:   value = fits-  value*BSCALE+BZERO
-
-- keyword: ESO OBS TARGET NAME
-  keygroup: Obs_log
-  value: target
-  comment: Target name
-
-- keyword: OBJECT
-  keygroup: Obs_log
-  value: OBJECT
-  comment: Object name
-
-- keyword: obscatg
-  keygroup: Obs_log
-  value: string
-  comment: Category of observation/exposure
-
-- keyword: obstype
-  keygroup: Obs_log
-  value: string
-  comment: Type of observation/exposure
-
-- keyword: ESO PROG ID
-  keygroup: Obs_log
-  value: prog_id
-  comment: Euler program identification
 
 - keyword: OBSERVER
   keygroup: Obs_log
@@ -150,6 +129,26 @@
   keygroup: Obs_log
   value: exptime
   comment: Integration time
+
+- keyword: ESO OBS TARGET NAME
+  keygroup: Obs_log
+  value: target
+  comment: Target name
+
+#- keyword: obscatg
+#  keygroup: Obs_log
+#  value: string
+#  comment: Category of observation/exposure
+#
+#- keyword: obstype
+#  keygroup: Obs_log
+#  value: string
+#  comment: Type of observation/exposure
+
+- keyword: ESO PROG ID
+  keygroup: Obs_log
+  value: prog_id
+  comment: Euler program identification
 
 - keyword: ESO DET FRAM COUNT
   keygroup: Obs_log
