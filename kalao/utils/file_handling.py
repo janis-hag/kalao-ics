@@ -300,6 +300,7 @@ def update_header(image_path, sequencer_arguments=None):
         # Remove all cards before updating
         #fits_header.clear()
         for card in header_df.itertuples(index=False):
+            print(card.keyword)
             fits_header.set(card.keyword, card.value, card.comment.strip())
 
         hdul.verify('silentfix+warn')
