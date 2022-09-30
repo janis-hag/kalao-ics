@@ -232,6 +232,16 @@ def update_header(image_path, sequencer_arguments=None):
             header_df.append({'keyword': card.keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
 
 
+        # Gather all the logs
+        monitoring_log = database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['value'].tolist(), 1,
+                                             dt=dt)
+        obs_log = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['value'].tolist(), 1,
+                                          dt=dt)
+        telemetry_log = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['value'].tolist(), 1,
+                                            dt=dt)
+
+        header_df = _add_header_values(header_df=header_df, log_status={**monitoring_log, **obs_log, **telemetry_log})
+
         # # TODO add dpr catg, tech, and tpye value along with comment (dpr_tech should always be 'image')
         # header_df.loc[header_df['keygroup'] == 'eso_dpr'] = _add_header_values(
         #                       header_df=header_df.loc[header_df['keygroup'] == 'eso_dpr'],
@@ -243,29 +253,25 @@ def update_header(image_path, sequencer_arguments=None):
         #                       log_status = database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
         #                       keycode = 'INS')
 
-        header_df.loc[header_df['keygroup'] == 'Monitoring'] = _add_header_values(
-                              header_df=header_df.loc[header_df['keygroup'] == 'Monitoring'],
-                              log_status=database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['value'].tolist(), 1, dt=dt))
-
         # Add Telemetry keys
         # header = _fill_log_header_keys(header,
         #                       header_df = header_df.loc[header_df['keygroup'] == 'Telemetry'],
         #                       log_status = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
         #                       keycode = 'INS AO')
 
-        header_df.loc[header_df['keygroup'] == 'Telemetry'] = _add_header_values(
-                              header_df=header_df.loc[header_df['keygroup'] == 'Telemetry'],
-                              log_status=database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['value'].tolist(), 1, dt=dt))
+        # header_df.loc[header_df['keygroup'] == 'Telemetry'] = _add_header_values(
+        #                       header_df=header_df.loc[header_df['keygroup'] == 'Telemetry'],
+        #                       log_status=database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['value'].tolist(), 1, dt=dt))
 
         # Add obs_log keys
         # header = _fill_log_header_keys(header,
         #                       header_df = header_df.loc[header_df['keygroup'] == 'Obs_log'],
         #                       log_status = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
         #                       keycode = 'OBS')
-
-        header_df.loc[header_df['keygroup'] == 'Obs_log'] = _add_header_values(
-                              header_df=header_df.loc[header_df['keygroup'] == 'Obs_log'],
-                              log_status=database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['value'].tolist(), 1, dt=dt))
+        #
+        # header_df.loc[header_df['keygroup'] == 'Obs_log'] = _add_header_values(
+        #                       header_df=header_df.loc[header_df['keygroup'] == 'Obs_log'],
+        #                       log_status=database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['value'].tolist(), 1, dt=dt))
 
         # Add telescope header
 
@@ -527,14 +533,18 @@ def _add_header_values(header_df, log_status):
     '''
 
     for idx, card in header_df.iterrows():
-        print(card.keyword)
+        # Do not modify default_keys
+        if card.keygroup == 'default_keys':
+            continue
+
         #header.set(card.keyword.upper(), card.value, card.comment.strip())
-        if card.value in log_status.keys() and log_status[card.value]['values']:
+        elif card.value in log_status.keys() and log_status[card.value]['values']:
             header_df.loc[idx,'value'] = log_status[card.value]['values'][0]
             header_df.loc[idx,'commment'] = card.comment.strip()
             #card.keyword =  'ESO '+ keycode + ' ' + card.keyword.upper()
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), log_status[card.keyword]['values'][0],
             #           card.comment.strip())
+
         else:
             #card.value = log_status[card.keyword]['values'][0]
             header_df.loc[idx, 'value'] = ''
