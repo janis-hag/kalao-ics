@@ -245,7 +245,7 @@ def update_header(image_path, sequencer_arguments=None):
 
         header_df.loc[header_df['keygroup'] == 'Monitoring'] = _add_header_values(
                               header_df=header_df.loc[header_df['keygroup'] == 'Monitoring'],
-                              log_status=database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt))
+                              log_status=database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['value'].tolist(), 1, dt=dt))
 
         # Add Telemetry keys
         # header = _fill_log_header_keys(header,
@@ -255,7 +255,7 @@ def update_header(image_path, sequencer_arguments=None):
 
         header_df.loc[header_df['keygroup'] == 'Telemetry'] = _add_header_values(
                               header_df=header_df.loc[header_df['keygroup'] == 'Telemetry'],
-                              log_status=database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt))
+                              log_status=database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['value'].tolist(), 1, dt=dt))
 
         # Add obs_log keys
         # header = _fill_log_header_keys(header,
@@ -265,7 +265,7 @@ def update_header(image_path, sequencer_arguments=None):
 
         header_df.loc[header_df['keygroup'] == 'Obs_log'] = _add_header_values(
                               header_df=header_df.loc[header_df['keygroup'] == 'Obs_log'],
-                              log_status=database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['keyword'].tolist(), 1, dt=dt))
+                              log_status=database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['value'].tolist(), 1, dt=dt))
 
         # Add telescope header
 
