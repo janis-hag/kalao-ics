@@ -3,19 +3,19 @@
 #    value:   value_type
 #    comment:   comment
 
-- keyword: instrume
+- keyword: INSTRUME
   keygroup: default_keys
   value: KalAO
   comment: Instrument used
 
-- keyword: telescop
+- keyword: TELESCOP
   keygroup: default_keys
   value: EULER
   comment: Telescope name
 
-- keyword: site
+- keyword: SITE
   keygroup: default_keys
-  value: La Silla
+  value: ESO La Silla, Chile
   comment: Observing site
 
 - keyword: ORIGIN
@@ -34,17 +34,17 @@
   comment: Value used for NULL pixels
 
 
-- keyword: TECH
+- keyword: DPR TECH
   keygroup: eso_dpr
   value: IMAGE
   comment: Observation technique
 
-- keyword: CATG
+- keyword: DPR CATG
   keygroup: eso_dpr
   value: string
   comment: Observation category
 
-- keyword: TYPE
+- keyword: DPR TYPE
   keygroup: eso_dpr
   value: string
   comment: Observation type
@@ -59,14 +59,14 @@
 #  value: 1.0
 #  comment:   value = fits-  value*BSCALE+BZERO
 
-- keyword: target
+- keyword: ESO OBS TARGET NAME
   keygroup: Obs_log
-  value: string
+  value: target
   comment: Target name
 
-- keyword: object
+- keyword: OBJECT
   keygroup: Obs_log
-  value: string
+  value: OBJECT
   comment: Object name
 
 - keyword: obscatg
@@ -79,60 +79,62 @@
   value: string
   comment: Type of observation/exposure
 
-- keyword: prog_id
+- keyword: ESO PROG ID
   keygroup: Obs_log
-  value: string
-  comment: Observing program ID
+  value: prog_id
+  comment: Euler program identification
 
-- keyword: observer
+- keyword: OBSERVER
   keygroup: Obs_log
-  value: string
-  comment: Observer name
+  value: observer
+  comment: Name of observer
 
-- keyword: date-obs
+- keyword: DATE-OBS
   keygroup: Obs_log
-  value: string
-  comment: No   comment
+  value: date-obs
+  comment: Observing date
 
 - keyword: DATE
   keygroup: Obs_log
-  value: string
+  value: DATE
   comment: Date the file was written
 
-- keyword: mjd-obs
+- keyword: MJD-OBS
   keygroup: Obs_log
-  value: float
+  value: mjd-obs
+  comment: Value of date-obs
+
+- keyword: UTC
+  keygroup: Obs_log
+  value: utc
+  comment: utc-hms
+
+- keyword: LST
+  keygroup: Obs_log
+  value: lst
+  comment: lst-hms
+
+- keyword: RA
+  keygroup: Obs_log
+  value: ra
   comment: No   comment
 
-- keyword: utc
+- keyword: DEC
   keygroup: Obs_log
-  value: float
+  value: dec
   comment: No   comment
 
-- keyword: lst
+- keyword: EQUINOX
   keygroup: Obs_log
-  value: float
-  comment: No   comment
+  value: equinox
+  comment: Standard radecsys_value
 
-- keyword: ra
-  keygroup: Obs_log
-  value: float
-  comment: No   comment
+# TODO check if FK5 or ICRS
 
-- keyword: dec
+- keyword: RADECSYS
   keygroup: Obs_log
-  value: float
-  comment: No   comment
-
-- keyword: equinox
-  keygroup: Obs_log
-  value: float
-  comment: No   comment
-
-- keyword: radecsys
-  keygroup: Obs_log
-  value: string
-  comment: No   comment
+  value: radecsys
+  comment: Coordinate system
 
 #instrume:
 #    value: string
@@ -144,118 +146,131 @@
 #    value: string
 #    comment: Site name
 
-- keyword: exptime
+- keyword: EXPTIME
   keygroup: Obs_log
-  value: float
-  comment: Exposure time
+  value: exptime
+  comment: Integration time
 
-- keyword: fli_image_count
+- keyword: ESO DET FRAM COUNT
   keygroup: Obs_log
-  value: int
+  value: fli_image_count
   comment: FLI shutter count
 # WCS
 # geo coordinates
+- keyword: ESO INS DATE
+  keygroup: default_keys
+  value: 2022-11-17
+  comment: Instrument release date (yyyy-mm-dd).
 
+- keyword: ESO DET ID
+  keygroup: default_keys
+  value: KalAO-FLI
+  comment: Detector system Id
 
-- keyword: fli_filter_name
+- keyword: ESO DET NAME
+  keygroup: default_keys
+  value: KalAO-FLI
+  comment: Detector system NAME
+
+- keyword: ESO INS1 FILT ID
   keygroup: Monitoring
-  value: string
-  comment: Filter name
+  value: fli_filter_name
+  comment: KalAO-FLI filter unique id.
 
-- keyword: fli_filter_position
+- keyword: ESO INS1 FILT NO
   keygroup: Monitoring
-  value: int
-  comment: Filter number
+  value: fli_filter_position
+  comment: KalAO-FLI filter wheel position index
 
-- keyword: fli_temp_CCD
+- keyword: ESO DET CCD TEMP
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: fli_temp_CCD
+  comment: [C] CCD temperature
 
-- keyword: fli_temp_heatsink
+- keyword: ESO DET CCD TEMP
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: fli_temp_heatsink
+  comment: [C] HS temperature
 
-- keyword: shutter
+- keyword: ESO INS SHUT ST
   keygroup: Monitoring
-  value: string
-  comment: No   comment
+  value: shutter
+  comment: Shutter open/closed
 
-- keyword: flip_mirror
+- keyword: ESO INS FLIP MIR
   keygroup: Monitoring
-  value: string
-  comment: No   comment
+  value: flip_mirror
+  comment: Flip mirror position
 
-- keyword: calib_unit
+- keyword: ESO INS CALIB POS
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: calib_unit
+  comment: [mm] Position of the calibration unit
 
-- keyword: temp_bench_air
+- keyword: ESO INS TEMP AIR
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: temp_bench_air
+  comment: [C] Enclosure air temperature
 
-- keyword: temp_bench_board
+- keyword: ESO INS TEMP BENCH
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: temp_bench_board
+  comment: [C] Bench air temperature
 
-- keyword: temp_water_in
+- keyword: ESO INS TEMP WATER IN
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: temp_water_in
+  comment: [C] Incoming cooling water temp
 
-- keyword: temp_water_out
+- keyword: ESO INS TEMP WATER OUT
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: temp_water_out
+  comment: [C] Outgoing cooling water temp
 
-- keyword: laser
+- keyword: ESO INS LASER POWER
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: laser
+  comment: [mW] Calibration laser power
 
-- keyword: tungsten
+- keyword: ESO INS TUNGSTEN ST
   keygroup: Monitoring
-  value: string
-  comment: No   comment
+  value: tungsten
+  comment: Calibration tungsten lamp state
 
-- keyword: adc1
+- keyword: ESO INS ADC1 angle
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: adc1
+  comment: [deg] ADC1 angle
 
-- keyword: adc2
+- keyword: ESO INS ADC1 angle
   keygroup: Monitoring
-  value: float
-  comment: No   comment
+  value: ac2
+  comment: [deg] ADC1 angle
 
-- keyword: loop_on
+- keyword: ESO AOS LOOP ST
   keygroup: Telemetry
-  value: string
+  value: loop_on
   comment: AO loop ON/OFF
 
-- keyword: loop_gain
+- keyword: ESO AOS LOOP GAIN
   keygroup: Telemetry
-  value: float
+  value: loop_gain
   comment: AO loop gain
 
-- keyword: loop_mult
+- keyword: ESO AOS LOOP MULT
   keygroup: Telemetry
-  value: float
+  value: loop_mult
   comment: AO loop mult coeff
 
-- keyword: nuvu_exposuretime
+- keyword: ESO AOS WFS DIT
   keygroup: Telemetry
-  value: float
-  comment: Exposure time of the EMCCD [ms]
+  value: nuvu_exposuretime
+  comment: [ms] WFS EMCCD exposure time
 
-- keyword: nuvu_emgain
+- keyword: ESO AOS WFS EMGAIN
   keygroup: Telemetry
-  value: float
-  comment: EM gain of the EMCCD
+  value: nuvu_emgain
+  comment: EMCCD EM gain
 
 #Euler
 # TEL AZ:
@@ -268,9 +283,9 @@
 - keyword: DATAMAX
   keygroup: FLI
   value: float
-  comment: Maximal pixel   value
+  comment: Maximal pixel value
 
 - keyword: DATAMIN
   keygroup: FLI
   value: float
-  comment: Minimal pixel   value
+  comment: Minimal pixel value

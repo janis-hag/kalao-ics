@@ -86,7 +86,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
     Updates the temporary image header and saves into the archive.
 
     :param image_path:
-    :param header_keydict:
+    :param sequencer_arguments: argument list received by the sequencer
     :return:
     '''
     Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
@@ -117,24 +117,98 @@ def update_header(image_path, sequencer_arguments=None):
     :return:
     '''
 
+    # TODO add date-obs as comment for MJD-OBS
+    # TODO give UTC value is seconds and add UTC HMS in comment: [s] 00:19:38.000 UTC
+    # TODO give LST value is seconds and add UTC HMS in comment: [s] 17:15:25.278 LST
+    # TODO add RA comment: [deg] 16:22:51.8 RA (J2000) pointing
+    # TODO add DEC comment: [deg] -23:07:08.8 DEC (J2000) pointing
+    # TODO add radecsys value in EQUINOX comment
+    # TODO add in shutter comment "Shutter open" or "Shutter closed" and put only T/F in value
+
     header_df = _read_fits_defintions()
 
-    dpr_values = {}
-    dpr_values['TECH'] = {'value': 'IMAGE'}
     if sequencer_arguments is not None:
         type = sequencer_arguments.get('type')
         if type == 'K_DARK':
-            dpr_values['CATG'] = {'value': 'CALIB'}
-            dpr_values['TYPE'] = {'value': 'DARK'}
+            header_df['DPR CATG']['value'] = 'CALIB'
+            header_df['DPR TYPE']['value'] = 'DARK'
         elif type == 'K_LMPFLT':
-            dpr_values['CATG'] = {'value': 'CALIB'}
-            dpr_values['TYPE'] = {'value': 'FLAT,LAMP'}
+            header_df['DPR CATG']['value'] = 'CALIB'
+            header_df['DPR TYPE']['value'] = 'FLAT,LAMP'
         elif type == 'K_TRGOBS':
-            dpr_values['CATG'] = {'value': 'SCIENCE'}
-            dpr_values['TYPE'] = {'value': 'OBJECT'}
-    else:
-        dpr_values['CATG'] = {'value': 'TECHNICAL'}
-        dpr_values['TYPE'] = {'value': ''}
+            header_df['DPR CATG']['value'] = 'SCIENCE'
+            header_df['DPR TYPE']['value'] = 'OBJECT'
+        else:
+            header_df['DPR CATG']['value'] = 'TECHNICAL'
+            header_df['DPR TYPE']['value'] = ''
+    #
+    # dpr_values = {}
+    # dpr_values['TECH'] = {'values': 'IMAGE'}
+    # if sequencer_arguments is not None:
+    #     type = sequencer_arguments.get('type')
+    #     if type == 'K_DARK':
+    #         dpr_values['CATG'] = {'values': 'CALIB'}
+    #         dpr_values['TYPE'] = {'values': 'DARK'}
+    #     elif type == 'K_LMPFLT':
+    #         dpr_values['CATG'] = {'values': 'CALIB'}
+    #         dpr_values['TYPE'] = {'values': 'FLAT,LAMP'}
+    #     elif type == 'K_TRGOBS':
+    #         dpr_values['CATG'] = {'values': 'SCIENCE'}
+    #         dpr_values['TYPE'] = {'values': 'OBJECT'}
+    # else:
+    #     dpr_values['CATG'] = {'values': 'TECHNICAL'}
+    #     dpr_values['TYPE'] = {'values': ''}
+
+
+    # header_definitions_df = _read_fits_defintions()
+    #
+    # header_df = []
+    #
+    # header_df.append({
+    #     'keyword': 'DPR TECH',
+    #     'value': 'IMAGE',
+    #     'comment': 'Observation technique'})
+    #
+    # if sequencer_arguments is not None:
+    #     type = sequencer_arguments.get('type')
+    #     if type == 'K_DARK':
+    #         header_df.append({
+    #             'keyword': 'DPR CATG',
+    #             'value': 'CALIB',
+    #             'comment': 'Observation category'})
+    #         header_df.append({
+    #             'keyword': 'DPR TYPE',
+    #             'value': 'DARK',
+    #             'comment': 'Observation type'})
+    #     elif type == 'K_LMPFLT':
+    #         header_df.append({
+    #             'keyword': 'DPR CATG',
+    #             'value': 'CALIB',
+    #             'comment': 'Observation category'})
+    #         header_df.append({
+    #             'keyword': 'DPR TYPE',
+    #             'value': 'FLAT,LAMP',
+    #             'comment': 'Observation type'})
+    #     elif type == 'K_TRGOBS':
+    #         header_df.append({
+    #             'keyword': 'DPR CATG',
+    #             'value': 'SCIENCE',
+    #             'comment': 'Observation category'})
+    #         header_df.append({
+    #             'keyword': 'DPR TYPE',
+    #             'value': 'OBJECT',
+    #             'comment': 'Observation type'})
+    # else:
+    #     header_df.append({
+    #             'keyword': 'DPR CATG',
+    #             'value': 'TECHNICAL',
+    #             'comment': 'Observation category'})
+    #     header_df.append({
+    #         'keyword': 'DPR TYPE',
+    #         'value': '',
+    #         'comment': 'Observation type'})
+    #
+    # header_df = pd.DataFrame(header_df)
 
 
     with fits.open(image_path, mode='update') as hdul:
@@ -146,16 +220,21 @@ def update_header(image_path, sequencer_arguments=None):
         else:
             dt = datetime.fromisoformat(header['DATE']).replace(tzinfo=timezone.utc)
 
-        # TODO create header dataframe and fill all the headers at the end.
-        # Add default keys
-        for card in header_df.loc[header_df['keygroup'] == 'default_keys'].itertuples(index=False):
-            header.set(card.keyword.upper(), card.value, card.comment.strip())
 
-        # TODO add dpr catg, tech, and tpye value along with comment (dpr_tech should always be 'image')
-        header_df.loc[header_df['keygroup'] == 'eso_dpr'] = _add_header_values(
-                              header_df=header_df.loc[header_df['keygroup'] == 'eso_dpr'],
-                              log_status=dpr_values,
-                              keycode='DPR')
+        # Add default keys
+        # for card in header_df.loc[header_df['keygroup'] == 'default_keys'].itertuples(index=False):
+        #     header.set(card.keyword.upper(), card.value, card.comment.strip())
+
+        # Create header dataframe and fill all the headers at the end.
+        for card in header_df.loc[header_df['keygroup'] == 'default_keys'].itertuples(index=False):
+            # TODO add the keywords into the header at the right position in order to keep it sorted.
+            header_df.append({'keyword': card.keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
+
+
+        # # TODO add dpr catg, tech, and tpye value along with comment (dpr_tech should always be 'image')
+        # header_df.loc[header_df['keygroup'] == 'eso_dpr'] = _add_header_values(
+        #                       header_df=header_df.loc[header_df['keygroup'] == 'eso_dpr'],
+        #                       log_status=dpr_values)
 
         # Add monitoring_log keys
         # header = _fill_log_header_keys(header,
@@ -165,8 +244,7 @@ def update_header(image_path, sequencer_arguments=None):
 
         header_df.loc[header_df['keygroup'] == 'Monitoring'] = _add_header_values(
                               header_df=header_df.loc[header_df['keygroup'] == 'Monitoring'],
-                              log_status=database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
-                              keycode='INS')
+                              log_status=database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt))
 
         # Add Telemetry keys
         # header = _fill_log_header_keys(header,
@@ -176,8 +254,7 @@ def update_header(image_path, sequencer_arguments=None):
 
         header_df.loc[header_df['keygroup'] == 'Telemetry'] = _add_header_values(
                               header_df=header_df.loc[header_df['keygroup'] == 'Telemetry'],
-                              log_status=database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
-                              keycode='INS AO')
+                              log_status=database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt))
 
         # Add obs_log keys
         # header = _fill_log_header_keys(header,
@@ -187,8 +264,7 @@ def update_header(image_path, sequencer_arguments=None):
 
         header_df.loc[header_df['keygroup'] == 'Obs_log'] = _add_header_values(
                               header_df=header_df.loc[header_df['keygroup'] == 'Obs_log'],
-                              log_status=database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['keyword'].tolist(), 1, dt=dt),
-                              keycode='OBS')
+                              log_status=database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['keyword'].tolist(), 1, dt=dt))
 
         # Add telescope header
 
@@ -198,7 +274,6 @@ def update_header(image_path, sequencer_arguments=None):
         telescope_header_df = telescope_header_df[(telescope_header_df.keyword == 'OBSERVER' ).idxmax():]
 
         for card in telescope_header_df.itertuples(index=False):
-            # TODO add the keywords into the header at the right position in order to keep it sorted.
             # if key starts with ESO search last occurence with same beginning and add keyword afterwards
             if len(card.keyword) < 8:
                 card_keyword = card.keyword.upper()
@@ -402,6 +477,7 @@ def _clean_sort_header(hdr):
 
     return header_df
 
+
 def _read_fits_defintions():
     '''
     Reads the fits header file defintion and return a pandas dataframe
@@ -441,7 +517,7 @@ def _header_to_df(header):
     return header_df
 
 
-def _add_header_values(header_df, log_status, keycode):
+def _add_header_values(header_df, log_status):
     '''
     Add hte values from the log to the header dataframe
 
@@ -454,14 +530,14 @@ def _add_header_values(header_df, log_status, keycode):
         if card.keyword in log_status.keys() and log_status[card.keyword]['values']:
             card.value = log_status[card.keyword]['values'][0]
             card.commment = card.comment.strip()
-            card.keyword =  'ESO '+ keycode + ' ' + card.keyword.upper()
+            #card.keyword =  'ESO '+ keycode + ' ' + card.keyword.upper()
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), log_status[card.keyword]['values'][0],
             #           card.comment.strip())
         else:
             #card.value = log_status[card.keyword]['values'][0]
             card.value = ''
             card.commment = card.comment.strip()
-            card.keyword = 'ESO ' + keycode + ' ' + card.keyword.upper()
+            #card.keyword = 'ESO ' + keycode + ' ' + card.keyword.upper()
 
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), '', card.comment.strip())
 
