@@ -216,10 +216,10 @@ def update_header(image_path, sequencer_arguments=None):
         # Change something in hdul.
         fits_header = hdul[0].header
 
-        if 'DATE-OBS' in header.keys():
-            dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
+        if 'DATE-OBS' in fits_header.keys():
+            dt = datetime.fromisoformat(fits_header['DATE-OBS']).replace(tzinfo=timezone.utc)
         else:
-            dt = datetime.fromisoformat(header['DATE']).replace(tzinfo=timezone.utc)
+            dt = datetime.fromisoformat(fits_header['DATE']).replace(tzinfo=timezone.utc)
 
 
         # Add default keys
