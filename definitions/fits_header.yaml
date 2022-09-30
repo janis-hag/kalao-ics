@@ -157,6 +157,7 @@
   comment: FLI shutter count
 # WCS
 # geo coordinates
+
 - keyword: ESO INS DATE
   keygroup: default_keys
   value: 2022-11-17
