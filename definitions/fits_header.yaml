@@ -38,30 +38,10 @@
   value: OBJECT
   comment: Object name
 
-#- keyword: BZERO
-#  keygroup: default_keys
-#  value: 32768.0
-#  comment:   value = fits-  value*BSCALE+BZERO
-#
-#- keyword: BSCALE
-#  keygroup: default_keys
-#  value: 1.0
-#  comment:   value = fits-  value*BSCALE+BZERO
-
 - keyword: OBSERVER
   keygroup: Obs_log
   value: observer
   comment: Name of observer
-
-- keyword: DATE-OBS
-  keygroup: Obs_log
-  value: date-obs
-  comment: Observing date
-
-- keyword: DATE
-  keygroup: Obs_log
-  value: DATE
-  comment: Date the file was written
 
 - keyword: MJD-OBS
   keygroup: Obs_log
@@ -304,6 +284,14 @@
   keygroup: FLI
   value: float
   comment: Minimal pixel value
+
+- keyword: BZERO
+  keygroup: FLI
+  value: int
+  comment: Offset data range to that of unsigned short
+
+#BSCALE  =                    1 / default scaling factor
+
 
 # Keyword provided by the FLI
 #SIMPLE  =                    T / file does conform to FITS standard
