@@ -590,8 +590,7 @@ def _fill_log_header_keys(header, header_df, log_status, keycode):
 
 
 def _dynamic_cards_update(header_df):
-    # TODO give UTC value is seconds and add UTC HMS in comment: [s] 00:19:38.000 UTC
-    # TODO give LST value is seconds and add UTC HMS in comment: [s] 17:15:25.278 LST
+
     # TODO add RA comment: [deg] 16:22:51.8 RA (J2000) pointing
     # TODO add DEC comment: [deg] -23:07:08.8 DEC (J2000) pointing
     # TODO add radecsys value in EQUINOX comment
@@ -611,14 +610,15 @@ def _dynamic_cards_update(header_df):
             header_df.iloc[idx].value = 'F'
 
 
-    # TODO add date-obs as comment for MJD-OBS
     date_obs = header_df.loc[header_df['keyword'] == 'DATE-OBS']['value'].values[0]
 
     dt_obs = datetime.fromisoformat(date_obs).replace(tzinfo=timezone.utc)
 
     la_silla_coord = EarthLocation.from_geocentric(1838554.9580025, -5258914.42492168, -3099898.78073271, units.m)
 
-    astrotime = Time(date_obs)
+    astro_time = Time(date_obs, scale='utc', location=la_silla_coord)
+    sidereal_seconds = astro_time.sidereal_time('mean').hour*3600
+    #astro_time.sidereal_time('mean').to_string(units.hour, sep=':')
 
     # Update MJD-OBS
     idx = header_df.index[header_df['keyword'] == 'MJD-OBS']
@@ -636,14 +636,10 @@ def _dynamic_cards_update(header_df):
                                     + '.' + str(dt_obs.microsecond)
 
     # # Update LST
-    # idx = header_df.index[header_df['keyword'] == 'LST']
-    # if len(idx>0):
-    #     idx = idx[0]
-    #     header_df.iloc[idx].comment = '[s] '+dt_obs.strftime('%H:%M:%S.%f')[:-3] + ' UTC'
-    #     header_df.iloc[idx].value = str((dt_obs.hour * 60 + dt_obs.minute) * 60 + dt_obs.second) \
-    #                                 + '.' + str(dt_obs.microsecond)
-    #
-    #
-    # t.sidereal_time('mean')
+    idx = header_df.index[header_df['keyword'] == 'LST']
+    if len(idx>0):
+        idx = idx[0]
+        header_df.iloc[idx].comment = '[s] '+ astro_time.sidereal_time('mean').to_string(units.hour, sep=':')[:-1] + ' LST'
+        header_df.iloc[idx].value = astro_time.sidereal_time('mean').hour*3600
 
     return header_df
