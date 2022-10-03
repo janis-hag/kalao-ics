@@ -46,7 +46,9 @@ symb_name = parser.get('T120', 'symb_name')
 rcmd = parser.get('T120', 'rcmd')
 port = parser.getint('T120', 'Port')  # only for inet connection
 semkey = parser.getint('T120', 'semkey')  # only for inet connection
-timeout = parser.getint('T120', 'timeout')  # only for inet connection
+connection_timeout = parser.getint('T120', 'timeout')  # only for inet connection
+altaz_timeout = parser.getint('T120', 'altaz_timeout')
+focus_timeout = parser.getint('T120', 'focus_timeout')
 focus_offset_limit = parser.getint('T120', 'focus_offset_limit')  # only for inet connection
 
 #
@@ -78,21 +80,21 @@ def send_offset(delta_alt, delta_az):
     _t120_print_and_log(f'Sending {delta_alt} and {delta_az} offsets')
 
     offset_cmd = '@offset '+str(delta_alt) +' '+str(delta_az)
-    ipc.send_cmd(offset_cmd, timeout, timeout)
+    ipc.send_cmd(offset_cmd, connection_timeout, altaz_timeout)
 
     return socketId
 
 
 def send_focus_offset(focus_offset):
 
-    #TODO Verify offset value below limit differentiate between offsets and absolute values
     #if focus_offset > focus_offset_limit:
     #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limite {focus_offset_limit}')
 
     host = database.get_latest_record('obs_log', key='t120_host')['t120_host']+'.ls.eso.org'
 
+    #Verify offset value below limit differentiate between offsets and absolute values
     if type(focus_offset) is str:
-        if focus_offset[0]=='+' and float(focus_offset)>2:
+        if focus_offset[0] == '+' and float(focus_offset) > 2:
             print(f'Error set_focus value out of bounds: {focus_offset}')
             return -1
         elif focus_offset[0] == '-' and float(focus_offset) < -2:
@@ -113,7 +115,8 @@ def send_focus_offset(focus_offset):
     _t120_print_and_log(f'Sending focus {focus_offset}')
 
     offset_cmd = '@m2p '+str(focus_offset)
-    ipc.send_cmd(offset_cmd, timeout, timeout)
+    ipc.send_cmd(offset_cmd, connection_timeout, focus_offset)
+
 
     return socketId
 
@@ -124,22 +127,22 @@ def get_focus_value():
 
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
 
-    print ("wait");
-    status = ipc.shm_wait(timeout)
+    print ("wait")
+    status = ipc.shm_wait(connection_timeout)
     print ("ipc.shm_wait returns:", status)
     if (status<0):
         ipc.shm_free()
         return -1
 
 
-    print ("ini_shm_kw");
+    print ("ini_shm_kw")
     ipc.ini_shm_kw()
 
-    print ("put_shm_kw 1");
+    print ("put_shm_kw 1")
     ipc.put_shm_kw("COMMAND","@kal_getm2")
 
     ipc.shm_ack()
-    ipc.shm_wack(timeout)
+    ipc.shm_wack(focus_timeout)
 
     returnList = ipc.get_shm_kw("te.m2z")
 
@@ -163,7 +166,7 @@ def test_connection():
         _t120_print_and_log('Error connecting to T120')
         return -1
 
-    ipc.send_cmd('show i', timeout, timeout)
+    ipc.send_cmd('show i', connection_timeout, connection_timeout)
 
     return socketId
 
