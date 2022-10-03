@@ -115,7 +115,7 @@ def send_focus_offset(focus_offset):
     _t120_print_and_log(f'Sending focus {focus_offset}')
 
     offset_cmd = '@m2p '+str(focus_offset)
-    ipc.send_cmd(offset_cmd, connection_timeout, focus_offset)
+    ipc.send_cmd(offset_cmd, connection_timeout, focus_timeout)
 
 
     return socketId
