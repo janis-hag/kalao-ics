@@ -127,23 +127,27 @@ def update_header(image_path, sequencer_arguments=None):
     :return:
     '''
 
+    # TODO consider reindexing with keyword
+    #header_df.set_index('keyword', drop=False, inplace=True)
+    #header_df['value']['HIERARCH ESO DPR TECH'] = 'IMAGE'
+
     header_df = _read_fits_defintions()
 
-    header_df['HIERARCH ESO DPR TECH']['value'] = 'IMAGE'
-    header_df['HIERARCH ESO DPR CATG']['value'] = 'TECHNICAL'
-    header_df['HIERARCH ESO DPR TYPE']['value'] = ''
+    header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TECH']].value = 'IMAGE'
+    header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'TECHNICAL'
+    header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = ''
 
     if sequencer_arguments is not None:
         type = sequencer_arguments.get('type')
         if type == 'K_DARK':
-            header_df['HIERARCH ESO DPR CATG']['value'] = 'CALIB'
-            header_df['HIERARCH ESO DPR TYPE']['value'] = 'DARK'
+            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'CALIB'
+            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = 'DARK'
         elif type == 'K_LMPFLT':
-            header_df['HIERARCH ESO DPR CATG']['value'] = 'CALIB'
-            header_df['HIERARCH ESO DPR TYPE']['value'] = 'FLAT,LAMP'
+            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'CALIB'
+            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = 'FLAT,LAMP'
         elif type == 'K_TRGOBS':
-            header_df['HIERARCH ESO DPR CATG']['value'] = 'SCIENCE'
-            header_df['HIERARCH ESO DPR TYPE']['value'] = 'OBJECT'
+            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'SCIENCE'
+            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = 'OBJECT'
 
     #
     # dpr_values = {}
