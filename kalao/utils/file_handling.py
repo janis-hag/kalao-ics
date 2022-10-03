@@ -129,21 +129,21 @@ def update_header(image_path, sequencer_arguments=None):
 
     header_df = _read_fits_defintions()
 
-    header_df['ESO DPR TECH']['value'] = 'IMAGE'
-    header_df['ESO DPR CATG']['value'] = 'TECHNICAL'
-    header_df['ESO DPR TYPE']['value'] = ''
+    header_df['HIERARCH ESO DPR TECH']['value'] = 'IMAGE'
+    header_df['HIERARCH ESO DPR CATG']['value'] = 'TECHNICAL'
+    header_df['HIERARCH ESO DPR TYPE']['value'] = ''
 
     if sequencer_arguments is not None:
         type = sequencer_arguments.get('type')
         if type == 'K_DARK':
-            header_df['ESO DPR CATG']['value'] = 'CALIB'
-            header_df['ESO DPR TYPE']['value'] = 'DARK'
+            header_df['HIERARCH ESO DPR CATG']['value'] = 'CALIB'
+            header_df['HIERARCH ESO DPR TYPE']['value'] = 'DARK'
         elif type == 'K_LMPFLT':
-            header_df['ESO DPR CATG']['value'] = 'CALIB'
-            header_df['ESO DPR TYPE']['value'] = 'FLAT,LAMP'
+            header_df['HIERARCH ESO DPR CATG']['value'] = 'CALIB'
+            header_df['HIERARCH ESO DPR TYPE']['value'] = 'FLAT,LAMP'
         elif type == 'K_TRGOBS':
-            header_df['ESO DPR CATG']['value'] = 'SCIENCE'
-            header_df['ESO DPR TYPE']['value'] = 'OBJECT'
+            header_df['HIERARCH ESO DPR CATG']['value'] = 'SCIENCE'
+            header_df['HIERARCH ESO DPR TYPE']['value'] = 'OBJECT'
 
     #
     # dpr_values = {}
