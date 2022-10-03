@@ -129,6 +129,10 @@ def update_header(image_path, sequencer_arguments=None):
 
     header_df = _read_fits_defintions()
 
+    header_df['ESO DPR TECH']['value'] = 'IMAGE'
+    header_df['ESO DPR CATG']['value'] = 'TECHNICAL'
+    header_df['ESO DPR TYPE']['value'] = ''
+
     if sequencer_arguments is not None:
         type = sequencer_arguments.get('type')
         if type == 'K_DARK':
@@ -140,9 +144,7 @@ def update_header(image_path, sequencer_arguments=None):
         elif type == 'K_TRGOBS':
             header_df['ESO DPR CATG']['value'] = 'SCIENCE'
             header_df['ESO DPR TYPE']['value'] = 'OBJECT'
-        else:
-            header_df['ESO DPR CATG']['value'] = 'TECHNICAL'
-            header_df['ESO DPR TYPE']['value'] = ''
+
     #
     # dpr_values = {}
     # dpr_values['TECH'] = {'values': 'IMAGE'}
@@ -291,7 +293,11 @@ def update_header(image_path, sequencer_arguments=None):
             else:
                 card_keyword = 'ESO TEL ' + card.keyword.upper()
             #header_df.set(card_keyword, card.value, card.comment.strip())
-            header_df.append({'keyword': card_keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
+            #header_df.append({'keyword': card_keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
+            header_df = pd.concat([header_df, pd.DataFrame({'keygroup': 'Telescope',
+                                                            'keyword': card_keyword,
+                                                            'value': card.value,
+                                                            'comment': card.comment}, index=[0])], ignore_index=True)
 
         header_df = _dynamic_cards_update(header_df)
 
