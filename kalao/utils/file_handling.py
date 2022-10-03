@@ -101,8 +101,8 @@ def save_tmp_image(image_path, sequencer_arguments=None):
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
         update_header(image_path, sequencer_arguments=sequencer_arguments)
         os.rename(image_path, target_path_name)
-        # Remove write permission
-        os.chmod(target_path_name, FileMask)
+        # TODO Remove write permission
+        # os.chmod(target_path_name, FileMask)
 
         # TODO possibly add the right UID and GID
 
