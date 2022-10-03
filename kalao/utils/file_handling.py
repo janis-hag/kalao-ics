@@ -22,6 +22,9 @@ from datetime import datetime, timezone
 from astropy.io import fits
 import pandas as pd
 import yaml
+from astropy import units
+from astropy.coordinates import EarthLocation
+from astropy.time import Time
 
 from kalao.utils import kalao_time, database
 from kalao.fli import camera
@@ -561,7 +564,6 @@ def _add_header_values(header_df, log_status, fits_header):
             #card.keyword = 'ESO ' + keycode + ' ' + card.keyword.upper()
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), '', card.comment.strip())
 
-
     return header_df
 
 
@@ -610,14 +612,38 @@ def _dynamic_cards_update(header_df):
 
 
     # TODO add date-obs as comment for MJD-OBS
-    date_obs = header_df.loc[header_df['keyword'] == 'DATE-OBS']['value']
+    date_obs = header_df.loc[header_df['keyword'] == 'DATE-OBS']['value'].values[0]
 
+    dt_obs = datetime.fromisoformat(date_obs).replace(tzinfo=timezone.utc)
+
+    la_silla_coord = EarthLocation.from_geocentric(1838554.9580025, -5258914.42492168, -3099898.78073271, units.m)
+
+    astrotime = Time(date_obs)
+
+    # Update MJD-OBS
     idx = header_df.index[header_df['keyword'] == 'MJD-OBS']
     if len(idx>0):
         idx = idx[0]
         header_df.iloc[idx].comment = date_obs
-        header_df.iloc[idx].value = kalao_time.get_mjd(date_obs)
+        header_df.iloc[idx].value = str(kalao_time.get_mjd(dt_obs))[2:]
 
+    # Update UTC
+    idx = header_df.index[header_df['keyword'] == 'UTC']
+    if len(idx>0):
+        idx = idx[0]
+        header_df.iloc[idx].comment = '[s] '+dt_obs.strftime('%H:%M:%S.%f')[:-3] + ' UTC'
+        header_df.iloc[idx].value = str((dt_obs.hour * 60 + dt_obs.minute) * 60 + dt_obs.second) \
+                                    + '.' + str(dt_obs.microsecond)
 
+    # # Update LST
+    # idx = header_df.index[header_df['keyword'] == 'LST']
+    # if len(idx>0):
+    #     idx = idx[0]
+    #     header_df.iloc[idx].comment = '[s] '+dt_obs.strftime('%H:%M:%S.%f')[:-3] + ' UTC'
+    #     header_df.iloc[idx].value = str((dt_obs.hour * 60 + dt_obs.minute) * 60 + dt_obs.second) \
+    #                                 + '.' + str(dt_obs.microsecond)
+    #
+    #
+    # t.sidereal_time('mean')
 
     return header_df
