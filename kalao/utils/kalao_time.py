@@ -59,6 +59,7 @@ def get_mjd(dt):
 
     return julian_datetime
 
+
 def check_time_format(dt):
     '''
     Verify that datetime format is correct. Return the dt object if it is correct.

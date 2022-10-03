@@ -38,6 +38,7 @@ parser.read(config_path)
 
 TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
 Science_folder = parser.get('FLI', 'ScienceDataStorage')
+FileMask = parser.get('FLI', 'FileMask')
 T4root = parser.get('SEQ', 't4root')
 FitsHeaderFile = parser.get('SEQ', 'fits_header_file')
 
@@ -90,12 +91,17 @@ def save_tmp_image(image_path, sequencer_arguments=None):
     :return:
     '''
     Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
-    target_path_name = Science_night_folder+os.sep+os.path.basename(image_path)
+
+    # Remove tmp_ from filename
+    target_path_name = Science_night_folder+os.sep+os.path.basename(image_path).replace('tmp_', '')
 
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
         update_header(image_path, sequencer_arguments=sequencer_arguments)
         os.rename(image_path, target_path_name)
-        # TODO remove write permission
+        # Remove write permission
+        os.chmod(target_path_name, FileMask)
+
+        # TODO possibly add the right UID and GID
 
         camera.log_last_image_path(target_path_name)
 
@@ -117,14 +123,6 @@ def update_header(image_path, sequencer_arguments=None):
     :param sequencer_arguments: argumetns received by the sequencer
     :return:
     '''
-
-    # TODO add date-obs as comment for MJD-OBS
-    # TODO give UTC value is seconds and add UTC HMS in comment: [s] 00:19:38.000 UTC
-    # TODO give LST value is seconds and add UTC HMS in comment: [s] 17:15:25.278 LST
-    # TODO add RA comment: [deg] 16:22:51.8 RA (J2000) pointing
-    # TODO add DEC comment: [deg] -23:07:08.8 DEC (J2000) pointing
-    # TODO add radecsys value in EQUINOX comment
-    # TODO add in shutter comment "Shutter open" or "Shutter closed" and put only T/F in value
 
     header_df = _read_fits_defintions()
 
@@ -243,7 +241,7 @@ def update_header(image_path, sequencer_arguments=None):
                                             dt=dt)
 
         # obs_log needs to be first as it contains some non-hierarch keywords
-        header_df = _add_header_values(header_df=header_df, log_status={**obs_log, **monitoring_log, **telemetry_log})
+        header_df = _add_header_values(header_df=header_df, log_status={**obs_log, **monitoring_log, **telemetry_log}, fits_header=fits_header)
 
         # # TODO add dpr catg, tech, and tpye value along with comment (dpr_tech should always be 'image')
         # header_df.loc[header_df['keygroup'] == 'eso_dpr'] = _add_header_values(
@@ -292,6 +290,7 @@ def update_header(image_path, sequencer_arguments=None):
             #header_df.set(card_keyword, card.value, card.comment.strip())
             header_df.append({'keyword': card_keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
 
+        header_df = _dynamic_cards_update(header_df)
 
         # # Add key dictionary given as argument
         # if not header_keydict is None:
@@ -305,6 +304,8 @@ def update_header(image_path, sequencer_arguments=None):
         for card in header_df.itertuples(index=False):
             print(card.keyword)
             fits_header.set(card.keyword, card.value, card.comment.strip())
+
+        # Update 'DATE' card
 
         hdul.verify('silentfix+warn')
 
@@ -528,7 +529,7 @@ def _header_to_df(header):
     return header_df
 
 
-def _add_header_values(header_df, log_status):
+def _add_header_values(header_df, log_status, fits_header):
     '''
     Add hte values from the log to the header dataframe
 
@@ -541,10 +542,14 @@ def _add_header_values(header_df, log_status):
         if card.keygroup == 'default_keys':
             continue
 
+        elif card.keygroup == 'FLI' and card.keyword in fits_header.keys():
+            header_df.loc[idx, 'value'] = fits_header[card.keyword]
+            header_df.loc[idx,'comment'] = card.comment.strip()
+
         #header.set(card.keyword.upper(), card.value, card.comment.strip())
         elif card.value in log_status.keys() and log_status[card.value]['values']:
             header_df.loc[idx,'value'] = log_status[card.value]['values'][0]
-            header_df.loc[idx,'commment'] = card.comment.strip()
+            header_df.loc[idx,'comment'] = card.comment.strip()
             #card.keyword =  'ESO '+ keycode + ' ' + card.keyword.upper()
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), log_status[card.keyword]['values'][0],
             #           card.comment.strip())
@@ -552,14 +557,12 @@ def _add_header_values(header_df, log_status):
         else:
             #card.value = log_status[card.keyword]['values'][0]
             header_df.loc[idx, 'value'] = ''
-            header_df.loc[idx,'commment'] = card.comment.strip()
+            header_df.loc[idx,'comment'] = card.comment.strip()
             #card.keyword = 'ESO ' + keycode + ' ' + card.keyword.upper()
-
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), '', card.comment.strip())
 
 
     return header_df
-
 
 
 def _fill_log_header_keys(header, header_df, log_status, keycode):
@@ -582,3 +585,39 @@ def _fill_log_header_keys(header, header_df, log_status, keycode):
             header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), '', card.comment.strip())
 
     return header
+
+
+def _dynamic_cards_update(header_df):
+    # TODO give UTC value is seconds and add UTC HMS in comment: [s] 00:19:38.000 UTC
+    # TODO give LST value is seconds and add UTC HMS in comment: [s] 17:15:25.278 LST
+    # TODO add RA comment: [deg] 16:22:51.8 RA (J2000) pointing
+    # TODO add DEC comment: [deg] -23:07:08.8 DEC (J2000) pointing
+    # TODO add radecsys value in EQUINOX comment
+
+
+    # Change shutter comment to "Shutter open" or "Shutter closed" and put only T/F in value
+
+    idx = header_df.index[header_df['keyword'] == 'HIERARCH ESO INS SHUT ST']
+
+    if len(idx>0):
+        idx = idx[0]
+        header_df.iloc[idx].comment = header_df.iloc[idx].comment + ' ' + header_df.iloc[idx].value.lower()
+
+        if header_df.iloc[idx].value == 'Open':
+            header_df.iloc[idx].value = 'T'
+        else:
+            header_df.iloc[idx].value = 'F'
+
+
+    # TODO add date-obs as comment for MJD-OBS
+    date_obs = header_df.loc[header_df['keyword'] == 'DATE-OBS']['value']
+
+    idx = header_df.index[header_df['keyword'] == 'MJD-OBS']
+    if len(idx>0):
+        idx = idx[0]
+        header_df.iloc[idx].comment = date_obs
+        header_df.iloc[idx].value = kalao_time.get_mjd(date_obs)
+
+
+
+    return header_df
