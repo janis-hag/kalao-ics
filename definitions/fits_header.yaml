@@ -152,7 +152,7 @@
   value: fli_temp_CCD
   comment: "[C] CCD temperature"
 
-- keyword: HIERARCH ESO DET CCD TEMP
+- keyword: HIERARCH ESO DET HS TEMP
   keygroup: Monitoring
   value: fli_temp_heatsink
   comment: "[C] HS temperature"
