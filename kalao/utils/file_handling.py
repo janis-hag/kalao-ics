@@ -625,10 +625,10 @@ def _dynamic_cards_update(header_df):
                                                        + header_df['value']['HIERARCH ESO INS SHUT ST'].lower()
 
 
-    if header_df.iloc[idx].value == 'Open':
-        header_df.iloc[idx].value = 'T'
+    if header_df['value']['HIERARCH ESO INS SHUT ST'] == 'Open':
+        header_df['value']['HIERARCH ESO INS SHUT ST'] = 'T'
     else:
-        header_df.iloc[idx].value = 'F'
+        header_df['value']['HIERARCH ESO INS SHUT ST'] = 'F'
 
 
     date_obs = header_df.loc[header_df['keyword'] == 'DATE-OBS']['value'].values[0]
