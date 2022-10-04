@@ -300,7 +300,7 @@ def update_header(image_path, sequencer_arguments=None):
 
         for card in telescope_header_df.itertuples(index=False):
             # if key starts with ESO search last occurence with same beginning and add keyword afterwards
-            if len(card.keyword) < 8:
+            if len(card.keyword) < 9:
                 card_keyword = card.keyword.upper()
             else:
                 card_keyword = 'HIERARCH ' + card.keyword.upper()
