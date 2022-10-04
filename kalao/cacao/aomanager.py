@@ -215,7 +215,7 @@ def do_calibration(conf):
 	run_process("compsCM-{conf['CACAO_LOOPNUMBER']}", False)
 
 def close_loop():
-	pass
+	return 0
 
 def check_loop():
 	# TODO check if loop is running. If loop broken return -1
