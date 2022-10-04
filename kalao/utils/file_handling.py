@@ -496,7 +496,7 @@ def _clean_sort_header(header_df):
 
     # Remove cards with empty keywords
     header_df = header_df[header_df['keyword'].str.strip().astype(bool)]
-
+    header_df.reset_index(drop=True, inplace=True)
 
     # Search for first HIERARCH keyword (i.e. longer than 8) and split in two header dataframes
     first_hierarch_line = header_df.keyword.str.len().ge(9).idxmax()
@@ -504,7 +504,7 @@ def _clean_sort_header(header_df):
     header_tail_df = header_df.iloc[first_hierarch_line:].sort_values(by=['keyword'])
 
     #header_df = header_head_df.append(header_tail_df, ignore_index=True)
-    header_df = pd.concat([header_head_df, header_tail_df])
+    header_df = pd.concat([header_head_df, header_tail_df], ignore_index=True)
 
     # To be verified of HIERARCH keyword is needed
     #header_tail_df['keyword'] = 'HIERARCH ' + header_tail_df['keyword'].astype(str)
