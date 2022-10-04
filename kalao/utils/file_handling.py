@@ -303,7 +303,7 @@ def update_header(image_path, sequencer_arguments=None):
             if len(card.keyword) < 8:
                 card_keyword = card.keyword.upper()
             else:
-                card_keyword = 'HIERARCH ESO TEL ' + card.keyword.upper()
+                card_keyword = 'HIERARCH ' + card.keyword.upper()
             #header_df.set(card_keyword, card.value, card.comment.strip())
             #header_df.append({'keyword': card_keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
             header_df = pd.concat([header_df, pd.DataFrame({'keygroup': 'Telescope',
