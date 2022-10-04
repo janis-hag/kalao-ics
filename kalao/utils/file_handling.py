@@ -132,8 +132,6 @@ def update_header(image_path, sequencer_arguments=None):
 
     # TODO consider reindexing with keyword
     header_df.set_index('keyword', drop=False, inplace=True)
-    header_df['value']['HIERARCH ESO DPR TECH'] = 'IMAGE'
-
 
     # TODO verify why these value are not assigned.
     # header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TECH']].value = 'IMAGE'
@@ -619,16 +617,18 @@ def _dynamic_cards_update(header_df):
 
     # Change shutter comment to "Shutter open" or "Shutter closed" and put only T/F in value
 
-    idx = header_df.index[header_df['keyword'] == 'HIERARCH ESO INS SHUT ST']
+    # idx = header_df.index[header_df['keyword'] == 'HIERARCH ESO INS SHUT ST']
+    #
+    # if len(idx>0):
+    #     idx = idx[0]
+    header_df['comment']['HIERARCH ESO INS SHUT ST'] = header_df['comment']['HIERARCH ESO INS SHUT ST'] + ' ' \
+                                                       + header_df['value']['HIERARCH ESO INS SHUT ST'].lower()
 
-    if len(idx>0):
-        idx = idx[0]
-        header_df.iloc[idx].comment = header_df.iloc[idx].comment + ' ' + header_df.iloc[idx].value.lower()
 
-        if header_df.iloc[idx].value == 'Open':
-            header_df.iloc[idx].value = 'T'
-        else:
-            header_df.iloc[idx].value = 'F'
+    if header_df.iloc[idx].value == 'Open':
+        header_df.iloc[idx].value = 'T'
+    else:
+        header_df.iloc[idx].value = 'F'
 
 
     date_obs = header_df.loc[header_df['keyword'] == 'DATE-OBS']['value'].values[0]
