@@ -127,27 +127,34 @@ def update_header(image_path, sequencer_arguments=None):
     :return:
     '''
 
-    # TODO consider reindexing with keyword
-    #header_df.set_index('keyword', drop=False, inplace=True)
-    #header_df['value']['HIERARCH ESO DPR TECH'] = 'IMAGE'
 
     header_df = _read_fits_defintions()
 
-    header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TECH']].value = 'IMAGE'
-    header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'TECHNICAL'
-    header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = ''
+    # TODO consider reindexing with keyword
+    header_df.set_index('keyword', drop=False, inplace=True)
+    header_df['value']['HIERARCH ESO DPR TECH'] = 'IMAGE'
+
+
+    # TODO verify why these value are not assigned.
+    # header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TECH']].value = 'IMAGE'
+    # header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'TECHNICAL'
+    # header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = ''
+
+    header_df['value']['HIERARCH ESO DPR TECH'] = 'IMAGE'
+    header_df['value']['HIERARCH ESO DPR CATG'] = 'TECHNICAL'
+    header_df['value']['HIERARCH ESO DPR TYPE'] = ''
 
     if sequencer_arguments is not None:
         type = sequencer_arguments.get('type')
         if type == 'K_DARK':
-            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'CALIB'
-            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = 'DARK'
+            header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
+            header_df['value']['HIERARCH ESO DPR TYPE'] = 'DARK'
         elif type == 'K_LMPFLT':
-            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'CALIB'
-            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = 'FLAT,LAMP'
+            header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
+            header_df['value']['HIERARCH ESO DPR TYPE'] = 'FLAT,LAMP'
         elif type == 'K_TRGOBS':
-            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'SCIENCE'
-            header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = 'OBJECT'
+            header_df['value']['HIERARCH ESO DPR CATG'] = 'SCIENCE'
+            header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
 
     #
     # dpr_values = {}
@@ -236,8 +243,11 @@ def update_header(image_path, sequencer_arguments=None):
         # Create header dataframe and fill all the headers at the end.
         for card in header_df.loc[header_df['keygroup'] == 'default_keys'].itertuples(index=False):
             # TODO add the keywords into the header at the right position in order to keep it sorted.
-            header_df.append({'keyword': card.keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
-
+            #header_df.append({'keyword': card.keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
+            header_df = pd.concat([header_df, pd.DataFrame({'keygroup': 'default_keys',
+                                                            'keyword': card.keyword,
+                                                            'value': card.value,
+                                                            'comment': card.comment}, index=[0])])
 
         # Gather all the logs
         obs_log = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['value'].tolist(), 1,
@@ -301,7 +311,7 @@ def update_header(image_path, sequencer_arguments=None):
             header_df = pd.concat([header_df, pd.DataFrame({'keygroup': 'Telescope',
                                                             'keyword': card_keyword,
                                                             'value': card.value,
-                                                            'comment': card.comment}, index=[0])], ignore_index=True)
+                                                            'comment': card.comment}, index=[0])])
 
         header_df = _dynamic_cards_update(header_df)
 
@@ -495,7 +505,8 @@ def _clean_sort_header(header_df):
     header_head_df = header_df.iloc[:first_hierarch_line]
     header_tail_df = header_df.iloc[first_hierarch_line:].sort_values(by=['keyword'])
 
-    header_df = header_head_df.append(header_tail_df, ignore_index=True)
+    #header_df = header_head_df.append(header_tail_df, ignore_index=True)
+    header_df = pd.concat([header_head_df, header_tail_df])
 
     # To be verified of HIERARCH keyword is needed
     #header_tail_df['keyword'] = 'HIERARCH ' + header_tail_df['keyword'].astype(str)
