@@ -127,16 +127,12 @@ def update_header(image_path, sequencer_arguments=None):
     :return:
     '''
 
-
+    # Reading the fits definitions
     header_df = _read_fits_defintions()
 
-    # TODO consider reindexing with keyword
+    # Reindexing with keyword
     header_df.set_index('keyword', drop=False, inplace=True)
 
-    # TODO verify why these value are not assigned.
-    # header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TECH']].value = 'IMAGE'
-    # header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR CATG']].value = 'TECHNICAL'
-    # header_df.iloc[header_df.index[header_df['keyword'] == 'HIERARCH ESO DPR TYPE']].value = ''
 
     header_df['value']['HIERARCH ESO DPR TECH'] = 'IMAGE'
     header_df['value']['HIERARCH ESO DPR CATG'] = 'TECHNICAL'
@@ -154,75 +150,6 @@ def update_header(image_path, sequencer_arguments=None):
             header_df['value']['HIERARCH ESO DPR CATG'] = 'SCIENCE'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
 
-    #
-    # dpr_values = {}
-    # dpr_values['TECH'] = {'values': 'IMAGE'}
-    # if sequencer_arguments is not None:
-    #     type = sequencer_arguments.get('type')
-    #     if type == 'K_DARK':
-    #         dpr_values['CATG'] = {'values': 'CALIB'}
-    #         dpr_values['TYPE'] = {'values': 'DARK'}
-    #     elif type == 'K_LMPFLT':
-    #         dpr_values['CATG'] = {'values': 'CALIB'}
-    #         dpr_values['TYPE'] = {'values': 'FLAT,LAMP'}
-    #     elif type == 'K_TRGOBS':
-    #         dpr_values['CATG'] = {'values': 'SCIENCE'}
-    #         dpr_values['TYPE'] = {'values': 'OBJECT'}
-    # else:
-    #     dpr_values['CATG'] = {'values': 'TECHNICAL'}
-    #     dpr_values['TYPE'] = {'values': ''}
-
-
-    # header_definitions_df = _read_fits_defintions()
-    #
-    # header_df = []
-    #
-    # header_df.append({
-    #     'keyword': 'DPR TECH',
-    #     'value': 'IMAGE',
-    #     'comment': 'Observation technique'})
-    #
-    # if sequencer_arguments is not None:
-    #     type = sequencer_arguments.get('type')
-    #     if type == 'K_DARK':
-    #         header_df.append({
-    #             'keyword': 'DPR CATG',
-    #             'value': 'CALIB',
-    #             'comment': 'Observation category'})
-    #         header_df.append({
-    #             'keyword': 'DPR TYPE',
-    #             'value': 'DARK',
-    #             'comment': 'Observation type'})
-    #     elif type == 'K_LMPFLT':
-    #         header_df.append({
-    #             'keyword': 'DPR CATG',
-    #             'value': 'CALIB',
-    #             'comment': 'Observation category'})
-    #         header_df.append({
-    #             'keyword': 'DPR TYPE',
-    #             'value': 'FLAT,LAMP',
-    #             'comment': 'Observation type'})
-    #     elif type == 'K_TRGOBS':
-    #         header_df.append({
-    #             'keyword': 'DPR CATG',
-    #             'value': 'SCIENCE',
-    #             'comment': 'Observation category'})
-    #         header_df.append({
-    #             'keyword': 'DPR TYPE',
-    #             'value': 'OBJECT',
-    #             'comment': 'Observation type'})
-    # else:
-    #     header_df.append({
-    #             'keyword': 'DPR CATG',
-    #             'value': 'TECHNICAL',
-    #             'comment': 'Observation category'})
-    #     header_df.append({
-    #         'keyword': 'DPR TYPE',
-    #         'value': '',
-    #         'comment': 'Observation type'})
-    #
-    # header_df = pd.DataFrame(header_df)
-
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -234,14 +161,9 @@ def update_header(image_path, sequencer_arguments=None):
             dt = datetime.fromisoformat(fits_header['DATE']).replace(tzinfo=timezone.utc)
 
 
-        # Add default keys
-        # for card in header_df.loc[header_df['keygroup'] == 'default_keys'].itertuples(index=False):
-        #     header.set(card.keyword.upper(), card.value, card.comment.strip())
-
-        # Create header dataframe and fill all the headers at the end.
+        # Fill default values
         for card in header_df.loc[header_df['keygroup'] == 'default_keys'].itertuples(index=False):
             # TODO add the keywords into the header at the right position in order to keep it sorted.
-            #header_df.append({'keyword': card.keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
             header_df = pd.concat([header_df, pd.DataFrame({'keygroup': 'default_keys',
                                                             'keyword': card.keyword,
                                                             'value': card.value,
@@ -260,39 +182,8 @@ def update_header(image_path, sequencer_arguments=None):
         # obs_log needs to be first as it contains some non-hierarch keywords
         header_df = _add_header_values(header_df=header_df, log_status={**obs_log, **monitoring_log, **telemetry_log}, fits_header=fits_header)
 
-        # # TODO add dpr catg, tech, and tpye value along with comment (dpr_tech should always be 'image')
-        # header_df.loc[header_df['keygroup'] == 'eso_dpr'] = _add_header_values(
-        #                       header_df=header_df.loc[header_df['keygroup'] == 'eso_dpr'],
-        #                       log_status=dpr_values)
-
-        # Add monitoring_log keys
-        # header = _fill_log_header_keys(header,
-        #                       header_df = header_df.loc[header_df['keygroup'] == 'Monitoring'],
-        #                       log_status = database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['keyword'].tolist(), 1, dt=dt),
-        #                       keycode = 'INS')
-
-        # Add Telemetry keys
-        # header = _fill_log_header_keys(header,
-        #                       header_df = header_df.loc[header_df['keygroup'] == 'Telemetry'],
-        #                       log_status = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
-        #                       keycode = 'INS AO')
-
-        # header_df.loc[header_df['keygroup'] == 'Telemetry'] = _add_header_values(
-        #                       header_df=header_df.loc[header_df['keygroup'] == 'Telemetry'],
-        #                       log_status=database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['value'].tolist(), 1, dt=dt))
-
-        # Add obs_log keys
-        # header = _fill_log_header_keys(header,
-        #                       header_df = header_df.loc[header_df['keygroup'] == 'Obs_log'],
-        #                       log_status = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['keyword'].tolist(), 1, dt=dt),
-        #                       keycode = 'OBS')
-        #
-        # header_df.loc[header_df['keygroup'] == 'Obs_log'] = _add_header_values(
-        #                       header_df=header_df.loc[header_df['keygroup'] == 'Obs_log'],
-        #                       log_status=database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['value'].tolist(), 1, dt=dt))
 
         # Add telescope header
-
         telescope_header_df, header_path = _get_last_telescope_header()
         # Remove first part of header
         # TODO set the cutoff keyword in kalao.config
@@ -304,8 +195,6 @@ def update_header(image_path, sequencer_arguments=None):
                 card_keyword = card.keyword.upper()
             else:
                 card_keyword = 'HIERARCH ' + card.keyword.upper()
-            #header_df.set(card_keyword, card.value, card.comment.strip())
-            #header_df.append({'keyword': card_keyword, 'value': card.value, 'comment': card.comment}, ignore_index=True)
             header_df = pd.concat([header_df, pd.DataFrame({'keygroup': 'Telescope',
                                                             'keyword': card_keyword,
                                                             'value': card.value,
@@ -333,112 +222,6 @@ def update_header(image_path, sequencer_arguments=None):
         hdul.flush()  # changes are written back to original.fits
 
     return 0
-
-
-# def update_header_obsolete(image_path, header_keydict=None):
-#     '''
-#     OBSOLETE version, use update_header function instead.
-#
-#     Updates the image header with values from the observing, monitoring, and telemetry logs.
-#
-#     :param image_path: path to the image to update
-#     :param header_keydict: dictionary of key:values to add
-#     :return:
-#     '''
-#
-#     # Read DATE-OBS in headers
-#     # Search start values in log
-#     # Search end values in log using DATE-OBS and TEXP
-#     # Compute median values for specific keywords
-#     # Add HEADER values for start, end, and median.
-#
-#     # :param obs_category: Observing category keyword.SCIENCE, CALIB, TECHNICAL, TEST, OTHER
-#     # :param obs_type: Observing type.Can be comma separated list of the following keywords
-#     # OBJECT, STD, ASTROMETRY, BIAS, DARK, FLAT, SKY, LAMP, FLUX, PSF-CALIBRATOR, FOCUS
-#
-#
-#     fits_header_config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'fits_header.config')
-#     header_config = ConfigParser()
-#     header_config.read(fits_header_config_path)
-#
-#     default_cards = read_header_cards(header_config, 'Default_cards')
-#
-#     obs_log_cards = read_header_cards(header_config, 'Obs_log')
-#
-#     monitoring_cards = read_header_cards(header_config, 'Monitoring')
-#     #monitoring_cards = dict(header_config.items('Monitoring'))
-#     for k in monitoring_cards.keys():
-#          monitoring_cards[k] = monitoring_cards[k].split(',')
-#
-#     telemetry_cards = read_header_cards(header_config, 'Telemetry')
-#     #telemetry_cards = dict(header_config.items('Telemetry'))
-#     for k in telemetry_cards.keys():
-#         telemetry_cards[k] = telemetry_cards[k].split(',')
-#
-#     with fits.open(image_path, mode='update') as hdul:
-#         # Change something in hdul.
-#         header = hdul[0].header
-#
-#         if 'DATE-OBS' in header.keys():
-#             dt = datetime.fromisoformat(header['DATE-OBS']).replace(tzinfo=timezone.utc)
-#         else:
-#             dt = datetime.fromisoformat(header['DATE']).replace(tzinfo=timezone.utc)
-#
-#         # keys = {'shutter', 'tungsten', 'laser', 'adc1', 'adc2'}
-#
-#         for key, value_comment in default_cards.items():
-#             header.set(key.upper(), value_comment[0].strip(), value_comment[1].strip())
-#
-#         # Adding telescope header
-#         telescope_header, header_path = _get_last_telescope_header()
-#         header.extend(telescope_header.cards, unique=True)
-#
-#
-#         # Storing monitoring
-#         obs_log_status = database.get_obs_log(obs_log_cards.keys(), 1, dt=dt)
-#         for key, type_comment in obs_log_cards.items():
-#             # Check if key exists and value not empty
-#             if key in obs_log_status.keys() and obs_log_status[key]['values']:
-#                 header.set('HIERARCH ESO INS '+key.upper(), obs_log_status[key]['values'][0], type_comment[1].strip())
-#             else:
-#                 header.set('HIERARCH ESO INS '+key.upper(), '', type_comment[1].strip())
-#
-#
-#         # Storing monitoring
-#         monitoring_status = database.get_monitoring(monitoring_cards.keys(), 1, dt=dt)
-#         for key, type_comment in monitoring_cards.items():
-#             # Check if key exists and value not empty
-#             if key in monitoring_status.keys() and monitoring_status[key]['values']:
-#                 header.set('HIERARCH ESO INS '+key.upper(), monitoring_status[key]['values'][0], type_comment[1].strip())
-#             else:
-#                 header.set('HIERARCH ESO INS '+key.upper(), '', type_comment[1].strip())
-#
-#         # Storing telemetry
-#         telemetry_status = database.get_telemetry(telemetry_cards.keys(), 1, dt=dt)
-#         for key, type_comment in telemetry_cards.items():
-#             # Check if key exists and value not empty
-#             if key in telemetry_status.keys() and telemetry_status[key]['values']:
-#                 header.set('HIERARCH ESO INS AO '+key.upper(), telemetry_status[key]['values'][0], type_comment[1].strip())
-#             else:
-#                 header.set('HIERARCH ESO INS AO '+key.upper(), '', type_comment[1].strip())
-#
-#         #header_keydict = update_default_header_keydict(default_cards, header_keydict)
-#
-#         # Add key dictionary given as argument
-#         if not header_keydict is None:
-#             for key, value in header_keydict:
-#                 header.set(key.upper(), value) #, type_comment[1].strip())
-#
-#
-#         # header.set('LASER', monitoring_status['laser']['values'][0], 'short description fro database_definition')
-#         # header.set('SHUTTER', monitoring_status['shutter']['values'][0], 'short description fro database_definition')
-#         # header.set('TUNGSTEN', monitoring_status['tungsten']['values'][0], 'short description fro database_definition')
-#         # header.set('ADC1', monitoring_status['adc1']['values'][0], 'short description fro database_definition')
-#         # header.set('ADC2', monitoring_status['adc2']['values'][0], 'short description fro database_definition')
-#
-#         hdul.flush()  # changes are written back to original.fits
-#
-#     return 0
 
 
 def add_comment(image_path, comment_string):
@@ -514,9 +297,10 @@ def _clean_sort_header(header_df):
 
 def _read_fits_defintions():
     '''
-    Reads the fits header file defintion and return a pandas dataframe
+    Reads the fits header file definition YAML file and returns a pandas dataframe with
+    the following keys: keyword, value, comment
 
-    :return: pandas dataframe with the fits definitons
+    :return: pandas dataframe with the fits definitions
     '''
 
     with open(FitsHeaderFile, 'r') as f:
@@ -553,10 +337,10 @@ def _header_to_df(header):
 
 def _add_header_values(header_df, log_status, fits_header):
     '''
-    Add hte values from the log to the header dataframe
+    Add the values from the log to the header dataframe
 
     :param header_df:
-    :return:
+    :return: header_df: with values completed
     '''
 
     for idx, card in header_df.iterrows():
