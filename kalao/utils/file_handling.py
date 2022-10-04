@@ -624,12 +624,10 @@ def _dynamic_cards_update(header_df):
     header_df['comment']['HIERARCH ESO INS SHUT ST'] = header_df['comment']['HIERARCH ESO INS SHUT ST'] + ' ' \
                                                        + header_df['value']['HIERARCH ESO INS SHUT ST'].lower()
 
-
     if header_df['value']['HIERARCH ESO INS SHUT ST'] == 'Open':
         header_df['value']['HIERARCH ESO INS SHUT ST'] = 'T'
     else:
         header_df['value']['HIERARCH ESO INS SHUT ST'] = 'F'
-
 
     date_obs = header_df.loc[header_df['keyword'] == 'DATE-OBS']['value'].values[0]
 
@@ -642,25 +640,25 @@ def _dynamic_cards_update(header_df):
     #astro_time.sidereal_time('mean').to_string(units.hour, sep=':')
 
     # Update MJD-OBS
-    idx = header_df.index[header_df['keyword'] == 'MJD-OBS']
-    if len(idx>0):
-        idx = idx[0]
-        header_df.iloc[idx].comment = date_obs
-        header_df.iloc[idx].value = str(kalao_time.get_mjd(dt_obs))[2:]
+    # idx = header_df.index[header_df['keyword'] == 'MJD-OBS']
+    # if len(idx>0):
+    #     idx = idx[0]
+    header_df['comment']['MJD-OBS'] = date_obs
+    header_df['value']['MJD-OBS'] = str(kalao_time.get_mjd(dt_obs))[2:]
 
     # Update UTC
-    idx = header_df.index[header_df['keyword'] == 'UTC']
-    if len(idx>0):
-        idx = idx[0]
-        header_df.iloc[idx].comment = '[s] '+dt_obs.strftime('%H:%M:%S.%f')[:-3] + ' UTC'
-        header_df.iloc[idx].value = str((dt_obs.hour * 60 + dt_obs.minute) * 60 + dt_obs.second) \
+    # idx = header_df.index[header_df['keyword'] == 'UTC']
+    # if len(idx>0):
+    #     idx = idx[0]
+    header_df['comment']['UTC'] = '[s] '+dt_obs.strftime('%H:%M:%S.%f')[:-3] + ' UTC'
+    header_df['value']['UTC'] = str((dt_obs.hour * 60 + dt_obs.minute) * 60 + dt_obs.second) \
                                     + '.' + str(dt_obs.microsecond)
 
     # # Update LST
-    idx = header_df.index[header_df['keyword'] == 'LST']
-    if len(idx>0):
-        idx = idx[0]
-        header_df.iloc[idx].comment = '[s] '+ astro_time.sidereal_time('mean').to_string(units.hour, sep=':')[:-1] + ' LST'
-        header_df.iloc[idx].value = astro_time.sidereal_time('mean').hour*3600
+    # idx = header_df.index[header_df['keyword'] == 'LST']
+    # if len(idx>0):
+    #     idx = idx[0]
+    header_df['comment']['LST'] = '[s] '+ astro_time.sidereal_time('mean').to_string(units.hour, sep=':')[:-1] + ' LST'
+    header_df['value']['LST'] = astro_time.sidereal_time('mean').hour*3600
 
     return header_df
