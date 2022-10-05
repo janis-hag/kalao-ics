@@ -24,6 +24,7 @@ from kalao.cacao import telemetry
 
 
 def set_loopgain(gain):
+    fps_slopes = fps("shwfs_process")
 
     return 0
 
