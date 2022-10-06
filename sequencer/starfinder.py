@@ -208,13 +208,14 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     return x_star, y_star
 
 
-def focus_sequence(focus_points=6):
+def focus_sequence(focus_points=6, focusing_dit=20):
 
+    # TODO define focusing_dit in kalao.config or pass as argument
     focus_points = np.around(focus_points)
 
     initial_focus = t120.get_focus_value()
 
-    req, file_path = camera.take_image()
+    req, file_path = camera.take_image(dit=focusing_dit)
 
     #time.sleep(5)
     file_handling.add_comment(file_path, "Focus sequence: 0")
@@ -241,7 +242,7 @@ def focus_sequence(focus_points=6):
         # Remove sleep if send_focus is blocking
         time.sleep(15)
 
-        req, file_path = camera.take_image()
+        req, file_path = camera.take_image(dit=focusing_dit)
 
         #time.sleep(20)
         file_handling.add_comment(file_path, "Focus sequence: "+str(new_focus))
