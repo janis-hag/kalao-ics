@@ -27,6 +27,7 @@ CenterY = parser.getint('FLI', 'CenterY')
 PixScale = parser.getfloat('FLI', 'PixScale')
 
 CenteringTimeout = parser.getfloat('SEQ', 'CenteringTimeout')
+FocusingStep = parser.getfloat('SEQ', 'FocusingStep')
 
 WFSilluminationThreshold = parser.getfloat('AO', 'WFSilluminationThreshold')
 WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
@@ -226,9 +227,9 @@ def focus_sequence(focus_points=6):
     if (focus_points % 2) == 1:
         focus_points=focus_points+1
 
-    focus_sequence = (np.arange(focus_points+1) - focus_points / 2) * 0.005
+    focusing_sequence = (np.arange(focus_points+1) - focus_points / 2) * FocusingStep
 
-    for focus_offset in focus_sequence:
+    for focus_offset in focusing_sequence:
         if focus_offset == 0:
             # skip set_focus zero as it was already taken
             continue
@@ -237,6 +238,7 @@ def focus_sequence(focus_points=6):
 
         t120.send_focus_offset(new_focus)
 
+        # Remove sleep if send_focus is blocking
         time.sleep(15)
 
         req, file_path = camera.take_image()
@@ -247,11 +249,15 @@ def focus_sequence(focus_points=6):
         image = fits.getdata(file_path)
         flux = image[np.argpartition(image, -6)][-6:].sum()
 
+
         focus_flux.loc[len(focus_flux.index)] = [new_focus, flux]
 
     # Keep best set_focus
     best_focus = focus_flux.loc[focus_flux['flux'].idxmax(), 'set_focus']
 
+    system.print_and_log(focus_flux)
+
+    system.print_and_log('best focus value: ' + str(best_focus))
     database.store_obs_log({'tracking_log': best_focus})
 
 
