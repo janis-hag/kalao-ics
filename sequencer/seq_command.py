@@ -25,7 +25,7 @@ from kalao.fli import camera
 from kalao.utils import file_handling, database, database_updater, kalao_time
 from kalao.cacao import aomanager
 from sequencer import starfinder, system
-from tcs_communication import t120
+# from tcs_communication import t120
 
 
 config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
@@ -90,7 +90,9 @@ def dark(**seq_args):
 
     # Take nbPic image
     for _ in range(nbPic):
-        rValue, image_path = camera.take_image(dit=dit, filepath=filepath)
+        #seq_command_received = database.get_latest_record('obs_log', key='sequencer_command_received')[
+        #    'sequencer_command_received']
+        rValue, image_path = camera.take_image(dit=dit, filepath=filepath, sequencer_arguments=seq_args)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         #file_handling.save_tmp_image(image_path)
@@ -384,33 +386,37 @@ def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, f
     if core.lamps_off() != 0:
         system.print_and_log("Error: failed to turn off lamps")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if flip_mirror.down() != 'DOWN':
         system.print_and_log("Error: flip mirror did not go down")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if shutter.shutter_open() != 'OPEN':
         system.print_and_log("Error: failed to open the shutter")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if starfinder.centre_on_target() == -1:
         system.print_and_log("Error: problem with centre on target")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if filter_arg is None:
-        system.print_and_log("Warning: no filter specified for take image, using clear")
+        system.print_and_log("Warning: no filter specified for take_image, using clear")
         filter_arg = 'clear'
+        return -1
 
     if filterwheel.set_position(filter_arg) == -1:
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
-    aomanager.close_loop()
+    if aomanager.close_loop() == -1:
+        system.print_and_log("Error: unable to close loop")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
 
     temporary_path = file_handling.create_night_folder()
 
@@ -424,7 +430,7 @@ def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, f
     if rValue != 0:
         system.print_and_log(rValue)
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if check_abort(q, dit) == -1:
         return -1
@@ -449,8 +455,6 @@ def target_observation_abort():
         system.print_and_log(rValue)
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
-
-
 
 
 def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
@@ -512,7 +516,7 @@ def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg 
         return
 
 
-    rValue = t120.focus_sequence(focus_points=6)
+    rValue = starfinder.focus_sequence(focus_points=6)
 
     if rValue != 0:
         system.print_and_log(rValue)
