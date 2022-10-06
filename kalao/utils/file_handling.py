@@ -106,7 +106,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
         # os.chmod(target_path_name, FileMask)
 
         # TODO possibly add the right UID and GID
-
+        system.print_and_log('Saved: '+target_path_name)
         camera.log_last_image_path(target_path_name)
 
         return target_path_name
