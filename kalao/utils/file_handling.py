@@ -16,6 +16,7 @@ file_handling.py is part of the KalAO Instrument Control Software
 import sys
 import os
 from pathlib import Path
+import shutil
 #import time
 from configparser import ConfigParser
 from datetime import datetime, timezone
@@ -100,7 +101,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
 
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
         update_header(image_path, sequencer_arguments=sequencer_arguments)
-        os.rename(image_path, target_path_name)
+        shutil.move(image_path, target_path_name)
         # TODO Remove write permission
         # os.chmod(target_path_name, FileMask)
 
@@ -132,7 +133,6 @@ def update_header(image_path, sequencer_arguments=None):
 
     # Reindexing with keyword
     header_df.set_index('keyword', drop=False, inplace=True)
-
 
     header_df['value']['HIERARCH ESO DPR TECH'] = 'IMAGE'
     header_df['value']['HIERARCH ESO DPR CATG'] = 'TECHNICAL'
@@ -212,7 +212,7 @@ def update_header(image_path, sequencer_arguments=None):
         # Remove all cards before updating
         #fits_header.clear()
         for card in header_df.itertuples(index=False):
-            print(card.keyword)
+            print(card.keyword, card.value)
             fits_header.set(card.keyword, card.value, card.comment.strip())
 
         # Update 'DATE' card
