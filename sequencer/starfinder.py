@@ -255,7 +255,7 @@ def focus_sequence(focus_points=6):
     # Keep best set_focus
     best_focus = focus_flux.loc[focus_flux['flux'].idxmax(), 'set_focus']
 
-    system.print_and_log(focus_flux)
+    print(focus_flux)
 
     system.print_and_log('best focus value: ' + str(best_focus))
     database.store_obs_log({'tracking_log': best_focus})
