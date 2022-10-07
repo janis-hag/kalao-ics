@@ -120,13 +120,13 @@ def save_tmp_image(image_path, sequencer_arguments=None):
 
 
 def update_header(image_path, sequencer_arguments=None):
-    '''
+    """
     Updates the image header with values from the observing, monitoring, and telemetry logs.
 
     :param image_path: path to the image to update
     :param sequencer_arguments: argumetns received by the sequencer
     :return:
-    '''
+    """
 
     # Reading the fits definitions
     header_df = _read_fits_defintions()
@@ -150,6 +150,7 @@ def update_header(image_path, sequencer_arguments=None):
             header_df['value']['HIERARCH ESO DPR CATG'] = 'SCIENCE'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
 
+    print(header_df)
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -182,6 +183,7 @@ def update_header(image_path, sequencer_arguments=None):
         # obs_log needs to be first as it contains some non-hierarch keywords
         header_df = _add_header_values(header_df=header_df, log_status={**obs_log, **monitoring_log, **telemetry_log}, fits_header=fits_header)
 
+        print(header_df)
 
         # Add telescope header
         telescope_header_df, header_path = _get_last_telescope_header()
