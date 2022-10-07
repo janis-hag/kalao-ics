@@ -150,7 +150,7 @@ def update_header(image_path, sequencer_arguments=None):
             header_df['value']['HIERARCH ESO DPR CATG'] = 'SCIENCE'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
 
-    print(header_df)
+    print(header_df[['keyword', 'value']])
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -183,7 +183,7 @@ def update_header(image_path, sequencer_arguments=None):
         # obs_log needs to be first as it contains some non-hierarch keywords
         header_df = _add_header_values(header_df=header_df, log_status={**obs_log, **monitoring_log, **telemetry_log}, fits_header=fits_header)
 
-        print(header_df)
+        print(header_df[['keyword','value']])
 
         # Add telescope header
         telescope_header_df, header_path = _get_last_telescope_header()
