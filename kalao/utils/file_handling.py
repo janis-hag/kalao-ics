@@ -150,8 +150,6 @@ def update_header(image_path, sequencer_arguments=None):
             header_df['value']['HIERARCH ESO DPR CATG'] = 'SCIENCE'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
 
-    print(header_df[['keyword', 'value']])
-
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
         fits_header = hdul[0].header
@@ -180,10 +178,10 @@ def update_header(image_path, sequencer_arguments=None):
         telemetry_log = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['value'].tolist(), 1,
                                             dt=dt)
 
+
         # obs_log needs to be first as it contains some non-hierarch keywords
         header_df = _add_header_values(header_df=header_df, log_status={**obs_log, **monitoring_log, **telemetry_log}, fits_header=fits_header)
 
-        print(header_df[['keyword','value']])
 
         # Add telescope header
         telescope_header_df, header_path = _get_last_telescope_header()
@@ -347,7 +345,7 @@ def _add_header_values(header_df, log_status, fits_header):
 
     for idx, card in header_df.iterrows():
         # Do not modify default_keys
-        if card.keygroup == 'default_keys':
+        if card.keygroup == 'default_keys' or card.keygroup == 'eso_dpr':
             continue
 
         elif card.keygroup == 'FLI' and card.keyword in fits_header.keys():
