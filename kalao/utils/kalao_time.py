@@ -35,6 +35,8 @@ def get_mjd(dt):
     #From: https://stackoverflow.com/questions/31142181/calculating-julian-date-in-python
     #From: http://aa.usno.navy.mil/faq/docs/JD_Formula.php
 
+    # Replace by astropy Time functionality
+
     # # Ensure correct format
     # if not isinstance(dt, datetime):
     #     raise TypeError('Invalid type for parameter "date" - expecting datetime')
@@ -55,7 +57,7 @@ def get_mjd(dt):
                                         + (dt_utc.hour + dt_utc.minute / 60.0 + dt_utc.second / math.pow(60, 2)) / 24.0 \
                                         - 0.5 * math.copysign(1, 100 * dt_utc.year + dt_utc.month - 190002.5) \
                                         + 0.5 \
-                                        - 24000.5
+                                        - 2400000.5
 
     return julian_datetime
 
@@ -77,6 +79,7 @@ def check_time_format(dt):
 
     return dt
 
+
 def get_isotime(now_time=None):
     """
     Takes an datetime object or otherwise the current UTC time and returns a string in ISO 8601 format format such as
@@ -92,6 +95,7 @@ def get_isotime(now_time=None):
     else:
         check_time_format(now_time)
         return now_time.replace(tzinfo=None).isoformat(timespec='milliseconds')
+
 
 def now():
     """

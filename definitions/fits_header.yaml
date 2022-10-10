@@ -48,6 +48,11 @@
   value: mjd-obs
   comment: Value of date-obs
 
+- keyword: MJD-END
+  keygroup: Obs_log
+  value: mjd-end
+  comment: Value of date-end
+
 - keyword: UTC
   keygroup: Obs_log
   value: utc
@@ -74,7 +79,7 @@
   comment: Standard radecsys_value
 
 # TODO check if FK5 or ICRS
-
+# RADECSYS keyword is deprecated, use RADESYSa.
 - keyword: RADECSYS
   keygroup: Obs_log
   value: radecsys
@@ -273,17 +278,17 @@
 - keyword: DATE-OBS
   keygroup: FLI
   value: float
-  comment: Minimal pixel value
+  comment: Observing date
 
 - keyword: DATE-END
   keygroup: FLI
   value: float
-  comment: Minimal pixel value
+  comment: End of exposure time
 
 - keyword: DATE
   keygroup: FLI
   value: float
-  comment: Minimal pixel value
+  comment: Date the file was written
 
 - keyword: BZERO
   keygroup: FLI

@@ -397,14 +397,9 @@ def _dynamic_cards_update(header_df):
     # TODO add RA comment: [deg] 16:22:51.8 RA (J2000) pointing
     # TODO add DEC comment: [deg] -23:07:08.8 DEC (J2000) pointing
     # TODO add radecsys value in EQUINOX comment
+    # TODO Change shutter comment to "Shutter open" or "Shutter closed" and put only T/F in value
 
 
-    # Change shutter comment to "Shutter open" or "Shutter closed" and put only T/F in value
-
-    # idx = header_df.index[header_df['keyword'] == 'HIERARCH ESO INS SHUT ST']
-    #
-    # if len(idx>0):
-    #     idx = idx[0]
     header_df['comment']['HIERARCH ESO INS SHUT ST'] = header_df['comment']['HIERARCH ESO INS SHUT ST'] + ' ' \
                                                        + header_df['value']['HIERARCH ESO INS SHUT ST'].lower()
 
@@ -414,6 +409,7 @@ def _dynamic_cards_update(header_df):
         header_df['value']['HIERARCH ESO INS SHUT ST'] = 'F'
 
     date_obs = header_df.loc[header_df['keyword'] == 'DATE-OBS']['value'].values[0]
+    date_end = header_df.loc[header_df['keyword'] == 'DATE-END']['value'].values[0]
 
     dt_obs = datetime.fromisoformat(date_obs).replace(tzinfo=timezone.utc)
 
@@ -428,7 +424,11 @@ def _dynamic_cards_update(header_df):
     # if len(idx>0):
     #     idx = idx[0]
     header_df['comment']['MJD-OBS'] = date_obs
-    header_df['value']['MJD-OBS'] = str(kalao_time.get_mjd(dt_obs))[2:]
+    #header_df['value']['MJD-OBS'] = str(kalao_time.get_mjd(dt_obs))[2:]
+    header_df['value']['MJD-OBS'] = astro_time.mjd
+
+    header_df['comment']['MJD-END'] = date_end
+    header_df['value']['MJD-END'] = Time(date_end, scale='utc', location=la_silla_coord).mjd
 
     # Update UTC
     # idx = header_df.index[header_df['keyword'] == 'UTC']
