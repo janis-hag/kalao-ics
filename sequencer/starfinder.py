@@ -28,6 +28,8 @@ PixScale = parser.getfloat('FLI', 'PixScale')
 
 CenteringTimeout = parser.getfloat('SEQ', 'CenteringTimeout')
 FocusingStep = parser.getfloat('SEQ', 'FocusingStep')
+FocusingPixels = parser.getint('SEQ', 'FocusingPixels')
+
 
 WFSilluminationThreshold = parser.getfloat('AO', 'WFSilluminationThreshold')
 WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
@@ -209,7 +211,15 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
 
 
 def focus_sequence(focus_points=6, focusing_dit=20):
+    """
+    Starts a sequence to find best telescope M2 focus position.
 
+    TODO normalise flux by integration time and adapt focusing_dit in case of saturation
+
+    :param focus_points: number of points to take for in the sequence
+    :param focusing_dit: integration time for each image
+    :return:
+    """
     # TODO define focusing_dit in kalao.config or pass as argument
     focus_points = np.around(focus_points)
 
@@ -248,8 +258,8 @@ def focus_sequence(focus_points=6, focusing_dit=20):
         file_handling.add_comment(file_path, "Focus sequence: "+str(new_focus))
 
         image = fits.getdata(file_path)
-        flux = image[np.argpartition(image, -6)][-6:].sum()
-
+        # flux = image[np.argpartition(image, -6)][-6:].sum()
+        flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
 
         focus_flux.loc[len(focus_flux.index)] = [new_focus, flux]
 
