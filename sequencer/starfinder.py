@@ -104,18 +104,22 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     # middle of the spot
     mid = int(spot_size / 2)
 
-    # ponderation matrix for score calcul
-    p1, p2 = np.abs(np.mgrid[-mid: mid + 1, -mid: mid + 1])
-    ponderation = p1 + p2
-    ponderation[mid, mid] = 1
+    # weighting matrix for score calcul
+    w1, w2 = np.abs(np.mgrid[-mid: mid + 1, -mid: mid + 1])
+    weighting = w1 + w2
+    weighting[mid, mid] = 1
 
-    # set the minimum brightness for a pixel to be considered in score calcul
+    # set the minimum brightness for a pixel to be considered in score calculation
     median = np.median(image)
     hist, bin_edges = np.histogram(image[~np.isnan(image)], bins=4096, range=(median - 10, median + 10))
     lumino = np.float32((hist * bin_edges[:-1]).sum() / hist.sum() * 10)
 
-    # for each pixel, check if it's brighter than lumino, then check index limite
-    # if all ok: divide spot around the pixel by the ponderation matrix
+    if lumino < image.max():
+        # Image quality insufficient for centering
+        return -1, -1
+
+    # for each pixel, check if it's brighter than lumino, then check index limit
+    # if all ok: divide spot around the pixel by the weighting matrix
     # after that, score is a matrix with luminosity score of all pixel brighter than lumino
     shape = image.shape
     score = np.zeros((shape[0], shape[1]))
@@ -123,9 +127,9 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
         for j in range(shape[1]):
             if image[i, j] > lumino:
                 if i + mid + 1 <= shape[0] and j + mid + 1 <= shape[1] and i - mid >= 0 and j - mid >= 0:
-                    score[i, j] = np.divide(image[i - mid:i + mid + 1, j - mid:j + mid + 1], ponderation).sum()
+                    score[i, j] = np.divide(image[i - mid:i + mid + 1, j - mid:j + mid + 1], weighting).sum()
 
-    # find the max of score matrix and get coordonate of it
+    # find the max of score matrix and get coordinate of it
     # argmax return flat index, unravel_index return right format
     (y, x) = np.unravel_index(np.argmax(score), score.shape)
     star_spot = image[y - mid: y + mid + 1, x - mid: x + mid + 1]
