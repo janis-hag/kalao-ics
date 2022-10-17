@@ -256,7 +256,7 @@ def _get_last_telescope_header():
     """
 
     # TODO verify if latest_record['time_utc'] is recent enough
-    gls_home = Path('/disks/synology')
+    gls_home = Path(T4root)
 
     tcs_header_path_record = database.get_latest_record('obs_log', key='tcs_header_path')
 
