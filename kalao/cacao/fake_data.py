@@ -89,7 +89,7 @@ def fake_streams():
 
 	streams["shwfs_slopes"] = {"data": shwfs_slopes, "width": cols, "height": rows, "min": min, "max": max}
 
-	# Fake focus on the DM
+	# Fake set_focus on the DM
 	rows = 12
 	cols = 12
 	min = -1.75

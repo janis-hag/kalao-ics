@@ -46,8 +46,8 @@ def seq_server():
     :return:
     """
 
-    host = parser.get('SEQ','IP')
-    port = parser.getint('SEQ','Port')
+    host = parser.get('SEQ', 'IP')
+    port = parser.getint('SEQ', 'Port')
 
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socketSeq.bind((host, port))
@@ -117,7 +117,7 @@ def seq_server():
 
         # if abort command, stop last command with Queue object q
         # and start abort func
-        if(commandList[0] == preCommand + '_ABORT'):
+        if commandList[0] == preCommand + '_ABORT':
             # adds 1 to the q object to communicate the abort instruction
             q.put(1)
             seq_command.commandDict[commandList[0]]()
@@ -127,7 +127,7 @@ def seq_server():
             database.store_obs_log({'sequencer_status': 'WAITING'})
             continue
         # if not abort, but a thread exist, wait for the thread end
-        elif(th != None):
+        elif th is not None:
             th.join()
 
         # Start a subThread with received command
@@ -177,7 +177,7 @@ def cast_args(args):
 
     # Translate keyword if not already present
     for edp_arg, kalao_arg in edp_translation_dict.items():
-        if edp_arg in args.keys() and not kalao_arg in args.keys():
+        if edp_arg in args.keys() and kalao_arg not in args.keys():
             args[kalao_arg] = args.pop(edp_arg)
 
     # Check for each keys if the cast of the value is possible and cast it
@@ -206,6 +206,7 @@ def cast_args(args):
         #     return 1
 
     return 0
+
 
 if __name__ == "__main__":
     seq_server()

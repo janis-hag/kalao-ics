@@ -13,20 +13,20 @@
 
 <focus>
   <focusNew>yes</focusNew>
-  <!-- always try to focus new windows when they appear. other rules do
+  <!-- always try to set_focus new windows when they appear. other rules do
        apply -->
   <followMouse>no</followMouse>
-  <!-- move focus to a window when you move the mouse into it -->
+  <!-- move set_focus to a window when you move the mouse into it -->
   <focusLast>yes</focusLast>
-  <!-- focus the last used window when changing desktops, instead of the one
+  <!-- set_focus the last used window when changing desktops, instead of the one
        under the mouse pointer. when followMouse is enabled -->
   <underMouse>no</underMouse>
-  <!-- move focus under the mouse, even when the mouse is not moving -->
+  <!-- move set_focus under the mouse, even when the mouse is not moving -->
   <focusDelay>200</focusDelay>
   <!-- when followMouse is enabled, the mouse must be inside the window for
-       this many milliseconds (1000 = 1 sec) before moving focus to it -->
+       this many milliseconds (1000 = 1 sec) before moving set_focus to it -->
   <raiseOnFocus>no</raiseOnFocus>
-  <!-- when followMouse is enabled, and a window is given focus by moving the
+  <!-- when followMouse is enabled, and a window is given set_focus by moving the
        mouse into it, also raise the window -->
 </focus>
 
@@ -42,7 +42,7 @@
        the active window is, 'Primary' - only on the primary monitor -->
   <primaryMonitor>1</primaryMonitor>
   <!-- The monitor where Openbox should place popup dialogs such as the
-       focus cycling popup, or the desktop switch popup.  It can be an index
+       set_focus cycling popup, or the desktop switch popup.  It can be an index
        from 1, specifying a particular monitor.  Or it can be one of the
        following: 'Mouse' - where the mouse is, or
                   'Active' - where the active window is -->
@@ -709,9 +709,9 @@
       <height>30%</height>
     </size>
 
-    <focus>yes</focus>
-    # if the window should try be given focus when it appears. if this is set
-    # to yes it doesn't guarantee the window will be given focus. some
+    <set_focus>yes</set_focus>
+    # if the window should try be given set_focus when it appears. if this is set
+    # to yes it doesn't guarantee the window will be given set_focus. some
     # restrictions may apply, but Openbox will try to
 
     <desktop>1</desktop>

@@ -40,6 +40,8 @@ SetupTime = parser.getint('FLI', 'SetupTime')
 TungstenStabilisationTime = parser.getint('PLC', 'TungstenStabilisationTime')
 TungstenWaitSleep = parser.getint('PLC', 'TungstenWaitSleep')
 DefaultFlatList = parser.get('Calib', 'DefaultFlatList').replace(' ', '').replace('\n', '').split(',')
+PointingWaitTime = parser.getfloat('SEQ', 'PointingWaitTime')
+PointingTimeOut = parser.getfloat('SEQ', 'PointingTimeOut')
 
 
 def dark(**seq_args):
@@ -188,11 +190,11 @@ def tungsten_FLAT(**seq_args):
         q.get()
         return
 
-    if filepath is None:
-        filepath = file_handling.create_night_filepath()
-    else:
-        # TODO, verify that temporary_path is in the filepath
-        temporary_path = file_handling.create_night_folder()
+    # if filepath is None:
+    #     filepath = file_handling.create_night_filepath()
+    # else:
+    #     # TODO, verify that temporary_path is in the filepath
+    #     temporary_path = file_handling.create_night_folder()
 
     while(tungsten.get_switch_time() < TungstenStabilisationTime):
         # Wait for tungsten to warm up
@@ -211,7 +213,6 @@ def tungsten_FLAT(**seq_args):
         time.sleep(TungstenWaitSleep)
     else:
         database.store_obs_log({'sequencer_status': 'BUSY'})
-
 
     for filter_name in filter_list:
 
@@ -251,6 +252,7 @@ def tungsten_FLAT_abort():
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
     """
+
     # two cancel are done to avoid concurrency problems
     rValue = camera.cancel()
     if(rValue != 0):
@@ -354,7 +356,7 @@ def sky_FLAT(**seq_args):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
+def target_observation(**seq_args):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -398,6 +400,10 @@ def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, f
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
+    if waitfortracking() == -1:
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
     if starfinder.centre_on_target() == -1:
         system.print_and_log("Error: problem with centre on target")
         database.store_obs_log({'sequencer_status': 'ERROR'})
@@ -418,9 +424,9 @@ def target_observation(**seq_args): #q = None, dit = ExpTime, filepath = None, f
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    temporary_path = file_handling.create_night_folder()
+    image_path = file_handling.create_night_filepath()
 
-    rValue, image_path = camera.take_image(dit = dit, filepath = filepath)
+    rValue, image_path = camera.take_image(dit=dit, filepath=image_path)
 
     #Monitor AO and cancel exposure if needed
 
@@ -489,22 +495,26 @@ def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg 
     if core.lamps_off() != 0:
         system.print_and_log("Error: failed to turn off lamps")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if flip_mirror.down() != 'DOWN':
         system.print_and_log("Error: flip mirror did not go down")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if shutter.shutter_open() != 'OPEN':
         system.print_and_log("Error: failed to open the shutter")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
+
+    if waitfortracking() == -1:
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
 
     if starfinder.centre_on_target() == -1:
         system.print_and_log("Error: problem with centre on target")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if filter_arg is None:
         #system.print_and_log("Warning: no filter specified for take image, using clear")
@@ -513,7 +523,7 @@ def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg 
     if filterwheel.set_position(filter_arg) == -1:
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
 
     rValue = starfinder.focus_sequence(focus_points=6)
@@ -521,7 +531,7 @@ def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg 
     if rValue != 0:
         system.print_and_log(rValue)
         database.store_obs_log({'sequencer_status': 'ERROR'})
-        return
+        return -1
 
     if check_abort(q, dit) == -1:
         return -1
@@ -590,6 +600,7 @@ def AO_loop_calibration(**seq_args): #q = None, intensity = 0, **kwargs):
 def lamp_on(**seq_args):
     """
     Turn lamp on
+
     :return: nothing
     """
 
@@ -604,9 +615,30 @@ def lamp_on(**seq_args):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
+def waitfortracking():
+    """
+    Waits for the telescope to be on target
+
+    :return: 0 or 1 depending on success pointing
+    """
+    t0 = time.time()
+
+    while time.time() - t0 > PointingTimeOut:
+        tracking_status = database.get_latest_record(collection_name='obs_log', key='tracking_status')
+        if tracking_status == 'TRACKING':
+            return 0
+        time.sleep(PointingWaitTime)
+
+    else:
+        system.print_and_log('Error: Timeout while waiting to be on target.')
+
+        return -1
+
+
 def lamp_off():
     """
     Turn lamps off
+
     :return: nothing
     """
 

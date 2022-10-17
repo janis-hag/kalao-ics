@@ -7,11 +7,11 @@ import socket
 
 #sys.path.append("/home/weber/src/pymod_libgop/")
 
-import pymod_libgop
+from pygop import pymod_libgop, tcs_srv_gop
 
 #sys.path.append("/home/weber/src/tcs_srv/")
 
-import tcs_srv_gop
+#import tcs_srv_gop
 
 #
 # Initialise Gop (Geneva Observatory Protocol)
