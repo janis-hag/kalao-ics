@@ -256,10 +256,15 @@ def _get_last_telescope_header():
     """
 
     # TODO verify if latest_record['time_utc'] is recent enough
+    gls_home = Path('/disks/synology')
 
     tcs_header_path_record = database.get_latest_record('obs_log', key='tcs_header_path')
 
-    tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
+    if 'home' in tcs_header_path_record['tcs_header_path']:
+        tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][1:]
+    else:
+        tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
+
 
     if tcs_header_path.is_file():
         tcs_header_df = _header_to_df(fits.getheader(tcs_header_path))
