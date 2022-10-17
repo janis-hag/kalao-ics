@@ -23,6 +23,7 @@ from sequencer import system
 import FLI
 from pyMilk.interfacing.isio_shmlib import SHM
 
+
 parser = argparse.ArgumentParser(
         description='Opens stream with FLI camera images.')
 parser.add_argument('-d', action="store",  dest="dit", type=int, default=1)

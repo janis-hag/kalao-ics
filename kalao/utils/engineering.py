@@ -11,6 +11,7 @@ com_tools.py is part of the KalAO Instrument Control Software
 """
 
 import numpy as np
+import glob
 
 from astropy.io import fits
 from time import sleep, time
@@ -41,6 +42,7 @@ def scan_calib(scan_range, dit=0.05):
             print(filename)
 
     tungsten.off()
+
 
 def scan_adc(scan_range1, scan_range2, dit=0.001):
 
@@ -80,9 +82,22 @@ def scan_adc(scan_range1, scan_range2, dit=0.001):
     return 0
 
 
+def star_stack_max(dirlist):
+    data = fits.getdata(dirlist[0])
+    stack = np.zeros(len(dirlist), data.shape[0], data.shape[1])
+
+    for index, filename in enumerate(dirlist):
+        stack[index] = fits.getdata(filename)
+
+    med = np.median(stack, axis=0)
+
+    return np.where(med == np.amax(med))
+
+
 def focus():
     # Focus sequence like coralie
     pass
+
 
 def create_mosaic():
     # create a 5x5 image grid for initial star centering
