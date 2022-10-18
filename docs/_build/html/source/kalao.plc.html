@@ -1,0 +1,844 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>kalao.plc package &#8212; KalAO-ICS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="kalao-plc-package">
+<h1>kalao.plc package<a class="headerlink" href="#kalao-plc-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-kalao.plc.adc">
+<span id="kalao-plc-adc-module"></span><h2>kalao.plc.adc module<a class="headerlink" href="#module-kalao.plc.adc" title="Permalink to this heading">¶</a></h2>
+<p>adc.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.adc.check_error">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.adc.</span></span><span class="sig-name descname"><span class="pre">check_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adc_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.adc.check_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.adc.initialise">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.adc.</span></span><span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adc_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motor_nCommand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motor_bExecute</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.adc.initialise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise the ADC motor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>motor_bExecute</strong> – </p></li>
+<li><p><strong>adc_id</strong> – </p></li>
+<li><p><strong>force_init</strong> – </p></li>
+<li><p><strong>beck</strong> – the handle for the plc connection</p></li>
+<li><p><strong>motor_nCommand</strong> – handle to send commands to the motor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>returns 0 on success and error code on failure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.adc.rotate">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.adc.</span></span><span class="sig-name descname"><span class="pre">rotate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adc_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.adc.rotate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.adc.send_execute">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.adc.</span></span><span class="sig-name descname"><span class="pre">send_execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">motor_bExecute</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.adc.send_execute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.adc.send_init">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.adc.</span></span><span class="sig-name descname"><span class="pre">send_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">motor_nCommand</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motor_bExecute</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.adc.send_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.adc.status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.adc.</span></span><span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adc_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.adc.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the status of the ADC motor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>complete status of calibration unit</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-kalao.plc.calib_unit">
+<span id="kalao-plc-calib-unit-module"></span><h2>kalao.plc.calib_unit module<a class="headerlink" href="#module-kalao.plc.calib_unit" title="Permalink to this heading">¶</a></h2>
+<p>calib_unit.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.calib_unit.check_error">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.calib_unit.</span></span><span class="sig-name descname"><span class="pre">check_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.calib_unit.check_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.calib_unit.initialise">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.calib_unit.</span></span><span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motor_nCommand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.calib_unit.initialise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise the calibration unit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>beck</strong> – the handle for the plc connection</p></li>
+<li><p><strong>motor_nCommand</strong> – handle to send commands to the motor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>returns 0 on success and error code on failure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.calib_unit.laser_position">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.calib_unit.</span></span><span class="sig-name descname"><span class="pre">laser_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.calib_unit.laser_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.calib_unit.move">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.calib_unit.</span></span><span class="sig-name descname"><span class="pre">move</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">23.36</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.calib_unit.move" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.calib_unit.send_execute">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.calib_unit.</span></span><span class="sig-name descname"><span class="pre">send_execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.calib_unit.send_execute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.calib_unit.send_init">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.calib_unit.</span></span><span class="sig-name descname"><span class="pre">send_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">motor_nCommand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.calib_unit.send_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.calib_unit.status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.calib_unit.</span></span><span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.calib_unit.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the status of the calibration unit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>complete status of calibration unit</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.calib_unit.tungsten_position">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.calib_unit.</span></span><span class="sig-name descname"><span class="pre">tungsten_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.calib_unit.tungsten_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-kalao.plc.core">
+<span id="kalao-plc-core-module"></span><h2>kalao.plc.core module<a class="headerlink" href="#module-kalao.plc.core" title="Permalink to this heading">¶</a></h2>
+<p>beck.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.core.check_beck">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.core.</span></span><span class="sig-name descname"><span class="pre">check_beck</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.core.check_beck" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.core.connect">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.core.</span></span><span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">addr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'10.10.132.121'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4840</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.core.connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.core.database_update">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.core.</span></span><span class="sig-name descname"><span class="pre">database_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.core.database_update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.core.device_status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.core.</span></span><span class="sig-name descname"><span class="pre">device_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.core.device_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the status of a PLC connected device based on its path</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>complete status of calibration unit</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.core.disabled_device_list">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.core.</span></span><span class="sig-name descname"><span class="pre">disabled_device_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.core.disabled_device_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.core.lamps_off">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.core.</span></span><span class="sig-name descname"><span class="pre">lamps_off</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.core.lamps_off" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.core.plc_status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.core.</span></span><span class="sig-name descname"><span class="pre">plc_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.core.plc_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query status of all PLC connected devices
+:return: device status dictionary</p>
+</dd></dl>
+
+</section>
+<section id="module-kalao.plc.filterwheel">
+<span id="kalao-plc-filterwheel-module"></span><h2>kalao.plc.filterwheel module<a class="headerlink" href="#module-kalao.plc.filterwheel" title="Permalink to this heading">¶</a></h2>
+<p>camera.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.filterwheel.create_filter_id">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.filterwheel.</span></span><span class="sig-name descname"><span class="pre">create_filter_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.filterwheel.create_filter_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.filterwheel.get_position">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.filterwheel.</span></span><span class="sig-name descname"><span class="pre">get_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.filterwheel.get_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.filterwheel.init">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.filterwheel.</span></span><span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.filterwheel.init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.filterwheel.set_position">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.filterwheel.</span></span><span class="sig-name descname"><span class="pre">set_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_arg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.filterwheel.set_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-kalao.plc.flip_mirror">
+<span id="kalao-plc-flip-mirror-module"></span><h2>kalao.plc.flip_mirror module<a class="headerlink" href="#module-kalao.plc.flip_mirror" title="Permalink to this heading">¶</a></h2>
+<p>flip_mirror.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.flip_mirror.down">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.flip_mirror.</span></span><span class="sig-name descname"><span class="pre">down</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.flip_mirror.down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move the flip mirror down</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status of the flip_mirror</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.flip_mirror.initialise">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.flip_mirror.</span></span><span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.flip_mirror.initialise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.flip_mirror.position">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.flip_mirror.</span></span><span class="sig-name descname"><span class="pre">position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.flip_mirror.position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the single string status of the shutter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>single string status of shutter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.flip_mirror.status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.flip_mirror.</span></span><span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.flip_mirror.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the status of the flip mirror.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>complete status of flip mirror</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.flip_mirror.switch">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.flip_mirror.</span></span><span class="sig-name descname"><span class="pre">switch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.flip_mirror.switch" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Open or Close the shutter depending on action_name</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>action_name</strong> – bClose_Shutter or</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>position of flip_mirror</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.flip_mirror.up">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.flip_mirror.</span></span><span class="sig-name descname"><span class="pre">up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.flip_mirror.up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move the flip mirror up</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status of the flip_mirror</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-kalao.plc.laser">
+<span id="kalao-plc-laser-module"></span><h2>kalao.plc.laser module<a class="headerlink" href="#module-kalao.plc.laser" title="Permalink to this heading">¶</a></h2>
+<p>laser.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.laser.disable">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.laser.</span></span><span class="sig-name descname"><span class="pre">disable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.laser.disable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Power off laser source</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status of the laser</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.laser.enable">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.laser.</span></span><span class="sig-name descname"><span class="pre">enable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.laser.enable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Power on laser source and set to default intensity</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status of the laser</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.laser.initialise">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.laser.</span></span><span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.laser.initialise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.laser.lock">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.laser.</span></span><span class="sig-name descname"><span class="pre">lock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.laser.lock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lock laser into software only control</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status of the laser lock</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.laser.set_intensity">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.laser.</span></span><span class="sig-name descname"><span class="pre">set_intensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">intensity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.laser.set_intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set light intensity of the laser source</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>intensity</strong> – light intensity to use in ?mW?</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>value of the new intensity</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.laser.status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.laser.</span></span><span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.laser.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the current intensity of the laser</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>intensity of laser</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.laser.switch">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.laser.</span></span><span class="sig-name descname"><span class="pre">switch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.laser.switch" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Enable or Disable the laser depending on action_name</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>action_name</strong> – bDisable or bEnable</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of laser</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.laser.unlock">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.laser.</span></span><span class="sig-name descname"><span class="pre">unlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.laser.unlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lock laser into software only control</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status of the laser lock</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-kalao.plc.shutter">
+<span id="kalao-plc-shutter-module"></span><h2>kalao.plc.shutter module<a class="headerlink" href="#module-kalao.plc.shutter" title="Permalink to this heading">¶</a></h2>
+<p>shutter.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.shutter.initialise">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.shutter.</span></span><span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.shutter.initialise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise the shutter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status of shutter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.shutter.position">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.shutter.</span></span><span class="sig-name descname"><span class="pre">position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.shutter.position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the single string status of the shutter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>single string status of shutter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.shutter.shutter_close">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.shutter.</span></span><span class="sig-name descname"><span class="pre">shutter_close</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.shutter.shutter_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the shutter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status of shutter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.shutter.shutter_open">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.shutter.</span></span><span class="sig-name descname"><span class="pre">shutter_open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.shutter.shutter_open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open the shutter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status of shutter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.shutter.status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.shutter.</span></span><span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.shutter.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the status of the shutter</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>complete status of shutter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.shutter.switch">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.shutter.</span></span><span class="sig-name descname"><span class="pre">switch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.shutter.switch" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Open or Close the shutter depending on action_name</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>action_name</strong> – bClose_Shutter or</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of shutter</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-kalao.plc.temperature_control">
+<span id="kalao-plc-temperature-control-module"></span><h2>kalao.plc.temperature_control module<a class="headerlink" href="#module-kalao.plc.temperature_control" title="Permalink to this heading">¶</a></h2>
+<p>temperature_control.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.fan_off">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">fan_off</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.fan_off" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to turn off the water fan</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the fan</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.fan_on">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">fan_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.fan_on" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to turn on the water fan</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the fan</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.fan_status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">fan_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.fan_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to query the status of the water fan</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the fan</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.get_cooling_status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">get_cooling_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.get_cooling_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query status of the cooling system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle of the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.get_temperatures">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">get_temperatures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.get_temperatures" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query all the temperature sensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle of the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dictionary of temperatures</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.heater_off">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">heater_off</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.heater_off" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to turn off the water heater</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the heater</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.heater_on">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">heater_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.heater_on" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to turn on the water heater</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the heater</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.heater_status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">heater_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.heater_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to query the status of the water heater</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the heater</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.pump_off">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">pump_off</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.pump_off" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to turn off the water pump</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the pump</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.pump_on">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">pump_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.pump_on" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to turn on the water pump</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the pump</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.pump_status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">pump_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.pump_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to query the status of the water pump</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the pump</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">relay_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open or Close the shutter depending on action_name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>relay_name</strong> – bClose_Shutter or</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>position of flip_mirror</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.temperature_control.switch">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.temperature_control.</span></span><span class="sig-name descname"><span class="pre">switch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">relay_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.temperature_control.switch" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Open or Close the shutter depending on action_name</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>relay_name</strong> – bClose_Shutter or</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>position of flip_mirror</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-kalao.plc.tungsten">
+<span id="kalao-plc-tungsten-module"></span><h2>kalao.plc.tungsten module<a class="headerlink" href="#module-kalao.plc.tungsten" title="Permalink to this heading">¶</a></h2>
+<p>tungsten.py is part of the KalAO Instrument Control Software
+(KalAO-ICS).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.check_error">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">check_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.check_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.get_flat_dits">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">get_flat_dits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.get_flat_dits" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.get_switch_time">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">get_switch_time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.get_switch_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Looks up the time when the tungsten lamp as last been put into current state (ON/OFF/ERROR)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>switch_time a datetime object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.initialise">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">initialise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tungsten_nCommand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.initialise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise the calibration unit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>beck</strong> – the handle for the plc connection</p></li>
+<li><p><strong>tungsten_nCommand</strong> – handle to send commands to the motor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>returns 0 on success and error code on failure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.off">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">off</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.off" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turn off tungsten lamp</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to for the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the lamp</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.on">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.on" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turn off tungsten lamp</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>beck</strong> – handle to for the beckhoff connection</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status of the lamp</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.send_command">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">send_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nCommand_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.send_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a command to the tungsten lamp</p>
+<p>tungsten number commands are
+1 = init
+2 = OFF
+3 = ON</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>beck</strong> – handle to the beckhoff connection</p></li>
+<li><p><strong>nCommand_value</strong> – 1, 2, or 3</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.send_execute">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">send_execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.send_execute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.status">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the status of the tungsten lamp.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>complete status of tungsten lamp</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.plc.tungsten.update_db">
+<span class="sig-prename descclassname"><span class="pre">kalao.plc.tungsten.</span></span><span class="sig-name descname"><span class="pre">update_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">beck</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.plc.tungsten.update_db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-kalao.plc">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-kalao.plc" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">KalAO-ICS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Janis Hagelberg.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/kalao.plc.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
