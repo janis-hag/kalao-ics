@@ -206,18 +206,51 @@
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="cacao.alignment_tools.dm_layout_add_viewboxes">
-<span class="sig-prename descclassname"><span class="pre">cacao.alignment_tools.</span></span><span class="sig-name descname"><span class="pre">dm_layout_add_viewboxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cacao.alignment_tools.dm_layout_add_viewboxes" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py" id="cacao.alignment_tools.run">
+<span class="sig-prename descclassname"><span class="pre">cacao.alignment_tools.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cacao.alignment_tools.run" title="Permalink to this definition">#</a></dt>
+<dd><p>Run WFS the alignment tool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>exit code</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-cacao.alignment_tools_fli">
+<span id="cacao-alignment-tools-fli-module"></span><h2>cacao.alignment_tools_fli module<a class="headerlink" href="#module-cacao.alignment_tools_fli" title="Permalink to this heading">#</a></h2>
+<p>&#64;author: Nathanaël Restori</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cacao.alignment_tools_fli.center_of_mass">
+<span class="sig-prename descclassname"><span class="pre">cacao.alignment_tools_fli.</span></span><span class="sig-name descname"><span class="pre">center_of_mass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cacao.alignment_tools_fli.center_of_mass" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="cacao.alignment_tools.keyPressed">
-<span class="sig-prename descclassname"><span class="pre">cacao.alignment_tools.</span></span><span class="sig-name descname"><span class="pre">keyPressed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cacao.alignment_tools.keyPressed" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py" id="cacao.alignment_tools_fli.clamp">
+<span class="sig-prename descclassname"><span class="pre">cacao.alignment_tools_fli.</span></span><span class="sig-name descname"><span class="pre">clamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cacao.alignment_tools_fli.clamp" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
-</section>
-<section id="cacao-alignment-tools-fli-module">
-<h2>cacao.alignment_tools_fli module<a class="headerlink" href="#cacao-alignment-tools-fli-module" title="Permalink to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="cacao.alignment_tools_fli.dm_layout_add_viewboxes">
+<span class="sig-prename descclassname"><span class="pre">cacao.alignment_tools_fli.</span></span><span class="sig-name descname"><span class="pre">dm_layout_add_viewboxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cacao.alignment_tools_fli.dm_layout_add_viewboxes" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cacao.alignment_tools_fli.keyPressed">
+<span class="sig-prename descclassname"><span class="pre">cacao.alignment_tools_fli.</span></span><span class="sig-name descname"><span class="pre">keyPressed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cacao.alignment_tools_fli.keyPressed" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cacao.alignment_tools_fli.run">
+<span class="sig-prename descclassname"><span class="pre">cacao.alignment_tools_fli.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cacao.alignment_tools_fli.run" title="Permalink to this definition">#</a></dt>
+<dd><p>Run the alignment tool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>exit code</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-cacao.aocontrol">
 <span id="cacao-aocontrol-module"></span><h2>cacao.aocontrol module<a class="headerlink" href="#module-cacao.aocontrol" title="Permalink to this heading">#</a></h2>
@@ -618,11 +651,17 @@ decreasing down to zero for the last mode</p>
 <li><a class="reference internal" href="#module-cacao.alignment_tools">cacao.alignment_tools module</a><ul>
 <li><a class="reference internal" href="#cacao.alignment_tools.center_of_mass"><code class="docutils literal notranslate"><span class="pre">center_of_mass()</span></code></a></li>
 <li><a class="reference internal" href="#cacao.alignment_tools.clamp"><code class="docutils literal notranslate"><span class="pre">clamp()</span></code></a></li>
-<li><a class="reference internal" href="#cacao.alignment_tools.dm_layout_add_viewboxes"><code class="docutils literal notranslate"><span class="pre">dm_layout_add_viewboxes()</span></code></a></li>
-<li><a class="reference internal" href="#cacao.alignment_tools.keyPressed"><code class="docutils literal notranslate"><span class="pre">keyPressed()</span></code></a></li>
+<li><a class="reference internal" href="#cacao.alignment_tools.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#cacao-alignment-tools-fli-module">cacao.alignment_tools_fli module</a></li>
+<li><a class="reference internal" href="#module-cacao.alignment_tools_fli">cacao.alignment_tools_fli module</a><ul>
+<li><a class="reference internal" href="#cacao.alignment_tools_fli.center_of_mass"><code class="docutils literal notranslate"><span class="pre">center_of_mass()</span></code></a></li>
+<li><a class="reference internal" href="#cacao.alignment_tools_fli.clamp"><code class="docutils literal notranslate"><span class="pre">clamp()</span></code></a></li>
+<li><a class="reference internal" href="#cacao.alignment_tools_fli.dm_layout_add_viewboxes"><code class="docutils literal notranslate"><span class="pre">dm_layout_add_viewboxes()</span></code></a></li>
+<li><a class="reference internal" href="#cacao.alignment_tools_fli.keyPressed"><code class="docutils literal notranslate"><span class="pre">keyPressed()</span></code></a></li>
+<li><a class="reference internal" href="#cacao.alignment_tools_fli.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-cacao.aocontrol">cacao.aocontrol module</a><ul>
 <li><a class="reference internal" href="#cacao.aocontrol.linear_low_pass_modal_gain_filter"><code class="docutils literal notranslate"><span class="pre">linear_low_pass_modal_gain_filter()</span></code></a></li>
 <li><a class="reference internal" href="#cacao.aocontrol.set_loopgain"><code class="docutils literal notranslate"><span class="pre">set_loopgain()</span></code></a></li>
