@@ -51,6 +51,10 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+<<<<<<< HEAD
+=======
+#build/
+>>>>>>> d6902985c2cbb2a75eca96066a75b59ab68b4e75
 develop-eggs/
 dist/
 downloads/
@@ -111,7 +115,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+#docs/_build/
 
 # PyBuilder
 .pybuilder/
