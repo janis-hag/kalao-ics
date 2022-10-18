@@ -1,124 +1,278 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" />
 
-<!DOCTYPE html>
+    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+        <title>kalao.fli.FLI package - KalAO-ICS documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
-    <title>kalao.fli.FLI package &#8212; KalAO-ICS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">KalAO-ICS  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
+  <span class="sidebar-brand-text">KalAO-ICS  documentation</span>
   
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  
+</div>
+</div>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
           
-
-          <div class="body" role="main">
-            
-  <section id="kalao-fli-fli-package">
-<h1>kalao.fli.FLI package<a class="headerlink" href="#kalao-fli-fli-package" title="Permalink to this heading">¶</a></h1>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="kalao-fli-fli-package">
+<h1>kalao.fli.FLI package<a class="headerlink" href="#kalao-fli-fli-package" title="Permalink to this heading">#</a></h1>
 <section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">#</a></h2>
 </section>
 <section id="module-kalao.fli.FLI.camera">
-<span id="kalao-fli-fli-camera-module"></span><h2>kalao.fli.FLI.camera module<a class="headerlink" href="#module-kalao.fli.FLI.camera" title="Permalink to this heading">¶</a></h2>
+<span id="kalao-fli-fli-camera-module"></span><h2>kalao.fli.FLI.camera module<a class="headerlink" href="#module-kalao.fli.FLI.camera" title="Permalink to this heading">#</a></h2>
 <p>FLI.camera.py</p>
 <p>Object-oriented interface for handling FLI USB cameras</p>
 <p>author:       Craig Wm. Versek, Yankee Environmental Systems
 author_email: <a class="reference external" href="mailto:cwv&#37;&#52;&#48;yesinc&#46;com">cwv<span>&#64;</span>yesinc<span>&#46;</span>com</a></p>
 <dl class="py class">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.camera.</span></span><span class="sig-name descname"><span class="pre">USBCamera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitdepth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'16bit'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.camera.</span></span><span class="sig-name descname"><span class="pre">USBCamera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitdepth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'16bit'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#kalao.fli.FLI.device.USBDevice" title="kalao.fli.FLI.device.USBDevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">USBDevice</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.fetch_image">
-<span class="sig-name descname"><span class="pre">fetch_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.fetch_image" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fetch_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.fetch_image" title="Permalink to this definition">#</a></dt>
 <dd><p>Fetch the image data for the last exposure.
 Returns a numpy.ndarray object.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.get_camera_mode">
-<span class="sig-name descname"><span class="pre">get_camera_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_camera_mode" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_camera_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_camera_mode" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.get_camera_mode_string">
-<span class="sig-name descname"><span class="pre">get_camera_mode_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_camera_mode_string" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_camera_mode_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_camera_mode_string" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.get_cooler_power">
-<span class="sig-name descname"><span class="pre">get_cooler_power</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_cooler_power" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_cooler_power</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_cooler_power" title="Permalink to this definition">#</a></dt>
 <dd><p>gets the cooler’s power in watts (undocumented API function)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.get_exposure_timeleft">
-<span class="sig-name descname"><span class="pre">get_exposure_timeleft</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_exposure_timeleft" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_exposure_timeleft</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_exposure_timeleft" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the time left on the exposure in milliseconds.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.get_image_size">
-<span class="sig-name descname"><span class="pre">get_image_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_image_size" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_image_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_image_size" title="Permalink to this definition">#</a></dt>
 <dd><p>returns (row_width, img_rows, img_size)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.get_info">
-<span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_info" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_info" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.get_temperature">
-<span class="sig-name descname"><span class="pre">get_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_temperature" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.get_temperature" title="Permalink to this definition">#</a></dt>
 <dd><p>gets the camera’s temperature in degrees Celcius</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.read_CCD_temperature">
-<span class="sig-name descname"><span class="pre">read_CCD_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.read_CCD_temperature" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">read_CCD_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.read_CCD_temperature" title="Permalink to this definition">#</a></dt>
 <dd><p>gets the CCD’s temperature in degrees Celcius</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.read_base_temperature">
-<span class="sig-name descname"><span class="pre">read_base_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.read_base_temperature" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">read_base_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.read_base_temperature" title="Permalink to this definition">#</a></dt>
 <dd><p>gets the cooler’s hot side in degrees Celcius</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.set_bitdepth">
-<span class="sig-name descname"><span class="pre">set_bitdepth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bitdepth</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_bitdepth" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_bitdepth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bitdepth</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_bitdepth" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.set_camera_mode">
-<span class="sig-name descname"><span class="pre">set_camera_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_camera_mode" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_camera_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_camera_mode" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.set_exposure">
-<span class="sig-name descname"><span class="pre">set_exposure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exptime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frametype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_exposure" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_exposure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exptime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frametype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_exposure" title="Permalink to this definition">#</a></dt>
 <dd><p>setup the exposure type:
 exptime   - exposure time in milliseconds
 frametype -  ‘normal’     - open shutter exposure</p>
@@ -130,30 +284,30 @@ frametype -  ‘normal’     - open shutter exposure</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.set_flushes">
-<span class="sig-name descname"><span class="pre">set_flushes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_flushes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_flushes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_flushes" title="Permalink to this definition">#</a></dt>
 <dd><p>set the number of flushes to the CCD before taking exposure</p>
 <p>must have 0 &lt;= num &lt;= 16, else raises ValueError</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.set_image_area">
-<span class="sig-name descname"><span class="pre">set_image_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ul_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ul_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_image_area" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_image_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ul_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ul_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_image_area" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.set_image_binning">
-<span class="sig-name descname"><span class="pre">set_image_binning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hbin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vbin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_image_binning" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_image_binning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hbin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vbin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_image_binning" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.set_temperature">
-<span class="sig-name descname"><span class="pre">set_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_temperature" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.set_temperature" title="Permalink to this definition">#</a></dt>
 <dd><p>set the camera’s temperature target in degrees Celcius</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.start_exposure">
-<span class="sig-name descname"><span class="pre">start_exposure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.start_exposure" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">start_exposure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.start_exposure" title="Permalink to this definition">#</a></dt>
 <dd><p>Begin the exposure and return immediately.
 Use the method  ‘get_timeleft’ to check the exposure progress
 until it returns 0, then use method ‘fetch_image’ to fetch the image
@@ -162,7 +316,7 @@ data as a numpy array.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.camera.USBCamera.take_photo">
-<span class="sig-name descname"><span class="pre">take_photo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.take_photo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">take_photo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.camera.USBCamera.take_photo" title="Permalink to this definition">#</a></dt>
 <dd><p>Expose the frame, wait for completion, and fetch the image data.</p>
 </dd></dl>
 
@@ -170,31 +324,31 @@ data as a numpy array.</p>
 
 </section>
 <section id="module-kalao.fli.FLI.device">
-<span id="kalao-fli-fli-device-module"></span><h2>kalao.fli.FLI.device module<a class="headerlink" href="#module-kalao.fli.FLI.device" title="Permalink to this heading">¶</a></h2>
+<span id="kalao-fli-fli-device-module"></span><h2>kalao.fli.FLI.device module<a class="headerlink" href="#module-kalao.fli.FLI.device" title="Permalink to this heading">#</a></h2>
 <p>FLI.device.py</p>
 <p>Object-oriented base interface for handling FLI USB devices</p>
 <p>author:       Craig Wm. Versek, Yankee Environmental Systems
 author_email: <a class="reference external" href="mailto:cwv&#37;&#52;&#48;yesinc&#46;com">cwv<span>&#64;</span>yesinc<span>&#46;</span>com</a></p>
 <dl class="py class">
 <dt class="sig sig-object py" id="kalao.fli.FLI.device.USBDevice">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.device.</span></span><span class="sig-name descname"><span class="pre">USBDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.device.USBDevice" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.device.</span></span><span class="sig-name descname"><span class="pre">USBDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.device.USBDevice" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>base class for all FLI USB devices</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.device.USBDevice.find_devices">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">find_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.device.USBDevice.find_devices" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">find_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.device.USBDevice.find_devices" title="Permalink to this definition">#</a></dt>
 <dd><p>locates all FLI USB devices in the current domain and returns a
 list of USBDevice objects</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.device.USBDevice.get_serial_number">
-<span class="sig-name descname"><span class="pre">get_serial_number</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.device.USBDevice.get_serial_number" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_serial_number</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.device.USBDevice.get_serial_number" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.device.USBDevice.locate_device">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">locate_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">serial_number</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.device.USBDevice.locate_device" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">locate_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">serial_number</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.device.USBDevice.locate_device" title="Permalink to this definition">#</a></dt>
 <dd><p>locates the FLI USB devices in the current domain that matches the
 ‘serial_number’ string</p>
 <p>returns None if no match is found</p>
@@ -208,7 +362,7 @@ list of USBDevice objects</p>
 
 </section>
 <section id="module-kalao.fli.FLI.filter_wheel">
-<span id="kalao-fli-fli-filter-wheel-module"></span><h2>kalao.fli.FLI.filter_wheel module<a class="headerlink" href="#module-kalao.fli.FLI.filter_wheel" title="Permalink to this heading">¶</a></h2>
+<span id="kalao-fli-fli-filter-wheel-module"></span><h2>kalao.fli.FLI.filter_wheel module<a class="headerlink" href="#module-kalao.fli.FLI.filter_wheel" title="Permalink to this heading">#</a></h2>
 <p>FLI.filter_wheel.py</p>
 <p>Object-oriented interface for handling FLI (Finger Lakes Instrumentation)
 USB filter wheels</p>
@@ -216,28 +370,28 @@ USB filter wheels</p>
 author_email: <a class="reference external" href="mailto:cwv&#37;&#52;&#48;yesinc&#46;com">cwv<span>&#64;</span>yesinc<span>&#46;</span>com</a></p>
 <dl class="py class">
 <dt class="sig sig-object py" id="kalao.fli.FLI.filter_wheel.USBFilterWheel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.filter_wheel.</span></span><span class="sig-name descname"><span class="pre">USBFilterWheel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.filter_wheel.</span></span><span class="sig-name descname"><span class="pre">USBFilterWheel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#kalao.fli.FLI.device.USBDevice" title="kalao.fli.FLI.device.USBDevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">USBDevice</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.filter_wheel.USBFilterWheel.get_filter_count">
-<span class="sig-name descname"><span class="pre">get_filter_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel.get_filter_count" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_filter_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel.get_filter_count" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.filter_wheel.USBFilterWheel.get_filter_pos">
-<span class="sig-name descname"><span class="pre">get_filter_pos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel.get_filter_pos" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_filter_pos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel.get_filter_pos" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.filter_wheel.USBFilterWheel.set_filter_pos">
-<span class="sig-name descname"><span class="pre">set_filter_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel.set_filter_pos" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_filter_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel.set_filter_pos" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 </section>
 <section id="module-kalao.fli.FLI.focuser">
-<span id="kalao-fli-fli-focuser-module"></span><h2>kalao.fli.FLI.focuser module<a class="headerlink" href="#module-kalao.fli.FLI.focuser" title="Permalink to this heading">¶</a></h2>
+<span id="kalao-fli-fli-focuser-module"></span><h2>kalao.fli.FLI.focuser module<a class="headerlink" href="#module-kalao.fli.FLI.focuser" title="Permalink to this heading">#</a></h2>
 <p>FLI.focuser.py</p>
 <p>Object-oriented interface for handling FLI (Finger Lakes Instrumentation) USB
 focusers</p>
@@ -245,161 +399,161 @@ focusers</p>
 author_email: <a class="reference external" href="mailto:cwv&#37;&#52;&#48;yesinc&#46;com">cwv<span>&#64;</span>yesinc<span>&#46;</span>com</a></p>
 <dl class="py class">
 <dt class="sig sig-object py" id="kalao.fli.FLI.focuser.USBFocuser">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.focuser.</span></span><span class="sig-name descname"><span class="pre">USBFocuser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.focuser.</span></span><span class="sig-name descname"><span class="pre">USBFocuser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dev_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#kalao.fli.FLI.device.USBDevice" title="kalao.fli.FLI.device.USBDevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">USBDevice</span></code></a></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.focuser.USBFocuser.get_stepper_position">
-<span class="sig-name descname"><span class="pre">get_stepper_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.get_stepper_position" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_stepper_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.get_stepper_position" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.focuser.USBFocuser.get_steps_remaining">
-<span class="sig-name descname"><span class="pre">get_steps_remaining</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.get_steps_remaining" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_steps_remaining</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.get_steps_remaining" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.focuser.USBFocuser.home_focuser">
-<span class="sig-name descname"><span class="pre">home_focuser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.home_focuser" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">home_focuser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.home_focuser" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.focuser.USBFocuser.read_external_temperature">
-<span class="sig-name descname"><span class="pre">read_external_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.read_external_temperature" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">read_external_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.read_external_temperature" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.focuser.USBFocuser.read_internal_temperature">
-<span class="sig-name descname"><span class="pre">read_internal_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.read_internal_temperature" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">read_internal_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.read_internal_temperature" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.focuser.USBFocuser.step_motor">
-<span class="sig-name descname"><span class="pre">step_motor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.step_motor" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">step_motor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.focuser.USBFocuser.step_motor" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 </section>
 <section id="module-kalao.fli.FLI.lib">
-<span id="kalao-fli-fli-lib-module"></span><h2>kalao.fli.FLI.lib module<a class="headerlink" href="#module-kalao.fli.FLI.lib" title="Permalink to this heading">¶</a></h2>
+<span id="kalao-fli-fli-lib-module"></span><h2>kalao.fli.FLI.lib module<a class="headerlink" href="#module-kalao.fli.FLI.lib" title="Permalink to this heading">#</a></h2>
 <p>FLI.lib.py</p>
 <p>Python interface to the FLI (Finger Lakes Instrumentation) API</p>
 <p>author:       Craig Wm. Versek, Yankee Environmental Systems
 author_email: <a class="reference external" href="mailto:cwv&#37;&#52;&#48;yesinc&#46;com">cwv<span>&#64;</span>yesinc<span>&#46;</span>com</a></p>
 <dl class="py exception">
 <dt class="sig sig-object py" id="kalao.fli.FLI.lib.FLIError">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">FLIError</span></span><a class="headerlink" href="#kalao.fli.FLI.lib.FLIError" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">FLIError</span></span><a class="headerlink" href="#kalao.fli.FLI.lib.FLIError" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="kalao.fli.FLI.lib.FLILibrary">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">FLILibrary</span></span><a class="headerlink" href="#kalao.fli.FLI.lib.FLILibrary" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">FLILibrary</span></span><a class="headerlink" href="#kalao.fli.FLI.lib.FLILibrary" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.lib.FLILibrary.getDll">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getDll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wrap_error_codes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.lib.FLILibrary.getDll" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getDll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wrap_error_codes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.lib.FLILibrary.getDll" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.lib.FLILibrary.getVersion">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getVersion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.lib.FLILibrary.getVersion" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getVersion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.lib.FLILibrary.getVersion" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="kalao.fli.FLI.lib.FLIWarning">
-<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">FLIWarning</span></span><a class="headerlink" href="#kalao.fli.FLI.lib.FLIWarning" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">FLIWarning</span></span><a class="headerlink" href="#kalao.fli.FLI.lib.FLIWarning" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Warning</span></code></p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="kalao.fli.FLI.lib.c_long_p">
-<span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">c_long_p</span></span><a class="headerlink" href="#kalao.fli.FLI.lib.c_long_p" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">c_long_p</span></span><a class="headerlink" href="#kalao.fli.FLI.lib.c_long_p" title="Permalink to this definition">#</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">LP_c_long</span></code></p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.fli.FLI.lib.chk_err">
-<span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">chk_err</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">err</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.lib.chk_err" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.lib.</span></span><span class="sig-name descname"><span class="pre">chk_err</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">err</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.lib.chk_err" title="Permalink to this definition">#</a></dt>
 <dd><p>wraps a libfli C function call with error checking code</p>
 </dd></dl>
 
 </section>
 <section id="kalao-fli-fli-libfli-module">
-<h2>kalao.fli.FLI.libfli module<a class="headerlink" href="#kalao-fli-fli-libfli-module" title="Permalink to this heading">¶</a></h2>
+<h2>kalao.fli.FLI.libfli module<a class="headerlink" href="#kalao-fli-fli-libfli-module" title="Permalink to this heading">#</a></h2>
 </section>
 <section id="module-kalao.fli.FLI.odict">
-<span id="kalao-fli-fli-odict-module"></span><h2>kalao.fli.FLI.odict module<a class="headerlink" href="#module-kalao.fli.FLI.odict" title="Permalink to this heading">¶</a></h2>
+<span id="kalao-fli-fli-odict-module"></span><h2>kalao.fli.FLI.odict module<a class="headerlink" href="#module-kalao.fli.FLI.odict" title="Permalink to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.odict.</span></span><span class="sig-name descname"><span class="pre">OrderedDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kalao.fli.FLI.odict.</span></span><span class="sig-name descname"><span class="pre">OrderedDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
 <p>Dictionary that remembers insertion order</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.clear">
-<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None.</span>&#160; <span class="pre">Remove</span> <span class="pre">all</span> <span class="pre">items</span> <span class="pre">from</span> <span class="pre">od.</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.clear" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None.</span>&#160; <span class="pre">Remove</span> <span class="pre">all</span> <span class="pre">items</span> <span class="pre">from</span> <span class="pre">od.</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.clear" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.copy">
-<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">shallow</span> <span class="pre">copy</span> <span class="pre">of</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.copy" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">shallow</span> <span class="pre">copy</span> <span class="pre">of</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.copy" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.fromkeys">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fromkeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">New</span> <span class="pre">ordered</span> <span class="pre">dictionary</span> <span class="pre">with</span> <span class="pre">keys</span> <span class="pre">from</span> <span class="pre">S</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.fromkeys" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fromkeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">New</span> <span class="pre">ordered</span> <span class="pre">dictionary</span> <span class="pre">with</span> <span class="pre">keys</span> <span class="pre">from</span> <span class="pre">S</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.fromkeys" title="Permalink to this definition">#</a></dt>
 <dd><p>and values equal to v (which defaults to None).</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.items">
-<span class="sig-name descname"><span class="pre">items</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span> <span class="pre">of</span> <span class="pre">(key,</span> <span class="pre">value)</span> <span class="pre">pairs</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.items" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">items</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span> <span class="pre">of</span> <span class="pre">(key,</span> <span class="pre">value)</span> <span class="pre">pairs</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.items" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.iteritems">
-<span class="sig-name descname"><span class="pre">iteritems</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.iteritems" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">iteritems</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.iteritems" title="Permalink to this definition">#</a></dt>
 <dd><p>od.iteritems -&gt; an iterator over the (key, value) items in od</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.iterkeys">
-<span class="sig-name descname"><span class="pre">iterkeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">an</span> <span class="pre">iterator</span> <span class="pre">over</span> <span class="pre">the</span> <span class="pre">keys</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.iterkeys" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">iterkeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">an</span> <span class="pre">iterator</span> <span class="pre">over</span> <span class="pre">the</span> <span class="pre">keys</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.iterkeys" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.itervalues">
-<span class="sig-name descname"><span class="pre">itervalues</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.itervalues" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">itervalues</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.itervalues" title="Permalink to this definition">#</a></dt>
 <dd><p>od.itervalues -&gt; an iterator over the values in od</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.keys">
-<span class="sig-name descname"><span class="pre">keys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span> <span class="pre">of</span> <span class="pre">keys</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.keys" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">keys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span> <span class="pre">of</span> <span class="pre">keys</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.keys" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.pop">
-<span class="sig-name descname"><span class="pre">pop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">v,</span> <span class="pre">remove</span> <span class="pre">specified</span> <span class="pre">key</span> <span class="pre">and</span> <span class="pre">return</span> <span class="pre">the</span> <span class="pre">corresponding</span> <span class="pre">value.</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.pop" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">pop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">v,</span> <span class="pre">remove</span> <span class="pre">specified</span> <span class="pre">key</span> <span class="pre">and</span> <span class="pre">return</span> <span class="pre">the</span> <span class="pre">corresponding</span> <span class="pre">value.</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.pop" title="Permalink to this definition">#</a></dt>
 <dd><p>If key is not found, d is returned if given, otherwise KeyError is raised.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.popitem">
-<span class="sig-name descname"><span class="pre">popitem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">(k,</span> <span class="pre">v),</span> <span class="pre">return</span> <span class="pre">and</span> <span class="pre">remove</span> <span class="pre">a</span> <span class="pre">(key,</span> <span class="pre">value)</span> <span class="pre">pair.</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.popitem" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">popitem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">(k,</span> <span class="pre">v),</span> <span class="pre">return</span> <span class="pre">and</span> <span class="pre">remove</span> <span class="pre">a</span> <span class="pre">(key,</span> <span class="pre">value)</span> <span class="pre">pair.</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.popitem" title="Permalink to this definition">#</a></dt>
 <dd><p>Pairs are returned in LIFO order if last is true or FIFO order if false.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.setdefault">
-<span class="sig-name descname"><span class="pre">setdefault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">od.get(k,d),</span> <span class="pre">also</span> <span class="pre">set</span> <span class="pre">od[k]=d</span> <span class="pre">if</span> <span class="pre">k</span> <span class="pre">not</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.setdefault" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setdefault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">od.get(k,d),</span> <span class="pre">also</span> <span class="pre">set</span> <span class="pre">od[k]=d</span> <span class="pre">if</span> <span class="pre">k</span> <span class="pre">not</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.setdefault" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">F</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None.</span>&#160; <span class="pre">Update</span> <span class="pre">od</span> <span class="pre">from</span> <span class="pre">dict/iterable</span> <span class="pre">E</span> <span class="pre">and</span> <span class="pre">F.</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.update" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">F</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None.</span>&#160; <span class="pre">Update</span> <span class="pre">od</span> <span class="pre">from</span> <span class="pre">dict/iterable</span> <span class="pre">E</span> <span class="pre">and</span> <span class="pre">F.</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.update" title="Permalink to this definition">#</a></dt>
 <dd><p>If E is a dict instance, does:           for k in E: od[k] = E[k]
 If E has a .keys() method, does:         for k in E.keys(): od[k] = E[k]
 Or if E is an iterable of items, does:   for k, v in E: od[k] = v
@@ -408,29 +562,29 @@ In either case, this is followed by:     for k, v in F.items(): od[k] = v</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.values">
-<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span> <span class="pre">of</span> <span class="pre">values</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.values" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span> <span class="pre">of</span> <span class="pre">values</span> <span class="pre">in</span> <span class="pre">od</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.values" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.viewitems">
-<span class="sig-name descname"><span class="pre">viewitems</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">od's</span> <span class="pre">items</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.viewitems" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">viewitems</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">od's</span> <span class="pre">items</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.viewitems" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.viewkeys">
-<span class="sig-name descname"><span class="pre">viewkeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">od's</span> <span class="pre">keys</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.viewkeys" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">viewkeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">od's</span> <span class="pre">keys</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.viewkeys" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="kalao.fli.FLI.odict.OrderedDict.viewvalues">
-<span class="sig-name descname"><span class="pre">viewvalues</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">an</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">od's</span> <span class="pre">values</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.viewvalues" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">viewvalues</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">an</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">od's</span> <span class="pre">values</span></span></span><a class="headerlink" href="#kalao.fli.FLI.odict.OrderedDict.viewvalues" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 </section>
 <section id="module-kalao.fli.FLI">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-kalao.fli.FLI" title="Permalink to this heading">¶</a></h2>
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-kalao.fli.FLI" title="Permalink to this heading">#</a></h2>
 <p>FLI</p>
 <p>Object-oriented interface for handling Finger Lakes Instrumentation devices</p>
 <p>author:       Craig Wm. Versek, Yankee Environmental Systems
@@ -438,67 +592,155 @@ author_email: <a class="reference external" href="mailto:cwv&#37;&#52;&#48;yesin
 </section>
 </section>
 
-
-          </div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
           
         </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../index.html">KalAO-ICS</a></h1>
-
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2022, Janis Hagelberg
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
     </div>
-</div>
-<script>document.getElementById('searchbox').style.display = "block"</script>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">kalao.fli.FLI package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-kalao.fli.FLI.camera">kalao.fli.FLI.camera module</a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera"><code class="docutils literal notranslate"><span class="pre">USBCamera</span></code></a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.fetch_image"><code class="docutils literal notranslate"><span class="pre">USBCamera.fetch_image()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.get_camera_mode"><code class="docutils literal notranslate"><span class="pre">USBCamera.get_camera_mode()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.get_camera_mode_string"><code class="docutils literal notranslate"><span class="pre">USBCamera.get_camera_mode_string()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.get_cooler_power"><code class="docutils literal notranslate"><span class="pre">USBCamera.get_cooler_power()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.get_exposure_timeleft"><code class="docutils literal notranslate"><span class="pre">USBCamera.get_exposure_timeleft()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.get_image_size"><code class="docutils literal notranslate"><span class="pre">USBCamera.get_image_size()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.get_info"><code class="docutils literal notranslate"><span class="pre">USBCamera.get_info()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.get_temperature"><code class="docutils literal notranslate"><span class="pre">USBCamera.get_temperature()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.read_CCD_temperature"><code class="docutils literal notranslate"><span class="pre">USBCamera.read_CCD_temperature()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.read_base_temperature"><code class="docutils literal notranslate"><span class="pre">USBCamera.read_base_temperature()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.set_bitdepth"><code class="docutils literal notranslate"><span class="pre">USBCamera.set_bitdepth()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.set_camera_mode"><code class="docutils literal notranslate"><span class="pre">USBCamera.set_camera_mode()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.set_exposure"><code class="docutils literal notranslate"><span class="pre">USBCamera.set_exposure()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.set_flushes"><code class="docutils literal notranslate"><span class="pre">USBCamera.set_flushes()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.set_image_area"><code class="docutils literal notranslate"><span class="pre">USBCamera.set_image_area()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.set_image_binning"><code class="docutils literal notranslate"><span class="pre">USBCamera.set_image_binning()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.set_temperature"><code class="docutils literal notranslate"><span class="pre">USBCamera.set_temperature()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.start_exposure"><code class="docutils literal notranslate"><span class="pre">USBCamera.start_exposure()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.camera.USBCamera.take_photo"><code class="docutils literal notranslate"><span class="pre">USBCamera.take_photo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-kalao.fli.FLI.device">kalao.fli.FLI.device module</a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.device.USBDevice"><code class="docutils literal notranslate"><span class="pre">USBDevice</span></code></a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.device.USBDevice.find_devices"><code class="docutils literal notranslate"><span class="pre">USBDevice.find_devices()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.device.USBDevice.get_serial_number"><code class="docutils literal notranslate"><span class="pre">USBDevice.get_serial_number()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.device.USBDevice.locate_device"><code class="docutils literal notranslate"><span class="pre">USBDevice.locate_device()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-kalao.fli.FLI.filter_wheel">kalao.fli.FLI.filter_wheel module</a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel"><code class="docutils literal notranslate"><span class="pre">USBFilterWheel</span></code></a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel.get_filter_count"><code class="docutils literal notranslate"><span class="pre">USBFilterWheel.get_filter_count()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel.get_filter_pos"><code class="docutils literal notranslate"><span class="pre">USBFilterWheel.get_filter_pos()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.filter_wheel.USBFilterWheel.set_filter_pos"><code class="docutils literal notranslate"><span class="pre">USBFilterWheel.set_filter_pos()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-kalao.fli.FLI.focuser">kalao.fli.FLI.focuser module</a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.focuser.USBFocuser"><code class="docutils literal notranslate"><span class="pre">USBFocuser</span></code></a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.focuser.USBFocuser.get_stepper_position"><code class="docutils literal notranslate"><span class="pre">USBFocuser.get_stepper_position()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.focuser.USBFocuser.get_steps_remaining"><code class="docutils literal notranslate"><span class="pre">USBFocuser.get_steps_remaining()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.focuser.USBFocuser.home_focuser"><code class="docutils literal notranslate"><span class="pre">USBFocuser.home_focuser()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.focuser.USBFocuser.read_external_temperature"><code class="docutils literal notranslate"><span class="pre">USBFocuser.read_external_temperature()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.focuser.USBFocuser.read_internal_temperature"><code class="docutils literal notranslate"><span class="pre">USBFocuser.read_internal_temperature()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.focuser.USBFocuser.step_motor"><code class="docutils literal notranslate"><span class="pre">USBFocuser.step_motor()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-kalao.fli.FLI.lib">kalao.fli.FLI.lib module</a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.lib.FLIError"><code class="docutils literal notranslate"><span class="pre">FLIError</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.lib.FLILibrary"><code class="docutils literal notranslate"><span class="pre">FLILibrary</span></code></a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.lib.FLILibrary.getDll"><code class="docutils literal notranslate"><span class="pre">FLILibrary.getDll()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.lib.FLILibrary.getVersion"><code class="docutils literal notranslate"><span class="pre">FLILibrary.getVersion()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#kalao.fli.FLI.lib.FLIWarning"><code class="docutils literal notranslate"><span class="pre">FLIWarning</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.lib.c_long_p"><code class="docutils literal notranslate"><span class="pre">c_long_p</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.lib.chk_err"><code class="docutils literal notranslate"><span class="pre">chk_err()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#kalao-fli-fli-libfli-module">kalao.fli.FLI.libfli module</a></li>
+<li><a class="reference internal" href="#module-kalao.fli.FLI.odict">kalao.fli.FLI.odict module</a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict"><code class="docutils literal notranslate"><span class="pre">OrderedDict</span></code></a><ul>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.clear"><code class="docutils literal notranslate"><span class="pre">OrderedDict.clear()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.copy"><code class="docutils literal notranslate"><span class="pre">OrderedDict.copy()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.fromkeys"><code class="docutils literal notranslate"><span class="pre">OrderedDict.fromkeys()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.items"><code class="docutils literal notranslate"><span class="pre">OrderedDict.items()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.iteritems"><code class="docutils literal notranslate"><span class="pre">OrderedDict.iteritems()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.iterkeys"><code class="docutils literal notranslate"><span class="pre">OrderedDict.iterkeys()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.itervalues"><code class="docutils literal notranslate"><span class="pre">OrderedDict.itervalues()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.keys"><code class="docutils literal notranslate"><span class="pre">OrderedDict.keys()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.pop"><code class="docutils literal notranslate"><span class="pre">OrderedDict.pop()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.popitem"><code class="docutils literal notranslate"><span class="pre">OrderedDict.popitem()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.setdefault"><code class="docutils literal notranslate"><span class="pre">OrderedDict.setdefault()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.update"><code class="docutils literal notranslate"><span class="pre">OrderedDict.update()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.values"><code class="docutils literal notranslate"><span class="pre">OrderedDict.values()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.viewitems"><code class="docutils literal notranslate"><span class="pre">OrderedDict.viewitems()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.viewkeys"><code class="docutils literal notranslate"><span class="pre">OrderedDict.viewkeys()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.fli.FLI.odict.OrderedDict.viewvalues"><code class="docutils literal notranslate"><span class="pre">OrderedDict.viewvalues()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-kalao.fli.FLI">Module contents</a></li>
+</ul>
+</li>
+</ul>
 
-
-
-
-
-
-
-
+          </div>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2022, Janis Hagelberg.
       
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
-      |
-      <a href="../_sources/source/kalao.fli.FLI.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+    </aside>
+  </div>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/scripts/furo.js"></script>
+    </body>
 </html>

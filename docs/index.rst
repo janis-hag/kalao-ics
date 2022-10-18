@@ -10,6 +10,9 @@ Welcome to KalAO-ICS's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   kalao
+   sequencer
+   tcs_communication
 
 
 Indices and tables
