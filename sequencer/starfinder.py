@@ -235,6 +235,9 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
 
     focusing_dit = optimise_dit()
 
+    if focusing_dit == -1:
+        system.print_and_log('Error optimising dit for focusing sequence. Target brightness out of range')
+
     req, file_path = camera.take_image(dit=focusing_dit)
 
     #time.sleep(5)
@@ -289,6 +292,8 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
 
 
 def optimise_dit():
+
+    # TODO implement filter change to nd if dit too short.
 
     new_dit = FocusingDit
 
