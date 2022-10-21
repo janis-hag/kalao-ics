@@ -511,10 +511,10 @@ def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg 
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if starfinder.centre_on_target() == -1:
-        system.print_and_log("Error: problem with centre on target")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return -1
+    # if starfinder.centre_on_target() == -1:
+    #     system.print_and_log("Error: problem with centre on target")
+    #     database.store_obs_log({'sequencer_status': 'ERROR'})
+    #     return -1
 
     if filter_arg is None:
         #system.print_and_log("Warning: no filter specified for take image, using clear")
