@@ -235,7 +235,8 @@ def focus_sequence(focus_points=6, focusing_dit=20):
     file_handling.add_comment(file_path, "Focus sequence: 0")
 
     image = fits.getdata(file_path)
-    flux= image[np.argpartition(image, -6)][-6:].sum()
+    flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
+
     focus_flux = pd.DataFrame({'set_focus': [initial_focus], 'flux': [flux]})
 
     # Get even number of focus_points in order to include 0 in the sequence.
