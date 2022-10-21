@@ -623,7 +623,7 @@ def waitfortracking():
     """
     t0 = time.time()
 
-    while time.time() - t0 > PointingTimeOut:
+    while time.time() - t0 < PointingTimeOut:
         tracking_status = database.get_latest_record(collection_name='obs_log', key='tracking_status')
         if tracking_status == 'TRACKING':
             return 0
