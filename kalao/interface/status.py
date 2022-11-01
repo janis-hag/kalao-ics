@@ -94,7 +94,7 @@ def kalao_status():
         # If the status is not set assume that the sequencer is doww
         status_string = '/status/ERROR/0/DOWN'
     elif sequencer_status[0] == 'WAITING':
-        status_string = '/status/'+sequencer_status[0]+'/path/'+_last_filepath_archived()
+        status_string = '|status|'+sequencer_status[0]+'|path|'+_last_filepath_archived()
     elif sequencer_status[0] == 'ERROR':
         status_string = '/status/'+sequencer_status[0]
     elif sequencer_status[0] == 'WAITLAMP':
