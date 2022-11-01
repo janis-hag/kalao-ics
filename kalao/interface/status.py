@@ -94,7 +94,7 @@ def kalao_status():
         # If the status is not set assume that the sequencer is doww
         status_string = '/status/ERROR/0/DOWN'
     elif sequencer_status[0] == 'WAITING':
-        status_string = '/status/'+sequencer_status[0]
+        status_string = '/status/'+sequencer_status[0]+'/path/'+_last_filepath_archived()
     elif sequencer_status[0] == 'ERROR':
         status_string = '/status/'+sequencer_status[0]
     elif sequencer_status[0] == 'WAITLAMP':
@@ -165,3 +165,8 @@ def elapsed_exposure_seconds():
 def _last_exposure_start():
     #return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
     return database.get_latest_record('obs_log', key='fli_image_count')['time_utc'].replace(tzinfo=datetime.timezone.utc)
+
+
+def _last_filepath_archived():
+    #return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+    return database.get_latest_record('obs_log', key='fli_last_image_path')['fli_last_image_path']
