@@ -46,7 +46,7 @@ POSITIONCHANGEWAIT = parser.getfloat('FilterWheel','PositionChangeWait')
 # Id_filter.update(revd)
 
 Id_filter_dict = {}
-for key, val in parser.items( 'FilterPosition'):
+for key, val in parser.items('FilterPosition'):
     Id_filter_dict[key] = int(val)
     Id_filter_dict[int(val)] = key
 

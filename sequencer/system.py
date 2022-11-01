@@ -306,12 +306,16 @@ def check_kalao_config():
         print_and_log("Error: wrong values format for SEQ 'InitDuration' in kalao.config file: "+str(SEQSection['initduration']))
         error = True
 
+    #PointingWaitTime int, PointingTimeOut int
+
     ################
     # Starfinder section
     ###############
     if not StarfinderSection['centeringtimeout'].isdigit():
         print_and_log("Error: wrong values format for SEQ 'CenteringTimeout' in kalao.config file: "+str(SEQSection['centeringtimeout']))
         error = True
+
+    # CenteringTimeout int, FocusingStep float, FocusingPixels int, FocusingDit int, MinFlux int, MaxFlux int, MaxDit int, DitOptimisationTrials int
 
     ################
     # GOP section

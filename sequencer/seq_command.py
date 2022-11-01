@@ -380,6 +380,7 @@ def target_observation(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
 
+
     if None in (q, dit):
         system.print_and_log('Missing keyword in target_observation function call')
         database.store_obs_log({'sequencer_status': 'ERROR'})
