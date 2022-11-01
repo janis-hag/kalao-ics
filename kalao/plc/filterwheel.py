@@ -61,6 +61,7 @@ def set_position(filter_arg):
         database.store_obs_log({'filterwheel_log': "Error: wrong filter id got ({})".format(filter_arg)})
         return -1
     elif type(filter_arg) == str:
+        filter_arg = filter_arg.lower()
         if filter_arg not in Id_filter_dict.keys():
             database.store_obs_log({'filterwheel_log': "Error: wrong filter name (got {})".format(filter_arg)})
             return -1
