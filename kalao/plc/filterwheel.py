@@ -7,7 +7,7 @@
 
 """
 camera.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 import os
@@ -50,10 +50,15 @@ for key, val in parser.items('FilterPosition'):
     Id_filter_dict[key] = int(val)
     Id_filter_dict[int(val)] = key
 
+Id_only_filter_dict = {}
+for key, val in parser.items( 'FilterPosition'):
+    Id_only_filter_dict[key] = int(val)
 
 def create_filter_id():
     return Id_filter_dict
 
+def get_filter_ids():
+    return Id_only_filter_dict
 
 def set_position(filter_arg):
 
