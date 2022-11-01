@@ -141,15 +141,20 @@ def update_header(image_path, sequencer_arguments=None):
         if type == 'K_DARK':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'DARK'
+            header_df['value']['HIERARCH ESO PROG ID'] = '199'
+
         elif type == 'K_LMPFLT':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'FLAT,LAMP'
+            header_df['value']['HIERARCH ESO PROG ID'] = '199'
+
         elif type == 'K_TRGOBS':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'SCIENCE'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
         elif type == 'K_FOCUS':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
+            header_df['value']['HIERARCH ESO PROG ID'] = '199'
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -341,12 +346,14 @@ def _header_to_df(header):
 
 
 def _add_header_values(header_df, log_status, fits_header):
-    '''
+    """
     Add the values from the log to the header dataframe
 
     :param header_df:
+    :param log_status:
+    :param fits_header:
     :return: header_df: with values completed
-    '''
+    """
 
     for idx, card in header_df.iterrows():
         # Do not modify default_keys

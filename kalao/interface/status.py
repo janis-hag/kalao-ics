@@ -98,17 +98,17 @@ def kalao_status():
     elif sequencer_status[0] == 'ERROR':
         status_string = '/status/'+sequencer_status[0]
     elif sequencer_status[0] == 'WAITLAMP':
-        status_string = '/status/BUSY/'+elapsed_time(sequencer_status[0])
+        status_string = '|status|BUSY|'+elapsed_time(sequencer_status[0])
     elif sequencer_status[0] == 'EXP':
         #sequencer_commad_received = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']
         #if sequencer_commad_received['type'] == 'K_LMPFLT':
         texp = int(database.get_latest_record('obs_log', key='fli_texp')['fli_texp'])
         #if
         #texp = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']['texp']
-        status_string = '/status/BUSY/'+elapsed_time(sequencer_status[0])+'/'+str(texp)
+        status_string = '|status|BUSY|elapsed_time|'+elapsed_time(sequencer_status[0])+'|requested_time|'+str(texp)
     else:
         #  TODO get alt/az and focus offset from cacao.telemetry and add to string
-        status_string = '/status/BUSY/'+elapsed_time(sequencer_status[0])+'/'+sequencer_status[0]
+        status_string = '|status|BUSY|elapsed_time|'+elapsed_time(sequencer_status[0])+'|requested_time|'+sequencer_status[0]
 
     #status_string = '/status/'+sequencer_status
 
