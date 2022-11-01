@@ -376,7 +376,7 @@ def target_observation(**seq_args):
     """
 
     q = seq_args.get('q')
-    filter_arg = seq_args.get('filter_arg')
+    kalfilter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
 
@@ -409,12 +409,12 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if filter_arg is None:
+    if kalfilter is None:
         system.print_and_log("Warning: no filter specified for take_image, using clear")
-        filter_arg = 'clear'
+        kalfilter = 'clear'
         return -1
 
-    if filterwheel.set_position(filter_arg) == -1:
+    if filterwheel.set_position(kalfilter) == -1:
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
@@ -463,7 +463,7 @@ def target_observation_abort():
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg = None, **kwargs):
+def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, kalfilter = None, **kwargs):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -483,7 +483,7 @@ def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg 
     """
 
     q = seq_args.get('q')
-    filter_arg = seq_args.get('filter_arg')
+    kalfilter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
 
@@ -516,15 +516,14 @@ def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, filter_arg 
     #     database.store_obs_log({'sequencer_status': 'ERROR'})
     #     return -1
 
-    if filter_arg is None:
+    if kalfilter is None:
         #system.print_and_log("Warning: no filter specified for take image, using clear")
-        filter_arg = 'clear'
+        kalfilter = 'clear'
 
-    if filterwheel.set_position(filter_arg) == -1:
+    if filterwheel.set_position(kalfilter) == -1:
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
-
 
     rValue = starfinder.focus_sequence(focus_points=6)
 
