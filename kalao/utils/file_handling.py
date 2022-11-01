@@ -117,8 +117,6 @@ def save_tmp_image(image_path, sequencer_arguments=None):
         return -1
 
 
-
-
 def update_header(image_path, sequencer_arguments=None):
     """
     Updates the image header with values from the observing, monitoring, and telemetry logs.
@@ -148,6 +146,9 @@ def update_header(image_path, sequencer_arguments=None):
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'FLAT,LAMP'
         elif type == 'K_TRGOBS':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'SCIENCE'
+            header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
+        elif type == 'K_FOCUS':
+            header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
 
     with fits.open(image_path, mode='update') as hdul:
@@ -264,7 +265,6 @@ def _get_last_telescope_header():
         tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][1:]
     else:
         tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
-
 
     if tcs_header_path.is_file():
         tcs_header_df = _header_to_df(fits.getheader(tcs_header_path))
