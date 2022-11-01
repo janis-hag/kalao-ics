@@ -308,7 +308,7 @@ def optimise_dit():
         # flux = image[np.argpartition(image, -6)][-6:].sum()
         #flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
 
-        print(new_dit, image.max())
+        print(new_dit, image.max(), MaxFlux, MinFlux)
         if image.max() >= MaxFlux:
             new_dit = int(np.floor(0.8 * new_dit))
             if new_dit <= 1:
