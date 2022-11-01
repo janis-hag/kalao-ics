@@ -26,10 +26,14 @@ CenterX = parser.getint('FLI', 'CenterX')
 CenterY = parser.getint('FLI', 'CenterY')
 PixScale = parser.getfloat('FLI', 'PixScale')
 
-CenteringTimeout = parser.getfloat('SEQ', 'CenteringTimeout')
-FocusingStep = parser.getfloat('SEQ', 'FocusingStep')
-FocusingPixels = parser.getint('SEQ', 'FocusingPixels')
-
+CenteringTimeout = parser.getfloat('Starfinder', 'CenteringTimeout')
+FocusingStep = parser.getfloat('Starfinder', 'FocusingStep')
+FocusingPixels = parser.getint('Starfinder', 'FocusingPixels')
+FocusingDit = parser.getint('Starfinder', 'FocusingDit')
+MinFlux = parser.getfloat('Starfinder', 'MinFlux')
+MaxFlux = parser.getfloat('Starfinder', 'MaxFlux')
+MaxDit = parser.getint('Starfinder', 'MaxDit')
+DitOptimisationTrials  = parser.getint('Starfinder', 'DitOptimisationTrials')
 
 WFSilluminationThreshold = parser.getfloat('AO', 'WFSilluminationThreshold')
 WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
@@ -214,7 +218,7 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     return x_star, y_star
 
 
-def focus_sequence(focus_points=6, focusing_dit=20):
+def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
     """
     Starts a sequence to find best telescope M2 focus position.
 
@@ -229,13 +233,19 @@ def focus_sequence(focus_points=6, focusing_dit=20):
 
     initial_focus = t120.get_focus_value()
 
+    focusing_dit = optimise_dit()
+
+    if focusing_dit == -1:
+        system.print_and_log('Error optimising dit for focusing sequence. Target brightness out of range')
+
     req, file_path = camera.take_image(dit=focusing_dit)
 
     #time.sleep(5)
     file_handling.add_comment(file_path, "Focus sequence: 0")
 
     image = fits.getdata(file_path)
-    flux= image[np.argpartition(image, -6)][-6:].sum()
+    flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
+
     focus_flux = pd.DataFrame({'set_focus': [initial_focus], 'flux': [flux]})
 
     # Get even number of focus_points in order to include 0 in the sequence.
@@ -279,3 +289,41 @@ def focus_sequence(focus_points=6, focusing_dit=20):
     t120.send_focus_offset(best_focus)
 
     return 0
+
+
+def optimise_dit():
+
+    # TODO implement filter change to nd if dit too short.
+
+    new_dit = FocusingDit
+
+    for i in range(DitOptimisationTrials):
+
+        req, file_path = camera.take_image(dit=new_dit)
+
+        #time.sleep(20)
+        file_handling.add_comment(file_path, "Dit optimisation sequence: "+str(new_dit))
+
+        image = fits.getdata(file_path)
+        # flux = image[np.argpartition(image, -6)][-6:].sum()
+        #flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
+
+        print(new_dit, image.max(), MaxFlux, MinFlux)
+        if image.max() >= MaxFlux:
+            new_dit = int(np.floor(0.8 * new_dit))
+            if new_dit <= 1:
+                print('Max flux ' + str(image.max()) + ' above max permitted value ' + str(MaxFlux))
+                return -1
+            continue
+        elif image.max() <= MinFlux:
+            new_dit = int(np.ceil(1.2 * new_dit))
+            if new_dit >= MaxDit:
+                print('Max flux ' + str(image.max()) + ' below minimum permitted value: ' + str(MinFlux))
+                return -1
+            continue
+        else:
+            break
+
+    print('Optimal dit: ' + str(new_dit))
+
+    return new_dit

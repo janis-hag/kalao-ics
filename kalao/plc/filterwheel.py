@@ -7,7 +7,7 @@
 
 """
 camera.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 import os
@@ -46,14 +46,19 @@ POSITIONCHANGEWAIT = parser.getfloat('FilterWheel','PositionChangeWait')
 # Id_filter.update(revd)
 
 Id_filter_dict = {}
-for key, val in parser.items( 'FilterPosition'):
+for key, val in parser.items('FilterPosition'):
     Id_filter_dict[key] = int(val)
     Id_filter_dict[int(val)] = key
 
+Id_only_filter_dict = {}
+for key, val in parser.items( 'FilterPosition'):
+    Id_only_filter_dict[key] = int(val)
 
 def create_filter_id():
     return Id_filter_dict
 
+def get_filter_ids():
+    return Id_only_filter_dict
 
 def set_position(filter_arg):
 
@@ -61,6 +66,7 @@ def set_position(filter_arg):
         database.store_obs_log({'filterwheel_log': "Error: wrong filter id got ({})".format(filter_arg)})
         return -1
     elif type(filter_arg) == str:
+        filter_arg = filter_arg.lower()
         if filter_arg not in Id_filter_dict.keys():
             database.store_obs_log({'filterwheel_log': "Error: wrong filter name (got {})".format(filter_arg)})
             return -1

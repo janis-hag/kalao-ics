@@ -221,6 +221,7 @@ def check_kalao_config():
     PLCSection = dict(parser.items('PLC'))
     FLISection = dict(parser.items('FLI'))
     SEQSection = dict(parser.items('SEQ'))
+    StarfinderSection = dict(parser.items('Starfinder'))
     GOPSection = dict(parser.items('GOP'))
     FilterWheelSection = dict(parser.items('FilterWheel'))
     FilterPositionSection = dict(parser.items('FilterPosition'))
@@ -301,12 +302,20 @@ def check_kalao_config():
     if not SEQSection['port'].isdigit():
         print_and_log("Error: wrong values format for SEQ 'Port' in kalao.config file: "+str(SEQSection['port']))
         error = True
-    if not SEQSection['centeringtimeout'].isdigit():
-        print_and_log("Error: wrong values format for SEQ 'CenteringTimeout' in kalao.config file: "+str(SEQSection['centeringtimeout']))
-        error = True
     if not SEQSection['initduration'].isdigit():
         print_and_log("Error: wrong values format for SEQ 'InitDuration' in kalao.config file: "+str(SEQSection['initduration']))
         error = True
+
+    #PointingWaitTime int, PointingTimeOut int
+
+    ################
+    # Starfinder section
+    ###############
+    if not StarfinderSection['centeringtimeout'].isdigit():
+        print_and_log("Error: wrong values format for SEQ 'CenteringTimeout' in kalao.config file: "+str(SEQSection['centeringtimeout']))
+        error = True
+
+    # CenteringTimeout int, FocusingStep float, FocusingPixels int, FocusingDit int, MinFlux int, MaxFlux int, MaxDit int, DitOptimisationTrials int
 
     ################
     # GOP section

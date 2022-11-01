@@ -1,0 +1,610 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" />
+
+    <meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+        <title>kalao package - KalAO-ICS documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">KalAO-ICS  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  
+  <span class="sidebar-brand-text">KalAO-ICS  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="kalao-package">
+<h1>kalao package<a class="headerlink" href="#kalao-package" title="Permalink to this heading">#</a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="kalao.cacao.html">kalao.cacao package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.alignment_tools">kalao.cacao.alignment_tools module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.alignment_tools.center_of_mass"><code class="docutils literal notranslate"><span class="pre">center_of_mass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.alignment_tools.clamp"><code class="docutils literal notranslate"><span class="pre">clamp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.alignment_tools.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.alignment_tools_fli">kalao.cacao.alignment_tools_fli module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.alignment_tools_fli.center_of_mass"><code class="docutils literal notranslate"><span class="pre">center_of_mass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.alignment_tools_fli.clamp"><code class="docutils literal notranslate"><span class="pre">clamp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.alignment_tools_fli.dm_layout_add_viewboxes"><code class="docutils literal notranslate"><span class="pre">dm_layout_add_viewboxes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.alignment_tools_fli.keyPressed"><code class="docutils literal notranslate"><span class="pre">keyPressed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.alignment_tools_fli.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.aocontrol">kalao.cacao.aocontrol module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aocontrol.linear_low_pass_modal_gain_filter"><code class="docutils literal notranslate"><span class="pre">linear_low_pass_modal_gain_filter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aocontrol.set_loopgain"><code class="docutils literal notranslate"><span class="pre">set_loopgain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aocontrol.set_looplimit"><code class="docutils literal notranslate"><span class="pre">set_looplimit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aocontrol.set_loopmult"><code class="docutils literal notranslate"><span class="pre">set_loopmult()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aocontrol.set_modal_gain"><code class="docutils literal notranslate"><span class="pre">set_modal_gain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aocontrol.wfs_centering"><code class="docutils literal notranslate"><span class="pre">wfs_centering()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.aomanager">kalao.cacao.aomanager module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.check_loop"><code class="docutils literal notranslate"><span class="pre">check_loop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.clean"><code class="docutils literal notranslate"><span class="pre">clean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.close_loop"><code class="docutils literal notranslate"><span class="pre">close_loop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.configure_hardware"><code class="docutils literal notranslate"><span class="pre">configure_hardware()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.do_calibration"><code class="docutils literal notranslate"><span class="pre">do_calibration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.init_hardware"><code class="docutils literal notranslate"><span class="pre">init_hardware()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.init_loop"><code class="docutils literal notranslate"><span class="pre">init_loop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.load_dm_flat"><code class="docutils literal notranslate"><span class="pre">load_dm_flat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.run_process"><code class="docutils literal notranslate"><span class="pre">run_process()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.source_conf"><code class="docutils literal notranslate"><span class="pre">source_conf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.start_hardware"><code class="docutils literal notranslate"><span class="pre">start_hardware()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.start_shwfs"><code class="docutils literal notranslate"><span class="pre">start_shwfs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.wait_file"><code class="docutils literal notranslate"><span class="pre">wait_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.wait_loop"><code class="docutils literal notranslate"><span class="pre">wait_loop()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.aomanager.wait_stream"><code class="docutils literal notranslate"><span class="pre">wait_stream()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.fake_data">kalao.cacao.fake_data module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.fake_data.fake_fli_view"><code class="docutils literal notranslate"><span class="pre">fake_fli_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.fake_data.fake_latest_obs_log_entry"><code class="docutils literal notranslate"><span class="pre">fake_latest_obs_log_entry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.fake_data.fake_streams"><code class="docutils literal notranslate"><span class="pre">fake_streams()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.fake_data.fake_telemetry"><code class="docutils literal notranslate"><span class="pre">fake_telemetry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.fake_data.fake_telemetry_for_db"><code class="docutils literal notranslate"><span class="pre">fake_telemetry_for_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.fake_data.fake_telemetry_series"><code class="docutils literal notranslate"><span class="pre">fake_telemetry_series()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#kalao-cacao-generate-flat-dm-module">kalao.cacao.generate_flat_dm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.nuvu_stream_process">kalao.cacao.nuvu_stream_process module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.nuvu_stream_process.handler"><code class="docutils literal notranslate"><span class="pre">handler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.nuvu_stream_process.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.nuvu_z_align">kalao.cacao.nuvu_z_align module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.nuvu_z_align.print_ratio"><code class="docutils literal notranslate"><span class="pre">print_ratio()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.open_loop_ncpa">kalao.cacao.open_loop_ncpa module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.open_loop_ncpa.cut_image"><code class="docutils literal notranslate"><span class="pre">cut_image()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.open_loop_ncpa.handler"><code class="docutils literal notranslate"><span class="pre">handler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.open_loop_ncpa.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.open_loop_ncpa.save_stream_to_fits"><code class="docutils literal notranslate"><span class="pre">save_stream_to_fits()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.telemetry">kalao.cacao.telemetry module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.telemetry.check_fps"><code class="docutils literal notranslate"><span class="pre">check_fps()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.telemetry.check_stream"><code class="docutils literal notranslate"><span class="pre">check_stream()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.telemetry.create_shm_stream"><code class="docutils literal notranslate"><span class="pre">create_shm_stream()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.telemetry.get_stream_data"><code class="docutils literal notranslate"><span class="pre">get_stream_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.telemetry.streams"><code class="docutils literal notranslate"><span class="pre">streams()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.telemetry.telemetry_save"><code class="docutils literal notranslate"><span class="pre">telemetry_save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.telemetry.wfs_illumination_fraction"><code class="docutils literal notranslate"><span class="pre">wfs_illumination_fraction()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao.toolbox">kalao.cacao.toolbox module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.toolbox.get_actuator_1d"><code class="docutils literal notranslate"><span class="pre">get_actuator_1d()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.toolbox.get_actuator_2d"><code class="docutils literal notranslate"><span class="pre">get_actuator_2d()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.toolbox.get_roi_and_subapertures"><code class="docutils literal notranslate"><span class="pre">get_roi_and_subapertures()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.toolbox.get_subaperture_1d"><code class="docutils literal notranslate"><span class="pre">get_subaperture_1d()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.toolbox.get_subaperture_2d"><code class="docutils literal notranslate"><span class="pre">get_subaperture_2d()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.toolbox.get_subapertures_around_actuator"><code class="docutils literal notranslate"><span class="pre">get_subapertures_around_actuator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.toolbox.get_wfs_flux_map"><code class="docutils literal notranslate"><span class="pre">get_wfs_flux_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.cacao.html#kalao.cacao.toolbox.save_stream_to_fits"><code class="docutils literal notranslate"><span class="pre">save_stream_to_fits()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.cacao.html#module-kalao.cacao">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kalao.filterwheel.html">kalao.filterwheel package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kalao.filterwheel.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.filterwheel.html#kalao-filterwheel-python-fli-session-module">kalao.filterwheel.python-FLI_session module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.filterwheel.html#kalao-filterwheel-thoralbs-fwc-module">kalao.filterwheel.thoralbs_fwc module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.filterwheel.html#kalao-filterwheel-thorlabs-module">kalao.filterwheel.thorlabs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.filterwheel.html#module-kalao.filterwheel">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kalao.fli.html">kalao.fli package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kalao.fli.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.FLI.html">kalao.fli.FLI package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="kalao.fli.FLI.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kalao.fli.FLI.html#module-kalao.fli.FLI.camera">kalao.fli.FLI.camera module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kalao.fli.FLI.html#module-kalao.fli.FLI.device">kalao.fli.FLI.device module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kalao.fli.FLI.html#module-kalao.fli.FLI.filter_wheel">kalao.fli.FLI.filter_wheel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kalao.fli.FLI.html#module-kalao.fli.FLI.focuser">kalao.fli.FLI.focuser module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kalao.fli.FLI.html#module-kalao.fli.FLI.lib">kalao.fli.FLI.lib module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kalao.fli.FLI.html#kalao-fli-fli-libfli-module">kalao.fli.FLI.libfli module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kalao.fli.FLI.html#module-kalao.fli.FLI.odict">kalao.fli.FLI.odict module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kalao.fli.FLI.html#module-kalao.fli.FLI">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.fli.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.fli.html#module-kalao.fli.camera">kalao.fli.camera module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.cancel"><code class="docutils literal notranslate"><span class="pre">cancel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.check_server_status"><code class="docutils literal notranslate"><span class="pre">check_server_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.cut_image"><code class="docutils literal notranslate"><span class="pre">cut_image()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.database_update"><code class="docutils literal notranslate"><span class="pre">database_update()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.get_temperatures"><code class="docutils literal notranslate"><span class="pre">get_temperatures()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.increment_image_counter"><code class="docutils literal notranslate"><span class="pre">increment_image_counter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.log"><code class="docutils literal notranslate"><span class="pre">log()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.log_last_image_path"><code class="docutils literal notranslate"><span class="pre">log_last_image_path()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.log_temporary_image_path"><code class="docutils literal notranslate"><span class="pre">log_temporary_image_path()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.set_temperature"><code class="docutils literal notranslate"><span class="pre">set_temperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.take_image"><code class="docutils literal notranslate"><span class="pre">take_image()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.fli.html#kalao.fli.camera.video_stream"><code class="docutils literal notranslate"><span class="pre">video_stream()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.fli.html#kalao-fli-fli-stream-module">kalao.fli.fli_stream module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.fli.html#kalao-fli-libfli-module">kalao.fli.libfli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.fli.html#module-kalao.fli">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kalao.interface.html">kalao.interface package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kalao.interface.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.interface.html#module-kalao.interface.star_centering">kalao.interface.star_centering module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.star_centering.fli_view"><code class="docutils literal notranslate"><span class="pre">fli_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.star_centering.get_last_image_path"><code class="docutils literal notranslate"><span class="pre">get_last_image_path()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.star_centering.get_temporary_image_path"><code class="docutils literal notranslate"><span class="pre">get_temporary_image_path()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.star_centering.star_pixel"><code class="docutils literal notranslate"><span class="pre">star_pixel()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.interface.html#module-kalao.interface.status">kalao.interface.status module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.status.elapsed_exposure_seconds"><code class="docutils literal notranslate"><span class="pre">elapsed_exposure_seconds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.status.elapsed_time"><code class="docutils literal notranslate"><span class="pre">elapsed_time()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.status.kalao_status"><code class="docutils literal notranslate"><span class="pre">kalao_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.status.latest_obs_log_entry"><code class="docutils literal notranslate"><span class="pre">latest_obs_log_entry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.status.monitoring"><code class="docutils literal notranslate"><span class="pre">monitoring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.status.short"><code class="docutils literal notranslate"><span class="pre">short()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.status.streams"><code class="docutils literal notranslate"><span class="pre">streams()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.interface.html#kalao.interface.status.telemetry_series"><code class="docutils literal notranslate"><span class="pre">telemetry_series()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.interface.html#module-kalao.interface">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kalao.plc.html">kalao.plc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc.adc">kalao.plc.adc module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.adc.check_error"><code class="docutils literal notranslate"><span class="pre">check_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.adc.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.adc.rotate"><code class="docutils literal notranslate"><span class="pre">rotate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.adc.send_execute"><code class="docutils literal notranslate"><span class="pre">send_execute()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.adc.send_init"><code class="docutils literal notranslate"><span class="pre">send_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.adc.status"><code class="docutils literal notranslate"><span class="pre">status()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc.calib_unit">kalao.plc.calib_unit module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.calib_unit.check_error"><code class="docutils literal notranslate"><span class="pre">check_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.calib_unit.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.calib_unit.laser_position"><code class="docutils literal notranslate"><span class="pre">laser_position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.calib_unit.move"><code class="docutils literal notranslate"><span class="pre">move()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.calib_unit.send_execute"><code class="docutils literal notranslate"><span class="pre">send_execute()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.calib_unit.send_init"><code class="docutils literal notranslate"><span class="pre">send_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.calib_unit.status"><code class="docutils literal notranslate"><span class="pre">status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.calib_unit.tungsten_position"><code class="docutils literal notranslate"><span class="pre">tungsten_position()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc.core">kalao.plc.core module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.core.check_beck"><code class="docutils literal notranslate"><span class="pre">check_beck()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.core.connect"><code class="docutils literal notranslate"><span class="pre">connect()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.core.database_update"><code class="docutils literal notranslate"><span class="pre">database_update()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.core.device_status"><code class="docutils literal notranslate"><span class="pre">device_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.core.disabled_device_list"><code class="docutils literal notranslate"><span class="pre">disabled_device_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.core.lamps_off"><code class="docutils literal notranslate"><span class="pre">lamps_off()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.core.plc_status"><code class="docutils literal notranslate"><span class="pre">plc_status()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc.filterwheel">kalao.plc.filterwheel module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.filterwheel.create_filter_id"><code class="docutils literal notranslate"><span class="pre">create_filter_id()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.filterwheel.get_position"><code class="docutils literal notranslate"><span class="pre">get_position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.filterwheel.init"><code class="docutils literal notranslate"><span class="pre">init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.filterwheel.set_position"><code class="docutils literal notranslate"><span class="pre">set_position()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc.flip_mirror">kalao.plc.flip_mirror module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.flip_mirror.down"><code class="docutils literal notranslate"><span class="pre">down()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.flip_mirror.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.flip_mirror.position"><code class="docutils literal notranslate"><span class="pre">position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.flip_mirror.status"><code class="docutils literal notranslate"><span class="pre">status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.flip_mirror.switch"><code class="docutils literal notranslate"><span class="pre">switch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.flip_mirror.up"><code class="docutils literal notranslate"><span class="pre">up()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc.laser">kalao.plc.laser module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.laser.disable"><code class="docutils literal notranslate"><span class="pre">disable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.laser.enable"><code class="docutils literal notranslate"><span class="pre">enable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.laser.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.laser.lock"><code class="docutils literal notranslate"><span class="pre">lock()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.laser.set_intensity"><code class="docutils literal notranslate"><span class="pre">set_intensity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.laser.status"><code class="docutils literal notranslate"><span class="pre">status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.laser.switch"><code class="docutils literal notranslate"><span class="pre">switch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.laser.unlock"><code class="docutils literal notranslate"><span class="pre">unlock()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc.shutter">kalao.plc.shutter module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.shutter.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.shutter.position"><code class="docutils literal notranslate"><span class="pre">position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.shutter.shutter_close"><code class="docutils literal notranslate"><span class="pre">shutter_close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.shutter.shutter_open"><code class="docutils literal notranslate"><span class="pre">shutter_open()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.shutter.status"><code class="docutils literal notranslate"><span class="pre">status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.shutter.switch"><code class="docutils literal notranslate"><span class="pre">switch()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc.temperature_control">kalao.plc.temperature_control module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.fan_off"><code class="docutils literal notranslate"><span class="pre">fan_off()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.fan_on"><code class="docutils literal notranslate"><span class="pre">fan_on()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.fan_status"><code class="docutils literal notranslate"><span class="pre">fan_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.get_cooling_status"><code class="docutils literal notranslate"><span class="pre">get_cooling_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.get_temperatures"><code class="docutils literal notranslate"><span class="pre">get_temperatures()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.heater_off"><code class="docutils literal notranslate"><span class="pre">heater_off()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.heater_on"><code class="docutils literal notranslate"><span class="pre">heater_on()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.heater_status"><code class="docutils literal notranslate"><span class="pre">heater_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.pump_off"><code class="docutils literal notranslate"><span class="pre">pump_off()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.pump_on"><code class="docutils literal notranslate"><span class="pre">pump_on()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.pump_status"><code class="docutils literal notranslate"><span class="pre">pump_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.status"><code class="docutils literal notranslate"><span class="pre">status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.temperature_control.switch"><code class="docutils literal notranslate"><span class="pre">switch()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc.tungsten">kalao.plc.tungsten module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.check_error"><code class="docutils literal notranslate"><span class="pre">check_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.get_flat_dits"><code class="docutils literal notranslate"><span class="pre">get_flat_dits()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.get_switch_time"><code class="docutils literal notranslate"><span class="pre">get_switch_time()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.initialise"><code class="docutils literal notranslate"><span class="pre">initialise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.off"><code class="docutils literal notranslate"><span class="pre">off()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.on"><code class="docutils literal notranslate"><span class="pre">on()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.send_command"><code class="docutils literal notranslate"><span class="pre">send_command()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.send_execute"><code class="docutils literal notranslate"><span class="pre">send_execute()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.status"><code class="docutils literal notranslate"><span class="pre">status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.plc.html#kalao.plc.tungsten.update_db"><code class="docutils literal notranslate"><span class="pre">update_db()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.plc.html#module-kalao.plc">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kalao.rtc.html">kalao.rtc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kalao.rtc.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.rtc.html#module-kalao.rtc.device_status">kalao.rtc.device_status module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.rtc.html#kalao.rtc.device_status.database_update"><code class="docutils literal notranslate"><span class="pre">database_update()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.rtc.html#kalao.rtc.device_status.read_all"><code class="docutils literal notranslate"><span class="pre">read_all()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.rtc.html#module-kalao.rtc.gpu_control">kalao.rtc.gpu_control module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.rtc.html#kalao.rtc.gpu_control.full_status_parse"><code class="docutils literal notranslate"><span class="pre">full_status_parse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.rtc.html#kalao.rtc.gpu_control.status"><code class="docutils literal notranslate"><span class="pre">status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.rtc.html#kalao.rtc.gpu_control.status_parse"><code class="docutils literal notranslate"><span class="pre">status_parse()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.rtc.html#module-kalao.rtc">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kalao.utils.html">kalao.utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kalao.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.utils.html#module-kalao.utils.database">kalao.utils.database module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.connect_db"><code class="docutils literal notranslate"><span class="pre">connect_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.convert_database_definition"><code class="docutils literal notranslate"><span class="pre">convert_database_definition()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_all_last_monitoring"><code class="docutils literal notranslate"><span class="pre">get_all_last_monitoring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_all_last_obs_log"><code class="docutils literal notranslate"><span class="pre">get_all_last_obs_log()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_all_last_telemetry"><code class="docutils literal notranslate"><span class="pre">get_all_last_telemetry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_data"><code class="docutils literal notranslate"><span class="pre">get_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_db"><code class="docutils literal notranslate"><span class="pre">get_db()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_latest_record"><code class="docutils literal notranslate"><span class="pre">get_latest_record()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_monitoring"><code class="docutils literal notranslate"><span class="pre">get_monitoring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_obs_log"><code class="docutils literal notranslate"><span class="pre">get_obs_log()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_telemetry"><code class="docutils literal notranslate"><span class="pre">get_telemetry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.get_telemetry_series"><code class="docutils literal notranslate"><span class="pre">get_telemetry_series()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.read_mongo_to_pandas"><code class="docutils literal notranslate"><span class="pre">read_mongo_to_pandas()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.read_mongo_to_pandas_by_timestamp"><code class="docutils literal notranslate"><span class="pre">read_mongo_to_pandas_by_timestamp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.store_data"><code class="docutils literal notranslate"><span class="pre">store_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.store_monitoring"><code class="docutils literal notranslate"><span class="pre">store_monitoring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.store_obs_log"><code class="docutils literal notranslate"><span class="pre">store_obs_log()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database.store_telemetry"><code class="docutils literal notranslate"><span class="pre">store_telemetry()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.utils.html#module-kalao.utils.database_updater">kalao.utils.database_updater module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database_updater.handler"><code class="docutils literal notranslate"><span class="pre">handler()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database_updater.update_plc_monitoring"><code class="docutils literal notranslate"><span class="pre">update_plc_monitoring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.database_updater.update_telemetry"><code class="docutils literal notranslate"><span class="pre">update_telemetry()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.utils.html#module-kalao.utils.engineering">kalao.utils.engineering module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.engineering.create_mosaic"><code class="docutils literal notranslate"><span class="pre">create_mosaic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.engineering.focus"><code class="docutils literal notranslate"><span class="pre">focus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.engineering.scan_adc"><code class="docutils literal notranslate"><span class="pre">scan_adc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.engineering.scan_calib"><code class="docutils literal notranslate"><span class="pre">scan_calib()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.engineering.star_stack_max"><code class="docutils literal notranslate"><span class="pre">star_stack_max()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.utils.html#module-kalao.utils.file_handling">kalao.utils.file_handling module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.file_handling.add_comment"><code class="docutils literal notranslate"><span class="pre">add_comment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.file_handling.create_night_filepath"><code class="docutils literal notranslate"><span class="pre">create_night_filepath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.file_handling.create_night_folder"><code class="docutils literal notranslate"><span class="pre">create_night_folder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.file_handling.read_header_cards"><code class="docutils literal notranslate"><span class="pre">read_header_cards()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.file_handling.save_tmp_image"><code class="docutils literal notranslate"><span class="pre">save_tmp_image()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.file_handling.update_default_header_keydict"><code class="docutils literal notranslate"><span class="pre">update_default_header_keydict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.file_handling.update_header"><code class="docutils literal notranslate"><span class="pre">update_header()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.utils.html#module-kalao.utils.kalao_time">kalao.utils.kalao_time module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.kalao_time.check_time_format"><code class="docutils literal notranslate"><span class="pre">check_time_format()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.kalao_time.datetime_is_naive"><code class="docutils literal notranslate"><span class="pre">datetime_is_naive()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.kalao_time.get_isotime"><code class="docutils literal notranslate"><span class="pre">get_isotime()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.kalao_time.get_mjd"><code class="docutils literal notranslate"><span class="pre">get_mjd()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.kalao_time.get_start_of_night"><code class="docutils literal notranslate"><span class="pre">get_start_of_night()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kalao.utils.html#kalao.utils.kalao_time.now"><code class="docutils literal notranslate"><span class="pre">now()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kalao.utils.html#module-kalao.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="kalao-plc-stub-module">
+<h2>kalao.plc_stub module<a class="headerlink" href="#kalao-plc-stub-module" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="module-kalao">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-kalao" title="Permalink to this heading">#</a></h2>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2022, Janis Hagelberg
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">kalao package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#kalao-plc-stub-module">kalao.plc_stub module</a></li>
+<li><a class="reference internal" href="#module-kalao">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/scripts/furo.js"></script>
+    </body>
+</html>

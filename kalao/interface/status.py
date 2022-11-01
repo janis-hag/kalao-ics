@@ -94,21 +94,21 @@ def kalao_status():
         # If the status is not set assume that the sequencer is doww
         status_string = '/status/ERROR/0/DOWN'
     elif sequencer_status[0] == 'WAITING':
-        status_string = '/status/'+sequencer_status[0]
+        status_string = '|status|'+sequencer_status[0]+'|path|'+_last_filepath_archived()
     elif sequencer_status[0] == 'ERROR':
         status_string = '/status/'+sequencer_status[0]
     elif sequencer_status[0] == 'WAITLAMP':
-        status_string = '/status/BUSY/'+elapsed_time(sequencer_status[0])
+        status_string = '|status|BUSY|'+elapsed_time(sequencer_status[0])
     elif sequencer_status[0] == 'EXP':
         #sequencer_commad_received = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']
         #if sequencer_commad_received['type'] == 'K_LMPFLT':
         texp = int(database.get_latest_record('obs_log', key='fli_texp')['fli_texp'])
         #if
         #texp = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']['texp']
-        status_string = '/status/BUSY/'+elapsed_time(sequencer_status[0])+'/'+str(texp)
+        status_string = '|status|BUSY|elapsed_time|'+elapsed_time(sequencer_status[0])+'|requested_time|'+str(texp)
     else:
         #  TODO get alt/az and focus offset from cacao.telemetry and add to string
-        status_string = '/status/BUSY/'+elapsed_time(sequencer_status[0])+'/'+sequencer_status[0]
+        status_string = '|status|BUSY|elapsed_time|'+elapsed_time(sequencer_status[0])+'|requested_time|'+sequencer_status[0]
 
     #status_string = '/status/'+sequencer_status
 
@@ -165,3 +165,8 @@ def elapsed_exposure_seconds():
 def _last_exposure_start():
     #return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
     return database.get_latest_record('obs_log', key='fli_image_count')['time_utc'].replace(tzinfo=datetime.timezone.utc)
+
+
+def _last_filepath_archived():
+    #return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+    return database.get_latest_record('obs_log', key='fli_last_image_path')['fli_last_image_path']

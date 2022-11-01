@@ -117,8 +117,6 @@ def save_tmp_image(image_path, sequencer_arguments=None):
         return -1
 
 
-
-
 def update_header(image_path, sequencer_arguments=None):
     """
     Updates the image header with values from the observing, monitoring, and telemetry logs.
@@ -143,12 +141,20 @@ def update_header(image_path, sequencer_arguments=None):
         if type == 'K_DARK':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'DARK'
+            header_df['value']['HIERARCH ESO PROG ID'] = '199'
+
         elif type == 'K_LMPFLT':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'FLAT,LAMP'
+            header_df['value']['HIERARCH ESO PROG ID'] = '199'
+
         elif type == 'K_TRGOBS':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'SCIENCE'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
+        elif type == 'K_FOCUS':
+            header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
+            header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
+            header_df['value']['HIERARCH ESO PROG ID'] = '199'
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -256,10 +262,14 @@ def _get_last_telescope_header():
     """
 
     # TODO verify if latest_record['time_utc'] is recent enough
+    gls_home = Path(T4root)
 
     tcs_header_path_record = database.get_latest_record('obs_log', key='tcs_header_path')
 
-    tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
+    if 'home' in tcs_header_path_record['tcs_header_path']:
+        tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][1:]
+    else:
+        tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
 
     if tcs_header_path.is_file():
         tcs_header_df = _header_to_df(fits.getheader(tcs_header_path))
@@ -336,12 +346,14 @@ def _header_to_df(header):
 
 
 def _add_header_values(header_df, log_status, fits_header):
-    '''
+    """
     Add the values from the log to the header dataframe
 
     :param header_df:
+    :param log_status:
+    :param fits_header:
     :return: header_df: with values completed
-    '''
+    """
 
     for idx, card in header_df.iterrows():
         # Do not modify default_keys
