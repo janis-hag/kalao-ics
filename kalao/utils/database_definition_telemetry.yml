@@ -5,6 +5,7 @@ time_utc:
   long: UTC time
   unit: python datetime object
   main_gui: 0 # main_gui: 2
+  group:
 
 # PI Tip/Tilt
 pi_tip:
@@ -12,12 +13,14 @@ pi_tip:
   long: Tip on Tip-Tilt platform
   unit: mrad
   main_gui: 0 # main_gui: 2
+  group: Tip-Tilt
 
 pi_tilt:
   short: Tilt
   long: Tilt on Tip-Tilt platform
   unit: mrad
   main_gui: 0 # main_gui: 2
+  group: Tip-Tilt
 
 # Nüvü camera (temperatures)
 nuvu_temp_ccd:
@@ -25,30 +28,35 @@ nuvu_temp_ccd:
   long: Temperature of the EMCCD
   unit: °C
   main_gui: 3 # main_gui: 2
+  group: Nuvu
 
 nuvu_temp_controller:
   short: CNTRLR Temp.
   long: Temperature of the Nüvü controller
   unit: °C
   main_gui: 2 # main_gui: 2
+  group: Nuvu
 
 nuvu_temp_power_supply:
   short: PSU Temp.
   long: Temperature of the Nüvü power supply
   unit: °C
   main_gui: 2 # main_gui: 2
+  group: Nuvu
 
 nuvu_temp_fpga:
   short: FPGA Temp.
   long: Temperature of the Nüvü FPGA
   unit: °C
   main_gui: 2 # main_gui: 2
+  group: Nuvu
 
 nuvu_temp_heatsink:
   short: HS Temp.
   long: Temperature of the Nüvü heatsink
   unit: °C
   main_gui: 2 # main_gui: 2
+  group: Nuvu
 
 # Nüvü camera (exposure)
 nuvu_emgain:
@@ -56,25 +64,28 @@ nuvu_emgain:
   long: EM gain of the EMCCD
   unit: '-'
   main_gui: 3
+  group: Nuvu
 
 nuvu_detgain:
   short: Detector gain
   long: Analogic detector gain
   unit: '-'
   main_gui: 3
+  group: Nuvu
 
 nuvu_exposuretime:
   short: Exp. time
   long: Exposure time of the EMCCD
   unit: ms
   main_gui: 3
+  group: Nuvu
 
 nuvu_mframerate:
   short: Framerate
   long: Measured frame rate
   unit: Hz
   main_gui: 3
-
+  group: Nuvu
 
 # Shack-Hartmann WFS
 slopes_flux_subaperture:
@@ -82,19 +93,21 @@ slopes_flux_subaperture:
   long: Maximum flux in a subaperture
   unit: ADU
   main_gui: 3
+  group: SHWFS slopes
 
 slopes_residual_pix:
   short: WFS rms error (pix)
   long: WFS rms residuals in pixels
   unit: pix
   main_gui: 0 # main_gui: 2
+  group: SHWFS slopes
 
 slopes_residual_arcsec:
   short: WFS rms error (as)
   long: WFS rms residuals in arcsec
   unit: arcsec
   main_gui: 2 # main_gui: 2
-
+  group: SHWFS slopes
 
 # AO loop status
 loop_gain:
@@ -102,15 +115,18 @@ loop_gain:
   long: AO loop gain
   unit: ''
   main_gui: 2 # main_gui: 2
+  group: AO loop
 
 loop_mult:
   short: AO loop mult coeff
   long: AO loop mult coeff
   unit: ''
   main_gui: 2 # main_gui: 2
+  group: AO loop
 
 loop_on:
   short: AO loop ON/OFF
   long: AO loop ON/OFF
   unit: ''
   main_gui: 2 # main_gui: 2
+  group: AO loop

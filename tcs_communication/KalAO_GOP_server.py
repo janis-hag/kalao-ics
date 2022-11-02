@@ -36,17 +36,24 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 
 def gop_print_and_log(log_text):
-    '''
+    """
     Print out message to stdout and log message
 
     :param log_text: text to be printed and logged
     :return:
-    '''
+    """
+
     print(str(kalao_time.now())+' '+log_text)
     database.store_obs_log({'gop_log': log_text})
 
 
 def gop_server():
+    """
+    The main server code to run. It is listening on the IP and port defined in kalao.config
+
+    :return:
+    """
+
     # Initialise Gop (Geneva Observatory Protocol)
     gop = tcs_srv_gop.gop()
 
@@ -85,7 +92,7 @@ def gop_server():
                 # gc = gop.initializeGopConnection(socketName, verbosity)
                 gc = gop.initializeInetGopConnection(socketName, socketPort, verbosity)
                 break
-            elif  controlRead[-1] == '#':
+            elif controlRead[-1] == '#':
                 command += controlRead[:-1]  # concat input string
             else:
                 command += controlRead  # concat input string
@@ -107,7 +114,7 @@ def gop_server():
 
         socket_connection_error = False
 
-        # Check if its a KalAO command and send it
+        # Check if it's a KalAO command and send it
         if commandList[0][:1] == "K":
 
             hostSeq, portSeq = (sequencer_host, sequencer_port)
@@ -128,27 +135,31 @@ def gop_server():
                 socketSeq.close()
 
         if socket_connection_error:
-                sleep(10)
-                continue
+            sleep(10)
+            continue
 
         if commandList[0] == "TEST":
             message = "/OK"
             gop_print_and_log("Send acknowledge: "+str(message))
             gop.write(message)
+
         elif commandList[0] == "ONTARGET":
             database.store_obs_log({'tcs_header_path': commandList[1]})
             database.store_obs_log({'tracking_status': 'TRACKING'})
             gop_print_and_log("Received fits header path: " + str(commandList[1]))
+
         elif (commandList[0] == "quit") or (commandList[0] == "exit"):
             message = "/OK"
             gop_print_and_log("Send acknowledge and quit: "+str(message))
             gop.write(message)
             gop_print_and_log("Acknowledge sent")
             break
+
         elif commandList[0] == "STATUS":
             message = status.kalao_status()
             gop_print_and_log("Send status: "+str(message))
             gop.write(message)
+
         else:
             message = "/OK"
             gop_print_and_log("Send acknowledge: "+str(message))
