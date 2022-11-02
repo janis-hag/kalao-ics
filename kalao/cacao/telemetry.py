@@ -5,6 +5,7 @@
 """
 
 from pathlib import Path
+from scipy import stats
 import numpy as np
 
 import libtmux
@@ -64,22 +65,26 @@ def create_shm_stream(name):
 		return None
 
 
-def _get_stream(name, min_value, max_value):
+def _get_stream(name, min_value, max_value, sigma_clip=True):
 	"""
-	Opens an existing stream after having verified it's existence.
+	Opens an existing stream after having verified its existence.
 
-	:param name:
-	:param min_value:
-	:param max_value:
+	:param name: Name of the stream to get
+	:param min_value: Maximum value to use
+	:param max_value: Minimum value to use
+	:param sigma_clip: Apply sigma clipping
 	:return:
 	"""
 	exists, stream_path = check_stream(name)
 
 	if exists:
-		shm_stream = SHM(str(stream_path)) #name)
-		#shm_stream = SHM(name) #name)
+		shm_stream = SHM(str(stream_path))
 		# Check turned off to prevent timeout. Data may be obsolete
 		data = shm_stream.get_data(check=False)
+
+		if sigma_clip:
+			data, min_value, max_value = stats.sigmaclip(data,low=2.0, high=2.0)
+
 
 		#stream.close()
 		if len(data.shape) == 1:
@@ -177,6 +182,7 @@ def telemetry_save(stream_list):
 	try:
 		session = server.find_where({ "session_name": "nuvu_ctrl" })
 	except:
+		# TODO specify more precise exception
 		session = False
 
 	# If tmux session exists send query temperatures
