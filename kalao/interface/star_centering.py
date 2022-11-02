@@ -41,11 +41,13 @@ def fli_view(binfactor=1, x=512, y=512, realData=True):
         return manual_centering_needed, centering_image
 
 
+# TODO move the following functions to file_handling or fli.camera
+
 def _get_image_path(image_type):
 
     if image_type in ['last', 'temporary']:
         # READ mongodb to find latest filename
-        last_image = database.get_obs_log(['fli_'+image_type+'_image_path'], 1)['fli_'+image_type+'_image_path']
+        last_image = database.get_latest_record('obs_log', key='fli_'+image_type+'_image_path')['fli_'+image_type+'_image_path']
         if last_image.get('values'):
             filename = last_image['values'][0]
             file_date = last_image['time_utc'][0]
