@@ -17,6 +17,8 @@ import math
 import yaml
 import time as time_lib
 
+import csv
+
 import logging
 
 from os import path
@@ -29,6 +31,7 @@ from kalao.cacao import telemetry as k_telemetry
 from kalao.interface import status as k_status
 from kalao.interface import star_centering as k_star_centering
 from kalao.utils import database as k_database
+from kalao.plc import filterwheel as k_filterwheel
 
 def create_app():
 
@@ -50,6 +53,7 @@ def create_app():
         monitoringMetaData = {}
         obsLogMetaData = {}
         telemetryMetaData = {}
+        filterwheelMetaData = {}
 
         # Read parameters.yml
         file_path = projectPath+'/kalao-ics/kalao/utils/database_definition_monitoring.yml'
@@ -73,10 +77,34 @@ def create_app():
             except yaml.YAMLError as exc:
                 print("Error while trying to load parametersfrom "+file_path+" file")
 
+        filterwheelMetaData = k_filterwheel.get_filter_ids()
+
+        colormapsMetaData = {}
+
+        def csv_to_json(csvFilePath):
+            jsonArray = []
+
+            f = open(csvFilePath, "r")
+            for row in f:
+                v = list(map(float, row.split(",")))
+                v2 = [math.floor(val*255) for val in v]
+                s = {"r":v2[0],"g":v2[1],"b":v2[2]}
+                jsonArray.append(s)
+            f.close()
+            return jsonArray
+
+        colormapsMetaData = {
+            "diverging_bwg_20-95_c41_n256":csv_to_json('colormaps/diverging_bwg_20-95_c41_n256.csv'),
+            "linear_worb_100-25_c53_n256":csv_to_json('colormaps/linear_worb_100-25_c53_n256.csv'),
+            "glasbey_hv_n256":csv_to_json('colormaps/glasbey_hv_n256.csv')
+        }
+
         return {
             "monitoring": monitoringMetaData,
             "telemetry": telemetryMetaData,
-            "obsLog": obsLogMetaData
+            "obsLog": obsLogMetaData,
+            "filterwheel": filterwheelMetaData,
+            "colormaps": colormapsMetaData
         }
 
     @app.route('/pixelImages', methods=['GET'])
@@ -183,40 +211,6 @@ def create_app():
         random = bool(request.args.get('random', default = "", type = str))
         return k_status.cacao_measurements(random)
 
-    @app.route('/timeSeries2/<t_start>/<t_end>', methods=['GET'])
-    def timeSeries2(t_start,t_end):
-
-        startDay = datetime.fromtimestamp(int(t_start))
-        endDay = datetime.fromtimestamp(int(t_end))
-
-        startDay = startDay.astimezone(timezone.utc)
-        endDay = endDay.astimezone(timezone.utc)
-        print("###",startDay, endDay)
-        data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay) #.to_json(orient="split")*/
-        ts = {}
-        ts_full = []
-        time_list = data["time_utc"].tolist()
-        if len(time_list) <= 1:
-            time_list = []
-        time_values = [time_lib.mktime(d.timetuple()) for d in time_list]
-
-        for col in data.columns:
-            if col != "time_utc":
-                values = data[col].tolist()
-                if len(values) <= 1:
-                    values = []
-
-                ts[col] = {
-                    "time": [],
-                    "values": []
-                }
-                for i in range(len(values)):
-                    if time_values[i] >= float(t_start) and time_values[i] <= float(t_end) :
-                        ts[col]["time"].append(time_values[i])
-                        ts[col]["values"].append(values[i])
-
-        return json.dumps(ts);
-
     @app.route('/timeSeries/<t_start>/<t_end>', methods=['GET'])
     def timeSeries(t_start,t_end):
 
@@ -225,7 +219,9 @@ def create_app():
 
         startDay = startDay.astimezone(timezone.utc)
         endDay = endDay.astimezone(timezone.utc)
-        data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay) #.to_json(orient="split")*/
+        monitoring_data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay,'monitoring') #.to_json(orient="split")*/
+        telemetry_data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay,'telemetry') #.to_json(orient="split")*/
+        data = telemetry_data
         ts = {}
         ts_full = []
         time_list = data["time_utc"].tolist()
@@ -255,8 +251,32 @@ def create_app():
 
         options = request.get_json()
         k_aocontrol.set_modal_gain(options["key"],options["value"])
-        print(options)
-        print("SET",options["key"],options["value"])
+        return "ok"
+
+    @app.route('/modalGainFilter', methods=['POST'])
+    def modalGainFilter():
+
+        options = request.get_json()
+        if "cut_off" in options:
+            if "last_mode" in options:
+                k_aocontrol.linear_low_pass_modal_gain_filter(options["cut_off"],options["last_mode"])
+            else:
+                k_aocontrol.linear_low_pass_modal_gain_filter(options["cut_off"])
+
+        return "ok"
+
+    @app.route('/loop/<type>', methods=['POST'])
+    def loop(type):
+
+        options = request.get_json()
+
+        if type == "gain":
+            k_aocontrol.set_loopgain(float(options["value"]))
+        elif type == "mult":
+            k_aocontrol.set_loopmult(float(options["value"]))
+        elif type == "limit":
+            k_aocontrol.set_looplimit(float(options["value"]))
+
         return "ok"
 
     return app

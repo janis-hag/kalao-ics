@@ -5,6 +5,7 @@ from kalao.plc import shutter as k_shutter
 from kalao.plc import flip_mirror as k_flip_mirror
 from kalao.plc import tungsten as k_tungsten
 from kalao.plc import calib_unit as k_calib_unit
+from kalao.plc import filterwheel as k_filterwheel
 
 import json
 
@@ -27,7 +28,10 @@ def plcStatus():
             "status": k_tungsten.status()
         },
         "calib_unit": {
-            "status": k_calib_unit.status()}
+            "status": k_calib_unit.status()
+        },
+        "filterwheel": {
+            "position": k_filterwheel.get_position()}
         })
 
 @plc_bp.route('/laser/enable', methods=['GET'])
@@ -69,13 +73,22 @@ def plcTungstenOff():
 
 @plc_bp.route('/calibUnit/laser', methods=['GET'])
 def plcCalibUnitLaser():
-    return k_calib_unit.laser();
+    return k_calib_unit.laser_position();
 
 @plc_bp.route('/calibUnit/tungsten', methods=['GET'])
 def plcCalibUnitTungsten():
-    return k_calib_unit.tungsten();
+    return k_calib_unit.tungsten_position();
+
+@plc_bp.route('/filterwheel/move', methods=['POST'])
+def plcFilterwheelMove():
+    options = request.get_json()
+    return str(k_filterwheel.set_position(int(options["filter"])))
 
 @plc_bp.route('/calibUnit/move', methods=['POST'])
 def plcCalibUnitMove():
     options = request.get_json()
     return str(k_calib_unit.move(float(options["move"])))
+
+@plc_bp.route('/calibUnit/initialise', methods=['GET'])
+def plcCalibUnitInitialise():
+    return str(k_calib_unit.initialise())
