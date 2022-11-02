@@ -219,19 +219,40 @@ def create_app():
 
         startDay = startDay.astimezone(timezone.utc)
         endDay = endDay.astimezone(timezone.utc)
-        monitoring_data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay,'monitoring') #.to_json(orient="split")*/
-        telemetry_data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay,'telemetry') #.to_json(orient="split")*/
-        data = telemetry_data
+        monitoring_data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay,collection_name='monitoring') #.to_json(orient="split")*/
+        telemetry_data = k_database.read_mongo_to_pandas_by_timestamp(startDay, endDay,collection_name='telemetry') #.to_json(orient="split")*/
+        #data = telemetry_data
         ts = {}
         ts_full = []
-        time_list = data["time_utc"].tolist()
+        time_list = monitoring_data["time_utc"].tolist()
         if len(time_list) <= 1:
             time_list = []
         time_values = [time_lib.mktime(d.timetuple()) for d in time_list]
 
-        for col in data.columns:
+        for col in monitoring_data.columns:
             if col != "time_utc":
-                values = data[col].tolist()
+                values = monitoring_data[col].tolist()
+                if len(values) <= 1:
+                    values = []
+
+                ts[col] = {
+                    "time": [],
+                    "values": []
+                }
+                for i in range(len(values)):
+                    if time_values[i] >= float(t_start) and time_values[i] <= float(t_end) :
+                        ts[col]["time"].append(time_values[i])
+                        ts[col]["values"].append(values[i])
+
+        ts_full = []
+        time_list = telemetry_data["time_utc"].tolist()
+        if len(time_list) <= 1:
+            time_list = []
+        time_values = [time_lib.mktime(d.timetuple()) for d in time_list]
+
+        for col in telemetry_data.columns:
+            if col != "time_utc":
+                values = telemetry_data[col].tolist()
                 if len(values) <= 1:
                     values = []
 

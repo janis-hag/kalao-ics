@@ -7,6 +7,9 @@ from kalao.plc import tungsten as k_tungsten
 from kalao.plc import calib_unit as k_calib_unit
 from kalao.plc import filterwheel as k_filterwheel
 
+from kalao.utils import database as k_database
+
+
 import json
 
 plc_bp = Blueprint('plc', __name__, url_prefix='/plc')
@@ -14,6 +17,8 @@ plc_bp = Blueprint('plc', __name__, url_prefix='/plc')
 @plc_bp.route('/status', methods=['GET'])
 def plcStatus():
 
+    monitoring = k_database.get_all_last_monitoring()
+    filter_position = monitoring["fli_filter_position"]["values"]
     return json.dumps({
         "laser": {
             "status": k_laser.status()
@@ -31,7 +36,7 @@ def plcStatus():
             "status": k_calib_unit.status()
         },
         "filterwheel": {
-            "position": k_filterwheel.get_position()}
+            "position": filter_position}
         })
 
 @plc_bp.route('/laser/enable', methods=['GET'])
