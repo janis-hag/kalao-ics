@@ -47,10 +47,10 @@ def _get_image_path(image_type):
 
     if image_type in ['last', 'temporary']:
         # READ mongodb to find latest filename
-        last_image = database.get_latest_record('obs_log', key='fli_'+image_type+'_image_path')['fli_'+image_type+'_image_path']
+        last_image = database.get_latest_record('obs_log', key='fli_'+image_type+'_image_path')
         if last_image.get('values'):
-            filename = last_image['values'][0]
-            file_date = last_image['time_utc'][0]
+            filename = last_image['fli_'+image_type+'_image_path']
+            file_date = last_image['time_utc']
         else:
             # Set to None is list is empty
             filename = None
@@ -58,7 +58,7 @@ def _get_image_path(image_type):
 
         return filename, file_date
 
-    return 1
+    return -1
 
 
 def get_last_image_path():
