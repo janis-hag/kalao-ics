@@ -34,6 +34,10 @@ tracking_log:
   short: Log of the tacking
   long:
   unit:
+tracking_manual_centering:
+  short: Manual centering flag
+  long: Flag do indicate if manual centering is needed
+  unit: boolean
 
 # PI Tip/Tilt
 pi_log:
