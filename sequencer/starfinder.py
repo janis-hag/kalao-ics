@@ -48,9 +48,9 @@ def centre_on_target(filter_arg='clear'):
     timeout_time = time.time()+CenteringTimeout
 
     while time.time() < timeout_time:
-        rValue, image_path = camera.take_image(dit = ExpTime)
-        #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
-        #file_handling.save_tmp_image(image_path)
+        rValue, image_path = camera.take_image(dit=ExpTime)
+        # image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
+        # file_handling.save_tmp_image(image_path)
 
         if rValue != 0:
             # print(rValue)
@@ -64,7 +64,7 @@ def centre_on_target(filter_arg='clear'):
             send_pixel_offset(x, y)
 
             if verify_centering() == 0:
-                database.store_obs_log({'tracking_manual_centering': False})
+                request_manual_centering(False)
 
                 return 0
 
@@ -72,13 +72,14 @@ def centre_on_target(filter_arg='clear'):
             # Start manual centering
             # TODO start timeout (value in kalao.config)
             # Set flag for manual centering
-            database.store_obs_log({'tracking_manual_centering': True})
+            request_manual_centering()
 
             while time.time() < timeout_time:
 
                 # Check if we are centered and exit loop
-                rValue =  verify_centering()
+                rValue = verify_centering()
                 if rValue == 0:
+                    request_manual_centering(False)
                     return 0
 
                 time.sleep(15)
@@ -91,6 +92,10 @@ def centre_on_target(filter_arg='clear'):
             #    return 0
 
             pass
+
+
+def request_manual_centering(flag=True):
+    database.store_obs_log({'tracking_manual_centering': flag})
 
 
 def manual_centering(x, y):
@@ -112,7 +117,7 @@ def send_pixel_offset(x, y):
     # TODO uncomment when gui testing finished
     #t120.send_offset(alt_offset, az_offset)
 
-    system.print_and_log(f'Sending offsest: {alt_offset=} {az_offset=}')
+    system.print_and_log(f'Sending offset: {alt_offset=} {az_offset=}')
 
 
 def verify_centering():
