@@ -52,7 +52,7 @@ def _get_image_path(image_type):
         last_image = database.get_latest_record('obs_log', key='fli_'+image_type+'_image_path')
         if last_image.get('fli_'+image_type+'_image_path'):
             filename = last_image['fli_'+image_type+'_image_path']
-            file_date = last_image['time_utc']
+            file_date = last_image['time_utc'].strftime('%H:%M:%S.%f')[:-3]
         else:
             # Set to None is list is empty
             filename = None
