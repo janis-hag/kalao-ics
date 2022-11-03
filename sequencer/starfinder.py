@@ -102,13 +102,17 @@ def manual_centering(x, y):
 
     return rValue
 
+
 def send_pixel_offset(x, y):
     # Found star
     alt_offset = (x - CenterX) * PixScale
     az_offset = (y - CenterY) * PixScale
 
     # TODO transform pixel x y into arcseconds
-    t120.send_offset(alt_offset, az_offset)
+    # TODO uncomment when gui testing finished
+    #t120.send_offset(alt_offset, az_offset)
+
+    system.print_and_log(f'Sending offsest: {alt_offset=} {az_offset=}')
 
 
 def verify_centering():
