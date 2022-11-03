@@ -20,7 +20,7 @@ from kalao.utils import database
 from kalao.cacao import fake_data
 
 
-def fli_view(binfactor=1, x=512, y=512, last_file_date=None, realData=True):
+def fli_view(binfactor=4, x=512, y=512, last_file_date=None, realData=True):
 
     if not realData:
         # Returning fake fli_view for testing purposes
