@@ -50,14 +50,14 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
 
                 else:
                     # Clip after zooming
-                    if x + 128 - centering_image.shape[0] > 0:
-                        x =  centering_image.shape[0] - 128
-                    elif x - 128 < 0:
-                        x = 128
-                    if y + 128 - centering_image.shape[1] > 0:
-                        y = centering_image.shape[1] - 128
-                    elif y - 128 < 0:
-                        y = 128
+                    # if x + 128 - centering_image.shape[0] > 0:
+                    #     x =  centering_image.shape[0] - 128
+                    # elif x - 128 < 0:
+                    #     x = 128
+                    # if y + 128 - centering_image.shape[1] > 0:
+                    #     y = centering_image.shape[1] - 128
+                    # elif y - 128 < 0:
+                    #     y = 128
 
                     centering_image = centering_image[x-128:x+128, y-128:y+128]
 
@@ -72,7 +72,7 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
             centering_image = np.zeros((256, 256))
             file_date = 'No data'
 
-        manual_centering_needed = False
+        manual_centering_needed = database.get_latest_record('obs_log', key='tracking_manual_centering')['tracking_manual_centering']
 
         return manual_centering_needed, centering_image, file_date
 
