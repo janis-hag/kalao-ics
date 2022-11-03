@@ -20,8 +20,9 @@ from kalao.utils import database
 from kalao.cacao import fake_data
 
 
-def fli_view(binfactor=4, x=512, y=512, percentile=99, last_file_date=None, realData=True):
+def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
 
+    binfactor = 4
     if not realData:
         # Returning fake fli_view for testing purposes
         return False, fake_data.fake_fli_view()
@@ -39,7 +40,7 @@ def fli_view(binfactor=4, x=512, y=512, percentile=99, last_file_date=None, real
             else:
                 centering_image = fits.getdata(fli_image_path)
 
-                if binfactor == 4:
+                if x is None or y is None:
                     # Clip before binning
                     centering_image, min_value, max_value = percentile_clip(centering_image, percentile)
                     centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
