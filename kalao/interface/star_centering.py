@@ -42,7 +42,7 @@ def fli_view(binfactor=1, x=512, y=512, last_file_date=None, realData=True):
                     centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
                            anti_aliasing=True)
                 # if binning other that 4 we need to cut edges for the final image to be 256
-                centering_image, min_value, max_value = stats.sigmaclip(centering_image, low=2.0, high=2.0)
+                #centering_image, min_value, max_value = stats.sigmaclip(centering_image, low=2.0, high=2.0)
 
         else:
             centering_image = np.zeros((256, 256))
