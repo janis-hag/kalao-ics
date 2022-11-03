@@ -20,7 +20,7 @@ from kalao.utils import database
 from kalao.cacao import fake_data
 
 
-def fli_view(binfactor=4, x=512, y=512, last_file_date=None, realData=True):
+def fli_view(binfactor=4, x=512, y=512, percentile=98, last_file_date=None, realData=True):
 
     if not realData:
         # Returning fake fli_view for testing purposes
@@ -43,7 +43,7 @@ def fli_view(binfactor=4, x=512, y=512, last_file_date=None, realData=True):
                            anti_aliasing=True, preserve_range=True)
                 # if binning other that 4 we need to cut edges for the final image to be 256
                 #centering_image, min_value, max_value = stats.sigmaclip(centering_image, low=2.0, high=2.0)
-                centering_image, min_value, max_value = percentile_clip(centering_image, 5)
+                centering_image, min_value, max_value = percentile_clip(centering_image, percentile)
 
         else:
             centering_image = np.zeros((256, 256))
@@ -96,10 +96,12 @@ def star_pixel(x, y):
     return 0
 
 
-def percentile_clip(data, percentile):
+def percentile_clip(data, percentile_to_use):
 
-    low=np.percentile(data,5)
-    high=np.percentile(data,100-percentile)
+    percentile_to_use = (100-percentile_to_use)/2
+
+    low=np.percentile(data,percentile_to_use)
+    high=np.percentile(data,100-percentile_to_use)
 
     data = np.where(data<low,low, data)
     data = np.where(data > high, high, data)
