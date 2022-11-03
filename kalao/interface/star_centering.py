@@ -46,6 +46,8 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
                     centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
                            anti_aliasing=True, preserve_range=True)
 
+                    centering_image = centering_image.transpose()
+
                 else:
                     # Clip after zooming
                     if x + 128 - centering_image.shape[0] > 0:
@@ -60,6 +62,8 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
                     centering_image = centering_image[x-128:x+128, y-128:y+128]
 
                     centering_image, min_value, max_value = percentile_clip(centering_image, percentile)
+
+                    centering_image = centering_image.transpose()
 
                 # if binning other that 4 we need to cut edges for the final image to be 256
                 #centering_image, min_value, max_value = stats.sigmaclip(centering_image, low=2.0, high=2.0)
