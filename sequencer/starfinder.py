@@ -60,33 +60,66 @@ def centre_on_target(filter_arg='clear'):
         x, y = find_star(image_path)
 
         if x != -1 and y != -1:
-            # Found star
-            alt_offset = (x - CenterX)*PixScale
-            az_offset = (y - CenterY)*PixScale
 
-            #TODO transform pixel x y into arcseconds
-            t120.send_offset(alt_offset, az_offset)
+            send_pixel_offset(x, y)
 
-            # TODO verify if SHWFS is enough illuminated
-            illuminated_fraction = telemetry.wfs_illumination_fraction(WFSilluminationThreshold)
+            if verify_centering() == 0:
+                database.store_obs_log({'tracking_manual_centering': False})
 
-            aocontrol.wfs_centering(TTSlopeThreshold)
-
-            if illuminated_fraction > WFSilluminationFraction:
-                system.print_and_log('WFS on target')
                 return 0
 
         else:
             # Start manual centering
             # TODO start timeout (value in kalao.config)
-            # TODO set manual_align = True
+            # Set flag for manual centering
+            database.store_obs_log({'tracking_manual_centering': True})
+
+            while time.time() < timeout_time:
+
+                # Check if we are centered and exit loop
+                rValue =  verify_centering()
+                if rValue == 0:
+                    return 0
+
+                time.sleep(15)
+
             # TODO wait for observer input
             # TODO send gop message
             # TODO send offset to telescope
             # TODO verify if SHWFS enough illuminated
             # if shwfs ok:
             #    return 0
+
             pass
+
+
+def manual_centering(x, y):
+
+    # TODO verify value validity before sending
+
+    send_pixel_offset(x, y)
+    rValue = verify_centering()
+
+    return rValue
+
+def send_pixel_offset(x, y):
+    # Found star
+    alt_offset = (x - CenterX) * PixScale
+    az_offset = (y - CenterY) * PixScale
+
+    # TODO transform pixel x y into arcseconds
+    t120.send_offset(alt_offset, az_offset)
+
+
+def verify_centering():
+    # TODO verify if SHWFS is enough illuminated
+    illuminated_fraction = telemetry.wfs_illumination_fraction(WFSilluminationThreshold)
+
+    aocontrol.wfs_centering(TTSlopeThreshold)
+
+    if illuminated_fraction > WFSilluminationFraction:
+        system.print_and_log('WFS on target')
+        return 0
 
 
 def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
