@@ -30,6 +30,7 @@ def fli_view(binfactor=1, x=512, y=512, realData=True):
 
         if fli_image_path is not None and file_date is not None and os.path.isfile(fli_image_path):
             centering_image = fits.getdata(fli_image_path)
+            file_date = file_date.strftime('"%Y-%m-%d %H:%M:%S.%f')[:-3]
             if binfactor == 4:
                 centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
                        anti_aliasing=True)
@@ -52,7 +53,7 @@ def _get_image_path(image_type):
         last_image = database.get_latest_record('obs_log', key='fli_'+image_type+'_image_path')
         if last_image.get('fli_'+image_type+'_image_path'):
             filename = last_image['fli_'+image_type+'_image_path']
-            file_date = last_image['time_utc'].strftime('%H:%M:%S.%f')[:-3]
+            file_date = last_image['time_utc']
         else:
             # Set to None is list is empty
             filename = None
