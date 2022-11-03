@@ -33,6 +33,8 @@ from kalao.interface import star_centering as k_star_centering
 from kalao.utils import database as k_database
 from kalao.plc import filterwheel as k_filterwheel
 
+from sequencer import starfinder as s_starfinder
+
 def create_app():
 
     logging.getLogger("waitress").setLevel(logging.ERROR)
@@ -149,13 +151,33 @@ def create_app():
             "telemetry": telemetry
         }, 200
 
-    @app.route('/centeringImage', methods=['GET'])
+    @app.route('/centeringImage', methods=['POST'])
     def centeringImage():
+
+        if "last_file_date" in request.headers:
+            last_file_date = request.headers['last_file_date']
+        else:
+            last_file_date = None
+
+        options = request.get_json()
+        percentile = float(options["percentile"])
+
+        if "x" in options and "y" in options:
+            x = options["x"]
+            y = options["y"]
+        else:
+            x = None
+            y = None
+
         realData = not bool(request.args.get('random', default = "", type = str))
-        binFactor = not bool(request.args.get('binFactor', default = "", type = str))
-        x = not bool(request.args.get('x', default = "", type = str))
-        y = not bool(request.args.get('y', default = "", type = str))
-        (selection,image) = k_star_centering.fli_view(binFactor,x,y,realData)
+        #binFactor = not bool(request.args.get('binFactor', default = "", type = str))
+        #x = not bool(request.args.get('x', default = "", type = str))
+        #y = not bool(request.args.get('y', default = "", type = str))
+        (selection,image,file_date) = k_star_centering.fli_view(x=x, y=y, last_file_date=last_file_date, percentile=percentile, realData=realData)
+
+        if type(image) == type(None) and file_date is None:
+            return "Not updated", 204
+
         #if realData:
         #    lat_list = [item for sublist in image for item in sublist]
         #else:
@@ -170,7 +192,7 @@ def create_app():
             "min": min(flat_list),
             "width": math.sqrt(len(flat_list))
         }
-        jsonObject = json.dumps({"selection": selection, "image": imageObject})
+        jsonObject = json.dumps({"selection": selection, "image": imageObject, "file_date": file_date})
         return jsonObject;
 
     @app.route('/plots/<nb_points>', methods=['GET'])
@@ -284,6 +306,17 @@ def create_app():
             else:
                 k_aocontrol.linear_low_pass_modal_gain_filter(options["cut_off"])
 
+        return "ok"
+
+    @app.route('/manualCentering', methods=['POST'])
+    def manualCentering():
+
+        options = request.get_json()
+
+        x = options["x"]
+        y = options["y"]
+
+        s_starfinder.manual_centering(x, y)
         return "ok"
 
     @app.route('/loop/<type>', methods=['POST'])
