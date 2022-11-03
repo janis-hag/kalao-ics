@@ -20,24 +20,33 @@ from kalao.utils import database
 from kalao.cacao import fake_data
 
 
-def fli_view(binfactor=1, x=512, y=512, realData=True):
+def fli_view(binfactor=1, x=512, y=512, last_file_date=None, realData=True):
 
     if not realData:
         # Returning fake fli_view for testing purposes
         return False, fake_data.fake_fli_view()
+
     else:
         fli_image_path, file_date = get_last_image_path()
 
         if fli_image_path is not None and file_date is not None and os.path.isfile(fli_image_path):
-            centering_image = fits.getdata(fli_image_path)
+
             file_date = file_date.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-            if binfactor == 4:
-                centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
-                       anti_aliasing=True)
-            # if binning other that 4 we need to cut edges for the final image to be 256
-            centering_image, min_value, max_value = stats.sigmaclip(centering_image, low=2.0, high=2.0)
+            if last_file_date == file_date:
+                file_date = None
+                centering_image = None
+
+            else:
+                centering_image = fits.getdata(fli_image_path)
+                if binfactor == 4:
+                    centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
+                           anti_aliasing=True)
+                # if binning other that 4 we need to cut edges for the final image to be 256
+                centering_image, min_value, max_value = stats.sigmaclip(centering_image, low=2.0, high=2.0)
+
         else:
             centering_image = np.zeros((256, 256))
+            file_date = 'No data'
 
         manual_centering_needed = False
 
