@@ -14,7 +14,7 @@ from astropy.io import fits
 import os
 import numpy as np
 from skimage.transform import resize
-from scipy import stats
+#from scipy import stats
 
 from kalao.utils import database
 from kalao.cacao import fake_data
@@ -43,6 +43,7 @@ def fli_view(binfactor=4, x=512, y=512, last_file_date=None, realData=True):
                            anti_aliasing=True, preserve_range=True)
                 # if binning other that 4 we need to cut edges for the final image to be 256
                 #centering_image, min_value, max_value = stats.sigmaclip(centering_image, low=2.0, high=2.0)
+                centering_image, min_value, max_value = percentile_clip(centering_image, 5)
 
         else:
             centering_image = np.zeros((256, 256))
@@ -93,3 +94,14 @@ def star_pixel(x, y):
     # set manual_centering_needed to false
 
     return 0
+
+
+def percentile_clip(data, percentile):
+
+    low=np.percentile(data,5)
+    high=np.percentile(data,100-percentile)
+
+    data = np.where(data<low,low, data)
+    data = np.where(data > high, high, data)
+
+    return data, low, high
