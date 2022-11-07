@@ -17,6 +17,8 @@ Contents
    sequencer
    tcs_communication
 
+.. autosummary::
+   :toctree: modules
 
 Indices and tables
 ------------------
