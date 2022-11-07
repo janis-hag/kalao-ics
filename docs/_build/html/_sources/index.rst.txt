@@ -18,7 +18,8 @@ Contents
    tcs_communication
 
 .. autosummary::
-   :toctree: modules
+   :toctree: _autosummary
+   :recursive:
 
 Indices and tables
 ------------------
