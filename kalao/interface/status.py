@@ -6,8 +6,9 @@
 # @AUTHOR : Janis Hagelberg
 
 """
-status.py is part of the KalAO Instrument Control Software
-(KalAO-ICS).
+The status functions are used to reply to Euler control software status requests as well as generating
+datasets specific for the KalAO flask graphic user interface (GUI).
+
 """
 
 import datetime
@@ -56,7 +57,13 @@ def streams(realData=True):
 
 
 def monitoring(realData=True):
-    # Unused function to be removed.
+    """
+    Unused function to be removed.
+
+    :param realData:
+    :return:
+    """
+
     if realData:
         return database.get_all_last_monitoring()
     else:
@@ -71,6 +78,13 @@ def telemetry_series(nb_points, realData=True):
 
 
 def latest_obs_log_entry(realData=True):
+    """
+    Queries the latest entry in the *obs_log* mongo database,
+
+    :param realData:
+    :return: Text string with the latest entry
+    """
+
     if realData:
         latest_record = database.get_latest_record('obs_log')
         if latest_record is None:
@@ -88,7 +102,13 @@ def latest_obs_log_entry(realData=True):
 
 
 def kalao_status():
-    # TODO return sequencer_status, alt/az offset, focus offset, remaining_esposure_time 0 if not yet started
+    """
+    Generate the string sequence to return to the Euler telescope software on status request.
+    TODO return sequencer_status, alt/az offset, focus offset, remaining_esposure_time 0 if not yet started
+
+    :return: status_string to send to the Euler telescope
+    """
+
     sequencer_status = database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['values']
     if not sequencer_status:
         # If the status is not set assume that the sequencer is doww
@@ -116,6 +136,12 @@ def kalao_status():
 
 
 def elapsed_time(sequencer_status):
+    """
+    Get the elapsed time since the current operation has started.
+
+    :param sequencer_status: INITIALISING/SETUP/WAITLAMP
+    :return: Time in seconds (str)
+    """
 
     if sequencer_status == 'INITIALISING':
          status_time = database.get_latest_record('obs_log', key='sequencer_status')['time_utc'].replace(tzinfo=datetime.timezone.utc)
@@ -139,13 +165,18 @@ def elapsed_time(sequencer_status):
         return str(SetupTime - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == 'WAITLAMP':
-        return str(TungstenStabilisationTime -tungsten.get_switch_time()).split('.')[0]
+        return str(TungstenStabilisationTime - tungsten.get_switch_time()).split('.')[0]
 
     else:
         return elapsed_exposure_seconds()
 
 
 def elapsed_exposure_seconds():
+    """
+    Calculates the elapsed time since the current operation has started.
+
+    :return: Elasped time in seconds (int)
+    """
 
     #last_command_time = database.get_data('obs_log', ['sequencer_command_received'], 1)['sequencer_command_received']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
 
@@ -163,10 +194,21 @@ def elapsed_exposure_seconds():
     return elapsed_time
 
 def _last_exposure_start():
+    """
+    Query the time of the last exposure start in the KalAO-ICS mongo database.
+
+    :return: Time of exposure start (datetime)
+    """
     #return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
     return database.get_latest_record('obs_log', key='fli_image_count')['time_utc'].replace(tzinfo=datetime.timezone.utc)
 
 
 def _last_filepath_archived():
+    """
+    Query the file path of the last saved image in the KalAO-ICS mongo database.
+
+    :return: Image file path (str)
+    """
+
     #return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
     return database.get_latest_record('obs_log', key='fli_last_image_path')['fli_last_image_path']

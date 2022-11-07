@@ -9,7 +9,7 @@
 __init__.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 
-KalAO PLC control module.
+KalAO programmable logic controller PLC control module.
 
 This package is used to control the calibration unit, the flip mirror, the shutter, the laser source,
 the tungsten source, the ADC motors, and the filterwheel.
