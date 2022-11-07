@@ -236,32 +236,72 @@
 </section>
 <section id="module-kalao.interface.status">
 <span id="kalao-interface-status-module"></span><h2>kalao.interface.status module<a class="headerlink" href="#module-kalao.interface.status" title="Permalink to this heading">#</a></h2>
-<p>status.py is part of the KalAO Instrument Control Software
-(KalAO-ICS).</p>
+<p>The status functions are used to reply to Euler control software status requests as well as generating
+datasets specific for the KalAO flask graphic user interface (GUI).</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.interface.status.elapsed_exposure_seconds">
 <span class="sig-prename descclassname"><span class="pre">kalao.interface.status.</span></span><span class="sig-name descname"><span class="pre">elapsed_exposure_seconds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.status.elapsed_exposure_seconds" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Calculates the elapsed time since the current operation has started.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Elasped time in seconds (int)</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.interface.status.elapsed_time">
 <span class="sig-prename descclassname"><span class="pre">kalao.interface.status.</span></span><span class="sig-name descname"><span class="pre">elapsed_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequencer_status</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.status.elapsed_time" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Get the elapsed time since the current operation has started.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sequencer_status</strong> – INITIALISING/SETUP/WAITLAMP</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Time in seconds (str)</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.interface.status.kalao_status">
 <span class="sig-prename descclassname"><span class="pre">kalao.interface.status.</span></span><span class="sig-name descname"><span class="pre">kalao_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.status.kalao_status" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Generate the string sequence to return to the Euler telescope software on status request.
+TODO return sequencer_status, alt/az offset, focus offset, remaining_esposure_time 0 if not yet started</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>status_string to send to the Euler telescope</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.interface.status.latest_obs_log_entry">
 <span class="sig-prename descclassname"><span class="pre">kalao.interface.status.</span></span><span class="sig-name descname"><span class="pre">latest_obs_log_entry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">realData</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.status.latest_obs_log_entry" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Queries the latest entry in the <em>obs_log</em> mongo database,</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>realData</strong> – </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Text string with the latest entry</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.interface.status.monitoring">
 <span class="sig-prename descclassname"><span class="pre">kalao.interface.status.</span></span><span class="sig-name descname"><span class="pre">monitoring</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">realData</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.status.monitoring" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Unused function to be removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>realData</strong> – </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.interface.status.short">
@@ -287,6 +327,8 @@
 </section>
 <section id="module-kalao.interface">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-kalao.interface" title="Permalink to this heading">#</a></h2>
+<p>The interface package contains functions for interfacing with the Euler telescope control software as well as with
+the KalAO flask graphic user interface (GUI).</p>
 </section>
 </section>
 
