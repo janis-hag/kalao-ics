@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# @Filename : telmetry.py
+# @Date : 2021-03-18-10-02
+# @Project: KalAO-ICS
+# @AUTHOR : Janis Hagelberg, Nathanael Restori
+
 """
-@author: Nathanaël Restori
+The telemetry package contains the tools to store the Adaptive Optics telemetry of KalAO.
+
 """
 
 from pathlib import Path
@@ -56,6 +62,12 @@ def check_fps(fps_name):
 
 
 def create_shm_stream(name):
+	"""
+	Creates a new shared memory SHM stream. If the stream already exists it will reuse it instead of creating a new one.
+
+	:param name: The name to give to the stream.
+	:return: Pointer to the stream.
+	"""
 
 	exists, stream_path = check_stream(name)
 
@@ -128,6 +140,12 @@ def get_stream_data(shm_stream, name, min_value, max_value):
 
 
 def streams(realData=True):
+	"""
+	Provides all the streams needed for the KalAO GUI.
+
+	:param realData: Flag to turn on random data for GUI testing purposes
+	:return: dictionary with all the stream contents
+	"""
 	if not realData:
 		# Returning fake streams for testing purposes
 		return fake_data.fake_streams()
@@ -145,6 +163,13 @@ def streams(realData=True):
 
 
 def telemetry_save(stream_list):
+	"""
+	Saves all the adaptive optics telemetry on the mongo database.
+
+	:param stream_list: A list containing pointers to all the already opened streams.
+	:return: status code
+	"""
+
 	telemetry_data = {}
 
 	# Create the in-memory "file"
@@ -273,7 +298,7 @@ def wfs_illumination_fraction(wfs_threshold):
 	"""
 	Function reads the nuvu stream and return the summed flux in each subaperture
 
-	:return:  subaprtures summed flux
+	:return: subapertures summed flux
 	"""
 
 	# TODO implement masking procedure in order to only consider useful subaps
