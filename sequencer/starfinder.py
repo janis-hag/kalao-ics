@@ -41,7 +41,16 @@ TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 
 
 def centre_on_target(filter_arg='clear'):
+    """
+    Start star centering sequence:
+    - Sets this filter based on filter_arg request.
+    - Takes an image and search for the star position.
+    - Send telescope offsets based on the measured position.
+    - If auto centering does not work request manual centering
 
+    :param filter_arg:
+    :return: 0 if centering succeded
+    """
     # Add loop timeout
     filterwheel.set_position(filter_arg)
 
@@ -109,6 +118,13 @@ def manual_centering(x, y):
 
 
 def send_pixel_offset(x, y):
+    """
+    Send offsets to telescope converting the pixel offset into telescope alt/az offset.
+
+    :param x: pixel offset along the x axis
+    :param y: pixel offset along the y axis
+    :return: success status
+    """
     # Found star
     alt_offset = (x - CenterX) * PixScale
     az_offset = (y - CenterY) * PixScale
@@ -118,6 +134,8 @@ def send_pixel_offset(x, y):
     #t120.send_offset(alt_offset, az_offset)
 
     system.print_and_log(f'Sending offset: {alt_offset=} {az_offset=}')
+
+    return 0
 
 
 def verify_centering():
@@ -334,8 +352,13 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
 
 
 def optimise_dit():
+    """
+    Search for optimal dit value to reach the requested ADU.
 
-    # TODO implement filter change to nd if dit too short.
+    TODO implement filter change to nd if dit too short.
+
+    :return: optimal dit value
+    """
 
     new_dit = FocusingDit
 
