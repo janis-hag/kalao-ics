@@ -98,17 +98,26 @@ def _get_image_path(image_type):
 
 
 def get_last_image_path():
+    """
+    Retrieve the file path of the latest image
 
-    filename, file_date = _get_image_path('last')
+    :return: file_path and file_Date
+    """
+    file_path, file_date = _get_image_path('last')
 
-    return filename, file_date
+    return file_path, file_date
 
 
 def get_temporary_image_path():
+    """
+    Retrieve the file path of the latest temporary image
 
-    filename, file_date = _get_image_path('temporary')
+    :return: file_path and file_Date
+    """
 
-    return filename, file_date
+    file_path, file_date = _get_image_path('temporary')
+
+    return file_path, file_date
 
 
 def star_pixel(x, y):
