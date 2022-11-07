@@ -192,7 +192,20 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="starfinder.centre_on_target">
 <span class="sig-prename descclassname"><span class="pre">starfinder.</span></span><span class="sig-name descname"><span class="pre">centre_on_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_arg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'clear'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#starfinder.centre_on_target" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Start star centering sequence:
+- Sets this filter based on filter_arg request.
+- Takes an image and search for the star position.
+- Send telescope offsets based on the measured position.
+- If auto centering does not work request manual centering</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filter_arg</strong> – </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>0 if centering succeded</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="starfinder.find_star">
@@ -229,6 +242,50 @@
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="starfinder.manual_centering">
+<span class="sig-prename descclassname"><span class="pre">starfinder.</span></span><span class="sig-name descname"><span class="pre">manual_centering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#starfinder.manual_centering" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="starfinder.optimise_dit">
+<span class="sig-prename descclassname"><span class="pre">starfinder.</span></span><span class="sig-name descname"><span class="pre">optimise_dit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#starfinder.optimise_dit" title="Permalink to this definition">#</a></dt>
+<dd><p>Search for optimal dit value to reach the requested ADU.</p>
+<p>TODO implement filter change to nd if dit too short.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>optimal dit value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="starfinder.request_manual_centering">
+<span class="sig-prename descclassname"><span class="pre">starfinder.</span></span><span class="sig-name descname"><span class="pre">request_manual_centering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#starfinder.request_manual_centering" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="starfinder.send_pixel_offset">
+<span class="sig-prename descclassname"><span class="pre">starfinder.</span></span><span class="sig-name descname"><span class="pre">send_pixel_offset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#starfinder.send_pixel_offset" title="Permalink to this definition">#</a></dt>
+<dd><p>Send offsets to telescope converting the pixel offset into telescope alt/az offset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – pixel offset along the x axis</p></li>
+<li><p><strong>y</strong> – pixel offset along the y axis</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>success status</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="starfinder.verify_centering">
+<span class="sig-prename descclassname"><span class="pre">starfinder.</span></span><span class="sig-name descname"><span class="pre">verify_centering</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#starfinder.verify_centering" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
 
 </section>
 
@@ -275,6 +332,11 @@
 <li><a class="reference internal" href="#starfinder.centre_on_target"><code class="docutils literal notranslate"><span class="pre">centre_on_target()</span></code></a></li>
 <li><a class="reference internal" href="#starfinder.find_star"><code class="docutils literal notranslate"><span class="pre">find_star()</span></code></a></li>
 <li><a class="reference internal" href="#starfinder.focus_sequence"><code class="docutils literal notranslate"><span class="pre">focus_sequence()</span></code></a></li>
+<li><a class="reference internal" href="#starfinder.manual_centering"><code class="docutils literal notranslate"><span class="pre">manual_centering()</span></code></a></li>
+<li><a class="reference internal" href="#starfinder.optimise_dit"><code class="docutils literal notranslate"><span class="pre">optimise_dit()</span></code></a></li>
+<li><a class="reference internal" href="#starfinder.request_manual_centering"><code class="docutils literal notranslate"><span class="pre">request_manual_centering()</span></code></a></li>
+<li><a class="reference internal" href="#starfinder.send_pixel_offset"><code class="docutils literal notranslate"><span class="pre">send_pixel_offset()</span></code></a></li>
+<li><a class="reference internal" href="#starfinder.verify_centering"><code class="docutils literal notranslate"><span class="pre">verify_centering()</span></code></a></li>
 </ul>
 </li>
 </ul>

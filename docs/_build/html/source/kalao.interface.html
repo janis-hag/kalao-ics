@@ -198,17 +198,34 @@
 (KalAO-ICS).</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.interface.star_centering.fli_view">
-<span class="sig-prename descclassname"><span class="pre">kalao.interface.star_centering.</span></span><span class="sig-name descname"><span class="pre">fli_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">binfactor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">realData</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.star_centering.fli_view" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">kalao.interface.star_centering.</span></span><span class="sig-name descname"><span class="pre">fli_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">99</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_file_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">realData</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.star_centering.fli_view" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.interface.star_centering.get_last_image_path">
 <span class="sig-prename descclassname"><span class="pre">kalao.interface.star_centering.</span></span><span class="sig-name descname"><span class="pre">get_last_image_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.star_centering.get_last_image_path" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Retrieve the file path of the latest image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>file_path and file_Date</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.interface.star_centering.get_temporary_image_path">
 <span class="sig-prename descclassname"><span class="pre">kalao.interface.star_centering.</span></span><span class="sig-name descname"><span class="pre">get_temporary_image_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.star_centering.get_temporary_image_path" title="Permalink to this definition">#</a></dt>
+<dd><p>Retrieve the file path of the latest temporary image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>file_path and file_Date</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kalao.interface.star_centering.percentile_clip">
+<span class="sig-prename descclassname"><span class="pre">kalao.interface.star_centering.</span></span><span class="sig-name descname"><span class="pre">percentile_clip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentile_to_use</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.interface.star_centering.percentile_clip" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -318,6 +335,7 @@
 <li><a class="reference internal" href="#kalao.interface.star_centering.fli_view"><code class="docutils literal notranslate"><span class="pre">fli_view()</span></code></a></li>
 <li><a class="reference internal" href="#kalao.interface.star_centering.get_last_image_path"><code class="docutils literal notranslate"><span class="pre">get_last_image_path()</span></code></a></li>
 <li><a class="reference internal" href="#kalao.interface.star_centering.get_temporary_image_path"><code class="docutils literal notranslate"><span class="pre">get_temporary_image_path()</span></code></a></li>
+<li><a class="reference internal" href="#kalao.interface.star_centering.percentile_clip"><code class="docutils literal notranslate"><span class="pre">percentile_clip()</span></code></a></li>
 <li><a class="reference internal" href="#kalao.interface.star_centering.star_pixel"><code class="docutils literal notranslate"><span class="pre">star_pixel()</span></code></a></li>
 </ul>
 </li>
