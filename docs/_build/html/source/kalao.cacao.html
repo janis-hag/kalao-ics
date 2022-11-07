@@ -476,7 +476,7 @@ decreasing down to zero for the last mode</p>
 </section>
 <section id="module-kalao.cacao.telemetry">
 <span id="kalao-cacao-telemetry-module"></span><h2>kalao.cacao.telemetry module<a class="headerlink" href="#module-kalao.cacao.telemetry" title="Permalink to this heading">#</a></h2>
-<p>&#64;author: Nathanaël Restori</p>
+<p>The telemetry package contains the tools to store the Adaptive Optics telemetry of KalAO.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.cacao.telemetry.check_fps">
 <span class="sig-prename descclassname"><span class="pre">kalao.cacao.telemetry.</span></span><span class="sig-name descname"><span class="pre">check_fps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fps_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.cacao.telemetry.check_fps" title="Permalink to this definition">#</a></dt>
@@ -508,7 +508,16 @@ decreasing down to zero for the last mode</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.cacao.telemetry.create_shm_stream">
 <span class="sig-prename descclassname"><span class="pre">kalao.cacao.telemetry.</span></span><span class="sig-name descname"><span class="pre">create_shm_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.cacao.telemetry.create_shm_stream" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Creates a new shared memory SHM stream. If the stream already exists it will reuse it instead of creating a new one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – The name to give to the stream.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pointer to the stream.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.cacao.telemetry.get_stream_data">
@@ -517,14 +526,14 @@ decreasing down to zero for the last mode</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>shm_stream</strong> – </p></li>
-<li><p><strong>name</strong> – </p></li>
-<li><p><strong>min_value</strong> – </p></li>
-<li><p><strong>max_value</strong> – </p></li>
+<li><p><strong>shm_stream</strong> – The stream to read</p></li>
+<li><p><strong>name</strong> – stream name</p></li>
+<li><p><strong>min_value</strong> – minimal value in the stream</p></li>
+<li><p><strong>max_value</strong> – maximal value in the stream</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
+<dd class="field-even"><p>Dictionary with: data, width, height, min, max</p>
 </dd>
 </dl>
 </dd></dl>
@@ -532,12 +541,30 @@ decreasing down to zero for the last mode</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.cacao.telemetry.streams">
 <span class="sig-prename descclassname"><span class="pre">kalao.cacao.telemetry.</span></span><span class="sig-name descname"><span class="pre">streams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">realData</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.cacao.telemetry.streams" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Provides all the streams needed for the KalAO GUI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>realData</strong> – Flag to turn on random data for GUI testing purposes</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dictionary with all the stream contents</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.cacao.telemetry.telemetry_save">
 <span class="sig-prename descclassname"><span class="pre">kalao.cacao.telemetry.</span></span><span class="sig-name descname"><span class="pre">telemetry_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stream_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#kalao.cacao.telemetry.telemetry_save" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Saves all the adaptive optics telemetry on the mongo database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>stream_list</strong> – A list containing pointers to all the already opened streams.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>status code</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="kalao.cacao.telemetry.wfs_illumination_fraction">
@@ -545,7 +572,7 @@ decreasing down to zero for the last mode</p>
 <dd><p>Function reads the nuvu stream and return the summed flux in each subaperture</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>subaprtures summed flux</p>
+<dd class="field-odd"><p>subapertures summed flux</p>
 </dd>
 </dl>
 </dd></dl>
