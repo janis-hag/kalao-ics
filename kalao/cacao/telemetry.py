@@ -112,11 +112,11 @@ def get_stream_data(shm_stream, name, min_value, max_value):
 	"""
 	Reads and already open shm_stream, after having verified that the stream with that name exists.
 
-	:param shm_stream:
-	:param name:
-	:param min_value:
-	:param max_value:
-	:return:
+	:param shm_stream: The stream to read
+	:param name: stream name
+	:param min_value: minimal value in the stream
+	:param max_value: maximal value in the stream
+	:return: Dictionary with: data, width, height, min, max
 	"""
 	exists, stream_path = check_stream(name)
 
