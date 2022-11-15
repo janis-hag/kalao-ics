@@ -113,6 +113,7 @@ def clean():
 	subprocess.run(["rm step.aolaunch.*"], shell=True)
 	subprocess.run(["rm -r .*cacaotaskmanager-log"], shell=True)
 
+
 def init_loop(confname):
 	subprocess.run(["cacao-task-manager", "-X", "4", confname])
 
