@@ -104,13 +104,14 @@ def clean():
 
 	subprocess.run(["cacao-task-manager", "-C", "0", "ttmloop"], input=no, encoding='utf8')
 	subprocess.run(["cacao-task-manager", "-C", "0", "dmloop"],  input=no, encoding='utf8')
+	subprocess.run(["cacao-task-manager", "-C", "0", "kalaohardware"],  input=no, encoding='utf8')
 	subprocess.run(["pkill", "-f", "cacao"])
 	subprocess.run(["pkill", "-f", "milk"])
 	subprocess.run(["tmux", "kill-server"])
 	subprocess.run([f"rm {os.environ['MILK_SHM_DIR']}/*"], shell=True)
 	subprocess.run(["rm /dev/shm/sem..tmp.milk.*"], shell=True)
 	subprocess.run(["rm step.aolaunch.*"], shell=True)
-
+	subprocess.run(["rm -r .*cacaotaskmanager-log"], shell=True)
 
 def init_loop(confname):
 	subprocess.run(["cacao-task-manager", "-X", "4", confname])
@@ -121,8 +122,6 @@ def init_hardware(workdir):
 
 	cwd = os.getcwd()
 	os.chdir(workdir)
-
-	#TODO: os.environ NUVU_SDK_HARDWARE_CONCURRENCY=1
 
 	subprocess.run(["milk-fpsinit", "-e", "cacao", "-C", "-f", "/home/kalao/KalAO/src/cacao/src/KalAO_BMC/fpslist.txt"])
 	subprocess.run(["milk-fpsinit", "-e", "cacao", "-C", "-f", "/home/kalao/KalAO/src/cacao/src/KalAO_Nuvu/fpslist.txt"])
@@ -237,6 +236,7 @@ if __name__ == "__main__":
 		init_hardware(f"{dm_conf['CACAO_WORKDIR']}/hardware-workdir")
 		init_loop("dmloop")
 		init_loop("ttmloop")
+		init_loop("kalaohardware")
 
 		#TODO: remove when Olivier fix cacaotask-STARTDMCOMB and uncomment STARTDMCOMB in tasklist.txt
 		fps_dmcomb01 = fps("DMcomb-01")
