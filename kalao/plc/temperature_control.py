@@ -28,7 +28,7 @@ parser.read(config_path)
 pump_node = 'bRelayPump'
 fan_node = 'bRelayFan'
 heater_node = 'bWaterHeater'
-
+flowmeter_node = 'iFlowmeter'
 
 def get_temperatures(beck=None):
     """
@@ -73,7 +73,8 @@ def get_cooling_status(beck=None):
     cooling_status = {
         'pump_status': pump_status(beck),
         'heater_status': heater_status(beck),
-        'fan_status': fan_status(beck)
+        'fan_status': fan_status(beck),
+        'flow_value': get_flow_value(beck)
     }
 
     if disconnect_on_exit:
@@ -224,3 +225,22 @@ def fan_status(beck=None):
     """
 
     return status(fan_node, beck=beck)
+
+
+def get_flow_value(beck=None):
+    """
+    Convenience function to query the value of the water flow from the flowmeter
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the fan
+    """
+
+    # Connect to OPCUA server
+    beck, disconnect_on_exit = core.check_beck(beck)
+
+    flow_value = beck.get_node("ns=4;s=MAIN." + flowmeter_node).get_value()
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return flow_value

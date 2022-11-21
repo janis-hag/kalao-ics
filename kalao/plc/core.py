@@ -90,7 +90,8 @@ def plc_status(beck=None):
                          'adc2': adc.status(2)['lrPosActual'],
                          'pump_status': cooling_system['pump_status'],
                          'heater_status': cooling_system['heater_status'],
-                         'fan_status': cooling_system['fan_status']
+                         'fan_status': cooling_system['fan_status'],
+                         'flow_value': cooling_system['flow_value']
                          }
 
     plc_status_text = {'shutter': shutter.status(beck=beck)['sErrorText'],
@@ -106,7 +107,8 @@ def plc_status(beck=None):
                        'adc2': adc.status(2)['sStatus'],
                        'pump_status': cooling_system['pump_status'],
                        'heater_status': cooling_system['heater_status'],
-                       'fan_status': cooling_system['fan_status']
+                       'fan_status': cooling_system['fan_status'],
+                       'flow_value': cooling_system['flow_value']
                        }
 
     if disconnect_on_exit:

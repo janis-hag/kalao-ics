@@ -120,6 +120,13 @@ fan_status:
   main_gui: 2
   group: Motors, Cooling
 
+flow_value:
+  short: Water cooling flow value
+  long: Flow value of the water cooling
+  unit: l/min
+  main_gui: 2
+  group: Motors, Cooling
+
 laser:
   short: Laser power
   long: Laser calibration lamp power
