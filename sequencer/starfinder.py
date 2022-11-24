@@ -202,8 +202,12 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     # corresponds to the coordinates of the picture
     y_gauss, x_gauss = np.mgrid[0:spot_size, 0:spot_size]
     print(x_gauss.shape, star_spot.shape)
-    x_mean = np.average(x_gauss, weights=star_spot)
-    y_mean = np.average(y_gauss, weights=star_spot)
+    if x_gauss.shape == star_spot.shape:
+        x_mean = np.average(x_gauss, weights=star_spot)
+        y_mean = np.average(y_gauss, weights=star_spot)
+    else:
+        print("Star not found.. Human intervention needed !")
+        return -1, -1
 
     # standard deviation of the spot selected
     # from g(x,y) = A * e^(− a(x−x_mean)² − b(x−x_mean)(y−y_mean) − c(y−y_mean)²)
