@@ -21,3 +21,6 @@ export PATH=${PATH}:${CACAO_INSTALLDIR}/bin
 
 #export CLI_ADD_LIBS="/usr/local/cacao/lib/libcacaoKalAONuvu.so /usr/local/cacao/lib/libcacaoKalAOBMC.so /usr/local/cacao/lib/libcacaoKalAOSHWFS.so"
 export MILKCLI_ADD_LIBS="cacaoKalAONuvu,cacaoKalAOBMC,cacaoKalAOSHWFS"
+
+#export LD_LIBRARY_PATH=/usr/local/magma/lib:$LD_LIBRARY_PATH
+#export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/magma/lib/pkgconfig/
