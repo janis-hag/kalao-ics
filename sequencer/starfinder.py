@@ -17,8 +17,8 @@ import numpy as np
 from astropy.io import fits
 from configparser import ConfigParser
 
-
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 parser = ConfigParser()
 parser.read(config_path)
 ExpTime = parser.getfloat('FLI', 'ExpTime')
@@ -33,7 +33,7 @@ FocusingDit = parser.getint('Starfinder', 'FocusingDit')
 MinFlux = parser.getfloat('Starfinder', 'MinFlux')
 MaxFlux = parser.getfloat('Starfinder', 'MaxFlux')
 MaxDit = parser.getint('Starfinder', 'MaxDit')
-DitOptimisationTrials  = parser.getint('Starfinder', 'DitOptimisationTrials')
+DitOptimisationTrials = parser.getint('Starfinder', 'DitOptimisationTrials')
 
 WFSilluminationThreshold = parser.getfloat('AO', 'WFSilluminationThreshold')
 WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
@@ -54,7 +54,7 @@ def centre_on_target(filter_arg='clear'):
     # Add loop timeout
     filterwheel.set_position(filter_arg)
 
-    timeout_time = time.time()+CenteringTimeout
+    timeout_time = time.time() + CenteringTimeout
 
     while time.time() < timeout_time:
         rValue, image_path = camera.take_image(dit=ExpTime)
@@ -140,7 +140,8 @@ def send_pixel_offset(x, y):
 
 def verify_centering():
     # TODO verify if SHWFS is enough illuminated
-    illuminated_fraction = telemetry.wfs_illumination_fraction(WFSilluminationThreshold)
+    illuminated_fraction = telemetry.wfs_illumination_fraction(
+            WFSilluminationThreshold)
 
     aocontrol.wfs_centering(TTSlopeThreshold)
 
@@ -169,13 +170,14 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     mid = int(spot_size / 2)
 
     # weighting matrix for score calcul
-    w1, w2 = np.abs(np.mgrid[-mid: mid + 1, -mid: mid + 1])
+    w1, w2 = np.abs(np.mgrid[-mid:mid + 1, -mid:mid + 1])
     weighting = w1 + w2
     weighting[mid, mid] = 1
 
     # set the minimum brightness for a pixel to be considered in score calculation
     median = np.median(image)
-    hist, bin_edges = np.histogram(image[~np.isnan(image)], bins=4096, range=(median - 10, median + 10))
+    hist, bin_edges = np.histogram(image[~np.isnan(image)], bins=4096,
+                                   range=(median - 10, median + 10))
     lumino = np.float32((hist * bin_edges[:-1]).sum() / hist.sum() * 10)
 
     if lumino < image.max():
@@ -190,13 +192,16 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     for i in range(shape[0]):
         for j in range(shape[1]):
             if image[i, j] > lumino:
-                if i + mid + 1 <= shape[0] and j + mid + 1 <= shape[1] and i - mid >= 0 and j - mid >= 0:
-                    score[i, j] = np.divide(image[i - mid:i + mid + 1, j - mid:j + mid + 1], weighting).sum()
+                if i + mid + 1 <= shape[0] and j + mid + 1 <= shape[
+                        1] and i - mid >= 0 and j - mid >= 0:
+                    score[i, j] = np.divide(
+                            image[i - mid:i + mid + 1, j - mid:j + mid + 1],
+                            weighting).sum()
 
     # find the max of score matrix and get coordinate of it
     # argmax return flat index, unravel_index return right format
     (y, x) = np.unravel_index(np.argmax(score), score.shape)
-    star_spot = image[y - mid: y + mid + 1, x - mid: x + mid + 1]
+    star_spot = image[y - mid:y + mid + 1, x - mid:x + mid + 1]
 
     # create x,y component for gaussian calculation.
     # corresponds to the coordinates of the picture
@@ -243,13 +248,15 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     # For each try, check with variation of sigma.
     for _ in range(3):
         for i in np.arange(-1, 1, 0.2):
-            a_c = 0.5 / ((sigma + i) ** 2)
+            a_c = 0.5 / ((sigma + i)**2)
 
-            for j in np.linspace(-rng_step / 2, rng_step / 2, nb_step * 2 + 1)[1::2]:
-                ydiff = (y_gauss - (y_mean + j)) ** 2
+            for j in np.linspace(-rng_step / 2, rng_step / 2,
+                                 nb_step * 2 + 1)[1::2]:
+                ydiff = (y_gauss - (y_mean + j))**2
 
-                for k in np.linspace(-rng_step / 2, rng_step / 2, nb_step * 2 + 1)[1::2]:
-                    xdiff = (x_gauss - (x_mean + k)) ** 2
+                for k in np.linspace(-rng_step / 2, rng_step / 2,
+                                     nb_step * 2 + 1)[1::2]:
+                    xdiff = (x_gauss - (x_mean + k))**2
                     gauss = ampl * np.exp(-((a_c * ydiff) + (a_c * xdiff)))
                     ratio = np.mean(np.abs(star_spot - gauss)) / mean
 
@@ -300,7 +307,9 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
     focusing_dit = optimise_dit()
 
     if focusing_dit == -1:
-        system.print_and_log('Error optimising dit for focusing sequence. Target brightness out of range')
+        system.print_and_log(
+                'Error optimising dit for focusing sequence. Target brightness out of range'
+        )
 
     req, file_path = camera.take_image(dit=focusing_dit)
 
@@ -314,9 +323,10 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
 
     # Get even number of focus_points in order to include 0 in the sequence.
     if (focus_points % 2) == 1:
-        focus_points=focus_points+1
+        focus_points = focus_points + 1
 
-    focusing_sequence = (np.arange(focus_points+1) - focus_points / 2) * FocusingStep
+    focusing_sequence = (np.arange(focus_points + 1) -
+                         focus_points / 2) * FocusingStep
 
     for focus_offset in focusing_sequence:
         if focus_offset == 0:
@@ -333,7 +343,8 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
         req, file_path = camera.take_image(dit=focusing_dit)
 
         #time.sleep(20)
-        file_handling.add_comment(file_path, "Focus sequence: "+str(new_focus))
+        file_handling.add_comment(file_path,
+                                  "Focus sequence: " + str(new_focus))
 
         image = fits.getdata(file_path)
         # flux = image[np.argpartition(image, -6)][-6:].sum()
@@ -348,7 +359,6 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
 
     system.print_and_log('best focus value: ' + str(best_focus))
     database.store_obs_log({'tracking_log': best_focus})
-
 
     t120.send_focus_offset(best_focus)
 
@@ -371,7 +381,8 @@ def optimise_dit():
         req, file_path = camera.take_image(dit=new_dit)
 
         #time.sleep(20)
-        file_handling.add_comment(file_path, "Dit optimisation sequence: "+str(new_dit))
+        file_handling.add_comment(file_path,
+                                  "Dit optimisation sequence: " + str(new_dit))
 
         image = fits.getdata(file_path)
         # flux = image[np.argpartition(image, -6)][-6:].sum()
@@ -381,13 +392,15 @@ def optimise_dit():
         if image.max() >= MaxFlux:
             new_dit = int(np.floor(0.8 * new_dit))
             if new_dit <= 1:
-                print('Max flux ' + str(image.max()) + ' above max permitted value ' + str(MaxFlux))
+                print('Max flux ' + str(image.max()) +
+                      ' above max permitted value ' + str(MaxFlux))
                 return -1
             continue
         elif image.max() <= MinFlux:
             new_dit = int(np.ceil(1.2 * new_dit))
             if new_dit >= MaxDit:
-                print('Max flux ' + str(image.max()) + ' below minimum permitted value: ' + str(MinFlux))
+                print('Max flux ' + str(image.max()) +
+                      ' below minimum permitted value: ' + str(MinFlux))
                 return -1
             continue
         else:

@@ -8,7 +8,7 @@
  * _______/_/_/_/_/ENEVA_/_/_/_/_/BSERVATORY_/_/ROTOCOL__________
  * _____________________________________________________
  * _____________________________________
- * 
+ *
  */
 
 
@@ -45,7 +45,7 @@
  */
 
 /*
- * REMARQUE/INFO: 
+ * REMARQUE/INFO:
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -93,17 +93,17 @@ static int	gop_init_registration();
 /*
  * REMARQUE/INFO: les variables memo* permettent de memoriser un message
  * arrivant a un mauvais moment lors d'une sequence de forward.
- * 
+ *
  * Typique: un client envoie une commande vers un serveur via un transmetteur.
  * Le serveur (qui a un coté client vers un logbook par exemple) envoie juste
  * apres la fin du poll() également une commande. La commande venant du
  * serveur peut etre comprise pour le acknowledge de la commande di serveur
  * vers le client.
- * 
+ *
  * Pour eviter cela on stocke le message du serveur dans le variables memo*, on
  * finit la communication en cours. Et seulement ensuite on rejoue le forward
  * du message memorise.
- * 
+ *
  * Dans ce cas IL FAUT seulement un message qui sort du serveur à la fois, le
  * serveur doit etre capable de traiter une commande si elle se presente, IL
  * FAUT transmettre le message en mode completement asynchrone, Il faut ne
@@ -122,7 +122,7 @@ int		gop_broken_pipe=GOP_FALSE;
 
 //static char		tail[2000];
 
-static int 
+static int
 gop_header_read_without_acknow (struct gop_connect *connect);
 
 
@@ -213,7 +213,7 @@ gop_system(char *program)
 	do{
 		status = wait4(pid, (int *) NULL, 0, (struct rusage *) NULL);
 	} while (status==-1 && errno == EINTR);
-	
+
 	return(status);
 }
 
@@ -260,7 +260,7 @@ gop_process_registration(char *name, int port, char *socket_name, int sem_id, in
 	if((stat = gop_init_registration(pro_host, &pro_port)) != 0)
 		return(stat);
 	gop_printf("INFO: Enregistrement de \"%s\" sur \"processes\", host=%s port=%d\n",
-		name, pro_host, pro_port); 
+		name, pro_host, pro_port);
 
         connect = (struct gop_connect *) gop_alloc_connect_structure();
 	if(connect == (struct gop_connect *) NULL)
@@ -273,25 +273,25 @@ gop_process_registration(char *name, int port, char *socket_name, int sem_id, in
 	if((ptr = index(hostname, '.')) != (char *) NULL){
 		*ptr = (char) 0;
 	}
-	
+
 	strcpy(my_name, name);
         gop_init_client_socket(connect, my_name, pro_host, pro_port, 1024, 0, 60);
 
-        if (gop_connection(connect) != GOP_OK) 
+        if (gop_connection(connect) != GOP_OK)
 		return(-7);
 
 
 /**	version nodename **
 	sprintf(pro_host,"#set#%s#%s#%d#%d#%s#%d#%d", name, uts.nodename,
 		getpid(), port, socket_name, sem_id, shm_id);   **/
-		
+
 	sprintf(pro_host,"#set#%s#%s#%d#%d#%s#%d#%d", name, hostname,
 		getpid(), port, socket_name, sem_id, shm_id);
 
-	if (gop_write_command(connect, pro_host) != GOP_OK) 
+	if (gop_write_command(connect, pro_host) != GOP_OK)
 		return(-8);
 /**
-	if (gop_close_connection(connect) != GOP_OK) 
+	if (gop_close_connection(connect) != GOP_OK)
 		return(-9);
 **/
 	return(0);
@@ -341,10 +341,10 @@ gop_init_registration(char *pro_host, int *pro_port)
 		sprintf(str, "%s/.processes_%s", root, getenv("INSTRUMENT"));
 	}
 	gop_printf("INFO: gop_init_registration open de \"%s\"\n",str);
-	if ((pfile = fopen(str, "r")) == NULL) 
+	if ((pfile = fopen(str, "r")) == NULL)
 		return(-3);
-	
-	if (fgets(str, sizeof(str), pfile) == (char *) NULL)	
+
+	if (fgets(str, sizeof(str), pfile) == (char *) NULL)
 		return(-4);
 	if (fscanf(pfile, "%s", pro_host) == 0)
 		return(-5);
@@ -366,9 +366,9 @@ int gop_printf(char *key,...)
 
 	struct timeval  tp;
 	gettimeofday(&tp, (void *) NULL);
-	
+
 	sprintf(date, "%10d.%6.6d", (int)tp.tv_sec, (int)tp.tv_usec);
-	
+
 	va_start(pvar, key);
 	vsprintf(str, key, pvar);
 	va_end(pvar);
@@ -379,7 +379,7 @@ int gop_printf(char *key,...)
 		sprintf(out,"%s %s", date, str);
 		gop_fct_printf_std(out);
 	}
-		
+
 	return(0);
 }
 
@@ -428,19 +428,19 @@ gop_alloc_connect_structure (void)
 
 
 
-int 
+int
 gop_parse_opt_cmd_line (struct gop_connect *connect)
 {
 	char           *ptr;
 
 	/*
 	 * decode les argument de la forme:
-	 * 
+	 *
 	 * port:host:mode:timeout:stamp:hsync:dsync
-	 * 
+	 *
 	 * host est le seul champ de type caractere, les autres sont numerique
 	 * (1=true, 0=false)
-	 * 
+	 *
 	 * pose des defauts aux champs contenant de mauvaise valeur:
 	 * defaut=9999:"localhost":3:0:1:0:0
 	 */
@@ -585,7 +585,7 @@ gop_size_of_datatype(int datatype)
 
 /**
  * gop_stack_handler_XXXX:   stacks tournants pour le  stockage des handler
- * gop_pointer_handler_XXXX: index sur ces stacks 
+ * gop_pointer_handler_XXXX: index sur ces stacks
  **/
 static int             gop_pointer_handler_INT  = 0;
 static int             gop_pointer_handler_URG  = 0;
@@ -626,7 +626,7 @@ gop_push_handler_INT(void (*handler)())
 static void (*gop_pop_handler_INT())()
 {
 	int	crt=gop_pointer_handler_INT;
-	gop_pointer_handler_INT = (gop_pointer_handler_INT - 1) % 
+	gop_pointer_handler_INT = (gop_pointer_handler_INT - 1) %
 				(sizeof(gop_stack_handler_INT) / sizeof(int));
 	return(gop_stack_handler_INT[crt]);
 }
@@ -661,7 +661,7 @@ gop_push_handler_URG(void (*handler)())
 static void (*gop_pop_handler_URG())()
 {
 	int	crt=gop_pointer_handler_URG;
-	gop_pointer_handler_URG = (gop_pointer_handler_URG - 1) % 
+	gop_pointer_handler_URG = (gop_pointer_handler_URG - 1) %
 				(sizeof(gop_stack_handler_URG) / sizeof(int));
 	return(gop_stack_handler_URG[crt]);
 }
@@ -696,7 +696,7 @@ gop_push_handler_ALRM(void (*handler)())
 static void (*gop_pop_handler_ALRM())()
 {
 	int	crt=gop_pointer_handler_ALRM;
-	gop_pointer_handler_ALRM = (gop_pointer_handler_ALRM - 1) % 
+	gop_pointer_handler_ALRM = (gop_pointer_handler_ALRM - 1) %
 				(sizeof(gop_stack_handler_ALRM) / sizeof(int));
 	return(gop_stack_handler_ALRM[crt]);
 }
@@ -733,7 +733,7 @@ gop_push_handler_PIPE(void (*handler)())
 static void (*gop_pop_handler_PIPE())()
 {
 	int	crt=gop_pointer_handler_PIPE;
-	gop_pointer_handler_PIPE = (gop_pointer_handler_PIPE - 1) % 
+	gop_pointer_handler_PIPE = (gop_pointer_handler_PIPE - 1) %
 				(sizeof(gop_stack_handler_PIPE) / sizeof(int));
 	return(gop_stack_handler_PIPE[crt]);
 }
@@ -771,7 +771,7 @@ gop_push_handler_HUP(void (*handler)())
 static void (*gop_pop_handler_HUP())()
 {
 	int	crt=gop_pointer_handler_HUP;
-	gop_pointer_handler_HUP = (gop_pointer_handler_HUP - 1) % 
+	gop_pointer_handler_HUP = (gop_pointer_handler_HUP - 1) %
 				(sizeof(gop_stack_handler_HUP) / sizeof(int));
 	return(gop_stack_handler_HUP[crt]);
 }
@@ -811,33 +811,33 @@ gop_SIGINT_handler(int sig)
 	gop_connect_client_temp = gop_connect_client;
 
 	gop_printf("gop: [%8s] -> [%8s] gop_SIGINT_handler %d\n",
-		gop_connect_client_temp->my_name, gop_connect_client_temp->his_name, sig); 
+		gop_connect_client_temp->my_name, gop_connect_client_temp->his_name, sig);
 
 	if (gop_connect_client_temp->side == GOP_CLIENT_SIDE) {
 		if (gop_connect_client_temp->type == GOP_SOCKET &&
 		    gop_connect_client_temp->opcrt == GOP_READ) {
-			gop_printf("gop: [%8s] -> [%8s] envoi OOB sur server, cd=%d\n", 
-				gop_connect_client_temp->my_name, gop_connect_client_temp->his_name, gop_connect_client_temp->cd); 
+			gop_printf("gop: [%8s] -> [%8s] envoi OOB sur server, cd=%d\n",
+				gop_connect_client_temp->my_name, gop_connect_client_temp->his_name, gop_connect_client_temp->cd);
 			if (send(gop_connect_client_temp->cd, &buf, 1, MSG_OOB) != 1) {
 				perror("gop_SIGINT_handler");
-				gop_printf("gop: [%8s] -> [%8s] probleme a l'envoi de OOB\n", 
-					gop_connect_client_temp->my_name, gop_connect_client_temp->his_name); 
+				gop_printf("gop: [%8s] -> [%8s] probleme a l'envoi de OOB\n",
+					gop_connect_client_temp->my_name, gop_connect_client_temp->his_name);
 			} else {
-				gop_printf("gop: [%8s] -> [%8s] OOB transmis sur server, cd= %d\n", 
-					gop_connect_client_temp->my_name, gop_connect_client_temp->his_name, 
+				gop_printf("gop: [%8s] -> [%8s] OOB transmis sur server, cd= %d\n",
+					gop_connect_client_temp->my_name, gop_connect_client_temp->his_name,
 					gop_connect_client_temp->cd);
 			}
 		} else if (gop_connect_client_temp->type == GOP_SOCKET_UNIX &&
 			   gop_connect_client_temp->opcrt == GOP_READ) {
-			gop_printf("gop: [%8s] -> [%8s] envoi de SIGURG sur server, pid= %d\n", 
-				gop_connect_client_temp->my_name, gop_connect_client_temp->his_name, gop_connect_client_temp->pid); 
+			gop_printf("gop: [%8s] -> [%8s] envoi de SIGURG sur server, pid= %d\n",
+				gop_connect_client_temp->my_name, gop_connect_client_temp->his_name, gop_connect_client_temp->pid);
 			if (kill(gop_connect_client_temp->pid, SIGURG) != 0) {
 				perror("gop_SIGINT_handler");
-				gop_printf("gop: [%8s] -> [%8s] probleme a l'envoi de SIGURG\n", 
-					gop_connect_client_temp->my_name, gop_connect_client_temp->his_name); 
+				gop_printf("gop: [%8s] -> [%8s] probleme a l'envoi de SIGURG\n",
+					gop_connect_client_temp->my_name, gop_connect_client_temp->his_name);
 			} else {
-				gop_printf("gop: [%8s] -> [%8s] SIGURG transmis sur server, pid= %d\n", 
-					gop_connect_client_temp->my_name, gop_connect_client_temp->his_name, 
+				gop_printf("gop: [%8s] -> [%8s] SIGURG transmis sur server, pid= %d\n",
+					gop_connect_client_temp->my_name, gop_connect_client_temp->his_name,
 					gop_connect_client_temp->pid);
 			}
 		}
@@ -847,7 +847,7 @@ gop_SIGINT_handler(int sig)
 	 */
 	gop_fct_SIGINT_std = gop_get_handler_INT();
 	if (gop_fct_SIGINT_std != NULL && gop_fct_SIGINT_std != gop_SIGINT_handler) {
-		gop_printf("gop: [%8s] -> [%8s] gop_SIGINT_handler: envoi de la fonction enregistree\n", 
+		gop_printf("gop: [%8s] -> [%8s] gop_SIGINT_handler: envoi de la fonction enregistree\n",
 			gop_connect_client_temp->my_name, gop_connect_client_temp->his_name);
 		gop_connect_client = gop_connect_client_temp;
 		gop_fct_SIGINT_std(SIGINT);
@@ -861,31 +861,31 @@ gop_SIGINT_handler(int sig)
 }
 
 
-static void 
+static void
 gop_send_sigurg (struct gop_connect *connect)
 {
 	char            buf;
 
 	if (connect->type == GOP_SOCKET) {
-		gop_printf("gop: [%8s] -> [%8s] envoi OOB sur server, cd= %d\n", 
-			connect->my_name, connect->his_name, connect->cd); 
+		gop_printf("gop: [%8s] -> [%8s] envoi OOB sur server, cd= %d\n",
+			connect->my_name, connect->his_name, connect->cd);
 		if (send(connect->cd, &buf, 1, MSG_OOB) != 1) {
 			perror("gop_send_sigurg");
-			gop_printf("gop: [%8s] -> [%8s] probleme a l'envoi de OOB\n", 
-				connect->my_name, connect->his_name); 
+			gop_printf("gop: [%8s] -> [%8s] probleme a l'envoi de OOB\n",
+				connect->my_name, connect->his_name);
 		} else {
-			gop_printf("gop: [%8s] -> [%8s] OOB transmis sur server, cd= %d\n", 
+			gop_printf("gop: [%8s] -> [%8s] OOB transmis sur server, cd= %d\n",
 				connect->my_name, connect->his_name, connect->cd);
 		}
 	} else if (connect->type == GOP_SOCKET_UNIX) {
-		gop_printf("gop: [%8s] -> [%8s] envoi de SIGURG sur server, pid= %d\n", 
-			connect->my_name, connect->his_name, connect->pid); 
+		gop_printf("gop: [%8s] -> [%8s] envoi de SIGURG sur server, pid= %d\n",
+			connect->my_name, connect->his_name, connect->pid);
 		if (kill(connect->pid, SIGURG) != 0) {
 			perror("gop_send_sigurg");
-			gop_printf("gop: [%8s] -> [%8s] probleme a l'envoi de SIGURG\n", 
-				connect->my_name, connect->his_name); 
+			gop_printf("gop: [%8s] -> [%8s] probleme a l'envoi de SIGURG\n",
+				connect->my_name, connect->his_name);
 		} else {
-			gop_printf("gop: [%8s] -> [%8s] SIGURG transmis sur server, pid= %d\n", 
+			gop_printf("gop: [%8s] -> [%8s] SIGURG transmis sur server, pid= %d\n",
 				connect->my_name, connect->his_name, connect->pid);
 		}
 	}
@@ -906,17 +906,17 @@ gop_SIGURG_handler(int sig)
 
 	gop_connect_client_temp = gop_connect_client;
 
-	gop_printf("gop: [%8s] <> [%8s] gop_SIGURG_handler %d\n", 
-		gop_connect_client_temp->my_name, gop_connect_client_temp->his_name,sig); 
+	gop_printf("gop: [%8s] <> [%8s] gop_SIGURG_handler %d\n",
+		gop_connect_client_temp->my_name, gop_connect_client_temp->his_name,sig);
 
 	gop_connect_client_temp->interrupted = GOP_INTERRUPTED;
 
 	if (gop_connect_client_temp->side == GOP_TRANSMIT_SIDE) {
 		if (gop_connect_client_temp->opcrt == GOP_SELECT) {
-			gop_printf("gop: [%8s] <- [SIGURG--] Pas d'operation car on est en train de faire un poll() ou select()\n", 
-					gop_connect_client_temp->my_name); 
+			gop_printf("gop: [%8s] <- [SIGURG--] Pas d'operation car on est en train de faire un poll() ou select()\n",
+					gop_connect_client_temp->my_name);
 			return;
-		} 
+		}
 		gop_send_sigurg(gop_connect_client_temp);
 		return;
 	}
@@ -925,7 +925,7 @@ gop_SIGURG_handler(int sig)
 	 */
 	gop_fct_SIGURG_std = gop_get_handler_URG();
 	if (gop_fct_SIGURG_std != NULL && gop_fct_SIGURG_std != gop_SIGURG_handler) {
-		gop_printf("gop: [%8s] <- [SIGURG--] gop_SIGURG_handler: envoi de la fonction enregistree\n", 
+		gop_printf("gop: [%8s] <- [SIGURG--] gop_SIGURG_handler: envoi de la fonction enregistree\n",
 			gop_connect_client_temp->my_name);
 		gop_connect_client = gop_connect_client_temp;
 		gop_fct_SIGURG_std(SIGURG);
@@ -945,11 +945,11 @@ gop_SIGPIPE_handler(int sig)
 	 * ATTENTION: si on a un broken pipe sur le logbook, cet appel est
 	 * apelle recursivement et fini par planter (dans le cas ou
 	 * gop_printf ecrit sur le logbook).
-	 * 
+	 *
 	 * On detecte donc si le destinataire est le logbook (his_name) et dans
 	 * ce cas on deenregistre la fonction d'ecriture.
-	 * 
-	 * Cela veut aussi dire que le logbook doit s'appeler " logbook" 
+	 *
+	 * Cela veut aussi dire que le logbook doit s'appeler " logbook"
          * sous GOPgrrr!!!.
 	 */
 	if(strcmp(gop_connect_client_temp->his_name, " logbook") == 0){
@@ -975,7 +975,7 @@ static void
 gop_SIGALRM_handler(int sig)
 {
 	if(gop_connect_client != (struct gop_connect *) NULL){
-		gop_printf("gop: [%8s] <> [%8s] gop_SIGALRM_handler (ne fait rien) %d\n", 
+		gop_printf("gop: [%8s] <> [%8s] gop_SIGALRM_handler (ne fait rien) %d\n",
 			gop_connect_client->my_name, gop_connect_client->his_name,sig);
 	} else {
 		gop_printf("gop: [--------] <> [--------] gop_SIGALRM_handler (ne fait rien) %d\n",sig);
@@ -992,14 +992,14 @@ gop_SIGHUP_handler(int sig)
 
 	gop_connect_client_temp = gop_connect_client;
 
-	gop_printf("gop: [%8s] <> [%8s] gop_SIGHUP_handler %d\n", 
+	gop_printf("gop: [%8s] <> [%8s] gop_SIGHUP_handler %d\n",
 		gop_connect_client_temp->my_name, gop_connect_client_temp->his_name, sig);
 	/*
 	 * envoi de la fonction utilisateur si elle existe et si ce n'est pas recursif
 	 */
 	gop_fct_SIGHUP_std = gop_get_handler_HUP();
 	if (gop_fct_SIGHUP_std != NULL && gop_fct_SIGHUP_std != gop_SIGHUP_handler) {
-		gop_printf("gop: [%8s] <- [SIGUP---] gop_SIGHUP_handler: envoi de la fonction enregistree %d\n", 
+		gop_printf("gop: [%8s] <- [SIGUP---] gop_SIGHUP_handler: envoi de la fonction enregistree %d\n",
 			gop_connect_client_temp->my_name, sig);
 		gop_connect_client = gop_connect_client_temp;
 		gop_fct_SIGHUP_std(SIGHUP);
@@ -1008,7 +1008,7 @@ gop_SIGHUP_handler(int sig)
 
 
 
-void 
+void
 gop_init_handler (int sig)
 {
 #ifndef BSD
@@ -1073,7 +1073,7 @@ gop_init_handler (int sig)
 
 
 
-static void 
+static void
 gop_reinit_handler (int sig)
 {
 #ifndef BSD
@@ -1129,7 +1129,7 @@ gop_reinit_handler (int sig)
 
 
 
-void 
+void
 gop_restore_handler (int sig)
 {
 	switch(sig){
@@ -1157,7 +1157,7 @@ gop_restore_handler (int sig)
 /*
 
 
-static void 
+static void
 gop_sig_init_handler (void)
 {
 	(void) signal(SIGALRM, gop_SIGALRM_handler);
@@ -1165,7 +1165,7 @@ gop_sig_init_handler (void)
 }
 
 
-static void 
+static void
 gop_sig_init_handler_ (void)
 {
 	(void) signal(SIGALRM, gop_SIGALRM_handler);
@@ -1191,7 +1191,7 @@ static int             (*xdr_fct[9]) () = {
 
 
 
-static int 
+static int
 gop_fill_bench_xdr (struct gop_bench_xdr *test)
 {
 	float	float_value = (float) 1.23456789;
@@ -1200,13 +1200,13 @@ gop_fill_bench_xdr (struct gop_bench_xdr *test)
 	test->j = (u_int) 0x01234567;
 	test->l = float_value;
 	test->m = double_value;
-	
+
 	return (GOP_OK);
 
 }
 
 
-static int 
+static int
 gop_test_bench_xdr (struct gop_bench_xdr *test)
 {
 	float	float_value = (float) 1.23456789;
@@ -1221,7 +1221,7 @@ gop_test_bench_xdr (struct gop_bench_xdr *test)
 }
 
 
-static int 
+static int
 gop_set_struct_standart (struct gop_connect *connect)
 {
 	strcpy(connect->class, GOP_CLASS_COMD);
@@ -1231,20 +1231,20 @@ gop_set_struct_standart (struct gop_connect *connect)
 	connect->dsync = GOP_FALSE;
 	strcpy(connect->stat, GOP_STAT_OPOK);
 	connect->datatype = GOP_CHAR;
-	
+
 	return (GOP_OK);
 
 }
 
 
-static void 
+static void
 gop_struct_to_header (struct gop_connect *connect)
 {
 	struct timeval  tp;
 	struct timezone tzp;
 
 	if (connect->mode >= GOP_MESSAGE)
-		gop_printf("gop: [%8s] -> [%8s] \t fill header\n", connect->my_name, connect->his_name); 
+		gop_printf("gop: [%8s] -> [%8s] \t fill header\n", connect->my_name, connect->his_name);
 
 	strcpy(connect->header.version, GOP_VERSION_CRT);
 	strncpy(connect->header.class, connect->class,
@@ -1273,7 +1273,7 @@ gop_struct_to_header (struct gop_connect *connect)
 	else
 		strcpy(connect->header.dsync, GOP_STR_FALSE);
 
-	sprintf(connect->header.mode, "%1d", 
+	sprintf(connect->header.mode, "%1d",
 		GOP_MIN(GOP_MAX(connect->mode, 0), 9));
 
 	sprintf(connect->header.msize, "%10d", connect->msize);
@@ -1287,7 +1287,7 @@ gop_struct_to_header (struct gop_connect *connect)
 	strncpy(connect->header.stat, connect->stat, sizeof(connect->stat)-1);
 	*(connect->header.stat+sizeof(connect->stat)-1) = 0;
 
-	sprintf(connect->header.datatype, "%1d", 
+	sprintf(connect->header.datatype, "%1d",
 		GOP_MIN(GOP_MAX(connect->datatype, 0),9));
 
 	if (connect->need_xdr && !(connect->datatype==GOP_CHAR || connect->datatype==GOP_STRUCT))
@@ -1301,7 +1301,7 @@ gop_struct_to_header (struct gop_connect *connect)
 
 
 
-static void 
+static void
 gop_header_to_struct (struct gop_connect *connect, struct gop_header *header)
 {
 
@@ -1325,7 +1325,7 @@ gop_header_to_struct (struct gop_connect *connect, struct gop_header *header)
 }
 
 
-void 
+void
 gop_set_destination (struct gop_connect *connect)
 {
 	strncpy(connect->to, connect->header.from, sizeof(connect->header.to));
@@ -1338,7 +1338,7 @@ gop_set_destination (struct gop_connect *connect)
 
 
 
-static int 
+static int
 gop_socket_init_connection (struct gop_connect *connect)
 {
 	/*
@@ -1360,7 +1360,7 @@ gop_socket_init_connection (struct gop_connect *connect)
 	sinet.sin_addr.s_addr = INADDR_ANY;
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <- [%8s] gop_socket_init_connection() port=%d\n", 
+		gop_printf("gop: [%8s] <- [%8s] gop_socket_init_connection() port=%d\n",
 			connect->my_name, connect->his_name, connect->port);
 	}
 	/* Get an internet domain socket */
@@ -1369,7 +1369,7 @@ gop_socket_init_connection (struct gop_connect *connect)
 		return (GOP_KO);
 	}
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <- [%8s] \t socket()   cd=%d OK\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t socket()   cd=%d OK\n",
 			connect->my_name, connect->his_name,  connect->cd_init);
 	}
 	if (setsockopt(connect->cd_init, SOL_SOCKET, SO_REUSEADDR,
@@ -1386,7 +1386,7 @@ gop_socket_init_connection (struct gop_connect *connect)
 	}
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <- [%8s] \t bind()     cd=%d OK\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t bind()     cd=%d OK\n",
 			connect->my_name, connect->his_name,  connect->cd_init);
 	}
 	/* Show that we are willing to listen */
@@ -1395,14 +1395,14 @@ gop_socket_init_connection (struct gop_connect *connect)
 		return (GOP_KO);
 	}
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <- [%8s] \t listen()   cd=%d OK\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t listen()   cd=%d OK\n",
 			connect->my_name, connect->his_name,  connect->cd_init);
 	}
 	return(GOP_OK);
 }
 
 
-static int 
+static int
 gop_socket_unix_init_connection (struct gop_connect *connect)
 {
 	/*
@@ -1414,7 +1414,7 @@ gop_socket_unix_init_connection (struct gop_connect *connect)
 
 	sprintf(socket_name,"%s/.socket.%s",getenv("HOME"),connect->name);
 	unlink(socket_name);
-	
+
  	if(connect->cd_init != 0) close(connect->cd_init);
 	if(connect->cd != 0)      close(connect->cd);
 
@@ -1422,7 +1422,7 @@ gop_socket_unix_init_connection (struct gop_connect *connect)
 	sunix.sun_family = AF_UNIX;
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <- [%8s] gop_socket_unix_init_connection() socket_name=%s\n", 
+		gop_printf("gop: [%8s] <- [%8s] gop_socket_unix_init_connection() socket_name=%s\n",
 			connect->my_name, connect->his_name, socket_name);
 	}
 
@@ -1431,18 +1431,18 @@ gop_socket_unix_init_connection (struct gop_connect *connect)
 		return (GOP_KO);
 	}
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <- [%8s] \t socket()   cd=%d OK\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t socket()   cd=%d OK\n",
 			connect->my_name, connect->his_name,  connect->cd_init);
 	}
 
-	if(bind(connect->cd_init, (struct sockaddr *) &sunix, 
+	if(bind(connect->cd_init, (struct sockaddr *) &sunix,
 		strlen(sunix.sun_path) + sizeof(sunix.sun_family)) == EOF) {
 		gop_errno = GOP_ERRNO;
 		return (GOP_KO);
 	}
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <- [%8s] \t bind()     cd=%d OK\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t bind()     cd=%d OK\n",
 			connect->my_name, connect->his_name,  connect->cd_init);
 	}
 
@@ -1451,7 +1451,7 @@ gop_socket_unix_init_connection (struct gop_connect *connect)
 		return (GOP_KO);
 	}
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <- [%8s] \t listen()   cd=%d OK\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t listen()   cd=%d OK\n",
 			connect->my_name, connect->his_name,  connect->cd_init);
 	}
 
@@ -1460,12 +1460,12 @@ gop_socket_unix_init_connection (struct gop_connect *connect)
 
 
 
-int 
+int
 gop_init_connection (struct gop_connect *connect)
 {
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <- [%8s] debut de init connection\n", 
-			connect->my_name, connect->his_name); 
+		gop_printf("gop: [%8s] <- [%8s] debut de init connection\n",
+			connect->my_name, connect->his_name);
 
 	connect->side = GOP_SERVER_SIDE;
 
@@ -1489,7 +1489,7 @@ gop_init_connection (struct gop_connect *connect)
 		return (GOP_KO);
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <- [%8s] init connection ok\n", connect->my_name, connect->his_name); 
+		gop_printf("gop: [%8s] <- [%8s] init connection ok\n", connect->my_name, connect->his_name);
 
 	return (GOP_OK);
 }
@@ -1587,7 +1587,7 @@ gop_socket_accept_connection(struct gop_connect * connect)
 }
 
 
-static int 
+static int
 gop_socket_unix_accept_connection (struct gop_connect *connect)
 {
 	/*
@@ -1604,7 +1604,7 @@ gop_socket_unix_accept_connection (struct gop_connect *connect)
 		return (GOP_KO);
 	}
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [-accept-] gop_socket_unix_accept_connection() sur cd=%d\n", 
+		gop_printf("gop: [%8s] <> [-accept-] gop_socket_unix_accept_connection() sur cd=%d\n",
 			connect->my_name, connect->cd_init);
 
 	len = sizeof(struct sockaddr);
@@ -1658,7 +1658,7 @@ gop_socket_unix_accept_connection (struct gop_connect *connect)
 	}
 
 	if (connect->mode >= GOP_CONNECTION){
-		gop_printf("gop: [%8s] <> [-accept-] \t accept() OK, socket %d ready\n", 
+		gop_printf("gop: [%8s] <> [-accept-] \t accept() OK, socket %d ready\n",
 			connect->my_name, connect->cd);
 	}
 
@@ -1668,7 +1668,7 @@ gop_socket_unix_accept_connection (struct gop_connect *connect)
 
 
 
-int 
+int
 gop_accept_connection (struct gop_connect *connect)
 {
 	struct gop_connect rd_work;
@@ -1678,8 +1678,8 @@ gop_accept_connection (struct gop_connect *connect)
 	int	pid;
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <- [%8s] debut de accept connection\n", 
-			connect->my_name, connect->his_name); 
+		gop_printf("gop: [%8s] <- [%8s] debut de accept connection\n",
+			connect->my_name, connect->his_name);
 
         gop_errno = 0;
 
@@ -1704,9 +1704,9 @@ gop_accept_connection (struct gop_connect *connect)
 	 * accepte et le besoin de XDR
 	 */
 
-	(void) memcpy((char *) &rd_work, (char *) connect, 
+	(void) memcpy((char *) &rd_work, (char *) connect,
 				sizeof(struct gop_connect));
-	(void) memcpy((char *) &wr_work, (char *) connect, 
+	(void) memcpy((char *) &wr_work, (char *) connect,
 				sizeof(struct gop_connect));
 	gop_set_struct_standart(&wr_work);
 	wr_work.need_xdr = GOP_FALSE;
@@ -1717,7 +1717,7 @@ gop_accept_connection (struct gop_connect *connect)
 		return (GOP_KO);
 	}
 
-	if (gop_data_section_read(&rd_work, (char *) &packet, 
+	if (gop_data_section_read(&rd_work, (char *) &packet,
 			sizeof(struct gop_bench_xdr), GOP_TRUE, 0, 0, 0) <= GOP_OK){
 		return (GOP_KO);
 	}
@@ -1753,9 +1753,9 @@ gop_accept_connection (struct gop_connect *connect)
 	connect->maxpacket = GOP_MIN(connect->maxpacket, maxpacket);
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <> [%8s] taille des packets entre >%s< et >%s< = %d\n", 
+		gop_printf("gop: [%8s] <> [%8s] taille des packets entre >%s< et >%s< = %d\n",
 			connect->my_name, connect->his_name, connect->my_name, connect->his_name, connect->maxpacket);
-		gop_printf("gop: [%8s] <> [%8s] convertion XDR entre >%s< et >%s< = %d\n", 
+		gop_printf("gop: [%8s] <> [%8s] convertion XDR entre >%s< et >%s< = %d\n",
 			connect->my_name, connect->his_name, connect->my_name, connect->his_name, connect->need_xdr);
 	}
 	/*
@@ -1769,7 +1769,7 @@ gop_accept_connection (struct gop_connect *connect)
 	}
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <- [%8s] accept connection ok\n", connect->my_name, connect->his_name); 
+		gop_printf("gop: [%8s] <- [%8s] accept connection ok\n", connect->my_name, connect->his_name);
 
 	/*
 	 * Pour les communication type GOP_SOCKET_UNIX, on s'echange les
@@ -1798,7 +1798,7 @@ gop_accept_connection (struct gop_connect *connect)
 
 
 
-static int 
+static int
 gop_socket_connection (struct gop_connect *wconnect)
 {
 	/*
@@ -1809,11 +1809,11 @@ gop_socket_connection (struct gop_connect *wconnect)
 	struct sockaddr_in sinet;
 
 	if (wconnect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] -> [%8s] gop_socket_connection() host=>%s< port=%d\n", 
+		gop_printf("gop: [%8s] -> [%8s] gop_socket_connection() host=>%s< port=%d\n",
 			wconnect->my_name, wconnect->his_name, wconnect->name, wconnect->port);
 	}
 	if ((hp = gethostbyname(wconnect->name)) == NULL) {
-		gop_printf("gop: [%8s] -> [%8s] gop_socket_connection(), gethostbyname() unknown host: >%s< \n", 
+		gop_printf("gop: [%8s] -> [%8s] gop_socket_connection(), gethostbyname() unknown host: >%s< \n",
 			wconnect->my_name, wconnect->his_name, wconnect->name);
 		gop_errno = GOP_BAD_HOST_NAME;
 		return (GOP_KO);
@@ -1839,7 +1839,7 @@ gop_socket_connection (struct gop_connect *wconnect)
 		return (GOP_KO);
 	}
 	if (wconnect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] -> [%8s] \t socket()   cd=%d OK\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t socket()   cd=%d OK\n",
 			wconnect->my_name, wconnect->his_name,  wconnect->cd);
 	}
 	/*
@@ -1852,7 +1852,7 @@ gop_socket_connection (struct gop_connect *wconnect)
 	}
 
 	if (wconnect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] -> [%8s] \t connect()  cd=%d OK\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t connect()  cd=%d OK\n",
 			wconnect->my_name, wconnect->his_name,  wconnect->cd);
 	}
 #ifdef   BSD
@@ -1875,23 +1875,23 @@ gop_socket_connection (struct gop_connect *wconnect)
 
 	if (wconnect->mode >= GOP_CONNECTION) {
 
-		gop_printf("gop: [%8s] -> [%8s] socket %d ready\n", 
+		gop_printf("gop: [%8s] -> [%8s] socket %d ready\n",
 			wconnect->my_name, wconnect->his_name,  wconnect->cd);
 
 #ifdef   BSD
 		i = 4;
 		if (getsockopt(wconnect->cd, SOL_SOCKET, SO_SNDBUF, &sndbuf, &i) == -1) {
-			gop_printf("gop: [%8s] -> [%8s] warning = %s \n", 
+			gop_printf("gop: [%8s] -> [%8s] warning = %s \n",
 				wconnect->my_name, wconnect->his_name,  my_strerror(errno));
 		}
-		gop_printf("gop: [%8s] -> [%8s] socket send buffer    = %d \n", 
+		gop_printf("gop: [%8s] -> [%8s] socket send buffer    = %d \n",
 			wconnect->my_name, wconnect->his_name,  sndbuf);
 		i = 4;
 		if (getsockopt(wconnect->cd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, &i) == -1) {
-			gop_printf("gop: [%8s] -> [%8s] warning = %s \n", 
+			gop_printf("gop: [%8s] -> [%8s] warning = %s \n",
 				wconnect->my_name, wconnect->his_name,  my_strerror(errno));
 		}
-		gop_printf("gop: [%8s] -> [%8s] socket receive buffer = %d \n", 
+		gop_printf("gop: [%8s] -> [%8s] socket receive buffer = %d \n",
 			wconnect->my_name, wconnect->his_name,  rcvbuf);
 #endif /* BSD */
 	}
@@ -1900,7 +1900,7 @@ gop_socket_connection (struct gop_connect *wconnect)
 
 
 
-static int 
+static int
 gop_socket_unix_connection (struct gop_connect *wconnect)
 {
 	/*
@@ -1919,18 +1919,18 @@ gop_socket_unix_connection (struct gop_connect *wconnect)
 		return (GOP_KO);
 	}
 	if (wconnect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] -> [%8s] \t socket()   cd=%d OK\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t socket()   cd=%d OK\n",
 			wconnect->my_name, wconnect->his_name,  wconnect->cd);
 	}
 
-	if(connect(wconnect->cd, (struct sockaddr *)&sunix, 
+	if(connect(wconnect->cd, (struct sockaddr *)&sunix,
 		strlen(sunix.sun_path) + sizeof(sunix.sun_family)) == EOF) {
 		gop_errno = GOP_ERRNO;
 		return (GOP_KO);
 	}
 
 	if (wconnect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] -> [%8s] \t connect()  cd=%d OK\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t connect()  cd=%d OK\n",
 			wconnect->my_name, wconnect->his_name,  wconnect->cd);
 	}
 
@@ -1939,7 +1939,7 @@ gop_socket_unix_connection (struct gop_connect *wconnect)
 
 
 
-int 
+int
 gop_connection (struct gop_connect *connect)
 {
 
@@ -1949,8 +1949,8 @@ gop_connection (struct gop_connect *connect)
 	int	pid;
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] -> [%8s] debut de connection\n", 
-			connect->my_name, connect->his_name); 
+		gop_printf("gop: [%8s] -> [%8s] debut de connection\n",
+			connect->my_name, connect->his_name);
 
 	connect->side = GOP_CLIENT_SIDE;
 
@@ -2009,7 +2009,7 @@ gop_connection (struct gop_connect *connect)
 	if (gop_header_read(&rd_work) != GOP_OK){
 		return (GOP_KO);
 	}
-	if (gop_data_section_read(&rd_work, (char *) &packet, 
+	if (gop_data_section_read(&rd_work, (char *) &packet,
 			sizeof(struct gop_bench_xdr), GOP_TRUE, 0, 0, 0) <= GOP_OK){
 		return (GOP_KO);
 	}
@@ -2026,14 +2026,14 @@ gop_connection (struct gop_connect *connect)
 
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <> [%8s] taille des packets = %d\n", 
+		gop_printf("gop: [%8s] <> [%8s] taille des packets = %d\n",
 			connect->my_name, connect->his_name, connect->maxpacket);
-		gop_printf("gop: [%8s] <> [%8s] convertion XDR = %d\n", 
+		gop_printf("gop: [%8s] <> [%8s] convertion XDR = %d\n",
 			connect->my_name, connect->his_name, connect->need_xdr);
 	}
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] -> [%8s] connection ok\n", connect->my_name, connect->his_name); 
+		gop_printf("gop: [%8s] -> [%8s] connection ok\n", connect->my_name, connect->his_name);
 
 	/*
 	 * Pour les communication type GOP_SOCKET_UNIX, on s'echange les
@@ -2060,44 +2060,44 @@ gop_connection (struct gop_connect *connect)
 
 
 
-static int 
+static int
 gop_socket_close_connection (struct gop_connect *connect)
 {
 	int		status;
-	
-	
-	gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_connection() cd = %d cd_init = %d\n", 
+
+
+	gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_connection() cd = %d cd_init = %d\n",
 				connect->my_name, connect->cd, connect->cd_init);
 
 	if (connect->cd != -1) {
 		if (connect->mode >= GOP_CONNECTION) {
-			gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_connection() cd = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_connection() cd = %d\n",
 				connect->my_name, connect->cd);
 		}
 		status = shutdown(connect->cd, 2);
 		if (connect->mode >= GOP_CONNECTION)
-			gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n",
 				connect->my_name, connect->cd, status);
 		status = close(connect->cd);
 		if (connect->mode >= GOP_CONNECTION)
-			gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n",
 			connect->my_name, connect->cd, status);
 		connect->cd = -1;
 
 	}
-	
+
 	if (connect->cd_init != -1) {
 		if (connect->mode >= GOP_CONNECTION) {
-			gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_connection() cd_init = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_connection() cd_init = %d\n",
 				connect->my_name, connect->cd_init);
 		}
 		status = shutdown(connect->cd_init, 2);
 		if (connect->mode >= GOP_CONNECTION)
-			gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n",
 				connect->my_name, connect->cd_init, status);
 		status = close(connect->cd_init);
 		if (connect->mode >= GOP_CONNECTION)
-			gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n",
 				connect->my_name, connect->cd_init, status);
 		connect->cd_init = -1;
 	}
@@ -2106,7 +2106,7 @@ gop_socket_close_connection (struct gop_connect *connect)
 }
 
 
-static int 
+static int
 gop_socket_unix_close_connection (struct gop_connect *connect)
 {
 
@@ -2115,16 +2115,16 @@ gop_socket_unix_close_connection (struct gop_connect *connect)
 
 	if (connect->cd != -1) {
 		if (connect->mode >= GOP_CONNECTION) {
-			gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_unix_close_connection() cd=%d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_unix_close_connection() cd=%d\n",
 				connect->my_name, connect->cd);
 		}
 		status = shutdown(connect->cd, 2);
 		if (connect->mode >= GOP_CONNECTION)
-			gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n",
 				connect->my_name, connect->cd, status);
 		status = close(connect->cd);
 		if (connect->mode >= GOP_CONNECTION)
-			gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n",
 				connect->my_name, connect->cd, status);
 		connect->cd = -1;
 
@@ -2132,16 +2132,16 @@ gop_socket_unix_close_connection (struct gop_connect *connect)
 
 	if (connect->cd_init != -1) {
 		if (connect->mode >= GOP_CONNECTION) {
-			gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_unix_close_connection() cd_init = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_unix_close_connection() cd_init = %d\n",
 				connect->my_name, connect->cd_init);
 		}
 		status = shutdown(connect->cd_init, 2);
 		if (connect->mode >= GOP_CONNECTION)
-			gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n",
 				connect->my_name, connect->cd_init, status);
 		status = close(connect->cd_init);
 		if (connect->mode >= GOP_CONNECTION)
-			gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n", 
+			gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n",
 				connect->my_name, connect->cd_init, status);
 		sprintf(name, "%s/.socket.%s", getenv("HOME"), connect->name);
 		unlink(name);
@@ -2152,12 +2152,12 @@ gop_socket_unix_close_connection (struct gop_connect *connect)
 }
 
 
-int 
+int
 gop_close_connection (struct gop_connect *connect)
 {
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [%8s] debut de close_connection, gop_errno=%d (en entree)\n", 
+		gop_printf("gop: [%8s] <> [%8s] debut de close_connection, gop_errno=%d (en entree)\n",
 			connect->my_name, connect->his_name,  gop_errno);
 
 	switch (connect->type) {
@@ -2174,7 +2174,7 @@ gop_close_connection (struct gop_connect *connect)
 	}
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [%8s] fin close_connection, gop_errno=%d (en sortie)\n", 
+		gop_printf("gop: [%8s] <> [%8s] fin close_connection, gop_errno=%d (en sortie)\n",
 			connect->my_name, connect->his_name,  gop_errno);
 
 	return (GOP_OK);
@@ -2185,13 +2185,13 @@ gop_close_connection (struct gop_connect *connect)
 
 
 
-static int 
+static int
 gop_socket_close_init_connection (struct gop_connect *connect)
 {
 	int		status;
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_init_connection() cd_init = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_init_connection() cd_init = %d\n",
 			connect->my_name, connect->cd_init);
 	}
 
@@ -2200,11 +2200,11 @@ gop_socket_close_init_connection (struct gop_connect *connect)
 
 	status = shutdown(connect->cd_init, 2);
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n",
 			connect->my_name, connect->cd_init, status);
 	status = close(connect->cd_init);
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n",
 			connect->my_name, connect->cd_init, status);
 
 	connect->cd_init = -1;
@@ -2213,7 +2213,7 @@ gop_socket_close_init_connection (struct gop_connect *connect)
 }
 
 
-static int 
+static int
 gop_socket_unix_close_init_connection (struct gop_connect *connect)
 {
 
@@ -2222,7 +2222,7 @@ gop_socket_unix_close_init_connection (struct gop_connect *connect)
 
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_unix_close_init_connection() cd_init = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_unix_close_init_connection() cd_init = %d\n",
 			connect->my_name, connect->cd_init);
 	}
 
@@ -2231,28 +2231,28 @@ gop_socket_unix_close_init_connection (struct gop_connect *connect)
 
 	status = shutdown(connect->cd_init, 2);
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n",
 			connect->my_name, connect->cd_init, status);
 	status = close(connect->cd_init);
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n",
 			connect->my_name, connect->cd_init, status);
 
 	sprintf(socket_name,"%s/.socket.%s",getenv("HOME"),connect->name);
 	unlink(socket_name);
-	
+
 	connect->cd_init = -1;
 
 	return (GOP_OK);
 }
 
 
-int 
+int
 gop_close_init_connection (struct gop_connect *connect)
 {
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [%8s] debut de gop_close_init_connection, gop_errno=%d (en entree)\n", 
+		gop_printf("gop: [%8s] <> [%8s] debut de gop_close_init_connection, gop_errno=%d (en entree)\n",
 			connect->my_name, connect->his_name,  gop_errno);
 
 	switch (connect->type) {
@@ -2269,7 +2269,7 @@ gop_close_init_connection (struct gop_connect *connect)
 	}
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [%8s] fin de gop_close_init_connection, gop_errno=%d (en entree)\n", 
+		gop_printf("gop: [%8s] <> [%8s] fin de gop_close_init_connection, gop_errno=%d (en entree)\n",
 			connect->my_name, connect->his_name,  gop_errno);
 	return (GOP_OK);
 }
@@ -2278,14 +2278,14 @@ gop_close_init_connection (struct gop_connect *connect)
 
 
 
-static int 
+static int
 gop_socket_close_active_connection (struct gop_connect *connect)
 {
 	int		status;
 
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_active_connection() cd = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_close_active_connection() cd = %d\n",
 			connect->my_name, connect->cd);
 	}
 	if(connect->cd == -1)
@@ -2293,11 +2293,11 @@ gop_socket_close_active_connection (struct gop_connect *connect)
 
 	status = shutdown(connect->cd, 2);
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n",
 			connect->my_name, connect->cd, status);
 	status = close(connect->cd);
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n",
 			connect->my_name, connect->cd, status);
 
 	connect->cd = -1;
@@ -2306,14 +2306,14 @@ gop_socket_close_active_connection (struct gop_connect *connect)
 }
 
 
-static int 
+static int
 gop_socket_unix_close_active_connection (struct gop_connect *connect)
 {
 
 	int		status;
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_unix_close_active_connection() cd = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] gop_socket_unix_close_active_connection() cd = %d\n",
 			connect->my_name, connect->cd);
 	}
 
@@ -2322,11 +2322,11 @@ gop_socket_unix_close_active_connection (struct gop_connect *connect)
 
 	status = shutdown(connect->cd, 2);
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] shutdown(%d,2) status = %d\n",
 			connect->my_name, connect->cd, status);
 	status = close(connect->cd);
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n", 
+		gop_printf("gop: [%8s] <> [-CLOSE--] close(%d) status = %d\n",
 			connect->my_name, connect->cd, status);
 
 	connect->cd = -1;
@@ -2335,12 +2335,12 @@ gop_socket_unix_close_active_connection (struct gop_connect *connect)
 }
 
 
-int 
+int
 gop_close_active_connection (struct gop_connect *connect)
 {
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [%8s] debut de gop_close_active_connection, gop_errno=%d (en entree)\n", 
+		gop_printf("gop: [%8s] <> [%8s] debut de gop_close_active_connection, gop_errno=%d (en entree)\n",
 			connect->my_name, connect->his_name,  gop_errno);
 
 	switch (connect->type) {
@@ -2357,7 +2357,7 @@ gop_close_active_connection (struct gop_connect *connect)
 	}
 
 	if (connect->mode >= GOP_CONNECTION)
-		gop_printf("gop: [%8s] <> [%8s] fin de gop_close_active_connection, gop_errno=%d (en entree)\n", 
+		gop_printf("gop: [%8s] <> [%8s] fin de gop_close_active_connection, gop_errno=%d (en entree)\n",
 			connect->my_name, connect->his_name,  gop_errno);
 	return (GOP_OK);
 }
@@ -2375,25 +2375,25 @@ gop_socket_read(struct gop_connect * connect, char *buf, int size)
 	/*
 	 * Pour gerer les timeouts, on s'envoie un SIGALRM dans le but
 	 * d'interrompre le read().
-	 * 
+	 *
 	 * Sous BSD, lorsque survient un interrupt lors du read(), le system
 	 * relance automatiquement le read. Pour empecher ceci, la fonction
 	 * sigvec (avec flags=SV_INTERRUPT) permet de reelement interompre le
 	 * read().
-	 * 
+	 *
 	 * Sous POSIX, le read() est automatiquement interrompu, ce qui ne
 	 * necessite aucun traitement.
-	 * 
+	 *
 	 * Le programme utilisant les timeouts doivent avoir un handler de
 	 * SIGALRM qui ne fait rien. fait par gop_write() et gop_read().
 	 */
 
 	/*
 	 * memo de la structure de connection courante
-	 
+
 	 pas une bonne idée car l'utilisation simultanee du logbook
 	 embrouille tout des qu'on l'utilise pour envoyer des messages
-	 dans gop 
+	 dans gop
 	 */
 	/**
 	gop_connect_client = connect;
@@ -2431,7 +2431,7 @@ gop_socket_read(struct gop_connect * connect, char *buf, int size)
 	/* lecture de size bytes */
 
 	if (connect->mode >= GOP_IO)
-		gop_printf("gop: [%8s] <- [%8s] \t\t\t read socket debut: reception sur cd=%d de %d bytes\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t\t\t read socket debut: reception sur cd=%d de %d bytes\n",
 			connect->my_name, connect->his_name, connect->cd, size - ilen);
 
 	while (ilen < size) {
@@ -2472,20 +2472,20 @@ gop_socket_read(struct gop_connect * connect, char *buf, int size)
 		/* test deconnection */
 		if (len == -1 && errno == ECONNRESET) {
 			gop_printf("gop: [%8s] <- [%8s] ECONNRESET (GOP_BROKEN_PIPE) durant gop_socket_read()\n",
-				connect->my_name, connect->his_name); 
+				connect->my_name, connect->his_name);
 			gop_errno = GOP_BROKEN_PIPE;
 			return (GOP_KO);
-		} else if (len == -1 && errno != EINTR) { 
+		} else if (len == -1 && errno != EINTR) {
 		/* test erreur system */
 			gop_printf("gop: [%8s] <- [%8s] erreur system %d (GOP_ERRNO) durant gop_socket_read()\n",
-				connect->my_name, connect->his_name, errno); 
+				connect->my_name, connect->his_name, errno);
 			gop_errno = GOP_ERRNO;
 			return (GOP_KO);
 		}
 		/* detection du timeout */
 		if (errno == EINTR) {
 			gop_printf("gop: [%8s] <- [%8s] EINTR (GOP_INTERRUPTED_SYSTEM_CALL) durant gop_socket_read()\n",
-				connect->my_name, connect->his_name); 
+				connect->my_name, connect->his_name);
 			gop_errno = GOP_INTERRUPTED_SYSTEM_CALL;
 			return (GOP_KO);
 		}
@@ -2493,17 +2493,17 @@ gop_socket_read(struct gop_connect * connect, char *buf, int size)
 		if (len == 0) {
 			if (connect->mode >= GOP_CONNECTION)
 				gop_printf("gop: [%8s] <- [%8s] Detection deconnection (GOP_DISCONNECT) sur cd=%d durant gop_socket_read()\n",
-					connect->my_name, connect->his_name, connect->cd); 
+					connect->my_name, connect->his_name, connect->cd);
 			gop_errno = GOP_DISCONNECT;
 			return (GOP_KO);
 		}
 		ilen = ilen + len;
 		if (connect->mode >= GOP_IO)
-			gop_printf("gop: [%8s] <- [%8s] \t\t\t read socket effectif de %d bytes sur cd=%d\n", 
+			gop_printf("gop: [%8s] <- [%8s] \t\t\t read socket effectif de %d bytes sur cd=%d\n",
 				connect->my_name, connect->his_name,  len, connect->cd);
 	}
 	if (connect->mode >= GOP_IO)
-		gop_printf("gop: [%8s] <- [%8s] \t\t\t read socket fin: %d bytes ont ete recu sur cd=%d\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t\t\t read socket fin: %d bytes ont ete recu sur cd=%d\n",
 			connect->my_name, connect->his_name,  ilen, connect->cd);
 
 #ifdef   BSD
@@ -2519,7 +2519,7 @@ gop_socket_read(struct gop_connect * connect, char *buf, int size)
 
 
 
-static int 
+static int
 gop_socket_write (struct gop_connect *connect, char *buf, int size)
 {
 	int             ilen = 0;
@@ -2527,10 +2527,10 @@ gop_socket_write (struct gop_connect *connect, char *buf, int size)
 
 	/*
 	 * memo de la structure de connection courante
-	 
+
 	 pas une bonne idée car l'utilisation simultanee du logbook
 	 embrouille tout des qu'on l'utilise pour envoyer des messages
-	 dans gop 
+	 dans gop
 	 */
 	/**
 	gop_connect_client = connect;
@@ -2540,7 +2540,7 @@ gop_socket_write (struct gop_connect *connect, char *buf, int size)
 
 	errno = 0;
 	if (connect->mode >= GOP_IO)
-		gop_printf("gop: [%8s] -> [%8s] \t\t\t write socket debut: envoi sur cd=%d de %d bytes\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t\t\t write socket debut: envoi sur cd=%d de %d bytes\n",
 			connect->my_name, connect->his_name, connect->cd, size);
 
 	gop_broken_pipe = GOP_FALSE;
@@ -2550,22 +2550,22 @@ gop_socket_write (struct gop_connect *connect, char *buf, int size)
 		if ((len = send(connect->cd, buf+ilen, size-ilen, 0)) < 0) {
 			if (gop_broken_pipe) {
 				gop_printf("gop: [%8s] -> [%8s] GOP_BROKEN_PIPE sur cd=%d durant gop_socket_write()\n",
-					connect->my_name, connect->his_name, connect->cd); 
+					connect->my_name, connect->his_name, connect->cd);
 				gop_errno = GOP_BROKEN_PIPE;
 			} else {
 				gop_printf("gop: [%8s] -> [%8s] erreur system %d (GOP_ERRNO) durant gop_socket_write()\n",
-					connect->my_name, connect->his_name, errno); 
+					connect->my_name, connect->his_name, errno);
 				gop_errno = GOP_ERRNO;
 			}
 			return (GOP_KO);
 		}
 		if (connect->mode >= GOP_IO)
-			gop_printf("gop: [%8s] -> [%8s] \t\t\t write socket effectif de %d bytes sur cd=%d\n", 
+			gop_printf("gop: [%8s] -> [%8s] \t\t\t write socket effectif de %d bytes sur cd=%d\n",
 				connect->my_name, connect->his_name,  len, connect->cd);
 		ilen = ilen + len;
 	}
 	if (connect->mode >= GOP_IO)
-		gop_printf("gop: [%8s] -> [%8s] \t\t\t write socket fin: %d bytes ont ete envoye sur cd=%d\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t\t\t write socket fin: %d bytes ont ete envoye sur cd=%d\n",
 			connect->my_name, connect->his_name,  size, connect->cd);
 
 	return (GOP_OK);
@@ -2575,7 +2575,7 @@ gop_socket_write (struct gop_connect *connect, char *buf, int size)
 
 
 
-static int 
+static int
 gop_io_read (struct gop_connect *connect, char *buf, int size)
 
 {
@@ -2600,7 +2600,7 @@ gop_io_read (struct gop_connect *connect, char *buf, int size)
 }
 
 
-static int 
+static int
 gop_io_write (struct gop_connect *connect, char *buf, int size)
 
 {
@@ -2627,7 +2627,7 @@ gop_io_write (struct gop_connect *connect, char *buf, int size)
 /**********************************************************************/
 
 
-static int 
+static int
 gop_first_byte_read (struct gop_connect *connect, char *value)
 {
 
@@ -2636,20 +2636,20 @@ gop_first_byte_read (struct gop_connect *connect, char *value)
 	 */
 
 	if (connect->mode >= GOP_PACKET)
-		gop_printf("gop: [%8s] <- [%8s] \t\t attente premier byte d'un packet sur cd=%d\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t\t attente premier byte d'un packet sur cd=%d\n",
 			connect->my_name, connect->his_name,  connect->cd);
 
 	if(gop_io_read(connect, value, 1) != GOP_OK)
 		return (GOP_KO);
 
 	if (connect->mode >= GOP_PACKET)
-		gop_printf("gop: [%8s] <- [%8s] \t\t premier byte d'un packet = %c sur cd=%d\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t\t premier byte d'un packet = %c sur cd=%d\n",
 			connect->my_name, connect->his_name,  *value, connect->cd);
 	return (GOP_OK);
 }
 
 
-static int 
+static int
 gop_first_byte_write (struct gop_connect *connect, char *value)
 {
 
@@ -2658,7 +2658,7 @@ gop_first_byte_write (struct gop_connect *connect, char *value)
 	 */
 
 	if (connect->mode >= GOP_PACKET)
-		gop_printf("gop: [%8s] -> [%8s] \t\t ecriture premier byte d'un packet '%c' sur cd=%d\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t\t ecriture premier byte d'un packet '%c' sur cd=%d\n",
 			connect->my_name, connect->his_name,  *value, connect->cd);
 
 	if(gop_io_write(connect, value, 1) != GOP_OK)
@@ -2669,13 +2669,13 @@ gop_first_byte_write (struct gop_connect *connect, char *value)
 
 
 
-static int 
+static int
 gop_acknow_write (struct gop_connect *connect)
 {
 	char            ackno[4];
 
 	if (connect->mode >= GOP_PACKET)
-		gop_printf("gop: [%8s] -> [%8s] \t\t write acknowledge sur cd=%d\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t\t write acknowledge sur cd=%d\n",
 			connect->my_name, connect->his_name,  connect->cd);
 
 	sprintf(ackno, "A%2d", gop_errno);
@@ -2738,12 +2738,12 @@ gop_acknow_read(struct gop_connect * connect)
 
 /**********************************************************************/
 
-int 
+int
 gop_echo_header (char *my_name, char *his_name, struct gop_header *header)
 {
 	gop_printf("gop: [%8s] <> [%8s] \t V CLAS DATE__________ FROM____ TO______ H D M MSIZE_____ PSIZE_____ C STAT X D\n",
-		my_name, his_name); 
-	gop_printf("gop: [%8s] <> [%8s] \t %1s %4s %14s %8s %8s %1s %1s %1s %10s %10s %1s %4s %1s %1s %s", 
+		my_name, his_name);
+	gop_printf("gop: [%8s] <> [%8s] \t %1s %4s %14s %8s %8s %1s %1s %1s %10s %10s %1s %4s %1s %1s %s",
 		my_name, his_name,
 		header->version, header->class, header->date,
 		header->from, header->to, header->hsync,
@@ -2757,12 +2757,12 @@ gop_echo_header (char *my_name, char *his_name, struct gop_header *header)
 
 
 
-int 
+int
 gop_header_write (struct gop_connect *connect)
 {
 
 	if (connect->mode >= GOP_MESSAGE ) {
-		gop_printf("gop: [%8s] -> [%8s] \t write_header: sur cd=%d\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t write_header: sur cd=%d\n",
 			connect->my_name, connect->his_name,  connect->cd);
 	}
 	if (connect->mode >= GOP_HEADER ) {
@@ -2791,21 +2791,21 @@ gop_header_write (struct gop_connect *connect)
 
 
 
-int 
+int
 gop_h_read (struct gop_connect *connect)
 {
 	if (connect->mode >= GOP_PACKET)
-		gop_printf("gop: [%8s] <- [%8s] \t\t read '%c' sur cd=%d\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t\t read '%c' sur cd=%d\n",
 			connect->my_name, connect->his_name, GOP_HEADER_STD , connect->cd);
 
-	/* 
-	lit sur le cannal jusqu'a la reception d'un 'H' 
+	/*
+	lit sur le cannal jusqu'a la reception d'un 'H'
 	*/
 	do {
 		if (gop_first_byte_read(connect, &connect->header.header_type) != GOP_OK)
 			return (GOP_KO);
 	}
-	while (connect->header.header_type != GOP_HEADER_STD && 
+	while (connect->header.header_type != GOP_HEADER_STD &&
 		connect->header.header_type != GOP_HEADER_END);
 
 	/*
@@ -2813,7 +2813,7 @@ gop_h_read (struct gop_connect *connect)
 	 */
 	if (connect->header.header_type == GOP_HEADER_END) {
 		if (connect->mode >= 0)
-			gop_printf("gop: [%8s] <- [%8s]  DETECTION BLOC FIN MESSAGE ****** sur cd=%d\n", 
+			gop_printf("gop: [%8s] <- [%8s]  DETECTION BLOC FIN MESSAGE ****** sur cd=%d\n",
 				connect->my_name, connect->his_name,  connect->cd);
 		gop_errno = GOP_END_OF_MESSAGE;
 		connect->header.header_type = GOP_HEADER_STD;
@@ -2825,12 +2825,12 @@ gop_h_read (struct gop_connect *connect)
 
 
 
-static int 
+static int
 gop_header_read_without_acknow (struct gop_connect *connect)
 {
 
 	if (connect->mode >= GOP_MESSAGE) {
-		gop_printf("gop: [%8s] <- [%8s] \t read header: sur cd=%d\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t read header: sur cd=%d\n",
 			connect->my_name, connect->his_name,  connect->cd);
 	}
 
@@ -2863,7 +2863,7 @@ gop_header_read_without_acknow (struct gop_connect *connect)
 }
 
 
-int 
+int
 gop_header_read (struct gop_connect *connect)
 {
 
@@ -2886,7 +2886,7 @@ gop_header_read (struct gop_connect *connect)
 
 
 
-int 
+int
 gop_select_destination (struct gop_connect *from_connect, struct gop_list *list, struct gop_connect **to_connect)
 {
 
@@ -2908,8 +2908,8 @@ gop_select_destination (struct gop_connect *from_connect, struct gop_list *list,
 			   from_connect->my_name, list->gop[0]->my_name);
 
 		for (i = 0; i < list->nb; i++) {
-			gop_printf("gop: [%8s] <> [--------] \t\t %d) to: >%s<  cd=%d\n", 
-				from_connect->my_name, i, 
+			gop_printf("gop: [%8s] <> [--------] \t\t %d) to: >%s<  cd=%d\n",
+				from_connect->my_name, i,
 				list->gop[i]->his_name, list->gop[i]->cd);
 		}
 	}
@@ -2935,22 +2935,22 @@ gop_select_destination (struct gop_connect *from_connect, struct gop_list *list,
 			 */
 
 			if (from_connect->mode >= GOP_HEADER)
-				gop_printf("gop: [%8s] <> [--------] \t destination research:\n", 
-					from_connect->my_name); 
+				gop_printf("gop: [%8s] <> [--------] \t destination research:\n",
+					from_connect->my_name);
 
 			for (i = 0; i < list->nb; i++) {
 
 				if (from_connect->mode >= GOP_HEADER)
-					gop_printf("gop: [%8s] <> [--------] \t\t >%s< == >%s< equal ??\n", 
-						from_connect->my_name,   
+					gop_printf("gop: [%8s] <> [--------] \t\t >%s< == >%s< equal ??\n",
+						from_connect->my_name,
 						list->gop[i]->his_name, from_connect->header.to);
 
 
 				if (strcmp(list->gop[i]->his_name, from_connect->header.to) == 0) {
 
 					if (from_connect->mode >= GOP_HEADER)
-						gop_printf("gop: [%8s] <> [--------] \t\t ok, destination is >%s< cd=%d\n", 
-							from_connect->my_name,  
+						gop_printf("gop: [%8s] <> [--------] \t\t ok, destination is >%s< cd=%d\n",
+							from_connect->my_name,
 							list->gop[i]->his_name, list->gop[i]->cd);
 
 					/*
@@ -2994,7 +2994,7 @@ gop_select_destination (struct gop_connect *from_connect, struct gop_list *list,
 }
 
 
-static int 
+static int
 gop_d_packet_write (struct gop_connect *connect, char *buf, int size)
 {
 	/*
@@ -3007,7 +3007,7 @@ gop_d_packet_write (struct gop_connect *connect, char *buf, int size)
 	int		len;
 
 	if (connect->mode >= GOP_PACKET)
-		gop_printf("gop: [%8s] -> [%8s] \t\t write 1 packet data_section sur cd=%d\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t\t write 1 packet data_section sur cd=%d\n",
 			connect->my_name, connect->his_name,  connect->cd);
 
 
@@ -3017,12 +3017,12 @@ gop_d_packet_write (struct gop_connect *connect, char *buf, int size)
 	*/
 	if (connect->need_xdr && !(connect->datatype==GOP_CHAR || connect->datatype==GOP_STRUCT))  {
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] -> [%8s] \t\t xdr: taille originale = %d\n", 
+			gop_printf("gop: [%8s] -> [%8s] \t\t xdr: taille originale = %d\n",
 				connect->my_name, connect->his_name,  size);
 		len = size/gop_size_of_datatype(connect->datatype);
 		size = size + GOP_XDR_HEADER_SIZE;
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] -> [%8s] \t\t xdr: nouvelle taille =  %d\n", 
+			gop_printf("gop: [%8s] -> [%8s] \t\t xdr: nouvelle taille =  %d\n",
 				connect->my_name, connect->his_name,  size);
 		ptr = (char *) alloca(size);
 		if (ptr <= (char *)NULL) {
@@ -3031,7 +3031,7 @@ gop_d_packet_write (struct gop_connect *connect, char *buf, int size)
 		}
 		xdrmem_create(&xdrs, (char *) ptr, (u_int) size, XDR_ENCODE);
 		if (connect->mode >= GOP_PACKET)
-			gop_printf("gop: [%8s] -> [%8s] \t\t XDR_ENCODE dans %d \n", 
+			gop_printf("gop: [%8s] -> [%8s] \t\t XDR_ENCODE dans %d \n",
 				connect->my_name, connect->his_name,  ptr);
 
 		/*
@@ -3045,7 +3045,7 @@ gop_d_packet_write (struct gop_connect *connect, char *buf, int size)
 			return (GOP_KO);
 		}
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] -> [%8s] \t\t xdr: code = %d element\n", 
+			gop_printf("gop: [%8s] -> [%8s] \t\t xdr: code = %d element\n",
 				connect->my_name, connect->his_name,  len);
 	} else {
 		ptr = buf;
@@ -3077,7 +3077,7 @@ gop_d_packet_write (struct gop_connect *connect, char *buf, int size)
 
 
 
-int 
+int
 gop_data_section_write (struct gop_connect *connect, char *buf, int flag, int npix_x, int dx, int dy)
 {
 	int             nb_packet;
@@ -3087,12 +3087,12 @@ gop_data_section_write (struct gop_connect *connect, char *buf, int flag, int np
 	if(connect->msize == 0) return(GOP_OK);
 
 	if (connect->mode >= GOP_MESSAGE){
-		gop_printf("gop: [%8s] -> [%8s] \t write data section sur cd=%d\n", 
+		gop_printf("gop: [%8s] -> [%8s] \t write data section sur cd=%d\n",
 			connect->my_name, connect->his_name,  connect->cd);
 	}
 	if (connect->mode >= GOP_HEADER){
 		if (connect->datatype == GOP_CHAR){
-			gop_printf("gop: [%8s] -> [%8s] Contenu: >>%s<<\n", 
+			gop_printf("gop: [%8s] -> [%8s] Contenu: >>%s<<\n",
 				connect->my_name, connect->his_name, buf);
 		}
 	}
@@ -3106,8 +3106,8 @@ gop_data_section_write (struct gop_connect *connect, char *buf, int flag, int np
 	}
 
 	if (connect->mode >= GOP_PACKET_INFO)
-		gop_printf("gop: [%8s] -> [%8s] \t\t write %d packets sur cd=%d, size=%d  last_size=%d\n", 
-			connect->my_name, connect->his_name,  nb_packet, 
+		gop_printf("gop: [%8s] -> [%8s] \t\t write %d packets sur cd=%d, size=%d  last_size=%d\n",
+			connect->my_name, connect->his_name,  nb_packet,
 			connect->cd, connect->psize, size_of_last_packet);
 
 	write_bytes = 0;
@@ -3119,7 +3119,7 @@ gop_data_section_write (struct gop_connect *connect, char *buf, int flag, int np
 		} else {
 			offset = gop_size_of_datatype(connect->datatype)*(npix_x * (i + dy) + dx);
 		}
-			
+
 
 		/*
 		 * simulation de FDM au Neme block (modifier le test avec i
@@ -3127,8 +3127,8 @@ gop_data_section_write (struct gop_connect *connect, char *buf, int flag, int np
 		 */
 
 		if (i == -1) {
-			gop_printf("gop: [%8s] -> [%8s] *********** arret d'urgence\n", 
-				connect->my_name, connect->his_name); 
+			gop_printf("gop: [%8s] -> [%8s] *********** arret d'urgence\n",
+				connect->my_name, connect->his_name);
 			(void) gop_write_end_of_message(connect, "SIMULATION D'ERREUR");
 			return (GOP_OK);
 
@@ -3138,15 +3138,15 @@ gop_data_section_write (struct gop_connect *connect, char *buf, int flag, int np
 			size = size_of_last_packet;
 
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] -> [%8s] \t\t write packet No %d sur cd=%d, size=%d, offset=%d, addr=%d\n", 
-				connect->my_name, connect->his_name,  
+			gop_printf("gop: [%8s] -> [%8s] \t\t write packet No %d sur cd=%d, size=%d, offset=%d, addr=%d\n",
+				connect->my_name, connect->his_name,
 				i, connect->cd, size, offset, buf + offset);
 		if (gop_d_packet_write(connect, buf + offset, size) != GOP_OK)
 			return (GOP_KO);
 
 		write_bytes = write_bytes + size;
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] -> [%8s] \t\t %d bytes transmis sur cd=%d\n", 
+			gop_printf("gop: [%8s] -> [%8s] \t\t %d bytes transmis sur cd=%d\n",
 				connect->my_name, connect->his_name,  write_bytes, connect->cd);
 
 		if(connect->interrupted == GOP_INTERRUPTED){
@@ -3183,7 +3183,7 @@ gop_data_section_write (struct gop_connect *connect, char *buf, int flag, int np
 }
 
 
-static int 
+static int
 gop_d_packet_read (struct gop_connect *connect, char *buf, int size, int flag_acknow)
 {
 	/*
@@ -3198,7 +3198,7 @@ gop_d_packet_read (struct gop_connect *connect, char *buf, int size, int flag_ac
 	int		len=0;
 
 	if (connect->mode >= GOP_PACKET)
-		gop_printf("gop: [%8s] <- [%8s] \t\t read 1 packet data_section sur cd=%d\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t\t read 1 packet data_section sur cd=%d\n",
 			connect->my_name, connect->his_name,  connect->cd);
 /*
 	if (gop_first_byte_read(connect, &lettre) != GOP_OK)
@@ -3208,7 +3208,7 @@ gop_d_packet_read (struct gop_connect *connect, char *buf, int size, int flag_ac
 		return (GOP_KO);
 	}
 */
-	/* 
+	/*
 	lit sur le cannal jusqu'a la reception d'un 'D' ou d'un 'E'
 	*/
 	do {
@@ -3241,7 +3241,7 @@ gop_d_packet_read (struct gop_connect *connect, char *buf, int size, int flag_ac
 	 */
 	if (lettre == GOP_HEADER_END) {
 		if (connect->mode >= 0)
-			gop_printf("gop: [%8s] <- [%8s]  DETECTION BLOC FIN MESSAGE ****** sur cd=%d\n", 
+			gop_printf("gop: [%8s] <- [%8s]  DETECTION BLOC FIN MESSAGE ****** sur cd=%d\n",
 				connect->my_name, connect->his_name,  connect->cd);
 		gop_errno = GOP_END_OF_MESSAGE;
 		connect->header.header_type = GOP_HEADER_STD;
@@ -3255,11 +3255,11 @@ gop_d_packet_read (struct gop_connect *connect, char *buf, int size, int flag_ac
 	*/
 	if (connect->xdr && !(connect->datatype==GOP_CHAR || connect->datatype==GOP_STRUCT)) {
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] <- [%8s] \t\t xdr: taille originale = %d\n", 
+			gop_printf("gop: [%8s] <- [%8s] \t\t xdr: taille originale = %d\n",
 				connect->my_name, connect->his_name,  size);
 		size = size + GOP_XDR_HEADER_SIZE;
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] <- [%8s] \t\t xdr: nouvelle taille =  %d\n", 
+			gop_printf("gop: [%8s] <- [%8s] \t\t xdr: nouvelle taille =  %d\n",
 				connect->my_name, connect->his_name,  size);
 		ptr = (char *) alloca(size);
 		if (ptr <= (char *)NULL) {
@@ -3268,7 +3268,7 @@ gop_d_packet_read (struct gop_connect *connect, char *buf, int size, int flag_ac
 		}
 		xdrmem_create(&xdrs, (char *) ptr, (u_int) size, XDR_DECODE);
 		if (connect->mode >= GOP_PACKET)
-			gop_printf("gop: [%8s] <- [%8s] \t\t XDR_DECODE dans %d \n", 
+			gop_printf("gop: [%8s] <- [%8s] \t\t XDR_DECODE dans %d \n",
 				connect->my_name, connect->his_name,  ptr);
 	} else {
 		ptr = buf;
@@ -3277,7 +3277,7 @@ gop_d_packet_read (struct gop_connect *connect, char *buf, int size, int flag_ac
 	/*
 	lecture
 	*/
-	
+
 	if(gop_io_read(connect, ptr, size) != GOP_OK)
 		return (GOP_KO);
 
@@ -3308,7 +3308,7 @@ gop_d_packet_read (struct gop_connect *connect, char *buf, int size, int flag_ac
 			return (GOP_KO);
 		}
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] <- [%8s] \t\t xdr: lu = %d element\n", 
+			gop_printf("gop: [%8s] <- [%8s] \t\t xdr: lu = %d element\n",
 				connect->my_name, connect->his_name,  len);
 	}
 
@@ -3318,7 +3318,7 @@ gop_d_packet_read (struct gop_connect *connect, char *buf, int size, int flag_ac
 
 
 
-int 
+int
 gop_data_section_read (struct gop_connect *connect, char *buf, int maxsize, int flag, int npix_x, int dx, int dy)
 {
 	/*
@@ -3330,13 +3330,13 @@ gop_data_section_read (struct gop_connect *connect, char *buf, int maxsize, int 
 
 	/*
 	 * RETURN VALUE:
-	 * 
+	 *
 	 * >0 = nb_bytes_lus
-	 * 
+	 *
 	 * < 0 = nb de bytes lus (valeur absolue) avec erreur dans gop_errno
-	 * 
+	 *
 	 * cas special si == -1 erreur sans bytes lus
-	 * 
+	 *
 	 * si gop_errno = GOP_END_OF_MESSAGE -> on a recu le premier byte du
 	 * bloc de fin de message, c'est la fonction appellante qui doit lire
 	 * le bloc complet
@@ -3349,7 +3349,7 @@ gop_data_section_read (struct gop_connect *connect, char *buf, int maxsize, int 
 	if(connect->msize == 0) return(0);
 
 	if (connect->mode >= GOP_MESSAGE)
-		gop_printf("gop: [%8s] <- [%8s] \t read data section sur cd=%d\n", 
+		gop_printf("gop: [%8s] <- [%8s] \t read data section sur cd=%d\n",
 			connect->my_name, connect->his_name,  connect->cd);
 
 	if (connect->msize > maxsize) {
@@ -3371,8 +3371,8 @@ gop_data_section_read (struct gop_connect *connect, char *buf, int maxsize, int 
 	}
 
 	if (connect->mode >= GOP_PACKET_INFO)
-		gop_printf("gop: [%8s] <- [%8s] \t\t read %d packets sur cd=%d, size=%d  last_size=%d\n", 
-			connect->my_name, connect->his_name,  nb_packet, 
+		gop_printf("gop: [%8s] <- [%8s] \t\t read %d packets sur cd=%d, size=%d  last_size=%d\n",
+			connect->my_name, connect->his_name,  nb_packet,
 			connect->cd, connect->psize, size_of_last_packet);
 
 	read_bytes = 0;
@@ -3390,8 +3390,8 @@ gop_data_section_read (struct gop_connect *connect, char *buf, int maxsize, int 
 			size = size_of_last_packet;
 
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] <- [%8s] \t\t read packet No %d sur cd=%d, size=%d, offset=%d, addr=%d\n", 
-				connect->my_name, connect->his_name,  
+			gop_printf("gop: [%8s] <- [%8s] \t\t read packet No %d sur cd=%d, size=%d, offset=%d, addr=%d\n",
+				connect->my_name, connect->his_name,
 				i, connect->cd, size, offset, buf + offset);
 
 		if (gop_d_packet_read(connect, buf + offset, size, GOP_TRUE) != GOP_OK)
@@ -3400,7 +3400,7 @@ gop_data_section_read (struct gop_connect *connect, char *buf, int maxsize, int 
 		read_bytes = read_bytes + size;
 
 		if (connect->mode >= GOP_PACKET_INFO)
-			gop_printf("gop: [%8s] <- [%8s] \t\t %d bytes lus sur cd=%d\n", 
+			gop_printf("gop: [%8s] <- [%8s] \t\t %d bytes lus sur cd=%d\n",
 				connect->my_name, connect->his_name,  read_bytes, connect->cd);
 
 	}
@@ -3408,7 +3408,7 @@ gop_data_section_read (struct gop_connect *connect, char *buf, int maxsize, int 
 
 	if (connect->mode >= GOP_HEADER){
 		if (connect->datatype == GOP_CHAR){
-			gop_printf("gop: [%8s] <- [%8s] Contenu: >>%s<<\n", 
+			gop_printf("gop: [%8s] <- [%8s] Contenu: >>%s<<\n",
 				connect->my_name, connect->his_name, buf);
 		}
 	}
@@ -3419,7 +3419,7 @@ gop_data_section_read (struct gop_connect *connect, char *buf, int maxsize, int 
 
 
 
-static int 
+static int
 gop_data_section_forward (struct gop_connect *from_connect, struct gop_connect *to_connect)
 {
 	char           *buf;
@@ -3442,22 +3442,22 @@ gop_data_section_forward (struct gop_connect *from_connect, struct gop_connect *
 
 	/*
 	 * la structure from_connect contient les parametre de reception,
-	 * 
+	 *
 	 * la structure to_connect contient le header initial avec les
 	 * parametres pour l'envoi
-	 * 
+	 *
 	 * la seule valeur a changer dans le header initial est
 	 * to_connect->header->psize, si to_connect->maxpacket est plus petit
 	 * que from_connect->psize
-	 * 
+	 *
 	 */
 
 	if (from_connect->msize == 0)
 		return (GOP_OK);
 
 	if (from_connect->mode >= GOP_MESSAGE)
-		gop_printf("gop: [%8s] -> [%8s] \t forward data_section from cd=%d to cd=%d ([%8s] sur [%8s])\n", 
-				from_connect->my_name, from_connect->his_name,  
+		gop_printf("gop: [%8s] -> [%8s] \t forward data_section from cd=%d to cd=%d ([%8s] sur [%8s])\n",
+				from_connect->my_name, from_connect->his_name,
 				from_connect->cd, to_connect->cd,
 				from_connect->his_name, to_connect->his_name);
 
@@ -3472,7 +3472,7 @@ gop_data_section_forward (struct gop_connect *from_connect, struct gop_connect *
 	size_of_buf = 2 * max_size_transfert - 1;
 
 	if (from_connect->mode >= GOP_MESSAGE)
-		gop_printf("gop: [%8s]    [--------] \t allocation de buffer intermediaire de %d bytes\n", 
+		gop_printf("gop: [%8s]    [--------] \t allocation de buffer intermediaire de %d bytes\n",
 			from_connect->my_name, size_of_buf);
 	buf = (char *) alloca(size_of_buf);
 	if (buf == 0) {
@@ -3532,8 +3532,8 @@ gop_data_section_forward (struct gop_connect *from_connect, struct gop_connect *
 
 		do {
 			if (from_connect->mode >= GOP_PACKET_INFO)
-				gop_printf("gop: [%8s] <- [%8s] \t\t read packet No %d sur cd=%d, size=%d\n", 
-					from_connect->my_name, from_connect->his_name, 
+				gop_printf("gop: [%8s] <- [%8s] \t\t read packet No %d sur cd=%d, size=%d\n",
+					from_connect->my_name, from_connect->his_name,
 					nb_packet_read, from_connect->cd, from_size);
 			if (gop_d_packet_read(from_connect, buf + nb_bytes_in_buf,
 						     from_size, GOP_TRUE) != GOP_OK) {
@@ -3567,7 +3567,7 @@ gop_data_section_forward (struct gop_connect *from_connect, struct gop_connect *
 
 			if (from_connect->mode >= GOP_HEADER){
 				if (from_connect->datatype == GOP_CHAR){
-					gop_printf("gop: [%8s] <- [%8s] Contenu: >>%s<<\n", 
+					gop_printf("gop: [%8s] <- [%8s] Contenu: >>%s<<\n",
 						from_connect->my_name, from_connect->his_name, buf + nb_bytes_in_buf);
 				}
 			}
@@ -3593,15 +3593,15 @@ gop_data_section_forward (struct gop_connect *from_connect, struct gop_connect *
 		while (nb_bytes_in_buf - ptr >= to_size) {
 
 			if (to_connect->mode >= GOP_PACKET_INFO)
-				gop_printf("gop: [%8s] -> [%8s] \t\t write packet No %d sur cd=%d, size=%d\n", 
-					to_connect->my_name, to_connect->his_name, 
+				gop_printf("gop: [%8s] -> [%8s] \t\t write packet No %d sur cd=%d, size=%d\n",
+					to_connect->my_name, to_connect->his_name,
 					nb_packet_write, to_connect->cd, to_size);
 			if (gop_d_packet_write(to_connect, buf + ptr, to_size) != GOP_OK) {
 				return (GOP_KO);
 			}
 			if (to_connect->mode >= GOP_HEADER){
 				if (to_connect->datatype == GOP_CHAR){
-					gop_printf("gop: [%8s] -> [%8s] Contenu: >>%s<<\n", 
+					gop_printf("gop: [%8s] -> [%8s] Contenu: >>%s<<\n",
 						to_connect->my_name, to_connect->his_name, buf + ptr);
 				}
 			}
@@ -3623,15 +3623,15 @@ gop_data_section_forward (struct gop_connect *from_connect, struct gop_connect *
 
 
 
-static int 
+static int
 gop_header_forward (struct gop_connect *from_connect, struct gop_connect *to_connect)
 {
 	int             local_gop_errno;
 	int		to_psize;
 
 	if (to_connect->mode >= GOP_MESSAGE)
-		gop_printf("gop: [%8s] -> [%8s] \t forward header from cd=%d to cd=%d ([%8s] sur [%8s])\n", 
-			from_connect->my_name, from_connect->his_name, 
+		gop_printf("gop: [%8s] -> [%8s] \t forward header from cd=%d to cd=%d ([%8s] sur [%8s])\n",
+			from_connect->my_name, from_connect->his_name,
 			from_connect->cd, to_connect->cd,
 			from_connect->his_name, to_connect->his_name);
 
@@ -3670,7 +3670,7 @@ gop_header_forward (struct gop_connect *from_connect, struct gop_connect *to_con
 }
 
 
-int 
+int
 gop_select_active_channel (struct gop_list *list_active, struct gop_list *list_ready)
 {
 	/*
@@ -3696,21 +3696,21 @@ gop_select_active_channel (struct gop_list *list_active, struct gop_list *list_r
 
 	if (list_active->gop[0]->mode >= GOP_POLL) {
 #ifdef SELECT_CALL
-		gop_printf("gop: [%8s] <> [-SELECT-] select sur %d channel descriptor:\n", 
+		gop_printf("gop: [%8s] <> [-SELECT-] select sur %d channel descriptor:\n",
 			list_active->gop[0]->my_name, list_active->nb);
 #endif
 #ifdef POLL_CALL
-		gop_printf("gop: [%8s] <> [--POLL--] poll sur %d channel descriptor:\n", 
+		gop_printf("gop: [%8s] <> [--POLL--] poll sur %d channel descriptor:\n",
 			list_active->gop[0]->my_name, list_active->nb);
 #endif
 		for (i = 0; i < list_active->nb; i++) {
 			if (list_active->gop[i]->cd != -1) {
-				gop_printf("gop: [%8s] <> [%8s] \t cd[%d]      = %d\n", 
-					list_active->gop[i]->my_name, list_active->gop[i]->his_name, 
+				gop_printf("gop: [%8s] <> [%8s] \t cd[%d]      = %d\n",
+					list_active->gop[i]->my_name, list_active->gop[i]->his_name,
 					i, list_active->gop[i]->cd);
 			} else {
-				gop_printf("gop: [%8s] <> [%8s] \t cd_init[%d] = %d\n", 
-					list_active->gop[i]->my_name, list_active->gop[i]->his_name, 
+				gop_printf("gop: [%8s] <> [%8s] \t cd_init[%d] = %d\n",
+					list_active->gop[i]->my_name, list_active->gop[i]->his_name,
 					i, list_active->gop[i]->cd_init);
 			}
 		}
@@ -3790,7 +3790,7 @@ gop_select_active_channel (struct gop_list *list_active, struct gop_list *list_r
 	while ((list_ready->nb = poll(pfd, list_active->nb, timeout)) <= 0) {
 #endif
 		if (list_active->gop[0]->mode >= GOP_POLL) {
-			gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n", 
+			gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n",
 				list_active->gop[0]->my_name, list_ready->nb, errno);
 		}
 
@@ -3805,8 +3805,8 @@ gop_select_active_channel (struct gop_list *list_active, struct gop_list *list_r
 			/*
 			 * interruption durant le select
 			 */
-			gop_printf("gop: [%8s] <> [--POLL--] \n\n GOP_INTERRUPTED: interruption durant le select \n\n", 
-				gop_connect_client->my_name); 
+			gop_printf("gop: [%8s] <> [--POLL--] \n\n GOP_INTERRUPTED: interruption durant le select \n\n",
+				gop_connect_client->my_name);
 			/*
 			 * on recherche dans la liste des connections en
 			 * attente sur le select si une est en cours de
@@ -3822,8 +3822,8 @@ gop_select_active_channel (struct gop_list *list_active, struct gop_list *list_r
 		//} else if (list_ready->nb < 0) {
 		//	/* erreur system */
 		//	if(errno==EAGAIN){
-		//		gop_printf("gop: [%8s] <> [--POLL--] ***** ERREUR SYSTEM EAGAIN: %s: \n", 
-		//			gop_connect_client->my_name, my_strerror(errno)); 
+		//		gop_printf("gop: [%8s] <> [--POLL--] ***** ERREUR SYSTEM EAGAIN: %s: \n",
+		//			gop_connect_client->my_name, my_strerror(errno));
 		//		if(cpt_eagain++<1000){
 		//			continue;
 		//		}
@@ -3836,7 +3836,7 @@ gop_select_active_channel (struct gop_list *list_active, struct gop_list *list_r
 	gop_restore_handler(SIGURG);
 
 	if (list_active->gop[0]->mode >= GOP_POLL) {
-		gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n", 
+		gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n",
 			list_active->gop[0]->my_name, list_ready->nb, errno);
 	}
 
@@ -3857,7 +3857,7 @@ gop_select_active_channel (struct gop_list *list_active, struct gop_list *list_r
 #ifdef SELECT_CALL
 		if (FD_ISSET(cd, &readfds) != 0) {
 			if (list_active->gop[0]->mode >= GOP_POLL) {
-				gop_printf("gop: [%8s] <- [%8s] \t\t detection sur cannal: cd[%d] = %d\n", 
+				gop_printf("gop: [%8s] <- [%8s] \t\t detection sur cannal: cd[%d] = %d\n",
 					list_active->gop[i]->my_name, list_active->gop[i]->his_name,  ptr, cd);
 			}
 			list_ready->gop[ptr++] = list_active->gop[i];
@@ -3868,7 +3868,7 @@ gop_select_active_channel (struct gop_list *list_active, struct gop_list *list_r
 		/* gop_printf("gop: [%8s] -> [%8s] %d & %d = %d\n", connect->my_name, connect->his_name, pfd[i].revents, pfd[i].events, pfd[i].revents & pfd[i].events); */
 		if((pfd[i].revents & pfd[i].events) != 0){
 			if (list_active->gop[0]->mode >= GOP_POLL) {
-				gop_printf("gop: [%8s] <- [%8s] \t\t detection sur cannal: cd[%d] = %d\n", 
+				gop_printf("gop: [%8s] <- [%8s] \t\t detection sur cannal: cd[%d] = %d\n",
 					list_active->gop[i]->my_name, list_active->gop[i]->his_name,  ptr, cd);
 			}
 			list_ready->gop[ptr++] = list_active->gop[i];
@@ -3883,7 +3883,7 @@ gop_select_active_channel (struct gop_list *list_active, struct gop_list *list_r
 
 #ifdef POLL_CALL
 
-int 
+int
 gop_select_active_channel_poll (struct gop_list *list_active, struct gop_list *list_ready)
 {
 	/*
@@ -3902,16 +3902,16 @@ gop_select_active_channel_poll (struct gop_list *list_active, struct gop_list *l
 
 
 	if (list_active->gop[0]->mode >= GOP_POLL) {
-		gop_printf("gop: [%8s] <> [--POLL--] poll sur %d channel descriptor:\n", 
+		gop_printf("gop: [%8s] <> [--POLL--] poll sur %d channel descriptor:\n",
 			list_active->gop[0]->my_name, list_active->nb);
 		for (i = 0; i < list_active->nb; i++) {
 			if (list_active->gop[i]->cd != -1) {
-				gop_printf("gop: [%8s] <> [%8s] \t cd[%d]      = %d\n", 
-					list_active->gop[i]->my_name, list_active->gop[i]->his_name, 
+				gop_printf("gop: [%8s] <> [%8s] \t cd[%d]      = %d\n",
+					list_active->gop[i]->my_name, list_active->gop[i]->his_name,
 					i, list_active->gop[i]->cd);
 			} else {
-				gop_printf("gop: [%8s] <> [%8s] \t cd_init[%d] = %d\n", 
-					list_active->gop[i]->my_name, list_active->gop[i]->his_name, 
+				gop_printf("gop: [%8s] <> [%8s] \t cd_init[%d] = %d\n",
+					list_active->gop[i]->my_name, list_active->gop[i]->his_name,
 					i, list_active->gop[i]->cd_init);
 			}
 		}
@@ -3957,7 +3957,7 @@ gop_select_active_channel_poll (struct gop_list *list_active, struct gop_list *l
 	}
 	while ((list_ready->nb = poll(pfd, list_active->nb, timeout)) <= 0) {
 		if (list_active->gop[0]->mode >= GOP_POLL) {
-			gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n", 
+			gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n",
 				list_active->gop[0]->my_name, list_ready->nb, errno);
 		}
 
@@ -3972,8 +3972,8 @@ gop_select_active_channel_poll (struct gop_list *list_active, struct gop_list *l
 			/*
 			 * interruption durant le select
 			 */
-			gop_printf("gop: [%8s] <> [--POLL--] \n\n GOP_INTERRUPTED: interruption durant le select \n\n", 
-				gop_connect_client->my_name); 
+			gop_printf("gop: [%8s] <> [--POLL--] \n\n GOP_INTERRUPTED: interruption durant le select \n\n",
+				gop_connect_client->my_name);
 			/*
 			 * on recherche dans la liste des connections en
 			 * attente sur le select si une est en cours de
@@ -3989,8 +3989,8 @@ gop_select_active_channel_poll (struct gop_list *list_active, struct gop_list *l
 		//} else if (list_ready->nb < 0) {
 		//	/* erreur system */
 		//	if(errno==EAGAIN){
-		//		gop_printf("gop: [%8s] <> [--POLL--] ***** ERREUR SYSTEM EAGAIN: %s: \n", 
-		//			gop_connect_client->my_name, my_strerror(errno)); 
+		//		gop_printf("gop: [%8s] <> [--POLL--] ***** ERREUR SYSTEM EAGAIN: %s: \n",
+		//			gop_connect_client->my_name, my_strerror(errno));
 		//		if(cpt_eagain++<1000){
 		//			continue;
 		//		}
@@ -4003,7 +4003,7 @@ gop_select_active_channel_poll (struct gop_list *list_active, struct gop_list *l
 	gop_restore_handler(SIGURG);
 
 	if (list_active->gop[0]->mode >= GOP_POLL) {
-		gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n", 
+		gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n",
 			list_active->gop[0]->my_name, list_ready->nb, errno);
 	}
 
@@ -4024,7 +4024,7 @@ gop_select_active_channel_poll (struct gop_list *list_active, struct gop_list *l
 		/* gop_printf("gop: [%8s] -> [%8s] %d & %d = %d\n", connect->my_name, connect->his_name, pfd[i].revents, pfd[i].events, pfd[i].revents & pfd[i].events); */
 		if((pfd[i].revents & pfd[i].events) != 0){
 			if (list_active->gop[0]->mode >= GOP_POLL) {
-				gop_printf("gop: [%8s] <- [%8s] \t\t detection sur cannal: cd[%d] = %d\n", 
+				gop_printf("gop: [%8s] <- [%8s] \t\t detection sur cannal: cd[%d] = %d\n",
 					list_active->gop[i]->my_name, list_active->gop[i]->his_name,  ptr, cd);
 			}
 			list_ready->gop[ptr++] = list_active->gop[i];
@@ -4038,7 +4038,7 @@ gop_select_active_channel_poll (struct gop_list *list_active, struct gop_list *l
 
 #endif
 
-int 
+int
 gop_select_active_channel_select (struct gop_list *list_active, struct gop_list *list_ready)
 {
 	/*
@@ -4056,16 +4056,16 @@ gop_select_active_channel_select (struct gop_list *list_active, struct gop_list 
 	struct timeval  timeout, *ptr_timeout;
 
 	if (list_active->gop[0]->mode >= GOP_POLL) {
-		gop_printf("gop: [%8s] <> [-SELECT-] select sur %d channel descriptor:\n", 
+		gop_printf("gop: [%8s] <> [-SELECT-] select sur %d channel descriptor:\n",
 			list_active->gop[0]->my_name, list_active->nb);
 		for (i = 0; i < list_active->nb; i++) {
 			if (list_active->gop[i]->cd != -1) {
-				gop_printf("gop: [%8s] <> [%8s] \t cd[%d]      = %d\n", 
-					list_active->gop[i]->my_name, list_active->gop[i]->his_name, 
+				gop_printf("gop: [%8s] <> [%8s] \t cd[%d]      = %d\n",
+					list_active->gop[i]->my_name, list_active->gop[i]->his_name,
 					i, list_active->gop[i]->cd);
 			} else {
-				gop_printf("gop: [%8s] <> [%8s] \t cd_init[%d] = %d\n", 
-					list_active->gop[i]->my_name, list_active->gop[i]->his_name, 
+				gop_printf("gop: [%8s] <> [%8s] \t cd_init[%d] = %d\n",
+					list_active->gop[i]->my_name, list_active->gop[i]->his_name,
 					i, list_active->gop[i]->cd_init);
 			}
 		}
@@ -4116,7 +4116,7 @@ gop_select_active_channel_select (struct gop_list *list_active, struct gop_list 
 
 	while ((list_ready->nb = select((int) width, &readfds, (fd_set *) 0, (fd_set *) 0, ptr_timeout)) <= 0) {
 		if (list_active->gop[0]->mode >= GOP_POLL) {
-			gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n", 
+			gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n",
 				list_active->gop[0]->my_name, list_ready->nb, errno);
 		}
 
@@ -4131,8 +4131,8 @@ gop_select_active_channel_select (struct gop_list *list_active, struct gop_list 
 			/*
 			 * interruption durant le select
 			 */
-			gop_printf("gop: [%8s] <> [--POLL--] \n\n GOP_INTERRUPTED: interruption durant le select \n\n", 
-				gop_connect_client->my_name); 
+			gop_printf("gop: [%8s] <> [--POLL--] \n\n GOP_INTERRUPTED: interruption durant le select \n\n",
+				gop_connect_client->my_name);
 			/*
 			 * on recherche dans la liste des connections en
 			 * attente sur le select si une est en cours de
@@ -4148,8 +4148,8 @@ gop_select_active_channel_select (struct gop_list *list_active, struct gop_list 
 		//} else if (list_ready->nb < 0) {
 		//	/* erreur system */
 		//	if(errno==EAGAIN){
-		//		gop_printf("gop: [%8s] <> [--POLL--] ***** ERREUR SYSTEM EAGAIN: %s: \n", 
-		//			gop_connect_client->my_name, my_strerror(errno)); 
+		//		gop_printf("gop: [%8s] <> [--POLL--] ***** ERREUR SYSTEM EAGAIN: %s: \n",
+		//			gop_connect_client->my_name, my_strerror(errno));
 		//		if(cpt_eagain++<1000){
 		//			continue;
 		//		}
@@ -4162,7 +4162,7 @@ gop_select_active_channel_select (struct gop_list *list_active, struct gop_list 
 	gop_restore_handler(SIGURG);
 
 	if (list_active->gop[0]->mode >= GOP_POLL) {
-		gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n", 
+		gop_printf("gop: [%8s] <> [--POLL--] \t sortie de poll() ou select() avec nb d'evenements en attente = %d et errno = %d\n",
 			list_active->gop[0]->my_name, list_ready->nb, errno);
 	}
 
@@ -4182,7 +4182,7 @@ gop_select_active_channel_select (struct gop_list *list_active, struct gop_list 
 
 		if (FD_ISSET(cd, &readfds) != 0) {
 			if (list_active->gop[0]->mode >= GOP_POLL) {
-				gop_printf("gop: [%8s] <- [%8s] \t\t detection sur cannal: cd[%d] = %d\n", 
+				gop_printf("gop: [%8s] <- [%8s] \t\t detection sur cannal: cd[%d] = %d\n",
 					list_active->gop[i]->my_name, list_active->gop[i]->his_name,  ptr, cd);
 			}
 			list_ready->gop[ptr++] = list_active->gop[i];
@@ -4196,7 +4196,7 @@ gop_select_active_channel_select (struct gop_list *list_active, struct gop_list 
 /**********************************************************************/
 
 
-int 
+int
 gop_read (struct gop_connect *connect, char *cmd, int sizeof_cmd)
 {
 	int             status;
@@ -4256,7 +4256,7 @@ gop_handle_eom(struct gop_connect *connect, void fct(char *message))
 			return;
 		}
 		if (fct == NULL) {
-			gop_printf("gop: [%8s] <- [%8s] Recu fin de message: >%s<\n", 
+			gop_printf("gop: [%8s] <- [%8s] Recu fin de message: >%s<\n",
 				connect->my_name, connect->his_name,  message);
 		} else {
 			fct(message);
@@ -4275,7 +4275,7 @@ gop_handle_eom(struct gop_connect *connect, void fct(char *message))
 
 
 
-int 
+int
 gop_read_matrix (struct gop_connect *connect, char *cmd, int sizeof_cmd, int npix_x, int dx, int dy)
 {
 	int             status;
@@ -4307,7 +4307,7 @@ gop_read_matrix (struct gop_connect *connect, char *cmd, int sizeof_cmd, int npi
 }
 
 
-static int 
+static int
 gop_read_core (struct gop_connect *connect, char *cmd, int sizeof_cmd, int flag, int npix_x, int dx, int dy)
 {
 
@@ -4321,14 +4321,14 @@ gop_read_core (struct gop_connect *connect, char *cmd, int sizeof_cmd, int flag,
 	 * acknowledge du header avec tes tde la taille du message
 	 */
 
-	if (connect->msize > sizeof_cmd) 
+	if (connect->msize > sizeof_cmd)
 		gop_errno = GOP_TOO_BIG;
 
 	if (connect->hsync)
 		if (gop_acknow_write(connect) != GOP_OK)
 			return (GOP_KO);
 
-	if (connect->msize > sizeof_cmd) 
+	if (connect->msize > sizeof_cmd)
 		/* on repete GOP_TOO_BIG car gop_acknow_write pose gop_errno=0 */
 		gop_errno = GOP_TOO_BIG;
 
@@ -4341,7 +4341,7 @@ gop_read_core (struct gop_connect *connect, char *cmd, int sizeof_cmd, int flag,
 
 
 
-int 
+int
 gop_read_data (struct gop_connect *connect, char *buf, int sizeof_buf)
 {
 	int             status;
@@ -4376,7 +4376,7 @@ gop_read_data (struct gop_connect *connect, char *buf, int sizeof_buf)
 
 
 
-int 
+int
 gop_read_end_of_message (struct gop_connect *connect, char *cmd, int sizeof_cmd)
 {
 	/*
@@ -4406,7 +4406,7 @@ gop_read_end_of_message (struct gop_connect *connect, char *cmd, int sizeof_cmd)
 }
 
 
-int 
+int
 gop_write (struct gop_connect *connect, char *data, int msize, int psize, int datatype)
 {
 	int             status;
@@ -4439,7 +4439,7 @@ gop_write (struct gop_connect *connect, char *data, int msize, int psize, int da
 }
 
 
-int 
+int
 gop_write_matrix (struct gop_connect *connect, char *data, int msize, int psize, int datatype, int npix_x, int dx, int dy)
 {
 	int             status;
@@ -4471,7 +4471,7 @@ gop_write_matrix (struct gop_connect *connect, char *data, int msize, int psize,
 }
 
 
-static int 
+static int
 gop_write_core (struct gop_connect *connect, char *data, int msize, int psize, int datatype, int flag, int npix_x, int dx, int dy)
 {
 	connect->msize = msize;
@@ -4497,7 +4497,7 @@ gop_write_core (struct gop_connect *connect, char *data, int msize, int psize, i
 }
 
 
-int 
+int
 gop_write_command (struct gop_connect *connect, char *cmd)
 {
 	connect->header.header_type = GOP_HEADER_STD;
@@ -4507,7 +4507,7 @@ gop_write_command (struct gop_connect *connect, char *cmd)
 }
 
 
-int 
+int
 gop_write_acknowledgement (struct gop_connect *connect, char *state, char *texte)
 {
 	int	msize;
@@ -4535,7 +4535,7 @@ gop_write_acknowledgement (struct gop_connect *connect, char *state, char *texte
 
 
 
-int 
+int
 gop_write_end_of_message (struct gop_connect *connect, char *texte)
 {
 	/*
@@ -4560,8 +4560,8 @@ gop_write_end_of_message (struct gop_connect *connect, char *texte)
 	connect->datatype = GOP_CHAR;
 
 	if (connect->mode >= GOP_CONNECTION) {
-		gop_printf("gop: [%8s] -> [%8s] ++++++ gop_write_end_of_message() sur cd=%d\n", 
-			connect->my_name, connect->his_name, 
+		gop_printf("gop: [%8s] -> [%8s] ++++++ gop_write_end_of_message() sur cd=%d\n",
+			connect->my_name, connect->his_name,
 			connect->port, connect->cd);
 	}
 
@@ -4576,7 +4576,7 @@ gop_write_end_of_message (struct gop_connect *connect, char *texte)
 }
 
 
-static int 
+static int
 gop_forward_core (struct gop_connect *from_connect, struct gop_connect *to_connect, int timeout, struct gop_list *srv_list)
 {
 	struct gop_list input_list, output_list;
@@ -4607,7 +4607,7 @@ gop_forward_core (struct gop_connect *from_connect, struct gop_connect *to_conne
 	 * attente que de l'un des deux partenaires. Par contre on ne sait
 	 * pas dans quel sens part le message suivant. On effectue donc un
 	 * select() sur les deux.
-	 * 
+	 *
 	 * On accepte toutefois les message destiné a des serveurs desquels on
 	 * n'attend pas de reponse (typiquement logbook ou serveur d'etat)
 	 */
@@ -4621,8 +4621,8 @@ gop_forward_core (struct gop_connect *from_connect, struct gop_connect *to_conne
 
 	while (continuation_flag == GOP_TRUE) {
 		if(from_connect->mode >= GOP_POLL){
-			gop_printf("gop: [%8s] <> [--POLL--] Channels cd=%d ([%8s]) and cd=%d ([%8s]) booked (connect->cont=1)\n", 
-				from_connect->my_name, from_connect->cd, from_connect->his_name, 
+			gop_printf("gop: [%8s] <> [--POLL--] Channels cd=%d ([%8s]) and cd=%d ([%8s]) booked (connect->cont=1)\n",
+				from_connect->my_name, from_connect->cd, from_connect->his_name,
 				to_connect->cd, to_connect->his_name);
 		}
 		/*
@@ -4635,7 +4635,7 @@ gop_forward_core (struct gop_connect *from_connect, struct gop_connect *to_conne
 			gop_select_active_channel(&input_list, &output_list);
 		} while ((gop_errno == GOP_TIMEOUT || output_list.nb==0) &&
 			!(gop_errno != GOP_OK && gop_errno != GOP_TIMEOUT));
-		
+
 		if(gop_errno != GOP_OK)
 			return (GOP_KO);
 		/*
@@ -4702,7 +4702,7 @@ gop_forward_core (struct gop_connect *from_connect, struct gop_connect *to_conne
 			destination->psize = to_psize;
 		sprintf(destination->header.psize, "%10d", destination->psize);
 
-		if (destination->need_xdr && !(atoi(destination->header.datatype)==GOP_CHAR || atoi(destination->header.datatype)==GOP_STRUCT)) 
+		if (destination->need_xdr && !(atoi(destination->header.datatype)==GOP_CHAR || atoi(destination->header.datatype)==GOP_STRUCT))
 			strcpy(destination->header.xdr, GOP_STR_TRUE);
 		else
 			strcpy(destination->header.xdr, GOP_STR_FALSE);
@@ -4734,8 +4734,8 @@ gop_forward_core (struct gop_connect *from_connect, struct gop_connect *to_conne
 					/* c'est le bon destinataire */
 
 					if (from_connect->mode >= GOP_HEADER) {
-						gop_printf("gop: [%8s] <> [--------] \t\t ok, destination is >%s< cd=%d\n", 
-							sender->my_name,  
+						gop_printf("gop: [%8s] <> [--------] \t\t ok, destination is >%s< cd=%d\n",
+							sender->my_name,
 							srv_list->gop[i]->his_name, srv_list->gop[i]->cd);
 					}
 
@@ -4809,9 +4809,9 @@ gop_forward_core (struct gop_connect *from_connect, struct gop_connect *to_conne
 		}
 	}
 
-	/* si une collision est survenue durant 
+	/* si une collision est survenue durant
 	   le forward on l'envoie maintenant */
-	   
+
 	if (memo_action) {
 		if (memo_connect.mode >= GOP_HEADER)
 			gop_printf("gop: [%8s] -> [%8s] \t **** EXECUTION DIFFEREE DU A UNE COLISISION*** \n",
@@ -4872,7 +4872,7 @@ gop_forward_core (struct gop_connect *from_connect, struct gop_connect *to_conne
 }
 
 
-static int 
+static int
 gop_forward_locked_core (struct gop_connect *from_connect, struct gop_connect *to_connect, int timeout, struct gop_list *srv_list)
 {
 #pragma warning(disable:869)  // parameter "timeout" was never referenced
@@ -4902,7 +4902,7 @@ gop_forward_locked_core (struct gop_connect *from_connect, struct gop_connect *t
 	/*
 	 * On transmet les messages suivants uniquement si le message courant
 	 * a le flag de continuation. Dans ce cas on attend sur le destinataire
-	 * 
+	 *
 	 * On accepte toutefois les message destiné a des serveurs desquels on
 	 * n'attend pas de reponse (typiquement logbook ou serveur d'etat)
 	 */
@@ -4913,18 +4913,18 @@ gop_forward_locked_core (struct gop_connect *from_connect, struct gop_connect *t
 	//input_list.timeout = timeout;
 
 	continuation_flag = from_connect->cont;
-	
+
 	/*
 	 * nouveau partenaires
 	 */
-	 
+
 	sender      = to_connect;
 	destination = from_connect;
 
 	while (continuation_flag == GOP_TRUE) {
 		if(from_connect->mode >= GOP_POLL){
-			gop_printf("gop: [%8s] <- [%8s] Channels cd=%d ([%8s]) and cd=%d ([%8s]) booked (connect->cont=1)\n", 
-				destination->his_name, sender->his_name, destination->cd, destination->his_name, 
+			gop_printf("gop: [%8s] <- [%8s] Channels cd=%d ([%8s]) and cd=%d ([%8s]) booked (connect->cont=1)\n",
+				destination->his_name, sender->his_name, destination->cd, destination->his_name,
 				sender->cd, sender->his_name);
 		}
 		/*
@@ -4966,7 +4966,7 @@ gop_forward_locked_core (struct gop_connect *from_connect, struct gop_connect *t
 			destination->psize = to_psize;
 		sprintf(destination->header.psize, "%10d", destination->psize);
 
-		if (destination->need_xdr && !(atoi(destination->header.datatype)==GOP_CHAR || atoi(destination->header.datatype)==GOP_STRUCT)) 
+		if (destination->need_xdr && !(atoi(destination->header.datatype)==GOP_CHAR || atoi(destination->header.datatype)==GOP_STRUCT))
 			strcpy(destination->header.xdr, GOP_STR_TRUE);
 		else
 			strcpy(destination->header.xdr, GOP_STR_FALSE);
@@ -4998,8 +4998,8 @@ gop_forward_locked_core (struct gop_connect *from_connect, struct gop_connect *t
 					/* c'est le bon destinataire */
 
 					if (from_connect->mode >= GOP_HEADER) {
-						gop_printf("gop: [%8s] <> [--------] \t\t ok, destination is >%s< cd=%d\n", 
-							sender->my_name,  
+						gop_printf("gop: [%8s] <> [--------] \t\t ok, destination is >%s< cd=%d\n",
+							sender->my_name,
 							srv_list->gop[i]->his_name, srv_list->gop[i]->cd);
 					}
 
@@ -5059,7 +5059,7 @@ gop_forward_locked_core (struct gop_connect *from_connect, struct gop_connect *t
 			/*
 			 * on inverse les partenaires
 			 */
-			 
+
 			 dummy       = sender;
 			 sender      = destination;
 			 destination = dummy;
@@ -5067,9 +5067,9 @@ gop_forward_locked_core (struct gop_connect *from_connect, struct gop_connect *t
 		}
 	}
 
-	/* si une collision est survenue durant 
+	/* si une collision est survenue durant
 	   le forward on l'envoie maintenant */
-	   
+
 	if (memo_action) {
 		if (memo_connect.mode >= GOP_HEADER)
 			gop_printf("gop: [%8s] -> [%8s] \t **** EXECUTION DIFFEREE DU A UNE COLISISION*** \n",
@@ -5130,7 +5130,7 @@ gop_forward_locked_core (struct gop_connect *from_connect, struct gop_connect *t
 }
 
 
-int 
+int
 gop_forward (struct gop_connect *from_connect, struct gop_connect *to_connect, int timeout, struct gop_list *srv_list)
 {
 	int             status;
@@ -5160,8 +5160,8 @@ gop_forward (struct gop_connect *from_connect, struct gop_connect *to_connect, i
 
 }
 
-int 
-gop_forward_locked (struct gop_connect *from_connect, struct gop_connect *to_connect, 
+int
+gop_forward_locked (struct gop_connect *from_connect, struct gop_connect *to_connect,
 		int timeout, struct gop_list *srv_list)
 {
 	int             status;
@@ -5192,7 +5192,7 @@ gop_forward_locked (struct gop_connect *from_connect, struct gop_connect *to_con
 }
 
 
-//void 
+//void
 //gop_forward_memo_side (struct gop_connect *from_connect, struct gop_connect *to_connect)
 //
 //{
@@ -5205,14 +5205,14 @@ gop_forward_locked (struct gop_connect *from_connect, struct gop_connect *to_con
 
 
 
-void 
+void
 gop_set_type (struct gop_connect *connect, int type)
 {
 	connect->type = type;
 }
 
 
-void 
+void
 gop_set_name (struct gop_connect *connect, char *name)
 {
 	if(name == (char *) NULL)
@@ -5222,21 +5222,21 @@ gop_set_name (struct gop_connect *connect, char *name)
 }
 
 
-void 
+void
 gop_set_port (struct gop_connect *connect, int port)
 {
 	connect->port = port;
 }
 
 
-void 
+void
 gop_set_maxpacket (struct gop_connect *connect, int maxpacket)
 {
 	connect->maxpacket = maxpacket;
 }
 
 
-void 
+void
 gop_set_class (struct gop_connect *connect, char *class)
 {
 	if(class == (char *) NULL)
@@ -5246,7 +5246,7 @@ gop_set_class (struct gop_connect *connect, char *class)
 }
 
 
-void 
+void
 gop_set_from (struct gop_connect *connect, char *from)
 {
 	if(from == (char *) NULL)
@@ -5257,7 +5257,7 @@ gop_set_from (struct gop_connect *connect, char *from)
 }
 
 
-void 
+void
 gop_set_to (struct gop_connect *connect, char *to)
 {
 	if(to == (char *) NULL)
@@ -5268,7 +5268,7 @@ gop_set_to (struct gop_connect *connect, char *to)
 }
 
 
-void 
+void
 gop_set_my_name (struct gop_connect *connect, char *my_name)
 {
 	if(my_name == (char *) NULL)
@@ -5279,7 +5279,7 @@ gop_set_my_name (struct gop_connect *connect, char *my_name)
 }
 
 
-void 
+void
 gop_set_his_name (struct gop_connect *connect, char *his_name)
 {
 	if(his_name == (char *) NULL)
@@ -5290,49 +5290,49 @@ gop_set_his_name (struct gop_connect *connect, char *his_name)
 }
 
 
-void 
+void
 gop_set_msize (struct gop_connect *connect, int msize)
 {
 	connect->msize = msize;
 }
 
 
-void 
+void
 gop_set_psize (struct gop_connect *connect, int psize)
 {
 	connect->psize = psize;
 }
 
 
-void 
+void
 gop_set_cont (struct gop_connect *connect, int cont)
 {
 	connect->cont = cont!=0;
 }
 
 
-void 
+void
 gop_set_stamp (struct gop_connect *connect, int stamp)
 {
 	connect->stamp = stamp!=0;
 }
 
 
-void 
+void
 gop_set_hsync (struct gop_connect *connect, int hsync)
 {
 	connect->hsync = hsync!=0;
 }
 
 
-void 
+void
 gop_set_dsync (struct gop_connect *connect, int dsync)
 {
 	connect->dsync = dsync!=0;
 }
 
 
-void 
+void
 gop_set_stat (struct gop_connect *connect, char *stat)
 {
 	if(stat == (char *) NULL)
@@ -5342,28 +5342,28 @@ gop_set_stat (struct gop_connect *connect, char *stat)
 }
 
 
-void 
+void
 gop_set_mode (struct gop_connect *connect, int mode)
 {
 	connect->mode = mode;
 }
 
 
-void 
+void
 gop_set_datatype (struct gop_connect *connect, int datatype)
 {
 	connect->datatype = datatype;
 }
 
 
-void 
+void
 gop_set_timeout (struct gop_connect *connect, int timeout)
 {
 	connect->timeout = timeout;
 }
 
 
-void 
+void
 gop_set_side (struct gop_connect *connect, int side)
 {
 	connect->side = side;
@@ -5374,7 +5374,7 @@ gop_set_side (struct gop_connect *connect, int side)
 
 
 
-int 
+int
 gop_get_type (struct gop_connect *connect)
 {
 	return(connect->type);
@@ -5402,14 +5402,14 @@ gop_get_his_name (struct gop_connect *connect)
 }
 
 
-int 
+int
 gop_get_port (struct gop_connect *connect)
 {
 	return(connect->port);
 }
 
 
-int 
+int
 gop_get_maxpacket (struct gop_connect *connect)
 {
 	return(connect->maxpacket);
@@ -5437,42 +5437,42 @@ gop_get_to (struct gop_connect *connect)
 }
 
 
-int 
+int
 gop_get_msize (struct gop_connect *connect)
 {
 	return(connect->msize);
 }
 
 
-int 
+int
 gop_get_psize (struct gop_connect *connect)
 {
 	return(connect->psize);
 }
 
 
-int 
+int
 gop_get_cont (struct gop_connect *connect)
 {
 	return(connect->cont);
 }
 
 
-int 
+int
 gop_get_stamp (struct gop_connect *connect)
 {
 	return(connect->stamp);
 }
 
 
-int 
+int
 gop_get_hsync (struct gop_connect *connect)
 {
 	return(connect->hsync);
 }
 
 
-int 
+int
 gop_get_dsync (struct gop_connect *connect)
 {
 	return(connect->dsync);
@@ -5486,41 +5486,41 @@ gop_get_stat (struct gop_connect *connect)
 }
 
 
-int 
+int
 gop_get_mode (struct gop_connect *connect)
 {
 	return(connect->mode);
 }
 
 
-int 
+int
 gop_get_datatype (struct gop_connect *connect)
 {
 	return(connect->datatype);
 }
 
 
-int 
+int
 gop_get_timeout (struct gop_connect *connect)
 {
 	return(connect->timeout);
 }
 
 
-int 
+int
 gop_get_side (struct gop_connect *connect)
 {
 	return(connect->side);
 }
 
 
-int 
+int
 gop_get_cd (struct gop_connect *connect)
 {
 	return(connect->cd);
 }
 
-int 
+int
 gop_get_cd_init (struct gop_connect *connect)
 {
 	return(connect->cd_init);
@@ -5529,7 +5529,7 @@ gop_get_cd_init (struct gop_connect *connect)
 /**********************************************************************/
 
 
-void 
+void
 gop_init_server_socket (struct gop_connect *connect, char *my_name, int port, int maxpacket, int mode, int timeout)
 {
 	gop_set_hsync(connect, GOP_ASYNCHRO);
@@ -5542,7 +5542,7 @@ gop_init_server_socket (struct gop_connect *connect, char *my_name, int port, in
 	gop_set_timeout(connect, timeout);
 }
 
-void 
+void
 gop_init_client_socket (struct gop_connect *connect, char *my_name, char *host, int port, int maxpacket, int mode, int timeout)
 {
 	gop_set_hsync(connect, GOP_ASYNCHRO);
@@ -5557,7 +5557,7 @@ gop_init_client_socket (struct gop_connect *connect, char *my_name, char *host, 
 }
 
 
-void 
+void
 gop_init_server_socket_unix (struct gop_connect *connect, char *my_name, char *name, int maxpacket, int mode, int timeout)
 {
 	gop_set_hsync(connect, GOP_ASYNCHRO);
@@ -5571,7 +5571,7 @@ gop_init_server_socket_unix (struct gop_connect *connect, char *my_name, char *n
 }
 
 
-void 
+void
 gop_init_client_socket_unix (struct gop_connect *connect, char *my_name, char *name, int maxpacket, int mode, int timeout)
 {
 	gop_set_hsync(connect, GOP_ASYNCHRO);
@@ -5583,8 +5583,3 @@ gop_init_client_socket_unix (struct gop_connect *connect, char *my_name, char *n
 	gop_set_mode(connect, mode);
 	gop_set_timeout(connect, timeout);
 }
-
-
-
-
-

@@ -4,20 +4,19 @@
 # @Date : 2021-08-16-13-33
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 seq_init.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
 from sys import path as SysPath
-from os  import path as OsPath
+from os import path as OsPath
 # methode dirname return parent directory and methode abspath return absolut path
 SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
-from threading          import Thread
-from multiprocessing    import Process, Queue
-from configparser       import ConfigParser
+from threading import Thread
+from multiprocessing import Process, Queue
+from configparser import ConfigParser
 
 from pathlib import Path
 import os
@@ -31,17 +30,22 @@ from kalao.fli import camera
 
 from sequencer import system
 
+
 class ThreadWithReturnValue(Thread):
     """
     Thread subclass that allows you to retrieve a return value
     https://stackoverflow.com/questions/6893968/how-to-get-the-return-value-from-a-thread-in-python
     """
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, Verbose=None):
+
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
+                 Verbose=None):
         Thread.__init__(self, group, target, name, args, kwargs)
         self._return = None
+
     def run(self):
         if self._target is not None:
             self._return = self._target(*self._args, **self._kwargs)
+
     def join(self, *args):
         Thread.join(self, *args)
         return self._return
@@ -67,11 +71,11 @@ def initBenchComponents(q, init_foncs):
 
     # Create a thread for each function and set the thread's name to function's name
     for fonc in init_foncs:
-        th = ThreadWithReturnValue(target = fonc)
+        th = ThreadWithReturnValue(target=fonc)
         th.daemon = True
 
         name = fonc.__module__.split(".")[-1] + "." + fonc.__name__
-        system.print_and_log(str(name)+" started..")
+        system.print_and_log(str(name) + " started..")
         # name last_module_name.func_name (ex: control.initialise)
 
         th.start()
@@ -84,11 +88,12 @@ def initBenchComponents(q, init_foncs):
     for th in threads:
         rValue = th.join()
         if rValue != 0:
-            system.print_and_log("ERROR: "+str(th.getName())+" return "+str(rValue))
+            system.print_and_log("ERROR: " + str(th.getName()) + " return " +
+                                 str(rValue))
             q.put(th.getName())
             # add func's name who got an error to Queue object for retry
         else:
-            system.print_and_log(str(th.getName())+" initialised.")
+            system.print_and_log(str(th.getName()) + " initialised.")
 
 
 def startThread(q, timeout, init_foncs):
@@ -101,7 +106,8 @@ def startThread(q, timeout, init_foncs):
     :param init_foncs: list of function object
     :return:
     """
-    th = ThreadWithReturnValue(target = initBenchComponents, args = (q, init_foncs))
+    th = ThreadWithReturnValue(target=initBenchComponents,
+                               args=(q, init_foncs))
     th.daemon = True
     print("Subthreads started..")
     th.start()
@@ -128,7 +134,7 @@ def startProcess(startThread, q, timeout, init_foncs):
     :return:
     """
 
-    p = Process(target = startThread, args = (q, timeout, init_foncs))
+    p = Process(target=startThread, args=(q, timeout, init_foncs))
     print("Subprocess started..")
     p.start()
     p.join()
@@ -146,28 +152,29 @@ def initialisation():
     system.print_and_log('Starting initalisation')
     # read config file
 
-    config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+    config_path = os.path.join(
+            Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
     #Verify that config file exists
     if not Path(config_path).is_file():
-        system.print_and_log('kalao.config file not found at: '+config_path)
+        system.print_and_log('kalao.config file not found at: ' + config_path)
         return -1
 
     parser = ConfigParser()
     parser.read(config_path)
 
-    nbTry   = parser.getint('PLC','InitNbTry')
-    timeout = parser.getint('PLC','InitTimeout')
+    nbTry = parser.getint('PLC', 'InitNbTry')
+    timeout = parser.getint('PLC', 'InitTimeout')
 
     # dict where keys is string name of object <function> and values is object <function>
     init_dict = {
-        "system.initialise_services"     : system.initialise_services,
-        "control.initialise"    : camera.initialise,
-        "calib_unit.initialise" : calib_unit.initialise,
-        "flip_mirror.initialise": flip_mirror.initialise,
-        "shutter.initialise"    : shutter.initialise,
-        "tungsten.initialise"   : tungsten.initialise,
-        "laser.initialise"      : laser.initialise
+            "system.initialise_services": system.initialise_services,
+            "control.initialise": camera.initialise,
+            "calib_unit.initialise": calib_unit.initialise,
+            "flip_mirror.initialise": flip_mirror.initialise,
+            "shutter.initialise": shutter.initialise,
+            "tungsten.initialise": tungsten.initialise,
+            "laser.initialise": laser.initialise
     }
 
     # array of object <function>
@@ -178,7 +185,7 @@ def initialisation():
     q = Queue()
     startProcess(startThread, q, timeout, init_foncs)
 
-    for t in range(1,nbTry):
+    for t in range(1, nbTry):
         value = 0
         error_foncs = []
 
@@ -190,7 +197,7 @@ def initialisation():
             if value == 1:
                 while not q.empty():
                     q.get()
-                print(t,"retry..")
+                print(t, "retry..")
                 startProcess(startThread, q, timeout, init_foncs)
                 break
             else:
@@ -208,6 +215,7 @@ def initialisation():
     return 1
 
     # Start CACAO here ----
+
 
 if __name__ == "__main__":
     initialisation()

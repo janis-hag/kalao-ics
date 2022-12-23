@@ -4,10 +4,9 @@
 # @Date : 2021-03-15-10-29
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 database_updater.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from signal import SIGINT, SIGTERM
@@ -29,15 +28,18 @@ from configparser import ConfigParser
 from pathlib import Path
 import os
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 
 # Read config file
 parser = ConfigParser()
 parser.read(config_path)
 
 PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
-Telemetry_update_interval = parser.getint('Database', 'Telemetry_update_interval')
-PLC_update_interval = parser.getint('Database', 'PLC_monitoring_update_interval')
+Telemetry_update_interval = parser.getint('Database',
+                                          'Telemetry_update_interval')
+PLC_update_interval = parser.getint('Database',
+                                    'PLC_monitoring_update_interval')
 
 
 def handler(signal_received, frame):
@@ -71,7 +73,10 @@ def update_plc_monitoring():
     # FLI science camera status
     try:
         filter_number, filter_name = plc.filterwheel.get_position()
-        filter_status = {'fli_filter_position': filter_number, 'fli_filter_name': filter_name}
+        filter_status = {
+                'fli_filter_position': filter_number,
+                'fli_filter_name': filter_name
+        }
         values.update(filter_status)
     except Exception as e:
         print(e)
@@ -116,10 +121,16 @@ if __name__ == "__main__":
     # signal(SIGTERM, handler)
     # signal(SIGINT, handler)
 
-    sl = {'nuvu_stream': None, 'tt_stream': None, 'fps_slopes': None, 'loopRUN': None}
+    sl = {
+            'nuvu_stream': None,
+            'tt_stream': None,
+            'fps_slopes': None,
+            'loopRUN': None
+    }
 
     # Get monitoring and cacao
-    schedule.every(Telemetry_update_interval).seconds.do(update_telemetry, stream_list=sl)
+    schedule.every(Telemetry_update_interval).seconds.do(
+            update_telemetry, stream_list=sl)
     schedule.every(PLC_update_interval).seconds.do(update_plc_monitoring)
 
     while True:

@@ -2,7 +2,7 @@
 #
 # @(#)gop_timer 24/06/96 Luc Weber - Observatoire de Geneve
 #
-# Script pour le lancement de gop_timer. 
+# Script pour le lancement de gop_timer.
 #
 # Voir la description plus bas ou tapez "gop_timer.csh -h | more".
 #
@@ -58,28 +58,28 @@ if ("$1" == "-H") then
         shift
         cat << %%END%%
 #
-# Script pour le lancement de gop_timer. 
+# Script pour le lancement de gop_timer.
 #
 # USAGE:
 # ------
 #
-#	gop_timer.csh [-h]  
+#	gop_timer.csh [-h]
 #
 # DESCRIPTION:
 # ------------
 #
-# Ce script permet de lancer la version stable, la version beta ou la 
+# Ce script permet de lancer la version stable, la version beta ou la
 # version alpha de gop_timer et ceci avec ou sans debugger.
 #
 # La variable d'environnement "GOP_TIMER" definit le comportement de ce script.
 # Si elle n'est pas definie, le script envoie la version stable sans debugger.
-# 
+#
 # Si $GOP_TIMER contient:
 #
-#		"ok"	   on utilise la version ok (stable) 
-#		"beta"	   on utilise la version beta (integration) 
+#		"ok"	   on utilise la version ok (stable)
+#		"beta"	   on utilise la version beta (integration)
 #		"alpha"	   on utilise la version alpha (developpement )
-#		"debug"	   on lance le debugger definit dans $DEBUGGER 
+#		"debug"	   on lance le debugger definit dans $DEBUGGER
 #
 # Exemple:
 # 	pour lancer la version beta avec le debugger, on donne:
@@ -95,7 +95,7 @@ if ("$1" == "-H") then
 #	- OPSYS	(Operating System + Version)	ex: SunOS_5.4
 #	- DEBUGGER	(Nom du debugger)		ex: debugger
 #	- ECHO_EXE	si == "echo" affiche les commandes au lieu de les
-#			executer. 
+#			executer.
 #
 # Les assignations possibles sont:
 #
@@ -105,12 +105,12 @@ setenv   GOP_TIMER    "ok"
 setenv   GOP_TIMER    "alpha+debug"
 setenv   GOP_TIMER    "beta+debug"
 setenv   GOP_TIMER    "ok+debug"
-unsetenv GOP_TIMER   
+unsetenv GOP_TIMER
 setenv   ECHO_EXE "echo"
-unsetenv ECHO_EXE 
+unsetenv ECHO_EXE
 #
 # Les assignations peut aussi être décrites dans un fichier. Si on désire
-# utiliser un tel fichier, il faut donner son nom dans la variable 
+# utiliser un tel fichier, il faut donner son nom dans la variable
 # d'environnement INITENV. (format: <nom> <valeur>)
 #
 #
@@ -148,9 +148,7 @@ if (`expr "$GOP_TIMER" : '.*debug.*'`) then
 	echo "$EXE"
 	echo "Il faut taper les options de gop_timer dans le debugger; c'est a dire:"
 	echo "    run $OPTION $*"
-	$ECHO_EXE exec $EXE 
+	$ECHO_EXE exec $EXE
 else
 	$ECHO_EXE exec $EXE $OPTION $* &
 endif
-
-

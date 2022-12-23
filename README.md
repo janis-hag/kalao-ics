@@ -21,15 +21,15 @@ The KalAO Instrument Control Software
 
 
 ## Enabling services
-- _systemctl --user enable kalao_sequencer.service_ 
+- _systemctl --user enable kalao_sequencer.service_
 - _systemctl --user enable kalao_camera.service_
-- _systemctl --user enable kalao_database_updater.service_ 
+- _systemctl --user enable kalao_database_updater.service_
 - _systemctl --user enable kalao_flask_gui.service_
 - _systemctl --user enable kalao_gop_server.service_
 
 ## Configure telescope header content
 
-Edit content of 
+Edit content of
 - $THOME/config/ske_fits/generic_tele/kalao_descripteurs.ske
 - $THOME/config/ske_fits/generic_synchro/kalao_descripteurs.ske
 
@@ -55,7 +55,7 @@ Start milk sessions by typing '_milk_'
 
 - **Load turbulence file**
 - milk> _loadfits "cube12_12_60000_v10mps_1ms_clean.fits" imc_
-- **Open DM SHM channel** 
+- **Open DM SHM channel**
 - milk> _readshmim dm01disp04_
 - **Send turbulence on DM channel at 1000 microsecond refresh rate**
 - milk> _streamburst imc dm01disp04 1000_

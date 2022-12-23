@@ -4,10 +4,9 @@
 # @Date : 2021-03-04-13-59
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 nuvu_z_align.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from pyMilk.interfacing.isio_shmlib import SHM
@@ -24,7 +23,9 @@ left = (34, 45, 56, 67, 78)
 
 right = (42, 53, 64, 75, 86)
 
+
 def print_ratio():
-    frame, subapertures = get_roi_and_subapertures(nuvu_stream.get_data(check=True))
+    frame, subapertures = get_roi_and_subapertures(
+            nuvu_stream.get_data(check=True))
     for i in range(5):
-        print(np.mean(subapertures[left[i]])/np.mean(subapertures[right[i]]))
+        print(np.mean(subapertures[left[i]]) / np.mean(subapertures[right[i]]))

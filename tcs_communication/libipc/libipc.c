@@ -2,8 +2,8 @@
 	A l'occase voir si ftshm est correctement traité dans le cas d'un
 	client qui accède plusieurs blocs de communication. Il semblerait
 	qu'il ne reste trace que du dernier!!!
-        
-        
+
+
 **/
 
 #include <features.h>	// usage pour semtimedop (voir man feature_test_macros)
@@ -274,7 +274,7 @@ main()
 		/ *
 		 * fin transfert a Inter     ^^^^^^^^^^^
 		 * le traitement peut continuer
-		
+
 		 * /
 		inc_sem(semid, 1);
 
@@ -427,20 +427,20 @@ static int ipc_signal_caught;
 
 
 static void stamped_printf(char *fmt,...)
-{	
+{
 	va_list	pvar;
 	char date[32];
 	char out[1024];
 
 	struct timeval  tp;
 	gettimeofday(&tp, (void *) NULL);
-	
+
 	sprintf(date, "%10d.%6.6d", (int)tp.tv_sec, (int)tp.tv_usec);
-	
+
 	va_start(pvar, fmt);
 	vsprintf(out, fmt, pvar);
 	va_end(pvar);
-	
+
 	printf("%s libipc:%s", date, out);
 	fflush(stdout);
 }
@@ -455,10 +455,10 @@ static void stamped_printf(char *fmt,...)
 
 /*
  * Cree le triplet de semaphores
- * 
+ *
  * RETURN: create_semaphore() retourne le semaphore identifier (semid) ou -1 en
  * cas de d'erreur
- * 
+ *
  */
 
 int
@@ -477,14 +477,14 @@ create_semaphore(int flag_init_server)
 		stamped_printf("create_semaphore: semget - %s\n", my_strerror(errno));
 		return (-1);
 	}
-	
+
 /*
 	aie modif 23/10/1998
-*/	
+*/
 	if(flag_init_server) {
 		setval_sem(semid, 0, 0);
 	}
-		
+
 #ifdef DEBUG
         int semnum;
         int val;
@@ -498,11 +498,11 @@ create_semaphore(int flag_init_server)
 
 /*
  * Recherche le semaphore identifier (semid) du triplet de semaphores
- * 
- * 
+ *
+ *
  * RETURN: get_semaphore() retourne le semaphore identifier (semid) ou -1 en cas
  * de d'erreur
- * 
+ *
  */
 
 int
@@ -534,10 +534,10 @@ get_semaphore(void)
 
 /*
  * Elimine le triplet de semaphores
- * 
- * 
+ *
+ *
  * RETURN: kill_semaphore() retourne le 0 ou -1 en cas de d'erreur
- * 
+ *
  */
 
 int
@@ -557,14 +557,14 @@ kill_semaphore(int semid /* semaphore identifier */ )
 
 /*
  * Attend que le semaphore semnum du triplet semid vaille 0.
- * 
+ *
  * C'est la fonction utilisée par un client qui se met en attente de
  * disponibilite d'une ressource. Cette fonction accepte un timeout sur cette
  * attente.
- * 
- * RETURN: wait_for_sem() retourne normallement 0, -1 en cas de d'erreur ou 
+ *
+ * RETURN: wait_for_sem() retourne normallement 0, -1 en cas de d'erreur ou
  * (-100-signal_value) en cas de timeout.
- * 
+ *
  */
 
 int
@@ -617,10 +617,10 @@ wait_for_sem(int semid,		/* semaphore identifier */
 
 /*
  * Retourne le status du semaphore semnum du triplet semid
- * 
- * 
+ *
+ *
  * RETURN: wait_for_sem_nowait() retourne normallement 0 ou -1 en cas de d'erreur.
- * 
+ *
  */
 
 int
@@ -657,16 +657,16 @@ wait_for_sem_nowait(int semid,	/* semaphore identifier */
 
 /*
  * Test si l'incrementation d'un semaphore est autorisee.
- * 
+ *
  * Cette fonction affiche a l'ecran un message si le semaphore semnum vaut plus
  * que zero. Cette fonction est principalement utilisee pour tester
  * l'incrementation du semaphore 0, lequel ne doit pas etre incremente s'il
  * vaut deja 0 pour ne pas generer de situation interdite (possibilite de
  * connection de plusieurs client simultanement).
- * 
- * 
+ *
+ *
  * RETURN: test_inc_sem() retourne normallement 0 ou -1 en cas de d'erreur.
- * 
+ *
  */
 
 int
@@ -713,13 +713,13 @@ test_inc_sem(int semid,		/* semaphore identifier */
 
 /*
  * Incremente le semaphore semnum du triplet semid.
- * 
+ *
  * Le serveur qui veut incrementer le sem 0 doit utiliser
  * server_free_ressource()
- * 
- * 
+ *
+ *
  * RETURN: inc_sem() retourne normallement 0 ou -1 en cas de d'erreur.
- * 
+ *
  */
 
 int
@@ -755,7 +755,7 @@ inc_sem(int semid,		/* semaphore identifier */
 
 	/*
 	 * EN SUSPEND......
-	 * 
+	 *
 	 * ensuite, dans le cas ou on incremente le semaphore #0, on autorise
 	 * l'action uniquement (c'est le cas pour le client uniquement) 1) si
 	 * le serveur est en attente (NCNT sem#1=1) 2) et dans le cas ou NCNT
@@ -816,13 +816,13 @@ inc_sem(int semid,		/* semaphore identifier */
 
 /*
  * Incremente le semaphore 0 du triplet semid.
- * 
+ *
  * L'incrementation ne peut se faire que si elle ne genere pas une situation
  * interdite (semaphore_0 > 0) ainsi cette fonction utilise test_inc_sem()
  * avant de faire l'incrementation. Cette derniere fonction affiche une
  * message d'erreur en cas d'operation interdite et on ne fait pas
  * l'incrementation.
- * 
+ *
  * RETURN: server_free_ressource() retourne normallement 0, -1 en cas de
  * d'erreur.
  */
@@ -831,17 +831,17 @@ inc_sem(int semid,		/* semaphore identifier */
 
 /*
  * Incremente le semaphore 0 du triplet semid.
- * 
+ *
  * L'incrementation ne peut se faire que si elle ne genere pas une situation
  * interdite (semaphore_0 > 0) ainsi cette fonction utilise test_inc_sem()
  * avant de faire l'incrementation. Cette derniere fonction affiche une
  * message d'erreur en cas d'operation interdite et on ne fait pas
  * l'incrementation.
- * 
+ *
  * STATIC: La variable statique semid doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -898,15 +898,15 @@ server_free_ressource(int semid /* semaphore identifier */ )
 
 /*
  * Decremente le semaphore 0.
- * 
+ *
  * Si le serveur vient de mourir (dans ce cas sem#0=1 et aucun process n'est en
  * attente sur le sem#1 (ncount#1=0),  cette fonction simule un client en
  * attente avant de se mettre elle meme en attente. Par la suite, lorsque le
  * serveur demarre, il consomme le premier client (donc le faux) et part sur
  * le bon. Dans le cas normal la fonction stoppe le process si le semaphore
  * doit devenir negatif.
- * 
- * RETURN: dec_sem_zero() retourne normallement 0, -1 en cas de d'erreur ou 
+ *
+ * RETURN: dec_sem_zero() retourne normallement 0, -1 en cas de d'erreur ou
  * (-100-signal_value) en cas de timeout.
  */
 
@@ -945,8 +945,8 @@ dec_sem_zero(int semid,		/* semaphore identifier */
 /*
  * Decremente le semaphore semnum du triplet semid. Le process est stoppe si
  * le semaphore doit devenir negatif.
- * 
- * RETURN: dec_sem() retourne normallement 0, -1 en cas de d'erreur ou 
+ *
+ * RETURN: dec_sem() retourne normallement 0, -1 en cas de d'erreur ou
  * (-100-signal_value) en cas de timeout.
  */
 
@@ -959,8 +959,8 @@ dec_sem(int semid,		/* semaphore identifier */
 	int             nsops;
 	int             status;
 	struct timespec timer_value;
-	
-	
+
+
 	if (shm_remote) {
 		invalid_remote("dec_sem");
 		return (-1);
@@ -1002,7 +1002,7 @@ dec_sem(int semid,		/* semaphore identifier */
 /*
  * Decremente le semaphore semnum du triplet semid. Cette fonction est snas
  * attente, on reprends la main dans tout les cas.
- * 
+ *
  * RETURN: dec_sem_nowait() retourne normallement 0, -1 si le semaphore est deja
  * a zero et qu'on ne puisse le decrementer.
  */
@@ -1041,13 +1041,13 @@ dec_sem_nowait(int semid,	/* semaphore identifier */
 /*
  * Decremente le semaphore semnum du triplet semid. Cette fonction est snas
  * attente, on reprends la main dans tout les cas.
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
- * 
+ *
  */
 void
 dec_sem_nowait_(int semid,	/* semaphore identifier */
-	        int semnum,     /* semaphore number (0-2) */ 
+	        int semnum,     /* semaphore number (0-2) */
 		int *status     /* return status pointer */ )
 {
 	if (shm_remote) {
@@ -1061,10 +1061,10 @@ dec_sem_nowait_(int semid,	/* semaphore identifier */
 
 /*
  * retourne la valeur demandee par le code "cmd" d'un semaphore.
- * 
+ *
  * l'operation a lieu sur le semaphore semnum du triplet semid. Les commandes a
  * dispositions sont decrites dans le man de "semctl".
- * 
+ *
  * RETURN: get_cmd_sem() retourne normallement 0 ou -1 en cas de d'erreur.
  */
 
@@ -1106,7 +1106,7 @@ get_cmd_sem_pid(int semnum	/* semaphore number (0-2) */)
 
 /*
  * Pose le semaphore semnum du triplet semid a une valeur donnée.
- * 
+ *
  * RETURN: setval_sem() retourne normallement 0 ou -1 en cas de d'erreur.
  */
 
@@ -1149,7 +1149,7 @@ setval_sem(int semid,		/* semaphore identifier */
 
 /*
  * Cree le block de communication et retourne son identificateur ft_shm.
- * 
+ *
  * RETURN: alloc_block_shm() retourne l'adresse du bloc de communication ou (char *)-1
  * en cas de d'erreur.
  */
@@ -1184,9 +1184,9 @@ alloc_block_shm(int *ft_shm /* communication bloc identifier */ )
 		stamped_printf("alloc_block_shm: unable to attach shared memory\n");
 		return (NULL);
 	}
-	
+
 	memset(ft_addr, sizeof(struct block_kw), (char)0);
-	
+
 	return (ft_addr);
 
 }
@@ -1194,7 +1194,7 @@ alloc_block_shm(int *ft_shm /* communication bloc identifier */ )
 
 /*
  * Recherche le block de communication et retourne son identificateur ft_shm.
- * 
+ *
  * RETURN: get_block_shm() retourne l'adresse du bloc de communication ou -1 en
  * cas de d'erreur
  */
@@ -1236,7 +1236,7 @@ get_block_shm(int *ft_shm /* communication bloc identifier */ )
 
 /*
  * Elimine le block de communication designe par ft_shm
- * 
+ *
  * RETURN: kill_block_shm() retourne normallement 0 ou -1 en cas de d'erreur.
  */
 
@@ -1257,9 +1257,9 @@ kill_block_shm(int ft_shm /* communication bloc identifier */ )
 
 /*
  * Cree la matrice en memoire partagee de taille shmsize (pixel).
- * 
+ *
  * La matrice est fabriquee par segment de sysconf(_SC_PAGESIZE) bytes.
- * 
+ *
  * RETURN: alloc_matrix_shm() retourne un pointeur sur la zone allouee ou -1 en
  * cas de d'erreur
  */
@@ -1270,11 +1270,11 @@ alloc_matrix_shm(int shmsize /* size of the shared matrix (pixels) */ )
 	int             i, n, rest, size;
 	char           *mat_ft_addr[MAXSEGMENT];
 	int             mat_ft_shm[MAXSEGMENT];
-       
-	
+
+
 	long page_size  = sysconf(_SC_PAGESIZE);
 	long pixel_size = sizeof(float);
-	long segment_size = page_size*256;	// attention en cas de changement de taille, faire un ipckill 
+	long segment_size = page_size*256;	// attention en cas de changement de taille, faire un ipckill
         stamped_printf("alloc_matrix_shm: ask for %ld [bytes]\n",pixel_size * shmsize);
         stamped_printf("alloc_matrix_shm: PAGESIZE          = %ld\n",page_size);
         stamped_printf("alloc_matrix_shm: segment_size      = %ld\n",segment_size);
@@ -1307,7 +1307,7 @@ alloc_matrix_shm(int shmsize /* size of the shared matrix (pixels) */ )
 			stamped_printf("\nalloc_shared: shmget succeed mat_ft_shm=%d size=%d\n", mat_ft_shm[i], size);
 			**/
 		}
-		
+
 		/**
 		stamped_printf("A-alloc_matrix_shm: shmsize=%d, size=%d, i=%d, mat_ft_shm[i]=%d, n=%d, rest=%d\n",shmsize,size,i,mat_ft_shm[i], n ,rest);
 		**/
@@ -1324,7 +1324,7 @@ alloc_matrix_shm(int shmsize /* size of the shared matrix (pixels) */ )
 				stamped_printf("alloc_matrix_shm: unabled to attach shared memory\n");
 				return (NULL);
 			}
-			
+
 			/**
 			stamped_printf("b1-alloc_matrix_shm: shmat: mat_ft_addr[i]=%x\n",mat_ft_addr[i]);
 			**/
@@ -1338,7 +1338,7 @@ alloc_matrix_shm(int shmsize /* size of the shared matrix (pixels) */ )
 				stamped_printf("alloc_matrix_shm: unabled to attach shared memory\n");
 				return (NULL);
 			}
-						
+
 			/**
 			stamped_printf("c1-alloc_matrix_shm: shmat: mat_ft_addr[i]=%x\n",mat_ft_addr[i]);
 			**/
@@ -1368,9 +1368,9 @@ alloc_matrix_shm(int shmsize /* size of the shared matrix (pixels) */ )
  *
  *	par(3)		(real)		"format(par(3),g13.7)"
  *
- * 
  *
- * RETURN: get_server_value() retourne normallement 0, -1 en cas de d'erreur ou 
+ *
+ * RETURN: get_server_value() retourne normallement 0, -1 en cas de d'erreur ou
  * (-100-signal_value) en cas de timeout.
  */
 
@@ -1412,17 +1412,17 @@ get_server_value(int semid,	/* semaphore identifier */
 
 /*
  * Initialisation de la matrice en memoire partagee.
- * 
+ *
  * La fonction questionne le serveur sur la taille de la matrice puis effectue
  * l'allocation. Elle initialise le pointeur de matrice (pointer).
- * 
+ *
  * Cette fonction peut etre utilisee par chaque client une fois que le semaphore
  * semid est initialise et que le server est lance.
- * 
+ *
  * Reste en attente si le serveur n'est pas libre.
- * 
+ *
  * STATIC: La variable statique matrix_key doit etre valide.
- * 
+ *
  * RETURN: ask_and_init_shm() retourne normallement 0, -1 en cas de d'erreur ou
  * (-100-signal_value) en cas de timeout.
  */
@@ -1459,7 +1459,7 @@ ask_and_init_shm(int semid,	/* semaphore identifier */
 
 /*
  * Detache la matrice en memoire partagee.
- * 
+ *
  * RETURN: dettach_matrix_shm() retourne normallement 0 ou -1 en cas de d'erreur.
  */
 
@@ -1482,16 +1482,16 @@ ask_and_init_shm(int semid,	/* semaphore identifier */
 
 /*
  * Initialise les semaphores et le block de communication.
- * 
+ *
  * Cette fonction cree les semaphores et le bloc de communication s'ils
  * n'existent pas. Attention il lui faut des pointeurs.
- * 
+ *
  * RETURN: init_sem_block() retourne normallement 0 ou -1 en cas de d'erreur.
  */
 
 int
 init_sem_block(int *semid,	/* semaphore identifier pointer */
-	 struct block_kw ** block, /* communication bloc pointer address */ 
+	 struct block_kw ** block, /* communication bloc pointer address */
 	 int flag_init_server /* flag si on initilise le sémaphore d'un server */)
 {
 	if (shm_remote) {
@@ -1515,11 +1515,11 @@ init_sem_block(int *semid,	/* semaphore identifier pointer */
 
 /*
  * Recherche les semaphores et le block de communication.
- * 
+ *
  * Cette recherche les identificateurs des semaphores et l'adresse du bloc de
  * communication. Il doivent exister sinon il y a une erreur. Attention il
  * lui faut des pointeurs.
- * 
+ *
  * RETURN: get_sem_block() retourne normallement 0 ou -1 en cas de d'erreur.
  */
 int
@@ -1545,10 +1545,10 @@ get_sem_block(int *semid,	/* semaphore identifier pointer */
 
 /*
  * Elimine la matrice en memoire partagee.
- * 
+ *
  * STATIC: Les variables statiques mat_ft_shm[i] doivent etre valides (elles le
  * sont depuis la creation de la matrice).
- * 
+ *
  * RETURN: kill_matrix_shm() retourne normallement 0 ou -1 en cas de d'erreur.
  */
 
@@ -1578,10 +1578,10 @@ get_sem_block(int *semid,	/* semaphore identifier pointer */
 
 /*
  * Elimine les semaphores et le bloc de communication en memoire partagee
- * 
+ *
  * STATIC: La variable statique ftshm doit etre valide (elle est valide depuis
  * la creation du bloc de communication).
- * 
+ *
  * RETURN: discard_semaphore_and_shm() retourne normallement 0 ou -1 en cas de
  * d'erreur
  */
@@ -1609,10 +1609,10 @@ discard_semaphore_and_shm(int semid /* semaphore identifier */ )
 /*
  * Definis les valeurs des cles pour le semaphore identifier semid et la
  * shared memory du block de communication.
- * 
+ *
  * Initialise les variables statiques sem_key et block_key en fonction d'une cle
  * unique (f_key). C'est a dire: sem_key = f_key + 1 et block_key = f_key + 2
- * 
+ *
  */
 
 void
@@ -1639,9 +1639,9 @@ select_key_semid_block(int f_key /* numerical key */ )
 
 /*
  * Envoye un CTRL-C au serveur.
- * 
+ *
  * C'est le PID (block->pid_server) du block de communication qui est utilise.
- * 
+ *
  * RETURN: send_ctrlc() retourne la valeur de retour de kill()
  */
 
@@ -1661,7 +1661,7 @@ send_ctrlc(struct block_kw * block /* communication bloc pointer */ )
 
 /*
  * Stokage du No de signal.
- * 
+ *
  * Cette routine doit être utilisee par les handler de signaux qui enregistre
  * ainsi le No du signal qui a interrompu le process. Cet enregistrement
  * permet notament de diffrerencier les interruption par ctrlc et timeout
@@ -1676,7 +1676,7 @@ this_signal_was_caught(int sig)
 
 /*
  * Stokage du No de signal.
- * 
+ *
  * Cette routine doit être utilisee par les handler de signaux qui enregistre
  * ainsi le No du signal qui a interrompu le process. Cet enregistrement
  * permet notament de diffrerencier les interruption par ctrlc et timeout
@@ -1692,7 +1692,7 @@ this_signal_was_caught_(int *sig)
 /*
  * Recupere le No du signal qui a ete enregistre avec
  * this_signal_was_caught().
- * 
+ *
  * RETURN: signal number
  */
 
@@ -1723,7 +1723,7 @@ which_signal_caught_(int *sig /* signal number pointer */ )
 
 /*
  * Lit le contenu d'un keyword dans le bloc de communication.
- * 
+ *
  * RETURN: get_shm_block_kw() retourne normallement 0, -1 en cas d'erreur ou 1
  * si le keyword n'est pas trouvé
  */
@@ -1759,10 +1759,10 @@ get_shm_block_kw(struct block_kw * block,	/* communication bloc pointer */
 
 /*
  * Place le keyword et son contenu dans le bloc de communication
- * 
+ *
  * Le keyword est mis a la suite des autre, s'il doit etre le premier, il faut
  * utiliser ini_shm_block_kw() au prealable.
- * 
+ *
  * RETURN: put_shm_block_kw() retourne normallement 0, -1 en cas d'erreur ou 1
  * si le bloc de communication est plein
  */
@@ -1803,10 +1803,10 @@ put_shm_block_kw(struct block_kw * block,	/* communication bloc pointer */
 
 /*
  * Initialise le block de communication.
- * 
+ *
  * Cette initialisation se fait pour vider le bloc de communication avant
  * d'ecrire de nouveaux keywords.
- * 
+ *
  * RETURN: ini_shm_block_kw() retourne normallement 0, -1 en cas d'erreur
  */
 
@@ -1830,7 +1830,7 @@ ini_shm_block_kw(struct block_kw * block /* communication bloc pointer */ )
 
 /*
  * Retourne le keyword No "i" du bloc de communication.
- * 
+ *
  * RETURN: get_shm_block_kw_n() retourne normallement 0, -1 en cas d'erreur ou 1
  * si le keyword n'est pas trouvé
  */
@@ -1859,7 +1859,7 @@ get_shm_block_kw_n(struct block_kw * block,	/* communication bloc pointer */
 	}
 	(void) strcpy(key,     (block->line + i)->key);
 	(void) strcpy(content, (block->line + i)->content);
-	
+
 	return (0);
 }
 
@@ -1873,19 +1873,19 @@ get_shm_block_kw_n(struct block_kw * block,	/* communication bloc pointer */
 
 /*
  * Envoye une commande au serveur.
- * 
+ *
  * Il y a 2 mode de travail:
- * 
+ *
  * Si (wait==FORK_PROCESS) : on fait un fork() et la demande se traitera de
  * maniere autonome et le client reprend immediatement la main et si
  * (wait==NO_FORK_PROCESS) : on attend la fin.
- * 
+ *
  * On definis aussi par (ackno==WAIT_FOR_ANSWER) si le serveur ne doit pas
  * rendre la main. Dans ce cas, c'est le client qui se mettra en attente de
  * la fin du traitement avec wait_for_sem().
- * 
+ *
  * Cette fonction peut avoir un timeout sur l'attente de connection au serveur
- * 
+ *
  * RETURN: send_command() retourne normallement 0 si wait == NO_FORK_PROCESS, la
  * valeur de retour du fork() si wait == FORK_PROCESS, -1 en cas de d'erreur ou
  * (-100-signal_value) en cas de timeout.
@@ -1947,10 +1947,10 @@ send_command(int semid,		/* semaphore identifier */
 
 /*
  * Envoye une commande au serveur alors qu'on a deja la main.
- * 
+ *
  * Dans ce cas le serveur ne rend pas la main et c'est le client qui se mettra
  * en attente de la fin du traitement avec wait_for_sem().
- * 
+ *
  * RETURN: send_command_ready() retourne normallement 0, -1 en cas d'erreur
  */
 
@@ -1988,9 +1988,9 @@ send_command_ready(int semid,	/* semaphore identifier */
 
 /*
  * Retourne une chaine formattee avec le status courant des semaphores.
- * 
+ *
  * c'est a dire: la date, les secondes, les musecondes et l'etat des semaphores
- * 
+ *
  * RETURN: my_getdate() retourne normallement la chaine de caracteres, (char*)-1
  * en cas d'erreur
  */
@@ -2028,7 +2028,7 @@ my_getdate(int semid /* semaphore ID */ )
 
 /*
  * Affiche a l'ecran le contenu du bloc de communication
- * 
+ *
  * RETURN: show_shm_block_kw() retourne normallement le nb de keyword, -1 en cas d'erreur
  */
 
@@ -2087,9 +2087,9 @@ print_delay(void)
 
 /*
  * Envoie une commande au serveur remote Ipcsrv avec attente de status.
- * 
+ *
  * Le message de retour est compose uniquement du status (nombre formatte).
- * 
+ *
  * RETURN: write_to_ipc_server() retourne normallement 0, -1 en cas d'erreur
  */
 
@@ -2126,10 +2126,10 @@ write_to_ipc_server(char *string /* command */ )
 
 /*
  * Envoie une commande au serveur remote Ipcsrv avec attente de reponse.
- * 
+ *
  * Le message de retour est compose du status (nombre formatte sur les 3
  * premiers caracteres) puis du message proprement dit.
- * 
+ *
  * RETURN: write_read_to_ipc_server() retourne normallement 0, -1 en cas
  * d'erreur.
  */
@@ -2194,18 +2194,18 @@ invalid_remote(char *str)
 
 /*
  * Initialisation d'un server.
- * 
+ *
  * Cette fonction cree (s'ils n'existent pas) le triplet de semaphores et le
  * bloc de communication. Elle regarde si l'etat des semaphores indique que
  * la commande precedente ne s'est pas bien terminee et qu'un client "vivant"
  * est toujours en attente puis elle pose le semaphore_2 et place son PID
  * dans block->pid_server.
- * 
+ *
  * STATIC: Les variables statiques sem_key et block_key doivent etre valides et
  * les variables statiques semid et block sont mises a jour.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: 1) ID semaphore 2) ID block 3) si un client etait en cours de
  * communication avec le precedent server (client_waiting==1) 4) le status
  * est retourne normallement 0 ou -1 en cas d'erreur.
@@ -2255,21 +2255,21 @@ init_ipc_server_(int *f_semid,	/* semaphore identifier pointer */
 
 /*
  * Initialisation d'un client.
- * 
+ *
  * Cette fonction cree (s'ils n'existent pas) le triplet de semaphores et le
  * bloc de communication.
- * 
+ *
  * STATIC: Les variables statiques sem_key et block_key doivent etre valides et
  * les variables statiques semid et block sont mises a jour.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="init
  * <sem_key>-1").
- * 
+ *
  * RETURN: 1) ID semaphore 2) ID block 3) le status est retourne normallement 0
  * ou -1 en cas d'erreur.
  */
- 
-int init_ipc_remote_client_final(void){ 
+
+int init_ipc_remote_client_final(void){
 	char            message[12];
         if (shm_remote) {
 		sprintf(message, "init %d", sem_key - 1);
@@ -2277,7 +2277,7 @@ int init_ipc_remote_client_final(void){
 	}
 	return(-1);
 }
- 
+
 void
 init_ipc_client_(int *f_semid,	/* semaphore identifier pointer */
 		 struct block_kw ** f_block,	/* communication bloc pointer
@@ -2355,11 +2355,11 @@ shm_init_ipc_client(void)
 }
 *****/
 
-int      
+int
 init_remote_client(char *host, char *symb_name, char *rcmd, int  port, int semkey){
     int status ;
     int socketId;
-    
+
     socketId = init_ipc_remote_client(host, symb_name, rcmd, port);
     stamped_printf("init_ipc_remote_client returns: %d\n", socketId);
     if(socketId <0){
@@ -2372,21 +2372,21 @@ init_remote_client(char *host, char *symb_name, char *rcmd, int  port, int semke
     stamped_printf("init_ipc_remote_client_final: %d\n", status);
     if(status <0){
       return(status);
-    }  
-    
-    return(socketId);  
+    }
+
+    return(socketId);
 }
 
 
 
 /*
  * Initialisation d'un client sur un remote serveur.
- * 
+ *
  * Pour utiliser les fonctionnalites de libipc concernant la synchronisation par
  * semaphore et la communication au travers du bloc de communication sur un
  * serveur remote, le client doit lancer un serveur specialise emulant la
  * librarie libipc sur le host ou se trouve le serveur (voir ipcsrv).
- * 
+ *
  * Cette fonction (le client) cree une connection socket sur un remore host et y
  * lance la commande de demarrage d'un serveur ipc (ipcsrv). Immediatement
  * apres, le client se met en attente de connection. Cote serveur, une fois
@@ -2396,13 +2396,13 @@ init_remote_client(char *host, char *symb_name, char *rcmd, int  port, int semke
  * les ordres de controle par le cannal de communication sous forme de chaine
  * ascii. La librarie emule de maniere completement transparente tout les
  * ordres de controle.
- * 
- * 
+ *
+ *
  * RETURN: 1) socket number (sd_current) 2) le status est retourne normallement
  * 0 ou -1 en cas d'erreur.
- * 
+ *
  */
-/* version C */ 
+/* version C */
 
 int         /* return socketId si positif ou erreur si negatif) */
 init_ipc_remote_client( char *host,	/* remote server host */
@@ -2416,16 +2416,16 @@ init_ipc_remote_client( char *host,	/* remote server host */
 	char            answer[12];
 	char            client_host[40];
 	int		status;
-	
+
 	if(connect_ipc.cd != 0){
-		status = write_to_ipc_server("aliv");	
+		status = write_to_ipc_server("aliv");
 		if(status == 0){
 			return(connect_ipc.cd);
 		}
 	}
-			
-	
-        
+
+
+
 	gop_init_server_socket(&connect_ipc, symb_name, port, 4096,
 			       GOP_CONNECTION, 0);
 
@@ -2455,13 +2455,13 @@ init_ipc_remote_client( char *host,	/* remote server host */
 		return(-1);
 	}
 	stamped_printf("init_ipc_remote_client_: receive %d bytes: >%s<\n", nb_bytes, answer);
-        
+
 
 	return(connect_ipc.cd);
 
 }
- 
-/* version Fortran */ 
+
+/* version Fortran */
 void
 init_ipc_remote_client_(char *host,	/* remote server host */
 			char *symb_name,/* nom du client */
@@ -2520,7 +2520,7 @@ init_ipc_remote_client_(char *host,	/* remote server host */
 
 /*
  * Met a jour les variables statiques pour le travail remote.
- * 
+ *
  * shm_remote est pose a TRUE, sem_key est pose a key+1 et shm_sd est pose a sd
  */
 void
@@ -2532,7 +2532,7 @@ select_for_remote(int key,	/* numerical key */
 	sem_key = key + 1;
 	shm_sd  = sd;
 }
- 
+
 void
 select_for_remote_(int *key,	/* numerical key */
 		   int *sd /* socket number */ )
@@ -2546,9 +2546,9 @@ select_for_remote_(int *key,	/* numerical key */
 
 /*
  * Cree la matrice en memoire partagee de taille shmsize (pixel).
- * 
+ *
  * La matrice est fabriquee par segment de (1024 * SHMSIZE) bytes
- * 
+ *
  * RETURN: alloc_matrix_shm() retourne un pointeur sur la zone allouee ou -1 en
  * cas de d'erreur
  */
@@ -2566,7 +2566,7 @@ init_shm_(int *isize,		/* size of shared matrix (bytes) */
 /*
  * Met a jour les variables statiques pour les appels suivants (pour
  * clef=f_key).
- * 
+ *
  * Cette fonction pose shm_remote=FALSE, sem_key=f_key+1, block_key=f_key+2,
  * semid=f_semid et block=f_block.
  */
@@ -2593,7 +2593,7 @@ select_semid_block(int f_key, int f_semid, int *f_block)
 
 /*
  * recherche la clef (f_key) courante.
- * 
+ *
  * RETURN: f_key
  */
 void
@@ -2620,7 +2620,7 @@ select_matrix_key_(int *f_key /* key number pointer */ )
 
 /*
  * Detache la matrice en memoire partagee.
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur
  */
 //void
@@ -2631,10 +2631,10 @@ select_matrix_key_(int *f_key /* key number pointer */ )
 
 /*
  * Elimine les semaphores et le bloc de communication en memoire partagee
- * 
+ *
  * STATIC: Les variables statiques semid et ftshm doivent etre valides (ftshm
  * est valide depuis la creation du bloc de communication).
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur
  */
 void
@@ -2650,10 +2650,10 @@ discard_semaphore_and_shm_(int *status /* return status pointer */ )
 
 /*
  * Elimine la matrice en memoire partagee.
- * 
+ *
  * STATIC: Les variables statiques mat_ft_shm[i] doivent etre valides (elles le
  * sont depuis la creation de la matrice).
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 //void
@@ -2664,13 +2664,13 @@ discard_semaphore_and_shm_(int *status /* return status pointer */ )
 
 /*
  * Decremente le semaphore semnum.
- * 
+ *
  * STATIC: La variable statique semid doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
- * 
+ *
  */
 void
 decremente_sem_(int *semnum,	/* semaphore number pointer */
@@ -2687,11 +2687,11 @@ decremente_sem_(int *semnum,	/* semaphore number pointer */
 
 /*
  * incremente le semaphore semnum.
- * 
+ *
  * STATIC: La variable statique semid doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -2709,11 +2709,11 @@ incremente_sem_(int *semnum,	/* semaphore number pointer */
 
 /*
  * Pose le semaphore semnum a val.
- * 
+ *
  * STATIC: La variable statique semid doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -2738,9 +2738,9 @@ set_sem(int semnum,		/* semaphore number */
 
 /*
  * Retourne le pid du serveur.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: Le PID en mémoire
  */
 void
@@ -2761,9 +2761,9 @@ srvexis()
 
 /*
  * Retourne le pid du serveur.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: Le PID en mémoire
  */
 void
@@ -2784,11 +2784,11 @@ get_srv_pid()
 
 /*
  * Lit le nb de client en attente.
- * 
+ *
  * STATIC: La variable statique semid doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -2810,11 +2810,11 @@ get_ncount_sem(int semnum	/* semaphore number */ )
 
 /*
  * Lit le nb de client en attente de zero.
- * 
+ *
  * STATIC: La variable statique semid doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -2837,11 +2837,11 @@ get_zcount_sem(int semnum	/* semaphore number */ )
 
 /*
  * Lit la valeur du semaphore.
- * 
+ *
  * STATIC: La variable statique semid doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="gval").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -2870,11 +2870,11 @@ get_val_sem(int semnum	/* semaphore number */ )
 
 /*
  * Lit le contenu d'un keyword dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="getk <key>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0, -1 en cas d'erreur ou 1 si
  * le keyword n'est pas trouvé
  */
@@ -2910,11 +2910,11 @@ get_shm_kw(char *key,	/* keyword */
 }
 /*
  * Lit le contenu du keyword No "i" dans le bloc de communication.
- * 
+ *
  * STATIC: i doit être plus petit que NB_KW_MAX.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="getnk <n>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0, -1 en cas d'erreur ou 1 si
  * le keyword n'est pas trouvé
  */
@@ -2964,14 +2964,14 @@ get_shm_kw_n(int i,		/* No keyword */
 
 /*
  * Initialise le block de communication.
- * 
+ *
  * Cette initialisation se fait pour vider le bloc de communication avant
  * d'ecrire de nouveaux keywords.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="inik").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -2991,11 +2991,11 @@ ini_shm_kw(void)
 
 /*
  * Affiche a l'ecran le contenu du bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est invalide en mode remote.
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3012,15 +3012,15 @@ sho_shm_kw_(int *status /* return status pointer */ )
 
 /*
  * Place le keyword et son contenu dans le bloc de communication.
- * 
+ *
  * Le keyword est mis a la suite des autre, s'il doit etre le premier, il faut
  * utiliser ini_shm_block_kw() au prealable.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="putk <key>
  * <content>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0, -1 en cas d'erreur ou 1 si
  * le bloc de communication est plein
  */
@@ -3049,11 +3049,11 @@ put_shm_kw(char *key,		/* keyword */
 
 /*
  * Test si le bloc de communication a ete cree.
- * 
+ *
  * Le test est effectue sur la validite de la variable statique block.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="aliv").
- * 
+ *
  * RETURN: Le status est retourne a 0 si le bloc existe ou a -1 s'il n'existe
  * pas.
  */
@@ -3071,11 +3071,11 @@ ipc_alive_(int *status /* return status pointer */ )
 
 /*
  * Pose le flag d'erreur dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="perr <val>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3105,11 +3105,11 @@ put_shm_err(int val		/* erreur value */)
 
 /*
  * Pose le flag de status dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="psta <val>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3139,11 +3139,11 @@ put_shm_stat(int val		/* status value */)
 
 /*
  * Pose le message d'erreur dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="pste <str>")
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3172,11 +3172,11 @@ put_shm_str_err(char *str	/* error string */ )
 
 /*
  * Pose le code d'erreur dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="pecd <str>")
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3207,11 +3207,11 @@ put_shm_err_code(char *str	/* error code */ )
 
 /*
  * Pose le nom de la commande courante dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="pcmd <str>")
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3234,11 +3234,11 @@ put_shm_current_cmd_(char *str,	/* current commande */
 
 /*
  * Lit le flag d'erreur dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="gerr").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3268,11 +3268,11 @@ get_shm_err(int *val	/* error value pointer */)
 
 /*
  * Lit le flag d'acknowledge dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="gack").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3287,7 +3287,7 @@ get_shm_ackno(int *val		/* acknowledge value pointer */)
 {
 	int	status;
 	char            answer[12];
-	
+
 	if (shm_remote) {
 		status = write_read_to_ipc_server("gack", answer);
 		if (status == 0)
@@ -3303,11 +3303,11 @@ get_shm_ackno(int *val		/* acknowledge value pointer */)
 
 /*
  * Lit le status dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="gsta").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3338,11 +3338,11 @@ get_shm_stat(int *val		/* status value pointer */)
 
 /*
  * Lit le pid du client dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="gpid").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3373,11 +3373,11 @@ get_shm_pid_client(void)
 /*
  * Retourne son propre PID. C'est a dire celui du process courant
  * en mode static ou celui de ipcsrv et mode remote
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="gpid").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3403,11 +3403,11 @@ get_shm_my_pid(void)
 
 /*
  * Lit le message d'erreur dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="gers").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3437,11 +3437,11 @@ get_shm_str_err(char *str	/* error string */)
 
 /*
  * Lit le code d'erreur dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="gerc").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3472,11 +3472,11 @@ get_shm_err_code(char *str	/* error code */)
 
 /*
  * Lit la commande courante dans le bloc de communication.
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="gcmd").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3501,7 +3501,7 @@ get_shm_current_cmd_(char *str,	/* current command */
 int
 get_shm_current_cmd(char *str)
 {
-	
+
 	if (block == 0)
 		return(-1);
 	strcpy(str, block->current_cmd);
@@ -3510,17 +3510,17 @@ get_shm_current_cmd(char *str)
 
 /*
  * Envoi d'une commande simple au serveur avec attente.
- * 
+ *
  * Cette fonction attend que le serveur soit pret.
- * 
+ *
  * La commande est sans parametre et comme on libere le serveur, le bloc de
  * communication n'est pas valide apres la fin de cette fonction.
- * 
+ *
  * STATIC: Les variables statiques semid et block doivent etre valides.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="cmdw <timeouta>
  * <timeoutb> |<command>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 int
@@ -3583,10 +3583,10 @@ send_cmd(char *command,	  /* command */
 	if (inc_sem(semid, 0) < 0) {
 		status = -1;
 	}
-        
+
 	return(status);
-} 
- 
+}
+
 void
 send_cmd_(char *command,	/* command */
 	  int *timeouta,	/* timeout on command sending pointer */
@@ -3653,18 +3653,18 @@ send_cmd_(char *command,	/* command */
 
 /*
  * Envoi d'une commande au serveur sans attente de reponse.
- * 
+ *
  * Cette fonction attend que le serveur soit pret et signale si il y a eu une
  * erreur sur la commande precedente dans status.
- * 
+ *
  * La commande est sans parametre et comme on libere le serveur, le bloc de
  * communication n'est pas valide apres la fin de cette fonction.
- * 
+ *
  * STATIC: Les variables statiques semid et block doivent etre valides.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="cmdn <timeout>
  * |<command>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3721,15 +3721,15 @@ send_cmd_no_wait_(char *command,/* command */
 }
 
 /*
- * Attend que le server soit pret. 
+ * Attend que le server soit pret.
  *
  * Cette fonction ne teste ni ne clear les status.
- * 
+ *
  * STATIC: Les variables statiques semid et block doivent etre valides.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="cmdn <timeout>
  * |<command>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3761,14 +3761,14 @@ shm_wait(int timeout		/* timeout */)
 
 /*
  * Fait continuer le server, c'est le serveur qui rend la main.
- * 
+ *
  * Cette fonction est utilisee un fois que le client qui a pris la main a finis
  * de remplir le bloc de communication.
- * 
+ *
  * STATIC: Les variables statiques semid et block doivent etre valides.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="cont").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3795,11 +3795,11 @@ shm_cont(void)
 
 /*
  * Fait continuer le server, mais le serveur ne rend pas la main.
- * 
+ *
  * STATIC: Les variables statiques semid et block doivent etre valides.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="ackn").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3828,14 +3828,14 @@ shm_ack(void)
 
 /*
  * Attend que le server ait finis la command en cours.
- * 
+ *
  * Utilise apres un shm_ack_(), c'est une fonction de resynchronisation. Elle
  * signale si il y a eu une erreur sur la commande en cours
- * 
+ *
  * STATIC: Les variables statiques semid et block doivent etre valides.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="wack <timeout>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3871,15 +3871,15 @@ shm_wack(int timeout		/* timeout */)
 
 /*
  * Libere le server
- * 
+ *
  * Utilise par le client ou le serveur pour rendre la main.
- * 
+ *
  * STATIC: La variable statique semid doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="free").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
- * 
+ *
  */
 void
 shm_free_(int *status /* return status pointer */ )
@@ -3908,13 +3908,13 @@ shm_free(void)
 
 /*
  * Envoye un signal au serveur
- * 
+ *
  * La fonction fait un kill() sur block->pid_server
- * 
+ *
  * STATIC: La variable statique block doit etre valide.
- * 
+ *
  * REMOTE: Cette fonction est valide en mode remote (commande="sign <signal>").
- * 
+ *
  * RETURN: Le status est retourne normallement a 0 ou -1 en cas d'erreur.
  */
 void
@@ -3940,4 +3940,3 @@ send_signal(int sig		/* signal number pointer */)
 
 	return(kill(block->pid_server, sig));
 }
-

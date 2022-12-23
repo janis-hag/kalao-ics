@@ -71,7 +71,8 @@ def check_time_format(dt):
     '''
     # Ensure correct format
     if not isinstance(dt, datetime):
-        raise TypeError('Invalid type for parameter "date" - expecting datetime')
+        raise TypeError(
+                'Invalid type for parameter "date" - expecting datetime')
     elif datetime_is_naive(dt):
         raise TypeError("Datetime must not be naive")
     elif dt.year < 1801 or dt.year > 2099:

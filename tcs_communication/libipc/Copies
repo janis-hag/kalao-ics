@@ -7,5 +7,5 @@ Rules_$OPSYS.mke
 Makefile
 torture_ipc.prc
 tex/tutorial_libipc.tex
-tex/tutorial_libipc.ps 
+tex/tutorial_libipc.ps
 tex/cmd.tex

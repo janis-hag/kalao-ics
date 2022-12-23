@@ -4,10 +4,9 @@
 # @Date : 2022-02-11-10-21
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 nuvu_stream_process.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from pyMilk.interfacing.isio_shmlib import SHM
@@ -34,11 +33,12 @@ def run():
     data = cam.get_data(check=True)[4:-2, ::8].astype(np.int16)
 
     # Create stream
-    nuvu_out_stream = SHM('nuvu_proc_stream', data, # 30x30 int16 np.array
-                 location=-1, # CPU
-                 shared=True, # Shared
-                )
-
+    nuvu_out_stream = SHM(
+            'nuvu_proc_stream',
+            data,  # 30x30 int16 np.array
+            location=-1,  # CPU
+            shared=True,  # Shared
+    )
 
     while True:
         data = cam.get_data(check=True)[4:-2, ::8].astype(np.int16)

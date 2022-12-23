@@ -4,10 +4,9 @@
 # @Date : 2021-01-27-14-21
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 tungsten.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 
 """
 
@@ -22,7 +21,8 @@ import os
 from kalao.plc import core, filterwheel
 from kalao.utils import database, kalao_time
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
 parser = ConfigParser()
 parser.read(config_path)
@@ -95,9 +95,13 @@ def send_command(beck, nCommand_value):
 
     tungsten_nCommand = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.nCommand")
 
-    tungsten_nCommand.set_attribute(ua.AttributeIds.Value,
-                                    ua.DataValue(ua.Variant(int(nCommand_value),
-                                                            tungsten_nCommand.get_data_type_as_variant_type())))
+    tungsten_nCommand.set_attribute(
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(
+                            int(nCommand_value),
+                            tungsten_nCommand.get_data_type_as_variant_type()))
+    )
     # Execute
     send_execute(beck)
 
@@ -132,16 +136,22 @@ def initialise(beck=None, tungsten_nCommand=None):
     tungsten_status = 'ERROR'
 
     # Check if init, if not do init
-    if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
+    if not beck.get_node(
+            "ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
         # init
         send_command(beck, 1)
         sleep(15)
-        while(beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value() == 'INITIALISING'):
+        while (beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
+               == 'INITIALISING'):
             sleep(15)
-        if not beck.get_node("ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
-            tungsten_status = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value())
+        if not beck.get_node(
+                "ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
+            tungsten_status = 'ERROR: ' + str(
+                    beck.get_node("ns=4; s=MAIN.Tungsten.stat.nErrorCode").
+                    get_value())
         else:
-            tungsten_status = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
+            tungsten_status = beck.get_node(
+                    "ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
     else:
         tungsten_status = 0
 
@@ -157,7 +167,12 @@ def send_execute(beck):
     tungsten_bExecute = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.bExecute")
 
     tungsten_bExecute.set_attribute(
-        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, tungsten_bExecute.get_data_type_as_variant_type())))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(
+                            True,
+                            tungsten_bExecute.get_data_type_as_variant_type()))
+    )
 
 
 def status(beck=None):
@@ -176,10 +191,20 @@ def status(beck=None):
     else:
         disconnect_on_exit = False
 
-    device_status_dict = {'sStatus': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sStatus").get_value(),
-                          'sErrorText': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.sErrorText").get_value(),
-                          'nErrorCode': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.nErrorCode").get_value(),
-                          'nStatus': beck.get_node("ns=4; s=MAIN." + node_path + ".stat.nStatus").get_value()}
+    device_status_dict = {
+            'sStatus':
+                    beck.get_node("ns=4; s=MAIN." + node_path +
+                                  ".stat.sStatus").get_value(),
+            'sErrorText':
+                    beck.get_node("ns=4; s=MAIN." + node_path +
+                                  ".stat.sErrorText").get_value(),
+            'nErrorCode':
+                    beck.get_node("ns=4; s=MAIN." + node_path +
+                                  ".stat.nErrorCode").get_value(),
+            'nStatus':
+                    beck.get_node("ns=4; s=MAIN." + node_path +
+                                  ".stat.nStatus").get_value()
+    }
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -199,9 +224,13 @@ def get_switch_time():
     df = pd.DataFrame(database.get_monitoring({'tungsten'}, 1500)['tungsten'])
 
     # Search for last occurence of current status
-    switch_time = df.loc[df[df['values'] != status()['sStatus']].first_valid_index() - 1]['time_utc']
+    switch_time = df.loc[
+            df[df['values'] != status()['sStatus']].first_valid_index() -
+            1]['time_utc']
 
-    elapsed_time = (kalao_time.now() - switch_time.replace(tzinfo=datetime.timezone.utc)).total_seconds()
+    elapsed_time = (
+            kalao_time.now() -
+            switch_time.replace(tzinfo=datetime.timezone.utc)).total_seconds()
 
     return elapsed_time
 

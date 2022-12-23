@@ -9,7 +9,7 @@ INCLUDE_PATH =	-I .					\
 		-I $(OPENWINHOME)/include		\
         	-I /usr/include/x86_64-linux-gnu/       \
         	-I /usr/local/include
-		
+
 
 CDEBUGFLAGS += -g
 
@@ -18,5 +18,3 @@ CFLAGS	+= $(CDEBUGFLAGS) -fPIC -Wall -DUSE_STRERROR -DSYSV -DLINUX $(INCLUDE_PAT
 ARFLAGS += -U
 
 RANLIB	= echo
-
-

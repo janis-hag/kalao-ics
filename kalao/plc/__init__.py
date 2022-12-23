@@ -4,7 +4,6 @@
 # @Date : 2022-10-18-14-56
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 __init__.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
@@ -15,7 +14,10 @@ This package is used to control the calibration unit, the flip mirror, the shutt
 the tungsten source, the ADC motors, and the filterwheel.
 """
 
-__all__ = ["core", "calib_unit", "flip_mirror", "shutter", "laser", "tungsten", "adc", "filterwheel"]
+__all__ = [
+        "core", "calib_unit", "flip_mirror", "shutter", "laser", "tungsten",
+        "adc", "filterwheel"
+]
 from .core import *
 from .shutter import *
 from .calib_unit import *

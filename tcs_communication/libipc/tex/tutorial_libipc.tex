@@ -34,7 +34,7 @@ Les fonctions sont décrites sans leurs arguments, la description plus détaillées
 \chapter{PRINCIPES DE BASE}
 
 \section{Fonctionnement des sémaphores}
-Le sémaphore est un objet informatique se présentant (en schématisant) sous la forme d'une variable commune aux process s'y intéressant. Cet objet à deux compteurs associés \verb#NCNT# et \verb#ZCNT#. 
+Le sémaphore est un objet informatique se présentant (en schématisant) sous la forme d'une variable commune aux process s'y intéressant. Cet objet à deux compteurs associés \verb#NCNT# et \verb#ZCNT#.
 
 \medskip
 Un sémaphore est créé en donnant un identificateur (de type entier) puis est accédé au moyen du descripteur (de type entier) retourné lors de sa création.
@@ -50,11 +50,11 @@ Les propriétés des sémaphores sont les suivantes:
 \end{itemize}
 
 \section{Fonctionnement de la mémoire partagée}
-La mémoire partagée est une zone de mémoire commune allouée dynamiquement au run--time par un ensemble de process. Chaque process peut y lire ou y écrire des données. 
+La mémoire partagée est une zone de mémoire commune allouée dynamiquement au run--time par un ensemble de process. Chaque process peut y lire ou y écrire des données.
 
- 
+
 \medskip
-La mémoire partagée est allouée en donnant un identificateur et une taille, puis est accédée au moyen du pointeur (de type char) retourné lors de sa création. 
+La mémoire partagée est allouée en donnant un identificateur et une taille, puis est accédée au moyen du pointeur (de type char) retourné lors de sa création.
 
 \medskip
 La taille de la zone allouée doit être la même sur tous les process.
@@ -100,7 +100,7 @@ struct  block_kw{
 \end{verbatim}
 
 Il est utilisé:
- 
+
 \begin{enumerate}
 \item pour passer des commandes et des paramètres entre un client et un serveur (\verb#block->line#).
 \item pour recevoir les résultats facultatifs des commandes provenant du serveur(\verb#block->line#).
@@ -111,7 +111,7 @@ Il est utilisé:
 \item pour tester la survie d'un même serveur entre le début et la fin d'une exécution de commande (\verb#block->stat_server#).
 \end{enumerate}
 
-La structure "\verb#line#" est composée de 2 éléments, le mot--clé "\verb#line->key#" et son contenu "\verb#line->content#", leur nombre et leur taille sont limités de manière statique pour assurer l'intégrité de la taille du bloc de communication avec tout les programmes qui l'utilise. 
+La structure "\verb#line#" est composée de 2 éléments, le mot--clé "\verb#line->key#" et son contenu "\verb#line->content#", leur nombre et leur taille sont limités de manière statique pour assurer l'intégrité de la taille du bloc de communication avec tout les programmes qui l'utilise.
 Le nombre de mots--clé est limité à "\verb#NB_KW_MAX#". Le nom des mots--clé est libre, il ne doit pas comporter plus de "\verb#KW_SIZE#" caractères (NULL compris), seul le mot--clé contenant le nom de la commande est réservé, il doit s'appeler "COMMAND". Le contenu des mots--clé est uniquement de type caractère et leur longueur ne doit pas excéder "\verb#CONTENT_SIZE#" (NULL compris).
 
 \medskip
@@ -120,14 +120,14 @@ Un bloc de communication est créé pour chaque serveur. Du point de vue d'un clie
 \medskip
 Le principe d'envoi de commande est le suivant:
 \begin{enumerate}
-\item le client vide le bloc de communication.  
+\item le client vide le bloc de communication.
 \item le client place la commande destinée au serveur sous le mot--clé réservé "\verb#COMMAND#".
 \item le client place les paramètres facultatifs.
 \item le client passe la main au serveur (voir plus bas sous "Modes de synchronisation").
 \item Le serveur cherche le mot--clé "\verb#COMMAND#" et considère son contenu comme une commande qu'il exécute.
 \item Le serveur cherche les mots--clé facultatifs.\\[5mm]
 Ensuite, lorsque le serveur à terminé et si le client est en attente de résultats:\\
-\item Le serveur vide le bloc de communication et y place les résultats sous la forme de mots--clé avec leur contenu. 
+\item Le serveur vide le bloc de communication et y place les résultats sous la forme de mots--clé avec leur contenu.
 \item Le serveur passe la main au client (voir plus bas sous "Modes de synchronisation")
 \item Le client récupère les résultats.
 \end{enumerate}
@@ -138,26 +138,26 @@ Ensuite, lorsque le serveur à terminé et si le client est en attente de résultat
 
 \verb#put_shm_block_kw()# stockage d'un mot--clé avec son contenu
 
-\verb#get_shm_block_kw()# lecture du contenu d'un mot--clé 
+\verb#get_shm_block_kw()# lecture du contenu d'un mot--clé
 
 \section{Principe de la synchronisation}
-Les sémaphores permettent de synchroniser l'accès à une ressource en bloquant les process désirant l'utiliser. Il faut toutefois remarquer qu'un process peut accéder une ressource sans utiliser ce mode de synchronisation. Cela peut être utile pour communiquer avec un process exécutant une tache en arrière plan (voir plus loin sous "communication asynchrone"), mais dans la plupart des cas les accès asynchrones généreront des situations illégales difficile à contrôler ou à identifier. 
+Les sémaphores permettent de synchroniser l'accès à une ressource en bloquant les process désirant l'utiliser. Il faut toutefois remarquer qu'un process peut accéder une ressource sans utiliser ce mode de synchronisation. Cela peut être utile pour communiquer avec un process exécutant une tache en arrière plan (voir plus loin sous "communication asynchrone"), mais dans la plupart des cas les accès asynchrones généreront des situations illégales difficile à contrôler ou à identifier.
 
 \bigskip
 La synchronisation utilise 3 sémaphores que l'on appelle \verb:SEM0:, \verb:SEM1: et \verb:SEM2:. Ils ont les fonctions suivantes:
 
 \subsection{Fonctionnalités de SEM0}
-\verb:SEM0: permet de gérer l'accès à la ressource. Il est initialisé à 1 par le serveur, indiquant par là que la ressource est libre. Chaque client voulant accéder la ressource doit commencer par décrémenter ce sémaphore avant de d'effectuer une quelconque opération sur le bloc de communication ou sur les autres sémaphores. Si la ressource est occupée, le client et mis en attente et \verb:NCNT0: est incrémenté d'une unité. 
+\verb:SEM0: permet de gérer l'accès à la ressource. Il est initialisé à 1 par le serveur, indiquant par là que la ressource est libre. Chaque client voulant accéder la ressource doit commencer par décrémenter ce sémaphore avant de d'effectuer une quelconque opération sur le bloc de communication ou sur les autres sémaphores. Si la ressource est occupée, le client et mis en attente et \verb:NCNT0: est incrémenté d'une unité.
 
 Selon le mode de synchronisation, en fin de travail, c'est le serveur ou le client qui incrémente \verb:SEM0: pour libérer l'accès à la ressource pour le client suivant.
 
 \subsection{Fonctionnalités de SEM1}
-\verb:SEM1: bloque le serveur tant que le bloc de communication ne contient rien de valide. Il est initialisé à zéro par le serveur qui se met tout de suite en attente par une décrémentation (dans ce cas \verb:NCNT1=1:). C'est le client qui incrémente ce sémaphore lorsqu'il a obtenu l'accès à la ressource et remplis le bloc de communication. 
+\verb:SEM1: bloque le serveur tant que le bloc de communication ne contient rien de valide. Il est initialisé à zéro par le serveur qui se met tout de suite en attente par une décrémentation (dans ce cas \verb:NCNT1=1:). C'est le client qui incrémente ce sémaphore lorsqu'il a obtenu l'accès à la ressource et remplis le bloc de communication.
 
 Le serveur se remet en attente automatiquement en décrémentant \verb:SEM1: en fin de travail
 
 \subsection{Fonctionnalités de SEM2}
-\verb:SEM2: indique si le serveur est en cours d'exécution. Lorsqu'il vaut zéro, le serveur ne travaille pas, lorsqu'il vaut 1, il travaille. C'est toujours le client qui le pose à 1 avant d'ordonner l'exécution d'une commande au serveur en incrémentant le \verb:SEM1:. C'est le serveur qui le pose à zéro à la fin d'une exécution. Si le client veut attendre la fin d'une exécution, il se met en attente de valeur zéro sur ce sémaphore (dans ce cas \verb:ZCNT2=1:). 
+\verb:SEM2: indique si le serveur est en cours d'exécution. Lorsqu'il vaut zéro, le serveur ne travaille pas, lorsqu'il vaut 1, il travaille. C'est toujours le client qui le pose à 1 avant d'ordonner l'exécution d'une commande au serveur en incrémentant le \verb:SEM1:. C'est le serveur qui le pose à zéro à la fin d'une exécution. Si le client veut attendre la fin d'une exécution, il se met en attente de valeur zéro sur ce sémaphore (dans ce cas \verb:ZCNT2=1:).
 
 Ce sémaphore est utilisé lors des opérations d'initialisation d'un serveur où un serveur peut savoir s'il a été tué durant l'exécution d'une commande (\verb:SEM2=1:) et ainsi le signaler au client qui peut être toujours en attente.
 
@@ -210,11 +210,11 @@ main()
 
 
 \section{Partage de données, Matrice partagée}
-En plus du bloc de communication, une zone de mémoire partagée peut être allouée pour mettre en commun entre les clients et les serveurs un tableau de nombres flottants que l'on appelle la matrice partagée. 
+En plus du bloc de communication, une zone de mémoire partagée peut être allouée pour mettre en commun entre les clients et les serveurs un tableau de nombres flottants que l'on appelle la matrice partagée.
 
 \subsection{Initialisation de la matrice partagée}
 
-L'initialisation se fait avec la fonction "\verb#alloc_matrix_shm()#" qui demande une taille en pixels (1[pixel]$=$4[bytes]) et retourne un pointeur de type flottant.  
+L'initialisation se fait avec la fonction "\verb#alloc_matrix_shm()#" qui demande une taille en pixels (1[pixel]$=$4[bytes]) et retourne un pointeur de type flottant.
 
 \medskip
 Cette zone est allouée indifféremment par le client ou le serveur. Mais toutefois, il faut que la taille de la zone soit donnée identique des 2 côtés. Dans le cas ou le client ne connaît pas au préalable la taille de la zone, il peut questionner le serveur pour la connaître. Dans ce cas l'initialisation se fait avec la fonction "\verb#ask_and_init_shm()#". Le block de communication et les sémaphores doivent être déjà initialisés.
@@ -351,18 +351,18 @@ Par exemple, on peut imaginer un serveur recevant un ordre sans attente qui va l
 
 Dans l'exemple qui suit, on voit l'initialisation du processus, où on lance la commande "\verb#do_for_ever#" avec le flag "\verb#OK#". Le serveur recevant cette commande partira et l'exécutera tant que flag sera égal à "\verb#OK#"
 \begin{verbatim}
-          dec_sem_zero(semid,block,timeout);	
-          ini_shm_block_kw(block);	
-          put_shm_block_kw(block,"COMMAND","do_for_ever");	
-          put_shm_block_kw(block,"FLAG","OK");	
-          block->ackno = 0;		
-          setval_sem(semid, 2, 1);	
-          inc_sem(semid, 1);	
+          dec_sem_zero(semid,block,timeout);
+          ini_shm_block_kw(block);
+          put_shm_block_kw(block,"COMMAND","do_for_ever");
+          put_shm_block_kw(block,"FLAG","OK");
+          block->ackno = 0;
+          setval_sem(semid, 2, 1);
+          inc_sem(semid, 1);
 \end{verbatim}
 plus tard, pour terminer le processus bouclant, le client, ou un autre client, exécute par exemple:
 \begin{verbatim}
-          ini_shm_block_kw(block);	
-          put_shm_block_kw(block,"FLAG","STOP");	
+          ini_shm_block_kw(block);
+          put_shm_block_kw(block,"FLAG","STOP");
 \end{verbatim}
 
 \section{Status de retour}
@@ -371,7 +371,7 @@ D'une manière générale, les fonctions de libipc.c retournent (pour plus de détai
 \begin{itemize}
 \item un status supérieur ou égal à zéro en cas de succès.
 \item un status égal à -1 en cas de problème système (ex: sémaphore détruit) ou problème d'initialisation (ex: bloc de communication inexistant).
-\item un status égal à -2 en cas de time--out lors d'une attente dans les fonctions gérant le time--out. 
+\item un status égal à -2 en cas de time--out lors d'une attente dans les fonctions gérant le time--out.
 \end{itemize}
 
 \medskip
@@ -419,7 +419,7 @@ Les fonctions suivantes gèrent les time--out, ce sont:
 \verb#wait_for_sem()#, \verb#dec_sem_zero()#, \verb#dec_sem()#, \verb#get_server_value()#, \verb#ask_and_init_shm()#, et\\ \verb#send_command()#.
 
 \medskip
-Ces fonctions possèdent un ou deux arguments indiquant la ou les valeurs de time--out. Un time--out indique, en secondes (entières), le temps maximum que passe un client à attendre soit que le client est prêt, soit que le client finisse d'exécuter sa commande. 
+Ces fonctions possèdent un ou deux arguments indiquant la ou les valeurs de time--out. Un time--out indique, en secondes (entières), le temps maximum que passe un client à attendre soit que le client est prêt, soit que le client finisse d'exécuter sa commande.
 
 Par exemple, "\verb#dec_sem_zero()#" et "\verb#dec_sem()#" ont un time--out qui indique le temps d'attente pour qu'une ressource soit accessible, le time--out de "\verb#wait_for_sem()#" indique le temps d'attente pour la fin d'une exécution, et pour "\verb#get_server_value()#", "\verb#ask_and_init_shm()#" et "\verb#send_command()#" le premier time--out indique l'attente maximum pour la ressource et le deuxième le temps d'attente pour l'exécution.
 
@@ -432,8 +432,8 @@ Le problème est délicat lorsqu'un client est en attente de fin d'exécution et qu
 S'il est mort, il n'y a pas de problème, on ne libère pas le serveur, car le serveur se réinitialisera correctement lors de sa remise en marche.
 
 \medskip
-S'il n'est pas mort, il faut faire terminer le serveur pour qu'il se retrouve dans un état stable, prêt à accepter une nouvelle commande. 
-Le meilleur moyen à disposition pour réaliser ceci est de lui envoyer un signal d'interruption (dans ce cas le serveur doit être capable de gérer ce signal) puis s'assurer que le client soit bien le client qui avait envoyé la commande (test de concordance des PIDs) et enfin, libérer le serveur uniquement si le SEM0 est bien à zéro. 
+S'il n'est pas mort, il faut faire terminer le serveur pour qu'il se retrouve dans un état stable, prêt à accepter une nouvelle commande.
+Le meilleur moyen à disposition pour réaliser ceci est de lui envoyer un signal d'interruption (dans ce cas le serveur doit être capable de gérer ce signal) puis s'assurer que le client soit bien le client qui avait envoyé la commande (test de concordance des PIDs) et enfin, libérer le serveur uniquement si le SEM0 est bien à zéro.
 Cet ensemble de tests permet de gérer les interactions extérieures que pourrait avoir effectué l'utilisateur sur les sémaphores (reset par exemple).
 
 \medskip

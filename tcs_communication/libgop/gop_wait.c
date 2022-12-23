@@ -10,7 +10,7 @@
 
 char	my_name[16];
 
-static void 
+static void
 print_help_connection (void)
 {
 	fprintf(stderr, "Options connection:\n");
@@ -157,4 +157,3 @@ gop_wait.c(129): remark #981: operands are evaluated in unspecified order
 	exit(0);
 
 }
-

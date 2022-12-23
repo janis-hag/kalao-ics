@@ -65,7 +65,7 @@ Dans un:
 ```
 python test_server.py
 ```
-puis dans l'autre 
+puis dans l'autre
 ```
 python test_client.py
 ```
@@ -74,7 +74,7 @@ Ce qui est tapé dans la partie client est envoyé au serveur et affiché par ce
 
 Dans ce test, les commandes sont parsées selon le premier délimiteur par exemple
 ```
-"|my_command|arg1|arg2" 
+"|my_command|arg1|arg2"
 ```
 sera affiché par le serveur comme:
 ```
@@ -88,5 +88,3 @@ Ainsi pour terminer un session de test il faut taper dans le client:
 quit
 ```
 Le premier fera terminer le serveur ("\quit" devient "quit") et le deuxieme fera terminer le client.
-
-

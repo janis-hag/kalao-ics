@@ -4,10 +4,9 @@
 # @Date : 2021-08-02-11-55
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 file_handling.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 # TODO create functions:
@@ -34,7 +33,8 @@ from sequencer import system
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 
 # Read config file and create a dict for each section where keys is parameter
 parser = ConfigParser()
@@ -58,7 +58,7 @@ def create_night_filepath(tmp_night_folder=None):
         tmp_night_folder = create_night_folder()
 
     filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
-    filepath = tmp_night_folder+os.sep+filename
+    filepath = tmp_night_folder + os.sep + filename
 
     return filepath
 
@@ -68,8 +68,10 @@ def create_night_folder():
     # check if folder exists
     # remove temporary folder of previous night if empty
 
-    Tmp_night_folder = os.path.join(TemporaryDataStorage, kalao_time.get_start_of_night())
-    Science_night_folder = os.path.join(Science_folder, kalao_time.get_start_of_night())
+    Tmp_night_folder = os.path.join(TemporaryDataStorage,
+                                    kalao_time.get_start_of_night())
+    Science_night_folder = os.path.join(Science_folder,
+                                        kalao_time.get_start_of_night())
 
     # Check if tmp and science folders exist
     if not os.path.exists(Tmp_night_folder):
@@ -94,10 +96,12 @@ def save_tmp_image(image_path, sequencer_arguments=None):
     :param sequencer_arguments: argument list received by the sequencer
     :return:
     '''
-    Science_night_folder = Science_folder+os.sep+kalao_time.get_start_of_night()
+    Science_night_folder = Science_folder + os.sep + kalao_time.get_start_of_night(
+    )
 
     # Remove tmp_ from filename
-    target_path_name = Science_night_folder+os.sep+os.path.basename(image_path).replace('tmp_', '')
+    target_path_name = Science_night_folder + os.sep + os.path.basename(
+            image_path).replace('tmp_', '')
 
     if os.path.exists(image_path) and os.path.exists(Science_night_folder):
         update_header(image_path, sequencer_arguments=sequencer_arguments)
@@ -106,12 +110,16 @@ def save_tmp_image(image_path, sequencer_arguments=None):
         # os.chmod(target_path_name, FileMask)
 
         # TODO possibly add the right UID and GID
-        system.print_and_log('Saved: '+target_path_name)
+        system.print_and_log('Saved: ' + target_path_name)
         camera.log_last_image_path(target_path_name)
 
         return target_path_name
     else:
-        database.store_obs_log({'sequencer_log': 'ERROR: unable to save '+image_path+' to '+target_path_name})
+        database.store_obs_log({
+                'sequencer_log':
+                        'ERROR: unable to save ' + image_path + ' to ' +
+                        target_path_name
+        })
         database.store_obs_log({'sequencer_status': 'ERROR'})
 
         return -1
@@ -161,39 +169,54 @@ def update_header(image_path, sequencer_arguments=None):
         fits_header = hdul[0].header
 
         if 'DATE-OBS' in fits_header.keys():
-            dt = datetime.fromisoformat(fits_header['DATE-OBS']).replace(tzinfo=timezone.utc)
+            dt = datetime.fromisoformat(fits_header['DATE-OBS']).replace(
+                    tzinfo=timezone.utc)
         else:
-            dt = datetime.fromisoformat(fits_header['DATE']).replace(tzinfo=timezone.utc)
-
+            dt = datetime.fromisoformat(fits_header['DATE']).replace(
+                    tzinfo=timezone.utc)
 
         # Fill default values
-        for card in header_df.loc[header_df['keygroup'] == 'default_keys'].itertuples(index=False):
+        for card in header_df.loc[header_df['keygroup'] ==
+                                  'default_keys'].itertuples(index=False):
             # TODO add the keywords into the header at the right position in order to keep it sorted.
-            header_df = pd.concat([header_df, pd.DataFrame({'keygroup': 'default_keys',
-                                                            'keyword': card.keyword,
-                                                            'value': card.value,
-                                                            'comment': card.comment}, index=[0])])
+            header_df = pd.concat([
+                    header_df,
+                    pd.DataFrame(
+                            {
+                                    'keygroup': 'default_keys',
+                                    'keyword': card.keyword,
+                                    'value': card.value,
+                                    'comment': card.comment
+                            }, index=[0])
+            ])
 
         # Gather all the logs
-        obs_log = database.get_obs_log(header_df.loc[header_df['keygroup'] == 'Obs_log']['value'].tolist(), 1,
-                                          dt=dt)
+        obs_log = database.get_obs_log(
+                header_df.loc[header_df['keygroup'] == 'Obs_log']
+                ['value'].tolist(), 1, dt=dt)
 
-        monitoring_log = database.get_monitoring(header_df.loc[header_df['keygroup'] == 'Monitoring']['value'].tolist(), 1,
-                                             dt=dt)
+        monitoring_log = database.get_monitoring(
+                header_df.loc[header_df['keygroup'] == 'Monitoring']
+                ['value'].tolist(), 1, dt=dt)
 
-        telemetry_log = database.get_telemetry(header_df.loc[header_df['keygroup'] == 'Telemetry']['value'].tolist(), 1,
-                                            dt=dt)
-
+        telemetry_log = database.get_telemetry(
+                header_df.loc[header_df['keygroup'] == 'Telemetry']
+                ['value'].tolist(), 1, dt=dt)
 
         # obs_log needs to be first as it contains some non-hierarch keywords
-        header_df = _add_header_values(header_df=header_df, log_status={**obs_log, **monitoring_log, **telemetry_log}, fits_header=fits_header)
-
+        header_df = _add_header_values(
+                header_df=header_df, log_status={
+                        **obs_log,
+                        **monitoring_log,
+                        **telemetry_log
+                }, fits_header=fits_header)
 
         # Add telescope header
         telescope_header_df, header_path = _get_last_telescope_header()
         # Remove first part of header
         # TODO set the cutoff keyword in kalao.config
-        telescope_header_df = telescope_header_df[(telescope_header_df.keyword == 'OBSERVER' ).idxmax():]
+        telescope_header_df = telescope_header_df[(
+                telescope_header_df.keyword == 'OBSERVER').idxmax():]
 
         for card in telescope_header_df.itertuples(index=False):
             # if key starts with ESO search last occurence with same beginning and add keyword afterwards
@@ -201,10 +224,16 @@ def update_header(image_path, sequencer_arguments=None):
                 card_keyword = card.keyword.upper()
             else:
                 card_keyword = 'HIERARCH ' + card.keyword.upper()
-            header_df = pd.concat([header_df, pd.DataFrame({'keygroup': 'Telescope',
-                                                            'keyword': card_keyword,
-                                                            'value': card.value,
-                                                            'comment': card.comment}, index=[0])])
+            header_df = pd.concat([
+                    header_df,
+                    pd.DataFrame(
+                            {
+                                    'keygroup': 'Telescope',
+                                    'keyword': card_keyword,
+                                    'value': card.value,
+                                    'comment': card.comment
+                            }, index=[0])
+            ])
 
         header_df = _dynamic_cards_update(header_df)
 
@@ -264,17 +293,20 @@ def _get_last_telescope_header():
     # TODO verify if latest_record['time_utc'] is recent enough
     gls_home = Path(T4root)
 
-    tcs_header_path_record = database.get_latest_record('obs_log', key='tcs_header_path')
+    tcs_header_path_record = database.get_latest_record(
+            'obs_log', key='tcs_header_path')
 
     if 'home' in tcs_header_path_record['tcs_header_path']:
-        tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][1:]
+        tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][
+                1:]
     else:
         tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
 
     if tcs_header_path.is_file():
         tcs_header_df = _header_to_df(fits.getheader(tcs_header_path))
     else:
-        system.print_and_log(('ERROR: header file not found: '+str(tcs_header_path)))
+        system.print_and_log(
+                ('ERROR: header file not found: ' + str(tcs_header_path)))
         tcs_header_df = None
 
     # TODO uncomment the unlink line in order to remove the tmp fits
@@ -294,7 +326,8 @@ def _clean_sort_header(header_df):
     # Search for first HIERARCH keyword (i.e. longer than 8) and split in two header dataframes
     first_hierarch_line = header_df.keyword.str.len().ge(9).idxmax()
     header_head_df = header_df.iloc[:first_hierarch_line]
-    header_tail_df = header_df.iloc[first_hierarch_line:].sort_values(by=['keyword'])
+    header_tail_df = header_df.iloc[first_hierarch_line:].sort_values(
+            by=['keyword'])
 
     #header_df = header_head_df.append(header_tail_df, ignore_index=True)
     header_df = pd.concat([header_head_df, header_tail_df], ignore_index=True)
@@ -336,9 +369,10 @@ def _header_to_df(header):
 
     for keyword in header.keys():
         header_df.append({
-            'keyword': keyword,
-            'value': header[keyword],
-            'comment': header.comments[keyword]})
+                'keyword': keyword,
+                'value': header[keyword],
+                'comment': header.comments[keyword]
+        })
 
     header_df = pd.DataFrame(header_df)
 
@@ -362,12 +396,13 @@ def _add_header_values(header_df, log_status, fits_header):
 
         elif card.keygroup == 'FLI' and card.keyword in fits_header.keys():
             header_df.loc[idx, 'value'] = fits_header[card.keyword]
-            header_df.loc[idx,'comment'] = card.comment.strip()
+            header_df.loc[idx, 'comment'] = card.comment.strip()
 
         #header.set(card.keyword.upper(), card.value, card.comment.strip())
-        elif card.value in log_status.keys() and log_status[card.value]['values']:
-            header_df.loc[idx,'value'] = log_status[card.value]['values'][0]
-            header_df.loc[idx,'comment'] = card.comment.strip()
+        elif card.value in log_status.keys() and log_status[
+                card.value]['values']:
+            header_df.loc[idx, 'value'] = log_status[card.value]['values'][0]
+            header_df.loc[idx, 'comment'] = card.comment.strip()
             #card.keyword =  'ESO '+ keycode + ' ' + card.keyword.upper()
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), log_status[card.keyword]['values'][0],
             #           card.comment.strip())
@@ -375,7 +410,7 @@ def _add_header_values(header_df, log_status, fits_header):
         else:
             #card.value = log_status[card.keyword]['values'][0]
             header_df.loc[idx, 'value'] = ''
-            header_df.loc[idx,'comment'] = card.comment.strip()
+            header_df.loc[idx, 'comment'] = card.comment.strip()
             #card.keyword = 'ESO ' + keycode + ' ' + card.keyword.upper()
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), '', card.comment.strip())
 
@@ -395,11 +430,14 @@ def _fill_log_header_keys(header, header_df, log_status, keycode):
 
     for card in header_df.itertuples(index=False):
         #header.set(card.keyword.upper(), card.value, card.comment.strip())
-        if card.keyword in log_status.keys() and log_status[card.keyword]['values']:
-            header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), log_status[card.keyword]['values'][0],
+        if card.keyword in log_status.keys() and log_status[
+                card.keyword]['values']:
+            header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(),
+                       log_status[card.keyword]['values'][0],
                        card.comment.strip())
         else:
-            header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), '', card.comment.strip())
+            header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(),
+                       '', card.comment.strip())
 
     return header
 
@@ -420,15 +458,19 @@ def _dynamic_cards_update(header_df):
     else:
         header_df['value']['HIERARCH ESO INS SHUT ST'] = 'F'
 
-    date_obs = header_df.loc[header_df['keyword'] == 'DATE-OBS']['value'].values[0]
-    date_end = header_df.loc[header_df['keyword'] == 'DATE-END']['value'].values[0]
+    date_obs = header_df.loc[header_df['keyword'] ==
+                             'DATE-OBS']['value'].values[0]
+    date_end = header_df.loc[header_df['keyword'] ==
+                             'DATE-END']['value'].values[0]
 
     dt_obs = datetime.fromisoformat(date_obs).replace(tzinfo=timezone.utc)
 
-    la_silla_coord = EarthLocation.from_geocentric(1838554.9580025, -5258914.42492168, -3099898.78073271, units.m)
+    la_silla_coord = EarthLocation.from_geocentric(1838554.9580025,
+                                                   -5258914.42492168,
+                                                   -3099898.78073271, units.m)
 
     astro_time = Time(date_obs, scale='utc', location=la_silla_coord)
-    sidereal_seconds = astro_time.sidereal_time('mean').hour*3600
+    sidereal_seconds = astro_time.sidereal_time('mean').hour * 3600
     #astro_time.sidereal_time('mean').to_string(units.hour, sep=':')
 
     # Update MJD-OBS
@@ -440,13 +482,15 @@ def _dynamic_cards_update(header_df):
     header_df['value']['MJD-OBS'] = astro_time.mjd
 
     header_df['comment']['MJD-END'] = date_end
-    header_df['value']['MJD-END'] = Time(date_end, scale='utc', location=la_silla_coord).mjd
+    header_df['value']['MJD-END'] = Time(date_end, scale='utc',
+                                         location=la_silla_coord).mjd
 
     # Update UTC
     # idx = header_df.index[header_df['keyword'] == 'UTC']
     # if len(idx>0):
     #     idx = idx[0]
-    header_df['comment']['UTC'] = '[s] '+dt_obs.strftime('%H:%M:%S.%f')[:-3] + ' UTC'
+    header_df['comment']['UTC'] = '[s] ' + dt_obs.strftime(
+            '%H:%M:%S.%f')[:-3] + ' UTC'
     header_df['value']['UTC'] = str((dt_obs.hour * 60 + dt_obs.minute) * 60 + dt_obs.second) \
                                     + '.' + str(dt_obs.microsecond)
 
@@ -454,7 +498,8 @@ def _dynamic_cards_update(header_df):
     # idx = header_df.index[header_df['keyword'] == 'LST']
     # if len(idx>0):
     #     idx = idx[0]
-    header_df['comment']['LST'] = '[s] '+ astro_time.sidereal_time('mean').to_string(units.hour, sep=':')[:-1] + ' LST'
-    header_df['value']['LST'] = astro_time.sidereal_time('mean').hour*3600
+    header_df['comment']['LST'] = '[s] ' + astro_time.sidereal_time(
+            'mean').to_string(units.hour, sep=':')[:-1] + ' LST'
+    header_df['value']['LST'] = astro_time.sidereal_time('mean').hour * 3600
 
     return header_df

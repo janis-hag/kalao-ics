@@ -1,6 +1,6 @@
 /* C */
 
-extern int 
+extern int
 srvg_connect(char *server_command,
 	     char *client_name,
 	     char *socket_name,
@@ -14,13 +14,13 @@ srvg_connect(char *server_command,
 extern int
 srvg_disconnect(int ci);
 
-extern int 
+extern int
 srvg_write(int ci,
 	   char *str);
 extern int
 srvg_write_bin(int ci, char *str);
 
-extern int 
+extern int
 srvg_read(int ci,
 	  char *str,
 	  int sizeofstr,
@@ -76,7 +76,7 @@ srvg_read_(int *ci,
 extern void
 srvg_get_error_string_(char *str,
 		       int *ilen);
-                       
+
 extern void
 srvg_get_gop_errno_(int *gop_errno);
 

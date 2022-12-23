@@ -4,14 +4,15 @@
 # @Date : 2021-12-07-15-20
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 temperature_control.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from kalao.utils import database
 from kalao.plc import core
+from kalao.fli import camera
+from sequencer import system
 
 from opcua import ua
 from time import sleep
@@ -20,15 +21,22 @@ from configparser import ConfigParser
 from pathlib import Path
 import os
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
 parser = ConfigParser()
 parser.read(config_path)
+
+MINIMAL_FLOW = parser.getfloat('Cooling', 'MinimalFlow')
+MAX_WATER_TEMP = parser.getfloat('Cooling', 'MaxWaterTemp')
+MAX_HEATSINK_TEMP = parser.getfloat('Cooling', 'MaxHeatsinkTemp')
+MAX_CCD_TEMP = parser.getfloat('Cooling', 'MaxCCDTemp')
 
 pump_node = 'bRelayPump'
 fan_node = 'bRelayFan'
 heater_node = 'bWaterHeater'
 flowmeter_node = 'iFlowmeter'
+
 
 def get_temperatures(beck=None):
     """
@@ -48,11 +56,23 @@ def get_temperatures(beck=None):
     beck, disconnect_on_exit = core.check_beck(beck)
 
     temp_values = {
-        'temp_bench_air': BENCHAIROFFSET + beck.get_node('ns=4;s=MAIN.Temp_Bench_Air').get_value()/10,
-        'temp_bench_board': BENCHBOARDOFFSET + beck.get_node('ns=4;s=MAIN.Temp_Bench_Board').get_value()/10,
-        'temp_water_in': WATERINOFFSET + beck.get_node('ns=4;s=MAIN.Temp_Water_In').get_value()/10,
-        'temp_water_out': WATEROUTOFFSET + beck.get_node('ns=4;s=MAIN.Temp_Water_Out').get_value()/10
-        }
+            'temp_bench_air':
+                    BENCHAIROFFSET +
+                    beck.get_node('ns=4;s=MAIN.Temp_Bench_Air').get_value() /
+                    10,
+            'temp_bench_board':
+                    BENCHBOARDOFFSET +
+                    beck.get_node('ns=4;s=MAIN.Temp_Bench_Board').get_value() /
+                    10,
+            'temp_water_in':
+                    WATERINOFFSET +
+                    beck.get_node('ns=4;s=MAIN.Temp_Water_In').get_value() /
+                    10,
+            'temp_water_out':
+                    WATEROUTOFFSET +
+                    beck.get_node('ns=4;s=MAIN.Temp_Water_Out').get_value() /
+                    10
+    }
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -71,10 +91,10 @@ def get_cooling_status(beck=None):
     beck, disconnect_on_exit = core.check_beck(beck)
 
     cooling_status = {
-        'pump_status': pump_status(beck),
-        'heater_status': heater_status(beck),
-        'fan_status': fan_status(beck),
-        'flow_value': get_flow_value(beck)
+            'pump_status': pump_status(beck),
+            'heater_status': heater_status(beck),
+            'fan_status': fan_status(beck),
+            'flow_value': get_flow_value(beck)
     }
 
     if disconnect_on_exit:
@@ -116,7 +136,10 @@ def switch(relay_name, action, beck=None):
 
     relay_switch = beck.get_node("ns = 4; s = MAIN." + relay_name)
     relay_switch.set_attribute(
-        ua.AttributeIds.Value, ua.DataValue(ua.Variant(action, relay_switch.get_data_type_as_variant_type())))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(action,
+                               relay_switch.get_data_type_as_variant_type())))
 
     sleep(1)
 
@@ -231,6 +254,8 @@ def get_flow_value(beck=None):
     """
     Convenience function to query the value of the water flow from the flowmeter
 
+    TODO: add rounding of returned value
+
     :param beck: handle to the beckhoff connection
     :return: status of the fan
     """
@@ -244,3 +269,37 @@ def get_flow_value(beck=None):
         beck.disconnect()
 
     return flow_value
+
+
+def verify_cooling_status(beck=None):
+
+    cooling_flow = get_flow_value(beck=beck)
+    temp_water_in = get_temperatures(beck=beck)['temp_water_in']
+    camera_temperature = camera.get_temperatures()
+
+    if cooling_flow < MINIMAL_FLOW:
+        system.print_and_log(
+                f'Error: cooling flow  {cooling_flow} below mininum {MINIMAL_FLOW}'
+        )
+        # TODO shutdown bench
+        return -1
+
+    if temp_water_in > MAX_WATER_TEMP:
+        system.print_and_log(
+                f'Error: water_in temperature {cooling_flow} below mininum {MINIMAL_FLOW}'
+        )
+        return -1
+
+    if isinstance(camera_temperature, dict):
+        # Check if camera returns temperatures
+        if camera_temperature['fli_temp_heatsink'] > MAX_HEATSINK_TEMP:
+            system.print_and_log(
+                    f"Error: fli_temp_heatsink temperature {camera_temperature['fli_temp_heatsink']} below mininum {MAX_HEATSINK_TEMP}"
+            )
+            return -1
+
+        if camera_temperature['fli_temp_CCD'] > MAX_CCD_TEMP:
+            system.print_and_log(
+                    f"Error: fli_temp_CCD temperature {camera_temperature['fli_temp_CCD']} below mininum {MAX_CCD_TEMP}"
+            )
+            return -1

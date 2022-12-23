@@ -216,7 +216,7 @@ int            *ilen;
 			free(expansion);
 			/*
 			 * if (result) fprintf (stderr, "%s\n", line);
-			 * 
+			 *
 			 * if (result < 0) continue;
 			 */
 
@@ -231,4 +231,3 @@ int            *ilen;
 		}
 	} while (*ilen == 0);
 }
-

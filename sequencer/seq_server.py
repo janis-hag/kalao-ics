@@ -4,7 +4,7 @@
 #from signal import SIGINT, SIGTERM
 import signal
 from sys import path as SysPath
-from os  import path as OsPath
+from os import path as OsPath
 # methode dirname return parent directory and methode abspath return absolut path
 SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
@@ -20,20 +20,21 @@ import socket
 import os
 import sys
 
-from itertools      import zip_longest
-from configparser   import ConfigParser
-from queue          import Queue
-from threading      import Thread
+from itertools import zip_longest
+from configparser import ConfigParser
+from queue import Queue
+from threading import Thread
 
 #TODO clean config reading and loading procedure
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 if os.access(config_path, os.R_OK):
     # Read config file
     parser = ConfigParser()
     parser.read(config_path)
 else:
-    system.print_and_log('kalao.config not found on path: '+str(config_path))
+    system.print_and_log('kalao.config not found on path: ' + str(config_path))
     sys.exit(1)
 
 
@@ -51,7 +52,7 @@ def seq_server():
 
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socketSeq.bind((host, port))
-    system.print_and_log("Server on: "+str(kalao_time.now()))
+    system.print_and_log("Server on: " + str(kalao_time.now()))
 
     conn = None
 
@@ -63,14 +64,16 @@ def seq_server():
             if conn is not None:
                 conn.close()
             socketSeq.close()
-            system.print_and_log("Sequencer server off: " + str(kalao_time.now()))
+            system.print_and_log("Sequencer server off: " +
+                                 str(kalao_time.now()))
             #system.se_Server_service('RESTART')
         elif signal_received == signal.SIGINT:
             print('\nSIGINT or CTRL-C detected. Exiting.')
             if conn is not None:
                 conn.close()
             socketSeq.close()
-            system.print_and_log("Sequencer server off: " + str(kalao_time.now()))
+            system.print_and_log("Sequencer server off: " +
+                                 str(kalao_time.now()))
             exit(0)
 
     signal.signal(signal.SIGTERM, handler)
@@ -91,13 +94,14 @@ def seq_server():
         database.store_obs_log({'sequencer_status': 'BUSY'})
         # store BUSY when a command is received
 
-        separator   = command[0]
-        command     = command[1:]
+        separator = command[0]
+        command = command[1:]
         commandList = command.split(separator)
         #
         # 'command' is commandList[0], 'arguments' are commandList[1:]
         #
-        print("%s"%(kalao_time.now()), " command=>", commandList[0], "< arg=",commandList[1:], sep="")
+        print("%s" % (kalao_time.now()), " command=>", commandList[0],
+              "< arg=", commandList[1:], sep="")
 
         if commandList[0] == 'exit':
             break
@@ -134,10 +138,12 @@ def seq_server():
         # commandDict is a dict with keys = "K_****" and values is function object
         # it may need to be kwargs = **args as we are passing a dictionary
 
-        system.print_and_log("Starting "+commandList[0]+ " on "+str(kalao_time.now()))
+        system.print_and_log("Starting " + commandList[0] + " on " +
+                             str(kalao_time.now()))
         database.store_obs_log({'sequencer_status': 'SETUP'})
 
-        th = Thread(target=seq_command.commandDict[commandList[0]], kwargs = args)
+        th = Thread(target=seq_command.commandDict[commandList[0]],
+                    kwargs=args)
         th.start()
 
         preCommand = commandList[0]
@@ -145,7 +151,7 @@ def seq_server():
     # in case of break, we disconnect the socket
     conn.close()
     socketSeq.close()
-    system.print_and_log("Sequencer server off: "+str(kalao_time.now()))
+    system.print_and_log("Sequencer server off: " + str(kalao_time.now()))
 
 
 def cast_args(args):
@@ -158,7 +164,8 @@ def cast_args(args):
     """
 
     parser = ConfigParser()
-    config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+    config_path = os.path.join(
+            Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
     parser.read(config_path)
 
     # Create bidirect dict with filter id (str and int)
@@ -166,9 +173,10 @@ def cast_args(args):
 
     # Create a list from a string
     # from: "xxx, yyy, zzz" -> to: ['xxx', 'yyy', 'zzz']
-    arg_int    = parser.get('SEQ','gop_arg_int').replace(' ', '').split(',')
-    arg_float  = parser.get('SEQ','gop_arg_float').replace(' ', '').split(',')
-    arg_string = parser.get('SEQ','gop_arg_string').replace(' ', '').split(',')
+    arg_int = parser.get('SEQ', 'gop_arg_int').replace(' ', '').split(',')
+    arg_float = parser.get('SEQ', 'gop_arg_float').replace(' ', '').split(',')
+    arg_string = parser.get('SEQ', 'gop_arg_string').replace(' ',
+                                                             '').split(',')
 
     # Create dictionary to translate EDP argument to KalAO arguments
     edp_translation_dict = {}
@@ -186,12 +194,20 @@ def cast_args(args):
             if v.isdigit():
                 args[k] = int(v)
             else:
-                database.store_obs_log({'sequencer_log': "Error: {} value cannot be convert in int".format(k)})
+                database.store_obs_log({
+                        'sequencer_log':
+                                "Error: {} value cannot be convert in int".
+                                format(k)
+                })
         elif k in arg_float:
             if v.replace('.', '', 1).isdigit():
                 args[k] = float(v)
             else:
-                database.store_obs_log({'sequencer_log': "Error: {} value cannot be convert in float".format(k)})
+                database.store_obs_log({
+                        'sequencer_log':
+                                "Error: {} value cannot be convert in float".
+                                format(k)
+                })
         elif k in arg_string:
             # If filterposition arg is not a digit, then he must be a name
             # Get the int id from the dict Id_filter

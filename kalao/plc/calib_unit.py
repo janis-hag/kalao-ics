@@ -4,10 +4,9 @@
 # @Date : 2021-01-02-14-36
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 calib_unit.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from . import core
@@ -18,7 +17,8 @@ from configparser import ConfigParser
 from pathlib import Path
 import os
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
 parser = ConfigParser()
 parser.read(config_path)
@@ -44,35 +44,53 @@ def move(position=23.36, beck=None):
     beck, disconnect_on_exit = core.check_beck(beck)
 
     # define commands
-    motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
+    motor_nCommand = beck.get_node(
+            "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
 
     # Check if initialised
-    init_result = initialise(force_init=False, beck=beck, motor_nCommand=motor_nCommand)
+    init_result = initialise(force_init=False, beck=beck,
+                             motor_nCommand=motor_nCommand)
     if not init_result == 0:
         return init_result
 
     # Set velocity to 1 in case is has been changed
-    motor_lrVelocity = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrVelocity")
-    motor_lrVelocity.set_attribute(ua.AttributeIds.Value,
-                                   ua.DataValue(ua.Variant(float(0.5), motor_lrVelocity.get_data_type_as_variant_type())))
-    motor_lrPosition = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
+    motor_lrVelocity = beck.get_node(
+            "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrVelocity")
+    motor_lrVelocity.set_attribute(
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(
+                            float(0.5),
+                            motor_lrVelocity.get_data_type_as_variant_type())))
+    motor_lrPosition = beck.get_node(
+            "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
 
     if isinstance(position, numbers.Number):
         # Set target position
         motor_lrPosition.set_attribute(
-            ua.AttributeIds.Value, ua.DataValue(ua.Variant(float(position),
-                                                           motor_lrPosition.get_data_type_as_variant_type())))
+                ua.AttributeIds.Value,
+                ua.DataValue(
+                        ua.Variant(
+                                float(position),
+                                motor_lrPosition.get_data_type_as_variant_type(
+                                ))))
         # Set move command
         motor_nCommand.set_attribute(
-            ua.AttributeIds.Value, ua.DataValue(ua.Variant(int(3),
-                                                           motor_nCommand.get_data_type_as_variant_type())))
+                ua.AttributeIds.Value,
+                ua.DataValue(
+                        ua.Variant(
+                                int(3),
+                                motor_nCommand.get_data_type_as_variant_type())
+                ))
         # Execute
         send_execute(beck)
-        while(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value() == 'MOVING in Positioning Mode'):
+        while (beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").
+               get_value() == 'MOVING in Positioning Mode'):
             print('.')
             sleep(5)
         # Get new position
-        new_position = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value()
+        new_position = beck.get_node(
+                "ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value()
         # motor_lrPosition = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
     else:
         print('Expected position to be a number, received: ' + str(position))
@@ -114,7 +132,8 @@ def status(beck=None):
 
 
 def check_error(beck):
-    if beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value() == 0:
+    if beck.get_node(
+            "ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value() == 0:
         return 0
     else:
         error_status = 'ERROR'
@@ -137,7 +156,8 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
 
     if motor_nCommand is None:
         # define commands
-        motor_nCommand = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
+        motor_nCommand = beck.get_node(
+                "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
 
     # Set reset on error to true in case it has been changed
     #motor_bResetError = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bResetError")
@@ -145,12 +165,23 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
     #                               ua.DataValue(ua.Variant(True, motor_bResetError.get_data_type_as_variant_type())))
 
     # Check if enabled, if no do enable
-    if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value() or force_init:
-        motor_bEnable = beck.get_node("ns = 4; s = MAIN.Linear_Standa_8MT.ctrl.bEnable")
+    if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled"
+                         ).get_value() or force_init:
+        motor_bEnable = beck.get_node(
+                "ns = 4; s = MAIN.Linear_Standa_8MT.ctrl.bEnable")
         motor_bEnable.set_attribute(
-            ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, motor_bEnable.get_data_type_as_variant_type())))
-        if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value():
-            error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value())
+                ua.AttributeIds.Value,
+                ua.DataValue(
+                        ua.Variant(
+                                True,
+                                motor_bEnable.get_data_type_as_variant_type()))
+        )
+        if not beck.get_node(
+                "ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value():
+            error = 'ERROR: ' + str(
+                    beck.get_node(
+                            "ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").
+                    get_value())
 
             if disconnect_on_exit:
                 beck.disconnect()
@@ -158,15 +189,21 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
             return error
 
     # Check if init, if not do init
-    if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value() or force_init:
+    if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised"
+                         ).get_value() or force_init:
         send_init(beck, motor_nCommand)
         print('Starting calib_unit init.')
         sleep(15)
-        while(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value() == 'INITIALISING'):
+        while (beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").
+               get_value() == 'INITIALISING'):
             print('.')
             sleep(15)
-        if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised").get_value():
-            error = 'ERROR: '+str(beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value())
+        if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised"
+                             ).get_value():
+            error = 'ERROR: ' + str(
+                    beck.get_node(
+                            "ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").
+                    get_value())
 
             if disconnect_on_exit:
                 beck.disconnect()
@@ -180,14 +217,23 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
 
 
 def send_execute(beck):
-    motor_bExecute = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bExecute")
+    motor_bExecute = beck.get_node(
+            "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bExecute")
 
     motor_bExecute.set_attribute(
-        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, motor_bExecute.get_data_type_as_variant_type())))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(
+                            True,
+                            motor_bExecute.get_data_type_as_variant_type())))
 
 
 def send_init(beck, motor_nCommand):
-    motor_nCommand.set_attribute(ua.AttributeIds.Value,
-                                 ua.DataValue(ua.Variant(int(1), motor_nCommand.get_data_type_as_variant_type())))
+    motor_nCommand.set_attribute(
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(
+                            int(1),
+                            motor_nCommand.get_data_type_as_variant_type())))
     # Execute
     send_execute(beck)

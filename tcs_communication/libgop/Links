@@ -1,8 +1,8 @@
 # Link file pour gop (weber)
 #
-$LIB_DIR libgop_$OPSYS.a libgop.a	
-$LIB_DIR libsrvgop_$OPSYS.a libsrvgop.a	
-$INC_DIR gop.h	
+$LIB_DIR libgop_$OPSYS.a libgop.a
+$LIB_DIR libsrvgop_$OPSYS.a libsrvgop.a
+$INC_DIR gop.h
 $EXE_DIR gop_wait_$OPSYS  gop_wait
 $EXE_DIR gop_timer_$OPSYS gop_timer
 $SCR_DIR gop_timer.csh     gop_timer

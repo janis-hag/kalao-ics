@@ -4,7 +4,6 @@
 # @Date : 2021-08-02-10-16
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 camera.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
@@ -32,13 +31,14 @@ from kalao.utils import database
 # 5 empty
 
 parser = ConfigParser()
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 parser.read(config_path)
 
-DEVICEPORT = parser.get('FilterWheel','DevicePort')
-ENABLEWAIT = parser.getfloat('FilterWheel','EnableWait')
-INITIALIZATIONWAIT = parser.getfloat('FilterWheel','InitializationWait')
-POSITIONCHANGEWAIT = parser.getfloat('FilterWheel','PositionChangeWait')
+DEVICEPORT = parser.get('FilterWheel', 'DevicePort')
+ENABLEWAIT = parser.getfloat('FilterWheel', 'EnableWait')
+INITIALIZATIONWAIT = parser.getfloat('FilterWheel', 'InitializationWait')
+POSITIONCHANGEWAIT = parser.getfloat('FilterWheel', 'PositionChangeWait')
 
 # Create bidirect dict with filter id (str and int)
 # Id_filter = parser._sections['FilterPosition']
@@ -51,24 +51,34 @@ for key, val in parser.items('FilterPosition'):
     Id_filter_dict[int(val)] = key
 
 Id_only_filter_dict = {}
-for key, val in parser.items( 'FilterPosition'):
+for key, val in parser.items('FilterPosition'):
     Id_only_filter_dict[key] = int(val)
+
 
 def create_filter_id():
     return Id_filter_dict
 
+
 def get_filter_ids():
     return Id_only_filter_dict
 
+
 def set_position(filter_arg):
 
-    if type(filter_arg) == int and filter_arg not in range(0,6):
-        database.store_obs_log({'filterwheel_log': "Error: wrong filter id got ({})".format(filter_arg)})
+    if type(filter_arg) == int and filter_arg not in range(0, 6):
+        database.store_obs_log({
+                'filterwheel_log':
+                        "Error: wrong filter id got ({})".format(filter_arg)
+        })
         return -1
     elif type(filter_arg) == str:
         filter_arg = filter_arg.lower()
         if filter_arg not in Id_filter_dict.keys():
-            database.store_obs_log({'filterwheel_log': "Error: wrong filter name (got {})".format(filter_arg)})
+            database.store_obs_log({
+                    'filterwheel_log':
+                            "Error: wrong filter name (got {})".format(
+                                    filter_arg)
+            })
             return -1
         else:
             filter_arg = Id_filter_dict[filter_arg]
@@ -78,17 +88,23 @@ def set_position(filter_arg):
     # time.sleep(ENABLEWAIT)
     # fw.initialize()
     # time.sleep(INITIALIZATIONWAIT)
-    fw.set_position(filter_arg) # Same name of parent func ?
+    fw.set_position(filter_arg)  # Same name of parent func ?
     time.sleep(POSITIONCHANGEWAIT)
     position = fw.get_position()
     filter_name = Id_filter_dict[position]
 
     if position == filter_arg:
-        database.store_obs_log({'filterwheel_status': "Filterwheel on {}".format(Id_filter_dict[filter_arg])})
+        database.store_obs_log({
+                'filterwheel_status':
+                        "Filterwheel on {}".format(Id_filter_dict[filter_arg])
+        })
         return position, filter_name
     else:
         database.store_obs_log({
-            'filterwheel_log': "Error: filter position expected {}, but got {}".format(filter_arg, position)})
+                'filterwheel_log':
+                        "Error: filter position expected {}, but got {}".
+                        format(filter_arg, position)
+        })
         return -1
 
 

@@ -17,13 +17,13 @@ LIBRARY_PATH =  -L .                            \
                 -L /usr/ccs/lib
 #               -L /usr/local/lib
 
-CDEBUGFLAGS += 
-FDEBUGFLAGS += 
+CDEBUGFLAGS +=
+FDEBUGFLAGS +=
 
 CFLAGS	+= $(CDEBUGFLAGS) -fPIC -Wall -DUSE_STRERROR -DSELECT_CALL -DSYSV -DLINUX $(INCLUDE_PATH)
 FFLAGS	+= $(FDEBUGFLAGS)
 
-LDFLAGS += $(LIBRARY_PATH)  
+LDFLAGS += $(LIBRARY_PATH)
 
 ##LDLIBS  = -lposix4 -lsocket -lnsl
 LDLIBS  = -lpthread

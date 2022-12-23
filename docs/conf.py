@@ -12,6 +12,7 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('../kalao'))
 sys.path.insert(0, os.path.abspath('../sequencer'))
 sys.path.insert(0, os.path.abspath('../cacao'))
@@ -19,26 +20,22 @@ sys.path.insert(0, os.path.abspath('../tcs_communication'))
 sys.path.append(os.path.abspath('../..'))
 sys.path.append(os.path.abspath('..'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'KalAO-ICS'
 copyright = '2022, Janis Hagelberg'
 author = 'Janis Hagelberg'
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.doctest',
-              'sphinx.ext.autosummary',
-              'sphinx.ext.todo',
-              'sphinx.ext.coverage',
-              'sphinx.ext.ifconfig',
-              'sphinx.ext.napoleon']
+extensions = [
+        'sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.autosummary',
+        'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.ifconfig',
+        'sphinx.ext.napoleon'
+]
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
@@ -48,8 +45,10 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'plc_stub', 'test_client', 'FLI', 'test']
-
+exclude_patterns = [
+        '_build', 'Thumbs.db', '.DS_Store', 'plc_stub', 'test_client', 'FLI',
+        'test'
+]
 
 # -- Options for HTML output -------------------------------------------------
 

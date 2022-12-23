@@ -10,10 +10,10 @@ c
 	character*256	answer, err
 	character*8	gop_stat
 	character*8	gop_class
-	
+
 	timeout = 0
-									
-	call srvg_connect("", "test_f", "libsrvgop", 0, "", 2, 0, 
+
+	call srvg_connect("", "test_f", "libsrvgop", 0, "", 2, 0,
 	1			1, 1, ci)
 	if(ci.lt.0)then
 		call srvg_get_error_string(err, ilen)
@@ -33,7 +33,7 @@ c		stop
 			write(*,'(a)')"erreur : "//err(1:ilen)
 			stop
 		endif
-		call srvg_read(ci, answer, sizeof(answer), 
+		call srvg_read(ci, answer, sizeof(answer),
 	1			gop_stat, gop_class, timeout, status)
 		if(status.lt.0)then
 			call srvg_get_error_string(err, ilen)

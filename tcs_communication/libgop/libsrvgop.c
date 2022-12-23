@@ -14,39 +14,39 @@ Librarie pour l'acces simplifie aux serveurs gop de type ASCII.
  * La principale différence de cette librarie sur libgop est l'emploi d'un
  * "channel identifier" (CI) de type numérique, plutot qu'un "channel
  * descripteur" (cd) de type pointeur sur structure.
- * 
+ *
  * Ainsi  les appels aux fonctions se font en passant une simple valeur
  * numerique, les structures sont allouées dans la librarie. Les appels sont
  * simplifiés et il existe uniquement 6 fonctions principales:
- * 
+ *
  * - srvg_connect():	pour se connecter sur un serveur
- * 
+ *
  * - srvg_disconnect():	pour se déconnecter d'un serveur
- * 
+ *
  * - srvg_write():	écriture (envoi d'une commande par exemple)
- * 
+ *
  * - srvg_read():	lecture
- * 
+ *
  * - en cas d'erreur, le texte du message d'erreur se récupère avec
  * srvg_get_error_string()
- * 
+ *
  * - srvg_verbose():	pour changer le mode de verbosité de gop.
- * 
+ *
  * Pour permettre le travail avec cette librarie, le serveur doit absolument
  * pouvoir repondre a la commande "/test" et renvoyer un écho (max 8
  * caractères)
- * 
+ *
  * Cette librarie permet d'accéder un serveur existant, mais peut aussi le
  * lancer s'il n'existe pas. Dans ce cas, le serveur doit avoir la
  * fonctionalité suivante:
- * 
+ *
  * - Connection en mode MASTER (option -M) c'est a dire le serveur lancé avec
  * cette option fait le connect() (comme le fait un client traditionel) car
  * la librarie fait le accept(). Cette technique permet d'éviter les
  * problèmes de synchronisations. Une fois lancé le serveur retrouve un mode
  * de fonctionnement normal et fait uniquement des accept() pour de nouveaux
  * clients.
- * 
+ *
  */
 
 #include <stdio.h>
@@ -237,7 +237,7 @@ srvg_run_server(struct gop_connect *connect, char *server_command)
 	gethostname(host_name, sizeof(host_name));
 
 	/*
-	 * Attention pour savoir si on travaille en local, 
+	 * Attention pour savoir si on travaille en local,
 	 * on compare les adresse IP
 	 */
 
@@ -249,8 +249,8 @@ srvg_run_server(struct gop_connect *connect, char *server_command)
 			addr_dest = ((struct in_addr *) (hinfo_dest->h_addr))->s_addr;
 		}
 	}
-	local = (connect->type == GOP_SOCKET_UNIX || 
-		   (addr_src == addr_dest) || 
+	local = (connect->type == GOP_SOCKET_UNIX ||
+		   (addr_src == addr_dest) ||
 		   (strcmp(connect->name,"localhost") == 0));
 
 	if (gop_init_connection(connect) != GOP_OK) {
@@ -264,7 +264,7 @@ srvg_run_server(struct gop_connect *connect, char *server_command)
 	} else {
 		sprintf(cmd_name, "%s -M %d:%s &", server_command, connect->port, host_name);
 	}
-	
+
 #ifdef DEBUG
 	fprintf(stderr, "Envoi commande: <%s>\n", cmd_name);
 #endif				/* DEBUG */
@@ -299,10 +299,10 @@ srvg_run_server(struct gop_connect *connect, char *server_command)
  * sur socket de type Unix. Pour la connection Internet <host> est pris par
  * défaut à "LOCALHOST". Pour connection Unix <socket_name> doit etre
  * specifie
- * 
+ *
  * Si on est déjà connecté, seul un test de connection est effectué et on
  * retourne le <ci> de la connection
- * 
+ *
  * Retourne le <ci>
  */
 
@@ -313,10 +313,10 @@ srvg_connect(char *server_command,	/* name of the unix command to run
 	     char *socket_name,	/* socket name four Unix connection */
 	     int port,		/* port number for Internet connection */
 	     char *host,	/* host name for Internet connection */
-	     int verbose, /* GOP verbosity level */ 
-	     int timeout, /* timeout on connection */ 
-	     int hsync, /* header sync 0|1 */ 
-	     int dsync) /* data sync 0|1 */ 
+	     int verbose, /* GOP verbosity level */
+	     int timeout, /* timeout on connection */
+	     int hsync, /* header sync 0|1 */
+	     int dsync) /* data sync 0|1 */
 {
 
 	int             ci;	/* channel identifier */
@@ -560,7 +560,7 @@ srvg_write(int ci, char *str)
 }
 
 /*
- * Ecriture d'une chaine de caractère (non affichable) <str> terminée 
+ * Ecriture d'une chaine de caractère (non affichable) <str> terminée
  * par le caractère NULL sur le canal <ci>.
  */
 
@@ -648,33 +648,33 @@ srvg_verbose(int ci, int verbose)
  * INTERFACE FORTRAN
  */
 
-void 
+void
 srvg_connect_(char *server_command, char *client_name, char *socket_name, int *port, char *host, int *verbose, int *timeout, int *hsync, int *dsync, int *ci)
 {
 	*ci = srvg_connect(server_command, client_name, socket_name, *port, host, *verbose, *timeout, *hsync, *dsync);
 
 }
 
-void 
+void
 srvg_disconnect_(int *ci, int *status)
 {
 	*status = srvg_disconnect(*ci);
 }
 
-void 
+void
 srvg_write_(int *ci, char *str, int *status)
 {
 	*status = srvg_write(*ci, str);
 }
 
-void 
+void
 srvg_write_bin_(int *ci, char *str, int *status)
 {
 	*status = srvg_write_bin(*ci, str);
 }
 
 void
-srvg_read_(int *ci, char *str, int *sizeofstr, char *gop_stat, 
+srvg_read_(int *ci, char *str, int *sizeofstr, char *gop_stat,
 		char *gop_class, int *gop_timeout, int *status)
 {
 	*status = srvg_read(*ci, str, *sizeofstr, gop_stat, gop_class, *gop_timeout);
@@ -692,10 +692,10 @@ srvg_get_error_string_(char *str, int *ilen)
 void
 srvg_get_gop_errno_(int *gop_errno)
 {
-	*gop_errno = srvg_get_gop_errno(); 
+	*gop_errno = srvg_get_gop_errno();
 }
 
-void 
+void
 srvg_verbose_(int *ci, int *verbose, int *status)
 {
 	*status = srvg_verbose(*ci, *verbose);

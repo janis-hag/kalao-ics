@@ -4,10 +4,9 @@
 # @Date : 2021-03-18-10-02
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 camera.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 import shutil
 
@@ -20,13 +19,14 @@ from time import sleep
 import numpy as np
 
 from kalao.utils import database, database_updater, file_handling
+from sequencer import system
 from configparser import ConfigParser
 from pathlib import Path
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
-
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 
 # Read config file
 parser = ConfigParser()
@@ -50,7 +50,6 @@ else:
     print("Error: wrong values format for 'Port' in kalao.config file ")
     # return
 
-
 # Removing in order to only use take_image
 # def take_science_exposure(dit=0.05, filepath=None):
 #
@@ -65,7 +64,9 @@ else:
 #         return req_result
 
 
-def take_image(dit=0.05, filepath=None, sequencer_arguments=None): # obs_category='TEST', obs_type='LAMP'):
+def take_image(
+        dit=0.05, filepath=None,
+        sequencer_arguments=None):  # obs_category='TEST', obs_type='LAMP'):
     '''
 
     :param dit: Detector integration time to use
@@ -88,7 +89,8 @@ def take_image(dit=0.05, filepath=None, sequencer_arguments=None): # obs_categor
     req = _send_request('acquire', params)
 
     if get_temperatures()['fli_temp_CCD'] > TemperatureWarnThreshold:
-        message = 'WARN: CCD temperature above threshold: '+str(get_temperatures()['fli_temp_CCD'])
+        message = 'WARN: CCD temperature above threshold: ' + str(
+                get_temperatures()['fli_temp_CCD'])
         print(message)
         database.store_obs_log({'fli_log': message})
 
@@ -98,8 +100,11 @@ def take_image(dit=0.05, filepath=None, sequencer_arguments=None): # obs_categor
 
     if req.status_code == 200:
 
-        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
-        target_path_name = file_handling.save_tmp_image(image_path, sequencer_arguments=sequencer_arguments)
+        image_path = database.get_obs_log([
+                'fli_temporary_image_path'
+        ], 1)['fli_temporary_image_path']['values'][0]
+        target_path_name = file_handling.save_tmp_image(
+                image_path, sequencer_arguments=sequencer_arguments)
 
         return 0, target_path_name
     else:
@@ -112,14 +117,15 @@ def increment_image_counter():
 
     :return: new image counter value
     '''
-    image_count = database.get_latest_record('obs_log', key='fli_image_count')['fli_image_count'] +1
+    image_count = database.get_latest_record(
+            'obs_log', key='fli_image_count')['fli_image_count'] + 1
     database.store_obs_log({'fli_image_count': image_count})
 
     return image_count
 
 
 def video_stream(dit=0.05, window=None, center=None):
-   # initialise stream
+    # initialise stream
 
     filepath = '/tmp/fli_image.fits'
 
@@ -131,14 +137,19 @@ def video_stream(dit=0.05, window=None, center=None):
         img = cut_image(img, window=window, center=center)
 
     # Creating a brand new stream
-    shm = SHM('fli_stream', img,
-                 location=-1,  # CPU
-                 shared=True,  # Shared
-                 )
+    shm = SHM(
+            'fli_stream',
+            img,
+            location=-1,  # CPU
+            shared=True,  # Shared
+    )
 
     try:
         while req.status_code == 200:
-            req = _send_request('acquire', {'exptime': dit, 'filepath': filepath})
+            req = _send_request('acquire', {
+                    'exptime': dit,
+                    'filepath': filepath
+            })
             img = fits.getdata(filepath)
 
             if window is not None:
@@ -151,16 +162,15 @@ def video_stream(dit=0.05, window=None, center=None):
         print('interrupted!')
 
 
-
 def cut_image(img, window=None, center=None):
 
     if window is not None:
-        hw = int(np.round(window/2))
+        hw = int(np.round(window / 2))
         if center is None:
-            c = [img.shape[0]/2, img.shape[1]/2]
+            c = [img.shape[0] / 2, img.shape[1] / 2]
         else:
             c = center
-        img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
+        img = img[c[0] - hw:c[0] + hw, c[1] - hw:c[1] + hw]
 
     img = img.astype(float)
 
@@ -168,7 +178,9 @@ def cut_image(img, window=None, center=None):
 
 
 def log(req):
-    database.store_obs_log({'fli_log': req.text+' ('+str(req.status_code)+')'})
+    database.store_obs_log({
+            'fli_log': req.text + ' (' + str(req.status_code) + ')'
+    })
 
 
 def log_last_image_path(fli_image_path):
@@ -241,7 +253,7 @@ def _send_request(request_type, params):
         req.status_code = 200
 
     else:
-        url = 'http://'+address+':'+port+'/'+request_type
+        url = 'http://' + address + ':' + port + '/' + request_type
         if params == 'GET':
             req = requests.get(url, timeout=RequestTimeout)
         else:
@@ -251,16 +263,16 @@ def _send_request(request_type, params):
 
 
 def initialise():
-    # update fli file with content of kalao.config
-    # systtemctl restart kalaocamera.service
-    # https://github.com/torfsen/service
+    # TODO update fli file with content of kalao.config
+    system.camera_service('restart')
+
     return 0
 
 
 def check_server_status():
 
     try:
-        r = requests.get('http://'+address+':'+port+'/temperature')
+        r = requests.get('http://' + address + ':' + port + '/temperature')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return "DOWN"

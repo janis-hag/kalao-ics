@@ -4,7 +4,6 @@
 # @Date : 2021-01-26-16-48
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 laser.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
@@ -19,7 +18,8 @@ from opcua import ua
 
 from kalao.plc import core
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
 parser = ConfigParser()
 parser.read(config_path)
@@ -44,7 +44,8 @@ def status(beck=None):
     beck, disconnect_on_exit = core.check_beck(beck)
 
     if beck.get_node('ns = 4;s = MAIN.Laser.Status').get_value():
-        laser_status = beck.get_node('ns = 4;s = MAIN.Laser.Current').get_value()
+        laser_status = beck.get_node(
+                'ns = 4;s = MAIN.Laser.Current').get_value()
     else:
         laser_status = 'OFF'
 
@@ -116,17 +117,31 @@ def set_intensity(intensity=0.4, beck=None):
     if not beck.get_node("ns=4;s=MAIN.Laser.bEnable").get_value():
         laser_enable = beck.get_node("ns=4;s=MAIN.Laser.bEnable")
         laser_enable.set_attribute(
-            ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, laser_enable.get_data_type_as_variant_type())))
+                ua.AttributeIds.Value,
+                ua.DataValue(
+                        ua.Variant(
+                                True,
+                                laser_enable.get_data_type_as_variant_type())))
 
     # Give new intensity value
     laser_setIntensity = beck.get_node("ns=4;s=MAIN.Laser.setIntensity")
-    laser_setIntensity.set_attribute(ua.AttributeIds.Value, ua.DataValue(
-        ua.Variant(float(intensity), laser_setIntensity.get_data_type_as_variant_type())))
+    laser_setIntensity.set_attribute(
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(
+                            float(intensity),
+                            laser_setIntensity.get_data_type_as_variant_type())
+            ))
 
     # Apply new intensity value
     laser_bSetIntensity = beck.get_node("ns=4;s=MAIN.Laser.bSetIntensity")
     laser_bSetIntensity.set_attribute(
-            ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, laser_bSetIntensity.get_data_type_as_variant_type())))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(
+                            True,
+                            laser_bSetIntensity.get_data_type_as_variant_type(
+                            ))))
 
     sleep(LASER_SWITCH_WAIT)
     current = beck.get_node("ns=4;s=MAIN.Laser.Current").get_value()
@@ -149,14 +164,16 @@ def switch(action_name, beck=None):
 
     laser_switch = beck.get_node("ns = 4; s = MAIN.Laser." + action_name)
     laser_switch.set_attribute(
-        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(True,
+                               laser_switch.get_data_type_as_variant_type())))
 
     sleep(LASER_SWITCH_WAIT)
     if beck.get_node("ns=4;s=MAIN.Laser.Status").get_value():
         laser_status = 'ON'
     else:
         laser_status = 'OFF'
-
 
     if disconnect_on_exit:
         beck.disconnect()

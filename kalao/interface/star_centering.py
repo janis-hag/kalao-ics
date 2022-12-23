@@ -4,10 +4,9 @@
 # @Date : 2021-04-13-17-10
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 star_centering.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from astropy.io import fits
@@ -20,7 +19,8 @@ from kalao.utils import database
 from kalao.cacao import fake_data
 
 
-def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
+def fli_view(x=None, y=None, percentile=99, last_file_date=None,
+             realData=True):
 
     binfactor = 4
     if not realData:
@@ -30,7 +30,8 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
     else:
         fli_image_path, file_date = get_last_image_path()
 
-        if fli_image_path is not None and file_date is not None and os.path.isfile(fli_image_path):
+        if fli_image_path is not None and file_date is not None and os.path.isfile(
+                fli_image_path):
 
             file_date = file_date.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
             if last_file_date == file_date:
@@ -42,9 +43,13 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
 
                 if x is None or y is None:
                     # Clip before binning
-                    centering_image, min_value, max_value = percentile_clip(centering_image, percentile)
-                    centering_image = resize(centering_image, (centering_image.shape[0] // 4, centering_image.shape[1] // 4),
-                           anti_aliasing=True, preserve_range=True)
+                    centering_image, min_value, max_value = percentile_clip(
+                            centering_image, percentile)
+                    centering_image = resize(centering_image,
+                                             (centering_image.shape[0] // 4,
+                                              centering_image.shape[1] // 4),
+                                             anti_aliasing=True,
+                                             preserve_range=True)
 
                     centering_image = centering_image.transpose()
 
@@ -59,9 +64,11 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
                     # elif y - 128 < 0:
                     #     y = 128
 
-                    centering_image = centering_image[x-128:x+128, y-128:y+128]
+                    centering_image = centering_image[x - 128:x + 128,
+                                                      y - 128:y + 128]
 
-                    centering_image, min_value, max_value = percentile_clip(centering_image, percentile)
+                    centering_image, min_value, max_value = percentile_clip(
+                            centering_image, percentile)
 
                     centering_image = centering_image.transpose()
 
@@ -72,20 +79,24 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None, realData=True):
             centering_image = np.zeros((256, 256))
             file_date = 'No data'
 
-        manual_centering_needed = database.get_latest_record('obs_log', key='tracking_manual_centering')['tracking_manual_centering']
+        manual_centering_needed = database.get_latest_record(
+                'obs_log',
+                key='tracking_manual_centering')['tracking_manual_centering']
 
         return manual_centering_needed, centering_image, file_date
 
 
 # TODO move the following functions to file_handling or fli.camera
 
+
 def _get_image_path(image_type):
 
     if image_type in ['last', 'temporary']:
         # READ mongodb to find latest filename
-        last_image = database.get_latest_record('obs_log', key='fli_'+image_type+'_image_path')
-        if last_image.get('fli_'+image_type+'_image_path'):
-            filename = last_image['fli_'+image_type+'_image_path']
+        last_image = database.get_latest_record(
+                'obs_log', key='fli_' + image_type + '_image_path')
+        if last_image.get('fli_' + image_type + '_image_path'):
+            filename = last_image['fli_' + image_type + '_image_path']
             file_date = last_image['time_utc']
         else:
             # Set to None is list is empty
@@ -130,12 +141,12 @@ def star_pixel(x, y):
 
 def percentile_clip(data, percentile_to_use):
 
-    percentile_to_use = (100-percentile_to_use)/2
+    percentile_to_use = (100 - percentile_to_use) / 2
 
-    low=np.percentile(data,percentile_to_use)
-    high=np.percentile(data,100-percentile_to_use)
+    low = np.percentile(data, percentile_to_use)
+    high = np.percentile(data, 100 - percentile_to_use)
 
-    data = np.where(data<low,low, data)
+    data = np.where(data < low, low, data)
     data = np.where(data > high, high, data)
 
     return data, low, high

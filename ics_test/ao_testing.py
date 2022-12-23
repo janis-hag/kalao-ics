@@ -4,10 +4,9 @@
 # @Date : 2022-03-01-10-58
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 ao_testing.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 import subprocess
@@ -20,7 +19,8 @@ import sys
 from CacaoProcessTools import fps, FPS_status
 
 
-def launch_turbulence(refresh=1000, turbulence_file='cube12_12_60000_v10mps_1ms_clean.fits'):
+def launch_turbulence(refresh=1000,
+                      turbulence_file='cube12_12_60000_v10mps_1ms_clean.fits'):
 
     milk_input = f"""
     loadfits "{turbulence_file}" imc
@@ -29,7 +29,8 @@ def launch_turbulence(refresh=1000, turbulence_file='cube12_12_60000_v10mps_1ms_
     exitCLI
     """
 
-    cp = subprocess.run(["milk"], input=milk_input, encoding='utf8', stdout=PIPE, stderr=STDOUT)
+    cp = subprocess.run(["milk"], input=milk_input, encoding='utf8',
+                        stdout=PIPE, stderr=STDOUT)
 
     print("=========================== STDOUT")
 

@@ -4,7 +4,6 @@
 # @Date : 2021-01-02-16-50
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 The status functions are used to reply to Euler control software status requests as well as generating
 datasets specific for the KalAO flask graphic user interface (GUI).
@@ -21,7 +20,8 @@ from kalao.cacao import fake_data, telemetry
 
 from kalao.utils import database, kalao_time
 
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 # Read config file
 parser = ConfigParser()
 parser.read(config_path)
@@ -38,10 +38,7 @@ def short():
     :return: dictionary with all device short status
     """
 
-    short_status = {
-        'ccd_temp': 'ERROR',
-        'emccd_temp': 'ERROR'
-    }
+    short_status = {'ccd_temp': 'ERROR', 'emccd_temp': 'ERROR'}
 
     # Add status from PLC
     short_status.update(core.plc_status())
@@ -90,11 +87,13 @@ def latest_obs_log_entry(realData=True):
         if latest_record is None:
             formatted_entry_text = 'Obs logs empty'
         else:
-            time_string = latest_record['time_utc'].isoformat(timespec='milliseconds')
+            time_string = latest_record['time_utc'].isoformat(
+                    timespec='milliseconds')
             key_name = list(latest_record.keys())[1]
             record_text = latest_record[list(latest_record.keys())[1]]
 
-            formatted_entry_text = str(time_string)+' '+str(key_name)+': '+str(record_text)
+            formatted_entry_text = str(time_string) + ' ' + str(
+                    key_name) + ': ' + str(record_text)
 
         return formatted_entry_text
     else:
@@ -109,26 +108,32 @@ def kalao_status():
     :return: status_string to send to the Euler telescope
     """
 
-    sequencer_status = database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['values']
+    sequencer_status = database.get_data('obs_log', ['sequencer_status'],
+                                         1)['sequencer_status']['values']
     if not sequencer_status:
         # If the status is not set assume that the sequencer is doww
         status_string = '/status/ERROR/0/DOWN'
     elif sequencer_status[0] == 'WAITING':
-        status_string = '|status|'+sequencer_status[0]+'|path|'+_last_filepath_archived()
+        status_string = '|status|' + sequencer_status[
+                0] + '|path|' + _last_filepath_archived()
     elif sequencer_status[0] == 'ERROR':
-        status_string = '/status/'+sequencer_status[0]
+        status_string = '/status/' + sequencer_status[0]
     elif sequencer_status[0] == 'WAITLAMP':
-        status_string = '|status|BUSY|'+elapsed_time(sequencer_status[0])
+        status_string = '|status|BUSY|' + elapsed_time(sequencer_status[0])
     elif sequencer_status[0] == 'EXP':
         #sequencer_commad_received = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']
         #if sequencer_commad_received['type'] == 'K_LMPFLT':
-        texp = int(database.get_latest_record('obs_log', key='fli_texp')['fli_texp'])
+        texp = int(
+                database.get_latest_record('obs_log',
+                                           key='fli_texp')['fli_texp'])
         #if
         #texp = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']['texp']
-        status_string = '|status|BUSY|elapsed_time|'+elapsed_time(sequencer_status[0])+'|requested_time|'+str(texp)
+        status_string = '|status|BUSY|elapsed_time|' + elapsed_time(
+                sequencer_status[0]) + '|requested_time|' + str(texp)
     else:
         #  TODO get alt/az and focus offset from cacao.telemetry and add to string
-        status_string = '|status|BUSY|elapsed_time|'+elapsed_time(sequencer_status[0])+'|requested_time|'+sequencer_status[0]
+        status_string = '|status|BUSY|elapsed_time|' + elapsed_time(
+                sequencer_status[0]) + '|requested_time|' + sequencer_status[0]
 
     #status_string = '/status/'+sequencer_status
 
@@ -144,12 +149,17 @@ def elapsed_time(sequencer_status):
     """
 
     if sequencer_status == 'INITIALISING':
-         status_time = database.get_latest_record('obs_log', key='sequencer_status')['time_utc'].replace(tzinfo=datetime.timezone.utc)
-         #database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-         return str(InitDuration - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
+        status_time = database.get_latest_record(
+                'obs_log', key='sequencer_status')['time_utc'].replace(
+                        tzinfo=datetime.timezone.utc)
+        #database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+        return str(InitDuration - (kalao_time.now() -
+                                   status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == 'SETUP':
-        ktype = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']['type'][2:]
+        ktype = database.get_latest_record(
+                'obs_log', key='sequencer_command_received'
+        )['sequencer_command_received']['type'][2:]
 
         if ktype == 'DARK':
             SetupTime = parser.getint('Timings', 'DARKsetup')
@@ -158,14 +168,16 @@ def elapsed_time(sequencer_status):
         else:
             SetupTime = 0
 
+        status_time = database.get_latest_record(
+                'obs_log', key='sequencer_status')['time_utc'].replace(
+                        tzinfo=datetime.timezone.utc)
 
-        status_time = database.get_latest_record('obs_log', key='sequencer_status')['time_utc'].replace(
-            tzinfo=datetime.timezone.utc)
-
-        return str(SetupTime - (kalao_time.now() - status_time).total_seconds()).split('.')[0]
+        return str(SetupTime - (kalao_time.now() -
+                                status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == 'WAITLAMP':
-        return str(TungstenStabilisationTime - tungsten.get_switch_time()).split('.')[0]
+        return str(TungstenStabilisationTime -
+                   tungsten.get_switch_time()).split('.')[0]
 
     else:
         return elapsed_exposure_seconds()
@@ -182,16 +194,21 @@ def elapsed_exposure_seconds():
 
     last_exposure_start = _last_exposure_start()
     #last_exposure_end = database.get_data('obs_log', ['fli_log'], 1)['fli_log']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-    last_exposure_end = database.get_latest_record('obs_log', key='fli_temporary_image_path')['time_utc'].replace(tzinfo=datetime.timezone.utc)
+    last_exposure_end = database.get_latest_record(
+            'obs_log', key='fli_temporary_image_path')['time_utc'].replace(
+                    tzinfo=datetime.timezone.utc)
     #database.get_data('obs_log', ['fli_temporary_image_path'], 1)['fli_temporary_image_path']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
 
     if last_exposure_start > last_exposure_end:
         # An exposure is running
-        elapsed_time = str((kalao_time.now()-last_exposure_start).total_seconds()).split('.')[0]
+        elapsed_time = str((kalao_time.now() -
+                            last_exposure_start).total_seconds()).split('.')[0]
     else:
-        elapsed_time = str((last_exposure_end - last_exposure_start).total_seconds()).split('.')[0]
+        elapsed_time = str((last_exposure_end -
+                            last_exposure_start).total_seconds()).split('.')[0]
 
     return elapsed_time
+
 
 def _last_exposure_start():
     """
@@ -200,7 +217,9 @@ def _last_exposure_start():
     :return: Time of exposure start (datetime)
     """
     #return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-    return database.get_latest_record('obs_log', key='fli_image_count')['time_utc'].replace(tzinfo=datetime.timezone.utc)
+    return database.get_latest_record(
+            'obs_log', key='fli_image_count')['time_utc'].replace(
+                    tzinfo=datetime.timezone.utc)
 
 
 def _last_filepath_archived():
@@ -211,4 +230,5 @@ def _last_filepath_archived():
     """
 
     #return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-    return database.get_latest_record('obs_log', key='fli_last_image_path')['fli_last_image_path']
+    return database.get_latest_record(
+            'obs_log', key='fli_last_image_path')['fli_last_image_path']

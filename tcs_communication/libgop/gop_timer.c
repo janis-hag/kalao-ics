@@ -28,7 +28,7 @@ struct	pth_struct_def {
 
 pthread_mutex_t		mutex;
 
-static void 
+static void
 compress_input_list(int no)
 {
 	int             i;
@@ -36,7 +36,7 @@ compress_input_list(int no)
 /**
 	printf("\nAVANT: \n");
 	for (i = 0; i < input_list.nb; i++) {
-	
+
 		printf("\t %d: cd=%d cd_init=%d de %s\n",i, input_list.gop[i]->cd,input_list.gop[i]->cd_init,input_list.gop[i]->his_name);
 
 	}
@@ -58,7 +58,7 @@ compress_input_list(int no)
 /**
 	printf("APRES: \n");
 	for (i = 0; i < input_list.nb; i++) {
-	
+
 		printf("\t %d: cd=%d cd_init=%d de %s\n",i, input_list.gop[i]->cd,input_list.gop[i]->cd_init,input_list.gop[i]->his_name);
 
 	}
@@ -140,13 +140,13 @@ handler_sighup(int sig)
 }
 
 
-static void 
+static void
 *the_timer(void *arg)
 {
 	struct pth_struct_def *pth_struct;
 
 	pth_struct = (struct pth_struct_def *) arg;
-	
+
 	nanosleep(&pth_struct->rqtp, (struct timespec *) NULL);
 
 	pthread_mutex_lock(&mutex);
@@ -155,9 +155,9 @@ static void
 
 	gop_set_to(pth_struct->connect_timer, gop_get_his_name(pth_struct->connect_timer));
 /**
-	printf("On envoie : %s sur %d %s\n", 
-			pth_struct->timer_command, 
-			pth_struct->connect_timer->cd, 
+	printf("On envoie : %s sur %d %s\n",
+			pth_struct->timer_command,
+			pth_struct->connect_timer->cd,
 			pth_struct->connect_timer->his_name);
 **/
 	if (gop_write_command(pth_struct->connect_timer, pth_struct->timer_command) != GOP_OK) {
@@ -177,7 +177,7 @@ static void
 }
 
 
-static int 
+static int
 read_serveur(int sd)
 {
 	char            command[40];
@@ -330,7 +330,7 @@ read_serveur(int sd)
 }
 
 
-static int 
+static int
 serveur_accept (int sd)
 {
 	int             no;
@@ -443,7 +443,7 @@ int main(int argc, char **argv)
                 exit(-1);
         }
         /*
-         * on met le mask pour qu'il bloque SIGPIPE 
+         * on met le mask pour qu'il bloque SIGPIPE
          */
 /**
         if (sigprocmask(SIG_BLOCK, &set, NULL) != 0) {
@@ -541,8 +541,8 @@ int main(int argc, char **argv)
 			input_list.gop[input_list.nb] = connect_inet_master;
 			input_list.nb++;
 		}
-		connect_inet_master->cd_init = -1;		
-	} 
+		connect_inet_master->cd_init = -1;
+	}
 
 	/*
 	 * on met de toute facon le serveur en attente
@@ -585,7 +585,3 @@ int main(int argc, char **argv)
 	}
 
 }
-
-
-
-

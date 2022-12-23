@@ -1,0 +1,217 @@
+# Format is
+#key:
+#  value: value_type
+#  comment: comment
+
+default_keys:
+  - instrume:
+    value: KalAO
+    comment: Instrument used
+
+  - telescop:
+    value: EULER
+    comment: Telescope name
+
+  - site:
+    value: La Silla
+    comment: Observing site
+
+  - ORIGIN:
+    value: ESO-LASILLA
+    comment: Observatory
+
+  - BUNIT:
+    value: adu
+    comment: Physical unit of array values
+
+  - BLANK:
+    value: 0
+    comment: Value used for NULL pixels
+
+  - BZERO:
+    value: 32768.0
+    comment: value = fits-value*BSCALE+BZERO
+
+  - BSCALE:
+    value: 1.0
+    comment: value = fits-value*BSCALE+BZERO
+
+Obs_log:
+  - target:
+    value: string
+    comment: Target name
+
+  - object:
+    value: string
+    comment: Object name
+
+  - obscatg:
+    value: string
+    comment: Category of observation/exposure
+
+  - obstype:
+    value: string
+    comment: Type of observation/exposure
+
+  - prog_id:
+    value: string
+    comment: Observing program ID
+
+  - observer:
+    value: string
+    comment: Observer name
+
+  - date-obs:
+    value: string
+    comment: No comment
+
+  - DATE:
+    value: string
+    comment: Date the file was written
+
+  - mjd-obs:
+    value: float
+    comment: No comment
+
+  - utc:
+    value: float
+    comment: No comment
+
+  - lst:
+    value: float
+    comment: No comment
+
+  - ra:
+    value: float
+    comment: No comment
+
+  - dec:
+    value: float
+    comment: No comment
+
+  - equinox:
+    value: float
+    comment: No comment
+
+  - radecsys:
+    value: string
+    comment: No comment
+
+#instrume:
+#  value: string
+#  comment: Instrument name
+#telescop:
+#  value: string
+#  comment: Telescope name
+#site:
+#  value: string
+#  comment: Site name
+  - exptime:
+    value: float
+    comment: Exposure time
+
+  - fli_image_count:
+    value: int
+    comment: FLI shutter count
+# WCS
+# geo coordinates
+
+
+Monitoring:
+  - fli_filter_name:
+    value: string
+    comment: Filter name
+
+  - fli_filter_position:
+    value: int
+    comment: Filter number
+
+  - fli_temp_CCD:
+    value: float
+    comment: No comment
+
+  - fli_temp_heatsink:
+    value: float
+    comment: No comment
+
+  - shutter:
+    value: string
+    comment: No comment
+
+  - flip_mirror:
+    value: string
+    comment: No comment
+
+  - calib_unit:
+    value: float
+    comment: No comment
+
+  - temp_bench_air:
+    value: float
+    comment: No comment
+
+  - temp_bench_board:
+    value: float
+    comment: No comment
+
+  - temp_water_in:
+    value: float
+    comment: No comment
+
+  - temp_water_out:
+    value: float
+    comment: No comment
+
+  - laser:
+    value: float
+    comment: No comment
+
+  - tungsten:
+    value: string
+    comment: No comment
+
+  - adc1:
+    value: float
+    comment: No comment
+
+  - adc2:
+    value: float
+    comment: No comment
+
+Telemetry:
+  - loop_on:
+    value: string
+    comment: AO loop ON/OFF
+
+  - loop_gain:
+    value: float
+    comment: AO loop gain
+
+  - loop_mult:
+    value: float
+    comment: AO loop mult coeff
+
+  - nuvu_exposuretime:
+    value: float
+    comment: Exposure time of the EMCCD [ms]
+
+  - nuvu_emgain:
+    value: float
+    comment: EM gain of the EMCCD
+
+#Euler
+# TEL AZ:
+#  value:  349.660 / [deg] Az angle at start S=0,W=90
+#TEL MOON DEC:
+#  value: -13.72502 / [deg] -13:43:30.0 DEC (J2000)
+#TEL MOON RA:
+#  value: 314.878722 / [deg] 20:59:30.8 RA (J2000)
+
+FLI:
+  - DATAMAX:
+    value: float
+    comment: Maximal pixel value
+
+  - DATAMIN:
+    value: float
+    comment: Minimal pixel value

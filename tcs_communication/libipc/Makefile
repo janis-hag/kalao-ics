@@ -18,7 +18,7 @@ LIBIPC = libipc_${OPSYS}.a
 all: all_lib all_exe
 
 all_lib: $(LIBIPC)
-all_exe:  
+all_exe:
 
 clean:
 	rm *$(OPSYS).a
@@ -32,6 +32,3 @@ $(LIBIPC): 		$(LIBIPC)(libipc.o)		\
 			ipcdef.h			\
 			$(INC_DIR)/gop.h
 	$(RANLIB) $(LIBIPC)
-	
-
-

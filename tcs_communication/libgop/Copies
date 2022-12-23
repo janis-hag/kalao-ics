@@ -21,9 +21,9 @@ test_c_libsrvgop.c
 Makefile
 Rules_$OPSYS.mke
 tex/gopref.tex
-tex/gopref.ps 
-tex/description.var 
-tex/gop.description.var 
-tex/gopcmd.tex 
+tex/gopref.ps
+tex/description.var
+tex/gop.description.var
+tex/gopcmd.tex
 tex/t4protocole.tex
-tex/t4protocole.ps 
+tex/t4protocole.ps

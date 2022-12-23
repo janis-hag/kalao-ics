@@ -4,9 +4,9 @@
 
 /*
  * test c pour libsrvgop.c
- * 
+ *
  * xsdbmanager -s -f libsrvgop.sdb &
- * 
+ *
  * cc -g libsrvgop.c -I. -c -L ~/lib/SunOS_5.4 -lgop -ltpudummy -lnsl -lsocket
  */
 
@@ -26,7 +26,7 @@ main()
 			printf("%s\n", srvg_get_error_string());
 			exit(-1);
 		}
-			
+
 		if(srvg_read(ci, answer, sizeof(answer)) < GOP_OK){
 			printf("%s\n", srvg_get_error_string());
 			exit(-1);

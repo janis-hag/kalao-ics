@@ -1,9 +1,9 @@
 """
- FLI.camera.py 
- 
+ FLI.camera.py
+
  Object-oriented interface for handling FLI USB cameras
- 
- author:       Craig Wm. Versek, Yankee Environmental Systems 
+
+ author:       Craig Wm. Versek, Yankee Environmental Systems
  author_email: cwv@yesinc.com
 """
 
@@ -33,42 +33,47 @@ from .device import USBDevice
 ###############################################################################
 DEBUG = False
 DEFAULT_BITDEPTH = '16bit'
+
+
 ###############################################################################
 class USBCamera(USBDevice):
     #load the DLL
     _libfli = FLILibrary.getDll(debug=DEBUG)
     _domain = flidomain_t(FLIDOMAIN_USB | FLIDEVICE_CAMERA)
-    
-    def __init__(self, dev_name, model, bitdepth = DEFAULT_BITDEPTH):
-        USBDevice.__init__(self, dev_name = dev_name, model = model)
-        self.hbin  = 1
-        self.vbin  = 1
+
+    def __init__(self, dev_name, model, bitdepth=DEFAULT_BITDEPTH):
+        USBDevice.__init__(self, dev_name=dev_name, model=model)
+        self.hbin = 1
+        self.vbin = 1
         self.bitdepth = bitdepth
 
     def get_info(self):
         info = OrderedDict()
-        tmp1, tmp2, tmp3, tmp4   = (c_long(),c_long(),c_long(),c_long())
-        d1, d2                   = (c_double(),c_double())        
+        tmp1, tmp2, tmp3, tmp4 = (c_long(), c_long(), c_long(), c_long())
+        d1, d2 = (c_double(), c_double())
         info['serial_number'] = self.get_serial_number()
         self._libfli.FLIGetHWRevision(self._dev, byref(tmp1))
         info['hardware_rev'] = tmp1.value
         self._libfli.FLIGetFWRevision(self._dev, byref(tmp1))
         info['firmware_rev'] = tmp1.value
         self._libfli.FLIGetPixelSize(self._dev, byref(d1), byref(d2))
-        info['pixel_size'] = (d1.value,d2.value)
-        self._libfli.FLIGetArrayArea(self._dev, byref(tmp1), byref(tmp2), byref(tmp3), byref(tmp4))
-        info['array_area'] = (tmp1.value,tmp2.value,tmp3.value,tmp4.value)
-        self._libfli.FLIGetVisibleArea(self._dev, byref(tmp1), byref(tmp2), byref(tmp3), byref(tmp4))
-        info['visible_area'] = (tmp1.value,tmp2.value,tmp3.value,tmp4.value)        
+        info['pixel_size'] = (d1.value, d2.value)
+        self._libfli.FLIGetArrayArea(self._dev, byref(tmp1), byref(tmp2),
+                                     byref(tmp3), byref(tmp4))
+        info['array_area'] = (tmp1.value, tmp2.value, tmp3.value, tmp4.value)
+        self._libfli.FLIGetVisibleArea(self._dev, byref(tmp1), byref(tmp2),
+                                       byref(tmp3), byref(tmp4))
+        info['visible_area'] = (tmp1.value, tmp2.value, tmp3.value, tmp4.value)
         return info
-        
+
     def get_camera_mode_string(self):
         #("FLIGetCameraModeString", [flidev_t, flimode_t, c_char_p, c_size_t]),
         #(flidev_t dev, flimode_t mode_index, char *mode_string, size_t siz);
         buff_size = 32
-        mode_string = create_string_buffer(b"",buff_size)
+        mode_string = create_string_buffer(b"", buff_size)
         mode_index = self.get_camera_mode()
-        self._libfli.FLIGetCameraModeString(self._dev, mode_index, mode_string, c_size_t(buff_size))
+        self._libfli.FLIGetCameraModeString(self._dev, mode_index, mode_string,
+                                            c_size_t(buff_size))
         return mode_string.value
 
     def get_camera_mode(self):
@@ -84,76 +89,85 @@ class USBCamera(USBDevice):
 
     def get_image_size(self):
         "returns (row_width, img_rows, img_size)"
-        left, top, right, bottom   = (c_long(),c_long(),c_long(),c_long())        
-        self._libfli.FLIGetVisibleArea(self._dev, byref(left), byref(top), byref(right), byref(bottom))    
-        row_width = int((right.value - left.value)/self.hbin)
-        img_rows  = int((bottom.value - top.value)/self.vbin)
+        left, top, right, bottom = (c_long(), c_long(), c_long(), c_long())
+        self._libfli.FLIGetVisibleArea(self._dev, byref(left), byref(top),
+                                       byref(right), byref(bottom))
+        row_width = int((right.value - left.value) / self.hbin)
+        img_rows = int((bottom.value - top.value) / self.vbin)
         img_size = int(img_rows * row_width * sizeof(c_uint16))
         return (row_width, img_rows, img_size)
 
     def set_image_area(self, ul_x, ul_y, lr_x, lr_y):
         #FIXME does this API call actually do anything?
-        left, top, right, bottom   = (c_long(ul_x),c_long(ul_y),c_long(lr_x),c_long(lr_y))
-        row_width = (right.value - left.value)/self.hbin
-        img_rows  = (bottom.value - top.value)/self.vbin
-        self._libfli.FLISetImageArea(self._dev, left, top, c_long(left.value + row_width), c_long(top.value + img_rows))
+        left, top, right, bottom = (c_long(ul_x), c_long(ul_y), c_long(lr_x),
+                                    c_long(lr_y))
+        row_width = (right.value - left.value) / self.hbin
+        img_rows = (bottom.value - top.value) / self.vbin
+        self._libfli.FLISetImageArea(self._dev, left, top,
+                                     c_long(left.value + row_width),
+                                     c_long(top.value + img_rows))
 
-    def set_image_binning(self, hbin = 1, vbin = 1):
-        left, top, right, bottom   = (c_long(),c_long(),c_long(),c_long())        
-        self._libfli.FLIGetVisibleArea(self._dev, byref(left), byref(top), byref(right), byref(bottom))    
-        row_width = int((right.value - left.value)/hbin)
-        img_rows  = int((bottom.value - top.value)/vbin)
-        self._libfli.FLISetImageArea(self._dev, left, top, c_long(left.value + row_width), c_long(top.value + img_rows))
+    def set_image_binning(self, hbin=1, vbin=1):
+        left, top, right, bottom = (c_long(), c_long(), c_long(), c_long())
+        self._libfli.FLIGetVisibleArea(self._dev, byref(left), byref(top),
+                                       byref(right), byref(bottom))
+        row_width = int((right.value - left.value) / hbin)
+        img_rows = int((bottom.value - top.value) / vbin)
+        self._libfli.FLISetImageArea(self._dev, left, top,
+                                     c_long(left.value + row_width),
+                                     c_long(top.value + img_rows))
         self._libfli.FLISetHBin(self._dev, hbin)
         self._libfli.FLISetVBin(self._dev, vbin)
         self.hbin = hbin
         self.vbin = vbin
-    
+
     def set_flushes(self, num):
         """set the number of flushes to the CCD before taking exposure
-           
+
            must have 0 <= num <= 16, else raises ValueError
         """
-        if not(0 <= num <= 16):
+        if not (0 <= num <= 16):
             raise ValueError("must have 0 <= num <= 16")
         self._libfli.FLISetNFlushes(self._dev, c_long(num))
 
     def set_temperature(self, T):
         "set the camera's temperature target in degrees Celcius"
         self._libfli.FLISetTemperature(self._dev, c_double(T))
-                
+
     def get_temperature(self):
         "gets the camera's temperature in degrees Celcius"
-        T = c_double()         
+        T = c_double()
         self._libfli.FLIGetTemperature(self._dev, byref(T))
         return T.value
-        
+
     def read_CCD_temperature(self):
         "gets the CCD's temperature in degrees Celcius"
-        T = c_double()         
-        self._libfli.FLIReadTemperature(self._dev, FLI_TEMPERATURE_CCD, byref(T))
+        T = c_double()
+        self._libfli.FLIReadTemperature(self._dev, FLI_TEMPERATURE_CCD,
+                                        byref(T))
         return T.value
-        
+
     def read_base_temperature(self):
         "gets the cooler's hot side in degrees Celcius"
-        T = c_double()         
-        self._libfli.FLIReadTemperature(self._dev, FLI_TEMPERATURE_BASE, byref(T))
+        T = c_double()
+        self._libfli.FLIReadTemperature(self._dev, FLI_TEMPERATURE_BASE,
+                                        byref(T))
         return T.value
-        
+
     def get_cooler_power(self):
         "gets the cooler's power in watts (undocumented API function)"
-        P = c_double()         
+        P = c_double()
         self._libfli.FLIGetCoolerPower(self._dev, byref(P))
         return P.value
 
-    def set_exposure(self, exptime, frametype = "normal"):
+    def set_exposure(self, exptime, frametype="normal"):
         """setup the exposure type:
-               exptime   - exposure time in milliseconds 
+               exptime   - exposure time in milliseconds
                frametype -  'normal'     - open shutter exposure
                             'dark'       - exposure with shutter closed
                             'rbi_flush'  - flood CCD with internal light, with shutter closed
         """
-        exptime = c_long(exptime)        
+        exptime = c_long(exptime)
         if frametype == "normal":
             frametype = fliframe_t(FLI_FRAME_TYPE_NORMAL)
         elif frametype == "dark":
@@ -163,7 +177,9 @@ class USBCamera(USBDevice):
             # is this always the correct mode?
             frametype = fliframe_t(FLI_FRAME_TYPE_RBI_FLUSH)
         else:
-            raise ValueError("'frametype' must be either 'normal','dark' or 'rbi_flush'")
+            raise ValueError(
+                    "'frametype' must be either 'normal','dark' or 'rbi_flush'"
+            )
         self._libfli.FLISetExposureTime(self._dev, exptime)
         self._libfli.FLISetFrameType(self._dev, frametype)
 
@@ -177,7 +193,9 @@ class USBCamera(USBDevice):
         else:
             raise ValueError("'bitdepth' must be either '8bit' or '16bit'")
         try:
-            self._libfli.FLISetBitDepth(self._dev, bitdepth_var) #FIXME always returns 'Inavlid Argument' error
+            self._libfli.FLISetBitDepth(
+                    self._dev, bitdepth_var
+            )  #FIXME always returns 'Inavlid Argument' error
         except FLIError:
             msg = "API currently does not allow changing bitdepth for this USB camera."
             warnings.warn(FLIWarning(msg))
@@ -192,33 +210,33 @@ class USBCamera(USBDevice):
             timeleft = self.get_exposure_timeleft()
             if timeleft == 0:
                 break
-            time.sleep(timeleft/1000.0) #sleep for milliseconds
+            time.sleep(timeleft / 1000.0)  #sleep for milliseconds
         #grab the image
         return self.fetch_image()
-       
+
     def start_exposure(self):
         """ Begin the exposure and return immediately.
-            Use the method  'get_timeleft' to check the exposure progress 
+            Use the method  'get_timeleft' to check the exposure progress
             until it returns 0, then use method 'fetch_image' to fetch the image
             data as a numpy array.
         """
         self._libfli.FLIExposeFrame(self._dev)
-        
+
     def get_exposure_timeleft(self):
         """ Returns the time left on the exposure in milliseconds.
         """
         timeleft = c_long()
-        self._libfli.FLIGetExposureStatus(self._dev,byref(timeleft))
+        self._libfli.FLIGetExposureStatus(self._dev, byref(timeleft))
         return timeleft.value
-    
+
     def fetch_image(self):
         """ Fetch the image data for the last exposure.
             Returns a numpy.ndarray object.
         """
-        row_width, img_rows, img_size  = self.get_image_size()
+        row_width, img_rows, img_size = self.get_image_size()
         #use bit depth to determine array data type
         img_array_dtype = None
-        img_ptr_ctype   = None
+        img_ptr_ctype = None
         if self.bitdepth == '8bit':
             img_array_dtype = numpy.uint8
             img_ptr_ctype = c_uint8
@@ -230,12 +248,14 @@ class USBCamera(USBDevice):
         #allocate numpy array to store image
         img_array = numpy.zeros((img_rows, row_width), dtype=img_array_dtype)
         #get pointer to array's data space
-        img_ptr   = img_array.ctypes.data_as(POINTER(img_ptr_ctype))
+        img_ptr = img_array.ctypes.data_as(POINTER(img_ptr_ctype))
         #grab image buff row by row
         for row in range(img_rows):
-            offset = row*row_width*sizeof(img_ptr_ctype)
-            self._libfli.FLIGrabRow(self._dev, byref(img_ptr.contents,offset), row_width)
+            offset = row * row_width * sizeof(img_ptr_ctype)
+            self._libfli.FLIGrabRow(self._dev, byref(img_ptr.contents, offset),
+                                    row_width)
         return img_array
+
 
 ###############################################################################
 #  TEST CODE
@@ -247,8 +267,10 @@ if __name__ == "__main__":
     print("image size:", cam0.get_image_size())
     print("temperature:", cam0.get_temperature())
     print("mode:", cam0.get_camera_mode_string())
-    cam0.set_image_binning(2,2)
-    cam0.set_bitdepth("16bit") #this should generate a warning for any USB camera in libfli-1.104
+    cam0.set_image_binning(2, 2)
+    cam0.set_bitdepth(
+            "16bit"
+    )  #this should generate a warning for any USB camera in libfli-1.104
     cam0.set_exposure(5)
     img = cam0.take_photo()
     print(img)

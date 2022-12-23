@@ -21,14 +21,16 @@ def get_roi_and_subapertures(data):
         subapertures = np.empty((121, 10, 10), int)
         for i in range(11):
             for j in range(11):
-                subapertures[j + 11 * i] = roi[i * 10:10 + i * 10, j * 10:10 + j * 10]
+                subapertures[j + 11 * i] = roi[i * 10:10 + i * 10,
+                                               j * 10:10 + j * 10]
 
     elif data.shape == (64, 64):
         roi = data[4:60, 4:60]
         subapertures = np.empty((121, 4, 4), int)
         for i in range(11):
             for j in range(11):
-                subapertures[j + 11 * i] = roi[1 + i * 5:5 + i * 5, 1 + j * 5:5 + j * 5]
+                subapertures[j + 11 * i] = roi[1 + i * 5:5 + i * 5,
+                                               1 + j * 5:5 + j * 5]
 
     return roi, subapertures
 
@@ -83,10 +85,8 @@ def get_subapertures_around_actuator(i):
 
     x, y = get_actuator_2d(i)
 
-    return (get_subaperture_1d(x - 1, y - 1),
-            get_subaperture_1d(x - 1, y),
-            get_subaperture_1d(x, y - 1),
-            get_subaperture_1d(x, y))
+    return (get_subaperture_1d(x - 1, y - 1), get_subaperture_1d(x - 1, y),
+            get_subaperture_1d(x, y - 1), get_subaperture_1d(x, y))
 
 
 def get_wfs_flux_map(upsampling=4):
@@ -96,10 +96,10 @@ def get_wfs_flux_map(upsampling=4):
     radius_in = radius_out * 336.4 / 1200
 
     xx, yy = np.mgrid[:size, :size]
-    circle = (xx - size / 2 + 0.5) ** 2 + (yy - size / 2 + 0.5) ** 2
-    pupil = np.logical_and(circle <= radius_out ** 2, circle >= radius_in ** 2)
+    circle = (xx - size / 2 + 0.5)**2 + (yy - size / 2 + 0.5)**2
+    pupil = np.logical_and(circle <= radius_out**2, circle >= radius_in**2)
     pupil = block_reduce(pupil, upsampling)
-    pupil = pupil / upsampling ** 2
+    pupil = pupil / upsampling**2
 
     side_real = 5
     side = side_real * upsampling
@@ -110,7 +110,7 @@ def get_wfs_flux_map(upsampling=4):
     yy = np.abs(yy - offset + 0.5)
     subap = np.logical_and(xx <= side / 2, yy <= side / 2)
     subap = block_reduce(subap, upsampling)
-    subap = subap / upsampling ** 2
+    subap = subap / upsampling**2
 
     flux = np.zeros((11, 11))
 
@@ -118,7 +118,7 @@ def get_wfs_flux_map(upsampling=4):
         for j in range(11):
             subap_tmp = np.roll(subap, (i * side_real, j * side_real), (0, 1))
 
-            flux[i, j] = np.sum(subap_tmp * pupil) / (side_real) ** 2
+            flux[i, j] = np.sum(subap_tmp * pupil) / (side_real)**2
 
     return flux
 
@@ -130,10 +130,10 @@ def save_stream_to_fits(stream_name, fits_file):
     exitCLI
     """
 
-    cp = subprocess.run(["/usr/local/milk/bin/milk"], input=milk_input, encoding='utf8', stdout=PIPE, stderr=STDOUT)
+    cp = subprocess.run(["/usr/local/milk/bin/milk"], input=milk_input,
+                        encoding='utf8', stdout=PIPE, stderr=STDOUT)
 
     return cp
-
 
 
 if __name__ == "__main__":

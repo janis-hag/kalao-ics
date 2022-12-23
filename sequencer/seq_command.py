@@ -4,7 +4,6 @@
 # @Date : 2021-01-02-16-50
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 seq_command.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
@@ -27,8 +26,8 @@ from kalao.cacao import aomanager
 from sequencer import starfinder, system
 # from tcs_communication import t120
 
-
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 
 # Read config file and create a dict for each section where keys is parameter
 parser = ConfigParser()
@@ -39,7 +38,9 @@ ExpTime = parser.getfloat('FLI', 'ExpTime')
 SetupTime = parser.getint('FLI', 'SetupTime')
 TungstenStabilisationTime = parser.getint('PLC', 'TungstenStabilisationTime')
 TungstenWaitSleep = parser.getint('PLC', 'TungstenWaitSleep')
-DefaultFlatList = parser.get('Calib', 'DefaultFlatList').replace(' ', '').replace('\n', '').split(',')
+DefaultFlatList = parser.get('Calib',
+                             'DefaultFlatList').replace(' ', '').replace(
+                                     '\n', '').split(',')
 PointingWaitTime = parser.getfloat('SEQ', 'PointingWaitTime')
 PointingTimeOut = parser.getfloat('SEQ', 'PointingTimeOut')
 
@@ -60,9 +61,9 @@ def dark(**seq_args):
     :return: nothing
     """
 
-    q=seq_args.get('q')
-    dit=seq_args.get('dit')
-    nbPic=seq_args.get('nbPic')
+    q = seq_args.get('q')
+    dit = seq_args.get('dit')
+    nbPic = seq_args.get('nbPic')
 
     if nbPic is None:
         nbPic = 1
@@ -87,14 +88,14 @@ def dark(**seq_args):
         q.get()
         return -1
 
-
     filepath = file_handling.create_night_filepath()
 
     # Take nbPic image
     for _ in range(nbPic):
         #seq_command_received = database.get_latest_record('obs_log', key='sequencer_command_received')[
         #    'sequencer_command_received']
-        rValue, image_path = camera.take_image(dit=dit, filepath=filepath, sequencer_arguments=seq_args)
+        rValue, image_path = camera.take_image(dit=dit, filepath=filepath,
+                                               sequencer_arguments=seq_args)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         #file_handling.save_tmp_image(image_path)
@@ -119,14 +120,14 @@ def dark_abort():
     """
     # two cancel are done to avoid concurrency problems
     rValue = camera.cancel()
-    if(rValue != 0):
+    if (rValue != 0):
         # TODO handle error
         system.print_and_log('Error' + str(rValue))
 
     time.sleep(1)
 
     rValue = camera.cancel()
-    if(rValue != 0):
+    if (rValue != 0):
         # TODO handle error
         system.print_and_log('Error' + str(rValue))
 
@@ -152,8 +153,9 @@ def tungsten_FLAT(**seq_args):
     """
 
     rValue = tungsten.on()
-    if(rValue != 'ON'):
-        system.print_and_log('Could not turn on tungsten lamp: '+tungsten.status()['sErrorText'])
+    if (rValue != 'ON'):
+        system.print_and_log('Could not turn on tungsten lamp: ' +
+                             tungsten.status()['sErrorText'])
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
@@ -196,12 +198,12 @@ def tungsten_FLAT(**seq_args):
     #     # TODO, verify that temporary_path is in the filepath
     #     temporary_path = file_handling.create_night_folder()
 
-    while(tungsten.get_switch_time() < TungstenStabilisationTime):
+    while (tungsten.get_switch_time() < TungstenStabilisationTime):
         # Wait for tungsten to warm up
         # Check if an abort was requested
         # block for each picture and check if an abort was requested
         database.store_obs_log({'sequencer_status': 'WAITLAMP'})
-        if check_abort(q,1) == -1:
+        if check_abort(q, 1) == -1:
             return -1
 
         # Check if lamp is still on
@@ -255,14 +257,14 @@ def tungsten_FLAT_abort():
 
     # two cancel are done to avoid concurrency problems
     rValue = camera.cancel()
-    if(rValue != 0):
+    if (rValue != 0):
         # TODO handle error
         system.print_and_log(rValue)
 
     time.sleep(1)
 
     rValue = camera.cancel()
-    if(rValue != 0):
+    if (rValue != 0):
         # TODO handle error
         system.print_and_log(rValue)
 
@@ -349,7 +351,6 @@ def sky_FLAT(**seq_args):
         if check_abort(q, dit) == -1:
             return -1
 
-
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
 
@@ -380,9 +381,9 @@ def target_observation(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
 
-
     if None in (q, dit):
-        system.print_and_log('Missing keyword in target_observation function call')
+        system.print_and_log(
+                'Missing keyword in target_observation function call')
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
@@ -411,7 +412,8 @@ def target_observation(**seq_args):
         return -1
 
     if kalfilter is None:
-        system.print_and_log("Warning: no filter specified for take_image, using clear")
+        system.print_and_log(
+                "Warning: no filter specified for take_image, using clear")
         kalfilter = 'clear'
         return -1
 
@@ -452,19 +454,21 @@ def target_observation_abort():
     """
     # two cancel are done to avoid concurrency problems
     rValue = camera.cancel()
-    if(rValue != 0):
+    if (rValue != 0):
         system.print_and_log(rValue)
 
     time.sleep(1)
 
     rValue = camera.cancel()
-    if(rValue != 0):
+    if (rValue != 0):
         system.print_and_log(rValue)
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, kalfilter = None, **kwargs):
+def focusing(
+        **seq_args
+):  #q = None, dit = ExpTime, filepath = None, kalfilter = None, **kwargs):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -489,7 +493,8 @@ def focusing(**seq_args): #q = None, dit = ExpTime, filepath = None, kalfilter =
     dit = seq_args.get('dit')
 
     if None in (q, dit):
-        system.print_and_log('Missing keyword in target_observation function call')
+        system.print_and_log(
+                'Missing keyword in target_observation function call')
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
@@ -548,19 +553,19 @@ def focusing_abort():
     # TODO also send abort to focus_sequence not only to camera
     # two cancel are done to avoid concurrency problems
     rValue = camera.cancel()
-    if(rValue != 0):
+    if (rValue != 0):
         system.print_and_log(rValue)
 
     time.sleep(1)
 
     rValue = camera.cancel()
-    if(rValue != 0):
+    if (rValue != 0):
         system.print_and_log(rValue)
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def AO_loop_calibration(**seq_args): #q = None, intensity = 0, **kwargs):
+def AO_loop_calibration(**seq_args):  #q = None, intensity = 0, **kwargs):
     """
     1. Close shutter
     2. Move flip mirror up
@@ -604,11 +609,10 @@ def lamp_on(**seq_args):
     :return: nothing
     """
 
-    q=seq_args.get('q')
-
+    q = seq_args.get('q')
 
     rValue = tungsten.on()
-    if(rValue != 0):
+    if (rValue != 0):
         # TODO handle error
         system.print_and_log(rValue)
 
@@ -624,7 +628,9 @@ def waitfortracking():
     t0 = time.time()
 
     while time.time() - t0 < PointingTimeOut:
-        tracking_status = database.get_latest_record(collection_name='obs_log', key='tracking_status')['tracking_status']
+        tracking_status = database.get_latest_record(
+                collection_name='obs_log',
+                key='tracking_status')['tracking_status']
         if tracking_status == 'TRACKING':
             return 0
         time.sleep(PointingWaitTime)
@@ -650,7 +656,7 @@ def lamp_off():
 
     rValue = core.lamps_off()
     if rValue != 0:
-        system.print_and_log("Error: failed to turn off lamps "+str(rValue))
+        system.print_and_log("Error: failed to turn off lamps " + str(rValue))
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
@@ -684,7 +690,7 @@ def end():
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def check_abort(q, dit, AO = False):
+def check_abort(q, dit, AO=False):
     """
     Blocking function for exposition time
     Check every sec if Queue object q is empty
@@ -718,7 +724,9 @@ def check_abort(q, dit, AO = False):
 
         #database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
 
-        status_time = database.get_latest_record('obs_log', key='fli_temporary_image_path')['time_utc'].replace(tzinfo=datetime.timezone.utc)
+        status_time = database.get_latest_record(
+                'obs_log', key='fli_temporary_image_path')['time_utc'].replace(
+                        tzinfo=datetime.timezone.utc)
         print((t0 - status_time).total_seconds())
 
         if (t0 - status_time).total_seconds() < 0:
@@ -752,26 +760,26 @@ def config(**seq_args):
 
 
 commandDict = {
-    "K_DARK":           dark,
-    "K_DARK_ABORT":     dark_abort,
-    "K_LMPFLT":         tungsten_FLAT,
-    "K_LMPFLT_ABORT":   tungsten_FLAT_abort,
-    "K_SKFLT":          sky_FLAT,
-    "K_TRGOBS":         target_observation,
-    "K_TRGOBS_ABORT":   target_observation_abort,
-    "K_LAMPON":         lamp_on,
-    "K_LAMPOF":         lamp_off,
-    "K_FOCUS":          focusing,
-    "K_FOCUS_ABORT":    focusing_abort,
-    "K_CONFIG":         config,
-    "K_END":            end,
-    #"kal_AO_loop_calibration":      AO_loop_calibration
-    # "kal_dark":                     dark,
-    # "kal_dark_abort":               dark_abort,
-    # "kal_tungsten_FLAT":            tungsten_FLAT,
-    # "kal_tungsten_FLAT_abort":      tungsten_FLAT_abort,
-    # "kal_sky_FLAT":                 sky_FLAT,
-    # "kal_target_observation":       target_observation,
-    # "kal_target_observation_abort": target_observation_abort,
-    # "kal_AO_loop_calibration":      AO_loop_calibration
+        "K_DARK": dark,
+        "K_DARK_ABORT": dark_abort,
+        "K_LMPFLT": tungsten_FLAT,
+        "K_LMPFLT_ABORT": tungsten_FLAT_abort,
+        "K_SKFLT": sky_FLAT,
+        "K_TRGOBS": target_observation,
+        "K_TRGOBS_ABORT": target_observation_abort,
+        "K_LAMPON": lamp_on,
+        "K_LAMPOF": lamp_off,
+        "K_FOCUS": focusing,
+        "K_FOCUS_ABORT": focusing_abort,
+        "K_CONFIG": config,
+        "K_END": end,
+        #"kal_AO_loop_calibration":      AO_loop_calibration
+        # "kal_dark":                     dark,
+        # "kal_dark_abort":               dark_abort,
+        # "kal_tungsten_FLAT":            tungsten_FLAT,
+        # "kal_tungsten_FLAT_abort":      tungsten_FLAT_abort,
+        # "kal_sky_FLAT":                 sky_FLAT,
+        # "kal_target_observation":       target_observation,
+        # "kal_target_observation_abort": target_observation_abort,
+        # "kal_AO_loop_calibration":      AO_loop_calibration
 }

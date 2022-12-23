@@ -53,9 +53,9 @@ extern int      init_remote_client(char *host, char *symb_name, char *rcmd, int 
 //
 // Macros-Operations sur sémaphores (coté client)
 //
-extern int	shm_wait(int timeout=0);		
+extern int	shm_wait(int timeout=0);
 extern int	shm_ack(void);
-extern int	shm_wack(int timeout=0);	 	
+extern int	shm_wack(int timeout=0);
 extern int	shm_cont(void);
 extern int	shm_free(void);
 //

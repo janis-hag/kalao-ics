@@ -4,7 +4,6 @@
 # @Date : 2021-01-02-15-08
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 flip_mirror.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
@@ -61,7 +60,11 @@ def switch(action_name, beck=None):
 
     shutter_switch = beck.get_node("ns = 4; s = MAIN.Flip." + action_name)
     shutter_switch.set_attribute(
-        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(
+                            True,
+                            shutter_switch.get_data_type_as_variant_type())))
 
     sleep(1)
     if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Up_Flip").get_value():
@@ -92,12 +95,17 @@ def position(beck=None):
     # TODO check if initialised and not disabled
 
     # Check error status
-    error_code = beck.get_node('ns=4;s=MAIN.Flip.FlipMirror.stat.nErrorCode').get_value()
+    error_code = beck.get_node(
+            'ns=4;s=MAIN.Flip.FlipMirror.stat.nErrorCode').get_value()
     if error_code != 0:
         #someting went wrong
         # Logging error
-        error_text = beck.get_node("ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
-        database.store_obs_log({'flip_mirror_log': 'ERROR' + str(error_code) + ': '+error_text})
+        error_text = beck.get_node(
+                "ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
+        database.store_obs_log({
+                'flip_mirror_log':
+                        'ERROR' + str(error_code) + ': ' + error_text
+        })
         flip_position = error_text
 
     else:

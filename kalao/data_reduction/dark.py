@@ -4,10 +4,9 @@
 # @Date : 2021-08-02-11-44
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 dark.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 # TODO add funtionc:

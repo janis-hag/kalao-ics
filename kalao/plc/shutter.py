@@ -4,10 +4,9 @@
 # @Date : 2021-01-02-15-29
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 shutter.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 from kalao.plc import core
@@ -71,16 +70,22 @@ def position(beck=None):
     beck, disconnect_on_exit = core.check_beck(beck)
 
     # Check error status
-    error_code = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
+    error_code = beck.get_node(
+            "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
     if error_code != 0:
         #someting went wrong
-        error_text = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
-        database.store_obs_log({'shutter_log': 'ERROR' + str(error_code) + ': ' + str(error_text)})
+        error_text = beck.get_node(
+                "ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
+        database.store_obs_log({
+                'shutter_log':
+                        'ERROR' + str(error_code) + ': ' + str(error_text)
+        })
 
         position_status = error_text
 
     else:
-        if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Closed_Shutter").get_value():
+        if beck.get_node(
+                "ns=4; s=MAIN.Shutter.bStatus_Closed_Shutter").get_value():
             bStatus = 'CLOSED'
         else:
             bStatus = 'OPEN'
@@ -102,7 +107,8 @@ def initialise(beck=None):
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
-    init_status = beck.get_node("ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
+    init_status = beck.get_node(
+            "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
 
     initial_position = position(beck=beck)
 
@@ -159,11 +165,16 @@ def switch(action_name, beck=None):
 
     shutter_switch = beck.get_node("ns = 4; s = MAIN.Shutter." + action_name)
     shutter_switch.set_attribute(
-        ua.AttributeIds.Value, ua.DataValue(ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(
+                            True,
+                            shutter_switch.get_data_type_as_variant_type())))
 
     sleep(1)
 
-    if beck.get_node("ns=4; s=MAIN.Shutter.bStatus_Closed_Shutter").get_value():
+    if beck.get_node(
+            "ns=4; s=MAIN.Shutter.bStatus_Closed_Shutter").get_value():
         bStatus = 'CLOSED'
     else:
         bStatus = 'OPEN'

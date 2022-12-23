@@ -4,10 +4,9 @@
 # @Date : 2021-05-07-15-35
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 com_tools.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 import numpy as np
@@ -22,7 +21,6 @@ from kalao.fli import camera
 from kalao.utils import database, file_handling
 
 
-
 def scan_calib(scan_range, dit=0.05):
 
     #tungsten.on()
@@ -35,7 +33,7 @@ def scan_calib(scan_range, dit=0.05):
 
         filename, file_date = star_centering.get_temporary_image_path()
 
-        with fits.open(filename, mode = 'update') as hdul:
+        with fits.open(filename, mode='update') as hdul:
             hdr = hdul[0].header
             hdr.set('CALIBPOS', pos)
             hdul.flush()
@@ -51,10 +49,11 @@ def scan_adc(scan_range1, scan_range2, dit=0.001):
     adc.rotate(2, scan_range2[0])
 
     start = time()
-    while not (adc.status(1)['sStatus'] == 'STANDING' and adc.status(1)['sStatus'] == 'STANDING'):
+    while not (adc.status(1)['sStatus'] == 'STANDING' and
+               adc.status(1)['sStatus'] == 'STANDING'):
         # Timeout after 5 minutes
         print('.', end='')
-        if time() - start > 5*60:
+        if time() - start > 5 * 60:
             print('')
             print("TIMEOUT")
             return -1
@@ -74,10 +73,13 @@ def scan_adc(scan_range1, scan_range2, dit=0.001):
 
         sleep(1)
 
-        image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
+        image_path = database.get_obs_log([
+                'fli_temporary_image_path'
+        ], 1)['fli_temporary_image_path']['values'][0]
         print(image_path)
         file_handling.update_header(image_path)
-        file_handling.add_comment(image_path, 'adc1: '+str(ang1)+', adc2: '+str(ang2))
+        file_handling.add_comment(
+                image_path, 'adc1: ' + str(ang1) + ', adc2: ' + str(ang2))
 
     return 0
 

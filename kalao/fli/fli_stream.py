@@ -4,13 +4,11 @@
 # @Date : 2021-02-23-14-10
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 fli_stream.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 import argparse
-
 
 from time import sleep
 from signal import signal, SIGINT
@@ -23,14 +21,14 @@ from sequencer import system
 import FLI
 from pyMilk.interfacing.isio_shmlib import SHM
 
-
 parser = argparse.ArgumentParser(
         description='Opens stream with FLI camera images.')
-parser.add_argument('-d', action="store",  dest="dit", type=int, default=1)
-parser.add_argument('-c', action="store", dest="center",  default=None, nargs='+', type=int,
+parser.add_argument('-d', action="store", dest="dit", type=int, default=1)
+parser.add_argument('-c', action="store", dest="center", default=None,
+                    nargs='+', type=int,
                     help='x y position of the window center')
-parser.add_argument('-w', action="store", dest="window_size", default=None, type=int,
-                    help='Size of the window to cut out. ')
+parser.add_argument('-w', action="store", dest="window_size", default=None,
+                    type=int, help='Size of the window to cut out. ')
 
 args = parser.parse_args()
 dit = args.dit
@@ -49,12 +47,12 @@ def handler(signal_received, frame):
 def cut_image(img):
 
     if window is not None:
-        hw = int(np.round(window/2))
+        hw = int(np.round(window / 2))
         if center is None:
-            c = [img.shape[0]/2, img.shape[1]/2]
+            c = [img.shape[0] / 2, img.shape[1] / 2]
         else:
             c = center
-        img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
+        img = img[c[0] - hw:c[0] + hw, c[1] - hw:c[1] + hw]
 
     img = img.astype(float)
 
@@ -70,10 +68,12 @@ def run(cam):
     img = cut_image(img)
 
     # Creating a brand new stream
-    shm = SHM('fli_stream', img,
-                 location=-1,  # CPU
-                 shared=True,  # Shared
-                 )
+    shm = SHM(
+            'fli_stream',
+            img,
+            location=-1,  # CPU
+            shared=True,  # Shared
+    )
 
     while True:
         cam.set_exposure(dit)

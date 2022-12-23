@@ -31,12 +31,13 @@ cam.set_temperature(-30)
 cam.set_exposure(100)
 img = cam.take_photo()
 
+
 def take_picture(dit=100):
     det_temp = cam.get_temperature()
-    print('CCD temperature: '+str(det_temp))
+    print('CCD temperature: ' + str(det_temp))
     cam.set_exposure(dit)
     filter_number, filter_name = fw.get_position()
-    print('Filter '+filter_name', position: '+str(filter_number))
+    print('Filter ' + filter_name + ', position: ' + str(filter_number))
     hdr = fits.Header()
     hdr['INST'] = 'KalAO'
     hdr['DIT'] = dit

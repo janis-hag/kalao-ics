@@ -50,8 +50,8 @@ struct gop_list {
 
 
 struct gop_connect {
-	/* 
-         * parametres lies a la connection 
+	/*
+         * parametres lies a la connection
          */
 	int             type;		/* type de connection */
 	char            name[256];	/* nom du host a connecter */
@@ -68,8 +68,8 @@ struct gop_connect {
 	int             need_xdr;	/* indique (TRUE) si le canal a besoin de XDR */
 	int		pid;		/* pid du serveur */
 	int             timeout;	/* timeout pour l'operation en cours */
-	/* 
-         * parametres du header sous forme naturel (pas ASCII) 
+	/*
+         * parametres du header sous forme naturel (pas ASCII)
          */
 	char            class[5];	/* classe du message */
 	char            from[9];	/* nom symbolique expediteur */
@@ -84,8 +84,8 @@ struct gop_connect {
 	int             datatype;	/* type de données de la SDD */
 	int             xdr;		/* indique si la SDD est codée en XDR */
 	int             pthread;	/* indique si on est dans un pthread */
-	/*  
-         * header courant 
+	/*
+         * header courant
          */
 	struct gop_header header;	/* header associe au canal */
 };
@@ -101,7 +101,7 @@ extern int      gop_errno;
 /*
  * LISTE DES TYPES DE HEADER
  * ===========================================================================
- * 
+ *
  */
 
 #define	GOP_HEADER_STD	'H'
@@ -112,7 +112,7 @@ extern int      gop_errno;
 /*
  * LISTE ETAT
  * ===========================================================================
- * 
+ *
  */
 
 #define	GOP_OK	         0
@@ -125,7 +125,7 @@ extern int      gop_errno;
 /*
  * LISTE SIDES
  * ===========================================================================
- * 
+ *
  */
 
 #define	GOP_SERVER_SIDE		1
@@ -135,7 +135,7 @@ extern int      gop_errno;
 /*
  * LISTE DES CLASSES
  * ===========================================================================
- * 
+ *
  */
 
 #define	GOP_CLASS_COMD	"COMD"
@@ -150,7 +150,7 @@ extern int      gop_errno;
 /*
  * LISTE DES ETATS
  * ===========================================================================
- * 
+ *
  */
 
 #define	GOP_STAT_OPOK	"OPOK"
@@ -163,7 +163,7 @@ extern int      gop_errno;
 /*
  * LISTE DES TYPES DE COMMUNICATION
  * ===========================================================================
- * 
+ *
  */
 
 #define	GOP_SOCKET	1	/* socket internet */
@@ -183,7 +183,7 @@ extern int      gop_errno;
 /*
  * LISTE DES TYPES DE DONNÉES
  * ===========================================================================
- * 
+ *
  * Attention si on rajoute un type il faut modifier gop_struct_to_header()
  *
  */
@@ -202,7 +202,7 @@ extern int      gop_errno;
 /*
  * LISTE DES CODES D'ERREUR
  * ===========================================================================
- * 
+ *
  * attention en cas de modification dans cette liste, mettre a jour:
  * libgop.c:gop_get_error_str()
  */
@@ -245,7 +245,7 @@ extern int      gop_errno;
 /*
  * LISTE DES VALEURS DE MODE (CONNECT.MODE) POUR L'AFFICHAGE
  * ===========================================================================
- * 
+ *
  * chaque niveau implique le precedent
  */
 
@@ -263,7 +263,7 @@ extern int      gop_errno;
 /*
  * PROTOTYPES
  * ===========================================================================
- * 
+ *
  */
 
 /* libgop.c */

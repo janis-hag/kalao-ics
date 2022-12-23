@@ -60,13 +60,13 @@
 %                        \end{flushright}}
 \newcommand{\titre}[1] {\section{#1}}
 %
-% ecrit la commande 
+% ecrit la commande
 \newcommand{\cmda}[1]    {{\large\bf #1 \\[4mm]}}
 %
 
 %
 % format de la commande
-\newcommand{\fmtcmd}[2] {{\rm Format: \\[2mm] 
+\newcommand{\fmtcmd}[2] {{\rm Format: \\[2mm]
                           \hspace{2cm} \bf #1\hspace{3mm} #2 \\[8mm]}}
 %
 % commande complete
@@ -81,7 +81,7 @@
 %---------------------------------+
 % MACRO POUR LES TITRES SOULIGNES |
 %---------------------------------+
-\newcommand{\titreunderl}[1]{{\rm 
+\newcommand{\titreunderl}[1]{{\rm
                              \underline{#1}
                              \\[4mm]}}
 
@@ -119,7 +119,7 @@
 
 
 %-------------------------------------------------+
-% SEPARATIONS                                 
+% SEPARATIONS
 %-------------------------------------------------+
 
 
@@ -134,7 +134,7 @@
 
 
 %-------------------------------------------------+
-% Parametres                                 
+% Parametres
 %-------------------------------------------------+
 
 \newcommand {\docbeginparams} {\separation \subsubsection*{PARAMETRES:} \rm \begin{list}{}{\leftmargin=5.5cm\labelsep=.5cm\labelwidth=3cm\listparindent=0cm}}
@@ -147,31 +147,31 @@
 
 
 %-------------------------------------------------+
-% sujet                                 
+% sujet
 %-------------------------------------------------+
 
 \newcommand {\sujet}  [1] {\bigseparation \subsection*{#1}\noindent\par}
 
 %-------------------------------------------------+
-% subsujet                                 
+% subsujet
 %-------------------------------------------------+
 
 \newcommand {\subsujet}  [1] {\separation \subsection*{#1}\par}
 
 %-------------------------------------------------+
-% exemple                                 
+% exemple
 %-------------------------------------------------+
 
 \newcommand {\docexemples}  {\separation \subsubsection*{EXEMPLES:}}
 
 %-------------------------------------------------+
-% exemple                                 
+% exemple
 %-------------------------------------------------+
 
 \newcommand {\docexemple}  {\separation \subsubsection*{EXEMPLE:}}
 
 %-------------------------------------------------+
-% indentation                                 
+% indentation
 %-------------------------------------------------+
 
 \newcommand{\docindent}[1]{%
@@ -180,7 +180,7 @@
 \begin{list}{}{\leftmargin=2cm}\item {\bf#1}\end{list}}%
 
 %-------------------------------------------------+
-% variables importantes                                 
+% variables importantes
 %-------------------------------------------------+
 
 \newcommand {\docbeginvints} {\separation \subsubsection*{VARIABLES INTERACTIVES PRINCIPALES:} \rm \begin{list}{}{\leftmargin=4.5cm\labelsep=.5cm\labelwidth=2cm\listparindent=0cm}}
@@ -196,26 +196,26 @@
 \newcommand {\docendvars} {\end{list}}
 
 %-------------------------------------------------+
-% remarque                                 
+% remarque
 %-------------------------------------------------+
 
 \newcommand {\docremarque} [1] {\separation \subsubsection*{REMARQUE:} {\begin{list}{}{\setlength{\leftmargin}{2cm}}\item{\rm {#1}}\end{list}}}
 
 %-------------------------------------------------+
-% remarques                                 
+% remarques
 %-------------------------------------------------+
 
 \newcommand {\docremarques} [1] {\separation \subsubsection*{REMARQUES:} {\begin{list}{}{\setlength{\leftmargin}{2cm}}\item{\rm {#1}}\end{list}}}
 
 %-------------------------------------------------+
-% description breve                                 
+% description breve
 %-------------------------------------------------+
 
 %\newcommand {\descriptionbreve}  [1] {\rm{#1}}
 \newcommand {\descriptionbreve}  [1] {{\begin{list}{}{\setlength{\leftmargin}{2cm}}\item{\rm {#1}}\end{list}}}
 
 %-------------------------------------------------+
-% description                                  
+% description
 %-------------------------------------------------+
 
 \newcommand{\descriptionlongue}[1]{\separation \subsubsection*{DESCRIPTION:}{\begin{list}{}{\setlength{\leftmargin}{2cm}}\item{\rm {#1}}\end{list}}}
@@ -226,7 +226,7 @@
 \end{list}}%
 
 %-------------------------------------------------+
-% Syntaxe                                 
+% Syntaxe
 %-------------------------------------------------+
 
 \newcommand {\docbeginsyntaxe}  {\separation \subsubsection*{SYNTAXE:}  \rm \begin{list}{}{\setlength{\leftmargin}{2cm}}}
@@ -240,7 +240,7 @@
 
 %
 %--------------------------------+
-% Macro pour les  qualificateurs 
+% Macro pour les  qualificateurs
 %--------------------------------+
 
 \def\titrquas{\separation \subsubsection*{QUALIFICATEURS A DISPOSITION:}}
@@ -273,14 +273,14 @@
 \newcommand {\lkw} [3] {{#1} & {#2} & {#3}\\ \hline}
 \newcommand {\shortvar} [6] {{#1} & {#2} & {#3} & {#4} & {#5} & {#6}\\ \hline}
 \def\titrpar{\rm \large \underline{Variables du bloc utilisées par cette commande}}
-\newcommand{\titrtabpar}{\multicolumn{1}{l}{\large Variables} 
-                  &\multicolumn{1}{c}{\large Mode} 
+\newcommand{\titrtabpar}{\multicolumn{1}{l}{\large Variables}
+                  &\multicolumn{1}{c}{\large Mode}
                   &\multicolumn{1}{l}{\large Description} \\[1mm] \hline}
-\newcommand{\titrtabparsh}{\multicolumn{1}{l}{\large Variables} 
+\newcommand{\titrtabparsh}{\multicolumn{1}{l}{\large Variables}
                   &\multicolumn{1}{c}{\large Mode}
-		  &\multicolumn{1}{l}{\large Variables} 
+		  &\multicolumn{1}{l}{\large Variables}
                   &\multicolumn{1}{c}{\large Mode}
-		  &\multicolumn{1}{l}{\large Variables} 
+		  &\multicolumn{1}{l}{\large Variables}
                   &\multicolumn{1}{c}{\large Mode} \\[1mm] \hline}
 
 \makeatletter
@@ -293,5 +293,3 @@
 		{2ex plus .2ex}%
 		{\raggedright\large\bf}}
 \makeatother
-
-

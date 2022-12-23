@@ -7,7 +7,8 @@ readshmim dm01disp04
 streamburst imc dm01disp04 1000
 exitCLI
 """
-cp = subprocess.run(["milk"], input=input, encoding='utf8', stdout=PIPE, stderr=STDOUT)
+cp = subprocess.run(["milk"], input=input, encoding='utf8', stdout=PIPE,
+                    stderr=STDOUT)
 
 print("=========================== STDOUT")
 

@@ -66,8 +66,8 @@ def clamp(n, minn, maxn):
 
 def center_of_mass(array):
     x, y = ndimage.measurements.center_of_mass(array)
-    x = clamp(x+0.5, 0, array.shape[0])
-    y = clamp(y+0.5, 0, array.shape[1])
+    x = clamp(x + 0.5, 0, array.shape[0])
+    y = clamp(y + 0.5, 0, array.shape[1])
 
     return x, y
 
@@ -99,7 +99,8 @@ def dm_layout_add_viewboxes(layout):
     dm_viewbox_bottomright = layout.addViewBox(row=1, col=1, invertY=True)
 
     global dm_viewboxes
-    dm_viewboxes += (dm_viewbox_topleft, dm_viewbox_topright, dm_viewbox_bottomleft, dm_viewbox_bottomright)
+    dm_viewboxes += (dm_viewbox_topleft, dm_viewbox_topright,
+                     dm_viewbox_bottomleft, dm_viewbox_bottomright)
 
 
 def run():
@@ -108,7 +109,6 @@ def run():
 
     :return: exit code
     """
-
 
     display = 0
     frame = {}
@@ -126,7 +126,8 @@ def run():
     fli_window.setGeometry(100, 100, 1200, 800)
     fli_window.show()
 
-    fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True, enableMouse=True)
+    fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True,
+                                             enableMouse=True)
     fli_viewbox_full.setAspectLocked(True)
     fli_imageitem_full = pg.ImageItem()
     fli_viewbox_full.addItem(fli_imageitem_full)
@@ -136,7 +137,10 @@ def run():
     fli_imageitem_zoom = pg.ImageItem()
     fli_viewbox_zoom.addItem(fli_imageitem_zoom)
 
-    roi_circle = pg.CircleROI([fli_x_pos-fli_circle_radius, fli_y_pos-fli_circle_radius], [2*fli_circle_radius, 2*fli_circle_radius], pen=pg.mkPen(BLUE,width=2), movable=False)
+    roi_circle = pg.CircleROI([
+            fli_x_pos - fli_circle_radius, fli_y_pos - fli_circle_radius
+    ], [2 * fli_circle_radius, 2 * fli_circle_radius],
+                              pen=pg.mkPen(BLUE, width=2), movable=False)
     fli_viewbox_full.addItem(roi_circle)
 
     fli_text_line_1 = pg.LabelItem("", color=BLUE, bold=True)
@@ -159,23 +163,30 @@ def run():
     pupil_text_line_2 = pg.LabelItem("", color=BLUE, bold=True)
     pupil_window.addItem(pupil_text_line_2, row=2, col=0)
 
-    pupil_flux_top    = range( 12, 20+1,1)
-    pupil_flux_bottom = range(100,108+1,1)
-    pupil_flux_left   = range( 12,100+1,11)
-    pupil_flux_right  = range( 20,108+1,11)
+    pupil_flux_top = range(12, 20 + 1, 1)
+    pupil_flux_bottom = range(100, 108 + 1, 1)
+    pupil_flux_left = range(12, 100 + 1, 11)
+    pupil_flux_right = range(20, 108 + 1, 11)
 
     ##### Tip-Tilt window
     tiptilt_window = pg.GraphicsLayoutWidget(title="Tip-Tilt alignment")
     tiptilt_window.keyPressEvent = keyPressed
     tiptilt_window.show()
 
-    tiptilt_viewbox_topleft = tiptilt_window.addViewBox(row=0,col=0, invertY=True)
-    tiptilt_viewbox_topright = tiptilt_window.addViewBox(row=0,col=2, invertY=True)
-    tiptilt_viewbox_bottomleft = tiptilt_window.addViewBox(row=2,col=0, invertY=True)
-    tiptilt_viewbox_bottomright = tiptilt_window.addViewBox(row=2,col=2, invertY=True)
-    tiptilt_viewbox_center = tiptilt_window.addViewBox(row=1,col=1, invertY=True)
+    tiptilt_viewbox_topleft = tiptilt_window.addViewBox(
+            row=0, col=0, invertY=True)
+    tiptilt_viewbox_topright = tiptilt_window.addViewBox(
+            row=0, col=2, invertY=True)
+    tiptilt_viewbox_bottomleft = tiptilt_window.addViewBox(
+            row=2, col=0, invertY=True)
+    tiptilt_viewbox_bottomright = tiptilt_window.addViewBox(
+            row=2, col=2, invertY=True)
+    tiptilt_viewbox_center = tiptilt_window.addViewBox(row=1, col=1,
+                                                       invertY=True)
 
-    tiptilt_viewboxes = (tiptilt_viewbox_topleft, tiptilt_viewbox_topright, tiptilt_viewbox_bottomleft, tiptilt_viewbox_bottomright, tiptilt_viewbox_center)
+    tiptilt_viewboxes = (tiptilt_viewbox_topleft, tiptilt_viewbox_topright,
+                         tiptilt_viewbox_bottomleft,
+                         tiptilt_viewbox_bottomright, tiptilt_viewbox_center)
     tiptilt_subap_images = ()
     tiptilt_crosses = ()
     tiptilt_text_inds = ()
@@ -185,8 +196,10 @@ def run():
         viewbox.setAspectLocked(True)
 
         tiptilt_subap_image = pg.ImageItem()
-        tiptilt_cross_vert = pg.InfiniteLine(angle=90, movable=False, pen=YELLOW)
-        tiptilt_cross_hori = pg.InfiniteLine(angle=0, movable=False, pen=YELLOW)
+        tiptilt_cross_vert = pg.InfiniteLine(angle=90, movable=False,
+                                             pen=YELLOW)
+        tiptilt_cross_hori = pg.InfiniteLine(angle=0, movable=False,
+                                             pen=YELLOW)
         tiptilt_text_ind = pg.TextItem("", color=RED)
         tiptilt_text_loc = pg.TextItem("", color='k', anchor=(0, 1))
         viewbox.addItem(tiptilt_subap_image)
@@ -195,11 +208,13 @@ def run():
         viewbox.addItem(tiptilt_text_ind)
         viewbox.addItem(tiptilt_text_loc)
 
-        tiptilt_subap_images += (tiptilt_subap_image,)
-        tiptilt_crosses += ({VERT: tiptilt_cross_vert, HORI: tiptilt_cross_hori},)
-        tiptilt_text_inds += (tiptilt_text_ind,)
-        tiptilt_text_locs += (tiptilt_text_loc,)
-
+        tiptilt_subap_images += (tiptilt_subap_image, )
+        tiptilt_crosses += ({
+                VERT: tiptilt_cross_vert,
+                HORI: tiptilt_cross_hori
+        }, )
+        tiptilt_text_inds += (tiptilt_text_ind, )
+        tiptilt_text_locs += (tiptilt_text_loc, )
 
     ##### DM window
     dm_window = pg.GraphicsLayoutWidget(title="DM alignment")
@@ -207,7 +222,6 @@ def run():
     dm_window.show()
 
     dm_viewboxes = ()
-
 
     dm_layout_topleft = dm_window.addLayout(row=0, col=0)
     dm_layout_add_viewboxes(dm_layout_topleft)
@@ -255,11 +269,22 @@ def run():
         viewbox.addItem(dm_cross_vert_up)
         viewbox.addItem(dm_text_ind)
 
-        dm_subap_images += (dm_subap_image,)
-        dm_crosses += ({FLAT: {VERT: dm_cross_vert_ref, HORI: dm_cross_hori_ref},
-                        DOWN: {VERT: dm_cross_vert_down, HORI: dm_cross_hori_down},
-                        UP: {VERT: dm_cross_vert_up, HORI: dm_cross_hori_up}},)
-        dm_text_inds += (dm_text_ind,)
+        dm_subap_images += (dm_subap_image, )
+        dm_crosses += ({
+                FLAT: {
+                        VERT: dm_cross_vert_ref,
+                        HORI: dm_cross_hori_ref
+                },
+                DOWN: {
+                        VERT: dm_cross_vert_down,
+                        HORI: dm_cross_hori_down
+                },
+                UP: {
+                        VERT: dm_cross_vert_up,
+                        HORI: dm_cross_hori_up
+                }
+        }, )
+        dm_text_inds += (dm_text_ind, )
 
     ##### Help
     warning = "WARNING:<br /><br />'bmc_display', 'nuvu_acquire' and 'DMcomb' must be set-up and running,<br />and the dm flat must be loaded for this tool to work properly"
@@ -294,25 +319,40 @@ def run():
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
 
     # Add grid to pupil windows
-    if nuvu_stream.shape == (128,128):
+    if nuvu_stream.shape == (128, 128):
         for i in range(11):
-            pupil_viewbox.addItem(pg.InfiniteLine(pos=10*i, angle=90, movable=False, pen=YELLOW))
-            pupil_viewbox.addItem(pg.InfiniteLine(pos=10*i, angle=0, movable=False, pen=YELLOW))
-    elif nuvu_stream.shape == (64,64):
+            pupil_viewbox.addItem(
+                    pg.InfiniteLine(pos=10 * i, angle=90, movable=False,
+                                    pen=YELLOW))
+            pupil_viewbox.addItem(
+                    pg.InfiniteLine(pos=10 * i, angle=0, movable=False,
+                                    pen=YELLOW))
+    elif nuvu_stream.shape == (64, 64):
         for i in range(11):
-            pupil_viewbox.addItem(pg.InfiniteLine(pos=5*i+1, angle=90, movable=False, pen=YELLOW))
-            pupil_viewbox.addItem(pg.InfiniteLine(pos=5*i+5, angle=90, movable=False, pen=YELLOW))
-            pupil_viewbox.addItem(pg.InfiniteLine(pos=5*i+1, angle=0, movable=False, pen=YELLOW))
-            pupil_viewbox.addItem(pg.InfiniteLine(pos=5*i+5, angle=0, movable=False, pen=YELLOW))
+            pupil_viewbox.addItem(
+                    pg.InfiniteLine(pos=5 * i + 1, angle=90, movable=False,
+                                    pen=YELLOW))
+            pupil_viewbox.addItem(
+                    pg.InfiniteLine(pos=5 * i + 5, angle=90, movable=False,
+                                    pen=YELLOW))
+            pupil_viewbox.addItem(
+                    pg.InfiniteLine(pos=5 * i + 1, angle=0, movable=False,
+                                    pen=YELLOW))
+            pupil_viewbox.addItem(
+                    pg.InfiniteLine(pos=5 * i + 5, angle=0, movable=False,
+                                    pen=YELLOW))
 
     while loop:
         #FLI window
         fli_image = fli_stream.get_data(check=True)
         fli_imageitem_full.setImage(fli_image)
 
-        fli_imageitem_zoom.setImage(fli_image[fli_y_pos-3*fli_circle_radius:fli_y_pos+3*fli_circle_radius,
-                                    fli_x_pos-3*fli_circle_radius:fli_x_pos+3*fli_circle_radius])
-
+        fli_imageitem_zoom.setImage(fli_image[fli_y_pos -
+                                              3 * fli_circle_radius:fli_y_pos +
+                                              3 * fli_circle_radius,
+                                              fli_x_pos -
+                                              3 * fli_circle_radius:fli_x_pos +
+                                              3 * fli_circle_radius])
 
         # Do not poke actuators
         for act in dm_actuators_poke:
@@ -320,7 +360,8 @@ def run():
 
         dmdisp.set_data(dm_array, True)
         time.sleep(dm_wait_after_poke)
-        frame[FLAT], subapertures[FLAT] = get_roi_and_subapertures(nuvu_stream.get_data(check=True))
+        frame[FLAT], subapertures[FLAT] = get_roi_and_subapertures(
+                nuvu_stream.get_data(check=True))
 
         # Poke actuators down
         for act in dm_actuators_poke:
@@ -328,7 +369,8 @@ def run():
 
         dmdisp.set_data(dm_array, True)
         time.sleep(dm_wait_after_poke)
-        frame[DOWN], subapertures[DOWN] = get_roi_and_subapertures(nuvu_stream.get_data(check=True))
+        frame[DOWN], subapertures[DOWN] = get_roi_and_subapertures(
+                nuvu_stream.get_data(check=True))
 
         # Poke actuators up
         for act in dm_actuators_poke:
@@ -336,7 +378,8 @@ def run():
 
         dmdisp.set_data(dm_array, True)
         time.sleep(dm_wait_after_poke)
-        frame[UP], subapertures[UP] = get_roi_and_subapertures(nuvu_stream.get_data(check=True))
+        frame[UP], subapertures[UP] = get_roi_and_subapertures(
+                nuvu_stream.get_data(check=True))
 
         # Pupil window
         pupil_flux_top_sum = 0
@@ -356,13 +399,19 @@ def run():
         for i in pupil_flux_right:
             pupil_flux_right_sum += np.sum(subapertures[FLAT][i])
 
-        pupil_text_line_1.setText(f"Top : {pupil_flux_top_sum:.1f}, Bottom : {pupil_flux_bottom_sum:.1f}, Left : {pupil_flux_left_sum:.1f}, Right : {pupil_flux_right_sum:.1f}")
-        pupil_text_line_2.setText(f"T/B: {pupil_flux_top_sum/pupil_flux_bottom_sum:.3f} L/R: {pupil_flux_left_sum/pupil_flux_right_sum:.3f}")
+        pupil_text_line_1.setText(
+                f"Top : {pupil_flux_top_sum:.1f}, Bottom : {pupil_flux_bottom_sum:.1f}, Left : {pupil_flux_left_sum:.1f}, Right : {pupil_flux_right_sum:.1f}"
+        )
+        pupil_text_line_2.setText(
+                f"T/B: {pupil_flux_top_sum/pupil_flux_bottom_sum:.3f} L/R: {pupil_flux_left_sum/pupil_flux_right_sum:.3f}"
+        )
 
         pupil_imageitem.setImage(frame[display])
 
         # Tip-Tilt window
-        for i, subap_image, cross, text_ind, text_loc in zip(tiptilt_subap_indexes, tiptilt_subap_images, tiptilt_crosses, tiptilt_text_inds, tiptilt_text_locs):
+        for i, subap_image, cross, text_ind, text_loc in zip(
+                tiptilt_subap_indexes, tiptilt_subap_images, tiptilt_crosses,
+                tiptilt_text_inds, tiptilt_text_locs):
             pos = center_of_mass(subapertures[FLAT][i])
             text_ind.setText(f"{i}")
             text_loc.setText(f"({pos[HORI]:.2f},{pos[VERT]:.2f})")
@@ -371,7 +420,9 @@ def run():
             subap_image.setImage(subapertures[display][i])
 
         # DM window
-        for i, subap_image, cross, text_ind in zip(dm_subap_indexes, dm_subap_images, dm_crosses, dm_text_inds):
+        for i, subap_image, cross, text_ind in zip(dm_subap_indexes,
+                                                   dm_subap_images, dm_crosses,
+                                                   dm_text_inds):
             pos = center_of_mass(subapertures[FLAT][i])
             text_ind.setText(f"{i}")
             cross[FLAT][VERT].setValue(pos[VERT])

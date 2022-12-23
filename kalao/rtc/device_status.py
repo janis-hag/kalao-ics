@@ -4,15 +4,15 @@
 # @Date : 2021-02-24-10-32
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 device_status.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 import sensors
 from kalao.utils import database
 from kalao.rtc import gpu_control
+
 
 def read_all():
 
@@ -26,12 +26,12 @@ def read_all():
                 #print '  %s: %.2f' % (feature.label, feature.get_value())
                 chipname = '_'.join(str(chip).split('-')[:-1])
                 sensor_name = chipname + '-' + feature.label
-                rtc_sensors[sensor_name.replace(' ', '_')] = feature.get_value()
+                rtc_sensors[sensor_name.replace(' ',
+                                                '_')] = feature.get_value()
     finally:
         sensors.cleanup()
 
     # rtc_sensors.update(gpu_control.status())
-
 
     return rtc_sensors
 

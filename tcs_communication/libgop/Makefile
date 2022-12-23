@@ -35,16 +35,16 @@ all_lib: $(LIBGOP) $(LIBSRVGOP)
 all_exe: $(GOP_WAIT) $(GOP_TIMER)
 
 clean:
-	rm *$(OPSYS).a *$(OPSYS).o 
+	rm *$(OPSYS).a *$(OPSYS).o
 
-# $(TEST_GOP_TIMER) $(SERVER) $(CLIENT) $(TRANSMITTER) $(FCLIENT) 
+# $(TEST_GOP_TIMER) $(SERVER) $(CLIENT) $(TRANSMITTER) $(FCLIENT)
 # $(TORTURE_CLIENT) $(TEST_F_LIBSRVGOP) $(TEST_C_LIBSRVGOP)
 
 #
 # depences standards pour tout les utilitaires
 #
 DEPENDENCIES =  gop.h					\
-		$(LIBGOP)                 
+		$(LIBGOP)
 
 
 
@@ -83,11 +83,11 @@ $(GOP_WAIT):		gop_wait.c			\
 
 $(GOP_TIMER).o:		gop_timer.c			\
 			$(DEPENDENCIES)
-	$(CC) $(CFLAGS) $(CFLAGS_THREAD) $(LDFLAGS) gop_timer.c -c -o $(GOP_TIMER).o  
+	$(CC) $(CFLAGS) $(CFLAGS_THREAD) $(LDFLAGS) gop_timer.c -c -o $(GOP_TIMER).o
 
 $(GOP_TIMER):		$(GOP_TIMER).o			\
 			$(DEPENDENCIES)
-	$(CC) $(CFLAGS) $(CFLAGS_THREAD) $(LDFLAGS) $(GOP_TIMER).o -o $(GOP_TIMER) $(LIBGOP) -llogbook $(LDLIBS) $(LDLIBS_THREAD) 
+	$(CC) $(CFLAGS) $(CFLAGS_THREAD) $(LDFLAGS) $(GOP_TIMER).o -o $(GOP_TIMER) $(LIBGOP) -llogbook $(LDLIBS) $(LDLIBS_THREAD)
 
 $(TEST_GOP_TIMER):		test_gop_timer.c			\
 			$(DEPENDENCIES)

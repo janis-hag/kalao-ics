@@ -4,7 +4,6 @@
 # @Date : 2022-06-13-09-51
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 aocontrol.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
@@ -66,8 +65,9 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
         return -1
 
 
-
-def linear_low_pass_modal_gain_filter(cut_off, last_mode=None ,keep_existing_flat=False, stream_name='aol1_mgainfact'):
+def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
+                                      keep_existing_flat=False,
+                                      stream_name='aol1_mgainfact'):
     """
     Applies a linear low-pass filter to the ao modal gains. The gain is flat until the cut_off mode where it starts
     decreasing down to zero for the last mode
@@ -85,7 +85,6 @@ def linear_low_pass_modal_gain_filter(cut_off, last_mode=None ,keep_existing_fla
         mgainfact_shm = SHM(stream_name)
         mgainfact_array = mgainfact_shm.get_data(check=False)
 
-
         if not keep_existing_flat:
             mgainfact_array = np.ones(len(mgainfact_array))
 
@@ -94,18 +93,17 @@ def linear_low_pass_modal_gain_filter(cut_off, last_mode=None ,keep_existing_fla
             cut_off = len(mgainfact_array)
 
         if last_mode is None:
-            last_mode = len(mgainfact_array)#-1
+            last_mode = len(mgainfact_array)  #-1
         elif last_mode < cut_off:
             last_mode = cut_off
             mgainfact_array[last_mode:] = 0
         else:
             mgainfact_array[last_mode:] = 0
 
-        if not cut_off ==  last_mode:
+        if not cut_off == last_mode:
             #down = np.linspace(1, 0, len(mgainfact_array) - cut_off + 2 - (len(mgainfact_array) - last_mode) )[1:-1]
             down = np.linspace(1, 0, last_mode - cut_off + 2)[1:-1]
             mgainfact_array[cut_off:last_mode] = down
-
 
         mgainfact_shm.set_data(mgainfact_array.astype(mgainfact_shm.nptype))
 
@@ -135,13 +133,14 @@ def wfs_centering(tt_threshold):
         if tip_offset - tip < tt_threshold:
             tip_centered = True
         else:
-            fps_bmc.set_param_value_float('ttm_tip_offset', str(tip_offset - tip / 2))
+            fps_bmc.set_param_value_float('ttm_tip_offset',
+                                          str(tip_offset - tip / 2))
 
         if tilt_offset - tip < tt_threshold:
             tilt_centered = True
         else:
-            fps_bmc.set_param_value_float('ttm_tilt_offset', str(tilt_offset - tilt / 2))
+            fps_bmc.set_param_value_float('ttm_tilt_offset',
+                                          str(tilt_offset - tilt / 2))
 
     # TODO return 0 if centered, 1 if exceeded iterations
     return 0
-

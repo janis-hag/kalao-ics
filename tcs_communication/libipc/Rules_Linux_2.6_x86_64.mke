@@ -8,12 +8,10 @@ INCLUDE_PATH =	-I .				\
 		-I $(T4INC) 			\
 		-I $(OPENWINHOME)/include	\
 		-I /usr/local/include
-		
+
 
 CDEBUGFLAGS += -g
 
 CFLAGS	+= $(CDEBUGFLAGS) -fPIC -Wall -DUSE_STRERROR -DSYSV -DLINUX $(INCLUDE_PATH)
 
 RANLIB	= echo
-
-

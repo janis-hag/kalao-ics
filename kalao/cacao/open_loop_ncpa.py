@@ -4,10 +4,9 @@
 # @Date : 2022-03-19-15-33
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 open_loop_ncpa.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 
 import argparse
@@ -43,12 +42,12 @@ def handler(signal_received, frame):
 def cut_image(img, window, center):
 
     if window is not None:
-        hw = int(np.round(window/2))
+        hw = int(np.round(window / 2))
         if center is None:
-            c = [img.shape[0]/2, img.shape[1]/2]
+            c = [img.shape[0] / 2, img.shape[1] / 2]
         else:
             c = center
-        img = img[c[0]-hw:c[0]+hw, c[1]-hw:c[1]+hw]
+        img = img[c[0] - hw:c[0] + hw, c[1] - hw:c[1] + hw]
 
     img = img.astype(float)
 
@@ -63,7 +62,8 @@ def save_stream_to_fits(stream_name, fits_file):
     exitCLI
     """
 
-    cp = subprocess.run(["milk"], input=milk_input, encoding='utf8', stdout=PIPE, stderr=STDOUT)
+    cp = subprocess.run(["milk"], input=milk_input, encoding='utf8',
+                        stdout=PIPE, stderr=STDOUT)
     print("=========================== STDOUT")
     print(cp.stdout)
     print("=========================== STDERR")
@@ -86,7 +86,7 @@ def run(cam, args):
 
     new_dit = dit
 
-    while(True):
+    while (True):
         # Search optimal dit
         cam.set_exposure(new_dit)
         img = cam.take_photo()
@@ -96,19 +96,21 @@ def run(cam, args):
         if img.max() >= max_flux:
             new_dit = int(np.floor(0.8 * new_dit))
             if new_dit <= 1:
-                print('Max flux '+str(img.max())+' above max permitted value ' + str(max_flux))
+                print('Max flux ' + str(img.max()) +
+                      ' above max permitted value ' + str(max_flux))
                 sys.exit(1)
             continue
         elif img.max() <= min_flux:
             new_dit = int(np.ceil(1.2 * new_dit))
             if new_dit >= max_dit:
-                print('Max flux '+str(img.max())+' below minimum permitted value: ' + str(min_flux))
+                print('Max flux ' + str(img.max()) +
+                      ' below minimum permitted value: ' + str(min_flux))
                 sys.exit(1)
             continue
         else:
             break
 
-    print('Setting DIT to: '+str(new_dit))
+    print('Setting DIT to: ' + str(new_dit))
     cam.set_exposure(new_dit)
     img = cam.take_photo()
     img = cut_image(img, window, center)
@@ -116,10 +118,12 @@ def run(cam, args):
     peak_value = img.max()
 
     # Creating a brand new stream
-    shm = SHM('fli_stream', img,
-                 location=-1,  # CPU
-                 shared=True,  # Shared
-                 )
+    shm = SHM(
+            'fli_stream',
+            img,
+            location=-1,  # CPU
+            shared=True,  # Shared
+    )
 
     # bmc_zernike_coeff OSA sorted orders
 
@@ -128,16 +132,18 @@ def run(cam, args):
     zernike_shm = SHM('bmc_zernike_coeff')
     zernike_array = zernike_shm.get_data(check=False)
 
-    if orders_to_correct > len(zernike_array)-3:
-        orders_to_correct = len(zernike_array)-3
-        print("Correcting maximum number of orders: "+str(len(zernike_array)))
+    if orders_to_correct > len(zernike_array) - 3:
+        orders_to_correct = len(zernike_array) - 3
+        print("Correcting maximum number of orders: " +
+              str(len(zernike_array)))
     else:
-        print('Correcting '+str(orders_to_correct)+' orders.')
+        print('Correcting ' + str(orders_to_correct) + ' orders.')
 
     # -1.75 1.75
     zernike_array[:] = 0
 
-    df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step']+np.arange(len(zernike_array)).tolist())
+    df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step'] +
+                      np.arange(len(zernike_array)).tolist())
 
     # Initial step size
 
@@ -146,10 +152,11 @@ def run(cam, args):
 
     for i in range(iterations):
         print('=========================================')
-        print('Iteration: '+str(i+1)+'/'+str(iterations))
+        print('Iteration: ' + str(i + 1) + '/' + str(iterations))
 
-        for order in range(3, orders_to_correct+3):
-            print('Iteration: '+str(i+1)+'/'+str(iterations)+' Optimising order: '+str(order))
+        for order in range(3, orders_to_correct + 3):
+            print('Iteration: ' + str(i + 1) + '/' + str(iterations) +
+                  ' Optimising order: ' + str(order))
 
             zernike_step = 0.3 / 2  # / steps
 
@@ -159,7 +166,7 @@ def run(cam, args):
             img = cam.take_photo()
             img = cut_image(img, window, center)
 
-            peak_array = np.zeros((3,2))
+            peak_array = np.zeros((3, 2))
 
             peak_array[1][0] = img.max()
             peak_array[1][1] = zernike_array[order]
@@ -169,7 +176,9 @@ def run(cam, args):
                     # Stop search if step get too small for this order
                     break
 
-                print('Step '+str(step)+'. Zernike amplitude '+str(zernike_array[order])+'. Max flux: '+str(img.max()))
+                print('Step ' + str(step) + '. Zernike amplitude ' +
+                      str(zernike_array[order]) + '. Max flux: ' +
+                      str(img.max()))
 
                 up = zernike_array[order] + zernike_step
                 down = zernike_array[order] - zernike_step
@@ -207,16 +216,20 @@ def run(cam, args):
                 #     img = cam.take_photo()
                 #     img = cut_image(img, window, center)
 
-                df = df.append(pd.Series(np.concatenate((np.array([peak_array.max(),i, order, step]), zernike_array)),
-                                         index=df.columns), ignore_index=True)
+                df = df.append(
+                        pd.Series(
+                                np.concatenate((np.array([
+                                        peak_array.max(), i, order, step
+                                ]), zernike_array)), index=df.columns),
+                        ignore_index=True)
 
-                zernike_step = zernike_step/2
+                zernike_step = zernike_step / 2
 
                 shm.set_data(img)
                 sleep(0.00001)
 
                 # Set new value of center
-                peak_array[1][0] = peak_array[:,0].max()
+                peak_array[1][0] = peak_array[:, 0].max()
                 peak_array[1][1] = zernike_array[order]
 
             #zernike_step = zernike_array[order]/steps
@@ -225,13 +238,13 @@ def run(cam, args):
 
     time_name = kalao_time.get_isotime()
 
-    df.to_pickle('ncpa_scan_'+time_name+'.pickle')
+    df.to_pickle('ncpa_scan_' + time_name + '.pickle')
 
     max_row = df.iloc[df.peak_flux.idxmax()]
 
-    print(max_row[0:orders_to_correct+2])
+    print(max_row[0:orders_to_correct + 2])
 
-    zernike_array  = max_row[-len(zernike_array):].to_numpy()
+    zernike_array = max_row[-len(zernike_array):].to_numpy()
 
     zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
 
@@ -242,30 +255,35 @@ def run(cam, args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Run open-loop NCPA optimisation.')
-    parser.add_argument('-d', action="store", dest="dit", type=int, default=1, help="Science camera integration time")
-    parser.add_argument('-o', action="store", dest="orders_to_correct", default=10, type=int,
+            description='Run open-loop NCPA optimisation.')
+    parser.add_argument('-d', action="store", dest="dit", type=int, default=1,
+                        help="Science camera integration time")
+    parser.add_argument('-o', action="store", dest="orders_to_correct",
+                        default=10, type=int,
                         help='Numbers of orders to correct')
-    parser.add_argument('-s', action="store", dest="steps", default=25, type=int,
-                        help='Number of steps')
-    parser.add_argument('-i', action="store", dest="iterations", default=10, type=int,
-                        help='Number of iterations')
-    parser.add_argument('-max', action="store", dest="max_flux", default=2**15, type=float,
-                        help='Maximum flux to have on the FLI')
-    parser.add_argument('-min_flux', action="store", dest="min_flux", default=2**11, type=int,
+    parser.add_argument('-s', action="store", dest="steps", default=25,
+                        type=int, help='Number of steps')
+    parser.add_argument('-i', action="store", dest="iterations", default=10,
+                        type=int, help='Number of iterations')
+    parser.add_argument('-max', action="store", dest="max_flux", default=2**15,
+                        type=float, help='Maximum flux to have on the FLI')
+    parser.add_argument('-min_flux', action="store", dest="min_flux",
+                        default=2**11, type=int,
                         help='Minimum flux to have on the FLI')
-    parser.add_argument('-max_dit', action="store", dest="max_dit", default=20, type=int,
-                        help='Maximum dit of the FLI')
-    parser.add_argument('-filter', action="store", dest="filter_name", default='clear',
-                        help='Filter name to use')
-    parser.add_argument('-min_step', action="store", dest="min_step", default=0.0001, type=float,
+    parser.add_argument('-max_dit', action="store", dest="max_dit", default=20,
+                        type=int, help='Maximum dit of the FLI')
+    parser.add_argument('-filter', action="store", dest="filter_name",
+                        default='clear', help='Filter name to use')
+    parser.add_argument('-min_step', action="store", dest="min_step",
+                        default=0.0001, type=float,
                         help='Minimum step size for convergence')
-    parser.add_argument('-c', action="store", dest="center", default=[512, 512], nargs='+', type=int,
+    parser.add_argument('-c', action="store", dest="center",
+                        default=[512, 512], nargs='+', type=int,
                         help='x y position of the window center')
-    parser.add_argument('-w', action="store", dest="window_size", default=100, type=int,
-                        help='Size of the window to cut out. ')
-    parser.add_argument('-l', action="store", dest="laser_int", default=0.045, type=float,
-                        help='Laser intensity.')
+    parser.add_argument('-w', action="store", dest="window_size", default=100,
+                        type=int, help='Size of the window to cut out. ')
+    parser.add_argument('-l', action="store", dest="laser_int", default=0.045,
+                        type=float, help='Laser intensity.')
 
     args = parser.parse_args()
     dit = args.dit
@@ -291,7 +309,7 @@ if __name__ == '__main__':
     #laser.set_intensity(0.3)
 
     if filterwheel.set_position(filter_name) == -1:
-       print("Error with filter selection")
+        print("Error with filter selection")
     sleep(2)
 
     cam = FLI.USBCamera.find_devices()[0]

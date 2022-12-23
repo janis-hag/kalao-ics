@@ -184,7 +184,7 @@ sendFPScmd "setval bmc_display.conf.taskset 1"
 # Nuvu sdk driver setting
 ##sendFPScmd "setval nuvu_acquire.procinfo.RTprio 10"
 #sendFPScmd "setval nuvu_acquire.procinfo.loopcntMax -1"
-#sendFPScmd "setval nuvu_acquire.procinfo.triggermode 0" 
+#sendFPScmd "setval nuvu_acquire.procinfo.triggermode 0"
 
 ##sendFPScmd "setval nuvu_acquire.readoutmode 1"
 #sendFPScmd "setval nuvu_acquire.readoutmode 4"

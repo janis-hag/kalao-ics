@@ -52,7 +52,7 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
         set -l old_status $status
 
         # Prompt override?
-        if test -n "(KalAO_flask) "            
+        if test -n "(KalAO_flask) "
             printf "%s%s" "(KalAO_flask) " (set_color normal)
         else
             # ...Otherwise, prepend env

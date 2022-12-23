@@ -42,7 +42,7 @@ gcc -c -fPIC -Wall -DUSE_STRERROR -DSELECT_CALL -DSYSV -DLINUX ../libipc/libipc.
 ld -shared libipc.o ../gop/libgop.a pymod_libipc_wrap.o -o _pymod_libipc.so
 
 
-Test 
+Test
 -------------------
 Sur glslogin1 ou gvanuc1, lancer 2 terminaux (en bash si le path de python est defini dans un .bashrc)
 

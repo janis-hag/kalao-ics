@@ -165,14 +165,14 @@ de message.
 Il peut prendre une des valeurs suivantes:\\
 
 {\tt 'H'}, {\tt 'D'}, {\tt 'E'}\\[3mm]
-Un message commence toujours par un paquet de type entête: {\tt TYPE = 'H'} 
+Un message commence toujours par un paquet de type entête: {\tt TYPE = 'H'}
 (partie EDM obligatoire) qui peut être suivi (ou non) par des paquets
 de type donnée: {\tt TYPE = 'D'} (qui forment la partie SDD). Celle--ci peut--être envoyée en un seul ou plusieurs paquets.\\
 Si l'expéditeur décide d'interrompre la transmission  du message il envoie un paquet de fin de message: {\tt TYPE = 'E'} suivit lui aussi facultativement d'aucun ou plusieurs paquets.
 
 \subsubsection{VERSION -- No de version du protocole:}
 Indique la version logicielle du protocole (définie par un caractère)
-qui est utilisée. 
+qui est utilisée.
 
 \subsubsection{CLASS -- Classe du message:}
 Indique le genre de service demandé pour les messages de commande et,
@@ -289,7 +289,7 @@ data          & PSIZE & données\\ \hline
 \end{minipage}
 \end{center}
 \vspace{5mm}
-		
+
 \noindent
 La partie SDD est transmise dans un format indépendant du type
 de machine (arrivée et départ) en utilisant le standard XDR
@@ -350,7 +350,7 @@ Les {\tt ACK} sont des minipaquets, composé d'une chaîne de caractères, qui perm
 \multicolumn{3}{c}{~}\\[-2mm] \hline
 {\small TYPE}     & 1   & {\tt 'A'}                \\
 {\small CODE}     & 3   & {\tt "xx"}                    \\
-\hline 
+\hline
 \end{tabular}
 \end{minipage}
 \end{center}
@@ -359,7 +359,7 @@ Les {\tt ACK} sont des minipaquets, composé d'une chaîne de caractères, qui perm
 
 \subsection{Composition et synchronisation des messages}
 
-La composition d'un message, c'est à dire le nombre et la taille des paquets de la partie {\tt SDD} ainsi que la présence d'{\tt ACK} du header et des paquets de données sont déterminés par le contenu des mots--clés de l'entête. C'est à dire: {\tt MSIZE, PSIZE, HSYNC et DSYNC}.\\ 
+La composition d'un message, c'est à dire le nombre et la taille des paquets de la partie {\tt SDD} ainsi que la présence d'{\tt ACK} du header et des paquets de données sont déterminés par le contenu des mots--clés de l'entête. C'est à dire: {\tt MSIZE, PSIZE, HSYNC et DSYNC}.\\
 
 \noindent
 Les diagrammes GOP--3 et GOP--4 montrent les paquets d'un message de classe {\tt COMD} transitant entre un expéditeur et un destinataire via un transmetteur. On y remarque l'effet du mot--clé DSYNC.\\
@@ -372,16 +372,16 @@ Les diagrammes GOP--5 et GOP--6 montrent les paquets d'un message de classe {\tt
 Une communication est toujours unidirectionnelle et ne peut être interrompue par d'autres communications. Elle est composée d'une suite de messages. Par exemple, un programme désirant envoyer une commande et des données enverra une entête de classe {\tt COMD} suivit d'un paquet contenant la commande, puis une entête de classe {\tt DATA} suivit d'un certain nombre de paquets de données.
 
 \medskip\noindent
-Les messages d'une communication sont liés entre-eux (font partie de la même communication) par la présence de {\tt CONT=T} dans les entêtes des premiers messages. La communication est terminée: 
+Les messages d'une communication sont liés entre-eux (font partie de la même communication) par la présence de {\tt CONT=T} dans les entêtes des premiers messages. La communication est terminée:
 \begin{enumerate}
-\item lorsque le dernier paquet du message dont l'entête contient {\tt CONT=F} est reçu 
+\item lorsque le dernier paquet du message dont l'entête contient {\tt CONT=F} est reçu
 \item lors de la réception d'un paquet fin de message ({\tt FDM}).
 \end{enumerate}
 
 \subsection{Synchronisation d'une communication}
 
 \medskip\noindent
-Un message d'une communication peut être acquitté par un message de classe {\tt ACKN}. Ce message est une quittance qui permet de synchroniser une communication composée de plusieurs messages. Par exemple, pour une communication de type commande + données, la commande (classe {\tt COMD}) peut être acquittée avant l'envoi des données (voir diagramme GOP--7). La fin de l'envoi des données peut également être acquitté. 
+Un message d'une communication peut être acquitté par un message de classe {\tt ACKN}. Ce message est une quittance qui permet de synchroniser une communication composée de plusieurs messages. Par exemple, pour une communication de type commande + données, la commande (classe {\tt COMD}) peut être acquittée avant l'envoi des données (voir diagramme GOP--7). La fin de l'envoi des données peut également être acquitté.
 
 \medskip\noindent
 Le message de classe {\tt ACKN} (quittance) ne fait donc pas partie du protocole c'est un message dont l'envoi et la réception ont été voulu par l'expéditeur et le destinataire. Dans un tel mode de fonctionnement, et uniquement dans ce mode, où l'on sait que l'expéditeur est en attente d'une quittance, le destinataire peut envoyer des message de classe {\tt STAT, INFO, DBUG}. La communication sera terminée par l'envoi de la quittance (voir diagramme GOP--8).
@@ -501,7 +501,7 @@ Cette fonction effectue aussi la mise à jour du (ou des) moniteur(s) d'état à in
 
 
 \section{DESCRIPTION DU PROTOCOLE DE COMMUNICATION BAS NIVEAU UTILISÉ PAR LES TRANSPUTERS}
-Du côté transputer la communication avec \oserver\ (ou \iserver ) est définie 
+Du côté transputer la communication avec \oserver\ (ou \iserver ) est définie
 par le protocole {\bf SP}. Celui--ci détermine complètement (format, structure et type de données) les messages qui
 passent sur le link entre le transputer et le SUN de manière transparente
 pour un programme occam qui communique sur un link déclaré de type {\bf SP}
@@ -638,11 +638,9 @@ façon on peut assurer que tout ce qui remonte des transputers de commande ainsi 
 \item[expéditeur] celui qui envoie un message
 \item[interlocuteur] expéditeur, transmetteur ou destinataire
 \item[message] ensemble logique constitué d'une entête et d'une partie donnée
-\item[paquet] composant d'un message, le plus petit élément non découpable 
+\item[paquet] composant d'un message, le plus petit élément non découpable
 \item[quittance] message de confirmation utilisé pour la synchronisation dans une communication
 \item[transmetteur] celui qui transmet un message, interface entre un expéditeur et un destinataire
 \end{description}
 
 \end{document}
-
-

@@ -4,10 +4,9 @@
 # @Date : 2022-05-30-16-22
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 wfs_monitoring.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 import sys
 
@@ -21,6 +20,7 @@ from time import sleep
 #get image from nuvu shm
 #save fits with header
 
+
 def save_wfs_image():
 
     #turn on laser
@@ -28,8 +28,8 @@ def save_wfs_image():
     laser.set_intensity(5)
     flip_mirror.up()
 
-
-    file_path = file_handling.create_night_filepath(tmp_night_folder='/home/kalao/data/tmp/wfs')
+    file_path = file_handling.create_night_filepath(
+            tmp_night_folder='/home/kalao/data/tmp/wfs')
 
     cp = toolbox.save_stream_to_fits('nuvu_stream', file_path)
 
@@ -37,7 +37,6 @@ def save_wfs_image():
     print(cp.stdout)
     print("=========================== STDERR")
     print(cp.stderr)
-
 
     file_handling.update_header(file_path)
 

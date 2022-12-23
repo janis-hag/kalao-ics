@@ -4,10 +4,9 @@
 # @Date : 2021-03-22-18-21
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 __init__.py is part of the KalAO Instrument Control Software
-(KalAO-ICS). 
+(KalAO-ICS).
 """
 __all__ = ["camera.py"]
 from .camera import *

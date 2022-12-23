@@ -4,7 +4,6 @@
 # @Date : 2021-03-15-10-29
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
-
 """
 KalAO_GOP_server.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
@@ -25,7 +24,8 @@ from tcs_communication.pygop import tcs_srv_gop
 
 # Read config file
 parser = ConfigParser()
-config_path = os.path.join(Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 parser.read(config_path)
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -43,7 +43,7 @@ def gop_print_and_log(log_text):
     :return:
     """
 
-    print(str(kalao_time.now())+' '+log_text)
+    print(str(kalao_time.now()) + ' ' + log_text)
     database.store_obs_log({'gop_log': log_text})
 
 
@@ -88,9 +88,11 @@ def gop_server():
 
             if controlRead == -1:
                 gc = gop.closeConnection()
-                gop_print_and_log("Initialize new gop connection. Wait for client ...")
+                gop_print_and_log(
+                        "Initialize new gop connection. Wait for client ...")
                 # gc = gop.initializeGopConnection(socketName, verbosity)
-                gc = gop.initializeInetGopConnection(socketName, socketPort, verbosity)
+                gc = gop.initializeInetGopConnection(socketName, socketPort,
+                                                     verbosity)
                 break
             elif controlRead[-1] == '#':
                 command += controlRead[:-1]  # concat input string
@@ -100,7 +102,7 @@ def gop_server():
         if controlRead == -1:
             continue  # go to beginning
 
-        gop_print_and_log("After gop.read() := "+str(command))
+        gop_print_and_log("After gop.read() := " + str(command))
 
         separator = command[0]
         command = command[1:]
@@ -110,7 +112,8 @@ def gop_server():
         #
         #if len(commandList>1):
         #    gop_print_and_log(" command=> "+str(commandList[0])+" < arg="+commandList[1:].join(' '))
-        gop_print_and_log(" command=> " + str(commandList[0]) + " < arg=" + ' '.join(commandList[1:]))
+        gop_print_and_log(" command=> " + str(commandList[0]) + " < arg=" +
+                          ' '.join(commandList[1:]))
 
         socket_connection_error = False
 
@@ -140,40 +143,42 @@ def gop_server():
 
         if commandList[0] == "TEST":
             message = "/OK"
-            gop_print_and_log("Send acknowledge: "+str(message))
+            gop_print_and_log("Send acknowledge: " + str(message))
             gop.write(message)
 
         elif commandList[0] == "ONTARGET":
             database.store_obs_log({'tcs_header_path': commandList[1]})
             database.store_obs_log({'tracking_status': 'TRACKING'})
-            gop_print_and_log("Received fits header path: " + str(commandList[1]))
+            gop_print_and_log("Received fits header path: " +
+                              str(commandList[1]))
 
         elif (commandList[0] == "quit") or (commandList[0] == "exit"):
             message = "/OK"
-            gop_print_and_log("Send acknowledge and quit: "+str(message))
+            gop_print_and_log("Send acknowledge and quit: " + str(message))
             gop.write(message)
             gop_print_and_log("Acknowledge sent")
             break
 
         elif commandList[0] == "STATUS":
             message = status.kalao_status()
-            gop_print_and_log("Send status: "+str(message))
+            gop_print_and_log("Send status: " + str(message))
             gop.write(message)
 
         else:
             message = "/OK"
-            gop_print_and_log("Send acknowledge: "+str(message))
+            gop_print_and_log("Send acknowledge: " + str(message))
             gop.write(message)
     #
     # in case of break, we disconnect all servers
     #
 
-    gop_print_and_log(str(socketName)+" close gop connection and exit")
+    gop_print_and_log(str(socketName) + " close gop connection and exit")
 
     gop.closeConnection()
     #sys.exit(0)
 
     return 0
+
 
 if __name__ == "__main__":
     gop_server()
