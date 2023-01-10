@@ -271,35 +271,19 @@ def get_flow_value(beck=None):
     return flow_value
 
 
-def verify_cooling_status(beck=None):
+def get_cooling_values(beck=None):
 
-    cooling_flow = get_flow_value(beck=beck)
-    temp_water_in = get_temperatures(beck=beck)['temp_water_in']
+    cooling = {
+            'cooling_flow': get_flow_value(beck=beck),
+            'temp_water_in': get_temperatures(beck=beck)['temp_water_in']
+    }
+
     camera_temperature = camera.get_temperatures()
-
-    if cooling_flow < MINIMAL_FLOW:
-        system.print_and_log(
-                f'Error: cooling flow  {cooling_flow} below mininum {MINIMAL_FLOW}'
-        )
-        # TODO shutdown bench
-        return -1
-
-    if temp_water_in > MAX_WATER_TEMP:
-        system.print_and_log(
-                f'Error: water_in temperature {cooling_flow} below mininum {MINIMAL_FLOW}'
-        )
-        return -1
-
     if isinstance(camera_temperature, dict):
-        # Check if camera returns temperatures
-        if camera_temperature['fli_temp_heatsink'] > MAX_HEATSINK_TEMP:
-            system.print_and_log(
-                    f"Error: fli_temp_heatsink temperature {camera_temperature['fli_temp_heatsink']} below mininum {MAX_HEATSINK_TEMP}"
-            )
-            return -1
+        cooling['camera_HS'] = camera_temperature['fli_temp_heatsink']
+        cooling['camera_CCD'] = camera_temperature['fli_temp_CCD']
+    else:
+        cooling['camera_HS'] = -999
+        cooling['camera_CCD'] = -999
 
-        if camera_temperature['fli_temp_CCD'] > MAX_CCD_TEMP:
-            system.print_and_log(
-                    f"Error: fli_temp_CCD temperature {camera_temperature['fli_temp_CCD']} below mininum {MAX_CCD_TEMP}"
-            )
-            return -1
+    return cooling

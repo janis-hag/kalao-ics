@@ -11,17 +11,13 @@ TODO verify nuvu maximum flux and decrease EM gain or close shutter if needed.
 (KalAO-ICS).
 """
 
-from signal import SIGINT, SIGTERM
-from sys import exit
+import datetime
 from time import sleep
 import schedule
 
-from kalao import plc
-from kalao.rtc import device_status
-from kalao import fli
-from kalao.utils import database
+from kalao.plc import temperature_control, shutter
+from kalao.utils import database, kalao_time
 from sequencer import system
-from kalao.cacao import telemetry
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -35,102 +31,88 @@ parser = ConfigParser()
 parser.read(config_path)
 
 PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
-Telemetry_update_interval = parser.getint('Database',
-                                          'Telemetry_update_interval')
-PLC_update_interval = parser.getint('Database',
-                                    'PLC_monitoring_update_interval')
+TemperatureUpdateInterval = parser.getint('Watchdog',
+                                          'TemperatureUpdateInterval')
+BenchUpdateInterval = parser.getint('Watchdog', 'BenchUpdateInterval')
+OpenShutterTimeout = parser.getint('Watchdog', 'OpenShutterTimeout')
+InactivityTimeout = parser.getint('Watchdog', 'InactivityTimeout')
+
+MINIMAL_FLOW = parser.getfloat('Cooling', 'MinimalFlow')
+MAX_WATER_TEMP = parser.getfloat('Cooling', 'MaxWaterTemp')
+MAX_HEATSINK_TEMP = parser.getfloat('Cooling', 'MaxHeatsinkTemp')
+MAX_CCD_TEMP = parser.getfloat('Cooling', 'MaxCCDTemp')
 
 
-def handler(signal_received, frame):
-    # Handle any cleanup here
-    if signal_received == SIGTERM:
-        # Restarting using systemd framework
-        print('\nSIGTERM received. Restarting.')
-        system.database_service('RESTART')
-    elif signal_received == SIGINT:
-        print('\nSIGINT or CTRL-C detected. Exiting.')
-        exit(0)
+def _check_shutteropen_inactive():
+    # if switch_time long and no activity for given time close shutter
+
+    if shutter.position() == 'OPEN':
+        latest_obs_entry_time = database.get_latest_record(
+                'obs_log')['time_utc']
+
+        elapsed_time_since_activity = (
+                kalao_time.now() - latest_obs_entry_time.replace(
+                        tzinfo=datetime.timezone.utc)).total_seconds()
+
+        open_shutter_elapsed_time = shutter.get_switch_time()
+
+        if open_shutter_elapsed_time > OpenShutterTimeout and elapsed_time_since_activity > InactivityTimeout:
+            message = 'Closing shutter due to inactivity timeout'
+            system.print_and_log(message)
+            shutter.log(message)
+            shutter.shutter_close()
+
+    return 0
 
 
-def update_plc_monitoring():
-    values = {}
+def _check_bench_status():
+    _check_shutteropen_inactive()
 
-    # get monitoring from plc and store
-    plc_values, plc_text = plc.core.plc_status()
-
-    # Do not log status of disabled devices.
-    if not PLC_Disabled[0] == 'None':
-        for device_name in PLC_Disabled:
-            plc_values.pop(device_name)
-            plc_text.pop(device_name)
-    values.update(plc_values)
-
-    # get RTC data and update
-    rtc_temperatures = device_status.read_all()
-    values.update(rtc_temperatures)
-
-    # FLI science camera status
-    try:
-        filter_number, filter_name = plc.filterwheel.get_position()
-        filter_status = {
-                'fli_filter_position': filter_number,
-                'fli_filter_name': filter_name
-        }
-        values.update(filter_status)
-    except Exception as e:
-        print(e)
-
-    fli_server_status = fli.camera.check_server_status()
-    values.update({'fli_status': fli_server_status})
-    if fli_server_status == 'OK':
-        fli_temperatures = fli.camera.get_temperatures()
-        values.update(fli_temperatures)
-
-    if not values == {}:
-        database.store_monitoring(values)
+    return 0
 
 
-def update_telemetry(stream_list):
+def _check_cooling_status():
+    """
+    Verify cooling health status. Namely the cooling water flow, and the main temperatures.
+    If any value is below threshold either issue a warning or shutdown bench depending on level.
 
-    if stream_list['nuvu_stream'] is None:
-        nuvu_exists, nuvu_stream_path = telemetry.check_stream("nuvu_raw")
-        if nuvu_exists:
-            stream_list['nuvu_stream'] = SHM("nuvu_raw")
+    :return:
+    """
+    cooling_status = temperature_control.get_cooling_status()
 
-    if stream_list['tt_stream'] is None:
-        nuvu_exists, nuvu_stream_path = telemetry.check_stream("dm02disp")
-        if nuvu_exists:
-            stream_list['tt_stream'] = SHM("dm02disp")
+    if cooling_status['cooling_flow'] < MINIMAL_FLOW:
+        system.print_and_log(
+                f"Error: cooling flow  {cooling_status['cooling_flow']} below mininum {MINIMAL_FLOW}"
+        )
+        # TODO shutdown bench
+        return -1
 
-    if stream_list['fps_slopes'] is None:
-        shwfs_exists, shwfs_fps_path = telemetry.check_fps("shwfs_process")
-        if shwfs_exists:
-            stream_list['fps_slopes'] = fps("shwfs_process")
+    if cooling_status['temp_water_in'] > MAX_WATER_TEMP:
+        system.print_and_log(
+                f"Error: water_in temperature {cooling_status['temp_water_in']} below mininum {MINIMAL_FLOW}"
+        )
+        return -1
 
-    if stream_list['loopRUN'] is None:
-        looprun_exists, looprun_fps_path = telemetry.check_fps("loopRUN-1")
-        if looprun_exists:
-            stream_list['loopRUN'] = fps("loopRUN-1")
+    # Check if camera returns temperatures
+    if cooling_status['fli_temp_heatsink'] > MAX_HEATSINK_TEMP:
+        system.print_and_log(
+                f"Error: fli_temp_heatsink temperature {cooling_status['fli_temp_heatsink']} below mininum {MAX_HEATSINK_TEMP}"
+        )
+        return -1
 
-    telemetry.telemetry_save(stream_list)
+    if cooling_status['fli_temp_CCD'] > MAX_CCD_TEMP:
+        system.print_and_log(
+                f"Error: fli_temp_CCD temperature {cooling_status['fli_temp_CCD']} below mininum {MAX_CCD_TEMP}"
+        )
+        return -1
+
+    return 0
 
 
 if __name__ == "__main__":
-    # Tell Python to run the handler() function when SIGINT is recieved
-    # signal(SIGTERM, handler)
-    # signal(SIGINT, handler)
 
-    sl = {
-            'nuvu_stream': None,
-            'tt_stream': None,
-            'fps_slopes': None,
-            'loopRUN': None
-    }
-
-    # Get monitoring and cacao
-    schedule.every(Telemetry_update_interval).seconds.do(
-            update_telemetry, stream_list=sl)
-    schedule.every(PLC_update_interval).seconds.do(update_plc_monitoring)
+    schedule.every(TemperatureUpdateInterval).seconds.do(_check_cooling_status)
+    schedule.every(BenchUpdateInterval).seconds.do(_check_bench_status)
 
     while True:
         schedule.run_pending()
