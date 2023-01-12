@@ -11,11 +11,21 @@ the water cooling pump from on to off and opposite.
 """
 
 from kalao.plc import temperature_control
+import argparse
 
 if __name__ == "__main__":
-    if temperature_control.pump_status() == 'ON':
-        print("Switching pump OFF")
-        temperature_control.pump_off()
-    else:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--on', action=argparse.BooleanOptionalAction)
+
+    parser.add_argument('--on', help='Turn pump ON', action='store_true')
+    parser.add_argument('--off', dest='on', action='store_false')
+    parser.set_defaults(feature=False)
+    args = parser.parse_args()
+
+    #if temperature_control.pump_status() == 'ON':
+    if args.on:
         print("Switching pump ON")
         temperature_control.pump_on()
+    else:
+        print("Switching pump OFF")
+        temperature_control.pump_off()
