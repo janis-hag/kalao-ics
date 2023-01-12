@@ -15,7 +15,6 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--on', action=argparse.BooleanOptionalAction)
 
     parser.add_argument('--on', help='Turn pump ON', action='store_true')
     parser.add_argument('--off', dest='on', action='store_false')
