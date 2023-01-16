@@ -67,12 +67,13 @@ else:
 def take_image(
         dit=0.05, filepath=None,
         sequencer_arguments=None):  # obs_category='TEST', obs_type='LAMP'):
-    '''
+    """
 
+    :param sequencer_arguments:
     :param dit: Detector integration time to use
     :param filepath: Path where the file should be stored
     :return: path to the image
-    '''
+    """
 
     if dit < 0:
         database.store_obs_log({'fli_log': 'Abort before exposure started.'})
@@ -112,11 +113,11 @@ def take_image(
 
 
 def increment_image_counter():
-    '''
+    """
     Increments the image counter by one
 
     :return: new image counter value
-    '''
+    """
     image_count = database.get_latest_record(
             'obs_log', key='fli_image_count')['fli_image_count'] + 1
     database.store_obs_log({'fli_image_count': image_count})
@@ -136,7 +137,7 @@ def video_stream(dit=0.05, window=None, center=None):
     if window is not None:
         img = cut_image(img, window=window, center=center)
 
-    # Creating a brand new stream
+    # Creating a brand-new stream
     shm = SHM(
             'fli_stream',
             img,
@@ -260,6 +261,48 @@ def _send_request(request_type, params):
             req = requests.post(url, json=params, timeout=RequestTimeout)
 
     return req
+
+
+def poweroff():
+    return _switch_ippower('OFF')
+
+
+def poweron():
+    return _switch_ippower('ON')
+
+
+def _switch_ippower(value):
+    """
+    Function to swithc the camera ippower port between ON and OFF
+
+    TODO read the url and p parameter from kalao.config
+
+    :param value: ON or OFF
+    :return: return code the switching
+    """
+
+    url = 'http://10.10.132.94/statusjsn.js'
+
+    params = {'components': 50947, 'cmd': 1, 'p': 7, 's': 0}
+
+    if value == 'ON':
+        params['s'] = 1
+    elif not value == 'OFF':
+        error_message = f'Unknow camer ippower switch value ({value})'
+        database.store_obs_log({'fli_log': error_message})
+        print(error_message)
+
+        return -1
+
+    req = requests.get(url, params=params)
+
+    if req.status_code == 200:
+        return 0
+    else:
+        error_message = f'Could not switch camera IP-power to {value}. HTTP-response: {req.text}  ({req.status_code})'
+        database.store_obs_log({'fli_log': error_message})
+        print(error_message)
+        return -1
 
 
 def initialise():

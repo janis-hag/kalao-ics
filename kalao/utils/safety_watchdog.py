@@ -17,6 +17,7 @@ import schedule
 
 from kalao.plc import temperature_control, shutter
 from kalao.utils import database, kalao_time
+from kalao.fli import camera
 from sequencer import system
 
 from configparser import ConfigParser
@@ -84,7 +85,11 @@ def _check_cooling_status():
         system.print_and_log(
                 f"Error: cooling flow  {cooling_status['cooling_flow']} below mininum {MINIMAL_FLOW}"
         )
-        # TODO shutdown bench
+
+        system.print_and_log(f"Camera emergency poweroff")
+
+        camera.poweroff()
+
         return -1
 
     if cooling_status['temp_water_in'] > MAX_WATER_TEMP:
