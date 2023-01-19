@@ -99,15 +99,15 @@ def _check_cooling_status():
         return -1
 
     # Check if camera returns temperatures
-    if cooling_status['fli_temp_heatsink'] > MAX_HEATSINK_TEMP:
+    if cooling_status['camera_HS_temp'] > MAX_HEATSINK_TEMP:
         system.print_and_log(
-                f"Error: fli_temp_heatsink temperature {cooling_status['fli_temp_heatsink']} below mininum {MAX_HEATSINK_TEMP}"
+                f"Error: camera_HS_temp temperature {cooling_status['camera_HS_temp']} below mininum {MAX_HEATSINK_TEMP}"
         )
         return -1
 
-    if cooling_status['fli_temp_CCD'] > MAX_CCD_TEMP:
+    if cooling_status['camera_CCD_temp'] > MAX_CCD_TEMP:
         system.print_and_log(
-                f"Error: fli_temp_CCD temperature {cooling_status['fli_temp_CCD']} below mininum {MAX_CCD_TEMP}"
+                f"Error: camera_CCD_temp temperature {cooling_status['camera_CCD_temp']} below mininum {MAX_CCD_TEMP}"
         )
         return -1
 
