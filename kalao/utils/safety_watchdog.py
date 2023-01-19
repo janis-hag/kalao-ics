@@ -79,7 +79,7 @@ def _check_cooling_status():
 
     :return:
     """
-    cooling_status = temperature_control.get_cooling_status()
+    cooling_status = temperature_control.get_cooling_values()
 
     if cooling_status['flow_value'] < MINIMAL_FLOW:
         system.print_and_log(
