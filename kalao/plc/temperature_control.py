@@ -274,7 +274,7 @@ def get_flow_value(beck=None):
 def get_cooling_values(beck=None):
 
     cooling = {
-            'cooling_flow': get_flow_value(beck=beck),
+            'cooling_flow_value': get_flow_value(beck=beck),
             'temp_water_in': get_temperatures(beck=beck)['temp_water_in']
     }
 
