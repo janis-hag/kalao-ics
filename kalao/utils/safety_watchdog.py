@@ -81,12 +81,12 @@ def _check_cooling_status():
     """
     cooling_status = temperature_control.get_cooling_status()
 
-    if cooling_status['cooling_flow'] < MINIMAL_FLOW:
+    if cooling_status['flow_value'] < MINIMAL_FLOW:
         system.print_and_log(
-                f"Error: cooling flow  {cooling_status['cooling_flow']} below mininum {MINIMAL_FLOW}"
+                f"Error: cooling flow value {cooling_status['flow_value']} below mininum {MINIMAL_FLOW}"
         )
 
-        system.print_and_log(f"Camera emergency poweroff")
+        system.print_and_log(f"Camera emergency power-off")
 
         camera.poweroff()
 
