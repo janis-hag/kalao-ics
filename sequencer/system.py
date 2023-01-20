@@ -74,6 +74,13 @@ def check_enabled(unit_name):
 
 
 def unit_control(unit_name, action):
+    """
+    Function to control systemd unit services.
+
+    :param unit_name: Name of the systemd unit service to control
+    :param action: RESTART/START/STOP/STATUS
+    :return:
+    """
     bus, systemd, manager = connect_dbus()
 
     action = action.upper()
@@ -170,6 +177,14 @@ def check_status():
 
 
 def camera_service(action):
+    """
+    Control the camera server systemd service. It accepts one of the four systemctl commands:
+    RESTART/START/STOP/STATUS
+
+    :param action: RESTART/START/STOP/STATUS
+    :return:
+    """
+
     if not action.upper() == 'STATUS':
         database.store_obs_log({
                 'fli_log':
@@ -177,10 +192,19 @@ def camera_service(action):
         })
     unit_name = parser.get('SystemD', 'camera_service')
     status = unit_control(unit_name, action)
+
     return status
 
 
 def database_service(action):
+    """
+    Control the database systemd service. It accepts one of the four systemctl commands:
+    RESTART/START/STOP/STATUS
+
+    :param action: RESTART/START/STOP/STATUS
+    :return:
+    """
+
     if not action.upper() == 'STATUS':
         database.store_obs_log({
                 'database_log':
@@ -188,10 +212,19 @@ def database_service(action):
         })
     unit_name = parser.get('SystemD', 'database_updater')
     status = unit_control(unit_name, action)
+
     return status
 
 
 def flask_service(action):
+    """
+    Control the flask server systemd service. It accepts one of the four systemctl commands:
+    RESTART/START/STOP/STATUS
+
+    :param action: RESTART/START/STOP/STATUS
+    :return:
+    """
+
     if not action.upper() == 'STATUS':
         database.store_obs_log({
                 'flask_log': 'Sending ' + action + ' command to flask server.'

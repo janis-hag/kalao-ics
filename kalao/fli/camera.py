@@ -118,6 +118,7 @@ def increment_image_counter():
 
     :return: new image counter value
     """
+
     image_count = database.get_latest_record(
             'obs_log', key='fli_image_count')['fli_image_count'] + 1
     database.store_obs_log({'fli_image_count': image_count})
@@ -204,6 +205,12 @@ def cancel():
 
 
 def database_update():
+    """
+    Updates the monitoring database with the camera CCD and heatsink temperatures.
+
+    :return:
+    """
+
     # fli_temp_heatsink
     # fli_temp_CCD
     values = get_temperatures()
@@ -211,6 +218,11 @@ def database_update():
 
 
 def get_temperatures():
+    """
+    Gets CCD and heatsink temperatures from the camera.
+
+    :return:
+    """
 
     req = _send_request('temperature', 'GET')
 
@@ -224,7 +236,12 @@ def get_temperatures():
 
 
 def set_temperature(temperature):
+    """
+    Sets the CCD temperature.
 
+    :param temperature:
+    :return:
+    """
     params = {'temperature': temperature}
     req = _send_request('temperature', params)
 
@@ -264,11 +281,15 @@ def _send_request(request_type, params):
 
 
 def poweroff():
-    return _switch_ippower('OFF')
+
+    systemd_status = system.camera_service('STOP')
+    ipp_switch_status = _switch_ippower('OFF')
 
 
 def poweron():
-    return _switch_ippower('ON')
+    ipp_switch_status = _switch_ippower('ON')
+    sleep(20)
+    systemd_status = system.camera_service('RESTART')
 
 
 def _switch_ippower(value):

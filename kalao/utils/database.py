@@ -206,7 +206,16 @@ def get_latest_record(collection_name, key=None, no_id=True):
 
 def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, sampling=1500,
                                       collection_name='monitoring'):
-    """ Read from Mongo and Store into DataFrame """
+    """
+    Read from Mongo and Store into DataFrame by timestamp
+
+    :param dt_start:
+    :param dt_end:
+    :param sampling:
+    :param collection_name:
+    :return:
+    """
+
     dt_range = dt_end - dt_start
     dt = dt_start
     days = int(math.ceil(dt_range.days)) + 1
@@ -258,8 +267,17 @@ def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, sampling=1500,
     return df
 
 
-def read_mongo_to_pandas(dt, days=1, collection_name='monitoring', no_id=True):
-    """ Read from Mongo and Store into DataFrame """
+def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
+                         no_id=True):
+    """
+    Read from Mongo and Store into DataFrame by date
+
+    :param dt:
+    :param days:
+    :param collection_name:
+    :param no_id:
+    :return:
+    """
 
     appended_df = []
 
