@@ -1,9 +1,9 @@
 [Unit]
-Description=KalAO sequencer service
+Description=KalAO safety wachtdog service
 
 [Service]
 Type=simple
-ExecStart=/home/kalao/kalao-ics/scripts/kalao_sequencer.sh
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_safety-watchdog.sh
 Restart=always
 RestartSec=30
 StandardOutput=journal
@@ -12,4 +12,3 @@ Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=default.target
-#WantedBy=multi-user.target
