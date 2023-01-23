@@ -16,6 +16,7 @@ from sequencer import system
 
 from opcua import ua
 from time import sleep
+import pandas as pd
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -248,6 +249,30 @@ def fan_status(beck=None):
     """
 
     return status(fan_node, beck=beck)
+
+
+def get_flow_threshold_time(flow_threshold, beck=None):
+    """
+    Looks up the time when the tungsten lamp as last been put into current state (ON/OFF/ERROR)
+
+    :return:  switch_time a datetime object
+    """
+    # Update db to make sure the latest data point is valid
+    database.store_monitoring({'flow_value': get_flow_value(beck=beck)})
+
+    # Load flow log into dataframe
+    df = pd.DataFrame(
+            database.get_monitoring({'flow_value'}, 1500)['flow_value'])
+
+    # Search for last occurence of current status
+    switch_time = df.loc[df[df['values'] > flow_threshold].first_valid_index()
+                         - 1]['time_utc']
+
+    elapsed_time = (
+            kalao_time.now() -
+            switch_time.replace(tzinfo=datetime.timezone.utc)).total_seconds()
+
+    return elapsed_time
 
 
 def get_flow_value(beck=None):
