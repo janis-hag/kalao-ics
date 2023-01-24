@@ -146,6 +146,8 @@ def initialisation():
     Read the configuration file.
     Create a sub-process with initialisation function.
 
+    TODO check that /gls is mounted
+
     :return:
     """
 

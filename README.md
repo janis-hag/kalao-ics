@@ -26,6 +26,7 @@ The KalAO Instrument Control Software
 - _systemctl --user enable kalao_database_updater.service_
 - _systemctl --user enable kalao_flask_gui.service_
 - _systemctl --user enable kalao_gop_server.service_
+- _systemctl --user enable kalao_safety-watchdog.service_
 
 ## Configure telescope header content
 

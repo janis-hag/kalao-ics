@@ -369,6 +369,8 @@ def target_observation(**seq_args):
     8. Take picture
     9. Close shutter
 
+    TODO add ao flag check in seq_args
+
     :param q: Queue object for multithreads communication
     :param dit: float for exposition time
     :param filepath: If filepath is not None, store the picture to this path
@@ -380,6 +382,7 @@ def target_observation(**seq_args):
     kalfilter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
+    kao = seq_args.get('kao')
 
     if None in (q, dit):
         system.print_and_log(
@@ -415,17 +418,20 @@ def target_observation(**seq_args):
         system.print_and_log(
                 "Warning: no filter specified for take_image, using clear")
         kalfilter = 'clear'
-        return -1
 
     if filterwheel.set_position(kalfilter) == -1:
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})
+
         return -1
 
-    if aomanager.close_loop() == -1:
-        system.print_and_log("Error: unable to close loop")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return -1
+    if kao == 'AO':
+        system.print_and_log("Trying to close loop")
+
+        if aomanager.close_loop() == -1:
+            system.print_and_log("Error: unable to close loop")
+            database.store_obs_log({'sequencer_status': 'ERROR'})
+            return -1
 
     image_path = file_handling.create_night_filepath()
 
