@@ -294,7 +294,7 @@ def sky_FLAT(**seq_args):
 
     if None in (q, dit, filepath):
         # TODO verify which arguments are actually needed.
-        system.print_and_log('Missing keyword in dark function call')
+        system.print_and_log('Missing keyword in flat function call')
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
@@ -359,6 +359,8 @@ def sky_FLAT(**seq_args):
 
 def target_observation(**seq_args):
     """
+    On sky target observation sequence
+
     1. Turn off lamps
     2. Move flip mirror down
     3. Open shutter
@@ -368,8 +370,6 @@ def target_observation(**seq_args):
     7. Monitor AO and cancel exposure if needed
     8. Take picture
     9. Close shutter
-
-    TODO add ao flag check in seq_args
 
     :param q: Queue object for multithreads communication
     :param dit: float for exposition time
