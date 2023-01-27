@@ -110,12 +110,12 @@ def clean():
 	n
 	"""
 
-    subprocess.run(["cacao-task-manager", "-C", "0", "ttmloop"], input=no,
-                   encoding='utf8')
-    subprocess.run(["cacao-task-manager", "-C", "0", "dmloop"], input=no,
-                   encoding='utf8')
-    subprocess.run(["cacao-task-manager", "-C", "0", "kalaohardware"],
+    subprocess.run(["cacao-task-manager", "-C", "0", "KalAO-ttmloop"],
                    input=no, encoding='utf8')
+    subprocess.run(["cacao-task-manager", "-C", "0", "KalAO-dmloop"], input=no,
+                   encoding='utf8')
+    subprocess.run(["cacao-task-manager", "-C", "0", "kalaoHWloop"], input=no,
+                   encoding='utf8')
     subprocess.run(["pkill", "-f", "cacao"])
     subprocess.run(["pkill", "-f", "milk"])
     subprocess.run(["tmux", "kill-server"])
