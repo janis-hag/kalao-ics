@@ -259,7 +259,7 @@ def get_flow_threshold_time(flow_threshold, beck=None):
     :return:  switch_time a datetime object
     """
     # Update db to make sure the latest data point is valid
-    database.store_monitoring({'flow_value': get_flow_value(beck=beck)})
+    #database.store_monitoring({'flow_value': get_flow_value(beck=beck)})
 
     # Load flow log into dataframe
     df = pd.DataFrame(
