@@ -9,11 +9,12 @@ temperature_control.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from kalao.utils import database
+from kalao.utils import database, kalao_time
 from kalao.plc import core
 from kalao.fli import camera
 from sequencer import system
 
+import datetime
 from opcua import ua
 from time import sleep
 import pandas as pd
