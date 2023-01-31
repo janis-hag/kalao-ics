@@ -94,6 +94,7 @@ def get_cooling_status(beck=None):
 
     cooling_status = {
             'pump_status': pump_status(beck),
+            'pump_temp': pump_temperature(beck),
             'heater_status': heater_status(beck),
             'fan_status': fan_status(beck),
             'flow_value': get_flow_value(beck)
@@ -184,6 +185,24 @@ def pump_status(beck=None):
     """
 
     return status(pump_node, beck=beck)
+
+
+def pump_temperature(beck=None):
+    """
+    Convenience function to query the temperature of the pump
+
+    :param beck: beck: handle to the beckhoff connection
+    :return: temperature of the pump in degrees
+    """
+
+    beck, disconnect_on_exit = core.check_beck(beck)
+
+    pump_temp = beck.get_node("ns=4; s=MAIN.Temp_Pump").get_value() / 100
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return pump_temp
 
 
 def heater_on(beck=None):

@@ -49,6 +49,7 @@ MAX_CCD_TEMP = parser.getfloat('Cooling', 'MaxCCDTemp')
 
 def _check_shutteropen_inactive():
     # if switch_time long and no activity for given time close shutter
+    # ADD if tracking status IDLE, close
 
     if shutter.position() == 'OPEN':
         latest_obs_entry_time = database.get_latest_record(

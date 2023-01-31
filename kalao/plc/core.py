@@ -95,6 +95,7 @@ def plc_status(beck=None):
             'adc1': adc.status(1)['lrPosActual'],
             'adc2': adc.status(2)['lrPosActual'],
             'pump_status': cooling_system['pump_status'],
+            'pump_temp': cooling_system['pump_temp'],
             'heater_status': cooling_system['heater_status'],
             'fan_status': cooling_system['fan_status'],
             'flow_value': cooling_system['flow_value']

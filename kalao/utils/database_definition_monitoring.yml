@@ -106,8 +106,8 @@ pump_status:
   main_gui: 2
   group: Motors, Cooling
 
-pump_temperature:
-  short: Water pump tempeture
+pump_temp:
+  short: Water pump temperature
   long: Temperature of the water pump
   unit: degrees
   main_gui: 2
