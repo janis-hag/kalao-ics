@@ -32,9 +32,9 @@ parser = ConfigParser()
 parser.read(config_path)
 
 
-def _check_pump_temp():
-    beck, disconnect_on_exit = core.check_beck()
-    pump_temp = beck.get_node("ns=4; s=MAIN.Temp_Pump").get_value() / 100
+def _check_pump_temp(beck=None):
+    beck, disconnect_on_exit = core.check_beck(beck)
+    pump_temp = temperature_control.pump_temperature(beck)
 
     pump_status = temperature_control.pump_status(beck)
 
