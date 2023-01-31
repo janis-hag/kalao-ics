@@ -106,6 +106,13 @@ pump_status:
   main_gui: 2
   group: Motors, Cooling
 
+pump_temperature:
+  short: Water pump tempeture
+  long: Temperature of the water pump
+  unit: degrees
+  main_gui: 2
+  group: Temperature
+
 heater_status:
   short: Water heater status
   long: Status of the water cooling system heater

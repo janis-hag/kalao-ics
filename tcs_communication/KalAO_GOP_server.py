@@ -152,6 +152,13 @@ def gop_server():
             gop_print_and_log("Received fits header path: " +
                               str(commandList[1]))
 
+        elif commandList[0] == "STOPAO":
+            # TODO
+            # Stop AO
+            # Close shutter
+            # Set tracking to no-tracking keyword
+            database.store_obs_log({'tracking_status': 'IDLE'})
+
         elif (commandList[0] == "quit") or (commandList[0] == "exit"):
             message = "/OK"
             gop_print_and_log("Send acknowledge and quit: " + str(message))
