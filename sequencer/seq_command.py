@@ -414,7 +414,7 @@ def target_observation(**seq_args):
                 "Warning: no filter specified for take_image, using clear")
         kalfilter = 'clear'
 
-    if starfinder.centre_on_target(filter_arg=kalfilter, ao=kao) == -1:
+    if starfinder.centre_on_target(filter_arg=kalfilter, kao=kao) == -1:
         system.print_and_log("Error: problem with centre on target")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
