@@ -137,6 +137,8 @@ def send_pixel_offset(x, y):
 
     system.print_and_log(f'Sending offset: {alt_offset=} {az_offset=}')
 
+    time.sleep(2)
+
     return 0
 
 
