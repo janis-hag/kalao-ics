@@ -382,7 +382,7 @@ def target_observation(**seq_args):
     kalfilter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
-    kao = seq_args.get('kao')
+    kao = seq_args.get('kao').upper()
 
     if None in (q, dit):
         system.print_and_log(
@@ -409,15 +409,15 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if starfinder.centre_on_target() == -1:
-        system.print_and_log("Error: problem with centre on target")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return -1
-
     if kalfilter is None:
         system.print_and_log(
                 "Warning: no filter specified for take_image, using clear")
         kalfilter = 'clear'
+
+    if starfinder.centre_on_target(filter_arg=kalfilter, ao=kao) == -1:
+        system.print_and_log("Error: problem with centre on target")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
 
     if filterwheel.set_position(kalfilter) == -1:
         system.print_and_log("Error: problem with filter selection")
@@ -537,7 +537,7 @@ def focusing(
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    rValue = starfinder.focus_sequence(focus_points=6)
+    rValue = starfinder.focus_sequence(focus_points=6, focusing_dit=dit)
 
     if rValue != 0:
         system.print_and_log(rValue)

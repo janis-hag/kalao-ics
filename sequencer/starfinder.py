@@ -40,7 +40,7 @@ WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 
 
-def centre_on_target(filter_arg='clear'):
+def centre_on_target(filter_arg='clear', kao='NO_AO'):
     """
     Start star centering sequence:
     - Sets this filter based on filter_arg request.
@@ -73,9 +73,12 @@ def centre_on_target(filter_arg='clear'):
 
             send_pixel_offset(x, y)
 
-            if verify_centering() == 0:
-                request_manual_centering(False)
+            if kao == 'AO':
+                if verify_centering() == 0:
+                    request_manual_centering(False)
 
+                    return 0
+            else:
                 return 0
 
         else:
@@ -84,15 +87,19 @@ def centre_on_target(filter_arg='clear'):
             # Set flag for manual centering
             request_manual_centering()
 
-            while time.time() < timeout_time:
+            if kao == 'AO':
+                while time.time() < timeout_time:
 
-                # Check if we are centered and exit loop
-                rValue = verify_centering()
-                if rValue == 0:
-                    request_manual_centering(False)
-                    return 0
+                    # Check if we are centered and exit loop
+                    rValue = verify_centering()
+                    if rValue == 0:
+                        request_manual_centering(False)
+                        return 0
 
-                time.sleep(15)
+                    time.sleep(15)
+
+            else:
+                return 0
 
             # TODO wait for observer input
             # TODO send gop message
