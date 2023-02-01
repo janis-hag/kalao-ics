@@ -133,7 +133,7 @@ def send_pixel_offset(x, y):
 
     # TODO transform pixel x y into arcseconds
     # TODO uncomment when gui testing finished
-    #t120.send_offset(alt_offset, az_offset)
+    t120.send_offset(alt_offset, az_offset)
 
     system.print_and_log(f'Sending offset: {alt_offset=} {az_offset=}')
 
