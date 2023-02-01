@@ -147,17 +147,26 @@ def gop_server():
             gop.write(message)
 
         elif commandList[0] == "ONTARGET":
+            message = "/OK"
             database.store_obs_log({'tcs_header_path': commandList[1]})
             database.store_obs_log({'tracking_status': 'TRACKING'})
             gop_print_and_log("Received fits header path: " +
                               str(commandList[1]))
+            gop_print_and_log("Send acknowledge and quit: " + str(message))
+            gop.write(message)
+            gop_print_and_log("Acknowledge sent")
 
-        elif commandList[0] == "STOPAO":
+        elif commandList[0] == "STOPAO" or commandList[
+                0] == "INSTRUMENTCHANGE" or commandList[0] == "NOTHING":
             # TODO
             # Stop AO
             # Close shutter
             # Set tracking to no-tracking keyword
+            message = "/OK"
             database.store_obs_log({'tracking_status': 'IDLE'})
+            gop_print_and_log("Send acknowledge and quit: " + str(message))
+            gop.write(message)
+            gop_print_and_log("Acknowledge sent")
 
         elif (commandList[0] == "quit") or (commandList[0] == "exit"):
             message = "/OK"
