@@ -57,6 +57,7 @@ def centre_on_target(filter_arg='clear'):
     timeout_time = time.time() + CenteringTimeout
 
     while time.time() < timeout_time:
+        # TODO use exptime given by nseq args
         rValue, image_path = camera.take_image(dit=ExpTime)
         # image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         # file_handling.save_tmp_image(image_path)
@@ -112,6 +113,7 @@ def manual_centering(x, y):
     # TODO verify value validity before sending
 
     send_pixel_offset(x, y)
+    rValue, image_path = camera.take_image(dit=ExpTime)
     rValue = verify_centering()
 
     return rValue
@@ -304,7 +306,7 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
 
     initial_focus = t120.get_focus_value()
 
-    focusing_dit = optimise_dit()
+    focusing_dit = optimise_dit(focusing_dit)
 
     if focusing_dit == -1:
         system.print_and_log(
@@ -365,7 +367,7 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
     return 0
 
 
-def optimise_dit():
+def optimise_dit(focusing_dit):
     """
     Search for optimal dit value to reach the requested ADU.
 
@@ -374,7 +376,7 @@ def optimise_dit():
     :return: optimal dit value
     """
 
-    new_dit = FocusingDit
+    new_dit = focusing_dit
 
     for i in range(DitOptimisationTrials):
 
