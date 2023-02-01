@@ -119,7 +119,7 @@ def wfs_centering(tt_threshold):
     tilt_centered = False
 
     fps_slopes = fps("shwfs_process")
-    fps_bmc = fps("bmc_display")
+    fps_bmc = fps("bmc_display-01")
 
     #TODO add iterations limit to prevent infinite loop
     while not (tip_centered and tilt_centered):
