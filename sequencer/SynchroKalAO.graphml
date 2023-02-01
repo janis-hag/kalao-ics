@@ -235,7 +235,7 @@ exposure parameters<y:LabelModel>
     <node id="n15">
       <data key="d6">
         <y:GenericNode configuration="com.yworks.flowchart.process">
-          <y:Geometry height="50.0" width="200.0" x="-1396.2821753892013" y="1421.7960679248547"/>
+          <y:Geometry height="50.0" width="200.0" x="-1396.502794843837" y="1118.474921096903"/>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="81.326171875" x="59.3369140625" y="16.015625">do a stop AO<y:LabelModel>
@@ -251,10 +251,11 @@ exposure parameters<y:LabelModel>
     <node id="n16">
       <data key="d6">
         <y:GenericNode configuration="com.yworks.flowchart.decision">
-          <y:Geometry height="71.0" width="159.0" x="-946.6454416400848" y="1411.2960679248547"/>
+          <y:Geometry height="71.0" width="159.0" x="-946.8660610947204" y="1107.974921096903"/>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="69.6015625" x="44.69921875" y="26.515625">NTPL == 1<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="69.6015625" x="44.69921875" y="19.53125">IF
+NTPL == 1<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -797,7 +798,7 @@ host=kalaortc01<y:LabelModel>
     <node id="n50">
       <data key="d6">
         <y:GenericNode configuration="com.yworks.flowchart.process">
-          <y:Geometry height="116.93753098661364" width="200.0" x="-967.1454416400849" y="1163.225576314934"/>
+          <y:Geometry height="116.93753098661364" width="200.0" x="-967.1454416400849" y="1278.0398541878792"/>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="165.70703125" x="17.146484375" y="49.48439049330682">send exposure parameters<y:LabelModel>
@@ -813,7 +814,7 @@ host=kalaortc01<y:LabelModel>
     <node id="n51">
       <data key="d6">
         <y:GenericNode configuration="com.yworks.flowchart.process">
-          <y:Geometry height="50.0" width="200.0" x="-1396.2821753892013" y="1257.3697705161178"/>
+          <y:Geometry height="50.0" width="200.0" x="-1396.2821753892013" y="1372.184048389063"/>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="110.271484375" x="44.8642578125" y="16.015625">Prepare exposure<y:LabelModel>
@@ -829,7 +830,7 @@ host=kalaortc01<y:LabelModel>
     <node id="n52">
       <data key="d6">
         <y:GenericNode configuration="com.yworks.flowchart.process">
-          <y:Geometry height="71.0" width="200.0" x="-967.1454416400849" y="1310.2960679248547"/>
+          <y:Geometry height="71.0" width="200.0" x="-967.1454416400849" y="1425.1103457978"/>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="left" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="59.875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="126.6484375" x="36.67578125" y="5.5625">Define:
@@ -1299,7 +1300,7 @@ ABORT Flag<y:LabelModel>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="standard"/>
-          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" bottomInset="5" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="23.96875" horizontalTextPosition="center" iconTextGap="4" leftInset="10" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" rightInset="10" textColor="#000000" topInset="5" verticalTextPosition="bottom" visible="true" width="73.326171875" x="-143.43192807896162" y="-11.984327582957576">/STOPAO<y:LabelModel>
+          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" bottomInset="5" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="23.96875" horizontalTextPosition="center" iconTextGap="4" leftInset="10" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" rightInset="10" textColor="#000000" topInset="5" verticalTextPosition="bottom" visible="true" width="73.326171875" x="-143.43190544375352" y="-11.984429489034483">/STOPAO<y:LabelModel>
               <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -1331,13 +1332,16 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e6" source="n16" target="n20">
+    <edge id="e6" source="n16" target="n50">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="-867.3660610947204" y="1228.685653717827"/>
+            <y:Point x="-867.1454416400849" y="1228.685653717827"/>
+          </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="standard"/>
-          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="17.96875" horizontalTextPosition="center" iconTextGap="4" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="22.421875" x="-11.210932362741005" y="5.000901909229697">NO<y:LabelModel>
+          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="17.96875" horizontalTextPosition="center" iconTextGap="4" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="22.421875" x="-11.210909727532908" y="5.009344925028017">NO<y:LabelModel>
               <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -1664,12 +1668,12 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e26" source="n41" target="n50">
+    <edge id="e26" source="n41" target="n16">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.13797009831141316">
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
             <y:Point x="-867.3660610947204" y="1116.6505823287866"/>
-            <y:Point x="-867.1454416400849" y="1116.6505823287866"/>
+            <y:Point x="-867.3660610947204" y="1143.474921096903"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="standard"/>
@@ -1852,11 +1856,11 @@ ABORT Flag<y:LabelModel>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="10.940010679989655" ty="-12.17013208087883">
-            <y:Point x="-1285.3421647092116" y="1221.6943418082408"/>
+            <y:Point x="-1285.3421647092116" y="1336.508619681186"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="standard"/>
-          <y:EdgeLabel alignment="left" backgroundColor="#FFFFFF" bottomInset="5" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="79.84375" horizontalTextPosition="center" iconTextGap="4" leftInset="10" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" rightInset="10" textColor="#000000" topInset="5" verticalTextPosition="bottom" visible="true" width="316.197265625" x="-427.7857768005322" y="-69.92186912925922">/&lt;exposureType/&lt;param&gt;/&lt;&lt;param&gt;&gt;/...#
+          <y:EdgeLabel alignment="left" backgroundColor="#FFFFFF" bottomInset="5" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="79.84375" horizontalTextPosition="center" iconTextGap="4" leftInset="10" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" rightInset="10" textColor="#000000" topInset="5" verticalTextPosition="bottom" visible="true" width="316.197265625" x="-427.7857768005322" y="-69.92192231100148">/&lt;exposureType/&lt;param&gt;/&lt;&lt;param&gt;&gt;/...#
 /&lt;param&gt;/&lt;&lt;param&gt;&gt;/...#
 ...
 /&lt;param&gt;/&lt;&lt;param&gt;&gt;
@@ -1872,17 +1876,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e39" source="n52" target="n16">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.14389125248885648" sy="7.435698089511334" tx="0.1438912524887428" ty="-19.573329110723307"/>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="none" target="standard"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e40" source="n50" target="n52">
+    <edge id="e39" source="n50" target="n52">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1892,16 +1886,16 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e41" source="n51" target="n50">
+    <edge id="e40" source="n51" target="n50">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="7.9262974087369" tx="-91.5975151599149" ty="31.501864460907772">
-            <y:Point x="-991.9951442191211" y="1290.2960679248547"/>
-            <y:Point x="-991.9951442191211" y="1253.1962062691487"/>
+            <y:Point x="-991.9951442191211" y="1405.1103457978"/>
+            <y:Point x="-991.9951442191211" y="1368.010484142094"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="standard"/>
-          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="17.96875" horizontalTextPosition="center" iconTextGap="4" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="158.341796875" x="30.99055859663804" y="-8.984327582957803">OK (only one HandShake)<y:LabelModel>
+          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="17.96875" horizontalTextPosition="center" iconTextGap="4" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="158.341796875" x="30.99055859663804" y="-8.984380764700063">OK (only one HandShake)<y:LabelModel>
               <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -1913,7 +1907,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e42" source="n23" target="n54">
+    <edge id="e41" source="n23" target="n54">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -1925,7 +1919,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e43" source="n54" target="n55">
+    <edge id="e42" source="n54" target="n55">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -1946,7 +1940,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e44" source="n54" target="n24">
+    <edge id="e43" source="n54" target="n24">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1956,7 +1950,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e45" source="n25" target="n56">
+    <edge id="e44" source="n25" target="n56">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1966,7 +1960,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e46" source="n56" target="n57">
+    <edge id="e45" source="n56" target="n57">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1976,25 +1970,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e47" source="n57" target="n58">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="none" target="standard"/>
-          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="17.96875" horizontalTextPosition="center" iconTextGap="4" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="26.529296875" x="27.71380117490196" y="-8.984272255864198">YES<y:LabelModel>
-              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
-            </y:LabelModel>
-            <y:ModelParameter>
-              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="center" ratio="0.5" segment="0"/>
-            </y:ModelParameter>
-            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
-          </y:EdgeLabel>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e48" source="n59" target="n27">
+    <edge id="e46" source="n57" target="n58">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -2012,7 +1988,25 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e49" source="n57" target="n59">
+    <edge id="e47" source="n59" target="n27">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="17.96875" horizontalTextPosition="center" iconTextGap="4" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="26.529296875" x="27.71380117490196" y="-8.984272255864198">YES<y:LabelModel>
+              <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartEdgeLabelModelParameter angle="0.0" distance="30.0" distanceToCenter="true" position="center" ratio="0.5" segment="0"/>
+            </y:ModelParameter>
+            <y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
+          </y:EdgeLabel>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e48" source="n57" target="n59">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="-20.0"/>
@@ -2022,7 +2016,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e50" source="n61" target="n77">
+    <edge id="e49" source="n61" target="n77">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="-66.15629594428287" ty="2.2216918667832033"/>
@@ -2040,7 +2034,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e51" source="n29" target="n62">
+    <edge id="e50" source="n29" target="n62">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -2050,7 +2044,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e52" source="n77" target="n63">
+    <edge id="e51" source="n77" target="n63">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="2.8823313772303436" sy="1.3523126837653763" tx="0.0" ty="0.0"/>
@@ -2060,7 +2054,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e53" source="n23" target="n64">
+    <edge id="e52" source="n23" target="n64">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="-4.853976648984371"/>
@@ -2070,7 +2064,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e54" source="n65" target="n66">
+    <edge id="e53" source="n65" target="n66">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2089,7 +2083,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e55" source="n66" target="n65">
+    <edge id="e54" source="n66" target="n65">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2110,7 +2104,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e56" source="n65" target="n42">
+    <edge id="e55" source="n65" target="n42">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2121,17 +2115,19 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e57" source="n15" target="n20">
+    <edge id="e56" source="n15" target="n50">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="-12.189075800977662">
-            <y:Point x="-1296.2821753892013" y="1518.5088073362615"/>
-            <y:Point x="-867.1454416400848" y="1518.5088073362615"/>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="-1296.502794843837" y="1215.1876605083098"/>
+            <y:Point x="-867.3660610947204" y="1215.1876605083098"/>
+            <y:Point x="-867.3660610947204" y="1258.4474855230417"/>
+            <y:Point x="-867.1454416400849" y="1258.4474855230417"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="standard"/>
-          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="17.96875" horizontalTextPosition="center" iconTextGap="4" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="21.314453125" x="234.70494458401822" y="37.7619811643865">OK<y:LabelModel>
+          <y:EdgeLabel alignment="center" backgroundColor="#FFFFFF" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Dialog" fontSize="12" fontStyle="plain" height="17.96875" horizontalTextPosition="center" iconTextGap="4" lineColor="#000000" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="21.314453125" x="234.70490618407007" y="37.76200132862232">OK<y:LabelModel>
               <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -2143,7 +2139,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e58" source="n68" target="n67">
+    <edge id="e57" source="n68" target="n67">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="-14.333628127357201" sy="0.0" tx="0.0" ty="0.0"/>
@@ -2161,7 +2157,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e59" source="n69" target="n68">
+    <edge id="e58" source="n69" target="n68">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2172,7 +2168,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e60" source="n68" target="n33">
+    <edge id="e59" source="n68" target="n33">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2186,7 +2182,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e61" source="n24" target="n69">
+    <edge id="e60" source="n24" target="n69">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2197,7 +2193,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e62" source="n33" target="n25">
+    <edge id="e61" source="n33" target="n25">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2208,7 +2204,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e63" source="n59" target="n61">
+    <edge id="e62" source="n59" target="n61">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2219,7 +2215,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e64" source="n61" target="n29">
+    <edge id="e63" source="n61" target="n29">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2230,7 +2226,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e65" source="n58" target="n59">
+    <edge id="e64" source="n58" target="n59">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2244,7 +2240,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e66" source="n71" target="n70">
+    <edge id="e65" source="n71" target="n70">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="-14.333628127357201" sy="0.0" tx="0.0" ty="-11.679464642700623"/>
@@ -2262,7 +2258,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e67" source="n73" target="n72">
+    <edge id="e66" source="n73" target="n72">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="-14.333628127357201" sy="0.0" tx="0.0" ty="-9.425880019831766"/>
@@ -2280,7 +2276,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e68" source="n67" target="n73">
+    <edge id="e67" source="n67" target="n73">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2295,7 +2291,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e69" source="n31" target="n74">
+    <edge id="e68" source="n31" target="n74">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2317,7 +2313,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e70" source="n62" target="n71">
+    <edge id="e69" source="n62" target="n71">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2328,7 +2324,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e71" source="n70" target="n75">
+    <edge id="e70" source="n70" target="n75">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2350,7 +2346,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e72" source="n73" target="n35">
+    <edge id="e71" source="n73" target="n35">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2361,7 +2357,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e73" source="n72" target="n76">
+    <edge id="e72" source="n72" target="n76">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2383,7 +2379,7 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e74" source="n71" target="n73">
+    <edge id="e73" source="n71" target="n73">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -2394,11 +2390,25 @@ ABORT Flag<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e75" source="n77" target="n60">
+    <edge id="e74" source="n77" target="n60">
       <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e75" source="n52" target="n20">
+      <data key="d9"/>
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="-867.1454416400849" y="1517.3095765670307"/>
+            <y:Point x="-867.1454416400848" y="1517.3095765670307"/>
+          </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="standard"/>
           <y:BendStyle smoothed="false"/>
