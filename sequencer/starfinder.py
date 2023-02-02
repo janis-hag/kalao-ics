@@ -78,14 +78,18 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
                     request_manual_centering(False)
 
                     return 0
+                else:
+                    request_manual_centering(True)
             else:
+                request_manual_centering(False)
+
                 return 0
 
         else:
             # Start manual centering
             # TODO start timeout (value in kalao.config)
             # Set flag for manual centering
-            request_manual_centering()
+            request_manual_centering(True)
 
             if kao == 'AO':
                 while time.time() < timeout_time:
@@ -99,6 +103,7 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
                     time.sleep(15)
 
             else:
+                # TODO for centering
                 return 0
 
             # TODO wait for observer input
@@ -193,6 +198,9 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
 
     if lumino < image.max():
         # Image quality insufficient for centering
+        system.print_and_log(
+                f'Image quality insufficient for centering {lumino} < {image.max()}'
+        )
         return -1, -1
 
     # for each pixel, check if it's brighter than lumino, then check index limit
