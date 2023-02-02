@@ -113,7 +113,7 @@ def dark(**seq_args):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def dark_abort():
+def dark_abort(**seq_args):
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -249,7 +249,7 @@ def tungsten_FLAT(**seq_args):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def tungsten_FLAT_abort():
+def tungsten_FLAT_abort(**seq_args):
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -453,7 +453,7 @@ def target_observation(**seq_args):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def target_observation_abort():
+def target_observation_abort(**seq_args):
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -472,9 +472,7 @@ def target_observation_abort():
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def focusing(
-        **seq_args
-):  #q = None, dit = ExpTime, filepath = None, kalfilter = None, **kwargs):
+def focusing(**seq_args):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -550,7 +548,7 @@ def focusing(
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def focusing_abort():
+def focusing_abort(**seq_args):
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -625,7 +623,7 @@ def lamp_on(**seq_args):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def waitfortracking():
+def waitfortracking(**seq_args):
     """
     Waits for the telescope to be on target
 
@@ -647,7 +645,7 @@ def waitfortracking():
         return -1
 
 
-def lamp_off():
+def lamp_off(**seq_args):
     """
     Turn lamps off
 
@@ -669,12 +667,14 @@ def lamp_off():
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def end():
+def end(**seq_args):
     """
     End of instrument operation, go into standby mode
     :return: nothing
     """
     # two cancel are done to avoid concurrency problems
+
+    database.store_obs_log({'tracking_status': 'IDLE'})
 
     rValue = tungsten.off()
     if (rValue != 0):
@@ -690,6 +690,11 @@ def end():
     if (rValue != 0):
         # TODO handle error
         system.print_and_log(rValue)
+
+    database.store_obs_log({'tracking_manual_centering': False})
+
+    # request_manual_centering(False)
+    # change tracking flaf
 
     system.print_and_log('END received moving into standby.')
 

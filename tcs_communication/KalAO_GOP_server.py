@@ -117,6 +117,14 @@ def gop_server():
 
         socket_connection_error = False
 
+        if commandList[0] == "STOPAO" or commandList[
+                0] == "INSTRUMENTCHANGE" or commandList[0] == "NOTHING":
+            # For the moment no difference is made for these three cases
+            database.store_obs_log({'tracking_status': 'IDLE'})
+            commandList[0] = 'K_END'
+            command = 'K_END'
+            gop.write("/OK")
+
         # Check if it's a KalAO command and send it
         if commandList[0][:1] == "K":
 
@@ -143,7 +151,7 @@ def gop_server():
 
         if commandList[0] == "TEST":
             message = "/OK"
-            gop_print_and_log("Send acknowledge: " + str(message))
+            #gop_print_and_log("Send acknowledge: " + str(message))
             gop.write(message)
 
         elif commandList[0] == "ONTARGET":
@@ -152,27 +160,28 @@ def gop_server():
             database.store_obs_log({'tracking_status': 'TRACKING'})
             gop_print_and_log("Received fits header path: " +
                               str(commandList[1]))
-            gop_print_and_log("Send acknowledge and quit: " + str(message))
+            #gop_print_and_log("Send acknowledge and quit: " + str(message))
             gop.write(message)
-            gop_print_and_log("Acknowledge sent")
+            #gop_print_and_log("Acknowledge sent")
 
-        elif commandList[0] == "STOPAO" or commandList[
-                0] == "INSTRUMENTCHANGE" or commandList[0] == "NOTHING":
-            # TODO
-            # Stop AO
-            # Close shutter
-            # Set tracking to no-tracking keyword
-            message = "/OK"
-            database.store_obs_log({'tracking_status': 'IDLE'})
-            gop_print_and_log("Send acknowledge and quit: " + str(message))
-            gop.write(message)
-            gop_print_and_log("Acknowledge sent")
+        # elif commandList[0] == "STOPAO" or commandList[
+        #         0] == "INSTRUMENTCHANGE" or commandList[0] == "NOTHING":
+        #     # TODO
+        #     # Stop AO
+        #     # Close shutter
+        #     # Set tracking to no-tracking keyword
+        #     # Disable manual centering flag
+        #     message = "/OK"
+        #     database.store_obs_log({'tracking_status': 'IDLE'})
+        #     gop_print_and_log("Send acknowledge and quit: " + str(message))
+        #     gop.write(message)
+        #     #gop_print_and_log("Acknowledge sent")
 
         elif (commandList[0] == "quit") or (commandList[0] == "exit"):
             message = "/OK"
             gop_print_and_log("Send acknowledge and quit: " + str(message))
             gop.write(message)
-            gop_print_and_log("Acknowledge sent")
+            #gop_print_and_log("Acknowledge sent")
             break
 
         elif commandList[0] == "STATUS":
@@ -182,7 +191,7 @@ def gop_server():
 
         else:
             message = "/OK"
-            gop_print_and_log("Send acknowledge: " + str(message))
+            #gop_print_and_log("Send acknowledge: " + str(message))
             gop.write(message)
     #
     # in case of break, we disconnect all servers
