@@ -123,7 +123,7 @@ def gop_server():
             database.store_obs_log({'tracking_status': 'IDLE'})
             commandList[0] = 'K_END'
             command = 'K_END'
-            gop.write("/OK")
+            #gop.write("/OK")
 
         # Check if it's a KalAO command and send it
         if commandList[0][:1] == "K":
