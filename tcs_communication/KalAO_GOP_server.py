@@ -117,13 +117,13 @@ def gop_server():
 
         socket_connection_error = False
 
-        if commandList[0] == "STOPAO" or commandList[
-                0] == "INSTRUMENTCHANGE" or commandList[0] == "NOTHING":
-            # For the moment no difference is made for these three cases
-            database.store_obs_log({'tracking_status': 'IDLE'})
-            commandList[0] = 'K_END'
-            command = 'K_END'
-            #gop.write("/OK")
+        # if commandList[0] == "STOPAO" or commandList[
+        #         0] == "INSTRUMENTCHANGE" or commandList[0] == "NOTHING":
+        #     # For the moment no difference is made for these three cases
+        #     database.store_obs_log({'tracking_status': 'IDLE'})
+        #     commandList[0] = 'K_END'
+        #     command = 'K_END'
+        #     #gop.write("/OK")
 
         # Check if it's a KalAO command and send it
         if commandList[0][:1] == "K":
