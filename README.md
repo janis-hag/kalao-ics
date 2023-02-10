@@ -18,15 +18,17 @@ The KalAO Instrument Control Software
 ---
 # System deployment
 - Pull into '~/kalao-ics/'
+- Install configuration files symlinks:
+    ```console
+  kalaortc01:~>cd kalao-ics/kalao-config/
+  kalaortc01:~/kalao-ics/kalao-config>bash ./install_symlinks.sh
+    ```
+- Start systemd serviced:
+    ```console
+  kalaortc01:~>cd kalao-ics/kalao-config/
+  kalaortc01:~/kalao-ics/kalao-config>bash ./enable_systems.sh
+    ```
 
-
-## Enabling services
-- _systemctl --user enable kalao_sequencer.service_
-- _systemctl --user enable kalao_camera.service_
-- _systemctl --user enable kalao_database_updater.service_
-- _systemctl --user enable kalao_flask_gui.service_
-- _systemctl --user enable kalao_gop_server.service_
-- _systemctl --user enable kalao_safety-watchdog.service_
 
 ## Configure telescope header content
 
