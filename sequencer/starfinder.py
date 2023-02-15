@@ -59,6 +59,10 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
     while time.time() < timeout_time:
         # TODO use exptime given by nseq args
         rValue, image_path = camera.take_image(dit=ExpTime)
+
+        # TODO add dit optimisation
+        #  focusing_dit = optimise_dit(focusing_dit)
+
         # image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
         # file_handling.save_tmp_image(image_path)
 
@@ -199,13 +203,13 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
 
     #if lumino < image.max():
     # TODO this quality check doesn't make much sense
-    if 3 * lumino < image.max():
-        # Dirty hack in the black box...
-        # Image quality insufficient for centering
-        system.print_and_log(
-                f'Image quality insufficient for centering {lumino} < {image.max()}'
-        )
-        return -1, -1
+    # if 3 * lumino < image.max():
+    #     # Dirty hack in the black box...
+    #     # Image quality insufficient for centering
+    #     system.print_and_log(
+    #             f'Image quality insufficient for centering {lumino} < {image.max()}'
+    #     )
+    #     return -1, -1
 
     # for each pixel, check if it's brighter than lumino, then check index limit
     # if all ok: divide spot around the pixel by the weighting matrix
