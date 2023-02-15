@@ -170,13 +170,17 @@ def verify_centering():
         return 0
 
 
-def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
+def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5,
+              laser=False):
     """
+    Finds the position of a star or laser lamp spot in an image.
 
     :param image_path: path for the image to be centered (String)
     :param spot_size: size of the spot for the search of the star in pixel. Must be odd. (int)
     :param estim_error: margin of error for the Gaussian fitting (float)
     :param nb_step: Precision settings (int)
+    :param laser: flag to disable PSF quality check for saturated laser lamp spot
+
     :return: center of the star or (-1, -1) if an error has occurred. (float, float)
     """
 
@@ -203,13 +207,13 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
 
     #if lumino < image.max():
     # TODO this quality check doesn't make much sense
-    # if 3 * lumino < image.max():
-    #     # Dirty hack in the black box...
-    #     # Image quality insufficient for centering
-    #     system.print_and_log(
-    #             f'Image quality insufficient for centering {lumino} < {image.max()}'
-    #     )
-    #     return -1, -1
+    if not laser and 3 * lumino < image.max():
+        # Dirty hack in the black box...
+        # Image quality insufficient for centering
+        system.print_and_log(
+                f'Image quality insufficient for centering {lumino} < {image.max()}'
+        )
+        return -1, -1
 
     # for each pixel, check if it's brighter than lumino, then check index limit
     # if all ok: divide spot around the pixel by the weighting matrix
@@ -312,7 +316,7 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     print("Center :", (x_star, y_star))
     print("-----------------------")
 
-    if opti > estim_error:
+    if not laser and opti > estim_error:
         print("That's not enough.. Human intervention needed !")
         return -1, -1
 
