@@ -302,15 +302,15 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     print("lum min:", lumino)
     print("ratio  :", opti)
 
-    if opti > estim_error:
-        print("That's not enough.. Human intervention needed !")
-        return -1, -1
-
     x_star = x + x_f - mid
     y_star = y + y_f - mid
 
     print("Center :", (x_star, y_star))
     print("-----------------------")
+
+    if opti > estim_error:
+        print("That's not enough.. Human intervention needed !")
+        return -1, -1
 
     return x_star, y_star
 
