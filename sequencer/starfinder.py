@@ -198,7 +198,8 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     lumino = np.float32((hist * bin_edges[:-1]).sum() / hist.sum() * 10) / 2
 
     #if lumino < image.max():
-    if lumino < image.max():
+    # TODO this quality check doesn't make much sense
+    if 3 * lumino < image.max():
         # Dirty hack in the black box...
         # Image quality insufficient for centering
         system.print_and_log(
