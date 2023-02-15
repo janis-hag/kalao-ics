@@ -194,10 +194,11 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     median = np.median(image)
     hist, bin_edges = np.histogram(image[~np.isnan(image)], bins=4096,
                                    range=(median - 10, median + 10))
-    lumino = np.float32((hist * bin_edges[:-1]).sum() / hist.sum() * 10)
+    # Dividing lumino by two compared to original version of code.
+    lumino = np.float32((hist * bin_edges[:-1]).sum() / hist.sum() * 10) / 2
 
     #if lumino < image.max():
-    if 2 * lumino < image.max():
+    if lumino < image.max():
         # Dirty hack in the black box...
         # Image quality insufficient for centering
         system.print_and_log(
@@ -226,8 +227,9 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
 
     # create x,y component for gaussian calculation.
     # corresponds to the coordinates of the picture
-    y_gauss, x_gauss = np.mgrid[0:spot_size, 0:spot_size]
-    print(x_gauss.shape, star_spot.shape)
+    #y_gauss, x_gauss = np.mgrid[0:spot_size, 0:spot_size]
+    y_gauss, x_gauss = np.mgrid[y - mid:y + mid + 1, x - mid:x + mid + 1]
+
     if x_gauss.shape == star_spot.shape:
         x_mean = np.average(x_gauss, weights=star_spot)
         y_mean = np.average(y_gauss, weights=star_spot)
@@ -349,7 +351,9 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
     focusing_sequence = (np.arange(focus_points + 1) -
                          focus_points / 2) * FocusingStep
 
-    for focus_offset in focusing_sequence:
+    for step, focus_offset in enumerate(focusing_sequence):
+        system.print_and_log(f'Focus step: {step+1}/{len(focusing_sequence)}')
+
         if focus_offset == 0:
             # skip set_focus zero as it was already taken
             continue
