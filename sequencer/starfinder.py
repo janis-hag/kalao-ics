@@ -297,11 +297,10 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
     print("time:", tf - tb)
 
     print("-----------------------")
-    print("Center :", (x_f, y_f))
+    print("Window center :", (x_f, y_f))
     print("std    :", sigma + i_f)
     print("lum min:", lumino)
     print("ratio  :", opti)
-    print("-----------------------")
 
     if opti > estim_error:
         print("That's not enough.. Human intervention needed !")
@@ -309,6 +308,9 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5):
 
     x_star = x + x_f - mid
     y_star = y + y_f - mid
+
+    print("Center :", (x_star, y_star))
+    print("-----------------------")
 
     return x_star, y_star
 
