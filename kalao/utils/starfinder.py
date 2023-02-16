@@ -39,6 +39,7 @@ CenterY = parser.getint('FLI', 'CenterY')
 PixScale = parser.getfloat('FLI', 'PixScale')
 LaserCalibDIT = parser.getfloat('FLI', 'LaserCalibDIT')
 LaserCalibIntensity = parser.getfloat('PLC', 'LaserCalibIntensity')
+LaserPosition = parser.getfloat('PLC', 'LaserPosition')
 
 CenteringTimeout = parser.getfloat('Starfinder', 'CenteringTimeout')
 FocusingStep = parser.getfloat('Starfinder', 'FocusingStep')
@@ -152,9 +153,9 @@ def center_on_laser():
     :return:
     """
 
-    # Move calib unit to approximately correct position
-
-    calib_unit.laser_position()
+    # Move calib unit to approximately correct position if too far
+    if np.abs(calib_unit.status()['lrPosActual'] - LaserPosition) > 0.5:
+        calib_unit.laser_position()
 
     if filterwheel.set_position('ND') == -1:
         system.print_and_log("Error: problem with filter selection")
@@ -182,7 +183,7 @@ def center_on_laser():
                      laser=True)
 
     if x != -1 and y != -1:
-        calib_unit.pixel_move(y - CenterY)
+        calib_unit.pixel_move(CenterY - y)
 
     return 0
 
@@ -211,6 +212,7 @@ def send_pixel_offset(x, y):
     :return: success status
     """
     # Found star
+    # TODO verify that it should rather be CenterX-x
     alt_offset = (x - CenterX) * PixScale
     az_offset = (y - CenterY) * PixScale
 
