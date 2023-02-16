@@ -30,7 +30,7 @@ from astropy.io import fits
 from configparser import ConfigParser
 
 config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
 parser = ConfigParser()
 parser.read(config_path)
 ExpTime = parser.getfloat('FLI', 'ExpTime')
