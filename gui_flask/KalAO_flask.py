@@ -33,7 +33,7 @@ from kalao.interface import star_centering as k_star_centering
 from kalao.utils import database as k_database
 from kalao.plc import filterwheel as k_filterwheel
 
-from sequencer import starfinder as s_starfinder
+from kalao.utils import starfinder as s_starfinder
 
 
 def create_app():
