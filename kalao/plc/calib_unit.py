@@ -158,6 +158,7 @@ def move(position=23.36, beck=None):
                 ))
         # Execute
         send_execute(beck)
+        sleep(2)
         while (beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").
                get_value() == 'MOVING in Positioning Mode'):
             print('.')
