@@ -142,6 +142,7 @@ def center_on_laser():
     """
     Center the calibration unit the laser on the WFS.
 
+    1. Move calibration unit close to correct position
     1. Close shutter
     2. Turn laser on
     3. Move flip mirror up
@@ -150,6 +151,10 @@ def center_on_laser():
 
     :return:
     """
+
+    # Move calib unit to approximately correct position
+
+    calib_unit.laser_position()
 
     if filterwheel.set_position('ND') == -1:
         system.print_and_log("Error: problem with filter selection")
