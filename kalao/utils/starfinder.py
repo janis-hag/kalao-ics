@@ -177,7 +177,7 @@ def center_on_laser():
                      laser=True)
 
     if x != -1 and y != -1:
-        calib_unit.pixel_move(y)
+        calib_unit.pixel_move(y - CenterY)
 
     return 0
 
