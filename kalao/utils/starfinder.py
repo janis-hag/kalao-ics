@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Filename : calib_unit
+# @Date : 2021-01-02-14-36
+# @Project: KalAO-ICS
+# @AUTHOR : Janis Hagelberg
+"""
+Utilities for star and laser centering.
+
+starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
+"""
+
 import os
 import sys
 import time
@@ -7,7 +19,7 @@ import pandas as pd
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import camera
-from kalao.plc import filterwheel
+from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
 from kalao.utils import database, file_handling
 from kalao.cacao import telemetry, aocontrol
 from tcs_communication import t120
@@ -25,6 +37,8 @@ ExpTime = parser.getfloat('FLI', 'ExpTime')
 CenterX = parser.getint('FLI', 'CenterX')
 CenterY = parser.getint('FLI', 'CenterY')
 PixScale = parser.getfloat('FLI', 'PixScale')
+LaserCalibDIT = parser.getfloat('FLI', 'LaserCalibDIT')
+LaserCalibIntensity = parser.getfloat('PLC', 'LaserCalibIntensity')
 
 CenteringTimeout = parser.getfloat('Starfinder', 'CenteringTimeout')
 FocusingStep = parser.getfloat('Starfinder', 'FocusingStep')
@@ -48,11 +62,15 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
     - Send telescope offsets based on the measured position.
     - If auto centering does not work request manual centering
 
+    :param kao:
     :param filter_arg:
     :return: 0 if centering succeded
     """
     # Add loop timeout
-    filterwheel.set_position(filter_arg)
+    if filterwheel.set_position(filter_arg) == -1:
+        system.print_and_log("Error: problem with filter selection")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
 
     timeout_time = time.time() + CenteringTimeout
 
@@ -118,6 +136,50 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
             #    return 0
 
             pass
+
+
+def center_on_laser():
+    """
+    Center the calibration unit the laser on the WFS.
+
+    1. Close shutter
+    2. Turn laser on
+    3. Move flip mirror up
+    4. Get laser offset
+    5. Move calibration unit to new position
+
+    :return:
+    """
+
+    if filterwheel.set_position('ND') == -1:
+        system.print_and_log("Error: problem with filter selection")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
+    if shutter.shutter_close() != 'CLOSED':
+        system.print_and_log("Error: failed to close the shutter")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+    #
+    laser.set_intensity(LaserCalibIntensity)
+
+    if flip_mirror.up() != 'UP':
+        system.print_and_log("Error: flip mirror did not go up")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return
+
+    rValue, image_path = camera.take_image(dit=LaserCalibDIT)
+
+    # X can be changed by the ttm_tip_offset value
+    # Y can be changed by the calib_unit position or ttm_tilt_offset value
+    x, y = find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5,
+                     laser=True)
+
+    if x != -1 and y != -1:
+        calib_unit.pixel_move(y)
+
+    return 0
 
 
 def request_manual_centering(flag=True):

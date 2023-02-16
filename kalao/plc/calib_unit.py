@@ -9,7 +9,10 @@ calib_unit.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from . import core
+from kalao.plc import core
+from kalao.utils import database
+from sequencer import system
+
 import numbers
 from opcua import ua
 from time import sleep
@@ -25,21 +28,92 @@ parser.read(config_path)
 
 LASER_POSITION = parser.getfloat('PLC', 'LaserPosition')
 TUNGSTEN_POSITION = parser.getfloat('PLC', 'TungstenPosition')
-
+Pixel2mm = parser.getfloat('PLC', 'CalibUnitPixel2mm')
+mmOffset = parser.getfloat('PLC', 'CalibUnitmmOffset')
 # TODO store errors in obs_log
 
 
+def _update_db(beck=None):
+    """
+    Update the database with the current calib_unit position
+
+    :param beck: handle to the beckhoff connection if it's already open
+    :return:
+    """
+
+    database.store_monitoring({'calib_unit': status(beck=beck)['lrPosActual']})
+
+
+def _log(message):
+    """
+    Print and log to obs_log messages concerning the calibration unit
+
+    :param message: message to print and log
+    :return:
+    """
+
+    print('Calib unit: ' + str(message))
+    database.store_obs_log({'calib_unit_log': message})
+
+
 def tungsten_position():
+    """
+    Move calibration unit to the position where the tungsten lamp is
+
+    :return: position of the calibration unit
+    """
+
     new_position = move(position=TUNGSTEN_POSITION)
     return new_position
 
 
 def laser_position():
+    """
+    Move calibration unit to the position where the laser lamp is
+
+    :return: position of the calibration unit
+    """
+
     new_position = move(position=LASER_POSITION)
     return new_position
 
 
+def pixel_move(pixel, absolute=False):
+    """
+    Move calib unit by amount of pixels
+
+    :param pixel: pixel to move to
+    :return:
+    """
+
+    if absolute and pixel < 0:
+        system.print_and_log(
+                'ERROR: Calib unit absolute value should not be negative')
+        return -1
+
+    current_position = status()['lrPosActual']
+
+    if absolute:
+        position = mmOffset + Pixel2mm * pixel
+    else:
+        position = current_position + Pixel2mm * pixel
+
+    new_position = move(position)
+
+    return new_position
+
+
 def move(position=23.36, beck=None):
+    """
+    Move the calibration unit to position
+
+    :param position: position to move to
+    :param beck: handle to the beckhoff connection if it's already open
+    :return: position the calib unit has been moved to
+    """
+
+    _log(f'Moving to position: {position}')
+
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
@@ -96,6 +170,8 @@ def move(position=23.36, beck=None):
         print('Expected position to be a number, received: ' + str(position))
         new_position = -99
 
+    _log(f'Moved to position: {new_position}')
+
     # Disconnect from OPCUA server
     if disconnect_on_exit:
         beck.disconnect()
@@ -132,12 +208,21 @@ def status(beck=None):
 
 
 def check_error(beck):
-    if beck.get_node(
-            "ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value() == 0:
+    """
+    Check the status of the calibration unit motor for errors.
+
+    :param beck: the handle for the plc connection
+    :return:
+    """
+
+    error_text = beck.get_node(
+            "ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value()
+
+    if error_text == 0:
         return 0
     else:
-        error_status = 'ERROR'
-        return
+        _log(f'ERROR: {error_text}')
+        return -1
 
 
 def initialise(force_init=True, beck=None, motor_nCommand=None):
@@ -192,7 +277,7 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
     if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised"
                          ).get_value() or force_init:
         send_init(beck, motor_nCommand)
-        print('Starting calib_unit init.')
+        _log(f'Starting calib_unit init.')
         sleep(15)
         while (beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").
                get_value() == 'INITIALISING'):
