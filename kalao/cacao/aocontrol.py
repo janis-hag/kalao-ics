@@ -177,8 +177,8 @@ def wfs_centering(tt_threshold):
 
         time.sleep(1)
 
-        tilt = fps_slopes.get_param_value_float('slope_x')
         tip = fps_slopes.get_param_value_float('slope_y')
+        tilt = fps_slopes.get_param_value_float('slope_x')
 
         tip_offset = fps_bmc.get_param_value_float("ttm_tip_offset")
         tilt_offset = fps_bmc.get_param_value_float("ttm_tilt_offset")
@@ -189,7 +189,8 @@ def wfs_centering(tt_threshold):
         if np.abs(tip) < tt_threshold:
             tip_centered = True
         else:
-            new_tip_value = tip_offset - tip / 2
+            # The measured slope tip is about half the value of the negative offset needed to compensate for it
+            new_tip_value = tip_offset - tip
             if new_tip_value > 2.45:
                 print('Limiting tip to 2.45')
                 new_tip_value = 2.45
@@ -202,7 +203,8 @@ def wfs_centering(tt_threshold):
         if np.abs(tilt) < tt_threshold:
             tilt_centered = True
         else:
-            new_tilt_value = tilt_offset - tilt / 2
+            # The measured slope  in tilt is about half the value of the offset needed to compensate for it
+            new_tilt_value = tilt_offset + tilt
             if new_tilt_value > 2.45:
                 print('Limiting tip to 2.45')
                 new_tilt_value = 2.45
