@@ -22,6 +22,18 @@ from pyMilk.interfacing.isio_shmlib import SHM
 
 from kalao.cacao import telemetry
 
+from configparser import ConfigParser
+from pathlib import Path
+import os
+
+config_path = os.path.join(
+        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
+# Read config file
+parser = ConfigParser()
+parser.read(config_path)
+
+TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
+
 
 def set_loopgain(gain):
     fps_slopes = fps("shwfs_process")
@@ -112,6 +124,44 @@ def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
 
     else:
         return -1
+
+
+def tip_tilt_offset(x_tip, y_tilt):
+    """
+    Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
+
+    :param x_tip: number of pixels to tip
+    :param y_tilt: number of pixels to tilt
+    :return:
+    """
+
+    fps_slopes = fps("shwfs_process")
+    fps_bmc = fps("bmc_display-01")
+
+    tilt = fps_slopes.get_param_value_float('slope_x')
+    tip = fps_slopes.get_param_value_float('slope_y')
+
+    new_tip_value = tip + x_tip * TipMRadPerPixel
+
+    if new_tip_value > 2.45:
+        print('Limiting tip to 2.45')
+        new_tip_value = 2.45
+    elif new_tip_value < -2.45:
+        print('Limiting tip to -2.45')
+        new_tip_value = -2.45
+
+    fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tip_value))
+
+    new_tilt_value = tilt + y_tilt * TipMRadPerPixel
+
+    if new_tilt_value > 2.45:
+        print('Limiting tip to 2.45')
+        new_tilt_value = 2.45
+    elif new_tilt_value < -2.45:
+        print('Limiting tip to -2.45')
+        new_tilt_value = -2.45
+
+    fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tip_value))
 
 
 def wfs_centering(tt_threshold):

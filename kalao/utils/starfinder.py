@@ -21,7 +21,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
 from kalao.utils import database, file_handling
-from kalao.cacao import telemetry, aocontrol
+from kalao.cacao import telemetry, aocontrol, toolbox
 from tcs_communication import t120
 from sequencer import system
 
@@ -52,6 +52,8 @@ DitOptimisationTrials = parser.getint('Starfinder', 'DitOptimisationTrials')
 
 WFSilluminationThreshold = parser.getfloat('AO', 'WFSilluminationThreshold')
 WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
+WFSCentringPrecision = parser.getfloat('AO', 'WFSCentringPrecision')
+
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 
 
@@ -184,8 +186,34 @@ def center_on_laser():
 
     if x != -1 and y != -1:
         calib_unit.pixel_move(CenterY - y)
+        aocontrol.tip_tilt_offset(CenterX - x, 0)
 
     return 0
+
+
+def center_wfs():
+    """
+    Center the star or laser on the WFS by changing the Tip/Tilt offsets
+
+     Open nuvu stream
+     Start alignment loop:
+        Calculate left-right and up-down ratios
+        If ratio satisfying, break out of loop
+        Else Apply correction on tip/tilt
+
+    :return:
+    """
+
+    # TODO verify wfs flux is sufficient
+
+    nuvu_stream = SHM("nuvu_stream")
+
+    LR_ratio, UD_ratio = toolbox.get_wfs_LR_UD_ratios(nuvu_stream)
+
+    while np.abs(LR_ratio - 1) > WFSCentringPrecision or np.abs(
+            UD_ratio - 1) > WFSCentringPrecision:
+
+        LR_ratio, UD_ratio = toolbox.get_wfs_LR_UD_ratios(nuvu_stream)
 
 
 def request_manual_centering(flag=True):
@@ -212,12 +240,10 @@ def send_pixel_offset(x, y):
     :return: success status
     """
     # Found star
-    # TODO verify that it should rather be CenterX-x
-    alt_offset = (x - CenterX) * PixScale
-    az_offset = (y - CenterY) * PixScale
+    # TODO validate sign
+    alt_offset = (CenterX - x) * PixScale
+    az_offset = (CenterY - y) * PixScale
 
-    # TODO transform pixel x y into arcseconds
-    # TODO uncomment when gui testing finished
     t120.send_offset(alt_offset, az_offset)
 
     system.print_and_log(f'Sending offset: {alt_offset=} {az_offset=}')
@@ -242,7 +268,7 @@ def verify_centering():
 def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5,
               laser=False):
     """
-    Finds the position of a star or laser lamp spot in an image.
+    Finds the position of a star or laser lamp spot in an image taken with the FLI camera
 
     :param image_path: path for the image to be centered (String)
     :param spot_size: size of the spot for the search of the star in pixel. Must be odd. (int)
