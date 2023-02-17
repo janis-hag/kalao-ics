@@ -133,13 +133,13 @@ def wfs_centering(tt_threshold):
         print(f'tip = {tip}, tilt = {tilt}, tip_offset = {tip_offset}, tilt_offset = {tilt_offset}'
               )
 
-        if tip_offset - tip < tt_threshold:
+        if np.abs(tip) < tt_threshold:
             tip_centered = True
         else:
             fps_bmc.set_param_value_float('ttm_tip_offset',
                                           str(tip_offset - tip / 2))
 
-        if tilt_offset - tip < tt_threshold:
+        if np.abs(tilt) < tt_threshold:
             tilt_centered = True
         else:
             fps_bmc.set_param_value_float('ttm_tilt_offset',
