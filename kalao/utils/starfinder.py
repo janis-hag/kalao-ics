@@ -191,31 +191,6 @@ def center_on_laser():
     return 0
 
 
-def center_wfs():
-    """
-    Center the star or laser on the WFS by changing the Tip/Tilt offsets
-
-     Open nuvu stream
-     Start alignment loop:
-        Calculate left-right and up-down ratios
-        If ratio satisfying, break out of loop
-        Else Apply correction on tip/tilt
-
-    :return:
-    """
-
-    # TODO verify wfs flux is sufficient
-
-    nuvu_stream = SHM("nuvu_stream")
-
-    LR_ratio, UD_ratio = toolbox.get_wfs_LR_UD_ratios(nuvu_stream)
-
-    while np.abs(LR_ratio - 1) > WFSCentringPrecision or np.abs(
-            UD_ratio - 1) > WFSCentringPrecision:
-
-        LR_ratio, UD_ratio = toolbox.get_wfs_LR_UD_ratios(nuvu_stream)
-
-
 def request_manual_centering(flag=True):
     database.store_obs_log({'tracking_manual_centering': flag})
 
