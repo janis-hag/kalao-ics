@@ -15,6 +15,7 @@ import shutil
 import time
 
 import numpy as np
+import time
 
 from CacaoProcessTools import fps, FPS_status
 from pyMilk.interfacing.isio_shmlib import SHM
@@ -124,6 +125,8 @@ def wfs_centering(tt_threshold):
     #TODO add iterations limit to prevent infinite loop
     while not (tip_centered and tilt_centered):
 
+        time.sleep(1)
+
         tilt = fps_slopes.get_param_value_float('slope_x')
         tip = fps_slopes.get_param_value_float('slope_y')
 
@@ -136,14 +139,29 @@ def wfs_centering(tt_threshold):
         if np.abs(tip) < tt_threshold:
             tip_centered = True
         else:
-            fps_bmc.set_param_value_float('ttm_tip_offset',
-                                          str(tip_offset - tip / 2))
+            new_tip_value = tip_offset - tip / 2
+            if new_tip_value > 2.45:
+                print('Limiting tip to 2.45')
+                new_tip_value = 2.45
+            elif new_tip_value < -2.45:
+                print('Limiting tip to -2.45')
+                new_tip_value = -2.45
+
+            fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tip_value))
 
         if np.abs(tilt) < tt_threshold:
             tilt_centered = True
         else:
+            new_tilt_value = tilt_offset - tilt / 2
+            if new_tilt_value > 2.45:
+                print('Limiting tip to 2.45')
+                new_tilt_value = 2.45
+            elif new_tilt_value < -2.45:
+                print('Limiting tip to -2.45')
+                new_tilt_value = -2.45
+
             fps_bmc.set_param_value_float('ttm_tilt_offset',
-                                          str(tilt_offset - tilt / 2))
+                                          str(new_tilt_value))
 
     # TODO return 0 if centered, 1 if exceeded iterations
     return 0
