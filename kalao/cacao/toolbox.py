@@ -123,6 +123,34 @@ def get_wfs_flux_map(upsampling=4):
     return flux
 
 
+def get_wfs_LR_UD_ratios(nuvu_stream):
+    """
+    Calculates the flux ratio between two specific left/right columns and between two specific up/down rows. This ratio
+    can then be used for precise source centering on the WFS.
+
+    :param nuvu_stream: handle to an open WFS stream
+    :return: left_right_ratio and up_down_ratio
+    """
+
+    frame = {}
+    subapertures = {}
+
+    left = [34, 45, 56, 67, 78]
+    right = [42, 53, 64, 75, 86]
+
+    up = [14, 15, 16, 17, 18]
+    down = [102, 103, 104, 105, 106]
+
+    frame, subapertures = get_roi_and_subapertures(
+            nuvu_stream.get_data(check=True))
+
+    left_right_ratio = np.mean(subapertures[left]) / np.mean(
+            subapertures[right])
+    up_down_ratio = np.mean(subapertures[up]) / np.mean(subapertures[down])
+
+    return left_right_ratio, up_down_ratio
+
+
 def save_stream_to_fits(stream_name, fits_file):
     milk_input = f"""
     readshmim "{stream_name}"
