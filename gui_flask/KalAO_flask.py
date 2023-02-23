@@ -39,6 +39,7 @@ from kalao.utils import starfinder as s_starfinder
 def create_app():
 
     logging.getLogger("waitress").setLevel(logging.ERROR)
+    logging.getLogger('werkzeug').disabled = True
 
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'kalaoSECRETkeyFORstreams'
