@@ -366,3 +366,9 @@ def create_app():
         return "ok"
 
     return app
+
+
+if __name__ == "__main__":
+
+    application = create_app()
+    application.run(host='0.0.0.0', port='8080')
