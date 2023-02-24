@@ -75,6 +75,8 @@ def take_image(
     :return: path to the image
     """
 
+    # TODO verify first with check_server_status() before sending request
+
     if dit < 0:
         database.store_obs_log({'fli_log': 'Abort before exposure started.'})
         return 0
@@ -128,6 +130,8 @@ def increment_image_counter():
 
 def video_stream(dit=0.05, window=None, center=None):
     # initialise stream
+
+    # TODO verify first with check_server_status() before sending request
 
     filepath = '/tmp/fli_image.fits'
 
@@ -253,6 +257,15 @@ def set_temperature(temperature):
 
 def _send_request(request_type, params):
 
+    if not check_server_status == 'OK':
+
+        class Object(object):
+            pass
+
+        req = Object()
+        req.text = -1
+        req.status_code = 200
+
     if request_type == 'acquire':
         increment_image_counter()
         database.store_obs_log({'sequencer_status': 'EXP'})
@@ -334,6 +347,11 @@ def initialise():
 
 
 def check_server_status():
+
+    server_status = system.camera_service('status')
+
+    if server_status[0] == 'inactive':
+        return 'DOWN'
 
     try:
         r = requests.get('http://' + address + ':' + port + '/temperature')
