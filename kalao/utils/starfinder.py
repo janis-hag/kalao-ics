@@ -11,17 +11,19 @@ starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
 
 import os
-import sys
 import time
 from pathlib import Path
 import pandas as pd
 
+from astropy.stats import sigma_clipped_stats
+from photutils.detection import DAOStarFinder
+
 # add the necessary path to find the folder kalao for import
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+# sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
 from kalao.utils import database, file_handling
-from kalao.cacao import telemetry, aocontrol, toolbox
+from kalao.cacao import telemetry, aocontrol
 from tcs_communication import t120
 from sequencer import system
 
@@ -49,6 +51,7 @@ MinFlux = parser.getfloat('Starfinder', 'MinFlux')
 MaxFlux = parser.getfloat('Starfinder', 'MaxFlux')
 MaxDit = parser.getint('Starfinder', 'MaxDit')
 DitOptimisationTrials = parser.getint('Starfinder', 'DitOptimisationTrials')
+FWHM = parser.getint('Starfinder', 'FWHM')
 
 WFSilluminationThreshold = parser.getfloat('AO', 'WFSilluminationThreshold')
 WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
@@ -184,8 +187,8 @@ def center_on_laser():
 
     # X can be changed by the ttm_tip_offset value
     # Y can be changed by the calib_unit position or ttm_tilt_offset value
-    x, y = find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5,
-                     laser=True)
+    x, y = find_star_custom_algo(image_path, spot_size=7, estim_error=0.05,
+                                 nb_step=5, laser_spot=True)
 
     if x != -1 and y != -1:
         calib_unit.pixel_move(CenterY - y)
@@ -243,8 +246,42 @@ def verify_centering():
         return 0
 
 
-def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5,
-              laser=False):
+def find_star(image_path):
+    """
+    Finds the position of a star spot in an image taken with the FLI camera
+
+    :param image_path: path for the image to be centered (String)
+
+    :return: center of the star or (-1, -1) if an error has occurred. (float, float)
+    """
+
+    tb = time.time()
+    hdu_list = fits.open(image_path)
+    hdu_list.info()
+    image = hdu_list[0].data
+    hdu_list.close()
+
+    mean, median, std = sigma_clipped_stats(image, sigma=3.0)
+
+    daofind = DAOStarFinder(fwhm=FWHM, threshold=5. * std, brightest=1)
+    sources = daofind(image - median)
+
+    if sources is None:
+        print("Star not found.. Human intervention needed !")
+        x_star = -1
+        y_star = -1
+
+    else:
+        print(sources)
+        sources = sources.to_pandas()
+        x_star = sources.xcentroid.values[0]
+        y_star = sources.ycentroid.values[0]
+
+    return x_star, y_star
+
+
+def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
+                          laser_spot=False):
     """
     Finds the position of a star or laser lamp spot in an image taken with the FLI camera
 
@@ -252,7 +289,7 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5,
     :param spot_size: size of the spot for the search of the star in pixel. Must be odd. (int)
     :param estim_error: margin of error for the Gaussian fitting (float)
     :param nb_step: Precision settings (int)
-    :param laser: flag to disable PSF quality check for saturated laser lamp spot
+    :param laser_spot: flag to disable PSF quality check for saturated laser lamp spot
 
     :return: center of the star or (-1, -1) if an error has occurred. (float, float)
     """
@@ -280,7 +317,7 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5,
 
     #if lumino < image.max():
     # TODO this quality check doesn't make much sense
-    if not laser and 3 * lumino < image.max():
+    if not laser_spot and 3 * lumino < image.max():
         # Dirty hack in the black box...
         # Image quality insufficient for centering
         system.print_and_log(
@@ -389,7 +426,7 @@ def find_star(image_path, spot_size=7, estim_error=0.05, nb_step=5,
     print("Center :", (x_star, y_star))
     print("-----------------------")
 
-    if not laser and opti > estim_error:
+    if not laser_spot and opti > estim_error:
         print("That's not enough.. Human intervention needed !")
         return -1, -1
 
