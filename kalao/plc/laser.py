@@ -9,14 +9,17 @@ laser.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
+import datetime
 import os
 from configparser import ConfigParser
 from pathlib import Path
 from time import sleep
+import pandas as pd
 
 from opcua import ua
 
 from kalao.plc import core
+from kalao.utils import database, kalao_time
 
 config_path = os.path.join(
         Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
@@ -98,6 +101,41 @@ def unlock(beck=None):
     """
     laser_status = switch('bUnlock', beck=beck)
     return laser_status
+
+
+def get_switch_time():
+    """
+    Looks up the time when the tungsten lamp as last been put into current state (ON/OFF/ERROR)
+
+    :return:  switch_time a datetime object
+    """
+
+    # Update db to make sure the latest data point is valid
+    _update_db()
+    # Load tungsten log into dataframe
+    df = pd.DataFrame(database.get_monitoring({'laser'}, 1500)['laser'])
+
+    # Search for last occurence of current status
+    switch_time = df.loc[df[df['values'] != status()].first_valid_index() -
+                         1]['time_utc']
+
+    elapsed_time = (
+            kalao_time.now() -
+            switch_time.replace(tzinfo=datetime.timezone.utc)).total_seconds()
+
+    return elapsed_time
+
+
+def log(message):
+    """
+    Log message to shutter_log
+    :param message:
+    :return:
+    """
+
+    database.store_obs_log({'laser_log': message})
+
+    return 0
 
 
 def set_intensity(intensity=0.4, beck=None):
@@ -183,3 +221,14 @@ def switch(action_name, beck=None):
 
 def initialise():
     return 0
+
+
+def _update_db(beck=None):
+    """
+    Update the database with the current shutter position
+
+    :param beck: handle to the beckhoff connection if it's already open
+    :return:
+    """
+
+    database.store_monitoring({'laser': status(beck=beck)})

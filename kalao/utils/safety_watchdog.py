@@ -15,7 +15,7 @@ import datetime
 from time import sleep
 import schedule
 
-from kalao.plc import temperature_control, shutter
+from kalao.plc import temperature_control, shutter, laser
 from kalao.utils import database, kalao_time
 from kalao.fli import camera
 from sequencer import system
@@ -48,8 +48,15 @@ MAX_CCD_TEMP = parser.getfloat('Cooling', 'MaxCCDTemp')
 
 
 def _check_shutteropen_inactive():
+    """
+    Verify for how long the shutter is open and there is not observing activity.
+    Close the shutter if inactivity is longer than the value set in kalao.config file.
+
+    :return:
+    """
+
     # if switch_time long and no activity for given time close shutter
-    # ADD if tracking status IDLE, close
+    # TODO ADD if tracking status IDLE, close
 
     if shutter.position() == 'OPEN':
         latest_obs_entry_time = database.get_latest_record(
@@ -70,8 +77,47 @@ def _check_shutteropen_inactive():
     return 0
 
 
+def _check_laseron_inactive():
+    """
+    Verify for how long the laser is on and there is not observing activity.
+    Turn off laser if inactivity is longer than the value set in kalao.config file.
+
+    :return:
+    """
+
+    # Turn off laser is intensity is at 0
+    if laser.status() == 0:
+        laser.disable()
+
+    if not laser.status() == 'OFF':
+        latest_obs_entry_time = database.get_latest_record(
+                'obs_log')['time_utc']
+
+        elapsed_time_since_activity = (
+                kalao_time.now() - latest_obs_entry_time.replace(
+                        tzinfo=datetime.timezone.utc)).total_seconds()
+
+        laser_on_elapsed_time = laser.get_switch_time()
+
+        if laser_on_elapsed_time > OpenShutterTimeout and elapsed_time_since_activity > InactivityTimeout:
+            message = 'Turning off laser due to inactivity timeout'
+            system.print_and_log(message)
+            laser.log(message)
+            laser.disable()
+
+    return 0
+
+
 def _check_bench_status():
+    """
+    Checks the satus of bench components: shutter, and laser.
+    If inactivity timeout is reached, the shutter is closed, and the laser is turned off.
+
+    :return: 0
+    """
+
     _check_shutteropen_inactive()
+    _check_laseron_inactive()
 
     return 0
 
@@ -81,8 +127,9 @@ def _check_cooling_status():
     Verify cooling health status. Namely, the cooling water flow, and the main temperatures.
     If any value is below threshold either issue a warning or shutdown bench depending on level.
 
-    :return:
+    :return: 0
     """
+
     cooling_status = temperature_control.get_cooling_values()
 
     if cooling_status['cooling_flow_value'] < MINIMAL_FLOW:
