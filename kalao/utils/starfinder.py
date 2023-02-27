@@ -69,7 +69,10 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
     :param filter_arg:
     :return: 0 if centering succeded
     """
+
+    # TODO decide on using clear filter or science filter
     # Add loop timeout
+    filter_arg = 'clear'
     if filterwheel.set_position(filter_arg) == -1:
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})
