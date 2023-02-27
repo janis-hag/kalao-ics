@@ -11,7 +11,4 @@ __init__.py is part of the KalAO Instrument Control Software
 This package is contains the KalAO sequencer server and scripts.
 """
 
-__all__ = [
-        "start_seq", "seq_server", "seq_command", "seq_init", "starfinder",
-        "system"
-]
+__all__ = ["start_seq", "seq_server", "seq_command", "seq_init", "system"]
