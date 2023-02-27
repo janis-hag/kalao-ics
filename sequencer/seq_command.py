@@ -21,9 +21,9 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel
 from kalao.fli import camera
-from kalao.utils import file_handling, database, database_updater, kalao_time
+from kalao.utils import file_handling, database, database_updater, kalao_time, starfinder
 from kalao.cacao import aomanager
-from sequencer import starfinder, system
+from sequencer import system
 # from tcs_communication import t120
 
 config_path = os.path.join(
