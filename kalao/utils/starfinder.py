@@ -448,12 +448,12 @@ def focus_sequence(focus_points=6, focusing_dit=FocusingDit):
 
     initial_focus = t120.get_focus_value()
 
-    focusing_dit = optimise_dit(focusing_dit)
-
-    if focusing_dit == -1:
-        system.print_and_log(
-                'Error optimising dit for focusing sequence. Target brightness out of range'
-        )
+    # focusing_dit = optimise_dit(focusing_dit)
+    #
+    # if focusing_dit == -1:
+    #     system.print_and_log(
+    #             'Error optimising dit for focusing sequence. Target brightness out of range'
+    #     )
 
     req, file_path = camera.take_image(dit=focusing_dit)
 

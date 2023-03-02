@@ -496,7 +496,7 @@ def focusing(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
 
-    if None in (q, dit):
+    if q is None:
         system.print_and_log(
                 'Missing keyword in target_observation function call')
         database.store_obs_log({'sequencer_status': 'ERROR'})
@@ -523,6 +523,12 @@ def focusing(**seq_args):
 
     # if starfinder.centre_on_target() == -1:
     #     system.print_and_log("Error: problem with centre on target")
+    #     database.store_obs_log({'sequencer_status': 'ERROR'})
+    #     return -1
+
+    # if dit is None:# in (q, dit):
+    #     system.print_and_log(
+    #             'No focusing dit given. Searching for optimal dit')
     #     database.store_obs_log({'sequencer_status': 'ERROR'})
     #     return -1
 
