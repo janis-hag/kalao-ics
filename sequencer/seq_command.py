@@ -218,6 +218,12 @@ def tungsten_FLAT(**seq_args):
 
     for filter_name in filter_list:
 
+        # Check if lamp is still on
+        if tungsten.status()['nStatus'] != 2:
+            system.print_and_log('Tungsten lamp unexpectedly turned off.')
+            database.store_obs_log({'sequencer_status': 'ERROR'})
+            return -1
+
         if filterwheel.set_position(filter_name) == -1:
             system.print_and_log('Error: problem with filter selection.')
             database.store_obs_log({'sequencer_status': 'ERROR'})
