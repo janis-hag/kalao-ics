@@ -159,6 +159,7 @@ def update_header(image_path, sequencer_arguments=None):
         elif type == 'K_TRGOBS':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'SCIENCE'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
+
         elif type == 'K_FOCUS':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'

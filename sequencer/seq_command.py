@@ -234,7 +234,8 @@ def tungsten_FLAT(**seq_args):
 
         image_path = file_handling.create_night_filepath()
 
-        rValue, image_path = camera.take_image(dit=dit, filepath=image_path)
+        rValue, image_path = camera.take_image(dit=dit, filepath=image_path,
+                                               sequencer_arguments=seq_args)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
         #file_handling.save_tmp_image(image_path)
@@ -343,7 +344,8 @@ def sky_FLAT(**seq_args):
 
         image_path = file_handling.create_night_filepath()
 
-        rValue, image_path = camera.take_image(dit=dit, filepath=image_path)
+        rValue, image_path = camera.take_image(dit=dit, filepath=image_path,
+                                               sequencer_arguments=seq_args)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
         #file_handling.save_tmp_image(image_path)
@@ -441,7 +443,8 @@ def target_observation(**seq_args):
 
     image_path = file_handling.create_night_filepath()
 
-    rValue, image_path = camera.take_image(dit=dit, filepath=image_path)
+    rValue, image_path = camera.take_image(dit=dit, filepath=image_path,
+                                           sequencer_arguments=seq_args)
 
     #Monitor AO and cancel exposure if needed
 
