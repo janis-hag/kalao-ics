@@ -109,6 +109,7 @@ def get_telemetry_series(realData=True):
 
 
 def get_data(collection_name, keys, nb_of_point, dt=None):
+    # TODO get data from additional day in nb_of_points not reached
     # If dt is None, get db for today, otherwise get db for the day/night specified  by dt
     if dt is None:
         dt = kalao_time.now()
@@ -167,7 +168,8 @@ def get_latest_record(collection_name, key=None, no_id=True):
 
     latest_record = None
     day_number = 0
-    while (latest_record is None):
+
+    while latest_record is None:
         if key is None:
             last_logs = get_data(collection_name,
                                  definitions[collection_name].keys(), 1,
@@ -298,7 +300,7 @@ def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
             # Expand the cursor and construct the DataFrame
             appended_df.append(pd.DataFrame(list(cursor)))
 
-        # Check if the databse is empty for the given days
+        # Check if the database is empty for the given days
         if all([df.empty for df in appended_df]):
             # Search one more day back in time to look for database content
             db = get_db(client, dt - timedelta(days=days))

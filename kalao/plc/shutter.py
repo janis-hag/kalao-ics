@@ -11,6 +11,7 @@ shutter.py is part of the KalAO Instrument Control Software
 
 import datetime
 import pandas as pd
+import numpy as np
 from opcua import ua
 from time import sleep
 from kalao.plc import core
@@ -176,7 +177,7 @@ def _update_db(beck=None):
 
 def get_switch_time():
     """
-    Looks up the time when the tungsten lamp as last been put into current state (ON/OFF/ERROR)
+    Looks up the time when the tungsten lamp has last been put into current state (ON/OFF/ERROR)
 
     :return:  switch_time a datetime object
     """
@@ -184,16 +185,33 @@ def get_switch_time():
     # Update db to make sure the latest data point is valid
     _update_db()
     # Load tungsten log into dataframe
-    df = pd.DataFrame(database.get_monitoring({'shutter'}, 1500)['shutter'])
+    nb_of_points = 600
+    dt = kalao_time.now()
 
-    # Search for last occurence of current status
-    switch_time = df.loc[
-            df[df['values'] != status()['sStatus']].first_valid_index() -
-            1]['time_utc']
+    df = pd.DataFrame(
+            database.get_monitoring({'shutter'}, nb_of_points,
+                                    dt=dt)['shutter'])
+    if len(df) < nb_of_points:
+        df = pd.concat([
+                df,
+                pd.DataFrame(
+                        database.get_monitoring({'shutter'}, nb_of_points,
+                                                dt=dt -
+                                                timedelta(days=1))['shutter'])
+        ])
 
-    elapsed_time = (
-            kalao_time.now() -
-            switch_time.replace(tzinfo=datetime.timezone.utc)).total_seconds()
+    if len(np.unique(status()['sStatus'])):
+        # There is no switch time value
+        switch_time = df.iloc[-1]['time_utc']
+
+    else:
+        # Search for last occurrence of current status
+        switch_time = df.loc[
+                df[df['values'] != status()['sStatus']].first_valid_index() -
+                1]['time_utc']
+
+    elapsed_time = (kalao_time.now() - switch_time.to_pydatetime().replace(
+            tzinfo=datetime.timezone.utc)).total_seconds()
 
     return elapsed_time
 
