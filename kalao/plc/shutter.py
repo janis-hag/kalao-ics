@@ -196,8 +196,8 @@ def get_switch_time():
                 df,
                 pd.DataFrame(
                         database.get_monitoring({'shutter'}, nb_of_points,
-                                                dt=dt -
-                                                timedelta(days=1))['shutter'])
+                                                dt=dt - datetime.timedelta(
+                                                        days=1))['shutter'])
         ])
 
     if len(np.unique(status()['sStatus'])):
