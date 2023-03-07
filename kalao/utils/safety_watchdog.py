@@ -85,7 +85,7 @@ def _check_laseron_inactive():
     :return:
     """
 
-    # Turn off laser is intensity is at 0
+    # Turn off laser if intensity is at 0
     if laser.status() == 0:
         laser.disable()
 

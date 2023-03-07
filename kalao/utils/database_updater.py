@@ -99,8 +99,8 @@ def update_telemetry(stream_list):
             stream_list['nuvu_stream'] = SHM("nuvu_raw")
 
     if stream_list['tt_stream'] is None:
-        nuvu_exists, nuvu_stream_path = telemetry.check_stream("dm02disp")
-        if nuvu_exists:
+        tt_exists, tt_stream_path = telemetry.check_stream("dm02disp")
+        if tt_exists:
             stream_list['tt_stream'] = SHM("dm02disp")
 
     if stream_list['fps_slopes'] is None:

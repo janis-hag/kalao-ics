@@ -36,18 +36,19 @@ TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
 
 
 def set_loopgain(gain):
+    # TODO implement
     fps_slopes = fps("shwfs_process")
 
     return 0
 
 
 def set_loopmult(mult):
-
+    # TODO implement
     return 0
 
 
 def set_looplimit(limit):
-
+    # TODO implement
     return 0
 
 
@@ -164,6 +165,30 @@ def tip_tilt_offset(x_tip, y_tilt):
     fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tip_value))
 
 
+def reset_stream(stream_name):
+    """
+    Reset the tip/tilt channel to 0.
+
+    :return:
+    """
+
+    tt_exists, tt_fps_path = telemetry.check_stream(stream_name)
+
+    if tt_exists:
+        stream_shm = SHM(stream_name)
+
+        stream_data = stream_shm.get_data(check=False)
+
+        stream_data[:] = 0
+
+        stream_shm.set_data(stream_data.astyp(stream_shm.nptype))
+
+    else:
+        return -1
+
+    return 0
+
+
 def wfs_centering(tt_threshold):
 
     tip_centered = False
@@ -171,6 +196,9 @@ def wfs_centering(tt_threshold):
 
     fps_slopes = fps("shwfs_process")
     fps_bmc = fps("bmc_display-01")
+
+    #TODO verify that shwfs enough illuminated for centering
+    #TODO verify that shwfs enough illuminated for centering
 
     #TODO add iterations limit to prevent infinite loop
     while not (tip_centered and tilt_centered):

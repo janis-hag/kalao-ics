@@ -105,15 +105,20 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
             send_pixel_offset(x, y)
 
             if kao == 'AO':
+                # Check if enough light is on the WFS for precise centering
                 if verify_centering() == 0:
+                    # Start WFS centering procedure
+                    aocontrol.wfs_centering(TTSlopeThreshold)
                     request_manual_centering(False)
 
                     return 0
                 else:
-                    request_manual_centering(True)
-            else:
-                request_manual_centering(False)
+                    # Retry centering
+                    continue
 
+            else:
+                # Centering is good enough
+                request_manual_centering(False)
                 return 0
 
         else:
@@ -122,20 +127,23 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
             # Set flag for manual centering
             request_manual_centering(True)
 
-            if kao == 'AO':
-                while time.time() < timeout_time:
+            # Wait 10 seconds before trying another star detection
+            time.sleep(10)
+            continue
 
-                    # Check if we are centered and exit loop
-                    rValue = verify_centering()
-                    if rValue == 0:
-                        request_manual_centering(False)
-                        return 0
+            # if kao == 'AO':
+            #     while time.time() < timeout_time:
+            #
+            #         # Check if we are centered and exit loop
+            #         rValue = verify_centering()
+            #         if rValue == 0:
+            #             request_manual_centering(False)
+            #             return 0
 
-                    time.sleep(15)
-
-            else:
-                # TODO for centering
-                return 0
+            #
+            # else:
+            #     # TODO for centering
+            #     return 0
 
             # TODO wait for observer input
             # TODO send gop message
@@ -144,7 +152,8 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
             # if shwfs ok:
             #    return 0
 
-            pass
+    else:
+        return -1
 
 
 def center_on_laser():
@@ -183,6 +192,9 @@ def center_on_laser():
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
+    # Reset tip tilt stream to 0
+    aocontrol.reset_stream("dm02disp")
+
     rValue, image_path = camera.take_image(dit=LaserCalibDIT)
 
     # X can be changed by the ttm_tip_offset value
@@ -201,13 +213,14 @@ def request_manual_centering(flag=True):
     database.store_obs_log({'tracking_manual_centering': flag})
 
 
-def manual_centering(x, y):
+def manual_centering(x, y, AO=False):
 
     # TODO verify value validity before sending
 
     send_pixel_offset(x, y)
     rValue, image_path = camera.take_image(dit=ExpTime)
-    rValue = verify_centering()
+    if AO:
+        rValue = verify_centering()
 
     return rValue
 
@@ -238,8 +251,6 @@ def verify_centering():
     # TODO verify if SHWFS is enough illuminated
     illuminated_fraction = telemetry.wfs_illumination_fraction(
             WFSilluminationThreshold)
-
-    aocontrol.wfs_centering(TTSlopeThreshold)
 
     if illuminated_fraction > WFSilluminationFraction:
         system.print_and_log('WFS on target')
