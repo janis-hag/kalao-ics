@@ -40,7 +40,7 @@ def create_app():
 
     # this line coulde be redundant with     app.logger.setLevel(logging.ERROR)
     #logging.getLogger("werkzeug").setLevel(logging.WARNING)
-    logging.getLogger("werkzeug").setLevel(logging.DEBUG)
+    logging.getLogger("werkzeug").setLevel(logging.INFO)
 
     # Disables logging
     # logging.getLogger('werkzeug').disabled = True
@@ -52,7 +52,7 @@ def create_app():
     app.register_blueprint(plc_bp)
     app.register_blueprint(system_bp)
     #app.logger.setLevel(logging.WARNING)
-    app.logger.setLevel(logging.DEBUG)
+    app.logger.setLevel(logging.INFO)
 
     CORS(app)
 
