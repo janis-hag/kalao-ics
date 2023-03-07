@@ -65,6 +65,8 @@ def dark(**seq_args):
     dit = seq_args.get('dit')
     nbPic = seq_args.get('nbPic')
 
+    database.store_obs_log({'tracking_status': 'IDLE'})
+
     if nbPic is None:
         nbPic = 1
 
@@ -162,6 +164,8 @@ def tungsten_FLAT(**seq_args):
     q = seq_args.get('q')
     filter_list = seq_args.get('filter_list')
     filepath = seq_args.get('filepath')
+
+    database.store_obs_log({'tracking_status': 'IDLE'})
 
     # Commented out as it is not clear what is meant to be checked
     # if None in (q):
@@ -299,6 +303,8 @@ def sky_FLAT(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
 
+    database.store_obs_log({'tracking_status': 'CENTERING'})
+
     if None in (q, dit, filepath):
         # TODO verify which arguments are actually needed.
         system.print_and_log('Missing keyword in flat function call')
@@ -391,6 +397,8 @@ def target_observation(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
     kao = seq_args.get('kao').upper()
+
+    database.store_obs_log({'tracking_status': 'CENTERING'})
 
     if None in (q, dit):
         system.print_and_log(
@@ -504,6 +512,8 @@ def focusing(**seq_args):
     kalfilter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
+
+    database.store_obs_log({'tracking_status': 'CENTERING'})
 
     if q is None:
         system.print_and_log(
