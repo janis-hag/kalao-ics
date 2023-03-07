@@ -9,11 +9,6 @@ aocontrol.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-import subprocess
-import os
-import shutil
-import time
-
 import numpy as np
 import time
 
@@ -162,7 +157,7 @@ def tip_tilt_offset(x_tip, y_tilt):
         print('Limiting tip to -2.45')
         new_tilt_value = -2.45
 
-    fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tip_value))
+    fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tilt_value))
 
 
 def reset_stream(stream_name):
@@ -181,7 +176,7 @@ def reset_stream(stream_name):
 
         stream_data[:] = 0
 
-        stream_shm.set_data(stream_data.astyp(stream_shm.nptype))
+        stream_shm.set_data(stream_data.astype(stream_shm.nptype))
 
     else:
         return -1
