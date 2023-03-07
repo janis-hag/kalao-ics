@@ -134,8 +134,9 @@ def tip_tilt_offset(x_tip, y_tilt):
     fps_slopes = fps("shwfs_process")
     fps_bmc = fps("bmc_display-01")
 
-    tilt = fps_slopes.get_param_value_float('slope_x')
-    tip = fps_slopes.get_param_value_float('slope_y')
+    # TIP
+    #tip = fps_slopes.get_param_value_float('slope_y')
+    tip = fps_bmc.get_param_value_float('ttm_tip_offset')
 
     new_tip_value = tip + x_tip * TipMRadPerPixel
 
@@ -147,6 +148,11 @@ def tip_tilt_offset(x_tip, y_tilt):
         new_tip_value = -2.45
 
     fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tip_value))
+
+    # TILT
+
+    #tilt = fps_slopes.get_param_value_float('slope_x')
+    tilt = fps_bmc.get_param_value_float('ttm_tilt_offset')
 
     new_tilt_value = tilt + y_tilt * TipMRadPerPixel
 
