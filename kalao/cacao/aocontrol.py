@@ -16,6 +16,7 @@ from CacaoProcessTools import fps, FPS_status
 from pyMilk.interfacing.isio_shmlib import SHM
 
 from kalao.cacao import telemetry
+from kalao.utils import database
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -164,6 +165,12 @@ def tip_tilt_offset(x_tip, y_tilt):
         new_tilt_value = -2.45
 
     fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tilt_value))
+
+    message = f'Tip and Tilt offset changed to {new_tip_value} and {new_tilt_value}'
+    print(message)
+    database.store_obs_log({'ttm_log': message})
+
+    return 0
 
 
 def reset_stream(stream_name):

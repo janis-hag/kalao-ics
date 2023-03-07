@@ -40,7 +40,7 @@ tracking_manual_centering:
   unit: boolean
 
 # PI Tip/Tilt
-pi_log:
+ttm_log:
   short: Tip tilt status
   long: Tip-Tilt status
   unit: text
