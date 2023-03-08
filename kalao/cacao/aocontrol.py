@@ -123,7 +123,7 @@ def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
         return -1
 
 
-def tip_tilt_offset(x_tip, y_tilt):
+def tip_tilt_offset(x_tip, y_tilt, absolute=False):
     """
     Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
 
@@ -139,7 +139,10 @@ def tip_tilt_offset(x_tip, y_tilt):
     #tip = fps_slopes.get_param_value_float('slope_y')
     tip = fps_bmc.get_param_value_float('ttm_tip_offset')
 
-    new_tip_value = tip + x_tip * TipMRadPerPixel
+    if absolute:
+        new_tip_value = x_tip
+    else:
+        new_tip_value = tip + x_tip * TipMRadPerPixel
 
     if new_tip_value > 2.45:
         print('Limiting tip to 2.45')
@@ -155,21 +158,30 @@ def tip_tilt_offset(x_tip, y_tilt):
     #tilt = fps_slopes.get_param_value_float('slope_x')
     tilt = fps_bmc.get_param_value_float('ttm_tilt_offset')
 
-    new_tilt_value = tilt + y_tilt * TipMRadPerPixel
+    if absolute:
+        new_tilt_value = y_tilt
+    else:
+        new_tilt_value = tilt + y_tilt * TipMRadPerPixel
 
     if new_tilt_value > 2.45:
-        print('Limiting tip to 2.45')
+        print('Limiting tilt to 2.45')
         new_tilt_value = 2.45
     elif new_tilt_value < -2.45:
-        print('Limiting tip to -2.45')
+        print('Limiting tilt to -2.45')
         new_tilt_value = -2.45
 
-    fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tilt_value))
+    fps_bmc.set_param_value_float('ttm_tilt_offset', str(new_tilt_value))
 
-    message = f'Tip and Tilt offset changed to {new_tip_value} and {new_tilt_value}'
+    message = f'Changing Tip and Tilt offset to  {new_tip_value} and {new_tilt_value}'
     print(message)
     database.store_obs_log({'ttm_log': message})
 
+    tip = fps_bmc.get_param_value_float('ttm_tip_offset')
+    tilt = fps_bmc.get_param_value_float('ttm_tilt_offset')
+
+    message = f'New Tip and Tilt offset values {tip} and {tilt}'
+    print(message)
+    database.store_obs_log({'ttm_log': message})
     return 0
 
 

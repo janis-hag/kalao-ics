@@ -192,6 +192,9 @@ def center_on_laser():
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
+    # Reset tip tilt offset to 0
+    aocontrol.tip_tilt_offset(0, 0, absolute=True)
+
     # Reset tip tilt stream to 0
     aocontrol.reset_stream("dm02disp")
 
@@ -204,7 +207,11 @@ def center_on_laser():
 
     if x != -1 and y != -1:
         calib_unit.pixel_move(CenterY - y)
+        print('Moved calib unit')
+        time.sleep(10)
         aocontrol.tip_tilt_offset(CenterX - x, 0)
+
+        #aocontrol.wfs_centering(TTSlopeThreshold)
 
     return 0
 
