@@ -39,8 +39,8 @@ from kalao.utils import starfinder as s_starfinder
 def create_app():
 
     # this line coulde be redundant with     app.logger.setLevel(logging.ERROR)
-    #logging.getLogger("werkzeug").setLevel(logging.WARNING)
-    logging.getLogger("werkzeug").setLevel(logging.INFO)
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+    #logging.getLogger("werkzeug").setLevel(logging.INFO)
 
     # Disables logging
     # logging.getLogger('werkzeug').disabled = True
