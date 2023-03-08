@@ -55,14 +55,14 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None,
 
                 else:
                     # Clip after zooming
-                    # if x + 128 - centering_image.shape[0] > 0:
-                    #     x =  centering_image.shape[0] - 128
-                    # elif x - 128 < 0:
-                    #     x = 128
-                    # if y + 128 - centering_image.shape[1] > 0:
-                    #     y = centering_image.shape[1] - 128
-                    # elif y - 128 < 0:
-                    #     y = 128
+                    if x + 128 > centering_image.shape[0]:
+                        x = centering_image.shape[0] - 128
+                    elif x - 128 < 0:
+                        x = 128
+                    if y + 128 > centering_image.shape[1]:
+                        y = centering_image.shape[1] - 128
+                    elif y - 128 < 0:
+                        y = 128
 
                     centering_image = centering_image[x - 128:x + 128,
                                                       y - 128:y + 128]
