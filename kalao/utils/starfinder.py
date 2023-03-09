@@ -108,7 +108,7 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
                 # Check if enough light is on the WFS for precise centering
                 if verify_centering() == 0:
                     # Start WFS centering procedure
-                    aocontrol.wfs_centering(TTSlopeThreshold)
+                    aocontrol.wfs_centering(tt_threshold=TTSlopeThreshold)
                     request_manual_centering(False)
 
                     return 0
@@ -198,20 +198,23 @@ def center_on_laser():
     # Reset tip tilt stream to 0
     aocontrol.reset_stream("dm02disp")
 
-    rValue, image_path = camera.take_image(dit=LaserCalibDIT)
+    for i in range(3):
+        print(f'Centering step {i}')
 
-    # X can be changed by the ttm_tip_offset value
-    # Y can be changed by the calib_unit position or ttm_tilt_offset value
-    x, y = find_star_custom_algo(image_path, spot_size=7, estim_error=0.05,
-                                 nb_step=5, laser_spot=True)
+        rValue, image_path = camera.take_image(dit=LaserCalibDIT)
 
-    if x != -1 and y != -1:
-        calib_unit.pixel_move(CenterY - y)
-        print('Moved calib unit')
-        time.sleep(10)
-        aocontrol.tip_tilt_offset(CenterX - x, 0)
+        # X can be changed by the ttm_tip_offset value
+        # Y can be changed by the calib_unit position or ttm_tilt_offset value
+        x, y = find_star_custom_algo(image_path, spot_size=7, estim_error=0.05,
+                                     nb_step=5, laser_spot=True)
 
-        #aocontrol.wfs_centering(TTSlopeThreshold)
+        if x != -1 and y != -1:
+            calib_unit.pixel_move(CenterY - y)
+            print('Moved calib unit')
+            time.sleep(3)
+            aocontrol.tip_tilt_offset(CenterX - x, 0)
+
+            #aocontrol.wfs_centering(TTSlopeThreshold)
 
     return 0
 

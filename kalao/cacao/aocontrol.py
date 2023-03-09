@@ -29,6 +29,7 @@ parser = ConfigParser()
 parser.read(config_path)
 
 TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
+TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 
 
 def set_loopgain(gain):
@@ -129,6 +130,8 @@ def tip_tilt_offset(x_tip, y_tilt, absolute=False):
 
     :param x_tip: number of pixels to tip
     :param y_tilt: number of pixels to tilt
+    :param absolute: Flag to indicate that tip tilt values are in absolute radian. By default, set to False.
+
     :return:
     """
 
@@ -209,7 +212,7 @@ def reset_stream(stream_name):
     return 0
 
 
-def wfs_centering(tt_threshold):
+def wfs_centering(tt_threshold=TTSlopeThreshold):
 
     tip_centered = False
     tilt_centered = False
@@ -231,7 +234,7 @@ def wfs_centering(tt_threshold):
         tip_offset = fps_bmc.get_param_value_float("ttm_tip_offset")
         tilt_offset = fps_bmc.get_param_value_float("ttm_tilt_offset")
 
-        print(f'tip = {tip}, tilt = {tilt}, tip_offset = {tip_offset}, tilt_offset = {tilt_offset}'
+        print(f'Residual tip = {tip}, Residual tilt = {tilt}, tip_offset = {tip_offset}, tilt_offset = {tilt_offset}'
               )
 
         if np.abs(tip) < tt_threshold:

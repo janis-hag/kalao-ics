@@ -127,7 +127,7 @@ def move(position=23.36, beck=None):
     if not init_result == 0:
         return init_result
 
-    # Set velocity to 1 in case is has been changed
+    # Set velocity to 0.5 in case is has been changed
     motor_lrVelocity = beck.get_node(
             "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrVelocity")
     motor_lrVelocity.set_attribute(
