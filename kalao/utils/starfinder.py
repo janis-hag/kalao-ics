@@ -198,6 +198,7 @@ def center_on_laser():
     # Reset tip tilt stream to 0
     aocontrol.reset_stream("dm02disp")
 
+    # Rough centering loop with FLI
     for i in range(3):
         print(f'Centering step {i}')
 
@@ -214,7 +215,8 @@ def center_on_laser():
             time.sleep(3)
             aocontrol.tip_tilt_offset(CenterX - x, 0)
 
-            #aocontrol.wfs_centering(TTSlopeThreshold)
+    # Precise centering with WFS
+    aocontrol.wfs_centering(TTSlopeThreshold)
 
     return 0
 

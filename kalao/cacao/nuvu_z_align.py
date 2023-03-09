@@ -25,6 +25,7 @@ right = (42, 53, 64, 75, 86)
 
 
 def print_ratio():
+
     frame, subapertures = get_roi_and_subapertures(
             nuvu_stream.get_data(check=True))
     for i in range(5):
