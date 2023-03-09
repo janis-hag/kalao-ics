@@ -17,6 +17,7 @@ from pyMilk.interfacing.isio_shmlib import SHM
 
 from kalao.cacao import telemetry
 from kalao.utils import database
+from tcs_communication import t120
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -30,6 +31,8 @@ parser.read(config_path)
 
 TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
+
+PixScale = parser.getfloat('FLI', 'PixScale')
 
 
 def set_loopgain(gain):
@@ -124,6 +127,37 @@ def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
         return -1
 
 
+def tip_tilt_offload(gain=0.5):
+    """
+    Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
+    The gain can be adjusted to set how much of the tip/tilt should be offloaded.
+
+    :param gain: Gain factor, set to 0.5 by default.
+    :return:
+    """
+
+    stream_name = "dm02disp"
+
+    tt_exists, tt_fps_path = telemetry.check_stream(stream_name)
+
+    if not tt_exists:
+        return -1
+
+    stream_shm = SHM(stream_name)
+
+    stream_data = stream_shm.get_data(check=False)
+
+    tip = stream_data[0]
+    tilt = stream_data[1]
+
+    alt_offload = -tip * (PixScale / TipMRadPerPixel) * gain
+    az_offload = -tilt * (PixScale / TipMRadPerPixel) * gain
+
+    t120.send_offset(alt_offload, az_offload)
+
+    return 0
+
+
 def tip_tilt_offset(x_tip, y_tilt, absolute=False):
     """
     Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
@@ -190,14 +224,14 @@ def tip_tilt_offset(x_tip, y_tilt, absolute=False):
 
 def reset_stream(stream_name):
     """
-    Reset the tip/tilt channel to 0.
+    Reset the given stream to 0.
 
     :return:
     """
 
-    tt_exists, tt_fps_path = telemetry.check_stream(stream_name)
+    stream_exists, stream_path = telemetry.check_stream(stream_name)
 
-    if tt_exists:
+    if stream_exists:
         stream_shm = SHM(stream_name)
 
         stream_data = stream_shm.get_data(check=False)
