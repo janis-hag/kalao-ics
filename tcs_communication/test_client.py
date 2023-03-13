@@ -5,13 +5,14 @@ import logging
 import time
 import socket
 
-sys.path.append("/home/weber/src/pymod_libgop/")
+# sys.path.append("/home/weber/src/pymod_libgop/")
+from tcs_communication.pygop import tcs_srv_gop
 
-import pymod_libgop
-
-sys.path.append("/home/weber/src/tcs_srv/")
-
-import tcs_srv_gop
+# import pymod_libgop
+#
+# sys.path.append("/home/weber/src/tcs_srv/")
+#
+# import tcs_srv_gop
 
 #
 # Initialise Gop (Geneva Observatory Protocol)
