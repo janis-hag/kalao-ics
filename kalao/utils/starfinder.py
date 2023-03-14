@@ -230,7 +230,8 @@ def manual_centering(x, y, AO=False):
     # TODO verify value validity before sending
 
     send_pixel_offset(x, y)
-    rValue, image_path = camera.take_image(dit=ExpTime)
+    rValue, image_path = camera.take_image(
+            dit=ExpTime, sequencer_arguments=sequencer_arguments)
     if AO:
         rValue = verify_centering()
 
@@ -247,6 +248,7 @@ def send_pixel_offset(x, y):
     """
     # Found star
     # TODO validate sign
+    # TODO X is AZ and Y is ALT!!!
     alt_offset = (CenterX - x) * PixScale
     az_offset = (CenterY - y) * PixScale
 
@@ -456,11 +458,13 @@ def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
     return x_star, y_star
 
 
-def focus_sequence(focus_points=4, focusing_dit=FocusingDit):
+def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
+                   sequencer_arguments=None):
     """
     Starts a sequence to find best telescope M2 focus position.
 
     TODO normalise flux by integration time and adapt focusing_dit in case of saturation
+    TODO handle abort of sequence
 
     :param focus_points: number of points to take for in the sequence
     :param focusing_dit: integration time for each image
@@ -478,7 +482,8 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit):
     #             'Error optimising dit for focusing sequence. Target brightness out of range'
     #     )
 
-    req, file_path = camera.take_image(dit=focusing_dit)
+    req, file_path = camera.take_image(dit=focusing_dit,
+                                       sequencer_arguments=sequencer_arguments)
 
     #time.sleep(5)
     file_handling.add_comment(file_path, "Focus sequence: 0")
@@ -509,7 +514,8 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit):
         # Remove sleep if send_focus is blocking
         time.sleep(15)
 
-        req, file_path = camera.take_image(dit=focusing_dit)
+        req, file_path = camera.take_image(
+                dit=focusing_dit, sequencer_arguments=sequencer_arguments)
 
         #time.sleep(20)
         file_handling.add_comment(file_path,
@@ -547,7 +553,8 @@ def optimise_dit(focusing_dit):
 
     for i in range(DitOptimisationTrials):
 
-        req, file_path = camera.take_image(dit=new_dit)
+        req, file_path = camera.take_image(
+                dit=new_dit, sequencer_arguments=sequencer_arguments)
 
         #time.sleep(20)
         file_handling.add_comment(file_path,

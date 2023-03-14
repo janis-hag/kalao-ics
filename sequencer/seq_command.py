@@ -19,7 +19,7 @@ import datetime
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel
+from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel, calib_unit
 from kalao.fli import camera
 from kalao.utils import file_handling, database, database_updater, kalao_time, starfinder
 from kalao.cacao import aomanager
@@ -175,6 +175,13 @@ def tungsten_FLAT(**seq_args):
 
     if filter_list is None:
         filter_list = DefaultFlatList
+
+    if calib_unit.tungsten_position() == -1:
+        system.print_and_log(
+                "Error: failed to move calibration unit to tungsten lamp position"
+        )
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
 
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
@@ -560,7 +567,8 @@ def focusing(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    rValue = starfinder.focus_sequence(focus_points=6, focusing_dit=dit)
+    rValue = starfinder.focus_sequence(focus_points=6, focusing_dit=dit,
+                                       sequencer_arguments=seq_args)
 
     if rValue != 0:
         system.print_and_log(rValue)

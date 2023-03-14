@@ -13,6 +13,7 @@ from kalao.plc import core
 from kalao.utils import database
 from sequencer import system
 
+import numpy as np
 import numbers
 from opcua import ua
 from time import sleep
@@ -64,7 +65,17 @@ def tungsten_position():
     """
 
     new_position = move(position=TUNGSTEN_POSITION)
-    return new_position
+
+    if np.around(new_position,
+                 decimals=1) == np.around(TUNGSTEN_POSITION, decimals=1):
+        rValue = new_position
+    else:
+        system.print_and_log(
+                f'ERROR: Calib unit position requested {TUNGSTEN_POSITION} but moved to {new_position}'
+        )
+        rValue = -1
+
+    return rValue
 
 
 def laser_position():
@@ -75,7 +86,17 @@ def laser_position():
     """
 
     new_position = move(position=LASER_POSITION)
-    return new_position
+
+    if np.around(new_position,
+                 decimals=1) == np.around(LASER_POSITION, decimals=1):
+        rValue = new_position
+    else:
+        system.print_and_log(
+                f'ERROR: Calib unit position requested {TUNGSTEN_POSITION} but moved to {new_position}'
+        )
+        rValue = -1
+
+    return rValue
 
 
 def pixel_move(pixel, absolute=False):
