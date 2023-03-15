@@ -345,19 +345,21 @@ def sky_FLAT(**seq_args):
         q.get()
         return
 
+    current_filter = filter_list[0]
+
     for filter_name in filter_list:
 
-        if filterwheel.set_position(filter_name) == -1:
-            system.print_and_log('Error: problem with filter selection')
-            database.store_obs_log({'sequencer_status': 'ERROR'})
-            return -1
+        if filter_name != current_filter:
+            current_filter = filter_name
+            if filterwheel.set_position(filter_name) == -1:
+                system.print_and_log('Error: problem with filter selection')
+                database.store_obs_log({'sequencer_status': 'ERROR'})
+                return -1
 
         # Take nbPic image
-        dit = tungsten.get_flat_dits()[filter_name]
+        dit = starfinder.optimise_dit(5, sequencer_arguments=seq_args)
 
-        image_path = file_handling.create_night_filepath()
-
-        rValue, image_path = camera.take_image(dit=dit, filepath=image_path,
+        rValue, image_path = camera.take_image(dit=dit,
                                                sequencer_arguments=seq_args)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
@@ -596,7 +598,7 @@ def focusing_abort(**seq_args):
     time.sleep(1)
 
     rValue = camera.cancel()
-    if (rValue != 0):
+    if rValue != 0:
         system.print_and_log(rValue)
 
     database.store_obs_log({'sequencer_status': 'WAITING'})
@@ -715,12 +717,12 @@ def end(**seq_args):
         system.print_and_log(rValue)
 
     rValue = laser.disable()
-    if (rValue != 0):
+    if rValue != 0:
         # TODO handle error
         system.print_and_log(rValue)
 
     rValue = shutter.shutter_close()
-    if (rValue != 0):
+    if rValue != 0:
         # TODO handle error
         system.print_and_log(rValue)
 
@@ -747,6 +749,7 @@ def check_abort(q, dit, AO=False):
 
     # TODO completely remove function if it's not needed
 
+    print('Check abort')
     if True:
         return 0
 
@@ -758,7 +761,7 @@ def check_abort(q, dit, AO=False):
         time.sleep(1)
         print(".")
         # Check if an abort is required
-        if q != None and not q.empty():
+        if q is not None and not q.empty():
             q.get()
             # Update database
             database_updater.update_plc_monitoring()
