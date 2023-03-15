@@ -45,6 +45,7 @@ Science_folder = parser.get('FLI', 'ScienceDataStorage')
 FileMask = parser.get('FLI', 'FileMask')
 T4root = parser.get('SEQ', 't4root')
 FitsHeaderFile = parser.get('SEQ', 'fits_header_file')
+TCSHeaderValidity = parser.get('SEQ', 'tcs_header_validity')
 
 
 def create_night_filepath(tmp_night_folder=None):
@@ -219,27 +220,28 @@ def update_header(image_path, sequencer_arguments=None):
 
         # Add telescope header
         telescope_header_df, header_path = _get_last_telescope_header()
-        # Remove first part of header
-        # TODO set the cutoff keyword in kalao.config
-        telescope_header_df = telescope_header_df[(
-                telescope_header_df.keyword == 'OBSERVER').idxmax():]
+        if telescope_header_df is not None:
+            # Remove first part of header
+            # TODO set the cutoff keyword in kalao.config
+            telescope_header_df = telescope_header_df[(
+                    telescope_header_df.keyword == 'OBSERVER').idxmax():]
 
-        for card in telescope_header_df.itertuples(index=False):
-            # if key starts with ESO search last occurence with same beginning and add keyword afterwards
-            if len(card.keyword) < 9:
-                card_keyword = card.keyword.upper()
-            else:
-                card_keyword = 'HIERARCH ' + card.keyword.upper()
-            header_df = pd.concat([
-                    header_df,
-                    pd.DataFrame(
-                            {
-                                    'keygroup': 'Telescope',
-                                    'keyword': card_keyword,
-                                    'value': card.value,
-                                    'comment': card.comment
-                            }, index=[0])
-            ])
+            for card in telescope_header_df.itertuples(index=False):
+                # if key starts with ESO search last occurrence with same beginning and add keyword afterwards
+                if len(card.keyword) < 9:
+                    card_keyword = card.keyword.upper()
+                else:
+                    card_keyword = 'HIERARCH ' + card.keyword.upper()
+                header_df = pd.concat([
+                        header_df,
+                        pd.DataFrame(
+                                {
+                                        'keygroup': 'Telescope',
+                                        'keyword': card_keyword,
+                                        'value': card.value,
+                                        'comment': card.comment
+                                }, index=[0])
+                ])
 
         header_df = _dynamic_cards_update(header_df)
 
@@ -301,6 +303,17 @@ def _get_last_telescope_header():
 
     tcs_header_path_record = database.get_latest_record(
             'obs_log', key='tcs_header_path')
+
+    header_age = (kalao_time.now() -
+                  tcs_header_path_record['time_utc'].astimezone(
+                          datetime.timezone.utc)).total_seconds()
+
+    if header_age > TCSHeaderValidity:
+        system.print_and_log(
+                f'WARN: {tcs_header_path_record["tcs_header_path"]} is {header_age/60} minutes old. Discarding obsolete header'
+        )
+
+        tcs_header_df = None
 
     if 'home' in tcs_header_path_record['tcs_header_path']:
         tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][
