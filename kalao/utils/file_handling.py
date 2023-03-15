@@ -151,6 +151,11 @@ def update_header(image_path, sequencer_arguments=None):
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'DARK'
             header_df['value']['HIERARCH ESO PROG ID'] = '199'
 
+        elif type == 'K_SKYFLT':
+            header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
+            header_df['value']['HIERARCH ESO DPR TYPE'] = 'FLAT,SKY'
+            header_df['value']['HIERARCH ESO PROG ID'] = '199'
+
         elif type == 'K_LMPFLT':
             header_df['value']['HIERARCH ESO DPR CATG'] = 'CALIB'
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'FLAT,LAMP'
