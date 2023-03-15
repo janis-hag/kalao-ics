@@ -225,7 +225,7 @@ def request_manual_centering(flag=True):
     database.store_obs_log({'tracking_manual_centering': flag})
 
 
-def manual_centering(x, y, AO=False):
+def manual_centering(x, y, AO=False, sequencer_arguments=None):
 
     # TODO verify value validity before sending
 
@@ -470,6 +470,12 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
     :param focusing_dit: integration time for each image
     :return:
     """
+
+    if sequencer_arguments is None:
+        q = None
+    else:
+        q = sequencer_arguments.get('q')
+
     # TODO define focusing_dit in kalao.config or pass as argument
     focus_points = np.around(focus_points)
 
@@ -503,6 +509,10 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
     for step, focus_offset in enumerate(focusing_sequence):
         system.print_and_log(f'Focus step: {step+1}/{len(focusing_sequence)}')
 
+        # Check if an abort was requested
+        if q is not None and not q.empty():
+            q.get()
+            return -1
         if focus_offset == 0:
             # skip set_focus zero as it was already taken
             continue
@@ -527,6 +537,10 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
 
         focus_flux.loc[len(focus_flux.index)] = [new_focus, flux]
 
+        # block for each picture and check if an abort was requested
+        # if check_abort(q, dit) == -1:
+        #     return -1
+
     # Keep best set_focus
     best_focus = focus_flux.loc[focus_flux['flux'].idxmax(), 'set_focus']
 
@@ -540,7 +554,7 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
     return 0
 
 
-def optimise_dit(focusing_dit):
+def optimise_dit(starting_dit, sequencer_arguments=None):
     """
     Search for optimal dit value to reach the requested ADU.
 
@@ -549,7 +563,7 @@ def optimise_dit(focusing_dit):
     :return: optimal dit value
     """
 
-    new_dit = focusing_dit
+    new_dit = starting_dit
 
     for i in range(DitOptimisationTrials):
 
