@@ -244,7 +244,8 @@ def update_header(image_path, sequencer_arguments=None):
                                 }, index=[0])
                 ])
 
-        header_df = _dynamic_cards_update(header_df)
+        header_df = _dynamic_cards_update(header_df,
+                                          seq_args=sequencer_arguments)
 
         # # Add key dictionary given as argument
         # if not header_keydict is None:
@@ -462,7 +463,7 @@ def _fill_log_header_keys(header, header_df, log_status, keycode):
     return header
 
 
-def _dynamic_cards_update(header_df):
+def _dynamic_cards_update(header_df, seq_args=None):
 
     # TODO add RA comment: [deg] 16:22:51.8 RA (J2000) pointing
     # TODO add DEC comment: [deg] -23:07:08.8 DEC (J2000) pointing
@@ -521,6 +522,10 @@ def _dynamic_cards_update(header_df):
     header_df['comment']['LST'] = '[s] ' + astro_time.sidereal_time(
             'mean').to_string(units.hour, sep=':')[:-1] + ' LST'
     header_df['value']['LST'] = astro_time.sidereal_time('mean').hour * 3600
+
+    if seq_args is not None:
+
+        header_df['value']['HIERARCH ESO OBS TYPE'] = seq_args.get('type')
 
     return header_df
 
