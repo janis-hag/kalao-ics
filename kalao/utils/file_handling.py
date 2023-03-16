@@ -557,7 +557,7 @@ def directory_summary_df(filepath='.'):
 
 def get_exposure_times(filepath='.', exclude_types=['K_DARK']):
 
-    directory_summary = directory_summary_df()
+    directory_summary = directory_summary_df(filepath=filepath)
 
     if exclude_types is not None:
         for type_to_exclude in exclude_types:
