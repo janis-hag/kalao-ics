@@ -309,27 +309,25 @@ def _get_last_telescope_header():
                   tcs_header_path_record['time_utc'].astimezone(
                           timezone.utc)).total_seconds()
 
+    if 'home' in tcs_header_path_record['tcs_header_path']:
+        tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][
+                1:]
+    else:
+        tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
+
     if header_age > TCSHeaderValidity:
         system.print_and_log(
-                f'WARN: {tcs_header_path_record["tcs_header_path"]} is {header_age/60} minutes old. Discarding obsolete header'
+                f'WARN: {tcs_header_path_record["tcs_header_path"]} is {header_age / 60} minutes old. Discarding obsolete header'
         )
 
         tcs_header_df = None
 
+    elif tcs_header_path.is_file():
+        tcs_header_df = _header_to_df(fits.getheader(tcs_header_path))
     else:
-
-        if 'home' in tcs_header_path_record['tcs_header_path']:
-            tcs_header_path = gls_home / tcs_header_path_record[
-                    'tcs_header_path'][1:]
-        else:
-            tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
-
-        if tcs_header_path.is_file():
-            tcs_header_df = _header_to_df(fits.getheader(tcs_header_path))
-        else:
-            system.print_and_log(
-                    ('ERROR: header file not found: ' + str(tcs_header_path)))
-            tcs_header_df = None
+        system.print_and_log(
+                ('ERROR: header file not found: ' + str(tcs_header_path)))
+        tcs_header_df = None
 
     # TODO uncomment the unlink line in order to remove the tmp fits
     #tcs_header_path.unlink()
