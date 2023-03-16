@@ -16,6 +16,7 @@ import sys
 import os
 from pathlib import Path
 import shutil
+import glob
 #import time
 from configparser import ConfigParser
 from datetime import datetime, timezone
@@ -315,18 +316,20 @@ def _get_last_telescope_header():
 
         tcs_header_df = None
 
-    if 'home' in tcs_header_path_record['tcs_header_path']:
-        tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][
-                1:]
     else:
-        tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
 
-    if tcs_header_path.is_file():
-        tcs_header_df = _header_to_df(fits.getheader(tcs_header_path))
-    else:
-        system.print_and_log(
-                ('ERROR: header file not found: ' + str(tcs_header_path)))
-        tcs_header_df = None
+        if 'home' in tcs_header_path_record['tcs_header_path']:
+            tcs_header_path = gls_home / tcs_header_path_record[
+                    'tcs_header_path'][1:]
+        else:
+            tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
+
+        if tcs_header_path.is_file():
+            tcs_header_df = _header_to_df(fits.getheader(tcs_header_path))
+        else:
+            system.print_and_log(
+                    ('ERROR: header file not found: ' + str(tcs_header_path)))
+            tcs_header_df = None
 
     # TODO uncomment the unlink line in order to remove the tmp fits
     #tcs_header_path.unlink()
@@ -522,3 +525,42 @@ def _dynamic_cards_update(header_df):
     header_df['value']['LST'] = astro_time.sidereal_time('mean').hour * 3600
 
     return header_df
+
+
+def directory_summary_df(filepath='.'):
+
+    dirlist = glob.glob(filepath + os.sep + '*.fits')
+
+    df = None
+
+    for image_filename in dirlist:
+
+        print(f'Opening {image_filename}')
+
+        with fits.open(image_filename) as hdul:
+            dic = {'filename': image_filename}
+
+            for k in hdul[0].header.cards:
+                dic[k[0]] = k[1]
+
+        if df is None:
+            df = pd.DataFrame([dic])
+        else:
+            df = pd.concat([df, pd.DataFrame([dic])], ignore_index=True,
+                           axis=0)
+
+    return df
+
+
+def get_exposure_times(filepath='.', exclude_types=['K_DARK']):
+
+    directory_summary = directory_summary_df()
+
+    if exclude_types is not None:
+        for type_to_exclude in exclude_types:
+            directory_summary[
+                    directory_summary['ESO OBS TYPE'] != type_to_exclude]
+
+    exposure_times = directory_summary['EXPTIME'].unique()
+
+    return exposure_times

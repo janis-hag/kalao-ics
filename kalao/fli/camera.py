@@ -114,6 +114,13 @@ def take_image(
         return req.text, None
 
 
+def take_dark(dit=0.05):
+
+    seq_args = {'type': 'K_DARK', 'code': 'dark'}
+
+    take_image(dit=dit, filepath=None, sequencer_arguments=seq_args)
+
+
 def increment_image_counter():
     """
     Increments the image counter by one
