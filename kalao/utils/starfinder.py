@@ -527,19 +527,14 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
         req, file_path = camera.take_image(
                 dit=focusing_dit, sequencer_arguments=sequencer_arguments)
 
-        #time.sleep(20)
         file_handling.add_comment(file_path,
                                   "Focus sequence: " + str(new_focus))
 
         image = fits.getdata(file_path)
-        # flux = image[np.argpartition(image, -6)][-6:].sum()
+
         flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
 
         focus_flux.loc[len(focus_flux.index)] = [new_focus, flux]
-
-        # block for each picture and check if an abort was requested
-        # if check_abort(q, dit) == -1:
-        #     return -1
 
     # Keep best set_focus
     best_focus = focus_flux.loc[focus_flux['flux'].idxmax(), 'set_focus']

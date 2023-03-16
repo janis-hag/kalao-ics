@@ -45,7 +45,7 @@ Science_folder = parser.get('FLI', 'ScienceDataStorage')
 FileMask = parser.get('FLI', 'FileMask')
 T4root = parser.get('SEQ', 't4root')
 FitsHeaderFile = parser.get('SEQ', 'fits_header_file')
-TCSHeaderValidity = parser.get('SEQ', 'tcs_header_validity')
+TCSHeaderValidity = parser.getint('SEQ', 'tcs_header_validity')
 
 
 def create_night_filepath(tmp_night_folder=None):
@@ -308,12 +308,12 @@ def _get_last_telescope_header():
                   tcs_header_path_record['time_utc'].astimezone(
                           timezone.utc)).total_seconds()
 
-    # if header_age > TCSHeaderValidity:
-    #     system.print_and_log(
-    #             f'WARN: {tcs_header_path_record["tcs_header_path"]} is {header_age/60} minutes old. Discarding obsolete header'
-    #     )
-    #
-    #     tcs_header_df = None
+    if header_age > TCSHeaderValidity:
+        system.print_and_log(
+                f'WARN: {tcs_header_path_record["tcs_header_path"]} is {header_age/60} minutes old. Discarding obsolete header'
+        )
+
+        tcs_header_df = None
 
     if 'home' in tcs_header_path_record['tcs_header_path']:
         tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][
