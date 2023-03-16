@@ -118,7 +118,10 @@ def take_dark(dit=0.05):
 
     seq_args = {'type': 'K_DARK', 'code': 'dark'}
 
-    take_image(dit=dit, filepath=None, sequencer_arguments=seq_args)
+    rValue, image_path = take_image(dit=dit, filepath=None,
+                                    sequencer_arguments=seq_args)
+
+    return rValue, image_path
 
 
 def increment_image_counter():
