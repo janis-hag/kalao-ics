@@ -811,7 +811,7 @@ commandDict = {
         "K_DARK_ABORT": dark_abort,
         "K_LMPFLT": tungsten_FLAT,
         "K_LMPFLT_ABORT": tungsten_FLAT_abort,
-        "K_SKFLT": sky_FLAT,
+        "K_SKYFLT": sky_FLAT,
         "K_TRGOBS": target_observation,
         "K_TRGOBS_ABORT": target_observation_abort,
         "K_LAMPON": lamp_on,
