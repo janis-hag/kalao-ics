@@ -306,7 +306,7 @@ def _get_last_telescope_header():
 
     header_age = (kalao_time.now() -
                   tcs_header_path_record['time_utc'].astimezone(
-                          datetime.timezone.utc)).total_seconds()
+                          timezone.utc)).total_seconds()
 
     if header_age > TCSHeaderValidity:
         system.print_and_log(
