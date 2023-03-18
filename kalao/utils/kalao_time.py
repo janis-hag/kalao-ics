@@ -11,11 +11,20 @@ import pytz
 
 
 def datetime_is_naive(d):
+    # TODO add docstring
+
     # From: https://docs.python.org/3/library/datetime.html#determining-if-an-object-is-aware-or-naive
     return d.tzinfo is None or d.tzinfo.utcoffset(d) is None
 
 
 def get_start_of_night(dt=None):
+    """
+    Get the night date for the time given by dt. By definition a night date is valid from noon to noon the next day in Chilean local time.
+
+    :param dt: datetime object defining the time for which the night-date is requested. By default, returns the current night date.
+    :return: String object containing the night-date in YYYY-MM-DDD format.
+    """
+
     if dt is None:
         dt = now()
     # elif type(dt) is not datetime:
@@ -63,12 +72,12 @@ def get_mjd(dt):
 
 
 def check_time_format(dt):
-    '''
+    """
     Verify that datetime format is correct. Return the dt object if it is correct.
 
     :param dt: datetime object to verify
     :return: dt object
-    '''
+    """
     # Ensure correct format
     if not isinstance(dt, datetime):
         raise TypeError(
@@ -104,4 +113,5 @@ def now():
 
     :return: datetime object
     """
+
     return datetime.now(timezone.utc)

@@ -115,6 +115,7 @@ def take_image(
 
 
 def take_dark(dit=0.05):
+    # TODO add docstring
 
     seq_args = {'type': 'K_DARK', 'code': 'dark'}
 
@@ -139,6 +140,8 @@ def increment_image_counter():
 
 
 def video_stream(dit=0.05, window=None, center=None):
+    # TODO add docstring
+
     # initialise stream
 
     # TODO verify first with check_server_status() before sending request
@@ -194,20 +197,27 @@ def cut_image(img, window=None, center=None):
 
 
 def log(req):
+    # TODO add docstring
+
     database.store_obs_log({
             'fli_log': req.text + ' (' + str(req.status_code) + ')'
     })
 
 
 def log_last_image_path(fli_image_path):
+    # TODO add docstring
+
     database.store_obs_log({'fli_last_image_path': fli_image_path})
 
 
 def log_temporary_image_path(fli_image_path):
+    # TODO add docstring
+
     database.store_obs_log({'fli_temporary_image_path': fli_image_path})
 
 
 def cancel():
+    # TODO add docstring
 
     params = {'cancelExposure': True}
     req = _send_request('cancelExposure', params)

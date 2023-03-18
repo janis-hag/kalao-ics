@@ -222,11 +222,13 @@ def center_on_laser():
 
 
 def request_manual_centering(flag=True):
+    # TODO add docstring
+
     database.store_obs_log({'tracking_manual_centering': flag})
 
 
 def manual_centering(x, y, AO=False, sequencer_arguments=None):
-
+    # TODO add docstring
     # TODO verify value validity before sending
 
     send_pixel_offset(x, y)
@@ -262,6 +264,7 @@ def send_pixel_offset(x, y):
 
 
 def verify_centering():
+    # TODO add docstring
     # TODO verify if SHWFS is enough illuminated
     illuminated_fraction = telemetry.wfs_illumination_fraction(
             WFSilluminationThreshold)
@@ -597,6 +600,7 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
 
 
 def generate_night_darks(filepath='.'):
+    # TODO add docstring
 
     exp_times = file_handling.get_exposure_times(filepath=filepath)
 

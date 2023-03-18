@@ -556,7 +556,13 @@ def directory_summary_df(filepath='.'):
 
 
 def get_exposure_times(filepath='.', exclude_types=['K_DARK']):
+    """
+    Get the list of exposure times in the folder pointed at by filepath. By default, DARK exposure times are ignored.
 
+    :param filepath: path of the folder to scan.
+    :param exclude_types: exposure types to exclude from the scan.
+    :return: list of exposure times found.
+    """
     directory_summary = directory_summary_df(filepath=filepath)
 
     if exclude_types is not None:
