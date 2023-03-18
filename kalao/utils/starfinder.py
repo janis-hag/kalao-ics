@@ -594,3 +594,16 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
     print('Optimal dit: ' + str(new_dit))
 
     return new_dit
+
+
+def generate_night_darks(filepath='.'):
+
+    exp_times = file_handling.get_exposure_times(filepath=filepath)
+
+    for dit in exp_times:
+        for i in range(10):
+            print(dit, i)
+            rValue, image_path = camera.take_dark(dit=dit)
+            with fits.open(image_path, mode='update') as hdul:
+                hdul[0].header.set('HIERARCH ESO OBS TYPE', 'K_DARK')
+                hdul.flush()
