@@ -151,8 +151,8 @@ def tip_tilt_offload(gain=0.5):
     tip = stream_data[0]
     tilt = stream_data[1]
 
-    alt_offload = -tip * (PixScaleY / TipMRadPerPixel) * gain
-    az_offload = -tilt * (PixScaleX / TipMRadPerPixel) * gain
+    alt_offload = -tip * (PixScaleX / TipMRadPerPixel) * gain
+    az_offload = -tilt * (PixScaleY / TipMRadPerPixel) * gain
 
     t120.send_offset(az_offload, alt_offload)
 
