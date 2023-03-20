@@ -284,7 +284,7 @@ def set_temperature(temperature):
 
 def _send_request(request_type, params):
 
-    if not check_server_status == 'OK':
+    if not check_server_status() == 'OK':
 
         req = Mock(spec=Response)
 
