@@ -12,6 +12,8 @@ import shutil
 
 import requests
 import requests.exceptions
+from requests.models import Response
+from unittest.mock import Mock
 import os
 import json
 from astropy.io import fits
@@ -279,12 +281,18 @@ def _send_request(request_type, params):
 
     if not check_server_status == 'OK':
 
-        class Object(object):
-            pass
+        down_response = Mock(spec=Response)
 
-        req = Object()
-        req.text = '-1'
-        req.status_code = 200
+        down_response.json.return_value = {}
+        down_response.text = '-1'
+        down_response.status_code = 200
+
+        # class Object(object):
+        #     pass
+        #
+        # req = Object()
+        # req.text = '-1'
+        # req.status_code = 200
 
     else:
         if request_type == 'acquire':
