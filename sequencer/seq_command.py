@@ -312,7 +312,7 @@ def sky_FLAT(**seq_args):
 
     database.store_obs_log({'tracking_status': 'CENTERING'})
 
-    if None in (q, dit, filepath):
+    if None in (q):  #, dit, filepath):
         # TODO verify which arguments are actually needed.
         system.print_and_log('Missing keyword in flat function call')
         database.store_obs_log({'sequencer_status': 'ERROR'})
@@ -408,6 +408,8 @@ def target_observation(**seq_args):
     :param kwargs: supports additional arguments
     :return: nothing
     """
+
+    # TODO check for "'centrage', 'non'"
 
     q = seq_args.get('q')
     kalfilter = seq_args.get('kalfilter')
