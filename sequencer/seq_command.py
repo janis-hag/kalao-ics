@@ -312,7 +312,8 @@ def sky_FLAT(**seq_args):
 
     database.store_obs_log({'tracking_status': 'CENTERING'})
 
-    if None in (q):  #, dit, filepath):
+    #if None in (q, dit, filepath):
+    if q is None:
         # TODO verify which arguments are actually needed.
         system.print_and_log('Missing keyword in flat function call')
         database.store_obs_log({'sequencer_status': 'ERROR'})
