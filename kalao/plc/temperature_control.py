@@ -329,6 +329,7 @@ def get_cooling_values(beck=None):
     }
 
     camera_temperature = camera.get_temperatures()
+
     if isinstance(camera_temperature, dict):
         cooling['camera_HS_temp'] = camera_temperature['fli_temp_heatsink']
         cooling['camera_CCD_temp'] = camera_temperature['fli_temp_CCD']

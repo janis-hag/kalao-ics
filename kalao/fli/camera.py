@@ -286,29 +286,30 @@ def _send_request(request_type, params):
         req.text = -1
         req.status_code = 200
 
-    if request_type == 'acquire':
-        increment_image_counter()
-        database.store_obs_log({'sequencer_status': 'EXP'})
-        if 'exptime' in params.keys():
-            database.store_obs_log({'fli_texp': params['exptime']})
-
-    if DummyCamera:
-        if request_type == 'acquire':
-            shutil.copy(DummyImagePath, params['filepath'])
-
-        class Object(object):
-            pass
-
-        req = Object()
-        req.text = -1
-        req.status_code = 200
-
     else:
-        url = 'http://' + address + ':' + port + '/' + request_type
-        if params == 'GET':
-            req = requests.get(url, timeout=RequestTimeout)
+        if request_type == 'acquire':
+            increment_image_counter()
+            database.store_obs_log({'sequencer_status': 'EXP'})
+            if 'exptime' in params.keys():
+                database.store_obs_log({'fli_texp': params['exptime']})
+
+        if DummyCamera:
+            if request_type == 'acquire':
+                shutil.copy(DummyImagePath, params['filepath'])
+
+            class Object(object):
+                pass
+
+            req = Object()
+            req.text = -1
+            req.status_code = 200
+
         else:
-            req = requests.post(url, json=params, timeout=RequestTimeout)
+            url = 'http://' + address + ':' + port + '/' + request_type
+            if params == 'GET':
+                req = requests.get(url, timeout=RequestTimeout)
+            else:
+                req = requests.post(url, json=params, timeout=RequestTimeout)
 
     return req
 
@@ -367,6 +368,11 @@ def initialise():
 
 
 def check_server_status():
+    """
+    Verify if the camera server is up and running and check if the camera can be queried.
+
+    :return: status of the camera server (OK/DOWN/ERROR)
+    """
 
     server_status = system.camera_service('status')
 

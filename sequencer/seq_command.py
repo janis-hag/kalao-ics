@@ -350,7 +350,8 @@ def sky_FLAT(**seq_args):
     dit_list = tungsten.get_flat_dits()
 
     ref_dit = starfinder.optimise_dit(5, sequencer_arguments=seq_args)
-    coef = dit / dit_list[filter_list[0]]
+
+    coef = ref_dit / dit_list[filter_list[0]]
 
     # Adapt integration times
     for f, d in dit_list.items():
