@@ -258,9 +258,7 @@ def get_temperatures():
         temperatures['fli_temp_heatsink'] = temperatures.pop('heatsink')
         return temperatures
     elif req.status_code == 503:
-        temperatures = {}
-        temperatures['fli_temp_CCD'] = 0
-        temperatures['fli_temp_CCD'] = 0
+        temperatures = {'fli_temp_CCD': 0, 'fli_temp_heatsink': 0}
 
     return req.text
 
