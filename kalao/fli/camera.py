@@ -281,11 +281,11 @@ def _send_request(request_type, params):
 
     if not check_server_status == 'OK':
 
-        down_response = Mock(spec=Response)
+        req = Mock(spec=Response)
 
-        down_response.json.return_value = {}
-        down_response.text = '-1'
-        down_response.status_code = 200
+        req.json.return_value = {}
+        req.text = '-1'
+        req.status_code = 200
 
         # class Object(object):
         #     pass
