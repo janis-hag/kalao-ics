@@ -259,6 +259,7 @@ def get_temperatures():
         return temperatures
     elif req.status_code == 503:
         temperatures = {'fli_temp_CCD': 0, 'fli_temp_heatsink': 0}
+        return temperatures
 
     return req.text
 
@@ -356,7 +357,7 @@ def _switch_ippower(value):
     if value == 'ON':
         params['s'] = 1
     elif not value == 'OFF':
-        error_message = f'Unknow camer ippower switch value ({value})'
+        error_message = f'Unknow camera ippower switch value ({value})'
         database.store_obs_log({'fli_log': error_message})
         print(error_message)
 
