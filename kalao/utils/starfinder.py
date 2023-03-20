@@ -106,6 +106,18 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
             send_pixel_offset(x, y)
 
             if kao == 'AO':
+                rValue, image_path = camera.take_image(dit=ExpTime)
+                if rValue != 0:
+                    # print(rValue)
+                    database.store_obs_log({'sequencer_status': 'ERROR'})
+                    return -1
+
+                x, y = find_star(image_path)
+
+                if x != -1 and y != -1:
+                    # Fine centering with TTM
+                    aocontrol.tip_tilt_offset(CenterX - x, CenterY - y)
+
                 # Check if enough light is on the WFS for precise centering
                 if verify_centering() == 0:
                     # Start WFS centering procedure
