@@ -346,6 +346,14 @@ def sky_FLAT(**seq_args):
         return
 
     current_filter = filter_list[0]
+    dit_list = tungsten.get_flat_dits()
+
+    ref_dit = starfinder.optimise_dit(5, sequencer_arguments=seq_args)
+    coef = dit / dit_list[filter[0]]
+
+    # Adapt integration times
+    for f, d in dit_list.items():
+        dit_list[f] = d * coef
 
     for filter_name in filter_list:
 
@@ -357,9 +365,9 @@ def sky_FLAT(**seq_args):
                 return -1
 
         # Take nbPic image
-        dit = starfinder.optimise_dit(5, sequencer_arguments=seq_args)
+        #dit = starfinder.optimise_dit(5, sequencer_arguments=seq_args)
 
-        rValue, image_path = camera.take_image(dit=dit,
+        rValue, image_path = camera.take_image(dit=dit_list[filter_name],
                                                sequencer_arguments=seq_args)
 
         #image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values']
