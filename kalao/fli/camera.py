@@ -283,7 +283,7 @@ def _send_request(request_type, params):
             pass
 
         req = Object()
-        req.text = -1
+        req.text = '-1'
         req.status_code = 200
 
     else:
@@ -301,7 +301,7 @@ def _send_request(request_type, params):
                 pass
 
             req = Object()
-            req.text = -1
+            req.text = '-1'
             req.status_code = 200
 
         else:
