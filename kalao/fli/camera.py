@@ -257,6 +257,10 @@ def get_temperatures():
         temperatures['fli_temp_CCD'] = temperatures.pop('ccd')
         temperatures['fli_temp_heatsink'] = temperatures.pop('heatsink')
         return temperatures
+    elif req.status_code == 503:
+        temperatures = {}
+        temperatures['fli_temp_CCD'] = 0
+        temperatures['fli_temp_CCD'] = 0
 
     return req.text
 
@@ -273,6 +277,8 @@ def set_temperature(temperature):
 
     if req.status_code == 200:
         return 0
+    elif req.status_code == 503:
+        return -1
     else:
         return req.text
 
@@ -284,8 +290,9 @@ def _send_request(request_type, params):
         req = Mock(spec=Response)
 
         req.json.return_value = {}
-        req.text = '-1'
-        req.status_code = 200
+        req.text = 'Camera server down'
+        # 503 Service Unavailable
+        req.status_code = 503
 
         # class Object(object):
         #     pass
