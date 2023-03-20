@@ -32,7 +32,8 @@ parser.read(config_path)
 TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 
-PixScale = parser.getfloat('FLI', 'PixScale')
+PixScaleX = parser.getfloat('FLI', 'PixScaleX')
+PixScaleY = parser.getfloat('FLI', 'PixScaleY')
 
 
 def set_loopgain(gain):
@@ -150,10 +151,10 @@ def tip_tilt_offload(gain=0.5):
     tip = stream_data[0]
     tilt = stream_data[1]
 
-    alt_offload = -tip * (PixScale / TipMRadPerPixel) * gain
-    az_offload = -tilt * (PixScale / TipMRadPerPixel) * gain
+    alt_offload = -tip * (PixScaleY / TipMRadPerPixel) * gain
+    az_offload = -tilt * (PixScaleX / TipMRadPerPixel) * gain
 
-    t120.send_offset(alt_offload, az_offload)
+    t120.send_offset(az_offload, alt_offload)
 
     return 0
 
