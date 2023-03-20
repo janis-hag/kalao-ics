@@ -59,17 +59,17 @@ focus_offset_limit = parser.getint(
 
 
 def _t120_print_and_log(log_text):
-    '''
+    """
     Print out message to stdout and log message
 
     :param log_text: text to be printed and logged
     :return:
-    '''
+    """
     print(str(kalao_time.now()) + ' ' + log_text)
     database.store_obs_log({'t120_log': log_text})
 
 
-def send_offset(delta_alt, delta_az):
+def send_offset(delta_az, delta_alt):
 
     host = database.get_latest_record(
             'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
@@ -80,9 +80,9 @@ def send_offset(delta_alt, delta_az):
         _t120_print_and_log('Error connecting to T120')
         return -1
 
-    _t120_print_and_log(f'Sending {delta_alt} and {delta_az} offsets')
+    _t120_print_and_log(f'Sending {delta_az=} and {delta_alt=} offsets')
 
-    offset_cmd = '@offset ' + str(delta_alt) + ' ' + str(delta_az)
+    offset_cmd = '@offset ' + str(delta_az) + ' ' + str(delta_alt)
     ipc.send_cmd(offset_cmd, connection_timeout, altaz_timeout)
 
     return socketId
@@ -91,7 +91,7 @@ def send_offset(delta_alt, delta_az):
 def send_focus_offset(focus_offset):
 
     #if focus_offset > focus_offset_limit:
-    #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limite {focus_offset_limit}')
+    #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limit {focus_offset_limit}')
 
     host = database.get_latest_record(
             'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'

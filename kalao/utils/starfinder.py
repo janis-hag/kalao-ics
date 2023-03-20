@@ -38,7 +38,8 @@ parser.read(config_path)
 ExpTime = parser.getfloat('FLI', 'ExpTime')
 CenterX = parser.getint('FLI', 'CenterX')
 CenterY = parser.getint('FLI', 'CenterY')
-PixScale = parser.getfloat('FLI', 'PixScale')
+PixScaleX = parser.getfloat('FLI', 'PixScaleX')
+PixScaleY = parser.getfloat('FLI', 'PixScaleY')
 LaserCalibDIT = parser.getfloat('FLI', 'LaserCalibDIT')
 LaserCalibIntensity = parser.getfloat('PLC', 'LaserCalibIntensity')
 LaserPosition = parser.getfloat('PLC', 'LaserPosition')
@@ -251,10 +252,10 @@ def send_pixel_offset(x, y):
     # Found star
     # TODO validate sign
     # TODO X is AZ and Y is ALT!!!
-    alt_offset = (CenterX - x) * PixScale
-    az_offset = (CenterY - y) * PixScale
+    alt_offset = (CenterX - x) * PixScaleX
+    az_offset = (CenterY - y) * PixScaleY
 
-    t120.send_offset(alt_offset, az_offset)
+    t120.send_offset(az_offset, alt_offset)
 
     system.print_and_log(f'Sending offset: {alt_offset=} {az_offset=}')
 
