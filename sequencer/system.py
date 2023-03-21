@@ -252,6 +252,26 @@ def gop_service(action):
     return status
 
 
+def watchdog_service(action):
+    """
+    Control the flask server systemd service. It accepts one of the four systemctl commands:
+    RESTART/START/STOP/STATUS
+
+    :param action: RESTART/START/STOP/STATUS
+    :return:
+    """
+
+    if not action.upper() == 'STATUS':
+        database.store_obs_log({
+                'flask_log':
+                        'Sending ' + action + ' command to safety watchdog.'
+        })
+    unit_name = parser.get('SystemD', 'safety_watchdog')
+    status = unit_control(unit_name, action)
+
+    return status
+
+
 def initialise_services():
     '''
     Initialise all system services and run sanity checks
@@ -260,10 +280,11 @@ def initialise_services():
     '''
     ServiceRestartWait = parser.getint('SystemD', 'ServiceRestartWait')
 
-    flask_service('restart')
     database_service('restart')
     camera_service('restart')
+    flask_service('restart')
     gop_service('restart')
+    watchdog_service('restart')
 
     time.sleep(ServiceRestartWait)
 
