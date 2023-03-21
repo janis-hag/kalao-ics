@@ -187,6 +187,12 @@ def _check_cooling_status():
     return 0
 
 
+def initialise():
+    system.watchdog_service('restart')
+
+    return 0
+
+
 if __name__ == "__main__":
 
     schedule.every(TemperatureUpdateInterval).seconds.do(_check_cooling_status)
