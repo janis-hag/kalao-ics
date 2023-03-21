@@ -60,6 +60,8 @@ def check_active(unit_name):
     active_entertimestamp = datetime.utcfromtimestamp(
             int(active_entertimestamp) * 10**(-6))
 
+    bus.close()
+
     return active_state, active_substate, active_entertimestamp
 
 
@@ -69,6 +71,8 @@ def check_enabled(unit_name):
     bus, systemd, manager = connect_dbus()
 
     enabled_state = manager.GetUnitFileState(unit_name)
+
+    bus.close()
 
     return enabled_state
 
@@ -100,6 +104,8 @@ def unit_control(unit_name, action):
         print(error_string)
         database.store_obs_log({'sequencer_log': error_string})
         return -1
+
+    bus.close()
 
     return check_active(unit_name)
 
