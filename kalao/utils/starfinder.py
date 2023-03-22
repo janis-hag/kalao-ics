@@ -612,15 +612,26 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
     return new_dit
 
 
-def generate_night_darks(filepath='.'):
+def generate_night_darks(filepath=None):
     # TODO add docstring
+
+    if filepath is None:
+        tmp_night_folder, science_night_folder = file_handling.create_night_folder(
+        )
 
     exp_times = file_handling.get_exposure_times(filepath=filepath)
 
-    for dit in exp_times:
-        for i in range(10):
-            print(dit, i)
-            rValue, image_path = camera.take_dark(dit=dit)
-            with fits.open(image_path, mode='update') as hdul:
-                hdul[0].header.set('HIERARCH ESO OBS TYPE', 'K_DARK')
-                hdul.flush()
+    if len(exp_times) == 0:
+        system.print_and_log(
+                f'WARN: Not generating darks as {filepath} is empty.')
+        return 0
+    else:
+        for dit in exp_times:
+            for i in range(10):
+                print(dit, i)
+                rValue, image_path = camera.take_dark(dit=dit)
+                with fits.open(image_path, mode='update') as hdul:
+                    hdul[0].header.set('HIERARCH ESO OBS TYPE', 'K_DARK')
+                    hdul.flush()
+
+    return 0
