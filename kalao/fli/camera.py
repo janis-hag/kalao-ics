@@ -116,7 +116,7 @@ def take_image(
         return req.text, None
 
 
-def take_dark(dit=0.05):
+def take_dark(dit=0.05, filepath=None):
     # TODO add docstring
 
     seq_args = {'type': 'K_DARK', 'code': 'dark'}
