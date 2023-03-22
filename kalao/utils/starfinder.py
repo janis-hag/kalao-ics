@@ -616,8 +616,7 @@ def generate_night_darks(filepath=None):
     # TODO add docstring
 
     if filepath is None:
-        tmp_night_folder, science_night_folder = file_handling.create_night_folder(
-        )
+        tmp_night_folder, filepath = file_handling.create_night_folder()
 
     exp_times = file_handling.get_exposure_times(filepath=filepath)
 
