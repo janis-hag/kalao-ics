@@ -188,7 +188,7 @@ def cast_args(args):
         if edp_arg in args.keys() and kalao_arg not in args.keys():
             args[kalao_arg] = args.pop(edp_arg)
 
-    # Check for each keys if the cast of the value is possible and cast it
+    # Check for each key if the cast of the value is possible and cast it
     for k, v in args.items():
         if k in arg_int:
             if v.isdigit():
