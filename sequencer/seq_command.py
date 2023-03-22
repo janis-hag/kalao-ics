@@ -714,12 +714,15 @@ def lamp_off(**seq_args):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def end(**seq_args):
+def instrument_change(**seq_args):
     """
-    End of instrument operation, go into standby mode
+    Change of instrument operation, go into standby mode.
+
     :return: nothing
     """
     # two cancel are done to avoid concurrency problems
+    # TODO set EM gain to 1
+    # TODO start dark sequence
 
     database.store_obs_log({'tracking_status': 'IDLE'})
 
@@ -739,6 +742,46 @@ def end(**seq_args):
         system.print_and_log(rValue)
 
     database.store_obs_log({'tracking_manual_centering': False})
+
+    # request_manual_centering(False)
+    # change tracking flaf
+
+    system.print_and_log('INSTRUMENTCHANGE received moving into standby.')
+
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
+
+def end(**seq_args):
+    """
+    End of instrument operation, go into standby mode and starting morning calibrations.
+
+    :return: nothing
+    """
+    # two cancel are done to avoid concurrency problems
+    # TODO set EM gain to 1
+    # TODO start dark sequence
+
+    database.store_obs_log({'tracking_status': 'IDLE'})
+
+    rValue = tungsten.off()
+    if (rValue != 0):
+        # TODO handle error
+        system.print_and_log(rValue)
+
+    rValue = laser.disable()
+    if rValue != 0:
+        # TODO handle error
+        system.print_and_log(rValue)
+
+    rValue = shutter.shutter_close()
+    if rValue != 0:
+        # TODO handle error
+        system.print_and_log(rValue)
+
+    database.store_obs_log({'tracking_manual_centering': False})
+
+    # Generate darks for this night
+    starfinder.generate_night_darks()
 
     # request_manual_centering(False)
     # change tracking flaf
@@ -831,7 +874,8 @@ commandDict = {
         "K_FOCUS": focusing,
         "K_FOCUS_ABORT": focusing_abort,
         "K_CONFIG": config,
-        "K_END": end,
+        "INSTRUMENTCHANGE": instrument_change,
+        "THE_END": end,
         #"kal_AO_loop_calibration":      AO_loop_calibration
         # "kal_dark":                     dark,
         # "kal_dark_abort":               dark_abort,
