@@ -714,6 +714,26 @@ def lamp_off(**seq_args):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
+def any_abort(**seq_args):
+    """
+    Send abort instruction to fli camera and change sequencer status to 'WAITING'.
+    :return: nothing
+    """
+
+    # two cancel are done to avoid concurrency problems
+    rValue = camera.cancel()
+    if (rValue != 0):
+        system.print_and_log(rValue)
+
+    time.sleep(1)
+
+    rValue = camera.cancel()
+    if rValue != 0:
+        system.print_and_log(rValue)
+
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
+
 def instrument_change(**seq_args):
     """
     Change of instrument operation, go into standby mode.
@@ -874,6 +894,7 @@ commandDict = {
         "K_FOCUS": focusing,
         "K_FOCUS_ABORT": focusing_abort,
         "K_CONFIG": config,
+        "ABORT": any_abort,
         "INSTRUMENTCHANGE": instrument_change,
         "THE_END": end,
         #"kal_AO_loop_calibration":      AO_loop_calibration

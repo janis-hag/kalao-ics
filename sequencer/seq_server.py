@@ -121,7 +121,10 @@ def seq_server():
 
         # if abort command, stop last command with Queue object q
         # and start abort func
-        if commandList[0] == preCommand + '_ABORT':
+        if 'ABORT' in commandList[0]:
+            system.print_and_log(
+                    f'Received {commandList[0]}. Aborting sequence.')
+            #if commandList[0] == preCommand + '_ABORT':
             # adds 1 to the q object to communicate the abort instruction
             q.put(1)
             seq_command.commandDict[commandList[0]]()
