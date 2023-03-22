@@ -29,8 +29,7 @@ parser.read(config_path)
 InitDuration = parser.getint('SEQ', 'InitDuration')
 TungstenStabilisationTime = parser.getint('PLC', 'TungstenStabilisationTime')
 #SetupTime = parser.getint('FLI', 'SetupTime')
-SetupTimes = parser.get('Timings', 'gop_arg_string').replace(' ',
-                                                             '').split(',')
+#SetupTimes = parser.get('Timings', 'gop_arg_string').replace(' ','').split(',')
 
 
 def short():
