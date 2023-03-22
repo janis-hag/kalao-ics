@@ -353,7 +353,7 @@ def _clean_sort_header(header_df):
     #header_df = header_head_df.append(header_tail_df, ignore_index=True)
     header_df = pd.concat([header_head_df, header_tail_df], ignore_index=True)
 
-    # To be verified of HIERARCH keyword is needed
+    # To be verified if HIERARCH keyword is needed
     #header_tail_df['keyword'] = 'HIERARCH ' + header_tail_df['keyword'].astype(str)
 
     return header_df
