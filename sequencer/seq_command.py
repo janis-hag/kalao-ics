@@ -412,6 +412,7 @@ def target_observation(**seq_args):
     """
 
     # TODO check for "'centrage', 'non'"
+    # TODO verify if we are already centred from previous observation
 
     q = seq_args.get('q')
     kalfilter = seq_args.get('kalfilter')
@@ -442,20 +443,27 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if waitfortracking() == -1:
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return -1
-
     if kalfilter is None:
         system.print_and_log(
                 "Warning: no filter specified for take_image, using clear")
         kalfilter = 'clear'
 
-    if starfinder.centre_on_target(filter_arg=kalfilter, kao=kao) == -1:
+    # Put filter on clear to center on target
+    if filterwheel.set_position('clear') == -1:
+        system.print_and_log("Error: problem with filter selection")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
+    if waitfortracking() == -1:
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
+    if starfinder.centre_on_target(kao=kao) == -1:
         system.print_and_log("Error: problem with centre on target")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
+    # Move filter to correct position for science
     if filterwheel.set_position(kalfilter) == -1:
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})
