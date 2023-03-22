@@ -57,7 +57,7 @@ def create_night_filepath(tmp_night_folder=None):
     """
 
     if tmp_night_folder is None:
-        tmp_night_folder = create_night_folder()
+        tmp_night_folder, science_night_folder = create_night_folder()
 
     filename = 'tmp_KALAO.' + kalao_time.get_isotime() + '.fits'
     filepath = tmp_night_folder + os.sep + filename
@@ -70,24 +70,24 @@ def create_night_folder():
     # check if folder exists
     # remove temporary folder of previous night if empty
 
-    Tmp_night_folder = os.path.join(TemporaryDataStorage,
+    tmp_night_folder = os.path.join(TemporaryDataStorage,
                                     kalao_time.get_start_of_night())
-    Science_night_folder = os.path.join(Science_folder,
+    science_night_folder = os.path.join(Science_folder,
                                         kalao_time.get_start_of_night())
 
     # Check if tmp and science folders exist
-    if not os.path.exists(Tmp_night_folder):
-        os.mkdir(Tmp_night_folder)
-    if not os.path.exists(Science_night_folder):
-        os.mkdir(Science_night_folder)
+    if not os.path.exists(tmp_night_folder):
+        os.mkdir(tmp_night_folder)
+    if not os.path.exists(science_night_folder):
+        os.mkdir(science_night_folder)
 
     # Remove empty folder in tmp except for current night folder
     for folder in os.listdir(TemporaryDataStorage):
         folder = os.path.join(TemporaryDataStorage, folder)
-        if folder != Tmp_night_folder and len(os.listdir(folder)) == 0:
+        if folder != tmp_night_folder and len(os.listdir(folder)) == 0:
             os.rmdir(folder)
 
-    return Tmp_night_folder
+    return tmp_night_folder, science_night_folder
 
 
 def save_tmp_image(image_path, sequencer_arguments=None):
@@ -563,11 +563,12 @@ def get_exposure_times(filepath='.', exclude_types=['K_DARK']):
     :param exclude_types: exposure types to exclude from the scan.
     :return: list of exposure times found.
     """
+
     directory_summary = directory_summary_df(filepath=filepath)
 
     if exclude_types is not None:
         for type_to_exclude in exclude_types:
-            directory_summary[
+            directory_summary = directory_summary[
                     directory_summary['ESO OBS TYPE'] != type_to_exclude]
 
     exposure_times = directory_summary['EXPTIME'].unique()
