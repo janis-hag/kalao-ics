@@ -61,7 +61,7 @@ WFSCentringPrecision = parser.getfloat('AO', 'WFSCentringPrecision')
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 
 
-def centre_on_target(filter_arg='clear', kao='NO_AO'):
+def centre_on_target(kao='NO_AO'):
     """
     Start star centering sequence:
     - Sets this filter based on filter_arg request.
@@ -69,18 +69,10 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
     - Send telescope offsets based on the measured position.
     - If auto centering does not work request manual centering
 
-    :param kao:
-    :param filter_arg:
+    :param kao: flag to indicate if AO will be used, set to no by default.
+
     :return: 0 if centering succeded
     """
-
-    # TODO decide on using clear filter or science filter
-    # Add loop timeout
-    filter_arg = 'clear'
-    if filterwheel.set_position(filter_arg) == -1:
-        system.print_and_log("Error: problem with filter selection")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return -1
 
     timeout_time = time.time() + CenteringTimeout
 
@@ -105,18 +97,18 @@ def centre_on_target(filter_arg='clear', kao='NO_AO'):
 
             send_pixel_offset(x, y)
 
+            rValue, image_path = camera.take_image(dit=ExpTime)
+            if rValue != 0:
+                database.store_obs_log({'sequencer_status': 'ERROR'})
+                return -1
+
+            x, y = find_star(image_path)
+
+            if x != -1 and y != -1:
+                # Fine centering with TTM
+                aocontrol.tip_tilt_offset(CenterX - x, CenterY - y)
+
             if kao == 'AO':
-                rValue, image_path = camera.take_image(dit=ExpTime)
-                if rValue != 0:
-                    # print(rValue)
-                    database.store_obs_log({'sequencer_status': 'ERROR'})
-                    return -1
-
-                x, y = find_star(image_path)
-
-                if x != -1 and y != -1:
-                    # Fine centering with TTM
-                    aocontrol.tip_tilt_offset(CenterX - x, CenterY - y)
 
                 # Check if enough light is on the WFS for precise centering
                 if verify_centering() == 0:
