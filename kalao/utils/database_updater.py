@@ -125,7 +125,7 @@ if __name__ == "__main__":
             'nuvu_stream': None,
             'tt_stream': None,
             'fps_slopes': None,
-            'loopRUN': None
+            'mfilt-1': None
     }
 
     # Get monitoring and cacao
