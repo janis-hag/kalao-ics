@@ -298,21 +298,21 @@ def telemetry_save(stream_list):
 
     # looopRUN process
     # check if fps exists and is running
-    looprun_exists, looprun_fps_path = check_fps("loopRUN-1")
+    looprun_exists, looprun_fps_path = check_fps("mfilt-1")
 
     if looprun_exists:
-        if stream_list['loopRUN'] is None:
-            stream_list['loopRUN'] = fps("loopRUN-1")
+        if stream_list['mfilt-1'] is None:
+            stream_list['mfilt-1'] = fps("mfilt-1")
 
         # Check if it's running
-        if stream_list['loopRUN'].RUNrunning == 1:
+        if stream_list['mfilt-1'].RUNrunning == 1:
             telemetry_data["loop_gain"] = stream_list[
-                    'loopRUN'].get_param_value_float('loopgain')
+                    'mfilt-1'].get_param_value_float('loopgain')
             telemetry_data["loop_mult"] = stream_list[
-                    'loopRUN'].get_param_value_float('loopmult')
+                    'mfilt-1'].get_param_value_float('loopmult')
             # loopOn 0 = OFF, 1 = ON
             telemetry_data["loop_on"] = stream_list[
-                    'loopRUN'].get_param_value_int('loopON')
+                    'mfilt-1'].get_param_value_int('loopON')
             if telemetry_data["loop_on"] == 1:
                 telemetry_data["loop_on"] = 'ON'
             elif telemetry_data["loop_on"] == 0:

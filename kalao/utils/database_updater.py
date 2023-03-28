@@ -108,10 +108,10 @@ def update_telemetry(stream_list):
         if shwfs_exists:
             stream_list['fps_slopes'] = fps("shwfs_process")
 
-    if stream_list['loopRUN'] is None:
-        looprun_exists, looprun_fps_path = telemetry.check_fps("loopRUN-1")
+    if stream_list['mfilt-1'] is None:
+        looprun_exists, looprun_fps_path = telemetry.check_fps("mfilt-1")
         if looprun_exists:
-            stream_list['loopRUN'] = fps("loopRUN-1")
+            stream_list['mfilt-1'] = fps("mfilt-1")
 
     telemetry.telemetry_save(stream_list)
 
