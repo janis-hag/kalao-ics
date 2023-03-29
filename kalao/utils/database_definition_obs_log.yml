@@ -116,6 +116,10 @@ sequencer_command_received:
   short: sequencer command received
   long: Command dictionary received by the sequencer
   unit: text
+sequencer_obs_type:
+  short: sequencer observation type requested
+  long: Observations type requested to the sequencer
+  unit: text
 database_log:
   short: database log
   long: Log output of the databse system

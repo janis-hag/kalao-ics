@@ -109,7 +109,14 @@ def seq_server():
         # Transform list of arg to a dict and add Queue Object q
         # from: ['xxx', 'yyy', ... ] -> to: {'xxx': 'yyy', ... }
         args = dict(zip_longest(*[iter(commandList[1:])] * 2, fillvalue=""))
-        database.store_obs_log({'sequencer_command_received': args})
+        if 'type' in args.keys():
+            database.store_obs_log({
+                    'sequencer_command_received': args,
+                    'sequencer_obs_type': args['type']
+            })
+        else:
+            database.store_obs_log({'sequencer_command_received': args})
+
         args["q"] = q
 
         # try to cast every values of args dict in type needed
