@@ -116,10 +116,34 @@ def take_image(
         return req.text, None
 
 
-def take_dark(dit=0.05, filepath=None):
-    # TODO add docstring
+def take_target(dit=0.05, seq_args=None, filepath=None):
+    """
+    Convenience function to interactively execute a target observation.
 
-    seq_args = {'type': 'K_DARK', 'code': 'dark'}
+    :param dit: detector integration time in seconds.
+    :param seq_args: dictionary of sequencer arguments.
+    :param filepath:
+    :return:
+    """
+
+    seq_args = {'type': 'K_TRGOBS'}
+
+    rValue, image_path = take_image(dit=dit, filepath=None,
+                                    sequencer_arguments=seq_args)
+
+    return rValue, image_path
+
+
+def take_dark(dit=0.05, seq_args=None, filepath=None):
+    """
+    Convenience function to interactively execute a dark exposure.
+
+    :param dit:  detector integration time in seconds.
+    :param seq_args: dictionary of sequencer arguments.
+    :param filepath:
+    :return:
+    """
+    seq_args = {'type': 'K_DARK'}
 
     rValue, image_path = take_image(dit=dit, filepath=None,
                                     sequencer_arguments=seq_args)
