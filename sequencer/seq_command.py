@@ -419,6 +419,7 @@ def target_observation(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
     kao = seq_args.get('kao').upper()
+    centering = seq_args.get('centrage')
 
     database.store_obs_log({'tracking_status': 'CENTERING'})
 
@@ -458,10 +459,11 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
-    if starfinder.centre_on_target(kao=kao) == -1:
-        system.print_and_log("Error: problem with centre on target")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
-        return -1
+    if centering == 'aut':
+        if starfinder.centre_on_target(kao=kao) == -1:
+            system.print_and_log("Error: problem with centre on target")
+            database.store_obs_log({'sequencer_status': 'ERROR'})
+            return -1
 
     # Move filter to correct position for science
     if filterwheel.set_position(kalfilter) == -1:
