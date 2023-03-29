@@ -31,7 +31,7 @@ def check_stream(stream_name):
 	:param stream_name: stream to check existence
 	:return: boolean, stream_full_path
 	"""
-    #stream_path = Path(os.environ["MILK_SHM_DIR"])
+    # stream_path = Path(os.environ["MILK_SHM_DIR"])
     stream_path = Path('/tmp/milk')
     stream_name = isio_shmlib.check_SHM_name(stream_name) + '.im.shm'
     stream_path = stream_path / stream_name
@@ -49,7 +49,7 @@ def check_fps(fps_name):
 	:param fps_name: fps to check existence
 	:return: boolean, stream_full_path
 	"""
-    #fps_path = Path(os.environ["MILK_SHM_DIR"])
+    # fps_path = Path(os.environ["MILK_SHM_DIR"])
     fps_path = Path('/tmp/milk')
     fps_name = isio_shmlib.check_SHM_name(fps_name) + '.fps.shm'
     fps_path = fps_path / fps_name
@@ -188,11 +188,11 @@ def streams(realData=True):
 
 def telemetry_save(stream_list):
     """
-	Saves all the adaptive optics telemetry on the mongo database.
+    Saves all the adaptive optics telemetry on the mongo database.
 
-	:param stream_list: A list containing pointers to all the already opened streams.
-	:return: status code
-	"""
+    :param stream_list: A list containing pointers to all the already opened streams.
+    :return: status code
+    """
 
     telemetry_data = {}
 
@@ -243,7 +243,7 @@ def telemetry_save(stream_list):
         stream_keywords = stream_list['nuvu_stream'].get_keywords()
 
         # Check if it's running
-        #if fps_nuvu.RUNrunning==1:
+        # if fps_nuvu.RUNrunning==1:
         telemetry_data["nuvu_temp_ccd"] = stream_keywords['T_CCD']
         telemetry_data["nuvu_temp_controller"] = stream_keywords['T_CNTRLR']
         telemetry_data["nuvu_temp_power_supply"] = stream_keywords['T_PSU']
@@ -318,6 +318,27 @@ def telemetry_save(stream_list):
             elif telemetry_data["loop_on"] == 0:
                 telemetry_data["loop_on"] = 'OFF'
 
+    # check if fps exists and is running
+    tt_loop_exists, looprun_fps_path = check_fps("mfilt-2")
+
+    if tt_loop_exists:
+        if stream_list['mfilt-2'] is None:
+            stream_list['mfilt-2'] = fps("mfilt-2")
+
+        # Check if it's running
+        if stream_list['mfilt-2'].RUNrunning == 1:
+            telemetry_data["tt_loop_gain"] = stream_list[
+                    'mfilt-2'].get_param_value_float('loopgain')
+            telemetry_data["tt_loop_mult"] = stream_list[
+                    'mfilt-2'].get_param_value_float('loopmult')
+            # loopOn 0 = OFF, 1 = ON
+            telemetry_data["tt_loop_on"] = stream_list[
+                    'mfilt-2'].get_param_value_int('loopON')
+            if telemetry_data["tt_loop_on"] == 1:
+                telemetry_data["tt_loop_on"] = 'ON'
+            elif telemetry_data["tt_loop_on"] == 0:
+                telemetry_data["tt_loop_on"] = 'OFF'
+
     database.store_telemetry(telemetry_data)
 
     # return nuvu_stream, tt_stream, fps_slopes
@@ -327,10 +348,10 @@ def telemetry_save(stream_list):
 
 def wfs_illumination_fraction(wfs_threshold):
     """
-	Function reads the nuvu stream and return the summed flux in each subaperture
+    Function reads the nuvu stream and return the summed flux in each subaperture
 
-	:return: subapertures summed flux
-	"""
+    :return: subapertures summed flux
+    """
 
     # TODO implement masking procedure in order to only consider useful subaps
 

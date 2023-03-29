@@ -130,3 +130,25 @@ loop_on:
   unit: ''
   main_gui: 2 # main_gui: 2
   group: AO loop
+
+# AO loop status
+tt_loop_gain:
+  short: TT loop gain
+  long: Tip/Tilt loop gain
+  unit: ''
+  main_gui: 2 # main_gui: 2
+  group: AO loop
+
+tt_loop_mult:
+  short: TT loop mult coeff
+  long: Tip/tilt loop multiplication coefficient
+  unit: ''
+  main_gui: 2 # main_gui: 2
+  group: AO loop
+
+tt_loop_on:
+  short: TT loop ON/OFF
+  long: Tip/Til loop ON/OFF
+  unit: ''
+  main_gui: 2 # main_gui: 2
+  group: AO loop

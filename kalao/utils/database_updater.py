@@ -113,6 +113,11 @@ def update_telemetry(stream_list):
         if looprun_exists:
             stream_list['mfilt-1'] = fps("mfilt-1")
 
+    if stream_list['mfilt-2'] is None:
+        looprun_exists, looprun_fps_path = telemetry.check_fps("mfilt-2")
+        if looprun_exists:
+            stream_list['mfilt-2'] = fps("mfilt-2")
+
     telemetry.telemetry_save(stream_list)
 
 
@@ -125,7 +130,8 @@ if __name__ == "__main__":
             'nuvu_stream': None,
             'tt_stream': None,
             'fps_slopes': None,
-            'mfilt-1': None
+            'mfilt-1': None,
+            'mfilt-2': None
     }
 
     # Get monitoring and cacao
