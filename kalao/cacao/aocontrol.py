@@ -13,6 +13,8 @@ import numpy as np
 import time
 
 from CacaoProcessTools import fps, FPS_status
+from pyMilk.interfacing import isio_shmlib
+
 from pyMilk.interfacing.isio_shmlib import SHM
 
 from kalao.cacao import telemetry
@@ -34,6 +36,48 @@ TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 
 PixScaleX = parser.getfloat('FLI', 'PixScaleX')
 PixScaleY = parser.getfloat('FLI', 'PixScaleY')
+
+
+def check_stream(stream_name):
+    """
+	Function verifies if stream_name exists
+
+	:param stream_name: stream to check existence
+	:return: boolean, stream_full_path
+	"""
+    # stream_path = Path(os.environ["MILK_SHM_DIR"])
+    stream_path = Path('/tmp/milk')
+    stream_name = isio_shmlib.check_SHM_name(stream_name) + '.im.shm'
+    stream_path = stream_path / stream_name
+
+    if stream_path.exists():
+        return True, stream_path
+    else:
+        return False, stream_path
+
+
+def check_fps(fps_name):
+    """
+	Function verifies if fps_name exists
+
+	:param fps_name: fps to check existence
+	:return: boolean, stream_full_path
+	"""
+    # fps_path = Path(os.environ["MILK_SHM_DIR"])
+    fps_path = Path('/tmp/milk')
+    fps_name = isio_shmlib.check_SHM_name(fps_name) + '.fps.shm'
+    fps_path = fps_path / fps_name
+
+    if fps_path.exists():
+        return True, fps_path
+    else:
+        return False, fps_path
+
+
+def close_loop():
+    looprun_exists, looprun_fps_path = check_fps("mfilt-1")
+
+    return 0
 
 
 def set_loopgain(gain):

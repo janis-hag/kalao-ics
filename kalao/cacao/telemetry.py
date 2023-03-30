@@ -16,48 +16,11 @@ import numpy as np
 import libtmux
 
 from pyMilk.interfacing.isio_shmlib import SHM
-from pyMilk.interfacing import isio_shmlib
 
 from CacaoProcessTools import fps, FPS_status
 
 from kalao.utils import database
-from kalao.cacao import fake_data
-
-
-def check_stream(stream_name):
-    """
-	Function verifies if stream_name exists
-
-	:param stream_name: stream to check existence
-	:return: boolean, stream_full_path
-	"""
-    # stream_path = Path(os.environ["MILK_SHM_DIR"])
-    stream_path = Path('/tmp/milk')
-    stream_name = isio_shmlib.check_SHM_name(stream_name) + '.im.shm'
-    stream_path = stream_path / stream_name
-
-    if stream_path.exists():
-        return True, stream_path
-    else:
-        return False, stream_path
-
-
-def check_fps(fps_name):
-    """
-	Function verifies if fps_name exists
-
-	:param fps_name: fps to check existence
-	:return: boolean, stream_full_path
-	"""
-    # fps_path = Path(os.environ["MILK_SHM_DIR"])
-    fps_path = Path('/tmp/milk')
-    fps_name = isio_shmlib.check_SHM_name(fps_name) + '.fps.shm'
-    fps_path = fps_path / fps_name
-
-    if fps_path.exists():
-        return True, fps_path
-    else:
-        return False, fps_path
+from kalao.cacao import fake_data, aocontrol
 
 
 def create_shm_stream(name):
@@ -68,7 +31,7 @@ def create_shm_stream(name):
 	:return: Pointer to the stream.
 	"""
 
-    exists, stream_path = check_stream(name)
+    exists, stream_path = aocontrol.check_stream(name)
 
     if exists:
         return SHM(str(stream_path))
@@ -86,7 +49,7 @@ def _get_stream(name, min_value, max_value, sigma_clip=True):
 	:param sigma_clip: Apply sigma clipping
 	:return:
 	"""
-    exists, stream_path = check_stream(name)
+    exists, stream_path = aocontrol.check_stream(name)
 
     if exists:
         shm_stream = SHM(str(stream_path))
@@ -129,7 +92,7 @@ def get_stream_data(shm_stream, name, min_value, max_value):
 	:param max_value: maximal value in the stream
 	:return: Dictionary with: data, width, height, min, max
 	"""
-    exists, stream_path = check_stream(name)
+    exists, stream_path = aocontrol.check_stream(name)
 
     if exists:
         try:
@@ -201,7 +164,7 @@ def telemetry_save(stream_list):
 
     # # NUVU process
     # #check if fps exists and is running
-    # nuvu_exists, nuvu_fps_path = check_fps("nuvu_acquire")
+    # nuvu_exists, nuvu_fps_path = aocontrol.check_fps("nuvu_acquire")
     #
     # if nuvu_exists:
     # 	sys.stdout = temp_out
@@ -223,7 +186,7 @@ def telemetry_save(stream_list):
 
     # NUVU process
     # check if SHM exists and is running
-    nuvu_exists, nuvu_stream_path = check_stream("nuvu_raw")
+    nuvu_exists, nuvu_stream_path = aocontrol.check_stream("nuvu_raw")
 
     server = libtmux.Server()
     try:
@@ -260,7 +223,7 @@ def telemetry_save(stream_list):
 
     # SHWFS process
     # check if fps exists and is running
-    shwfs_exists, shwfs_fps_path = check_fps("shwfs_process")
+    shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process")
 
     # APO-Q-P240-R8,6 FOV per subap / pixels_per_subap
     pixel_scale = 5.7929690265142 / 5
@@ -281,7 +244,7 @@ def telemetry_save(stream_list):
 
     # Tip/tilt stream
     # check if fps exists and is running
-    tt_exists, tt_fps_path = check_stream("dm02disp")
+    tt_exists, tt_fps_path = aocontrol.check_stream("dm02disp")
 
     if tt_exists:
         if stream_list['tt_stream'] is None:
@@ -298,7 +261,7 @@ def telemetry_save(stream_list):
 
     # looopRUN process
     # check if fps exists and is running
-    looprun_exists, looprun_fps_path = check_fps("mfilt-1")
+    looprun_exists, looprun_fps_path = aocontrol.check_fps("mfilt-1")
 
     if looprun_exists:
         if stream_list['mfilt-1'] is None:
@@ -319,7 +282,7 @@ def telemetry_save(stream_list):
                 telemetry_data["loop_on"] = 'OFF'
 
     # check if fps exists and is running
-    tt_loop_exists, looprun_fps_path = check_fps("mfilt-2")
+    tt_loop_exists, looprun_fps_path = aocontrol.check_fps("mfilt-2")
 
     if tt_loop_exists:
         if stream_list['mfilt-2'] is None:
