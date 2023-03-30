@@ -38,6 +38,10 @@ tracking_manual_centering:
   short: Manual centering flag
   long: Flag do indicate if manual centering is needed
   unit: boolean
+ao_log:
+  short: AO system log
+  long: AO system log
+  unit: text
 
 # PI Tip/Tilt
 ttm_log:

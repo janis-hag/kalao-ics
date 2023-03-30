@@ -22,7 +22,7 @@ from kalao.rtc import device_status
 from kalao import fli
 from kalao.utils import database
 from sequencer import system
-from kalao.cacao import telemetry
+from kalao.cacao import telemetry, aocontrol
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -94,27 +94,27 @@ def update_plc_monitoring():
 def update_telemetry(stream_list):
 
     if stream_list['nuvu_stream'] is None:
-        nuvu_exists, nuvu_stream_path = telemetry.check_stream("nuvu_raw")
+        nuvu_exists, nuvu_stream_path = aocontrol.check_stream("nuvu_raw")
         if nuvu_exists:
             stream_list['nuvu_stream'] = SHM("nuvu_raw")
 
     if stream_list['tt_stream'] is None:
-        tt_exists, tt_stream_path = telemetry.check_stream("dm02disp")
+        tt_exists, tt_stream_path = aocontrol.check_stream("dm02disp")
         if tt_exists:
             stream_list['tt_stream'] = SHM("dm02disp")
 
     if stream_list['fps_slopes'] is None:
-        shwfs_exists, shwfs_fps_path = telemetry.check_fps("shwfs_process")
+        shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process")
         if shwfs_exists:
             stream_list['fps_slopes'] = fps("shwfs_process")
 
     if stream_list['mfilt-1'] is None:
-        looprun_exists, looprun_fps_path = telemetry.check_fps("mfilt-1")
+        looprun_exists, looprun_fps_path = aocontrol.check_fps("mfilt-1")
         if looprun_exists:
             stream_list['mfilt-1'] = fps("mfilt-1")
 
     if stream_list['mfilt-2'] is None:
-        looprun_exists, looprun_fps_path = telemetry.check_fps("mfilt-2")
+        looprun_exists, looprun_fps_path = aocontrol.check_fps("mfilt-2")
         if looprun_exists:
             stream_list['mfilt-2'] = fps("mfilt-2")
 

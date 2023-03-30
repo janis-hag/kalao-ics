@@ -20,6 +20,7 @@ from pyMilk.interfacing.isio_shmlib import SHM
 from kalao.cacao import telemetry
 from kalao.utils import database
 from tcs_communication import t120
+from sequencer import system
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -77,6 +78,32 @@ def check_fps(fps_name):
 def close_loop():
     looprun_exists, looprun_fps_path = check_fps("mfilt-1")
 
+    if not looprun_exists:
+        message = f'ERROR: {looprun_fps_path} is missing'
+        print(message)
+        database.store_obs_log({'ao_log': message})
+        system.print_and_log(message)
+
+        return -1
+
+    fps_mfilt1 = fps("mfilt-1")
+
+    fps_mfilt1.set_param_value_float('loopON', 'ON')
+
+    ttmloop_exists, ttmloop_fps_path = check_fps("mfilt-2")
+
+    if not ttmloop_exists:
+        message = f'ERROR: {ttmloop_fps_path} is missing'
+        print(message)
+        database.store_obs_log({'ao_log': message})
+        system.print_and_log(message)
+
+        return -1
+
+    fps_mfilt2 = fps("mfilt-2")
+
+    fps_mfilt2.set_param_value_float('loopON', 'ON')
+
     return 0
 
 
@@ -106,7 +133,7 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
     :param stream_name:
     :return:
     """
-    exists, stream_path = telemetry.check_stream(stream_name)
+    exists, stream_path = check_stream(stream_name)
 
     mode = int(np.floort(mode))
 
@@ -138,7 +165,7 @@ def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
     :return:
     """
 
-    exists, stream_path = telemetry.check_stream(stream_name)
+    exists, stream_path = check_stream(stream_name)
 
     if exists:
         mgainfact_shm = SHM(stream_name)
@@ -183,7 +210,7 @@ def tip_tilt_offload(gain=0.5):
 
     stream_name = "dm02disp"
 
-    tt_exists, tt_fps_path = telemetry.check_stream(stream_name)
+    tt_exists, tt_fps_path = check_stream(stream_name)
 
     if not tt_exists:
         return -1
@@ -214,7 +241,16 @@ def tip_tilt_offset(x_tip, y_tilt, absolute=False):
     :return:
     """
 
-    fps_slopes = fps("shwfs_process")
+    bmc_exists, bmc_fps_path = check_fps("bmc_display-01")
+
+    #fps_slopes = fps("shwfs_process")
+
+    if not bmc_exists:
+        message = f'ERROR: {bmc_fps_path} is missing'
+        print(message)
+        database.store_obs_log({'ttm_log': message})
+        return -1
+
     fps_bmc = fps("bmc_display-01")
 
     # TIP
@@ -264,6 +300,7 @@ def tip_tilt_offset(x_tip, y_tilt, absolute=False):
     message = f'New Tip and Tilt offset values {tip} and {tilt}'
     print(message)
     database.store_obs_log({'ttm_log': message})
+
     return 0
 
 
@@ -274,7 +311,7 @@ def reset_stream(stream_name):
     :return:
     """
 
-    stream_exists, stream_path = telemetry.check_stream(stream_name)
+    stream_exists, stream_path = check_stream(stream_name)
 
     if stream_exists:
         stream_shm = SHM(stream_name)
