@@ -40,11 +40,11 @@ PixScaleY = parser.getfloat('FLI', 'PixScaleY')
 
 def check_stream(stream_name):
     """
-	Function verifies if stream_name exists
+    Function verifies if stream_name exists
 
-	:param stream_name: stream to check existence
-	:return: boolean, stream_full_path
-	"""
+    :param stream_name: stream to check existence
+    :return: boolean, stream_full_path
+    """
     # stream_path = Path(os.environ["MILK_SHM_DIR"])
     stream_path = Path('/tmp/milk')
     stream_name = isio_shmlib.check_SHM_name(stream_name) + '.im.shm'
@@ -58,11 +58,11 @@ def check_stream(stream_name):
 
 def check_fps(fps_name):
     """
-	Function verifies if fps_name exists
+    Function verifies if fps_name exists
 
-	:param fps_name: fps to check existence
-	:return: boolean, stream_full_path
-	"""
+    :param fps_name: fps to check existence
+    :return: boolean, stream_full_path
+    """
     # fps_path = Path(os.environ["MILK_SHM_DIR"])
     fps_path = Path('/tmp/milk')
     fps_name = isio_shmlib.check_SHM_name(fps_name) + '.fps.shm'

@@ -25,11 +25,11 @@ from kalao.cacao import fake_data, aocontrol
 
 def create_shm_stream(name):
     """
-	Creates a new shared memory SHM stream. If the stream already exists it will reuse it instead of creating a new one.
+    Creates a new shared memory SHM stream. If the stream already exists it will reuse it instead of creating a new one.
 
-	:param name: The name to give to the stream.
-	:return: Pointer to the stream.
-	"""
+    :param name: The name to give to the stream.
+    :return: Pointer to the stream.
+    """
 
     exists, stream_path = aocontrol.check_stream(name)
 
@@ -41,14 +41,15 @@ def create_shm_stream(name):
 
 def _get_stream(name, min_value, max_value, sigma_clip=True):
     """
-	Opens an existing stream after having verified its existence.
+    Opens an existing stream after having verified its existence.
 
-	:param name: Name of the stream to get
-	:param min_value: Maximum value to use
-	:param max_value: Minimum value to use
-	:param sigma_clip: Apply sigma clipping
-	:return:
-	"""
+    :param name: Name of the stream to get
+    :param min_value: Maximum value to use
+    :param max_value: Minimum value to use
+    :param sigma_clip: Apply sigma clipping
+    :return:
+    """
+
     exists, stream_path = aocontrol.check_stream(name)
 
     if exists:
@@ -84,14 +85,15 @@ def _get_stream(name, min_value, max_value, sigma_clip=True):
 
 def get_stream_data(shm_stream, name, min_value, max_value):
     """
-	Reads and already open shm_stream, after having verified that the stream with that name exists.
+    Reads and already open shm_stream, after having verified that the stream with that name exists.
 
-	:param shm_stream: The stream to read
-	:param name: stream name
-	:param min_value: minimal value in the stream
-	:param max_value: maximal value in the stream
-	:return: Dictionary with: data, width, height, min, max
-	"""
+    :param shm_stream: The stream to read
+    :param name: stream name
+    :param min_value: minimal value in the stream
+    :param max_value: maximal value in the stream
+    :return: Dictionary with: data, width, height, min, max
+    """
+
     exists, stream_path = aocontrol.check_stream(name)
 
     if exists:
@@ -121,11 +123,12 @@ def get_stream_data(shm_stream, name, min_value, max_value):
 
 def streams(realData=True):
     """
-	Provides all the streams needed for the KalAO GUI.
+    Provides all the streams needed for the KalAO GUI.
 
-	:param realData: Flag to turn on random data for GUI testing purposes
-	:return: dictionary with all the stream contents
-	"""
+    :param realData: Flag to turn on random data for GUI testing purposes
+    :return: dictionary with all the stream contents
+    """
+
     if not realData:
         # Returning fake streams for testing purposes
         return fake_data.fake_streams()
