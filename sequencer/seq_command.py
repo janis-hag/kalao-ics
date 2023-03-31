@@ -478,6 +478,7 @@ def target_observation(**seq_args):
         for i in range(5):
             system.print_and_log("Initial tip/tilt offload")
             aocontrol.tip_tilt_offload()
+            starfinder.centre_on_target(kao=kao)
             time.sleep(3)
 
         if aocontrol.close_loop() == -1:
