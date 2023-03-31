@@ -461,7 +461,7 @@ def target_observation(**seq_args):
 
     if centering == 'aut':
         if starfinder.centre_on_target(kao=kao) == -1:
-            system.print_and_log("Error: problem with centre on target")
+            system.print_and_log("Error: problem with center on target")
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return -1
 

@@ -126,7 +126,7 @@ sequencer_obs_type:
   unit: text
 database_log:
   short: database log
-  long: Log output of the databse system
+  long: Log output of the database system
   unit: text
 flask_log:
   short: flask log
@@ -135,6 +135,10 @@ flask_log:
 gop_log:
   short: gop log
   long: Log output of the GOP server
+  unit: text
+status_txt:
+  short: status text for EDP
+  long: Text to send info the consigne text frame of the EDP
   unit: text
 t120_log:
   short: gop log

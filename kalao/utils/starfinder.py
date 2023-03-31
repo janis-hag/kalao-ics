@@ -88,7 +88,9 @@ def centre_on_target(kao='NO_AO'):
 
         if rValue != 0:
             # print(rValue)
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            system.print_and_log({
+                    'sequencer_status': f'ERROR no image received. {rValue}'
+            })
             return -1
 
         x, y = find_star(image_path)
@@ -99,7 +101,10 @@ def centre_on_target(kao='NO_AO'):
 
             rValue, image_path = camera.take_image(dit=ExpTime)
             if rValue != 0:
-                database.store_obs_log({'sequencer_status': 'ERROR'})
+                system.print_and_log({
+                        'sequencer_status':
+                                f'ERROR no image received. {rValue}'
+                })
                 return -1
 
             x, y = find_star(image_path)
@@ -158,6 +163,8 @@ def centre_on_target(kao='NO_AO'):
             #    return 0
 
     else:
+        system.print_and_log({'sequencer_status': 'ERROR centering timeout'})
+
         return -1
 
 
