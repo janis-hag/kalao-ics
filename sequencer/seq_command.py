@@ -22,7 +22,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel, calib_unit
 from kalao.fli import camera
 from kalao.utils import file_handling, database, database_updater, kalao_time, starfinder
-from kalao.cacao import aomanager
+from kalao.cacao import cacaomanager, aocontrol
 from sequencer import system
 # from tcs_communication import t120
 
@@ -475,7 +475,12 @@ def target_observation(**seq_args):
     if kao == 'AO':
         system.print_and_log("Trying to close loop")
 
-        if aomanager.close_loop() == -1:
+        for i in range(5):
+            system.print_and_log("Initial tip/tilt offload")
+            aocontrol.tip_tilt_offload()
+            time.sleep(3)
+
+        if aocontrol.close_loop() == -1:
             system.print_and_log("Error: unable to close loop")
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return -1

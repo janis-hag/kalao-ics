@@ -34,6 +34,7 @@ parser.read(config_path)
 
 TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
+MaxTelOffload = parser.getfloat('AO', 'MaxTelOffload')
 
 PixScaleX = parser.getfloat('FLI', 'PixScaleX')
 PixScaleY = parser.getfloat('FLI', 'PixScaleY')
@@ -199,7 +200,7 @@ def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
         return -1
 
 
-def tip_tilt_offload(gain=0.5):
+def tip_tilt_offload(gain=0.2):
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
@@ -224,6 +225,10 @@ def tip_tilt_offload(gain=0.5):
 
     alt_offload = -tip * (PixScaleX / TipMRadPerPixel) * gain
     az_offload = -tilt * (PixScaleY / TipMRadPerPixel) * gain
+
+    # Keep offsets within defined range
+    alt_offload = np.clip(alt_offload, -MaxTelOffload, MaxTelOffload)
+    az_offload = np.clip(az_offload, -MaxTelOffload, MaxTelOffload)
 
     t120.send_offset(az_offload, alt_offload)
 
