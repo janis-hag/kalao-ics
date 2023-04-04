@@ -474,7 +474,7 @@ def _dynamic_cards_update(header_df, seq_args=None):
     header_df['comment']['HIERARCH ESO INS SHUT ST'] = header_df['comment']['HIERARCH ESO INS SHUT ST'] + ' ' \
                                                        + header_df['value']['HIERARCH ESO INS SHUT ST'].lower()
 
-    if header_df['value']['HIERARCH ESO INS SHUT ST'] == 'open':
+    if header_df['value']['HIERARCH ESO INS SHUT ST'].upper() == 'OPEN':
         header_df['value']['HIERARCH ESO INS SHUT ST'] = 'T'
     else:
         header_df['value']['HIERARCH ESO INS SHUT ST'] = 'F'
