@@ -15,6 +15,7 @@ from pathlib import Path
 import time
 from configparser import ConfigParser
 import datetime
+import numpy as np
 
 # add the necessary path to find the folder kalao for import
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -355,7 +356,7 @@ def sky_FLAT(**seq_args):
 
     # Adapt integration times
     for f, d in dit_list.items():
-        dit_list[f] = d * coef
+        dit_list[f] = np.round(d * coef)
 
     for filter_name in filter_list:
 
