@@ -188,7 +188,7 @@ def load_dm_flat(conf):
 
     cwd = os.getcwd()
     os.chdir(f"{conf['CACAO_WORKDIR']}/hardware-workdir"
-             )  #TODO: use path.join()
+             )  # TODO: use path.join()
 
     input = f"""
 	loadfits "flat_dm.fits" dmflat
@@ -223,7 +223,7 @@ def do_calibration(conf):
 
     cwd = os.getcwd()
     os.chdir(f"{conf['CACAO_WORKDIR']}/{conf['CACAO_LOOPWORKDIR']}"
-             )  #TODO: use path.join()
+             )  # TODO: use path.join()
 
     input = f"""
 	loadfits "fps.compsCM-{conf['CACAO_LOOPNUMBER']}.datadir/sCMat00.fits" sCMat00_{conf['CACAO_LOOPNUMBER']}
@@ -255,7 +255,7 @@ if __name__ == "__main__":
         init_loop("ttmloop")
         init_loop("kalaohardware")
 
-        #TODO: remove when Olivier fix cacaotask-STARTDMCOMB and uncomment STARTDMCOMB in tasklist.txt
+        # TODO: remove when Olivier fix cacaotask-STARTDMCOMB and uncomment STARTDMCOMB in tasklist.txt
         fps_dmcomb01 = fps("DMcomb-01")
         fps_dmcomb01.RUNstart()
         fps_dmcomb01.CONFupdate()
