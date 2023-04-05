@@ -162,31 +162,6 @@ def telemetry_save(stream_list):
 
     telemetry_data = {}
 
-    # Create the in-memory "file"
-    # temp_out = io.StringIO()
-
-    # # NUVU process
-    # #check if fps exists and is running
-    # nuvu_exists, nuvu_fps_path = aocontrol.check_fps("nuvu_acquire")
-    #
-    # if nuvu_exists:
-    # 	sys.stdout = temp_out
-    # 	fps_nuvu = fps("nuvu_acquire")
-    # 	sys.stdout = sys.__stdout__
-    #
-    # 	# Check if it's running
-    # 	if fps_nuvu.RUNrunning==1:
-    # 		telemetry["nuvu_temp_ccd"]          = fps_nuvu["nuvu_acquire.temp_ccd"]
-    # 		telemetry["nuvu_temp_controller"]   = fps_nuvu["nuvu_acquire.temp_controller"]
-    # 		telemetry["nuvu_temp_power_supply"] = fps_nuvu["nuvu_acquire.temp_power_supply"]
-    # 		telemetry["nuvu_temp_fpga"]         = fps_nuvu["nuvu_acquire.temp_fpga"]
-    # 		telemetry["nuvu_temp_heatsink"]     = fps_nuvu["nuvu_acquire.temp_heatsink"]
-    # 		telemetry["nuvu_emgain"]            = fps_nuvu["nuvu_acquire.emgain"]
-    # 		telemetry["nuvu_exposuretime"]      = fps_nuvu["nuvu_acquire.exposuretime"]
-    #
-    # else:
-    # 	pass # Return empty streams
-
     # NUVU process
     # check if SHM exists and is running
     nuvu_exists, nuvu_stream_path = aocontrol.check_stream("nuvu_raw")
@@ -223,6 +198,32 @@ def telemetry_save(stream_list):
     else:
         # Return empty streams
         pass
+
+    # Create the in-memory "file"
+    # temp_out = io.StringIO()
+
+    # NUVU process
+    #check if fps exists and is running
+    # nuvu_exists, nuvu_fps_path = aocontrol.check_fps("nuvu_acquire")
+    #
+    # if nuvu_exists:
+    #     sys.stdout = temp_out
+    #     fps_nuvu = fps("nuvu_acquire")
+    #     sys.stdout = sys.__stdout__
+    #
+    #     # Check if it's running
+    # 	if fps_nuvu.RUNrunning==1:
+    #         telemetry_data["nuvu_temp_ccd"]          = fps_nuvu["nuvu_acquire.temp_ccd"]
+    #         telemetry_data["nuvu_temp_controller"]   = fps_nuvu["nuvu_acquire.temp_controller"]
+    #         telemetry_data["nuvu_temp_power_supply"] = fps_nuvu["nuvu_acquire.temp_power_supply"]
+    #         telemetry_data["nuvu_temp_fpga"]         = fps_nuvu["nuvu_acquire.temp_fpga"]
+    #         telemetry_data["nuvu_temp_heatsink"]     = fps_nuvu["nuvu_acquire.temp_heatsink"]
+    #         telemetry_data["nuvu_emgain"]            = fps_nuvu["nuvu_acquire.emgain"]
+    #         telemetry_data["nuvu_exposuretime"]      = fps_nuvu["nuvu_acquire.exposuretime"]
+    #
+    # else:
+    #     pass # Return empty streams
+    #
 
     # SHWFS process
     # check if fps exists and is running

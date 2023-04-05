@@ -108,6 +108,11 @@ def close_loop():
     return 0
 
 
+def check_loop():
+    # TODO check if loop is running. If loop broken return -1
+    pass
+
+
 def set_loopgain(gain):
     # TODO implement
     fps_slopes = fps("shwfs_process")
