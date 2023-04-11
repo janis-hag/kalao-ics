@@ -23,7 +23,7 @@ config_path = os.path.join(
 parser = ConfigParser()
 parser.read(config_path)
 
-adc_name = {1: 'ADC1_Newport_PR50PP', 2: 'ADC2_Newport_PR50PP'}
+adc_name = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
 
 
 def rotate(adc_id, position=0, beck=None):
