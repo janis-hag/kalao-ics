@@ -77,6 +77,12 @@ def check_fps(fps_name):
 
 
 def close_loop():
+    """
+    Close the primary DM AO loop followed by the secondary TTM loop.
+
+    :return:
+    """
+
     looprun_exists, looprun_fps_path = check_fps("mfilt-1")
 
     if not looprun_exists:
@@ -89,6 +95,7 @@ def close_loop():
 
     fps_mfilt1 = fps("mfilt-1")
 
+    # TODO the value to be set is not a float! this line will fail it need to be changed to string
     fps_mfilt1.set_param_value_float('loopON', 'ON')
 
     ttmloop_exists, ttmloop_fps_path = check_fps("mfilt-2")
@@ -103,6 +110,7 @@ def close_loop():
 
     fps_mfilt2 = fps("mfilt-2")
 
+    # TODO the value to be set is not a float! this line will fail it need to be changed to string
     fps_mfilt2.set_param_value_float('loopON', 'ON')
 
     return 0
@@ -113,20 +121,51 @@ def check_loop():
     pass
 
 
-def set_loopgain(gain):
-    # TODO implement
-    fps_slopes = fps("shwfs_process")
+def set_dmloop_gain(gain):
+    # TODO test
+
+    _set_fps_floatvalue('mfilt-1', 'loopgain', gain)
 
     return 0
 
 
-def set_loopmult(mult):
-    # TODO implement
+def set_dmloop_mult(mult):
+    # TODO test
+
+    _set_fps_floatvalue('mfilt-1', 'loopmult', mult)
+
     return 0
 
 
-def set_looplimit(limit):
+def set_dmloop_limit(limit):
     # TODO implement
+
+    _set_fps_floatvalue('mfilt-1', 'looplimit', limit)
+
+    return 0
+
+
+def set_ttmloop_gain(gain):
+    # TODO test
+
+    _set_fps_floatvalue('mfilt-2', 'loopgain', gain)
+
+    return 0
+
+
+def set_ttmloop_mult(mult):
+    # TODO test
+
+    _set_fps_floatvalue('mfilt-2', 'loopmult', mult)
+
+    return 0
+
+
+def set_ttmloop_limit(limit):
+    # TODO implement
+
+    _set_fps_floatvalue('mfilt-2', 'looplimit', limit)
+
     return 0
 
 
@@ -210,7 +249,7 @@ def tip_tilt_offload(gain=0.2):
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
 
-    :param gain: Gain factor, set to 0.5 by default.
+    :param gain: Gain factor, set to 0.2 by default.
     :return:
     """
 
@@ -240,7 +279,77 @@ def tip_tilt_offload(gain=0.2):
     return 0
 
 
-def tip_tilt_offset(x_tip, y_tilt, absolute=False):
+def tip_tilt_offset(x_tip, y_tilt, absolute=False, stream_name='dm02disp04'):
+    """
+    Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
+
+    :param x_tip: number of pixels to tip
+    :param y_tilt: number of pixels to tilt
+    :param absolute: Flag to indicate that tip tilt values are in absolute radian. By default, set to False.
+    :param stream_name: name of the stream to use to set the offset. dm02disp04 by default.
+
+    :return:
+    """
+
+    stream_exists, stream_path = check_stream(stream_name)
+
+    if not stream_exists:
+        message = f'ERROR: {stream_path} is missing'
+        print(message)
+        database.store_obs_log({'ttm_log': message})
+
+        return -1
+
+    stream_shm = SHM(stream_name)
+
+    stream_data = stream_shm.get_data(check=False)
+
+    tip, tilt = stream_data
+
+    # TIP
+    if absolute:
+        new_tip_value = x_tip
+    else:
+        new_tip_value = tip + x_tip * TipMRadPerPixel
+
+    if new_tip_value > 2.45:
+        print('Limiting tip to 2.45')
+        new_tip_value = 2.45
+    elif new_tip_value < -2.45:
+        print('Limiting tip to -2.45')
+        new_tip_value = -2.45
+
+    # TILT
+    if absolute:
+        new_tilt_value = y_tilt
+    else:
+        new_tilt_value = tilt + y_tilt * TipMRadPerPixel
+
+    if new_tilt_value > 2.45:
+        print('Limiting tilt to 2.45')
+        new_tilt_value = 2.45
+    elif new_tilt_value < -2.45:
+        print('Limiting tilt to -2.45')
+        new_tilt_value = -2.45
+
+    stream_data[:] = [new_tilt_value, new_tip_value]
+
+    stream_shm.set_data(stream_data.astype(stream_shm.nptype))
+
+    message = f'Changing Tip and Tilt offset to  {new_tip_value} and {new_tilt_value}'
+    print(message)
+    database.store_obs_log({'ttm_log': message})
+
+    tip, tilt = stream_data
+
+    message = f'New Tip and Tilt offset values {tip} and {tilt}'
+    print(message)
+    database.store_obs_log({'ttm_log': message})
+
+    return 0
+
+
+def tip_tilt_offset_bmc(x_tip, y_tilt, absolute=False):
     """
     Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
 
@@ -347,7 +456,6 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
     fps_bmc = fps("bmc_display-01")
 
     #TODO verify that shwfs enough illuminated for centering
-    #TODO verify that shwfs enough illuminated for centering
 
     #TODO add iterations limit to prevent infinite loop
     while not (tip_centered and tilt_centered):
@@ -393,4 +501,23 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
                                           str(new_tilt_value))
 
     # TODO return 0 if centered, 1 if exceeded iterations
+    return 0
+
+
+def _set_fps_floatvalue(fps_name, key, value):
+    # TODO implement
+    fps_exists, fps_path = check_fps(fps_name)
+
+    if not fps_exists:
+        message = f'ERROR: {fps_path} is missing'
+        print(message)
+        database.store_obs_log({'ao_log': message})
+        system.print_and_log(message)
+
+        return -1
+
+    fps_handle = fps(fps_name)
+
+    fps_handle.set_param_value_float(key, value)
+
     return 0
