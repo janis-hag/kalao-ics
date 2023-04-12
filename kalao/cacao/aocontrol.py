@@ -36,6 +36,8 @@ TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 MaxTelOffload = parser.getfloat('AO', 'MaxTelOffload')
 
+CenteringTimeout = parser.getfloat('Starfinder', 'CenteringTimeout')
+
 PixScaleX = parser.getfloat('FLI', 'PixScaleX')
 PixScaleY = parser.getfloat('FLI', 'PixScaleY')
 
@@ -453,29 +455,45 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
     tilt_centered = False
 
     fps_slopes = fps("shwfs_process")
-    fps_bmc = fps("bmc_display-01")
+    #fps_bmc = fps("bmc_display-01")
+    stream_name = 'dm02disp04'
+
+    stream_exists, stream_path = check_stream(stream_name)
+
+    if not stream_exists:
+        message = f'ERROR: {stream_path} is missing'
+        print(message)
+        database.store_obs_log({'ttm_log': message})
+
+        return -1
+
+    stream_shm = SHM(stream_name)
 
     #TODO verify that shwfs enough illuminated for centering
 
-    #TODO add iterations limit to prevent infinite loop
+    timeout_time = time.time() + CenteringTimeout
+
     while not (tip_centered and tilt_centered):
+        if time.time() > timeout_time:
+            system.print_and_log('ERROR centering timeout')
 
-        time.sleep(1)
+            return -1
 
-        tip = fps_slopes.get_param_value_float('slope_y')
-        tilt = fps_slopes.get_param_value_float('slope_x')
+        stream_data = stream_shm.get_data(check=False)
 
-        tip_offset = fps_bmc.get_param_value_float("ttm_tip_offset")
-        tilt_offset = fps_bmc.get_param_value_float("ttm_tilt_offset")
+        tip_offset, tilt_offset = stream_data
 
-        print(f'Residual tip = {tip}, Residual tilt = {tilt}, tip_offset = {tip_offset}, tilt_offset = {tilt_offset}'
+        tip_residual = fps_slopes.get_param_value_float('slope_y')
+        tilt_residual = fps_slopes.get_param_value_float('slope_x')
+
+        print(f'Residual tip = {tip_residual}, Residual tilt = {tilt_residual}, tip_offset = {tip_offset}, tilt_offset = {tilt_offset}'
               )
 
-        if np.abs(tip) < tt_threshold:
+        if np.abs(tip_residual) < tt_threshold:
             tip_centered = True
         else:
             # The measured slope tip is about half the value of the negative offset needed to compensate for it
-            new_tip_value = tip_offset - tip
+            new_tip_value = tip_offset - tip_residual
             if new_tip_value > 2.45:
                 print('Limiting tip to 2.45')
                 new_tip_value = 2.45
@@ -483,13 +501,11 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
                 print('Limiting tip to -2.45')
                 new_tip_value = -2.45
 
-            fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tip_value))
-
-        if np.abs(tilt) < tt_threshold:
+        if np.abs(tilt_residual) < tt_threshold:
             tilt_centered = True
         else:
             # The measured slope  in tilt is about half the value of the offset needed to compensate for it
-            new_tilt_value = tilt_offset + tilt
+            new_tilt_value = tilt_offset + tilt_residual
             if new_tilt_value > 2.45:
                 print('Limiting tip to 2.45')
                 new_tilt_value = 2.45
@@ -497,8 +513,11 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
                 print('Limiting tip to -2.45')
                 new_tilt_value = -2.45
 
-            fps_bmc.set_param_value_float('ttm_tilt_offset',
-                                          str(new_tilt_value))
+        stream_data[:] = [new_tilt_value, new_tip_value]
+
+        stream_shm.set_data(stream_data.astype(stream_shm.nptype))
+
+        time.sleep(1)
 
     # TODO return 0 if centered, 1 if exceeded iterations
     return 0
