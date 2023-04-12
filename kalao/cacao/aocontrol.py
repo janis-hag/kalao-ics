@@ -450,6 +450,12 @@ def reset_stream(stream_name):
 
 
 def wfs_centering(tt_threshold=TTSlopeThreshold):
+    """
+    Precise tip/tilt centering on the wavefront sensor.
+
+    :param tt_threshold: precision at which the centering need to be based on the residual slope.
+    :return:
+    """
 
     tip_centered = False
     tilt_centered = False
@@ -491,6 +497,7 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
 
         if np.abs(tip_residual) < tt_threshold:
             tip_centered = True
+            new_tip_value = tip_offset
         else:
             # The measured slope tip is about half the value of the negative offset needed to compensate for it
             new_tip_value = tip_offset - tip_residual
@@ -503,6 +510,8 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
 
         if np.abs(tilt_residual) < tt_threshold:
             tilt_centered = True
+            new_tilt_value = tilt_offset
+
         else:
             # The measured slope  in tilt is about half the value of the offset needed to compensate for it
             new_tilt_value = tilt_offset + tilt_residual
