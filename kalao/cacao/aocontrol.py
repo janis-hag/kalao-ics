@@ -567,6 +567,6 @@ def _set_fps_floatvalue(fps_name, key, value):
 
     fps_handle = fps(fps_name)
 
-    fps_handle.set_param_value_float(key, value)
+    fps_handle.set_param_value_float(key, str(value))
 
     return 0
