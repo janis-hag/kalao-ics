@@ -21,6 +21,7 @@ from opcua import ua
 
 from kalao.plc import core
 from kalao.utils import database, kalao_time
+from kalao.cacao import aocontrol
 
 config_path = os.path.join(
         Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
@@ -165,6 +166,10 @@ def set_intensity(intensity=0.4, beck=None):
 
     :return: value of the new intensity
     """
+
+    # TODO switch off EMGAIN
+    aocontrol.emgain_off()
+
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 

@@ -199,6 +199,13 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
         return -1
 
 
+def emgain_off():
+    set_emgain_tmux(egain=1)
+    set_emgain_fps(egain=1)
+
+    return 0
+
+
 def set_emgain_tmux(egain=1):
 
     server = libtmux.Server()
@@ -586,6 +593,6 @@ def _set_fps_intvalue(fps_name, key, value):
 
     fps_handle = fps(fps_name)
 
-    fps_handle.set_param_value_int(key, str(value))
+    rValue = fps_handle.set_param_value_int(key, str(value))
 
-    return 0
+    return rValue
