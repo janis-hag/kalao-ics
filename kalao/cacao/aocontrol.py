@@ -11,6 +11,7 @@ aocontrol.py is part of the KalAO Instrument Control Software
 
 import numpy as np
 import time
+import libtmux
 
 from CacaoProcessTools import fps, FPS_status
 from pyMilk.interfacing import isio_shmlib
@@ -196,6 +197,26 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
 
     else:
         return -1
+
+
+def set_emgain_tmux(egain=1):
+
+    server = libtmux.Server()
+
+    try:
+        session = server.find_where({"session_name": "nuvu_ctrl"})
+    except:
+        # TODO specify more precise exception
+        session = False
+
+    # If tmux session exists send query temperatures
+    if session:
+        session.attached_pane.send_keys(f'\ncam.SetEMCalibratedGain({egain})')
+
+
+def set_emgain_fps(egain=1):
+
+    _set_fps_floatvalue('nuvu_acquire-1', 'emgain', egain)
 
 
 def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
