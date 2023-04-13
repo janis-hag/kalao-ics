@@ -216,7 +216,7 @@ def set_emgain_tmux(egain=1):
 
 def set_emgain_fps(egain=1):
 
-    _set_fps_floatvalue('nuvu_acquire-1', 'emgain', egain)
+    _set_fps_intvalue('nuvu_acquire-1', 'emgain', egain)
 
 
 def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
@@ -568,5 +568,24 @@ def _set_fps_floatvalue(fps_name, key, value):
     fps_handle = fps(fps_name)
 
     fps_handle.set_param_value_float(key, str(value))
+
+    return 0
+
+
+def _set_fps_intvalue(fps_name, key, value):
+    # TODO implement
+    fps_exists, fps_path = check_fps(fps_name)
+
+    if not fps_exists:
+        message = f'ERROR: {fps_path} is missing'
+        print(message)
+        database.store_obs_log({'ao_log': message})
+        system.print_and_log(message)
+
+        return -1
+
+    fps_handle = fps(fps_name)
+
+    fps_handle.set_param_value_int(key, str(value))
 
     return 0
