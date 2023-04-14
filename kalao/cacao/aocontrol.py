@@ -243,7 +243,7 @@ def set_emgain_tmux(egain=1):
 
 def set_emgain_fps(egain=1):
 
-    _set_fps_intvalue('nuvu_acquire-1', 'emgain', egain)
+    _set_fps_intvalue('nuvu_acquire-1', 'emgain', str(egain))
 
 
 def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
