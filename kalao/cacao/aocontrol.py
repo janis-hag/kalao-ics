@@ -246,6 +246,11 @@ def set_emgain_fps(egain=1):
     _set_fps_intvalue('nuvu_acquire-1', 'emgain', str(egain))
 
 
+def set_exptime_fps(exptime=1):
+
+    _set_fps_intvalue('nuvu_acquire-1', 'exptime', str(exptime))
+
+
 def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
                                       keep_existing_flat=False,
                                       stream_name='aol1_mgainfact'):
