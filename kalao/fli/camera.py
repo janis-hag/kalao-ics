@@ -381,7 +381,7 @@ def _switch_ippower(value):
     if value == 'ON':
         params['s'] = 1
     elif not value == 'OFF':
-        error_message = f'Unknow camera ippower switch value ({value})'
+        error_message = f'Unknown camera ippower switch value ({value})'
         database.store_obs_log({'fli_log': error_message})
         print(error_message)
 
@@ -396,6 +396,33 @@ def _switch_ippower(value):
         database.store_obs_log({'fli_log': error_message})
         print(error_message)
         return -1
+
+
+def ippower_status():
+    """
+    Check the ippower status of the camera.
+
+    :return: 0=OFF, 1=ON, -1=Error
+    """
+
+    url = 'http://10.10.132.94/statusjsn.js'
+
+    params = {'components': 50947, 'cmd': 1, 'p': 7}
+
+    req = requests.get(url, params=params)
+
+    if req.status_code == 200:
+
+        state = req.json()['outputs'][6]['state']
+
+        if state in [0, 1]:
+            return state
+
+    error_message = f'Could not switch camera IP-power to {value}. HTTP-response: {req.text}  ({req.status_code})'
+    database.store_obs_log({'fli_log': error_message})
+    print(error_message)
+
+    return -1
 
 
 def initialise():

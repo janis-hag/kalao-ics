@@ -146,9 +146,11 @@ def _check_cooling_status():
                     f"ERROR: cooling flow value {cooling_status['cooling_flow_value']} below mininum {MINIMAL_FLOW} for {low_flow_time} seconds."
             )
 
-            system.print_and_log(f"Camera emergency power-off")
+            if camera.ippower_status() == 1:
 
-            camera.poweroff()
+                system.print_and_log(f"Camera emergency power-off")
+
+                camera.poweroff()
 
             return -1
         else:
@@ -163,7 +165,7 @@ def _check_cooling_status():
 
     if cooling_status['temp_water_in'] > MAX_WATER_TEMP:
         system.print_and_log(
-                f"ERROR: water_in temperature {cooling_status['temp_water_in']} below mininum {MINIMAL_FLOW}"
+                f"ERROR: water_in temperature {cooling_status['temp_water_in']} below minimum {MINIMAL_FLOW}"
         )
         return -1
 
@@ -172,7 +174,7 @@ def _check_cooling_status():
         # Verify if camera is running
         if cooling_status['camera_HS_temp'] > MAX_HEATSINK_TEMP:
             system.print_and_log(
-                    f"ERROR: camera_HS_temp temperature {cooling_status['camera_HS_temp']} abovemininum {MAX_HEATSINK_TEMP}"
+                    f"ERROR: camera_HS_temp temperature {cooling_status['camera_HS_temp']} above minimum {MAX_HEATSINK_TEMP}"
             )
             return -1
         elif cooling_status['camera_HS_temp'] > HEATSINK_TEMP_WARN:
@@ -182,7 +184,7 @@ def _check_cooling_status():
 
         if cooling_status['camera_CCD_temp'] > MAX_CCD_TEMP:
             system.print_and_log(
-                    f"ERROR: camera_CCD_temp temperature {cooling_status['camera_CCD_temp']} below mininum {MAX_CCD_TEMP}"
+                    f"ERROR: camera_CCD_temp temperature {cooling_status['camera_CCD_temp']} below minimum {MAX_CCD_TEMP}"
             )
             return -1
 
