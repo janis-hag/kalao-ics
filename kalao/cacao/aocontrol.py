@@ -248,7 +248,7 @@ def set_emgain_fps(egain=1):
 
 def set_exptime_fps(exptime=1):
 
-    _set_fps_intvalue('nuvu_acquire-1', 'exptime', str(exptime))
+    _set_fps_floatvalue('nuvu_acquire-1', 'exptime', str(exptime))
 
 
 def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,

@@ -46,6 +46,8 @@ MAX_HEATSINK_TEMP = parser.getfloat('Cooling', 'MaxHeatsinkTemp')
 HEATSINK_TEMP_WARN = parser.getfloat('Cooling', 'HeatsinkTempWarn')
 MAX_CCD_TEMP = parser.getfloat('Cooling', 'MaxCCDTemp')
 
+# TODO switch EM gain off after inactivity
+
 
 def _check_shutteropen_inactive():
     """
@@ -188,6 +190,11 @@ def _check_cooling_status():
 
 
 def initialise():
+    """
+    Restart the systemd service for the watchdog.
+
+    :return:
+    """
     system.watchdog_service('restart')
 
     return 0
