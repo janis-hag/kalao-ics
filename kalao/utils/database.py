@@ -156,13 +156,13 @@ def get_all_last_telemetry(realData=True):
 
 
 def get_latest_record(collection_name, key=None, no_id=True):
-    '''
+    """
     Searches for the last record in the database for a certain collection
 
     :param collection_name: the collection to search in 'obs_log', 'monitoring_log', 'telemetry_log'
     :param key: optional key to search for the last record of a specific key
     :return: last record
-    '''
+    """
 
     dt = kalao_time.now()
 

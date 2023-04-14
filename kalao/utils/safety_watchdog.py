@@ -134,6 +134,9 @@ def _check_cooling_status():
 
     cooling_status = temperature_control.get_cooling_values()
 
+    latest_log = database.get_latest_record('obs_log',
+                                            'sequencer_log')['sequencer_log']
+
     if cooling_status['cooling_flow_value'] < MINIMAL_FLOW:
 
         # Get time since flow is too low
@@ -142,9 +145,11 @@ def _check_cooling_status():
 
         if low_flow_time > FLOW_GRACE_TIME:
             # Verify how low the cooling is already below minimal value.
-            system.print_and_log(
-                    f"ERROR: cooling flow value {cooling_status['cooling_flow_value']} below mininum {MINIMAL_FLOW} for {low_flow_time} seconds."
-            )
+
+            message = f"ERROR: Cooling flow value {cooling_status['cooling_flow_value']} below minimum {MINIMAL_FLOW} for {low_flow_time} seconds."
+
+            if not latest_log.startswith(message[:24]):
+                system.print_and_log(message)
 
             if camera.ippower_status() == 1:
 
@@ -154,9 +159,9 @@ def _check_cooling_status():
 
             return -1
         else:
-            system.print_and_log(
-                    f"WARNING: Cooling flow value {cooling_status['cooling_flow_value']} below minimum"
-            )
+            message = f"WARNING: Cooling flow value {cooling_status['cooling_flow_value']} below minimum"
+            if not latest_log.startswith(message[:24]):
+                system.print_and_log(message)
 
     elif cooling_status['cooling_flow_value'] < FLOW_WARN:
         system.print_and_log(
@@ -164,28 +169,32 @@ def _check_cooling_status():
         )
 
     if cooling_status['temp_water_in'] > MAX_WATER_TEMP:
-        system.print_and_log(
-                f"ERROR: water_in temperature {cooling_status['temp_water_in']} below minimum {MINIMAL_FLOW}"
-        )
+        message = f"ERROR: water_in temperature {cooling_status['temp_water_in']} below minimum {MINIMAL_FLOW}"
+        if not latest_log.startswith(message[:24]):
+            system.print_and_log(message)
         return -1
 
     # Check camera temperatures
     if camera.check_server_status() == 'OK':
         # Verify if camera is running
         if cooling_status['camera_HS_temp'] > MAX_HEATSINK_TEMP:
-            system.print_and_log(
-                    f"ERROR: camera_HS_temp temperature {cooling_status['camera_HS_temp']} above minimum {MAX_HEATSINK_TEMP}"
-            )
+            message = f"ERROR: camera_HS_temp temperature {cooling_status['camera_HS_temp']} above minimum {MAX_HEATSINK_TEMP}"
+
+            if not latest_log.startswith(message[:24]):
+                system.print_and_log(message)
             return -1
+
         elif cooling_status['camera_HS_temp'] > HEATSINK_TEMP_WARN:
-            system.print_and_log(
-                    f"WARNING: camera_HS_temp temperature {cooling_status['camera_HS_temp']}"
-            )
+            message = f"WARNING: camera_HS_temp temperature {cooling_status['camera_HS_temp']}"
+            if not latest_log.startswith(message[:24]):
+                system.print_and_log(message)
+            return -1
 
         if cooling_status['camera_CCD_temp'] > MAX_CCD_TEMP:
-            system.print_and_log(
-                    f"ERROR: camera_CCD_temp temperature {cooling_status['camera_CCD_temp']} below minimum {MAX_CCD_TEMP}"
-            )
+            message = f"ERROR: camera_CCD_temp temperature {cooling_status['camera_CCD_temp']} below minimum {MAX_CCD_TEMP}"
+            if not latest_log.startswith(message[:24]):
+                system.print_and_log(message)
+
             return -1
 
     return 0
