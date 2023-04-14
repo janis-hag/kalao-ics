@@ -75,10 +75,14 @@ def disable(beck=None):
 
 def enable(beck=None):
     """
-    Power on laser source and set to default intensity
+    Power on laser source and set to default intensity.
+    Disables EM gain on WFS camera.
 
     :return: status of the laser
     """
+
+    aocontrol.emgain_off()
+
     laser_status = switch('bEnable', beck=beck)
     laser_status = set_intensity(beck=beck)
 

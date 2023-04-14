@@ -200,10 +200,30 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
 
 
 def emgain_off():
-    set_emgain_tmux(egain=1)
-    set_emgain_fps(egain=1)
+    """
+    Completely turn of EM gain on the WFS camera. For double safety the command is sent directly to the tmux as well as
+    to the nuvu_acquire fps.
 
-    return 0
+    :return: 0 on success
+    """
+
+    rValue = -1
+
+    try:
+        set_emgain_fps(egain=1)
+        rValue = 0
+    except Exception as err:
+        print('nuvu_acquire fps seems not to be running.')
+        print(Exception, err)
+
+    try:
+        set_emgain_tmux(egain=1)
+        rValue = 0
+    except Exception as err:
+        print('Unable to connect to nuvu_ctrl tmux. Is the WFS running?')
+        print(Exception, err)
+
+    return rValue
 
 
 def set_emgain_tmux(egain=1):
