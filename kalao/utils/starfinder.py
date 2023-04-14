@@ -42,6 +42,7 @@ PixScaleX = parser.getfloat('FLI', 'PixScaleX')
 PixScaleY = parser.getfloat('FLI', 'PixScaleY')
 LaserCalibDIT = parser.getfloat('FLI', 'LaserCalibDIT')
 LaserCalibIntensity = parser.getfloat('PLC', 'LaserCalibIntensity')
+LaserAOCalibIntensity = parser.getfloat('PLC', 'LaserAOCalibIntensity')
 LaserPosition = parser.getfloat('PLC', 'LaserPosition')
 
 CenteringTimeout = parser.getfloat('Starfinder', 'CenteringTimeout')
@@ -113,6 +114,7 @@ def centre_on_target(kao='NO_AO'):
                 # Check if enough light is on the WFS for precise centering
                 if verify_centering() == 0:
                     # Start WFS centering procedure
+                    # TODO set WFS exptime
                     aocontrol.wfs_centering(tt_threshold=TTSlopeThreshold)
                     request_manual_centering(False)
 
@@ -223,6 +225,10 @@ def center_on_laser():
             aocontrol.tip_tilt_offset(CenterX - x, 0)
 
     # Precise centering with WFS
+    aocontrol.emgain_off()
+
+    laser.set_intensity(LaserAOCalibIntensity)
+
     aocontrol.wfs_centering(TTSlopeThreshold)
 
     return 0
