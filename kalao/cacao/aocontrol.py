@@ -242,11 +242,22 @@ def set_emgain_tmux(egain=1):
 
 
 def set_emgain_fps(egain=1):
+    """
+        Set the EM gain of the Nuvu WFS camera.
 
+        :param egain: EM gain to set. 1 by default for no gain.
+        :return:
+        """
     _set_fps_intvalue('nuvu_acquire-1', 'emgain', str(egain))
 
 
-def set_exptime_fps(exptime=1):
+def set_exptime_fps(exptime=0):
+    """
+    Set the exposure time of the Nuvu WFS camera.
+
+    :param exptime: exposure time to set in milliseconds. 0 by default for highest frame rate.
+    :return:
+    """
 
     _set_fps_floatvalue('nuvu_acquire-1', 'exposuretime', str(exptime))
 
