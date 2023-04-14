@@ -284,15 +284,26 @@ def get_flow_threshold_time(flow_threshold, beck=None):
     df = pd.DataFrame(
             database.get_monitoring({'flow_value'}, 1500)['flow_value'])
 
-    # Search for last occurence of current status
-    switch_index = df[df['values'] > flow_threshold].first_valid_index() - 1
+    # Verify if at least one value is above threshold
+    if (df['values'] > flow_threshold).any():
+        # Search for last occurrence of current status
+        switch_index = df[df['values'] > flow_threshold].first_valid_index() - 1
+    else:
+        switch_index = -9
+
     if switch_index == -1:
         # flow is back above threshold
         elapsed_time = 0
     else:
-        switch_time = df.loc[
-                df[df['values'] > flow_threshold].first_valid_index() -
-                1]['time_utc']
+
+        if switch_index == -9:
+            # If no valid value use the oldest available time as switch. May not be valid on day change.
+            switch_time = df.iloc[-1]['time_utc']
+
+        else:
+            switch_time = df.loc[
+                    df[df['values'] > flow_threshold].first_valid_index() -
+                    1]['time_utc']
 
         elapsed_time = (kalao_time.now() - switch_time.replace(
                 tzinfo=datetime.timezone.utc)).total_seconds()
