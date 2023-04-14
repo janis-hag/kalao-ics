@@ -174,6 +174,11 @@ def tungsten_FLAT(**seq_args):
     #     database.store_obs_log({'sequencer_status': 'ERROR'})
     #     return -1
 
+    if aocontrol.emgain_off() == -1:
+        system.print_and_log("Error: failed to disable EM gain on WFS")
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
     if filter_list is None:
         filter_list = DefaultFlatList
 
@@ -317,6 +322,11 @@ def sky_FLAT(**seq_args):
     if q is None:
         # TODO verify which arguments are actually needed.
         system.print_and_log('Missing keyword in flat function call')
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
+    if aocontrol.emgain_off() == -1:
+        system.print_and_log("Error: failed to disable EM gain on WFS")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
 
