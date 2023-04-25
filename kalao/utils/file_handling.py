@@ -154,7 +154,7 @@ def update_db_from_telheader():
                 'tel_windir': 'ESO TEL AMBI WINDDIR',
                 'tel_windsp': 'ESO TEL AMBI WINDSP',
                 'tel_led_status': 'ESO TEL LED',
-                'OBJECT': 'OBJECT',
+                'object': 'OBJECT',
         }
 
         # Fill the actual values into the dictionary

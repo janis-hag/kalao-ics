@@ -10,6 +10,10 @@ obs_type:
   short:
   long: k_lmpflt/k_aocal/k_trgobs/k_dark/k_skyflt
   unit:
+object:
+  short: Target name
+  long: Name of current target
+  unit:
 target:
   short: Target name
   long: Name of current target
