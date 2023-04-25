@@ -156,11 +156,13 @@ def update_db_from_telheader():
                 'tel_led_status': 'ESO TEL LED',
                 'OBJECT': 'OBJECT',
         }
-        #target, obs_type
+
+        # Fill the actual values into the dictionary
         for log_key, header_key in log_header_dic.items():
-            database.store_obs_log({
-                    log_key: telescope_header_df.value.loc[header_key]
-            })
+            log_header_dic[log_key] = telescope_header_df.value.loc[header_key]
+
+        # Store values in db
+        database.store_obs_log({log_header_dic})
 
         return 0
 
