@@ -162,7 +162,7 @@ def update_db_from_telheader():
             log_header_dic[log_key] = telescope_header_df.value.loc[header_key]
 
         # Store values in db
-        database.store_obs_log({log_header_dic})
+        database.store_obs_log(log_header_dic)
 
         return 0
 
