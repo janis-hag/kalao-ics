@@ -357,6 +357,10 @@ def sky_FLAT(**seq_args):
         q.get()
         return
 
+    if waitfortracking() == -1:
+        database.store_obs_log({'sequencer_status': 'ERROR'})
+        return -1
+
     current_filter = filter_list[0]
     dit_list = tungsten.get_flat_dits()
 
@@ -710,6 +714,7 @@ def waitfortracking(**seq_args):
                 collection_name='obs_log',
                 key='tracking_status')['tracking_status']
         if tracking_status == 'TRACKING':
+            file_handling.update_db_from_telheader()
             return 0
         time.sleep(PointingWaitTime)
 

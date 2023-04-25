@@ -96,14 +96,14 @@ slopes_flux_subaperture:
   group: SHWFS slopes
 
 slopes_residual_pix:
-  short: WFS rms error (pix)
+  short: WFS rms error
   long: WFS rms residuals in pixels
   unit: pix
   main_gui: 0 # main_gui: 2
   group: SHWFS slopes
 
 slopes_residual_arcsec:
-  short: WFS rms error (as)
+  short: WFS rms error
   long: WFS rms residuals in arcsec
   unit: arcsec
   main_gui: 2 # main_gui: 2

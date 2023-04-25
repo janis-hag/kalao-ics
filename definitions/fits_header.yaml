@@ -66,12 +66,12 @@
 - keyword: RA
   keygroup: Obs_log
   value: ra
-  comment: No   comment
+  comment: No comment
 
 - keyword: DEC
   keygroup: Obs_log
   value: dec
-  comment: No   comment
+  comment: No comment
 
 - keyword: EQUINOX
   keygroup: Obs_log

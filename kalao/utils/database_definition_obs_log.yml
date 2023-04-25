@@ -26,6 +26,10 @@ target_ra:
   short: Target RA
   long: Target right ascension
   unit:
+target_spt:
+  short: Target SpT
+  long: Target spectral type
+  unit:
 tracking_status:
   short: Status of the tracking
   long: TRACKING/CENTERING/IDLE
@@ -166,3 +170,65 @@ filterwheel_log:
   short: Filterwheel log
   long: Log output of the filterwheel
   unit: text
+
+
+# TEL
+tel_focus_z:
+  short: M2 focus
+  long: M2 position in Z [mm]
+  unit: mm
+
+tel_mp_ie:
+  short: PM elevation offset error
+  long: Pointing model elevation offset error
+  unit: None
+
+tel_mp_ia:
+  short: PM azimuth offset error
+  long: Pointing model azimuth offset error
+  unit: None
+
+tel_m1_temp:
+  short: M1 temperature
+  long: M1 temperature
+  unit: °C
+
+tel_m2_temp:
+  short: M2 temperature
+  long: M2 temperature
+  unit: °C
+
+tel_ambi_dewp:
+  short: Dew point
+  long: Dew point
+  unit: °C
+
+tel_ambi_pressure:
+  short: Amtmospheric pressure
+  long: Amtmospheric pressure
+  unit: hPa
+
+tel_ambi_relhum:
+  short: Relative humidity
+  long: Relative humidity
+  unit: \%
+
+tel_ambi_temp:
+  short: Ambient temperature
+  long: Ambient temperature
+  unit: °C
+
+tel_windir:
+  short: Wind direction
+  long: Wind direction
+  unit: None
+
+tel_windsp:
+  short: Wind speed
+  long: Wind speed
+  unit: m/s
+
+tel_led_status:
+  short: tube led [red|blue|both|off]
+  long: tube led [red|blue|both|off]
+  unit: None

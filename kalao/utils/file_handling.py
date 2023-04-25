@@ -127,6 +127,47 @@ def save_tmp_image(image_path, sequencer_arguments=None):
         return -1
 
 
+def update_db_from_telheader():
+    """
+    Updates the obs_log database with the values from the telescope header
+    :return:
+    """
+
+    telescope_header_df, header_path = _get_last_telescope_header()
+    if telescope_header_df is not None:
+        telescope_header_df = telescope_header_df.set_index('keyword')
+
+        log_header_dic = {
+                'target_ra': 'ESO TEL ALPHA',
+                'target_dec': 'ESO TEL DELTA',
+                'target_magnitude': 'ESO OBS TARG MV',
+                'target_spt': 'ESO OBS TARG SP',
+                'tel_focus_z': 'ESO TEL FOCU Z',
+                'tel_mp_ie': 'ESO TEL MP IE',
+                'tel_mp_ia': 'HIERARCH ESO TEL MP IA',
+                'tel_m1_temp': 'ESO TEL M1 TEMP',
+                'tel_m2_temp': 'ESO TEL M2 TEMP',
+                'tel_ambi_dewp': 'ESO TEL AMBI DP',
+                'tel_ambi_pressure': 'ESO TEL AMBI PRESS',
+                'tel_ambi_relhum': 'ESO TEL AMBI RHUMP',
+                'tel_ambi_temp': 'ESO TEL AMBI TEMP',
+                'tel_windir': 'ESO TEL AMBI WINDDIR',
+                'tel_windsp': 'ESO TEL AMBI WINDSP',
+                'tel_led_status': 'ESO TEL LED',
+                'OBJECT': 'OBJECT',
+        }
+        #target, obs_type
+        for log_key, header_key in log_header_dic.items():
+            database.store_obs_log({
+                    log_key: telescope_header_df.value.loc[header_key]
+            })
+
+        return 0
+
+    else:
+        return -1
+
+
 def update_header(image_path, sequencer_arguments=None):
     """
     Updates the image header with values from the observing, monitoring, and telemetry logs.
