@@ -129,7 +129,8 @@ def save_tmp_image(image_path, sequencer_arguments=None):
 
 def update_db_from_telheader():
     """
-    Updates the obs_log database with the values from the telescope header
+    Updates the obs_log database with the values from the telescope header.
+
     :return:
     """
 
