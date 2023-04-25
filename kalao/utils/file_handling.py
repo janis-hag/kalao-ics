@@ -144,7 +144,7 @@ def update_db_from_telheader():
                 'target_spt': 'ESO OBS TARG SP',
                 'tel_focus_z': 'ESO TEL FOCU Z',
                 'tel_mp_ie': 'ESO TEL MP IE',
-                'tel_mp_ia': 'HIERARCH ESO TEL MP IA',
+                'tel_mp_ia': 'ESO TEL MP IA',
                 'tel_m1_temp': 'ESO TEL M1 TEMP',
                 'tel_m2_temp': 'ESO TEL M2 TEMP',
                 'tel_ambi_dewp': 'ESO TEL AMBI DP',
