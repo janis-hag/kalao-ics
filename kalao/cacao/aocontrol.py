@@ -405,7 +405,7 @@ def tip_tilt_offset(x_tip, y_tilt, absolute=False, stream_name='dm02disp04'):
         print('Limiting tilt to -2.45')
         new_tilt_value = -2.45
 
-    stream_data[:] = [new_tilt_value, new_tip_value]
+    stream_data[:] = [new_tip_value, new_tilt_value]
 
     stream_shm.set_data(stream_data.astype(stream_shm.nptype))
 
@@ -590,7 +590,7 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
                 print('Limiting tip to -2.45')
                 new_tilt_value = -2.45
 
-        stream_data[:] = [new_tilt_value, new_tip_value]
+        stream_data[:] = [new_tip_value, new_tilt_value]
         print(f'Residual tip = {tip_residual}, Residual tilt = {tilt_residual}, previous tip_offset = {tip_offset}, previous tilt_offset = {tilt_offset}, {new_tip_value=}, {new_tilt_value=}'
               )
         stream_shm.set_data(stream_data.astype(stream_shm.nptype))
