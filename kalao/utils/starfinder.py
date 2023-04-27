@@ -201,9 +201,13 @@ def center_on_laser():
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return
 
+    time.sleep(5)
+    print('Resetting tip tilt to 0')
     # Reset tip tilt offset to 0
     aocontrol.tip_tilt_offset(0, 0, absolute=True)
 
+    time.sleep(5)
+    print('Resetting stream to 0')
     # Reset tip tilt stream to 0
     aocontrol.reset_stream("dm02disp")
 
@@ -217,6 +221,9 @@ def center_on_laser():
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
         x, y = find_star_custom_algo(image_path, spot_size=7, estim_error=0.05,
                                      nb_step=5, laser_spot=True)
+
+        time.sleep(5)
+        print('Going to move calib unit')
 
         if x != -1 and y != -1:
             calib_unit.pixel_move(CenterY - y)
