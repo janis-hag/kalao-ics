@@ -262,7 +262,7 @@ def set_exptime_fps(exptime=0):
     _set_fps_floatvalue('nuvu_acquire-1', 'exposuretime', str(exptime))
 
 
-def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
+def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
                                       keep_existing_flat=False,
                                       stream_name='aol1_mgainfact'):
     """
@@ -275,6 +275,13 @@ def linear_low_pass_modal_gain_filter(cut_off, last_mode=None,
     :param stream_name: name of the milk stream where the gain factor are stored
     :return:
     """
+
+    if cut_off is None and last_mode is None:
+        return -1
+    elif cut_off is None:
+        cut_off = last_mode
+    elif last_mode is None:
+        last_mode = cut_off
 
     exists, stream_path = check_stream(stream_name)
 
