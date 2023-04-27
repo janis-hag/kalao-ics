@@ -556,9 +556,6 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
         tip_residual = fps_slopes.get_param_value_float('slope_y')
         tilt_residual = fps_slopes.get_param_value_float('slope_x')
 
-        print(f'Residual tip = {tip_residual}, Residual tilt = {tilt_residual}, tip_offset = {tip_offset}, tilt_offset = {tilt_offset}'
-              )
-
         if np.abs(tip_residual) < tt_threshold:
             tip_centered = True
             new_tip_value = tip_offset
@@ -587,7 +584,8 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
                 new_tilt_value = -2.45
 
         stream_data[:] = [new_tilt_value, new_tip_value]
-
+        print(f'Residual tip = {tip_residual}, Residual tilt = {tilt_residual}, previous tip_offset = {tip_offset}, previous tilt_offset = {tilt_offset}, {new_tip_value=}, {new_tilt_value=}'
+              )
         stream_shm.set_data(stream_data.astype(stream_shm.nptype))
 
         time.sleep(1)
