@@ -586,9 +586,6 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
                 print('Limiting tip to -2.45')
                 new_tilt_value = -2.45
 
-        time.sleep(5)
-        print('Applying new offsets on tip tilt')
-
         stream_data[:] = [new_tilt_value, new_tip_value]
 
         stream_shm.set_data(stream_data.astype(stream_shm.nptype))
