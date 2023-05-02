@@ -36,6 +36,8 @@ parser.read(config_path)
 TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 MaxTelOffload = parser.getfloat('AO', 'MaxTelOffload')
+YSlope2Tip = parser.getfloat('AO', 'YSlope2Tip')
+XSlope2Tilt = parser.getfloat('AO', 'XSlope2Tilt')
 
 CenteringTimeout = parser.getfloat('Starfinder', 'CenteringTimeout')
 
@@ -560,8 +562,9 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
 
         tip_offset, tilt_offset = stream_data
 
-        tip_residual = fps_slopes.get_param_value_float('slope_y')
-        tilt_residual = fps_slopes.get_param_value_float('slope_x')
+        tip_residual = fps_slopes.get_param_value_float('slope_y') * YSlope2Tip
+        tilt_residual = fps_slopes.get_param_value_float(
+                'slope_x') * XSlope2Tilt
 
         if np.abs(tip_residual) < tt_threshold:
             tip_centered = True
@@ -582,7 +585,7 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
 
         else:
             # The measured slope  in tilt is about half the value of the offset needed to compensate for it
-            new_tilt_value = tilt_offset + tilt_residual
+            new_tilt_value = tilt_offset - tilt_residual
             if new_tilt_value > 2.45:
                 print('Limiting tip to 2.45')
                 new_tilt_value = 2.45
