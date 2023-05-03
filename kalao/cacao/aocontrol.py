@@ -604,6 +604,50 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
     return 0
 
 
+def dm_poke_sequence(timestep=0.1):
+
+    dmdisp = SHM("dm01disp09")
+
+    #initial_shape = dmdisp.get_data(check=False)
+    dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * 1 / 2
+    dmdisp.set_data(dm_array, True)
+
+    # Two round one with pokes up and one with pokes down
+    for i in range(2):
+        poke = 1 / 2 + 0.25 - 0.5 * i
+
+        for iy, ix in np.ndindex(dmdisp.shape):
+            print(iy, ix)
+            dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * 1 / 2
+            dm_array[iy, ix] = poke
+            dmdisp.set_data(dm_array, True)
+            time.sleep(timestep)
+
+    # Clear DM before exiting
+    dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
+    dmdisp.set_data(dm_array, True)
+
+
+def dm_flat_poke(timestep=0.1):
+
+    dmdisp = SHM("dm01disp09")
+
+    #initial_shape = dmdisp.get_data(check=False)
+    dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * 1 / 2
+    dmdisp.set_data(dm_array, True)
+
+    # Two round one with pokes up and one with pokes down
+    for i in np.arange(0, 1, 1 / 20):
+        dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * i
+
+        dmdisp.set_data(dm_array, True)
+        time.sleep(timestep)
+
+    # Clear DM before exiting
+    dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
+    dmdisp.set_data(dm_array, True)
+
+
 def _set_fps_floatvalue(fps_name, key, value):
     # TODO implement
     fps_exists, fps_path = check_fps(fps_name)
