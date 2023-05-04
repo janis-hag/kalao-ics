@@ -929,6 +929,7 @@ commandDict = {
         "ABORT": any_abort,
         "INSTRUMENTCHANGE": instrument_change,
         "THE_END": end,
+        "K_ENDCAL": end,
         #"kal_AO_loop_calibration":      AO_loop_calibration
         # "kal_dark":                     dark,
         # "kal_dark_abort":               dark_abort,
