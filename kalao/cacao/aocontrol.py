@@ -88,6 +88,9 @@ def close_loop():
     :return:
     """
 
+    # code not yet ready
+    return 0
+
     looprun_exists, looprun_fps_path = check_fps("mfilt-1")
 
     if not looprun_exists:
