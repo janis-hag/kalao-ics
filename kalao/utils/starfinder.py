@@ -121,6 +121,8 @@ def centre_on_target(kao='NO_AO'):
                     return 0
                 else:
                     # Retry centering
+                    system.print_and_log(
+                            'No light on WFS, re-centering with FLI')
                     continue
 
             else:

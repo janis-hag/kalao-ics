@@ -557,7 +557,7 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
 
     while not (tip_centered and tilt_centered):
         if time.time() > timeout_time:
-            system.print_and_log('ERROR centering timeout')
+            system.print_and_log('ERROR WFS centering timeout')
 
             return -1
 
