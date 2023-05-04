@@ -222,6 +222,16 @@ def center_on_laser():
             calib_unit.pixel_move(CenterY - y)
             print('Moved calib unit')
             time.sleep(3)
+
+        # Check the new x position after the calib unit has been moved
+        rValue, image_path = camera.take_image(dit=LaserCalibDIT)
+
+        # X can be changed by the ttm_tip_offset value
+        # Y can be changed by the calib_unit position or ttm_tilt_offset value
+        x, y = find_star_custom_algo(image_path, spot_size=7, estim_error=0.05,
+                                     nb_step=5, laser_spot=True)
+
+        if x != -1 and y != -1:
             aocontrol.tip_tilt_offset(CenterX - x, 0)
 
     # Precise centering with WFS
