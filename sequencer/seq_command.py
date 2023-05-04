@@ -830,8 +830,14 @@ def end(**seq_args):
         # TODO handle error
         system.print_and_log(rValue)
 
+    # Set to waiting for the Euler synchro to be released
+    database.store_obs_log({'sequencer_status': 'WAITING'})
+
     database.store_obs_log({'tracking_manual_centering': False})
 
+    time.sleep(2)
+
+    database.store_obs_log({'sequencer_status': 'BUSY'})
     # Generate darks for this night
     starfinder.generate_night_darks()
 
