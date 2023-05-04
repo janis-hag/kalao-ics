@@ -575,6 +575,12 @@ def _dynamic_cards_update(header_df, seq_args=None):
 
 
 def directory_summary_df(filepath='.'):
+    """
+    Creates a dataframe summarising the header content of all the fits files in a folder.
+
+    :param filepath: path to the folder to be summarised
+    :return:
+    """
 
     dirlist = glob.glob(filepath + os.sep + '*.fits')
 

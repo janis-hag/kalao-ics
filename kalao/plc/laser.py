@@ -171,7 +171,6 @@ def set_intensity(intensity=0.4, beck=None):
     :return: value of the new intensity
     """
 
-    # TODO switch off EMGAIN
     aocontrol.emgain_off()
 
     # Connect to OPCUA server
