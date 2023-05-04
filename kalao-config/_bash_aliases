@@ -3,7 +3,7 @@ export XAUTHORITY=~/.Xauthority
 export CUDADIR=/usr/local/cuda
 export PATH=${PATH}:/usr/local/cuda/bin
 export OPENBLASDIR=/usr/lib/x86_64-linux-gnu/openblas-pthread
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/magma/lib/pkgconfig
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/magma/lib/pkgconfig:/opt/OpenBLAS/lib/pkgconfig
 
 export MILK_SHM_DIR=/tmp/milk
 mkdir -p $MILK_SHM_DIR
