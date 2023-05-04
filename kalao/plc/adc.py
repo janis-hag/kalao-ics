@@ -9,13 +9,19 @@ adc.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from . import core
 import numbers
+import numpy as np
 from opcua import ua
 from time import sleep
 from configparser import ConfigParser
 from pathlib import Path
 import os
+
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+
+from kalao.utils import database
+from kalao.plc import core
 
 config_path = os.path.join(
         Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
@@ -23,7 +29,96 @@ config_path = os.path.join(
 parser = ConfigParser()
 parser.read(config_path)
 
+ADC1_MAX_ANGLE = parser.getfloat('PLC', 'ADC1_MAX_ANGLE')
+ADC2_MAX_ANGLE = parser.getfloat('PLC', 'ADC2_MAX_ANGLE')
+
 adc_name = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
+
+
+def config_adc(beck=None):
+    # Connect to OPCUA server
+    beck, disconnect_on_exit = core.check_beck(beck)
+
+    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:cfg,4:lrEquinox
+    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:cfg,4:lrLatitude
+    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:cfg,4:lrLongitude
+    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:dec
+    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:equinox
+    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:latitude
+    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:longitude
+    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:ra
+    #ctrl.lrTemperature
+    #ctrl.lrPressure – Atmospheric Pressure in mbar
+
+    obs_log = database.get_all_last_obs_log()
+    star_ra = obs_log['target_ra']['values'][0]
+    star_dec = obs_log['target_dec']['values'][0]
+
+    c = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree, frame='icrs')
+
+    # Converting ra into hhmmss.mm and dec into ddmmss.mm format
+    star_ra = np.round(c.ra.hms[0] * 10000 + c.ra.hms[1] * 100 + c.ra.hms[2],
+                       2)
+    star_dec = np.round(
+            c.dec.dms[0] * 10000 + c.dec.dms[1] * 100 + c.dec.dms[2], 2)
+
+    for i in [1, 2]:
+        #_set_value(i, 'stAstroCoord.equinox', star_ra, beck=beck)
+        _set_value(i, 'stAstroCoord.ra', star_ra, beck=beck)
+        _set_value(i, 'stAstroCoord.dec', star_dec, beck=beck)
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return 0
+
+
+def set_max_disp(beck=None):
+
+    beck, disconnect_on_exit = core.check_beck(beck)
+
+    rotate(1, position=ADC1_MAX_ANGLE, beck=beck)
+    rotate(2, position=ADC2_MAX_ANGLE, beck=beck)
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return 0
+
+
+def set_min_disp(beck=None):
+    beck, disconnect_on_exit = core.check_beck(beck)
+
+    min_adc1_angle = ADC1_MAX_ANGLE - 180
+    min_adc2_angle = ADC2_MAX_ANGLE + 180
+
+    rotate(1, position=min_adc1_angle, beck=beck)
+    rotate(2, position=min_adc2_angle, beck=beck)
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return 0
+
+
+def _set_value(adc_id, value_path, value, beck=None):
+    beck, disconnect_on_exit = core.check_beck(beck)
+
+    value_node = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + "." +
+                               value_path)
+    value_node.set_attribute(
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                    ua.Variant(float(value),
+                               value_node.get_data_type_as_variant_type())))
+
+    sleep(0.1)
+    new_value = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + "." +
+                              value_path).get_value()
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return new_value
 
 
 def rotate(adc_id, position=0, beck=None):
@@ -202,7 +297,6 @@ def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None,
 
 
 def send_execute(motor_bExecute):
-
     motor_bExecute.set_attribute(
             ua.AttributeIds.Value,
             ua.DataValue(
