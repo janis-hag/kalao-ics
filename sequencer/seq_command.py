@@ -426,7 +426,7 @@ def target_observation(**seq_args):
     :return: nothing
     """
 
-    # TODO check for "'centrage', 'non'"
+    # TODO check for "'centering', 'non'"
     # TODO verify if we are already centred from previous observation
 
     q = seq_args.get('q')
@@ -434,7 +434,7 @@ def target_observation(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
     kao = seq_args.get('kao').upper()
-    centering = seq_args.get('centrage')
+    centering = seq_args.get('centering')
 
     database.store_obs_log({'tracking_status': 'CENTERING'})
 
@@ -772,9 +772,7 @@ def instrument_change(**seq_args):
 
     :return: nothing
     """
-    # two cancel are done to avoid concurrency problems
     # TODO set EM gain to 1
-    # TODO start dark sequence
 
     database.store_obs_log({'tracking_status': 'IDLE'})
 
@@ -809,9 +807,7 @@ def end(**seq_args):
 
     :return: nothing
     """
-    # two cancel are done to avoid concurrency problems
     # TODO set EM gain to 1
-    # TODO start dark sequence
 
     database.store_obs_log({'tracking_status': 'IDLE'})
 
