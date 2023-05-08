@@ -630,6 +630,10 @@ def dm_poke_sequence(timestep=0.1):
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
     dmdisp.set_data(dm_array, True)
 
+    # Clear DM before exiting
+    dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
+    dmdisp.set_data(dm_array, True)
+
 
 def dm_flat_poke(timestep=0.1):
 
@@ -647,6 +651,8 @@ def dm_flat_poke(timestep=0.1):
         time.sleep(timestep)
 
     # Clear DM before exiting
+    dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
+    dmdisp.set_data(dm_array, True)
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
     dmdisp.set_data(dm_array, True)
 
