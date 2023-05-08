@@ -636,11 +636,11 @@ def dm_flat_poke(timestep=0.1):
     dmdisp = SHM("dm01disp09")
 
     #initial_shape = dmdisp.get_data(check=False)
-    dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * 1 / 2
-    dmdisp.set_data(dm_array, True)
+    #dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * 1 / 2
+    #dmdisp.set_data(dm_array, True)
 
-    # Two round one with pokes up and one with pokes down
     for i in np.arange(0, 1, 1 / 20):
+        print(i)
         dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * i
 
         dmdisp.set_data(dm_array, True)
