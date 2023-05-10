@@ -102,7 +102,7 @@
 
 - keyword: HIERARCH ESO OBS TARGET NAME
   keygroup: Obs_log
-  value: target
+  value: object
   comment: Target name
 
 #- keyword: obscatg
