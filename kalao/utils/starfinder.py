@@ -693,10 +693,12 @@ def get_star_coord():
 
 def get_tel_coord():
 
-    tel_ra = database.get_latest_record('obs_log',
-                                        key='telescope_ra')['telescope_ra']
-    tel_dec = database.get_latest_record('obs_log',
-                                         key='telescope_dec')['telescope_dec']
+    tel_ra = float(
+            database.get_latest_record('obs_log',
+                                       key='telescope_ra')['telescope_ra'])
+    tel_dec = float(
+            database.get_latest_record('obs_log',
+                                       key='telescope_dec')['telescope_dec'])
 
     # TODO verify star_ra and star_dec validity
 
