@@ -46,6 +46,14 @@ tracking_manual_centering:
   short: Manual centering flag
   long: Flag do indicate if manual centering is needed
   unit: boolean
+telescope_dec:
+  short: Telescope DEC
+  long: Telescope declination
+  unit:
+telescope_ra:
+  short: Telescope RA
+  long: Telescope right ascension
+  unit:
 ao_log:
   short: AO system log
   long: AO system log
