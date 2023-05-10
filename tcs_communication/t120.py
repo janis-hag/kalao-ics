@@ -24,7 +24,7 @@ from configparser import ConfigParser
 from tcs_communication.pyipc import pymod_libipc as ipc
 #import tcs_communication.pygop as gop
 
-from kalao.utils import database, kalao_time
+from kalao.utils import database, kalao_time, starfinder
 from sequencer import system
 
 # Read config file
@@ -84,6 +84,8 @@ def send_offset(delta_az, delta_alt):
 
     offset_cmd = '@offset ' + str(delta_az) + ' ' + str(delta_alt)
     ipc.send_cmd(offset_cmd, connection_timeout, altaz_timeout)
+
+    #_update_db_ra_dec_offsets(delta_alt, delta_az)
 
     return socketId
 
@@ -157,7 +159,11 @@ def get_focus_value():
 
 
 def test_connection():
+    """
+    Test de connection to the T120 telecope server
 
+    :return:
+    """
     _t120_print_and_log(f'Sending show i')
 
     host = database.get_latest_record(
@@ -172,6 +178,28 @@ def test_connection():
     ipc.send_cmd('show i', connection_timeout, connection_timeout)
 
     return socketId
+
+
+def _update_db_ra_dec_offsets(delta_alt, delta_az):
+    """
+    Update the telescope RA/DEC values in the database to take into account the new offsets
+
+    :param ra_offset: ra offset which has been sent to the telescope
+    :param dec_offset: ra offset which has been sent to the telescope
+    :return:
+    """
+    latest_ra = database.get_latest_record('obs_log',
+                                           key='telescope_ra')['telescope_ra']
+    latest_dec = database.get_latest_record(
+            'obs_log', key='telescope_dec')['telescope_dec']
+
+    # TODO convert alt/az offset into ra/dec
+    coord = starfinder.compute_altaz_offset(delta_alt, delta_az)
+
+    database.store_obs_log({'telescope_ra': coord.ra})
+    database.store_obs_log({'telescope_dec': coord.dec})
+
+    return 0
 
 
 # def get_status():

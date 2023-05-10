@@ -15,7 +15,12 @@ import time
 from pathlib import Path
 import pandas as pd
 
+from astropy import wcs
+from astropy import units as u
+from astropy.coordinates import EarthLocation, SkyCoord, AltAz
 from astropy.stats import sigma_clipped_stats
+from astropy.time import Time
+
 from photutils.detection import DAOStarFinder
 
 # add the necessary path to find the folder kalao for import
@@ -60,6 +65,10 @@ WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
 WFSCentringPrecision = parser.getfloat('AO', 'WFSCentringPrecision')
 
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
+
+EulerLatitude = parser.getfloat('Euler', 'Latitude')
+EulerLongitude = parser.getfloat('Euler', 'Longitude')
+EulerAltitude = parser.getfloat('Euler', 'Altitude')
 
 
 def centre_on_target(kao='NO_AO'):
@@ -646,3 +655,72 @@ def generate_night_darks(filepath=None):
                     hdul.flush()
 
     return 0
+
+
+def generate_wcs():
+
+    # Create a new WCS object.  The number of axes must be set
+    # from the start
+    w = wcs.WCS(naxis=2)
+
+    # Reference pixel value
+    w.wcs.crpix = [CenterX, CenterY]
+
+    # Pixel scale
+    w.wcs.cdelt = np.array([PixScaleX, PixScaleY])
+
+    # RA, DEC at reference
+    #w.wcs.crval = [c.ra.to_value(), c.dec.to_value()]
+    w.wcs.crval = [0, -90]
+
+    # Gnomonic (TAN) projection
+    w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+
+
+def get_star_coord():
+
+    star_ra = database.get_latest_record('obs_log',
+                                         key='target_ra')['target_ra']
+    star_dec = database.get_latest_record('obs_log',
+                                          key='target_dec')['target_dec']
+
+    # TODO verify star_ra and star_dec validity
+
+    c = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree, frame='ICRS')
+
+    return c
+
+
+def get_tel_coord():
+
+    tel_ra = database.get_latest_record('obs_log',
+                                        key='telescope_ra')['telescope_ra']
+    tel_dec = database.get_latest_record('obs_log',
+                                         key='telescope_dec')['telescope_dec']
+
+    # TODO verify star_ra and star_dec validity
+
+    c = SkyCoord(ra=tel_ra * u.degree, dec=tel_dec * u.degree, frame='ICRS')
+
+    return c
+
+
+def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
+
+    #timezone_zone = timezone('Chile/Continental')
+    # date of today time = zone.localize(dt.datetime.now())
+    # give location on the Earth observing_location = EarthLocation(lat=-lat*u.deg, lon=lng*u.deg, height = alt)
+
+    # TODO check coordinates
+    # La Silla coordinates
+    observing_location = EarthLocation(lat=EulerLatitude, lon=EulerLongitude,
+                                       height=EulerAltitude * u.m)
+    observing_time = Time('2017-02-05 20:12:18')
+
+    aa = AltAz(location=observing_location, obstime=observing_time)
+
+    coord = get_tel_coord().transform_to(aa).spherical_offsets_by(
+            alt_offset_arcsec * u.arcsec,
+            az_offset_arcsec * u.arcsec).transform_to('icrs')
+
+    return coord
