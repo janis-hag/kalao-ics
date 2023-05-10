@@ -196,8 +196,8 @@ def _update_db_ra_dec_offsets(delta_alt, delta_az):
     # TODO convert alt/az offset into ra/dec
     coord = starfinder.compute_altaz_offset(delta_alt, delta_az)
 
-    database.store_obs_log({'telescope_ra': coord.ra})
-    database.store_obs_log({'telescope_dec': coord.dec})
+    database.store_obs_log({'telescope_ra': coord.ra.value})
+    database.store_obs_log({'telescope_dec': coord.dec.value})
 
     return 0
 
