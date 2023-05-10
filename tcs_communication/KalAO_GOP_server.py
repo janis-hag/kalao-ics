@@ -161,8 +161,6 @@ def gop_server():
             args = dict(zip_longest(*[iter(commandList[1:])] * 2,
                                     fillvalue=""))
 
-            print(args)
-            #database.store_obs_log({'tcs_header_path': commandList[1]})
             database.store_obs_log({
                     'tcs_header_path': args['header'],
                     'telescope_ra': args['ra'],
@@ -170,15 +168,10 @@ def gop_server():
                     'tracking_status': 'TRACKING'
             })
 
-            # database.store_obs_log({'telescope_ra': args['ra']})
-            # database.store_obs_log({'telescope_dec': args['dec']})
-            # database.store_obs_log({'tracking_status': 'TRACKING'})
-            #
             gop_print_and_log("Received fits header path: " +
                               str(commandList[1]))
-            #gop_print_and_log("Send acknowledge and quit: " + str(message))
+
             gop.write(message)
-            #gop_print_and_log("Acknowledge sent")
 
         # elif commandList[0] == "STOPAO" or commandList[
         #         0] == "INSTRUMENTCHANGE" or commandList[0] == "NOTHING":
