@@ -161,6 +161,7 @@ def gop_server():
             args = dict(zip_longest(*[iter(commandList[1:])] * 2,
                                     fillvalue=""))
 
+            print(args)
             #database.store_obs_log({'tcs_header_path': commandList[1]})
             database.store_obs_log({'tcs_header_path': args['header']})
             database.store_obs_log({'telescope_ra': args['ra']})
