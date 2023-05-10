@@ -17,6 +17,7 @@ import socket
 from time import sleep
 from pathlib import Path
 from configparser import ConfigParser
+from itertools import zip_longest
 
 from kalao.interface import status
 from kalao.utils import database, kalao_time
@@ -157,7 +158,13 @@ def gop_server():
 
         elif commandList[0] == "ONTARGET":
             message = "/OK"
-            database.store_obs_log({'tcs_header_path': commandList[1]})
+            args = dict(zip_longest(*[iter(commandList[1:])] * 2,
+                                    fillvalue=""))
+
+            #database.store_obs_log({'tcs_header_path': commandList[1]})
+            database.store_obs_log({'tcs_header_path': args['header']})
+            database.store_obs_log({'telescope_ra': args['ra']})
+            database.store_obs_log({'telescope_dec': args['dec']})
             database.store_obs_log({'tracking_status': 'TRACKING'})
             gop_print_and_log("Received fits header path: " +
                               str(commandList[1]))
