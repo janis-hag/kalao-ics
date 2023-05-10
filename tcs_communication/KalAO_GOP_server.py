@@ -163,10 +163,17 @@ def gop_server():
 
             print(args)
             #database.store_obs_log({'tcs_header_path': commandList[1]})
-            database.store_obs_log({'tcs_header_path': args['header']})
-            database.store_obs_log({'telescope_ra': args['ra']})
-            database.store_obs_log({'telescope_dec': args['dec']})
-            database.store_obs_log({'tracking_status': 'TRACKING'})
+            database.store_obs_log({
+                    'tcs_header_path': args['header'],
+                    'telescope_ra': args['ra'],
+                    'telescope_dec': args['dec'],
+                    'tracking_status': 'TRACKING'
+            })
+
+            # database.store_obs_log({'telescope_ra': args['ra']})
+            # database.store_obs_log({'telescope_dec': args['dec']})
+            # database.store_obs_log({'tracking_status': 'TRACKING'})
+            #
             gop_print_and_log("Received fits header path: " +
                               str(commandList[1]))
             #gop_print_and_log("Send acknowledge and quit: " + str(message))
