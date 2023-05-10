@@ -686,7 +686,7 @@ def get_star_coord():
 
     # TODO verify star_ra and star_dec validity
 
-    c = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree, frame='ICRS')
+    c = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree, frame='icrs')
 
     return c
 
@@ -700,7 +700,7 @@ def get_tel_coord():
 
     # TODO verify star_ra and star_dec validity
 
-    c = SkyCoord(ra=tel_ra * u.degree, dec=tel_dec * u.degree, frame='ICRS')
+    c = SkyCoord(ra=tel_ra * u.degree, dec=tel_dec * u.degree, frame='icrs')
 
     return c
 
@@ -715,9 +715,8 @@ def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
     # La Silla coordinates
     observing_location = EarthLocation(lat=EulerLatitude, lon=EulerLongitude,
                                        height=EulerAltitude * u.m)
-    observing_time = Time('2017-02-05 20:12:18')
 
-    aa = AltAz(location=observing_location, obstime=observing_time)
+    aa = AltAz(location=observing_location, obstime=Time.now())
 
     coord = get_tel_coord().transform_to(aa).spherical_offsets_by(
             alt_offset_arcsec * u.arcsec,
