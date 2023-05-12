@@ -622,8 +622,11 @@ def get_exposure_times(filepath='.', exclude_types=['K_DARK']):
     else:
         if exclude_types is not None:
             for type_to_exclude in exclude_types:
-                directory_summary = directory_summary[
-                        directory_summary['ESO OBS TYPE'] != type_to_exclude]
+                # Handle the case where ESO OBS TYPE is undefined in all files
+                if 'ESO OBS TYPE' in directory_summary.keys():
+                    directory_summary = directory_summary[
+                            directory_summary['ESO OBS TYPE'] !=
+                            type_to_exclude]
 
         exposure_times = directory_summary['EXPTIME'].unique()
 
