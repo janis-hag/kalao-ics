@@ -12,6 +12,7 @@ aocontrol.py is part of the KalAO Instrument Control Software
 import numpy as np
 import time
 import libtmux
+import pandas as pd
 
 from CacaoProcessTools import fps, FPS_status
 from pyMilk.interfacing import isio_shmlib
@@ -20,6 +21,8 @@ from pyMilk.interfacing.isio_shmlib import SHM
 
 from kalao.cacao import telemetry
 from kalao.utils import database
+from kalao.fli import camera
+
 from tcs_communication import t120
 from sequencer import system
 
@@ -232,7 +235,6 @@ def emgain_off():
 
 
 def set_emgain_tmux(egain=1):
-
     server = libtmux.Server()
 
     try:
@@ -302,7 +304,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
             cut_off = len(mgainfact_array)
 
         if last_mode is None:
-            last_mode = len(mgainfact_array)  #-1
+            last_mode = len(mgainfact_array)  # -1
         elif last_mode < cut_off:
             last_mode = cut_off
             mgainfact_array[last_mode:] = 0
@@ -310,7 +312,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
             mgainfact_array[last_mode:] = 0
 
         if not cut_off == last_mode:
-            #down = np.linspace(1, 0, len(mgainfact_array) - cut_off + 2 - (len(mgainfact_array) - last_mode) )[1:-1]
+            # down = np.linspace(1, 0, len(mgainfact_array) - cut_off + 2 - (len(mgainfact_array) - last_mode) )[1:-1]
             down = np.linspace(1, 0, last_mode - cut_off + 2)[1:-1]
             mgainfact_array[cut_off:last_mode] = down
 
@@ -440,7 +442,7 @@ def tip_tilt_offset_bmc(x_tip, y_tilt, absolute=False):
 
     bmc_exists, bmc_fps_path = check_fps("bmc_display-01")
 
-    #fps_slopes = fps("shwfs_process")
+    # fps_slopes = fps("shwfs_process")
 
     if not bmc_exists:
         message = f'ERROR: {bmc_fps_path} is missing'
@@ -451,7 +453,7 @@ def tip_tilt_offset_bmc(x_tip, y_tilt, absolute=False):
     fps_bmc = fps("bmc_display-01")
 
     # TIP
-    #tip = fps_slopes.get_param_value_float('slope_y')
+    # tip = fps_slopes.get_param_value_float('slope_y')
     tip = fps_bmc.get_param_value_float('ttm_tip_offset')
 
     if absolute:
@@ -470,7 +472,7 @@ def tip_tilt_offset_bmc(x_tip, y_tilt, absolute=False):
 
     # TILT
 
-    #tilt = fps_slopes.get_param_value_float('slope_x')
+    # tilt = fps_slopes.get_param_value_float('slope_x')
     tilt = fps_bmc.get_param_value_float('ttm_tilt_offset')
 
     if absolute:
@@ -537,7 +539,7 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
     tilt_centered = False
 
     fps_slopes = fps("shwfs_process")
-    #fps_bmc = fps("bmc_display-01")
+    # fps_bmc = fps("bmc_display-01")
     stream_name = 'dm02disp04'
 
     stream_exists, stream_path = check_stream(stream_name)
@@ -551,7 +553,7 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
 
     stream_shm = SHM(stream_name)
 
-    #TODO verify that shwfs enough illuminated for centering
+    # TODO verify that shwfs enough illuminated for centering
 
     timeout_time = time.time() + CenteringTimeout
 
@@ -608,20 +610,20 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
 
 
 def dm_poke_sequence(timestep=0.1):
-
     dmdisp = SHM("dm01disp09")
 
-    #initial_shape = dmdisp.get_data(check=False)
-    dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * 1 / 2
+    # initial_shape = dmdisp.get_data(check=False)
+    dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
     dmdisp.set_data(dm_array, True)
 
     # Two round one with pokes up and one with pokes down
     for i in range(2):
-        poke = 1 / 2 + 0.25 - 0.5 * i
+        # poke = 1 / 2 + 0.25 - 0.5 * i - 0.5
+        poke = i - 1  # -1, 0
 
         for iy, ix in np.ndindex(dmdisp.shape):
             print(iy, ix)
-            dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * 1 / 2
+            dm_array = np.ones(dmdisp.shape, dmdisp.nptype) - i  # 0, 1
             dm_array[iy, ix] = poke
             dmdisp.set_data(dm_array, True)
             time.sleep(timestep)
@@ -635,26 +637,197 @@ def dm_poke_sequence(timestep=0.1):
     dmdisp.set_data(dm_array, True)
 
 
-def dm_flat_poke(timestep=0.1):
-
+def actuator_response_sequence(timestep=0.1):
     dmdisp = SHM("dm01disp09")
+    shwfs_slopes = SHM('shwfs_slopes')
 
-    #initial_shape = dmdisp.get_data(check=False)
-    #dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * 1 / 2
-    #dmdisp.set_data(dm_array, True)
+    initial_shape = dmdisp.get_data(check=False)
+    # dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
 
-    for i in np.arange(0, 1, 1 / 20):
-        print(i)
-        dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * i
+    # # Two round one with pokes up and one with pokes down
+    # for i in range(2):
+    #     #poke = 1 / 2 + 0.25 - 0.5 * i - 0.5
+    #     poke = i -1   # -1, 0
 
-        dmdisp.set_data(dm_array, True)
-        time.sleep(timestep)
+    response_sequence = None
+
+    for ix, iy in np.ndindex(dmdisp.shape):
+        print(ix, iy)
+        if ix in [0, 11] or iy in [
+                0, 11
+        ]:  # skip actuators at the edge, i.e. ix or iy equal to 0 or 11
+            continue
+
+        single_response = single_actuator_response(ix, iy, dmdisp,
+                                                   shwfs_slopes, timestep)
+        #
+        # print(iy, ix)
+        # dm_array = np.ones(dmdisp.shape, dmdisp.nptype) - i # 0, 1
+        # dm_array[iy, ix] = poke
+        # dmdisp.set_data(dm_array, True)
+        # time.sleep(timestep)
+        if response_sequence is None:
+            response_sequence = single_response
+        else:
+            response_sequence = pd.concat([response_sequence, single_response],
+                                          axis=1)
 
     # Clear DM before exiting
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
     dmdisp.set_data(dm_array, True)
+
+    # Clear DM before exiting
+    dmdisp.set_data(initial_shape, True)
+
+    return response_sequence
+
+
+def single_actuator_response(ix, iy, dmdisp, shwfs_slopes, timestep=1):
+    #    Actuator 2,3 = > subaps: 1,2 1,3 2,2 2,3
+    #    ix, iy => ix,iy ix,iy-1 ix-1,iy-1, ix-1, iy
+
+    br = (ix, iy)
+    bl = (ix, iy - 1)
+    tl = (ix - 1, iy - 1)
+    tr = (ix - 1, iy)
+
+    br2 = (ix, iy + 11)
+    bl2 = (ix, iy - 1 + 11)
+    tl2 = (ix - 1, iy - 1 + 11)
+    tr2 = (ix - 1, iy + 11)
+
+    dm_array = -0.5 * np.ones(dmdisp.shape, dmdisp.nptype)
+
+    slopes_xy_list = []
+
+    slopes_stack = None
+
+    for poke_amplitude in np.arange(-0.5, 0.51, 1 / 20):
+
+        dm_array[ix, iy] = poke_amplitude
+        dmdisp.set_data(dm_array, True)
+        dmdisp.set_data(dm_array, True)
+
+        slopes_data = shwfs_slopes.get_data(check=False)
+        if slopes_stack is None:
+            slopes_stack = slopes_data
+        else:
+            slopes_stack = np.dstack((slopes_stack, slopes_data))
+
+        slopes_xy_list.append({
+                'poke_amplitude': np.round(poke_amplitude, 3),
+                'tl': slopes_data[tl],
+                'tl2': slopes_data[tl2],
+                'bl': slopes_data[bl],
+                'bl2': slopes_data[bl2],
+                'tr': slopes_data[tr],
+                'tr2': slopes_data[tr2],
+                'br': slopes_data[br],
+                'br2': slopes_data[br2],
+        })
+
+        time.sleep(timestep)
+
+    slopes_xy = pd.DataFrame.from_records(slopes_xy_list)
+
+    # Removing zero-offset in order to keep only positive values
+    for column in slopes_xy.columns[1:]:  # excluding col. 0: poke_amplitude
+        slopes_xy[column] = slopes_xy[column] - slopes_xy[column].min()
+
+        if slopes_xy[column][1:10].mean() > slopes_xy[column][10:].mean(
+        ):  # invert order if values are decreasing
+            slopes_xy[column] = slopes_xy[column].values[::-1]
+
+    slopes_xy = pd.concat([
+            slopes_xy.poke_amplitude, slopes_xy[list(slopes_xy)[1:]].sum(
+                    axis=1).rename(str(ix) + '_' + str(iy))
+    ], axis=1).set_index('poke_amplitude')
+
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
     dmdisp.set_data(dm_array, True)
+
+    return slopes_xy
+
+
+def dm_flat_poke(timestep=0.1):
+    dmdisp = SHM("dm01disp09")
+    dmdip0 = SHM("dm01disp")
+
+    shwfs_slopes = SHM('shwfs_slopes')
+
+    initial_shape = dmdisp.get_data(check=False)
+
+    slopes_xy_list = []
+
+    slopes_stack = None
+
+    amplitude_range = np.arange(-2, 2, 1 / 100)
+
+    for poke_amplitude in amplitude_range:
+
+        dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * poke_amplitude
+        dmdisp.set_data(dm_array, True)
+        print(poke_amplitude, np.mean(dmdip0.get_data(check=False)))
+        time.sleep(timestep)
+        slopes_data = shwfs_slopes.get_data(check=False)
+        if slopes_stack is None:
+            slopes_stack = slopes_data
+        else:
+            slopes_stack = np.dstack((slopes_stack, slopes_data))
+
+    # Clear DM before exiting
+    dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
+    dmdisp.set_data(dm_array, True)
+    dm_array = np.ones(dmdisp.shape, dmdisp.nptype) * (-2)
+    dmdisp.set_data(dm_array, True)
+
+    dmdisp.set_data(initial_shape, True)
+
+    # Remove initial slope offset
+    slopes_stack = np.rollaxis(slopes_stack, 2) - slopes_stack[:, :, 0]
+
+    # Put amplitude on first axis
+    #slopes_stack = np.rollaxis(slopes_stack, 2)
+
+    actuator_response = np.zeros([
+            slopes_stack.shape[0], dmdisp.shape[0], dmdisp.shape[1]
+    ])
+    actuator_response_df = None
+
+    # Get actuator response
+    for ix, iy in np.ndindex(dmdisp.shape):
+        if ix in [0, 11] or iy in [
+                0, 11
+        ]:  # skip actuators at the edge, i.e. ix or iy equal to 0 or 11
+            continue
+
+        actuator_response[:, ix, iy] = np.sum(
+                np.abs([
+                        slopes_stack[:, ix, iy], slopes_stack[:, ix, iy - 1],
+                        slopes_stack[:, ix - 1,
+                                     iy - 1], slopes_stack[:, ix - 1, iy],
+                        slopes_stack[:, ix,
+                                     iy + 11], slopes_stack[:, ix,
+                                                            iy - 1 + 11],
+                        slopes_stack[:, ix - 1,
+                                     iy - 1 + 11], slopes_stack[:, ix - 1,
+                                                                iy + 11]
+                ]), axis=0)
+
+        if actuator_response_df is None:
+            actuator_response_df = pd.DataFrame(
+                    actuator_response[:, ix,
+                                      iy], index=np.round(amplitude_range, 3),
+                    columns=[str(ix) + '_' + str(iy)])
+        else:
+            actuator_response_df = pd.concat([
+                    actuator_response_df,
+                    pd.DataFrame(actuator_response[:, ix, iy], index=np.round(
+                            amplitude_range, 3),
+                                 columns=[str(ix) + '_' + str(iy)])
+            ], axis=1)
+
+    return actuator_response, actuator_response_df, slopes_stack, amplitude_range
 
 
 def _set_fps_floatvalue(fps_name, key, value):
