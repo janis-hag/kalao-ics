@@ -27,7 +27,7 @@ from astropy import units
 from astropy.coordinates import EarthLocation
 from astropy.time import Time
 
-from kalao.utils import kalao_time, database
+from kalao.utils import kalao_time, database, starfinder
 from kalao.fli import camera
 
 from sequencer import system
@@ -304,7 +304,9 @@ def update_header(image_path, sequencer_arguments=None):
             print(card.keyword, card.value)
             fits_header.set(card.keyword, card.value, card.comment.strip())
 
-        # Update 'DATE' card
+        wcs = starfinder.generate_wcs()
+
+        fits_header.update(wcs.to_header())
 
         hdul.verify('silentfix+warn')
 

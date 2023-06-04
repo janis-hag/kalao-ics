@@ -671,10 +671,14 @@ def generate_wcs():
 
     # RA, DEC at reference
     #w.wcs.crval = [c.ra.to_value(), c.dec.to_value()]
-    w.wcs.crval = [0, -90]
+    coord = get_tel_coord()
+
+    w.wcs.crval = [coord.ra.degree, coord.dec.degree]
 
     # Gnomonic (TAN) projection
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+
+    return w
 
 
 def get_star_coord():
