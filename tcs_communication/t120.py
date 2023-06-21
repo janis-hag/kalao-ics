@@ -17,6 +17,7 @@
 #sys.path.append("/home/weber/src/pymod_libgop/")
 
 import os
+import pandas as pd
 
 from pathlib import Path
 from configparser import ConfigParser
@@ -33,15 +34,6 @@ config_path = os.path.join(
         Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
 parser.read(config_path)
 
-#timeout   = 2
-
-#host      = "glslogin1.ls.eso.org"
-#symb_name = "inter"
-#rcmd      = "ipcsrv"
-#port      = 12345
-#semkey    = 1000
-
-#host = parser.get('T120', 'Host')
 symb_name = parser.get('T120', 'symb_name')
 rcmd = parser.get('T120', 'rcmd')
 port = parser.getint('T120', 'Port')  # only for inet connection
@@ -52,6 +44,7 @@ altaz_timeout = parser.getint('T120', 'altaz_timeout')
 focus_timeout = parser.getint('T120', 'focus_timeout')
 focus_offset_limit = parser.getint(
         'T120', 'focus_offset_limit')  # only for inet connection
+temperature_file = parser.get('T120', 'temperature_file')
 
 #
 # The connection to ipcsrv on <host>:
@@ -125,6 +118,32 @@ def send_focus_offset(focus_offset):
     return socketId
 
 
+def update_focus_offset(focus_offset):
+
+    #if focus_offset > focus_offset_limit:
+    #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limit {focus_offset_limit}')
+
+    host = database.get_latest_record(
+            'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
+
+    if focus_offset > 30 or focus_offset < 20:
+        print(f'Error set_focus value out of bounds: {focus_offset}')
+        return -1
+
+    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    #print ("ipc.init_remote_client, returns:",socketId)
+    if (socketId <= 0):
+        _t120_print_and_log('Error connecting to T120')
+        return -1
+
+    _t120_print_and_log(f'Updating focus offset value fo.delta {focus_offset}')
+
+    offset_cmd = 'fo.delta=' + str(focus_offset)
+    ipc.send_cmd(offset_cmd, connection_timeout, focus_timeout)
+
+    return socketId
+
+
 def get_focus_value():
 
     host = database.get_latest_record(
@@ -156,6 +175,24 @@ def get_focus_value():
     _t120_print_and_log(f'Received focus value {returnList[1]}')
 
     return float(returnList[1])
+
+
+def request_autofocus():
+    host = database.get_latest_record(
+            'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
+
+    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    #print ("ipc.init_remote_client, returns:",socketId)
+    if (socketId <= 0):
+        _t120_print_and_log('Error connecting to T120')
+        return -1
+
+    _t120_print_and_log(f'Requesting autofocus.')
+
+    autofocus_cmd = '@t120_autofocus "kalao"'
+    ipc.send_cmd(autofocus_cmd, connection_timeout, focus_timeout)
+
+    return socketId
 
 
 def test_connection():
@@ -200,6 +237,10 @@ def _update_db_ra_dec_offsets(delta_alt, delta_az):
     database.store_obs_log({'telescope_dec': coord.dec.value})
 
     return 0
+
+
+def get_tube_temp():
+    return pd.read_csv(temperature_file, sep='\t', header=0).iloc[-1]
 
 
 # def get_status():

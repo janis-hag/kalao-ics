@@ -244,3 +244,18 @@ tel_led_status:
   short: tube led [red|blue|both|off]
   long: tube led [red|blue|both|off]
   unit: None
+
+focusing_best:
+  short: Optimal M2 focus
+  long: Optimal M2 position in Z found by focusing sequence [mm]
+  unit: mm
+
+focusing_temttb:
+  short: Telescope bottom temperature when focusing
+  long: Temperature at the bottom of the telescope tube during the focusing sequence
+  unit: deg
+
+focusing_temtth:
+  short: Telescope top temperature when focusing
+  long: Temperature at the top of the telescope tube during the focusing sequence
+  unit: deg
