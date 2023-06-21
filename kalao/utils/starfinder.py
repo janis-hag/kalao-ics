@@ -70,6 +70,8 @@ EulerLatitude = parser.getfloat('Euler', 'Latitude')
 EulerLongitude = parser.getfloat('Euler', 'Longitude')
 EulerAltitude = parser.getfloat('Euler', 'Altitude')
 
+temperature_file_timeout = parser.get('T120', 'temperature_file_timeout')
+
 
 def centre_on_target(kao='NO_AO'):
     """
@@ -581,7 +583,16 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
     system.print_and_log('best focus value: ' + str(best_focus))
     database.store_obs_log({'tracking_log': best_focus})
 
-    t120.send_focus_offset(best_focus)
+    temps = t120.get_tube_temp()
+
+    if (time.time() - float(temps.tunix)) < temperature_file_timeout:
+
+        database.store_obs_log({'focusing_best': best_focus})
+        database.store_obs_log({'focusing_temttb': temps.temttb})
+        database.store_obs_log({'focusing_temtth': temps.temtth})
+
+    # best_focus = initial_focus + correction
+    t120.update_focus_offset(best_focus - initial_focus)
 
     return 0
 
