@@ -587,9 +587,12 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
 
     if (time.time() - float(temps.tunix)) < temperature_file_timeout:
 
-        database.store_obs_log({'focusing_best': best_focus})
-        database.store_obs_log({'focusing_temttb': temps.temttb})
-        database.store_obs_log({'focusing_temtth': temps.temtth})
+        database.store_obs_log({
+                'focusing_best': best_focus,
+                'focusing_temttb': temps.temttb,
+                'focusing_temtth': temps.temtth,
+                'focusing_fodelta': best_focus - initial_focus
+        })
 
     # best_focus = initial_focus + correction
     t120.update_focus_offset(best_focus - initial_focus)

@@ -259,3 +259,8 @@ focusing_temtth:
   short: Telescope top temperature when focusing
   long: Temperature at the top of the telescope tube during the focusing sequence
   unit: deg
+
+focusing_fodelta:
+  short: Optimal M2 focusing offset
+  long: Optimal M2 position offset in Z to apply to value derived by model [mm]
+  unit: mm
