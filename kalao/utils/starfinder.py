@@ -14,6 +14,7 @@ import os
 import time
 from pathlib import Path
 import pandas as pd
+from datetime import datetime, timezone
 
 from astropy import wcs
 from astropy import units as u
@@ -27,7 +28,7 @@ from photutils.detection import DAOStarFinder
 # sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
-from kalao.utils import database, file_handling
+from kalao.utils import database, file_handling, kalao_time
 from kalao.cacao import telemetry, aocontrol
 from tcs_communication import t120
 from sequencer import system
@@ -591,13 +592,29 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
                 'focusing_best': best_focus,
                 'focusing_temttb': temps.temttb,
                 'focusing_temtth': temps.temtth,
-                'focusing_fodelta': best_focus - initial_focus
+                'focusing_fo_delta': best_focus - initial_focus
         })
 
     # best_focus = initial_focus + correction
     t120.update_focus_offset(best_focus - initial_focus)
 
     return 0
+
+
+def get_latest_fo_delta():
+
+    fo_delta_record = database.get_latest_record('obs_log',
+                                                 key='focusing_fo_delta')
+
+    fo_delta_age = (kalao_time.now() - fo_delta_record['time_utc'].astimezone(
+            timezone.utc)).total_seconds()
+
+    if fo_delta_age > 12 * 3600:
+        fo_delta = None
+    else:
+        fo_delta = fo_delta_record['focusing_fo_delta']
+
+    return fo_delta
 
 
 def optimise_dit(starting_dit, sequencer_arguments=None):
