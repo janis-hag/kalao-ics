@@ -118,7 +118,7 @@ def send_focus_offset(focus_offset):
     return socketId
 
 
-def update_focus_offset(focus_offset):
+def update_fo_delta(focus_offset):
 
     #if focus_offset > focus_offset_limit:
     #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limit {focus_offset_limit}')

@@ -25,7 +25,7 @@ from kalao.fli import camera
 from kalao.utils import file_handling, database, database_updater, kalao_time, starfinder
 from kalao.cacao import cacaomanager, aocontrol
 from sequencer import system
-# from tcs_communication import t120
+from tcs_communication import t120
 
 config_path = os.path.join(
         Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
@@ -469,6 +469,10 @@ def target_observation(**seq_args):
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': 'ERROR'})
         return -1
+
+    fo_delta = starfinder.get_latest_fo_delta()
+    if fo_delta is not None:
+        t120.update_fo_delta(fo_delta)
 
     if waitfortracking() == -1:
         database.store_obs_log({'sequencer_status': 'ERROR'})
