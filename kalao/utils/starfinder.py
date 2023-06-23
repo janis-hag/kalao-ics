@@ -548,6 +548,9 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
 
     for step, focus_offset in enumerate(focusing_sequence):
         system.print_and_log(f'Focus step: {step+1}/{len(focusing_sequence)}')
+        database.store_obs_log({
+                'sequencer_status': 'FOCUS {step+1}/{len(focusing_sequence)'
+        })
 
         # Check if an abort was requested
         if q is not None and not q.empty():
@@ -581,7 +584,7 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
 
     print(focus_flux)
 
-    system.print_and_log('best focus value: ' + str(best_focus))
+    system.print_and_log('Best focus value: ' + str(best_focus))
     database.store_obs_log({'tracking_log': best_focus})
 
     temps = t120.get_tube_temp()
