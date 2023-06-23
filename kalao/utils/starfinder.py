@@ -586,7 +586,7 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
 
     temps = t120.get_tube_temp()
 
-    if (time.time() - float(temps.tunix)) < temperature_file_timeout:
+    if (time.time() - float(temps.tunix)) < float(temperature_file_timeout):
 
         database.store_obs_log({
                 'focusing_best': best_focus,
