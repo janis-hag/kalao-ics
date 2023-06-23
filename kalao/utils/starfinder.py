@@ -553,7 +553,7 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
     for step, focus_offset in enumerate(focusing_sequence):
         system.print_and_log(f'Focus step: {step+1}/{len(focusing_sequence)}')
         database.store_obs_log({
-                'sequencer_status': f'FOCUS {step+1}/{len(focusing_sequence)}'
+                'sequencer_status': f'Focus {step+1}/{len(focusing_sequence)}'
         })
 
         # Check if an abort was requested
