@@ -126,10 +126,6 @@ def update_fo_delta(focus_offset):
     host = database.get_latest_record(
             'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
 
-    if focus_offset > 30 or focus_offset < 20:
-        print(f'Error set_focus value out of bounds: {focus_offset}')
-        return -1
-
     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
