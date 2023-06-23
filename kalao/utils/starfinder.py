@@ -311,7 +311,7 @@ def verify_centering():
         return 0
 
 
-def find_star(image_path):
+def find_star(image_path, df_output=False):
     """
     Finds the position of a star spot in an image taken with the FLI camera
 
@@ -342,7 +342,11 @@ def find_star(image_path):
         x_star = sources.xcentroid.values[0]
         y_star = sources.ycentroid.values[0]
 
-    return x_star, y_star
+    if df_output:
+        return sources
+
+    else:
+        return x_star, y_star
 
 
 def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
@@ -549,7 +553,7 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
     for step, focus_offset in enumerate(focusing_sequence):
         system.print_and_log(f'Focus step: {step+1}/{len(focusing_sequence)}')
         database.store_obs_log({
-                'sequencer_status': 'FOCUS {step+1}/{len(focusing_sequence)'
+                'sequencer_status': f'FOCUS {step+1}/{len(focusing_sequence)}'
         })
 
         # Check if an abort was requested
