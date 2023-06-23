@@ -596,7 +596,7 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
         })
 
     # best_focus = initial_focus + correction
-    t120.update_focus_offset(best_focus - initial_focus)
+    t120.update_fo_delta(best_focus - initial_focus)
 
     return 0
 
