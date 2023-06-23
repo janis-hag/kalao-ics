@@ -473,6 +473,7 @@ def target_observation(**seq_args):
     fo_delta = starfinder.get_latest_fo_delta()
     if fo_delta is not None:
         t120.update_fo_delta(fo_delta)
+        t120.request_autofocus()
 
     if waitfortracking() == -1:
         database.store_obs_log({'sequencer_status': 'ERROR'})
