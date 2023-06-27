@@ -704,8 +704,8 @@ def generate_wcs():
     # Reference pixel value
     w.wcs.crpix = [CenterX, CenterY]
 
-    # Pixel scale
-    w.wcs.cdelt = np.array([PixScaleX, PixScaleY])
+    # Pixel scale in degrees
+    w.wcs.cdelt = np.array([PixScaleX / 360, PixScaleY / 360])
 
     # RA, DEC at reference
     #w.wcs.crval = [c.ra.to_value(), c.dec.to_value()]
