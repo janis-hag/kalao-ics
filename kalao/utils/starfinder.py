@@ -649,14 +649,14 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
         #flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
 
         print(new_dit, image.max(), MaxFlux, MinFlux)
-        if image.max() >= MaxFlux:
+        if image.mean() >= MaxFlux:
             new_dit = int(np.floor(0.8 * new_dit))
             if new_dit <= 1:
                 print('Max flux ' + str(image.max()) +
                       ' above max permitted value ' + str(MaxFlux))
                 return -1
             continue
-        elif image.max() <= MinFlux:
+        elif image.mean() <= MinFlux:
             new_dit = int(np.ceil(1.2 * new_dit))
             if new_dit >= MaxDit:
                 print('Max flux ' + str(image.max()) +
