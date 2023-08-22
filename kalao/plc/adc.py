@@ -54,18 +54,20 @@ def config_adc(beck=None):
     star_ra = obs_log['target_ra']['values'][0]
     star_dec = obs_log['target_dec']['values'][0]
 
+    # Get filter
+
     c = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree, frame='icrs')
 
     # Converting ra into hhmmss.mm and dec into ddmmss.mm format
-    star_ra = np.round(c.ra.hms[0] * 10000 + c.ra.hms[1] * 100 + c.ra.hms[2],
-                       2)
-    star_dec = np.round(
-            c.dec.dms[0] * 10000 + c.dec.dms[1] * 100 + c.dec.dms[2], 2)
-
-    for i in [1, 2]:
-        #_set_value(i, 'stAstroCoord.equinox', star_ra, beck=beck)
-        _set_value(i, 'stAstroCoord.ra', star_ra, beck=beck)
-        _set_value(i, 'stAstroCoord.dec', star_dec, beck=beck)
+    # star_ra = np.round(c.ra.hms[0] * 10000 + c.ra.hms[1] * 100 + c.ra.hms[2],
+    #                    2)
+    # star_dec = np.round(
+    #         c.dec.dms[0] * 10000 + c.dec.dms[1] * 100 + c.dec.dms[2], 2)
+    #
+    # for i in [1, 2]:
+    #     #_set_value(i, 'stAstroCoord.equinox', star_ra, beck=beck)
+    #     _set_value(i, 'stAstroCoord.ra', star_ra, beck=beck)
+    #     _set_value(i, 'stAstroCoord.dec', star_dec, beck=beck)
 
     if disconnect_on_exit:
         beck.disconnect()
