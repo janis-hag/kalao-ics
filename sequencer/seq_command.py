@@ -295,7 +295,7 @@ def tungsten_FLAT_abort(**seq_args):
     database.store_obs_log({'sequencer_status': 'WAITING'})
 
 
-def sky_FLAT(**seq_args):
+def sky_flat(**seq_args):
     """
     1. Turn off lamps
     2. Move flip mirror down
@@ -925,7 +925,7 @@ commandDict = {
         "K_DARK_ABORT": dark_abort,
         "K_LMPFLT": tungsten_FLAT,
         "K_LMPFLT_ABORT": tungsten_FLAT_abort,
-        "K_SKYFLT": sky_FLAT,
+        "K_SKYFLT": sky_flat,
         "K_TRGOBS": target_observation,
         "K_TRGOBS_ABORT": target_observation_abort,
         "K_LAMPON": lamp_on,
