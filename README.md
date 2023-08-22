@@ -1,5 +1,8 @@
 ![KalAO](doc/logo/KalAO_def_200623.png?raw=true "Title")
 
+![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/m/janis-hag/kalao-ics)
+![GitHub language count](https://img.shields.io/github/languages/count/janis-hag/kalao-ics)
+
 The KalAO Instrument Control Software
 ============
 
