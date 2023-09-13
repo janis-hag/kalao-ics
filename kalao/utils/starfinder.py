@@ -672,6 +672,13 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
 
 
 def generate_night_darks(filepath=None):
+    """
+    Generate the darks needed for the calibration of the night which is assumed to have ended.
+
+    :param filepath:
+    :return:
+    """
+
     # TODO add docstring
 
     if filepath is None:
