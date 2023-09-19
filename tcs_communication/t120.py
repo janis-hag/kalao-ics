@@ -62,7 +62,14 @@ def _t120_print_and_log(log_text):
     database.store_obs_log({'t120_log': log_text})
 
 
-def send_offset(delta_az, delta_alt):
+def send_offset(delta_az_arcsec, delta_alt_arcsec):
+    """
+    Send altitude azimuth offset to T120 telescope server.
+
+    :param delta_az_arcsec: altitude offset to apply
+    :param delta_alt_arcsec: azimuth offset to apply
+    :return:
+    """
 
     host = database.get_latest_record(
             'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
@@ -73,9 +80,10 @@ def send_offset(delta_az, delta_alt):
         _t120_print_and_log('Error connecting to T120')
         return -1
 
-    _t120_print_and_log(f'Sending {delta_az=} and {delta_alt=} offsets')
+    _t120_print_and_log(
+            f'Sending {delta_az_arcsec=} and {delta_alt_arcsec=} offsets')
 
-    offset_cmd = '@offset ' + str(delta_az) + ' ' + str(delta_alt)
+    offset_cmd = '@offset ' + str(delta_az_arcsec) + ' ' + str(delta_alt_arcsec)
     ipc.send_cmd(offset_cmd, connection_timeout, altaz_timeout)
 
     #_update_db_ra_dec_offsets(delta_alt, delta_az)
@@ -84,6 +92,13 @@ def send_offset(delta_az, delta_alt):
 
 
 def send_focus_offset(focus_offset):
+    """
+    Send focus offset to the T120 telescope server. Values can either be interpreted as relative offsets if with a
+    leading +/-, or absolute if the value is only a number.
+
+    :param focus_offset: absolute or relative focus offset to apply
+    :return:
+    """
 
     #if focus_offset > focus_offset_limit:
     #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limit {focus_offset_limit}')
@@ -213,7 +228,7 @@ def test_connection():
     return socketId
 
 
-def _update_db_ra_dec_offsets(delta_alt, delta_az):
+def _update_db_ra_dec_offsets(delta_alt_arcsec, delta_az_arcsec):
     """
     Update the telescope RA/DEC values in the database to take into account the new offsets
 
@@ -227,7 +242,7 @@ def _update_db_ra_dec_offsets(delta_alt, delta_az):
             'obs_log', key='telescope_dec')['telescope_dec']
 
     # TODO convert alt/az offset into ra/dec
-    coord = starfinder.compute_altaz_offset(delta_alt, delta_az)
+    coord = starfinder.compute_altaz_offset(delta_alt_arcsec, delta_az_arcsec)
 
     database.store_obs_log({'telescope_ra': coord.ra.value})
     database.store_obs_log({'telescope_dec': coord.dec.value})
