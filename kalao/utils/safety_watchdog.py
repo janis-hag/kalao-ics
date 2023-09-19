@@ -17,6 +17,7 @@ import schedule
 
 from kalao.plc import temperature_control, shutter, laser
 from kalao.utils import database, kalao_time
+from kalao.cacao import aocontrol
 from kalao.fli import camera
 from sequencer import system
 
@@ -75,6 +76,27 @@ def _check_shutteropen_inactive():
             system.print_and_log(message)
             shutter.log(message)
             shutter.shutter_close()
+
+    return 0
+
+
+def _check_dm_inactive():
+    """
+    Verify for how long there is not observing activity.
+    Turn off DM if inactivity is longer than the value set in kalao.config file.
+
+    :return:
+    """
+
+    latest_obs_entry_time = database.get_latest_record('obs_log')['time_utc']
+
+    elapsed_time_since_activity = (
+            kalao_time.now() - latest_obs_entry_time.replace(
+                    tzinfo=datetime.timezone.utc)).total_seconds()
+
+    if elapsed_time_since_activity > InactivityTimeout:
+        # TODO add IPpower off if DM plug on IPpower (use existing FLI code)
+        aocontrol.reset_stream('dm01disp00')
 
     return 0
 
