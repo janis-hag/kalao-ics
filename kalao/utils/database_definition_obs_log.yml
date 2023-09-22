@@ -176,13 +176,18 @@ observer_email:
 # FilterWheel
 filterwheel_status:
   short: Filterwheel status
-  long: Status of the filterwheel clear/g/r/i/z/empty
+  long: Status of the filterwheel (clear/g/r/i/z/empty)
   unit: text
 filterwheel_log:
   short: Filterwheel log
   long: Log output of the filterwheel
   unit: text
 
+# ADC
+adc_angle:
+  short: ADC Angle
+  long: Angle between the ADC prisms
+  unit: °
 
 # TEL
 tel_focus_z:

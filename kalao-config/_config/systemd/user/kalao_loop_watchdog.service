@@ -1,9 +1,9 @@
 [Unit]
-Description=KalAO safety watchdog service
+Description=KalAO loop watchdog service
 
 [Service]
 Type=simple
-ExecStart=/home/kalao/kalao-ics/scripts/kalao_safety-watchdog.sh
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_loop-watchdog.sh
 Restart=always
 RestartSec=30
 StandardOutput=journal

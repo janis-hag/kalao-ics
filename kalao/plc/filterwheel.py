@@ -95,8 +95,7 @@ def set_position(filter_arg):
 
     if position == filter_arg:
         database.store_obs_log({
-                'filterwheel_status':
-                        "Filterwheel on {}".format(Id_filter_dict[filter_arg])
+                'filterwheel_status': Id_filter_dict[filter_arg]
         })
         return position, filter_name
     else:

@@ -1,5 +1,5 @@
 [Unit]
-Description=KalAO pump wachtdog service
+Description=KalAO pump watchdog service
 
 [Service]
 Type=simple

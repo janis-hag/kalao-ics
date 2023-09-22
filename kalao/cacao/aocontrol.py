@@ -36,6 +36,9 @@ config_path = os.path.join(
 parser = ConfigParser()
 parser.read(config_path)
 
+TTMTipToOnSky = parser.getfloat('AO', 'TTMTipToOnSky')
+TTMTiltToOnSky = parser.getfloat('AO', 'TTMTiltToOnSky')
+TipTiltOffloadThreshold = parser.getfloat('AO', 'TipTiltOffloadThreshold')
 TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
 TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
 MaxTelOffload = parser.getfloat('AO', 'MaxTelOffload')
@@ -43,9 +46,6 @@ YSlope2Tip = parser.getfloat('AO', 'YSlope2Tip')
 XSlope2Tilt = parser.getfloat('AO', 'XSlope2Tilt')
 
 CenteringTimeout = parser.getfloat('Starfinder', 'CenteringTimeout')
-
-PixScaleX = parser.getfloat('FLI', 'PixScaleX')
-PixScaleY = parser.getfloat('FLI', 'PixScaleY')
 
 
 def check_stream(stream_name):
@@ -324,7 +324,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
         return -1
 
 
-def tip_tilt_offload(gain=0.2):
+def tip_tilt_offload(gain=0.2, override_threshold=False):
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
@@ -347,14 +347,17 @@ def tip_tilt_offload(gain=0.2):
     tip = stream_data[0]
     tilt = stream_data[1]
 
-    alt_offload = -tip * (PixScaleX / TipMRadPerPixel) * gain
-    az_offload = -tilt * (PixScaleY / TipMRadPerPixel) * gain
+    offload = np.sqrt(tip**2 + tilt**2)
 
-    # Keep offsets within defined range
-    alt_offload = np.clip(alt_offload, -MaxTelOffload, MaxTelOffload)
-    az_offload = np.clip(az_offload, -MaxTelOffload, MaxTelOffload)
+    if override_threshold or offload > TipTiltOffloadThreshold:
+        alt_offload = tip * TTMTipToOnSky * gain
+        az_offload = tilt * TTMTiltToOnSky * gain
 
-    t120.send_offset(az_offload, alt_offload)
+        # Keep offsets within defined range
+        alt_offload = np.clip(alt_offload, -MaxTelOffload, MaxTelOffload)
+        az_offload = np.clip(az_offload, -MaxTelOffload, MaxTelOffload)
+
+        t120.send_offset(az_offload, alt_offload)
 
     return 0
 

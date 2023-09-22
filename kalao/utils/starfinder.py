@@ -18,9 +18,7 @@ from datetime import datetime, timezone
 
 from astropy import wcs
 from astropy import units as u
-from astropy.coordinates import EarthLocation, SkyCoord, AltAz
 from astropy.stats import sigma_clipped_stats
-from astropy.time import Time
 
 from photutils.detection import DAOStarFinder
 
@@ -30,6 +28,7 @@ from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
 from kalao.utils import database, file_handling, kalao_time
 from kalao.cacao import telemetry, aocontrol
+from kalao.interface import status
 from tcs_communication import t120
 from sequencer import system
 
@@ -717,7 +716,7 @@ def generate_wcs():
 
     # RA, DEC at reference
     #w.wcs.crval = [c.ra.to_value(), c.dec.to_value()]
-    coord = get_tel_coord()
+    coord = status.telescope_coord()
 
     w.wcs.crval = [coord.ra.degree, coord.dec.degree]
 
@@ -727,51 +726,7 @@ def generate_wcs():
     return w
 
 
-def get_star_coord():
-
-    star_ra = database.get_latest_record('obs_log',
-                                         key='target_ra')['target_ra']
-    star_dec = database.get_latest_record('obs_log',
-                                          key='target_dec')['target_dec']
-
-    # TODO verify star_ra and star_dec validity
-
-    c = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree, frame='icrs')
-
-    return c
-
-
-def get_tel_coord():
-
-    tel_ra = float(
-            database.get_latest_record('obs_log',
-                                       key='telescope_ra')['telescope_ra'])
-    tel_dec = float(
-            database.get_latest_record('obs_log',
-                                       key='telescope_dec')['telescope_dec'])
-
-    # TODO verify star_ra and star_dec validity
-
-    c = SkyCoord(ra=tel_ra * u.degree, dec=tel_dec * u.degree, frame='icrs')
-
-    return c
-
-
 def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
-
-    #timezone_zone = timezone('Chile/Continental')
-    # date of today time = zone.localize(dt.datetime.now())
-    # give location on the Earth observing_location = EarthLocation(lat=-lat*u.deg, lon=lng*u.deg, height = alt)
-
-    # TODO check coordinates
-    # La Silla coordinates
-    observing_location = EarthLocation(lat=EulerLatitude, lon=EulerLongitude,
-                                       height=EulerAltitude * u.m)
-
-    aa = AltAz(location=observing_location, obstime=Time.now())
-
-    coord = get_tel_coord().transform_to(aa).spherical_offsets_by(
+    return status.telescope_coord_altaz().spherical_offsets_by(
             alt_offset_arcsec * u.arcsec,
             az_offset_arcsec * u.arcsec).transform_to('icrs')
-
-    return coord

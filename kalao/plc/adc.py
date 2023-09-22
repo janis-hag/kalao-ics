@@ -17,11 +17,12 @@ from configparser import ConfigParser
 from pathlib import Path
 import os
 
-from astropy import units as u
-from astropy.coordinates import SkyCoord
+from numpy.polynomial import Polynomial
+from scipy.optimize import minimize_scalar
 
-from kalao.utils import database
 from kalao.plc import core
+from kalao.interface import status
+from kalao.utils import database
 
 config_path = os.path.join(
         Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
@@ -31,43 +32,131 @@ parser.read(config_path)
 
 ADC1_MAX_ANGLE = parser.getfloat('PLC', 'ADC1_MAX_ANGLE')
 ADC2_MAX_ANGLE = parser.getfloat('PLC', 'ADC2_MAX_ANGLE')
+ADCAngleThreshold = parser.getfloat('PLC', 'ADCAngleThreshold')
 
 adc_name = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
 
+dispersion_adc = {
+        450e-9:
+                Polynomial([4.689e-2, 1.444e-5, -2.170e-6, 3.551e-9]) * 20 /
+                1200 * 3600,  # ADC design start
+        475e-9:
+                Polynomial([3.795e-2, 1.169e-5, -1.756e-6, 2.874e-9]) * 20 /
+                1200 * 3600,  # Sloan g'
+        622e-9:
+                Polynomial([8.897e-3, 2.739e-6, -4.117e-7, 6.738e-10]) * 20 /
+                1200 * 3600,  # Sloan r'
+        763e-9:
+                Polynomial([-3.217e-3, -9.905e-7, 1.489e-7, -2.437e-10]) * 20 /
+                1200 * 3600,  # Sloan i'
+        905e-9:
+                Polynomial([-1.013e-2, -3.119e-6, 4.689e-7, -7.675e-10]) * 20 /
+                1200 * 3600,  # Sloan z'
+        1018e-9:
+                Polynomial([-1.375e-2, -4.233e-6, 6.364e-7, -1.042e-9]) * 20 /
+                1200 * 3600,  # ADC design end
+}
 
-def config_adc(beck=None):
+filter_to_wavelength = {
+        'g': 475e-9,
+        'r': 622e-9,
+        'i': 763e-9,
+        'z': 905e-9,
+        'clear': [450e-9, 1018e-9],
+        'nd': [450e-9, 1018e-9],
+}
+
+# Temperature in K
+# Pressure in Pa
+# Hygrometry between 0 and 1
+
+
+# Owens 1967 formula
+def air_refractive_index_OWENS(lambda0_, T, P, H):
+    sig = 1. / (lambda0_ * 1e6)
+    P = P / 100
+    t = T - 273.15
+
+    Pw_sat = 6.11 * 10**((7.5 * t) / (t + 237.7))
+    Pw = Pw_sat * H
+    Ps = P - Pw
+
+    Ds = Ps / T * (1 + Ps * (57.90e-8 - 9.3250e-4 / T + 0.25844 / T**2))
+    Dw = Pw / T * (
+            1 + Pw * (1 + 3.70e-4 * Pw) *
+            (-2.37321e-3 + 2.23366 / T - 710.792 / T**2 + 7.75141e4 / T**3))
+
+    n = (2371.34 + 683939.7 / (130. - sig**2) + 4547.3 /
+         (38.9 - sig**2)) * Ds + (6487.31 + 58.058 * sig**2 -
+                                  0.71150 * sig**4 + 0.08851 * sig**6) * Dw
+
+    return 1 + n * 1e-8
+
+
+# Edlen 1966 formula
+def air_refractive_index_EDLEN(lambda0_, T, P, H=None):
+    sig = 1. / (lambda0_ * 1e6)
+    p = P / 101325 * 760
+    t = T - 273.15
+
+    n = 8342.13 + 2406030 / (130. - sig**2) + 15997. / (38.9 - sig**2)
+    n *= 0.00138823 * p / (1 + 0.003671 * t)
+
+    return 1 + n * 1e-8
+
+
+def dispersion_air(alt, wavelength, T, P, H=0):
+    wavelength_ref = 715e-9
+    air_refractive_index = air_refractive_index_EDLEN
+
+    zenith_angle = (90 - alt) * np.pi / 180
+
+    return np.tan(zenith_angle) * (
+            air_refractive_index(wavelength, T, P, H) -
+            air_refractive_index(wavelength_ref, T, P, H)) * 180 / np.pi * 3600
+
+
+def get_optimal_adc_angle(alt, wavelength, T, P):
+    # Check the dispersion of the ADC is big enough for small elevations
+    target_dispersion = dispersion_air(alt, wavelength, T, P)
+    dispersion = dispersion_adc[wavelength]
+
+    res = minimize_scalar(lambda x: np.abs(dispersion(x) - target_dispersion),
+                          bounds=(0, 180))
+
+    if res.success and res.fun < 1e-2:
+        return res.x
+    else:
+        return 0
+
+
+def config_adc(beck=None, override_threshold=False):
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
-    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:cfg,4:lrEquinox
-    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:cfg,4:lrLatitude
-    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:cfg,4:lrLongitude
-    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:dec
-    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:equinox
-    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:latitude
-    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:longitude
-    # 0:Root,0:Objects,4:PLC1,4:MAIN,4:ADC1_Newport_PR50PP,4:stAstroCoord,4:ra
-    #ctrl.lrTemperature
-    #ctrl.lrPressure – Atmospheric Pressure in mbar
+    filter_name = status.filter_name()
+    T = status.outside_temperature()
+    P = status.outside_pressure()
+    alt = status.telescope_coord_altaz().alt.degrees
 
-    obs_log = database.get_all_last_obs_log()
-    star_ra = obs_log['target_ra']['values'][0]
-    star_dec = obs_log['target_dec']['values'][0]
+    wavelength = filter_to_wavelength[filter_name]
 
-    # Get filter
+    # TODO: in case if filter_name is not in filter_to_wavelength
 
-    c = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree, frame='icrs')
+    if type(wavelength) == list:
+        angle = 0
 
-    # Converting ra into hhmmss.mm and dec into ddmmss.mm format
-    # star_ra = np.round(c.ra.hms[0] * 10000 + c.ra.hms[1] * 100 + c.ra.hms[2],
-    #                    2)
-    # star_dec = np.round(
-    #         c.dec.dms[0] * 10000 + c.dec.dms[1] * 100 + c.dec.dms[2], 2)
-    #
-    # for i in [1, 2]:
-    #     #_set_value(i, 'stAstroCoord.equinox', star_ra, beck=beck)
-    #     _set_value(i, 'stAstroCoord.ra', star_ra, beck=beck)
-    #     _set_value(i, 'stAstroCoord.dec', star_dec, beck=beck)
+        for w in wavelength:
+            angle += get_optimal_adc_angle(alt, w, T, P)
+
+        angle /= len(wavelength)
+    else:
+        angle = get_optimal_adc_angle(alt, wavelength, T, P)
+
+    current_angle = status.adc_angle()
+
+    if override_threshold or np.abs(angle - current_angle) > ADCAngleThreshold:
+        set_angle(angle, beck=beck)
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -79,8 +168,7 @@ def set_max_disp(beck=None):
 
     beck, disconnect_on_exit = core.check_beck(beck)
 
-    rotate(1, position=ADC1_MAX_ANGLE, beck=beck)
-    rotate(2, position=ADC2_MAX_ANGLE, beck=beck)
+    set_angle(0, beck=beck)
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -88,19 +176,24 @@ def set_max_disp(beck=None):
     return 0
 
 
-def set_min_disp(beck=None):
+def set_zero_disp(beck=None):
     beck, disconnect_on_exit = core.check_beck(beck)
 
-    min_adc1_angle = ADC1_MAX_ANGLE - 180
-    min_adc2_angle = ADC2_MAX_ANGLE + 180
-
-    rotate(1, position=min_adc1_angle, beck=beck)
-    rotate(2, position=min_adc2_angle, beck=beck)
+    set_angle(180, beck=beck)
 
     if disconnect_on_exit:
         beck.disconnect()
 
     return 0
+
+
+def set_angle(angle, beck=None):
+    # Motors are face to face, offset by same angle so they are counter-rotating
+    rotate(1, position=ADC1_MAX_ANGLE + angle / 2, beck=beck)
+    rotate(2, position=ADC2_MAX_ANGLE + angle / 2, beck=beck)
+
+    # TODO: check motors moved successfully
+    database.store_obs_log({'adc_angle': angle})
 
 
 def _set_value(adc_id, value_path, value, beck=None):
