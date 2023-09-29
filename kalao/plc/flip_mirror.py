@@ -15,6 +15,8 @@ from kalao.plc import core
 from opcua import ua
 from time import sleep
 
+import config
+
 
 def status(beck=None):
     """
@@ -86,7 +88,7 @@ def position(beck=None):
 
     :return: single string status of shutter
     """
-    if 'flip_mirror' in core.disabled_device_list():
+    if 'flip_mirror' in config.PLC.disabled:
         return 1
 
     # Connect to OPCUA server

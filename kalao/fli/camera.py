@@ -14,7 +14,6 @@ import requests
 import requests.exceptions
 from requests.models import Response
 from unittest.mock import Mock
-import os
 import json
 from astropy.io import fits
 from time import sleep
@@ -22,35 +21,10 @@ import numpy as np
 
 from kalao.utils import database, database_updater, file_handling
 from sequencer import system
-from configparser import ConfigParser
-from pathlib import Path
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-ScienceDataStorage = parser.get('FLI', 'ScienceDataStorage')
-TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
-RequestTimeout = parser.getfloat('FLI', 'RequestTimeout')
-DummyCamera = parser.getboolean('FLI', 'DummyCamera')
-DummyImagePath = parser.get('FLI', 'DummyImagePath')
-TemperatureWarnThreshold = parser.getfloat('FLI', 'TemperatureWarnThreshold')
-
-address = parser.get('FLI', 'IP')
-port = parser.get('FLI', 'Port')
-
-# check if config value format is right
-if port.isdigit():
-    # Converting int to string
-    port = str(port)
-else:
-    print("Error: wrong values format for 'Port' in kalao.config file ")
-    # return
+import config
 
 # Removing in order to only use take_image
 # def take_science_exposure(dit=0.05, filepath=None):
@@ -93,7 +67,8 @@ def take_image(
     params = {'exptime': dit, 'filepath': filepath}
     req = _send_request('acquire', params)
 
-    if get_temperatures()['fli_temp_CCD'] > TemperatureWarnThreshold:
+    if get_temperatures(
+    )['fli_temp_CCD'] > config.FLI.temperature_warn_threshold:
         message = 'WARN: CCD temperature above threshold: ' + str(
                 get_temperatures()['fli_temp_CCD'])
         print(message)
@@ -331,9 +306,9 @@ def _send_request(request_type, params):
             if 'exptime' in params.keys():
                 database.store_obs_log({'fli_texp': params['exptime']})
 
-        if DummyCamera:
+        if config.FLI.dummy_camera:
             if request_type == 'acquire':
-                shutil.copy(DummyImagePath, params['filepath'])
+                shutil.copy(config.FLI.dummy_image_path, params['filepath'])
 
             class Object(object):
                 pass
@@ -343,11 +318,12 @@ def _send_request(request_type, params):
             req.status_code = 200
 
         else:
-            url = 'http://' + address + ':' + port + '/' + request_type
+            url = 'http://' + config.FLI.ip + ':' + config.FLI.port + '/' + request_type
             if params == 'GET':
-                req = requests.get(url, timeout=RequestTimeout)
+                req = requests.get(url, timeout=config.FLI.request_timeout)
             else:
-                req = requests.post(url, json=params, timeout=RequestTimeout)
+                req = requests.post(url, json=params,
+                                    timeout=config.FLI.request_timeout)
 
     return req
 
@@ -418,7 +394,7 @@ def ippower_status():
         if state in [0, 1]:
             return state
 
-    error_message = f'Could not switch camera IP-power to {value}. HTTP-response: {req.text}  ({req.status_code})'
+    error_message = f'Could not get camera IP-power status. HTTP-response: {req.text}  ({req.status_code})'
     database.store_obs_log({'fli_log': error_message})
     print(error_message)
 
@@ -445,7 +421,8 @@ def check_server_status():
         return 'DOWN'
 
     try:
-        r = requests.get('http://' + address + ':' + port + '/temperature')
+        r = requests.get('http://' + config.FLI.ip + ':' + config.FLI.port +
+                         '/temperature')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return "DOWN"

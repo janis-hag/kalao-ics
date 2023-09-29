@@ -12,27 +12,13 @@ temperature_control.py is part of the KalAO Instrument Control Software
 from kalao.utils import database, kalao_time
 from kalao.plc import core
 from kalao.fli import camera
-from sequencer import system
 
 import datetime
 from opcua import ua
 from time import sleep
 import pandas as pd
 
-from configparser import ConfigParser
-from pathlib import Path
-import os
-
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-MINIMAL_FLOW = parser.getfloat('Cooling', 'MinimalFlow')
-MAX_WATER_TEMP = parser.getfloat('Cooling', 'MaxWaterTemp')
-MAX_HEATSINK_TEMP = parser.getfloat('Cooling', 'MaxHeatsinkTemp')
-MAX_CCD_TEMP = parser.getfloat('Cooling', 'MaxCCDTemp')
+import config
 
 pump_node = 'bRelayPump'
 fan_node = 'bRelayFan'
@@ -47,31 +33,24 @@ def get_temperatures(beck=None):
     :param beck: handle of the beckhoff connection
     :return: dictionary of temperatures
     """
-
-    # Read calibrated temperature offset
-    BENCHAIROFFSET = parser.getfloat('PLC', 'TempBenchAirOffset')
-    BENCHBOARDOFFSET = parser.getfloat('PLC', 'TempBenchBoardOffset')
-    WATERINOFFSET = parser.getfloat('PLC', 'TempWaterInOffset')
-    WATEROUTOFFSET = parser.getfloat('PLC', 'TempWaterOutOffset')
-
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
     temp_values = {
             'temp_bench_air':
-                    BENCHAIROFFSET +
+                    config.PLC.temp_bench_air_offset +
                     beck.get_node('ns=4;s=MAIN.Temp_Bench_Air').get_value() /
                     10,
             'temp_bench_board':
-                    BENCHBOARDOFFSET +
+                    config.PLC.temp_bench_board_offset +
                     beck.get_node('ns=4;s=MAIN.Temp_Bench_Board').get_value() /
                     10,
             'temp_water_in':
-                    WATERINOFFSET +
+                    config.PLC.temp_water_in_offset +
                     beck.get_node('ns=4;s=MAIN.Temp_Water_In').get_value() /
                     10,
             'temp_water_out':
-                    WATEROUTOFFSET +
+                    config.PLC.temp_water_out_offset +
                     beck.get_node('ns=4;s=MAIN.Temp_Water_Out').get_value() /
                     10
     }

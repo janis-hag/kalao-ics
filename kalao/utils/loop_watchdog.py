@@ -15,19 +15,7 @@ import schedule
 from kalao.plc import adc
 from kalao.cacao import aocontrol
 
-from configparser import ConfigParser
-from pathlib import Path
-import os
-
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-ADCUpdateInterval = parser.getfloat('ADC', 'ADCUpdateInterval')
-TTMOffloadInterval = parser.getfloat('AO', 'TTMOffloadInterval')
+import config
 
 
 def _update_adc(beck=None):
@@ -40,8 +28,8 @@ def _offload_ttm(beck=None):
 
 if __name__ == "__main__":
 
-    schedule.every(ADCUpdateInterval).seconds.do(_update_adc)
-    schedule.every(TTMOffloadInterval).seconds.do(_offload_ttm)
+    schedule.every(config.ADC.update_interval).seconds.do(_update_adc)
+    schedule.every(config.TTM.offload_interval).seconds.do(_offload_ttm)
 
     while True:
         schedule.run_pending()

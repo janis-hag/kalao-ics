@@ -11,9 +11,7 @@ seq_command.py is part of the KalAO Instrument Control Software
 
 import sys
 import os
-from pathlib import Path
 import time
-from configparser import ConfigParser
 import datetime
 import numpy as np
 
@@ -27,23 +25,7 @@ from kalao.cacao import cacaomanager, aocontrol
 from sequencer import system
 from tcs_communication import t120
 
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
-
-# Read config file and create a dict for each section where keys is parameter
-parser = ConfigParser()
-parser.read(config_path)
-
-Science_storage = parser.get('FLI', 'ScienceDataStorage')
-ExpTime = parser.getfloat('FLI', 'ExpTime')
-SetupTime = parser.getint('FLI', 'SetupTime')
-TungstenStabilisationTime = parser.getint('PLC', 'TungstenStabilisationTime')
-TungstenWaitSleep = parser.getint('PLC', 'TungstenWaitSleep')
-DefaultFlatList = parser.get('Calib',
-                             'DefaultFlatList').replace(' ', '').replace(
-                                     '\n', '').split(',')
-PointingWaitTime = parser.getfloat('SEQ', 'PointingWaitTime')
-PointingTimeOut = parser.getfloat('SEQ', 'PointingTimeOut')
+import config
 
 
 def dark(**seq_args):
@@ -180,7 +162,7 @@ def tungsten_FLAT(**seq_args):
         return -1
 
     if filter_list is None:
-        filter_list = DefaultFlatList
+        filter_list = config.Calib.default_flat_list
 
     if calib_unit.tungsten_position() == -1:
         system.print_and_log(
@@ -215,7 +197,7 @@ def tungsten_FLAT(**seq_args):
     #     # TODO, verify that temporary_path is in the filepath
     #     temporary_path = file_handling.create_night_folder()
 
-    while (tungsten.get_switch_time() < TungstenStabilisationTime):
+    while (tungsten.get_switch_time() < config.Tungsten.stabilisation_time):
         # Wait for tungsten to warm up
         # Check if an abort was requested
         # block for each picture and check if an abort was requested
@@ -229,7 +211,7 @@ def tungsten_FLAT(**seq_args):
             database.store_obs_log({'sequencer_status': 'ERROR'})
             return -1
 
-        time.sleep(TungstenWaitSleep)
+        time.sleep(config.Tungsten.Sleep)
     else:
         database.store_obs_log({'sequencer_status': 'BUSY'})
 
@@ -331,7 +313,7 @@ def sky_flat(**seq_args):
         return -1
 
     if filter_list is None:
-        filter_list = DefaultFlatList
+        filter_list = config.Calib.default_flat_list
 
     if core.lamps_off() != 0:
         system.print_and_log("Error: failed to turn off lamps")
@@ -714,14 +696,14 @@ def waitfortracking(**seq_args):
     """
     t0 = time.time()
 
-    while time.time() - t0 < PointingTimeOut:
+    while time.time() - t0 < config.SEQ.pointing_timeout:
         tracking_status = database.get_latest_record(
                 collection_name='obs_log',
                 key='tracking_status')['tracking_status']
         if tracking_status == 'TRACKING':
             file_handling.update_db_from_telheader()
             return 0
-        time.sleep(PointingWaitTime)
+        time.sleep(config.SEQ.pointing_wait_time)
 
     else:
         system.print_and_log('Error: Timeout while waiting to be on target.')
@@ -870,7 +852,7 @@ def check_abort(q, dit, AO=False):
     t = 0
     t0 = kalao_time.now()
 
-    while t < dit + SetupTime:
+    while t < dit + config.FLI.setup_time:
         t += 1
         time.sleep(1)
         print(".")

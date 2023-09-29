@@ -16,35 +16,14 @@
 #sys.path.append("/home/weber/src/pymod_libipc/")
 #sys.path.append("/home/weber/src/pymod_libgop/")
 
-import os
 import pandas as pd
-
-from pathlib import Path
-from configparser import ConfigParser
 
 from tcs_communication.pyipc import pymod_libipc as ipc
 #import tcs_communication.pygop as gop
 
 from kalao.utils import database, kalao_time, starfinder
-from sequencer import system
 
-# Read config file
-parser = ConfigParser()
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
-parser.read(config_path)
-
-symb_name = parser.get('T120', 'symb_name')
-rcmd = parser.get('T120', 'rcmd')
-port = parser.getint('T120', 'Port')  # only for inet connection
-semkey = parser.getint('T120', 'semkey')  # only for inet connection
-connection_timeout = parser.getint(
-        'T120', 'connection_timeout')  # only for inet connection
-altaz_timeout = parser.getint('T120', 'altaz_timeout')
-focus_timeout = parser.getint('T120', 'focus_timeout')
-focus_offset_limit = parser.getint(
-        'T120', 'focus_offset_limit')  # only for inet connection
-temperature_file = parser.get('T120', 'temperature_file')
+import config
 
 #
 # The connection to ipcsrv on <host>:
@@ -74,7 +53,9 @@ def send_offset(delta_az_arcsec, delta_alt_arcsec):
     host = database.get_latest_record(
             'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
 
-    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    socketId = ipc.init_remote_client(host, config.T120.symb_name,
+                                      config.T120.rcmd, config.T120.port,
+                                      config.T120.semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
         _t120_print_and_log('Error connecting to T120')
@@ -84,7 +65,8 @@ def send_offset(delta_az_arcsec, delta_alt_arcsec):
             f'Sending {delta_az_arcsec=} and {delta_alt_arcsec=} offsets')
 
     offset_cmd = '@offset ' + str(delta_az_arcsec) + ' ' + str(delta_alt_arcsec)
-    ipc.send_cmd(offset_cmd, connection_timeout, altaz_timeout)
+    ipc.send_cmd(offset_cmd, config.T120.connection_timeout,
+                 config.T120.altaz_timeout)
 
     #_update_db_ra_dec_offsets(delta_alt, delta_az)
 
@@ -119,7 +101,9 @@ def send_focus_offset(focus_offset):
         print(f'Error set_focus value out of bounds: {focus_offset}')
         return -1
 
-    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    socketId = ipc.init_remote_client(host, config.T120.symb_name,
+                                      config.T120.rcmd, config.T120.port,
+                                      config.T120.semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
         _t120_print_and_log('Error connecting to T120')
@@ -128,7 +112,8 @@ def send_focus_offset(focus_offset):
     _t120_print_and_log(f'Sending focus {focus_offset}')
 
     offset_cmd = '@m2p ' + str(focus_offset)
-    ipc.send_cmd(offset_cmd, connection_timeout, focus_timeout)
+    ipc.send_cmd(offset_cmd, config.T120.connection_timeout,
+                 config.T120.focus_timeout)
 
     return socketId
 
@@ -141,7 +126,9 @@ def update_fo_delta(focus_offset):
     host = database.get_latest_record(
             'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
 
-    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    socketId = ipc.init_remote_client(host, config.T120.symb_name,
+                                      config.T120.rcmd, config.T120.port,
+                                      config.T120.semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
         _t120_print_and_log('Error connecting to T120')
@@ -150,7 +137,8 @@ def update_fo_delta(focus_offset):
     _t120_print_and_log(f'Updating focus offset value fo.delta {focus_offset}')
 
     offset_cmd = 'fo.delta=' + str(focus_offset)
-    ipc.send_cmd(offset_cmd, connection_timeout, focus_timeout)
+    ipc.send_cmd(offset_cmd, config.T120.connection_timeout,
+                 config.T120.focus_timeout)
 
     return socketId
 
@@ -160,10 +148,12 @@ def get_focus_value():
     host = database.get_latest_record(
             'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
 
-    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    socketId = ipc.init_remote_client(host, config.T120.symb_name,
+                                      config.T120.rcmd, config.T120.port,
+                                      config.T120.semkey)
 
     print("wait")
-    status = ipc.shm_wait(connection_timeout)
+    status = ipc.shm_wait(config.T120.connection_timeout)
     print("ipc.shm_wait returns:", status)
     if (status < 0):
         ipc.shm_free()
@@ -176,7 +166,7 @@ def get_focus_value():
     ipc.put_shm_kw("COMMAND", "@kal_getm2")
 
     ipc.shm_ack()
-    ipc.shm_wack(focus_timeout)
+    ipc.shm_wack(config.T120.focus_timeout)
 
     returnList = ipc.get_shm_kw("te.m2z")
 
@@ -192,7 +182,9 @@ def request_autofocus():
     host = database.get_latest_record(
             'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
 
-    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    socketId = ipc.init_remote_client(host, config.T120.symb_name,
+                                      config.T120.rcmd, config.T120.port,
+                                      config.T120.semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
         _t120_print_and_log('Error connecting to T120')
@@ -201,7 +193,8 @@ def request_autofocus():
     _t120_print_and_log(f'Requesting autofocus.')
 
     autofocus_cmd = '@t120_autofocus "kalao"'
-    ipc.send_cmd(autofocus_cmd, connection_timeout, focus_timeout)
+    ipc.send_cmd(autofocus_cmd, config.T120.connection_timeout,
+                 config.T120.focus_timeout)
 
     return socketId
 
@@ -217,13 +210,16 @@ def test_connection():
     host = database.get_latest_record(
             'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
 
-    socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+    socketId = ipc.init_remote_client(host, config.T120.symb_name,
+                                      config.T120.rcmd, config.T120.port,
+                                      config.T120.semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
         _t120_print_and_log('Error connecting to T120')
         return -1
 
-    ipc.send_cmd('show i', connection_timeout, connection_timeout)
+    ipc.send_cmd('show i', config.T120.connection_timeout,
+                 config.T120.connection_timeout)
 
     return socketId
 
@@ -251,7 +247,8 @@ def _update_db_ra_dec_offsets(delta_alt_arcsec, delta_az_arcsec):
 
 
 def get_tube_temp():
-    return pd.read_csv(temperature_file, sep='\t', header=0).iloc[-1]
+    return pd.read_csv(config.T120.temperature_file, sep='\t',
+                       header=0).iloc[-1]
 
 
 # def get_status():

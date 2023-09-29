@@ -20,21 +20,10 @@ from kalao.utils import database
 
 from opcua import Client
 
-from configparser import ConfigParser
-from pathlib import Path
-import os
-
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-PLC_IP = parser.get('PLC', 'IP')
-PLC_PORT = parser.getint('PLC', 'Port')
+import config
 
 
-def connect(addr=PLC_IP, port=PLC_PORT):
+def connect(addr=config.PLC.ip, port=config.PLC.port):
     beck = Client("opc.tcp://%s:%d" % (addr, port))
     beck.connect()
     # root = beck.get_root_node()
@@ -57,15 +46,6 @@ def lamps_off():
                         str(tungsten_status)
         })
         return 1
-
-
-def disabled_device_list():
-    # Read config file
-    parser.read(config_path)
-
-    PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
-
-    return PLC_Disabled
 
 
 def plc_status(beck=None):

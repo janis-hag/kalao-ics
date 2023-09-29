@@ -12,8 +12,6 @@ camera.py is part of the KalAO Instrument Control Software
 import os
 import sys
 import time
-from configparser import ConfigParser
-from pathlib import Path
 
 from microscope.filterwheels import thorlabs
 
@@ -22,45 +20,26 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.utils import database
 
-# clear griz, hole
-# 0 clear
-# 1 jaune g
-# 2 violet r
-# 3 bleu clair i
-# 4 argent z
-# 5 empty
-
-parser = ConfigParser()
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-parser.read(config_path)
-
-DEVICEPORT = parser.get('FilterWheel', 'DevicePort')
-ENABLEWAIT = parser.getfloat('FilterWheel', 'EnableWait')
-INITIALIZATIONWAIT = parser.getfloat('FilterWheel', 'InitializationWait')
-POSITIONCHANGEWAIT = parser.getfloat('FilterWheel', 'PositionChangeWait')
+import config
 
 # Create bidirect dict with filter id (str and int)
-# Id_filter = parser._sections['FilterPosition']
-# revd = dict( [reversed(i) for i in Id_filter.items()] )
-# Id_filter.update(revd)
 
-Id_filter_dict = {}
-for key, val in parser.items('FilterPosition'):
-    Id_filter_dict[key] = int(val)
-    Id_filter_dict[int(val)] = key
+id_filter_dict = {}
+for position, filter_name in enumerate(config.FilterWheel.position_list):
+    id_filter_dict[position] = filter_name
+    id_filter_dict[filter_name] = position
 
-Id_only_filter_dict = {}
-for key, val in parser.items('FilterPosition'):
-    Id_only_filter_dict[key] = int(val)
+id_only_filter_dict = {}
+for position, filter_name in enumerate(config.FilterWheel.position_list):
+    id_only_filter_dict[filter_name] = position
 
 
 def create_filter_id():
-    return Id_filter_dict
+    return id_filter_dict
 
 
 def get_filter_ids():
-    return Id_only_filter_dict
+    return id_only_filter_dict
 
 
 def set_position(filter_arg):
@@ -73,7 +52,7 @@ def set_position(filter_arg):
         return -1
     elif type(filter_arg) == str:
         filter_arg = filter_arg.lower()
-        if filter_arg not in Id_filter_dict.keys():
+        if filter_arg not in id_filter_dict.keys():
             database.store_obs_log({
                     'filterwheel_log':
                             "Error: wrong filter name (got {})".format(
@@ -81,21 +60,21 @@ def set_position(filter_arg):
             })
             return -1
         else:
-            filter_arg = Id_filter_dict[filter_arg]
+            filter_arg = id_filter_dict[filter_arg]
 
-    fw = thorlabs.ThorlabsFilterWheel(com=DEVICEPORT)
+    fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)
     # fw.enable()
-    # time.sleep(ENABLEWAIT)
+    # time.sleep(config.FilterWheel.enable_wait)
     # fw.initialize()
-    # time.sleep(INITIALIZATIONWAIT)
+    # time.sleep(config.FilterWheel.initialization_wait)
     fw.set_position(filter_arg)  # Same name of parent func ?
-    time.sleep(POSITIONCHANGEWAIT)
+    time.sleep(config.FilterWheel.position_change_wait)
     position = fw.get_position()
-    filter_name = Id_filter_dict[position]
+    filter_name = id_filter_dict[position]
 
     if position == filter_arg:
         database.store_obs_log({
-                'filterwheel_status': Id_filter_dict[filter_arg]
+                'filterwheel_status': id_filter_dict[filter_arg]
         })
         return position, filter_name
     else:
@@ -108,24 +87,24 @@ def set_position(filter_arg):
 
 
 def get_position():
-    fw = thorlabs.ThorlabsFilterWheel(com=DEVICEPORT)
+    fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)
     # fw.enable()
-    # time.sleep(ENABLEWAIT)
+    # time.sleep(config.FilterWheel.enable_wait)
     # fw.initialize()
-    # time.sleep(INITIALIZATIONWAIT)
+    # time.sleep(config.FilterWheel.initialization_wait)
     position = fw.get_position()
-    filter_name = Id_filter_dict[position]
+    filter_name = id_filter_dict[position]
 
     return position, filter_name
 
 
 def init():
 
-    fw = thorlabs.ThorlabsFilterWheel(com=DEVICEPORT)
+    fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)
     fw.enable()
-    time.sleep(ENABLEWAIT)
+    time.sleep(config.FilterWheel.enable_wait)
     fw.initialize()
-    time.sleep(INITIALIZATIONWAIT)
+    time.sleep(config.FilterWheel.initialization_wait)
 
     database.store_obs_log({'filterwheel_log': "Initialising filterwheel"})
 

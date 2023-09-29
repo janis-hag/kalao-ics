@@ -16,10 +16,6 @@ SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
 from threading import Thread
 from multiprocessing import Process, Queue
-from configparser import ConfigParser
-
-from pathlib import Path
-import os
 
 from kalao.plc import shutter
 from kalao.plc import calib_unit
@@ -29,6 +25,8 @@ from kalao.plc import tungsten
 from kalao.fli import camera
 
 from sequencer import system
+
+import config
 
 
 class ThreadWithReturnValue(Thread):
@@ -152,21 +150,6 @@ def initialisation():
     """
 
     system.print_and_log('Starting initalisation')
-    # read config file
-
-    config_path = os.path.join(
-            Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
-
-    #Verify that config file exists
-    if not Path(config_path).is_file():
-        system.print_and_log('kalao.config file not found at: ' + config_path)
-        return -1
-
-    parser = ConfigParser()
-    parser.read(config_path)
-
-    nbTry = parser.getint('PLC', 'InitNbTry')
-    timeout = parser.getint('PLC', 'InitTimeout')
 
     # dict where keys is string name of object <function> and values is object <function>
     init_dict = {
@@ -185,9 +168,9 @@ def initialisation():
     # Create a subprocess with a Queue object for return value
     # if returned value != 0, try 'nbTry' times
     q = Queue()
-    startProcess(startThread, q, timeout, init_foncs)
+    startProcess(startThread, q, config.PLC.init_timeout, init_foncs)
 
-    for t in range(1, nbTry):
+    for t in range(1, config.PLC.init_nb_try):
         value = 0
         error_foncs = []
 
@@ -200,7 +183,8 @@ def initialisation():
                 while not q.empty():
                     q.get()
                 print(t, "retry..")
-                startProcess(startThread, q, timeout, init_foncs)
+                startProcess(startThread, q, config.PLC.init_timeout,
+                             init_foncs)
                 break
             else:
                 # add func's name who got an error to a list for retry
@@ -212,7 +196,7 @@ def initialisation():
             return 0
         else:
             # retry only func who got an error
-            startProcess(startThread, q, timeout, error_foncs)
+            startProcess(startThread, q, config.PLC.init_timeout, error_foncs)
 
     return 1
 

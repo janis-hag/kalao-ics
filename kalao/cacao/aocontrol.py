@@ -26,26 +26,9 @@ from kalao.fli import camera
 from tcs_communication import t120
 from sequencer import system
 
-from configparser import ConfigParser
 from pathlib import Path
-import os
 
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-TTMTipToOnSky = parser.getfloat('AO', 'TTMTipToOnSky')
-TTMTiltToOnSky = parser.getfloat('AO', 'TTMTiltToOnSky')
-TipTiltOffloadThreshold = parser.getfloat('AO', 'TipTiltOffloadThreshold')
-TipMRadPerPixel = parser.getfloat('AO', 'TipMRadPerPixel')
-TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
-MaxTelOffload = parser.getfloat('AO', 'MaxTelOffload')
-YSlope2Tip = parser.getfloat('AO', 'YSlope2Tip')
-XSlope2Tilt = parser.getfloat('AO', 'XSlope2Tilt')
-
-CenteringTimeout = parser.getfloat('Starfinder', 'CenteringTimeout')
+import config
 
 
 def check_stream(stream_name):
@@ -324,7 +307,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
         return -1
 
 
-def tip_tilt_offload(gain=0.2, override_threshold=False):
+def tip_tilt_offload(gain=0.5, override_threshold=False):
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
@@ -349,13 +332,15 @@ def tip_tilt_offload(gain=0.2, override_threshold=False):
 
     offload = np.sqrt(tip**2 + tilt**2)
 
-    if override_threshold or offload > TipTiltOffloadThreshold:
-        alt_offload = tip * TTMTipToOnSky * gain
-        az_offload = tilt * TTMTiltToOnSky * gain
+    if override_threshold or offload > config.TTM.offload_threshold:
+        alt_offload = tip * config.TTM.tip_to_onsky * gain
+        az_offload = tilt * config.TTM.tilt_to_onsky * gain
 
         # Keep offsets within defined range
-        alt_offload = np.clip(alt_offload, -MaxTelOffload, MaxTelOffload)
-        az_offload = np.clip(az_offload, -MaxTelOffload, MaxTelOffload)
+        alt_offload = np.clip(alt_offload, -config.TTM.max_tel_offload,
+                              config.TTM.max_tel_offload)
+        az_offload = np.clip(az_offload, -config.TTM.max_tel_offload,
+                             config.TTM.max_tel_offload)
 
         t120.send_offset(az_offload, alt_offload)
 
@@ -393,7 +378,7 @@ def tip_tilt_offset(x_tip, y_tilt, absolute=False, stream_name='dm02disp04'):
     if absolute:
         new_tip_value = x_tip
     else:
-        new_tip_value = tip + x_tip * TipMRadPerPixel
+        new_tip_value = tip + x_tip * config.AO.FLI_tip_to_TTM
 
     if new_tip_value > 2.45:
         print('Limiting tip to 2.45')
@@ -406,7 +391,7 @@ def tip_tilt_offset(x_tip, y_tilt, absolute=False, stream_name='dm02disp04'):
     if absolute:
         new_tilt_value = y_tilt
     else:
-        new_tilt_value = tilt + y_tilt * TipMRadPerPixel
+        new_tilt_value = tilt + y_tilt * config.AO.FLI_tilt_to_TTM
 
     if new_tilt_value > 2.45:
         print('Limiting tilt to 2.45')
@@ -432,6 +417,7 @@ def tip_tilt_offset(x_tip, y_tilt, absolute=False, stream_name='dm02disp04'):
     return 0
 
 
+# TODO: still relevant?
 def tip_tilt_offset_bmc(x_tip, y_tilt, absolute=False):
     """
     Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
@@ -462,7 +448,7 @@ def tip_tilt_offset_bmc(x_tip, y_tilt, absolute=False):
     if absolute:
         new_tip_value = x_tip
     else:
-        new_tip_value = tip + x_tip * TipMRadPerPixel
+        new_tip_value = tip + x_tip * config.AO.FLI_tip_to_TTM
 
     if new_tip_value > 2.45:
         print('Limiting tip to 2.45')
@@ -481,7 +467,7 @@ def tip_tilt_offset_bmc(x_tip, y_tilt, absolute=False):
     if absolute:
         new_tilt_value = y_tilt
     else:
-        new_tilt_value = tilt + y_tilt * TipMRadPerPixel
+        new_tilt_value = tilt + y_tilt * config.AO.FLI_tilt_to_TTM
 
     if new_tilt_value > 2.45:
         print('Limiting tilt to 2.45')
@@ -530,7 +516,7 @@ def reset_stream(stream_name):
     return 0
 
 
-def wfs_centering(tt_threshold=TTSlopeThreshold):
+def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
     """
     Precise tip/tilt centering on the wavefront sensor.
 
@@ -558,7 +544,7 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
 
     # TODO verify that shwfs enough illuminated for centering
 
-    timeout_time = time.time() + CenteringTimeout
+    timeout_time = time.time() + config.Starfinder.centering_timeout
 
     while not (tip_centered and tilt_centered):
         if time.time() > timeout_time:
@@ -570,9 +556,10 @@ def wfs_centering(tt_threshold=TTSlopeThreshold):
 
         tip_offset, tilt_offset = stream_data
 
-        tip_residual = fps_slopes.get_param_value_float('slope_y') * YSlope2Tip
+        tip_residual = fps_slopes.get_param_value_float(
+                'slope_y') * config.AO.WFS_tip_to_TTM
         tilt_residual = fps_slopes.get_param_value_float(
-                'slope_x') * XSlope2Tilt
+                'slope_x') * config.AO.WFS_tilt_to_TTM
 
         if np.abs(tip_residual) < tt_threshold:
             tip_centered = True

@@ -10,11 +10,9 @@ Utilities for star and laser centering.
 starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
 
-import os
 import time
-from pathlib import Path
 import pandas as pd
-from datetime import datetime, timezone
+from datetime import timezone
 
 from astropy import wcs
 from astropy import units as u
@@ -34,43 +32,8 @@ from sequencer import system
 
 import numpy as np
 from astropy.io import fits
-from configparser import ConfigParser
 
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-parser = ConfigParser()
-parser.read(config_path)
-ExpTime = parser.getfloat('FLI', 'ExpTime')
-CenterX = parser.getint('FLI', 'CenterX')
-CenterY = parser.getint('FLI', 'CenterY')
-PixScaleX = parser.getfloat('FLI', 'PixScaleX')
-PixScaleY = parser.getfloat('FLI', 'PixScaleY')
-LaserCalibDIT = parser.getfloat('FLI', 'LaserCalibDIT')
-LaserCalibIntensity = parser.getfloat('PLC', 'LaserCalibIntensity')
-LaserAOCalibIntensity = parser.getfloat('PLC', 'LaserAOCalibIntensity')
-LaserPosition = parser.getfloat('PLC', 'LaserPosition')
-
-CenteringTimeout = parser.getfloat('Starfinder', 'CenteringTimeout')
-FocusingStep = parser.getfloat('Starfinder', 'FocusingStep')
-FocusingPixels = parser.getint('Starfinder', 'FocusingPixels')
-FocusingDit = parser.getint('Starfinder', 'FocusingDit')
-MinFlux = parser.getfloat('Starfinder', 'MinFlux')
-MaxFlux = parser.getfloat('Starfinder', 'MaxFlux')
-MaxDit = parser.getint('Starfinder', 'MaxDit')
-DitOptimisationTrials = parser.getint('Starfinder', 'DitOptimisationTrials')
-FWHM = parser.getint('Starfinder', 'FWHM')
-
-WFSilluminationThreshold = parser.getfloat('AO', 'WFSilluminationThreshold')
-WFSilluminationFraction = parser.getfloat('AO', 'WFSilluminationFraction')
-WFSCentringPrecision = parser.getfloat('AO', 'WFSCentringPrecision')
-
-TTSlopeThreshold = parser.getfloat('AO', 'TTSlopeThreshold')
-
-EulerLatitude = parser.getfloat('Euler', 'Latitude')
-EulerLongitude = parser.getfloat('Euler', 'Longitude')
-EulerAltitude = parser.getfloat('Euler', 'Altitude')
-
-temperature_file_timeout = parser.get('T120', 'temperature_file_timeout')
+import config
 
 
 def centre_on_target(kao='NO_AO'):
@@ -86,11 +49,11 @@ def centre_on_target(kao='NO_AO'):
     :return: 0 if centering succeded
     """
 
-    timeout_time = time.time() + CenteringTimeout
+    timeout_time = time.time() + config.Starfinder.centering_timeout
 
     while time.time() < timeout_time:
         # TODO use exptime given by nseq args
-        rValue, image_path = camera.take_image(dit=ExpTime)
+        rValue, image_path = camera.take_image(dit=config.FLI.exp_time)
 
         # TODO add dit optimisation
         #  focusing_dit = optimise_dit(focusing_dit)
@@ -109,7 +72,7 @@ def centre_on_target(kao='NO_AO'):
 
             send_pixel_offset(x, y)
 
-            rValue, image_path = camera.take_image(dit=ExpTime)
+            rValue, image_path = camera.take_image(dit=config.FLI.exp_time)
             if rValue != 0:
                 system.print_and_log(f'ERROR no image received. {rValue}')
                 return -1
@@ -118,7 +81,8 @@ def centre_on_target(kao='NO_AO'):
 
             if x != -1 and y != -1:
                 # Fine centering with TTM
-                aocontrol.tip_tilt_offset(CenterX - x, CenterY - y)
+                aocontrol.tip_tilt_offset(config.FLI.center_x - x,
+                                          config.FLI.center_y - y)
 
             if kao == 'AO':
 
@@ -126,7 +90,8 @@ def centre_on_target(kao='NO_AO'):
                 if verify_centering() == 0:
                     # Start WFS centering procedure
                     # TODO set WFS exptime
-                    aocontrol.wfs_centering(tt_threshold=TTSlopeThreshold)
+                    aocontrol.wfs_centering(tt_threshold=config.AO.
+                                            WFS_centering_slope_threshold)
                     request_manual_centering(False)
 
                     return 0
@@ -193,7 +158,8 @@ def center_on_laser():
     """
 
     # Move calib unit to approximately correct position if too far
-    if np.abs(calib_unit.status()['lrPosActual'] - LaserPosition) > 0.5:
+    if np.abs(calib_unit.status()['lrPosActual'] -
+              config.Laser.position) > 0.5:
         calib_unit.laser_position()
 
     if filterwheel.set_position('ND') == -1:
@@ -207,7 +173,7 @@ def center_on_laser():
         return
 
     #
-    laser.set_intensity(LaserCalibIntensity)
+    laser.set_intensity(config.Laser.calib_intensity)
 
     if flip_mirror.up() != 'UP':
         system.print_and_log("Error: flip mirror did not go up")
@@ -224,7 +190,7 @@ def center_on_laser():
     for i in range(3):
         print(f'Centering step {i}')
 
-        rValue, image_path = camera.take_image(dit=LaserCalibDIT)
+        rValue, image_path = camera.take_image(dit=config.FLI.laser_calib_dit)
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
@@ -232,12 +198,12 @@ def center_on_laser():
                                      nb_step=5, laser_spot=True)
 
         if x != -1 and y != -1:
-            calib_unit.pixel_move(CenterY - y)
+            calib_unit.pixel_move(config.FLI.center_y - y)
             print('Moved calib unit')
             time.sleep(3)
 
         # Check the new x position after the calib unit has been moved
-        rValue, image_path = camera.take_image(dit=LaserCalibDIT)
+        rValue, image_path = camera.take_image(dit=config.FLI.laser_calib_dit)
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
@@ -245,14 +211,14 @@ def center_on_laser():
                                      nb_step=5, laser_spot=True)
 
         if x != -1 and y != -1:
-            aocontrol.tip_tilt_offset(CenterX - x, 0)
+            aocontrol.tip_tilt_offset(config.FLI.center_x - x, 0)
 
     # Precise centering with WFS
     aocontrol.emgain_off()
 
-    laser.set_intensity(LaserAOCalibIntensity)
+    laser.set_intensity(config.Laser.AO_calib_intensity)
 
-    aocontrol.wfs_centering(TTSlopeThreshold)
+    aocontrol.wfs_centering(config.AO.WFS_centering_slope_threshold)
 
     return 0
 
@@ -269,7 +235,7 @@ def manual_centering(x, y, AO=False, sequencer_arguments=None):
 
     send_pixel_offset(x, y)
     rValue, image_path = camera.take_image(
-            dit=ExpTime, sequencer_arguments=sequencer_arguments)
+            dit=config.FLI.exp_time, sequencer_arguments=sequencer_arguments)
     if AO:
         rValue = verify_centering()
 
@@ -287,8 +253,8 @@ def send_pixel_offset(x, y):
     # Found star
     # TODO validate sign
     # TODO X is AZ and Y is ALT!!!
-    alt_offset = (CenterX - x) * PixScaleX
-    az_offset = (CenterY - y) * PixScaleY
+    alt_offset = (config.FLI.center_x - x) * config.FLI.pix_scale_x
+    az_offset = (config.FLI.center_y - y) * config.FLI.pix_scale_y
 
     t120.send_offset(az_offset, alt_offset)
 
@@ -303,9 +269,9 @@ def verify_centering():
     # TODO add docstring
     # TODO verify if SHWFS is enough illuminated
     illuminated_fraction = telemetry.wfs_illumination_fraction(
-            WFSilluminationThreshold)
+            config.AO.WFS_illumination_threshold)
 
-    if illuminated_fraction > WFSilluminationFraction:
+    if illuminated_fraction > config.AO.WFS_illumination_fraction:
         system.print_and_log('WFS on target')
         return 0
 
@@ -327,7 +293,8 @@ def find_star(image_path, df_output=False):
 
     mean, median, std = sigma_clipped_stats(image, sigma=3.0)
 
-    daofind = DAOStarFinder(fwhm=FWHM, threshold=5. * std, brightest=1)
+    daofind = DAOStarFinder(fwhm=config.Starfinder.FWHM, threshold=5. * std,
+                            brightest=1)
     sources = daofind(image - median)
 
     if sources is None:
@@ -501,7 +468,7 @@ def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
     return x_star, y_star
 
 
-def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
+def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
                    sequencer_arguments=None):
     """
     Starts a sequence to find best telescope M2 focus position.
@@ -538,7 +505,7 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
     file_handling.add_comment(file_path, "Focus sequence: 0")
 
     image = fits.getdata(file_path)
-    flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
+    flux = np.sort(np.ravel(image))[-config.Starfinder.focusing_pixels:].sum()
 
     focus_flux = pd.DataFrame({'set_focus': [initial_focus], 'flux': [flux]})
 
@@ -547,7 +514,7 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
         focus_points = focus_points + 1
 
     focusing_sequence = (np.arange(focus_points + 1) -
-                         focus_points / 2) * FocusingStep
+                         focus_points / 2) * config.Starfinder.focusing_step
 
     for step, focus_offset in enumerate(focusing_sequence):
         system.print_and_log(f'Focus step: {step+1}/{len(focusing_sequence)}')
@@ -578,7 +545,8 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
 
         image = fits.getdata(file_path)
 
-        flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
+        flux = np.sort(
+                np.ravel(image))[-config.Starfinder.focusing_pixels:].sum()
 
         focus_flux.loc[len(focus_flux.index)] = [new_focus, flux]
 
@@ -592,7 +560,8 @@ def focus_sequence(focus_points=4, focusing_dit=FocusingDit,
 
     temps = t120.get_tube_temp()
 
-    if (time.time() - float(temps.tunix)) < float(temperature_file_timeout):
+    if (time.time() - float(temps.tunix)) < float(
+            config.T120.temperature_file_timeout):
 
         database.store_obs_log({
                 'focusing_best': best_focus,
@@ -634,7 +603,7 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
 
     new_dit = starting_dit
 
-    for i in range(DitOptimisationTrials):
+    for i in range(config.Starfinder.dit_optimization_trials):
 
         req, file_path = camera.take_image(
                 dit=new_dit, sequencer_arguments=sequencer_arguments)
@@ -645,21 +614,24 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
 
         image = fits.getdata(file_path)
         # flux = image[np.argpartition(image, -6)][-6:].sum()
-        #flux = np.sort(np.ravel(image))[-FocusingPixels:].sum()
+        #flux = np.sort(np.ravel(image))[-focusing_pixels:].sum()
 
-        print(new_dit, image.max(), MaxFlux, MinFlux)
-        if image.mean() >= MaxFlux:
+        print(new_dit, image.max(), config.Starfinder.max_flux,
+              config.Starfinder.min_flux)
+        if image.mean() >= config.Starfinder.max_flux:
             new_dit = int(np.floor(0.8 * new_dit))
             if new_dit <= 1:
                 print('Max flux ' + str(image.max()) +
-                      ' above max permitted value ' + str(MaxFlux))
+                      ' above max permitted value ' +
+                      str(config.Starfinder.max_flux))
                 return -1
             continue
-        elif image.mean() <= MinFlux:
+        elif image.mean() <= config.Starfinder.min_flux:
             new_dit = int(np.ceil(1.2 * new_dit))
-            if new_dit >= MaxDit:
+            if new_dit >= config.Starfinder.max_dit:
                 print('Max flux ' + str(image.max()) +
-                      ' below minimum permitted value: ' + str(MinFlux))
+                      ' below minimum permitted value: ' +
+                      str(config.Starfinder.min_flux))
                 return -1
             continue
         else:
@@ -709,10 +681,12 @@ def generate_wcs():
     w = wcs.WCS(naxis=2)
 
     # Reference pixel value
-    w.wcs.crpix = [CenterX, CenterY]
+    w.wcs.crpix = [config.FLI.center_x, config.FLI.center_y]
 
     # Pixel scale in degrees
-    w.wcs.cdelt = np.array([PixScaleX / 3600, PixScaleY / 3600])
+    w.wcs.cdelt = np.array([
+            config.FLI.pix_scale_x / 3600, config.FLI.pix_scale_y / 3600
+    ])
 
     # RA, DEC at reference
     #w.wcs.crval = [c.ra.to_value(), c.dec.to_value()]

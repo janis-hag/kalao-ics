@@ -14,33 +14,24 @@ import datetime
 from opcua import ua
 from time import sleep
 import pandas as pd
-from configparser import ConfigParser
-from pathlib import Path
-import os
 
 from kalao.plc import core, filterwheel
 from kalao.utils import database, kalao_time
 
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-TungstenSwitchWait = parser.getfloat('PLC', 'TungstenSwitchWait')
+import config
 
 node_path = 'Tungsten'
 
 
 def get_flat_dits():
-    Id_filter_dict = filterwheel.create_filter_id()
-    Flat_dit_dict = {}
-    for key, val in parser.items('LampFlat'):
+    id_filter_dict = filterwheel.create_filter_id()
+    flat_dit_dict = {}
+    for key, val in config.Tungsten.flat_dit_list:
         # Create dit dictionary based on named filters
-        Flat_dit_dict[key] = float(val)
+        flat_dit_dict[key] = val
         # Create dit dictionary based on numbered filters
-        Flat_dit_dict[Id_filter_dict[key]] = float(val)
-    return Flat_dit_dict
+        flat_dit_dict[id_filter_dict[key]] = val
+    return flat_dit_dict
 
 
 def check_error(beck):
@@ -105,7 +96,7 @@ def send_command(beck, nCommand_value):
     # Execute
     send_execute(beck)
 
-    sleep(TungstenSwitchWait)
+    sleep(config.Tungsten.switch_wait)
     state = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
 
     # Store new status in database

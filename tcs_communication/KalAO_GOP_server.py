@@ -15,21 +15,15 @@ import os
 import sys
 import socket
 from time import sleep
-from pathlib import Path
-from configparser import ConfigParser
 from itertools import zip_longest
 
 from kalao.interface import status
 from kalao.utils import database, kalao_time
 from tcs_communication.pygop import tcs_srv_gop
 
-# Read config file
-parser = ConfigParser()
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
-parser.read(config_path)
+import config
 
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 #sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))+os.path(pymod_libgop))
 #sys.path.append('/home/kalao/kalao-ics/tcs_communication/pymod_libgop')
 
@@ -58,19 +52,12 @@ def gop_server():
     # Initialise Gop (Geneva Observatory Protocol)
     gop = tcs_srv_gop.gop()
 
-    socketName = parser.get('GOP', 'IP')
-    socketPort = parser.getint('GOP', 'Port')  # only for inet connection
-
-    sequencer_host = parser.get('SEQ', 'IP')
-    sequencer_port = parser.getint('SEQ', 'Port')
-
-    #
-    verbosity = parser.getint('GOP', 'Verbosity')
-    gop.processesRegistration(socketName)
+    gop.processesRegistration(config.GOP.ip)
 
     gop_print_and_log("Initialize new gop connection. Wait for client ...")
     # gc = gop.initializeGopConnection(socketName, verbosity)
-    gc = gop.initializeInetGopConnection(socketName, socketPort, verbosity)
+    gc = gop.initializeInetGopConnection(config.GOP.ip, config.GOP.port,
+                                         config.GOP.verbosity)
     #
     # Infinite loop, waiting for command
     # Rem; all command reply an acknowledgement
@@ -92,8 +79,9 @@ def gop_server():
                 gop_print_and_log(
                         "Initialize new gop connection. Wait for client ...")
                 # gc = gop.initializeGopConnection(socketName, verbosity)
-                gc = gop.initializeInetGopConnection(socketName, socketPort,
-                                                     verbosity)
+                gc = gop.initializeInetGopConnection(config.GOP.ip,
+                                                     config.GOP.port,
+                                                     config.GOP.verbosity)
                 break
             elif controlRead[-1] == '#':
                 command += controlRead[:-1]  # concat input string
@@ -130,7 +118,7 @@ def gop_server():
         if commandList[0][:1] == "K" or commandList[
                 0] == "INSTRUMENTCHANGE" or commandList[0] == "THE_END":
 
-            hostSeq, portSeq = (sequencer_host, sequencer_port)
+            hostSeq, portSeq = (config.SEQ.ip, config.SEQ.port)
             socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
             try:
@@ -206,7 +194,7 @@ def gop_server():
     # in case of break, we disconnect all servers
     #
 
-    gop_print_and_log(str(socketName) + " close gop connection and exit")
+    gop_print_and_log(str(config.GOP.ip) + " close gop connection and exit")
 
     gop.closeConnection()
     #sys.exit(0)

@@ -21,31 +21,7 @@ from kalao.cacao import aocontrol
 from kalao.fli import camera
 from sequencer import system
 
-from configparser import ConfigParser
-from pathlib import Path
-import os
-
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
-TemperatureUpdateInterval = parser.getint('Watchdog',
-                                          'TemperatureUpdateInterval')
-BenchUpdateInterval = parser.getint('Watchdog', 'BenchUpdateInterval')
-OpenShutterTimeout = parser.getint('Watchdog', 'OpenShutterTimeout')
-InactivityTimeout = parser.getint('Watchdog', 'InactivityTimeout')
-
-MINIMAL_FLOW = parser.getfloat('Cooling', 'MinimalFlow')
-FLOW_WARN = parser.getfloat('Cooling', 'FlowWarn')
-FLOW_GRACE_TIME = parser.getfloat('Cooling', 'FlowGraceTime')
-MAX_WATER_TEMP = parser.getfloat('Cooling', 'MaxWaterTemp')
-MAX_HEATSINK_TEMP = parser.getfloat('Cooling', 'MaxHeatsinkTemp')
-HEATSINK_TEMP_WARN = parser.getfloat('Cooling', 'HeatsinkTempWarn')
-MAX_CCD_TEMP = parser.getfloat('Cooling', 'MaxCCDTemp')
+import config
 
 # TODO switch EM gain off after inactivity
 
@@ -71,7 +47,7 @@ def _check_shutteropen_inactive():
 
         open_shutter_elapsed_time = shutter.get_switch_time()
 
-        if open_shutter_elapsed_time > OpenShutterTimeout and elapsed_time_since_activity > InactivityTimeout:
+        if open_shutter_elapsed_time > config.Watchdog.open_shutter_timeout and elapsed_time_since_activity > config.Watchdog.inactivity_timeout:
             message = 'Closing shutter due to inactivity timeout'
             system.print_and_log(message)
             shutter.log(message)
@@ -94,7 +70,7 @@ def _check_dm_inactive():
             kalao_time.now() - latest_obs_entry_time.replace(
                     tzinfo=datetime.timezone.utc)).total_seconds()
 
-    if elapsed_time_since_activity > InactivityTimeout:
+    if elapsed_time_since_activity > config.Watchdog.inactivity_timeout:
         # TODO add IPpower off if DM plug on IPpower (use existing FLI code)
         aocontrol.reset_stream('dm01disp00')
 
@@ -123,7 +99,7 @@ def _check_laseron_inactive():
 
         laser_on_elapsed_time = laser.get_switch_time()
 
-        if laser_on_elapsed_time > OpenShutterTimeout and elapsed_time_since_activity > InactivityTimeout:
+        if laser_on_elapsed_time > config.Watchdog.open_shutter_timeout and elapsed_time_since_activity > config.Watchdog.inactivity_timeout:
             message = 'Turning off laser due to inactivity timeout'
             system.print_and_log(message)
             laser.log(message)
@@ -159,16 +135,16 @@ def _check_cooling_status():
     latest_log = database.get_latest_record('obs_log',
                                             'sequencer_log')['sequencer_log']
 
-    if cooling_status['cooling_flow_value'] < MINIMAL_FLOW:
+    if cooling_status['cooling_flow_value'] < config.Cooling.minimal_flow:
 
         # Get time since flow is too low
         low_flow_time = temperature_control.get_flow_threshold_time(
-                MINIMAL_FLOW)
+                config.Cooling.minimal_flow)
 
-        if low_flow_time > FLOW_GRACE_TIME:
+        if low_flow_time > config.Cooling.flow_grace_time:
             # Verify how low the cooling is already below minimal value.
 
-            message = f"ERROR: Cooling flow value {cooling_status['cooling_flow_value']} below minimum {MINIMAL_FLOW} for {low_flow_time} seconds."
+            message = f"ERROR: Cooling flow value {cooling_status['cooling_flow_value']} below minimum {config.Cooling.minimal_flow} for {low_flow_time} seconds."
 
             if not latest_log.startswith(message[:24]):
                 system.print_and_log(message)
@@ -185,13 +161,13 @@ def _check_cooling_status():
             if not latest_log.startswith(message[:24]):
                 system.print_and_log(message)
 
-    elif cooling_status['cooling_flow_value'] < FLOW_WARN:
+    elif cooling_status['cooling_flow_value'] < config.Cooling.flow_warn:
         system.print_and_log(
                 f"WARNING: Low cooling flow value {cooling_status['cooling_flow_value']}"
         )
 
-    if cooling_status['temp_water_in'] > MAX_WATER_TEMP:
-        message = f"ERROR: water_in temperature {cooling_status['temp_water_in']} below minimum {MINIMAL_FLOW}"
+    if cooling_status['temp_water_in'] > config.Cooling.max_water_temp:
+        message = f"ERROR: water_in temperature {cooling_status['temp_water_in']} above maxiumum {config.Cooling.max_water_temp}"
         if not latest_log.startswith(message[:24]):
             system.print_and_log(message)
         return -1
@@ -199,21 +175,22 @@ def _check_cooling_status():
     # Check camera temperatures
     if camera.check_server_status() == 'OK':
         # Verify if camera is running
-        if cooling_status['camera_HS_temp'] > MAX_HEATSINK_TEMP:
-            message = f"ERROR: camera_HS_temp temperature {cooling_status['camera_HS_temp']} above minimum {MAX_HEATSINK_TEMP}"
+        if cooling_status['camera_HS_temp'] > config.Cooling.max_heatsink_temp:
+            message = f"ERROR: camera_HS_temp temperature {cooling_status['camera_HS_temp']} above maximum {config.Cooling.max_heatsink_temp}"
 
             if not latest_log.startswith(message[:24]):
                 system.print_and_log(message)
             return -1
 
-        elif cooling_status['camera_HS_temp'] > HEATSINK_TEMP_WARN:
-            message = f"WARNING: camera_HS_temp temperature {cooling_status['camera_HS_temp']}"
+        elif cooling_status[
+                'camera_HS_temp'] > config.Cooling.heatsink_temp_warn:
+            message = f"WARNING: camera_HS_temp temperature {cooling_status['camera_HS_temp']} above warning threshold {config.Cooling.heatsink_temp_warn}"
             if not latest_log.startswith(message[:24]):
                 system.print_and_log(message)
             return -1
 
-        if cooling_status['camera_CCD_temp'] > MAX_CCD_TEMP:
-            message = f"ERROR: camera_CCD_temp temperature {cooling_status['camera_CCD_temp']} below minimum {MAX_CCD_TEMP}"
+        if cooling_status['camera_CCD_temp'] > config.Cooling.max_CCD_temp:
+            message = f"ERROR: camera_CCD_temp temperature {cooling_status['camera_CCD_temp']} above maximum {config.Cooling.max_CCD_temp}"
             if not latest_log.startswith(message[:24]):
                 system.print_and_log(message)
 
@@ -235,8 +212,10 @@ def initialise():
 
 if __name__ == "__main__":
 
-    schedule.every(TemperatureUpdateInterval).seconds.do(_check_cooling_status)
-    schedule.every(BenchUpdateInterval).seconds.do(_check_bench_status)
+    schedule.every(config.Watchdog.temperature_update_interval).seconds.do(
+            _check_cooling_status)
+    schedule.every(config.Watchdog.bench_update_interval).seconds.do(
+            _check_bench_status)
 
     while True:
         schedule.run_pending()

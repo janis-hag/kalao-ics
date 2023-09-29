@@ -12,13 +12,10 @@ file_handling.py is part of the KalAO Instrument Control Software
 # TODO create functions:
 # - update_temporary_folder( current_folder, temporary_folder)
 
-import sys
 import os
 from pathlib import Path
 import shutil
 import glob
-#import time
-from configparser import ConfigParser
 from datetime import datetime, timezone
 from astropy.io import fits
 import pandas as pd
@@ -32,21 +29,7 @@ from kalao.fli import camera
 
 from sequencer import system
 
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-
-# Read config file and create a dict for each section where keys is parameter
-parser = ConfigParser()
-parser.read(config_path)
-
-TemporaryDataStorage = parser.get('FLI', 'TemporaryDataStorage')
-Science_folder = parser.get('FLI', 'ScienceDataStorage')
-FileMask = parser.get('FLI', 'FileMask')
-T4root = parser.get('SEQ', 't4root')
-FitsHeaderFile = parser.get('SEQ', 'fits_header_file')
-TCSHeaderValidity = parser.getint('SEQ', 'tcs_header_validity')
+import config
 
 
 def create_night_filepath(tmp_night_folder=None):
@@ -70,9 +53,9 @@ def create_night_folder():
     # check if folder exists
     # remove temporary folder of previous night if empty
 
-    tmp_night_folder = os.path.join(TemporaryDataStorage,
+    tmp_night_folder = os.path.join(config.FLI.temporary_data_storage,
                                     kalao_time.get_start_of_night())
-    science_night_folder = os.path.join(Science_folder,
+    science_night_folder = os.path.join(config.FLI.Science_folder,
                                         kalao_time.get_start_of_night())
 
     # Check if tmp and science folders exist
@@ -82,8 +65,8 @@ def create_night_folder():
         os.mkdir(science_night_folder)
 
     # Remove empty folder in tmp except for current night folder
-    for folder in os.listdir(TemporaryDataStorage):
-        folder = os.path.join(TemporaryDataStorage, folder)
+    for folder in os.listdir(config.FLI.temporary_data_storage):
+        folder = os.path.join(config.FLI.temporary_data_storage, folder)
         if folder != tmp_night_folder and len(os.listdir(folder)) == 0:
             os.rmdir(folder)
 
@@ -98,7 +81,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
     :param sequencer_arguments: argument list received by the sequencer
     :return:
     '''
-    Science_night_folder = Science_folder + os.sep + kalao_time.get_start_of_night(
+    Science_night_folder = config.FLI.Science_folder + os.sep + kalao_time.get_start_of_night(
     )
 
     # Remove tmp_ from filename
@@ -109,7 +92,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
         update_header(image_path, sequencer_arguments=sequencer_arguments)
         shutil.move(image_path, target_path_name)
         # TODO Remove write permission
-        # os.chmod(target_path_name, FileMask)
+        # os.chmod(target_path_name, file_mask)
 
         # TODO possibly add the right UID and GID
         system.print_and_log('Saved: ' + target_path_name)
@@ -347,7 +330,7 @@ def _get_last_telescope_header():
     """
 
     # TODO verify if latest_record['time_utc'] is recent enough
-    gls_home = Path(T4root)
+    gls_home = Path(config.SEQ.T4_root)
 
     tcs_header_path_record = database.get_latest_record(
             'obs_log', key='tcs_header_path')
@@ -362,7 +345,7 @@ def _get_last_telescope_header():
     else:
         tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
 
-    if header_age > TCSHeaderValidity:
+    if header_age > config.SEQ.tcs_header_validity:
         system.print_and_log(
                 f'WARN: {tcs_header_path_record["tcs_header_path"]} is {header_age / 60} minutes old. Discarding obsolete header'
         )
@@ -413,7 +396,7 @@ def _read_fits_defintions():
     :return: pandas dataframe with the fits definitions
     '''
 
-    with open(FitsHeaderFile, 'r') as f:
+    with open(config.SEQ.fits_header_file, 'r') as f:
         y = yaml.safe_load(f)
 
     yaml_dic = pd.json_normalize(y)

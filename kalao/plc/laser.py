@@ -10,9 +10,6 @@ laser.py is part of the KalAO Instrument Control Software
 """
 
 import datetime
-import os
-from configparser import ConfigParser
-from pathlib import Path
 from time import sleep
 import pandas as pd
 import numpy as np
@@ -23,14 +20,7 @@ from kalao.plc import core
 from kalao.utils import database, kalao_time
 from kalao.cacao import aocontrol
 
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-MAX_ALLOWED_LASER_INTENSITY = parser.getfloat('PLC', 'LaserMaxAllowed')
-LASER_SWITCH_WAIT = parser.getfloat('PLC', 'LaserSwitchWait')
+import config
 
 
 def status(beck=None):
@@ -177,8 +167,8 @@ def set_intensity(intensity=0.4, beck=None):
     beck, disconnect_on_exit = core.check_beck(beck)
 
     # Limit intensity to protect the WFS
-    if intensity > MAX_ALLOWED_LASER_INTENSITY:
-        intensity = MAX_ALLOWED_LASER_INTENSITY
+    if intensity > config.Laser.max_intensity:
+        intensity = config.Laser.max_intensity
     if not beck.get_node("ns=4;s=MAIN.Laser.bEnable").get_value():
         laser_enable = beck.get_node("ns=4;s=MAIN.Laser.bEnable")
         laser_enable.set_attribute(
@@ -208,7 +198,7 @@ def set_intensity(intensity=0.4, beck=None):
                             laser_bSetIntensity.get_data_type_as_variant_type(
                             ))))
 
-    sleep(LASER_SWITCH_WAIT)
+    sleep(config.Laser.switch_wait)
     current = beck.get_node("ns=4;s=MAIN.Laser.Current").get_value()
 
     if disconnect_on_exit:

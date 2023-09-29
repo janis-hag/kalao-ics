@@ -11,9 +11,6 @@ datasets specific for the KalAO flask graphic user interface (GUI).
 """
 
 import datetime
-import os
-from configparser import ConfigParser
-from pathlib import Path
 
 from astropy import units as u
 from astropy.coordinates import EarthLocation, SkyCoord, AltAz
@@ -24,23 +21,7 @@ from kalao.cacao import fake_data, telemetry
 
 from kalao.utils import database, kalao_time
 
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-InitDuration = parser.getint('SEQ', 'InitDuration')
-TungstenStabilisationTime = parser.getint('PLC', 'TungstenStabilisationTime')
-#SetupTime = parser.getint('FLI', 'SetupTime')
-#SetupTimes = parser.get('Timings', 'gop_arg_string').replace(' ','').split(',')
-
-EulerLatitude = parser.getfloat('Euler', 'Latitude')
-EulerLongitude = parser.getfloat('Euler', 'Longitude')
-EulerAltitude = parser.getfloat('Euler', 'Altitude')
-DefaultTemperature = parser.getfloat('Euler', 'DefaultTemperature')
-DefaultPressure = parser.getfloat('Euler', 'DefaultPressure')
-
+import config
 
 def short():
     """
@@ -164,7 +145,7 @@ def elapsed_time(sequencer_status):
                 'obs_log', key='sequencer_status')['time_utc'].replace(
                         tzinfo=datetime.timezone.utc)
         # database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-        return str(InitDuration - (kalao_time.now() -
+        return str(config.SEQ.init_duration - (kalao_time.now() -
                                    status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == 'SETUP':
@@ -172,12 +153,8 @@ def elapsed_time(sequencer_status):
                 'obs_log', key='sequencer_command_received'
         )['sequencer_command_received']['type'][2:]
 
-        if k_type.lower() in dict(parser.items('Timings')):
-            setup_time = parser.getint('Timings', k_type)
-    # if k_type == 'DARK':
-    #     setup_time = parser.getint('Timings', 'DARKsetup')
-    # elif k_type == 'LMPFLT':
-    #     setup_time = parser.getint('Timings', 'LMPFLTsetup')
+        if k_type.upper() in config.SEQ.timings:
+            setup_time = config.SEQ.timings[k_type.upper()]
         else:
             setup_time = 0
 
@@ -189,7 +166,7 @@ def elapsed_time(sequencer_status):
                                  status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == 'WAITLAMP':
-        return str(TungstenStabilisationTime -
+        return str(config.Tungsten.stabilisation_time -
                    tungsten.get_switch_time()).split('.')[0]
 
     else:
@@ -258,12 +235,12 @@ def adc_angle():
 
 def outside_pressure():
     # Might be updated to take actual value from weather station
-    return DefaultPressure
+    return config.Euler.default_pressure
 
 
 def outside_temperature():
     # Might be updated to take actual value from weather station
-    return DefaultTemperature
+    return config.Euler.default_temperature
 
 
 def star_coord():
@@ -304,8 +281,8 @@ def telescope_coord_altaz():
     # TODO check coordinates
     # La Silla coordinates
 
-    observing_location = EarthLocation(lat=EulerLatitude, lon=EulerLongitude,
-                                       height=EulerAltitude * u.m)
+    observing_location = EarthLocation(lat=config.Euler.latitude, lon=config.Euler.longitude,
+                                       height=config.Euler.altitude * u.m)
 
     altaz_frame = AltAz(location=observing_location, obstime=Time.now())
 

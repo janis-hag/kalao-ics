@@ -8,8 +8,6 @@ from os import path as OsPath
 # methode dirname return parent directory and methode abspath return absolut path
 SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
-from pathlib import Path
-
 from sequencer import seq_command, system
 
 from kalao.utils import database, kalao_time
@@ -17,25 +15,12 @@ from kalao.plc import filterwheel
 
 import socket
 #import time
-import os
-import sys
 
 from itertools import zip_longest
-from configparser import ConfigParser
 from queue import Queue
 from threading import Thread
 
-#TODO clean config reading and loading procedure
-
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
-if os.access(config_path, os.R_OK):
-    # Read config file
-    parser = ConfigParser()
-    parser.read(config_path)
-else:
-    system.print_and_log('kalao.config not found on path: ' + str(config_path))
-    sys.exit(1)
+import config
 
 
 def seq_server():
@@ -47,11 +32,8 @@ def seq_server():
     :return:
     """
 
-    host = parser.get('SEQ', 'IP')
-    port = parser.getint('SEQ', 'Port')
-
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socketSeq.bind((host, port))
+    socketSeq.bind((config.SEQ.ip, config.SEQ.port))
     system.print_and_log("Server on: " + str(kalao_time.now()))
 
     conn = None
@@ -173,24 +155,12 @@ def cast_args(args):
     :return: 0 if there was no error and 1 otherwise
     """
 
-    parser = ConfigParser()
-    config_path = os.path.join(
-            Path(os.path.abspath(__file__)).parents[1], 'kalao.config')
-    parser.read(config_path)
-
     # Create bidirect dict with filter id (str and int)
     Id_filter = filterwheel.create_filter_id()
 
-    # Create a list from a string
-    # from: "xxx, yyy, zzz" -> to: ['xxx', 'yyy', 'zzz']
-    arg_int = parser.get('SEQ', 'gop_arg_int').replace(' ', '').split(',')
-    arg_float = parser.get('SEQ', 'gop_arg_float').replace(' ', '').split(',')
-    arg_string = parser.get('SEQ', 'gop_arg_string').replace(' ',
-                                                             '').split(',')
-
     # Create dictionary to translate EDP argument to KalAO arguments
     edp_translation_dict = {}
-    for key, val in parser.items('EDP_translate'):
+    for key, val in config.SEQ.EDP_translate:
         edp_translation_dict[key] = val
 
     # Translate keyword if not already present
@@ -200,7 +170,7 @@ def cast_args(args):
 
     # Check for each key if the cast of the value is possible and cast it
     for k, v in args.items():
-        if k in arg_int:
+        if k in config.SEQ.gop_arg_int:
             if v.isdigit():
                 args[k] = int(v)
             else:
@@ -209,7 +179,7 @@ def cast_args(args):
                                 "Error: {} value cannot be convert in int".
                                 format(k)
                 })
-        elif k in arg_float:
+        elif k in config.SEQ.gop_arg_float:
             if v.replace('.', '', 1).isdigit():
                 args[k] = float(v)
             else:
@@ -218,7 +188,7 @@ def cast_args(args):
                                 "Error: {} value cannot be convert in float".
                                 format(k)
                 })
-        elif k in arg_string:
+        elif k in config.SEQ.gop_arg_string:
             # If filterposition arg is not a digit, then he must be a name
             # Get the int id from the dict Id_filter
             # If filterposition arg is a digit, cast it in int

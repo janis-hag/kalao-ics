@@ -9,6 +9,7 @@ systemctl --user enable kalao_flask-gui.service
 systemctl --user enable kalao_gop_server.service
 systemctl --user enable kalao_safety-watchdog.service
 systemctl --user enable kalao_pump-watchdog.service
+systemctl --user enable kalao_loop-watchdog.service
 
 # Starting services
 systemctl --user start kalao_sequencer.service
@@ -18,6 +19,7 @@ systemctl --user start kalao_flask-gui.service
 systemctl --user start kalao_gop_server.service
 systemctl --user start kalao_safety-watchdog.service
 systemctl --user start kalao_pump-watchdog.service
+systemctl --user start kalao_loop-watchdog.service
 
 # Printing out status
 systemctl --user status

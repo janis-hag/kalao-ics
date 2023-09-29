@@ -24,22 +24,7 @@ from kalao.utils import database
 from sequencer import system
 from kalao.cacao import telemetry, aocontrol
 
-from configparser import ConfigParser
-from pathlib import Path
-import os
-
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-PLC_Disabled = parser.get('PLC', 'Disabled').split(',')
-Telemetry_update_interval = parser.getint('Database',
-                                          'Telemetry_update_interval')
-PLC_update_interval = parser.getint('Database',
-                                    'PLC_monitoring_update_interval')
+import config
 
 
 def handler(signal_received, frame):
@@ -60,10 +45,9 @@ def update_plc_monitoring():
     plc_values, plc_text = plc.core.plc_status()
 
     # Do not log status of disabled devices.
-    if not PLC_Disabled[0] == 'None':
-        for device_name in PLC_Disabled:
-            plc_values.pop(device_name)
-            plc_text.pop(device_name)
+    for device_name in config.PLC.disabled:
+        plc_values.pop(device_name)
+        plc_text.pop(device_name)
     values.update(plc_values)
 
     # get RTC data and update
@@ -135,9 +119,10 @@ if __name__ == "__main__":
     }
 
     # Get monitoring and cacao
-    schedule.every(Telemetry_update_interval).seconds.do(
+    schedule.every(config.Database.telemetry_update_interval).seconds.do(
             update_telemetry, stream_list=sl)
-    schedule.every(PLC_update_interval).seconds.do(update_plc_monitoring)
+    schedule.every(config.Database.PLC_monitoring_update_interval).seconds.do(
+            update_plc_monitoring)
 
     while True:
         schedule.run_pending()

@@ -13,9 +13,6 @@ import numbers
 import numpy as np
 from opcua import ua
 from time import sleep
-from configparser import ConfigParser
-from pathlib import Path
-import os
 
 from numpy.polynomial import Polynomial
 from scipy.optimize import minimize_scalar
@@ -24,15 +21,7 @@ from kalao.plc import core
 from kalao.interface import status
 from kalao.utils import database
 
-config_path = os.path.join(
-        Path(os.path.abspath(__file__)).parents[2], 'kalao.config')
-# Read config file
-parser = ConfigParser()
-parser.read(config_path)
-
-ADC1_MAX_ANGLE = parser.getfloat('PLC', 'ADC1_MAX_ANGLE')
-ADC2_MAX_ANGLE = parser.getfloat('PLC', 'ADC2_MAX_ANGLE')
-ADCAngleThreshold = parser.getfloat('PLC', 'ADCAngleThreshold')
+import config
 
 adc_name = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
 
@@ -155,7 +144,8 @@ def config_adc(beck=None, override_threshold=False):
 
     current_angle = status.adc_angle()
 
-    if override_threshold or np.abs(angle - current_angle) > ADCAngleThreshold:
+    if override_threshold or np.abs(
+            angle - current_angle) > config.ADC.angle_threshold:
         set_angle(angle, beck=beck)
 
     if disconnect_on_exit:
@@ -189,8 +179,8 @@ def set_zero_disp(beck=None):
 
 def set_angle(angle, beck=None):
     # Motors are face to face, offset by same angle so they are counter-rotating
-    rotate(1, position=ADC1_MAX_ANGLE + angle / 2, beck=beck)
-    rotate(2, position=ADC2_MAX_ANGLE + angle / 2, beck=beck)
+    rotate(1, position=config.ADC.max_disp_angle_1 + angle / 2, beck=beck)
+    rotate(2, position=config.ADC.max_disp_angle_2 + angle / 2, beck=beck)
 
     # TODO: check motors moved successfully
     database.store_obs_log({'adc_angle': angle})
