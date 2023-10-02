@@ -675,6 +675,11 @@ def generate_night_darks(filepath=None):
 
 
 def generate_wcs():
+    """
+    Queries the current telescope coordinates to generate a WCS object.
+
+    :return: WCS object with current telescope coordinates
+    """
 
     # Create a new WCS object.  The number of axes must be set
     # from the start

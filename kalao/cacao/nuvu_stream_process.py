@@ -19,7 +19,6 @@ import numpy as np
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
-    # TODO close stream
     #system.camera_service('start')
     #print('Restarted kalao_camera service')
     exit(0)

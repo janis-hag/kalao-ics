@@ -248,7 +248,7 @@ def run(cam, args):
 
     zernike_shm.set_data(zernike_array.astype(zernike_shm.nptype))
 
-    # TODO save dm01disp shwfs_slopes
+    # TODO update zp0 stream
     save_stream_to_fits('dm01disp', 'dmflat_ncpa_time_name.fits')
     save_stream_to_fits('shwfs_slopes', 'slopes_ncpa_time_name.fits')
 
