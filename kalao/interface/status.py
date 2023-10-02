@@ -24,6 +24,7 @@ from kalao.utils import database, kalao_time
 from kalao_enums import SequencerStatus, TrackingStatus
 import kalao_config as config
 
+
 def short():
     """
     Query short status of all KalAO devices
@@ -146,8 +147,9 @@ def elapsed_time(sequencer_status):
                 'obs_log', key='sequencer_status')['time_utc'].replace(
                         tzinfo=datetime.timezone.utc)
         # database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-        return str(config.SEQ.init_duration - (kalao_time.now() -
-                                   status_time).total_seconds()).split('.')[0]
+        return str(config.SEQ.init_duration -
+                   (kalao_time.now() -
+                    status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == SequencerStatus.SETUP:
         k_type = database.get_latest_record(
@@ -245,8 +247,10 @@ def outside_temperature():
 
 
 def loop_running():
-    tracking_status = database.get_latest_record(collection_name='obs_log', key='tracking_status')['tracking_status']
-    return  tracking_status == TrackingStatus.TRACKING
+    tracking_status = database.get_latest_record(
+            collection_name='obs_log',
+            key='tracking_status')['tracking_status']
+    return tracking_status == TrackingStatus.TRACKING
 
 
 def star_coord():
@@ -285,7 +289,8 @@ def telescope_coord_altaz():
     # TODO check coordinates
     # La Silla coordinates
 
-    observing_location = EarthLocation(lat=config.Euler.latitude, lon=config.Euler.longitude,
+    observing_location = EarthLocation(lat=config.Euler.latitude,
+                                       lon=config.Euler.longitude,
                                        height=config.Euler.altitude * u.m)
 
     altaz_frame = AltAz(location=observing_location, obstime=Time.now())

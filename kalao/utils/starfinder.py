@@ -81,8 +81,8 @@ def centre_on_target(kao='NO_AO'):
 
             if x != -1 and y != -1:
                 # Fine centering with TTM
-                aocontrol.tip_tilt_offset(config.FLI.center_x - x,
-                                          config.FLI.center_y - y)
+                aocontrol.tip_tilt_offset_fli_to_ttm(x - config.FLI.center_x,
+                                                     y - config.FLI.center_y)
 
             if kao == 'AO':
 
@@ -181,7 +181,7 @@ def center_on_laser():
         return
 
     # Reset tip tilt offset to 0
-    aocontrol.tip_tilt_offset(0, 0, absolute=True)
+    aocontrol.tip_tilt_offset_fli_to_ttm(0, 0, absolute=True)
 
     # Reset tip tilt stream to 0
     aocontrol.reset_stream("dm02disp")
@@ -211,7 +211,7 @@ def center_on_laser():
                                      nb_step=5, laser_spot=True)
 
         if x != -1 and y != -1:
-            aocontrol.tip_tilt_offset(config.FLI.center_x - x, 0)
+            aocontrol.tip_tilt_offset_fli_to_ttm(x - config.FLI.center_x, 0)
 
     # Precise centering with WFS
     aocontrol.emgain_off()
@@ -253,8 +253,8 @@ def send_pixel_offset(x, y):
     # Found star
     # TODO validate sign
     # TODO X is AZ and Y is ALT!!!
-    alt_offset = (config.FLI.center_x - x) * config.FLI.pix_scale_x
-    az_offset = (config.FLI.center_y - y) * config.FLI.pix_scale_y
+    alt_offset = (x - config.FLI.center_x) * config.FLI.pix_scale_x
+    az_offset = (y - config.FLI.center_y) * config.FLI.pix_scale_y
 
     t120.send_offset(az_offset, alt_offset)
 

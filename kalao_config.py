@@ -24,9 +24,9 @@ class ADC:
 
 
 class TTM:
-    # Should be 20 / 1200 / 1000 * 180/np.pi * 3600 = 3.44 arcsec / mrad
-    tip_to_onsky = 3.44  # arcsec / mrad
-    tilt_to_onsky = 3.44  # arcsec / mrad
+    # Should be 2 * 20 / 1200 / 1000 * 180/np.pi * 3600 = 6.88 arcsec / mrad
+    tip_to_onsky = 6.88  # arcsec / mrad
+    tilt_to_onsky = 6.88  # arcsec / mrad
 
     # Recommended: 5 * 0.1 (10% of TTM range)
     offload_threshold = 0.5  # mrad
@@ -49,8 +49,8 @@ class FLI:
     request_timeout = 3500  # s
 
     # Should be 1/49.2726 * 3600 * 180/np.pi * 13e-6 = 0.0544 arcsec / px
-    pix_scale_x = -0.0658  # arcsec / px
-    pix_scale_y = -0.0512  # arcsec / px
+    pix_scale_x = 0.0658  # arcsec / px
+    pix_scale_y = 0.0512  # arcsec / px
 
     center_x = 551  # px
     #535
@@ -197,11 +197,11 @@ class AO:
     WFS_centering_timeout = 30
     WFS_centering_slope_threshold = 0.005
 
-    # Should be 1/49.2726 * 1200 / 20 * 1000 * 13e-6 = 0.0158 mrad / px
-    FLI_tip_to_TTM = -0.008497723325890764  # mrad / px
-    FLI_tilt_to_TTM = -0.008497723325890764  # mrad / px
+    # Should be 0.5 * 1/49.2726 * 1200 / 20 * 1000 * 13e-6 = 0.00792 mrad / px
+    FLI_tip_to_TTM = 0.008497723325890764  # mrad / px
+    FLI_tilt_to_TTM = 0.008497723325890764  # mrad / px
 
-    # Should be 1/5.31532 * 1200 / 20 * 1000 * 48e-6 = 0.542 mrad / px (2x2 binning)
+    # Should be 0.5 * 1/5.31532 * 1200 / 20 * 1000 * 48e-6 = 0.271 mrad / px (2x2 binning)
     WFS_tip_to_TTM = 0.28649303833986856  # mrad / px
     WFS_tilt_to_TTM = -0.25807611836775707  # mrad / px
 

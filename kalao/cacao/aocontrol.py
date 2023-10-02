@@ -307,12 +307,12 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
         return -1
 
 
-def tip_tilt_offload(gain=0.5, override_threshold=False):
+def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False):
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
 
-    :param gain: Gain factor, set to 0.2 by default.
+    :param gain: Gain factor, set to 0.25 by default.
     :return:
     """
 
@@ -347,7 +347,8 @@ def tip_tilt_offload(gain=0.5, override_threshold=False):
     return 0
 
 
-def tip_tilt_offset(x_tip, y_tilt, absolute=False, stream_name='dm02disp04'):
+def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
+                               stream_name='dm02disp04'):
     """
     Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
 
@@ -409,81 +410,6 @@ def tip_tilt_offset(x_tip, y_tilt, absolute=False, stream_name='dm02disp04'):
     database.store_obs_log({'ttm_log': message})
 
     tip, tilt = stream_data
-
-    message = f'New Tip and Tilt offset values {tip} and {tilt}'
-    print(message)
-    database.store_obs_log({'ttm_log': message})
-
-    return 0
-
-
-# TODO: still relevant?
-def tip_tilt_offset_bmc(x_tip, y_tilt, absolute=False):
-    """
-    Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
-
-    :param x_tip: number of pixels to tip
-    :param y_tilt: number of pixels to tilt
-    :param absolute: Flag to indicate that tip tilt values are in absolute radian. By default, set to False.
-
-    :return:
-    """
-
-    bmc_exists, bmc_fps_path = check_fps("bmc_display-01")
-
-    # fps_slopes = fps("shwfs_process")
-
-    if not bmc_exists:
-        message = f'ERROR: {bmc_fps_path} is missing'
-        print(message)
-        database.store_obs_log({'ttm_log': message})
-        return -1
-
-    fps_bmc = fps("bmc_display-01")
-
-    # TIP
-    # tip = fps_slopes.get_param_value_float('slope_y')
-    tip = fps_bmc.get_param_value_float('ttm_tip_offset')
-
-    if absolute:
-        new_tip_value = x_tip
-    else:
-        new_tip_value = tip + x_tip * config.AO.FLI_tip_to_TTM
-
-    if new_tip_value > 2.45:
-        print('Limiting tip to 2.45')
-        new_tip_value = 2.45
-    elif new_tip_value < -2.45:
-        print('Limiting tip to -2.45')
-        new_tip_value = -2.45
-
-    fps_bmc.set_param_value_float('ttm_tip_offset', str(new_tip_value))
-
-    # TILT
-
-    # tilt = fps_slopes.get_param_value_float('slope_x')
-    tilt = fps_bmc.get_param_value_float('ttm_tilt_offset')
-
-    if absolute:
-        new_tilt_value = y_tilt
-    else:
-        new_tilt_value = tilt + y_tilt * config.AO.FLI_tilt_to_TTM
-
-    if new_tilt_value > 2.45:
-        print('Limiting tilt to 2.45')
-        new_tilt_value = 2.45
-    elif new_tilt_value < -2.45:
-        print('Limiting tilt to -2.45')
-        new_tilt_value = -2.45
-
-    fps_bmc.set_param_value_float('ttm_tilt_offset', str(new_tilt_value))
-
-    message = f'Changing Tip and Tilt offset to  {new_tip_value} and {new_tilt_value}'
-    print(message)
-    database.store_obs_log({'ttm_log': message})
-
-    tip = fps_bmc.get_param_value_float('ttm_tip_offset')
-    tilt = fps_bmc.get_param_value_float('ttm_tilt_offset')
 
     message = f'New Tip and Tilt offset values {tip} and {tilt}'
     print(message)

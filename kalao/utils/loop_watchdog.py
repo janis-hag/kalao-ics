@@ -26,7 +26,7 @@ def _update_adc(beck=None):
 
 def _offload_ttm(beck=None):
     if status.loop_running():
-        aocontrol.tip_tilt_offload(beck=beck)
+        aocontrol.tip_tilt_offload_ttm_to_telescope(beck=beck)
 
 
 if __name__ == "__main__":

@@ -479,7 +479,7 @@ def target_observation(**seq_args):
 
         for i in range(5):
             system.print_and_log("Initial tip/tilt offload")
-            aocontrol.tip_tilt_offload()
+            aocontrol.tip_tilt_offload_ttm_to_telescope()
             starfinder.centre_on_target(kao=kao)
             time.sleep(3)
 
