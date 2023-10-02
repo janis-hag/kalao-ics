@@ -15,7 +15,8 @@ import time
 
 from kalao.utils import database
 
-import config
+from kalao_enums import SequencerStatus
+import kalao_config as config
 
 
 def _isDigit(x):
@@ -287,7 +288,7 @@ def initialise_services():
                         'ERROR: a service is not running! ' +
                         str(check_status())
         })
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     return 0
@@ -472,7 +473,7 @@ def check_kalao_config():
         error = True
 
     if error:
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
 

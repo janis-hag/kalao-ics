@@ -23,7 +23,7 @@ from tcs_communication.pyipc import pymod_libipc as ipc
 
 from kalao.utils import database, kalao_time, starfinder
 
-import config
+import kalao_config as config
 
 #
 # The connection to ipcsrv on <host>:

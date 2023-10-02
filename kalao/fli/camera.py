@@ -24,7 +24,8 @@ from sequencer import system
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
-import config
+from kalao_enums import SequencerStatus
+import kalao_config as config
 
 # Removing in order to only use take_image
 # def take_science_exposure(dit=0.05, filepath=None):
@@ -302,7 +303,7 @@ def _send_request(request_type, params):
     else:
         if request_type == 'acquire':
             increment_image_counter()
-            database.store_obs_log({'sequencer_status': 'EXP'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.EXP})
             if 'exptime' in params.keys():
                 database.store_obs_log({'fli_texp': params['exptime']})
 

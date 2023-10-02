@@ -14,11 +14,13 @@ from sequencer import seq_server
 from sequencer import system
 from kalao.utils import database, kalao_time
 
+from kalao_enums import SequencerStatus
+
 if __name__ == '__main__':
 
     system.print_and_log("Server starting: " + str(kalao_time.now()))
 
-    database.store_obs_log({'sequencer_status': 'INITIALISING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.INITIALISING})
 
     if seq_init.initialisation() == 0:
         print("Initialisation OK.")

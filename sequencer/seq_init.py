@@ -26,7 +26,7 @@ from kalao.fli import camera
 
 from sequencer import system
 
-import config
+import kalao_config as config
 
 
 class ThreadWithReturnValue(Thread):

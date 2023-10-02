@@ -20,7 +20,8 @@ from itertools import zip_longest
 from queue import Queue
 from threading import Thread
 
-import config
+from kalao_enums import SequencerStatus
+import kalao_config as config
 
 
 def seq_server():
@@ -65,7 +66,7 @@ def seq_server():
     th = None
     preCommand = ""
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
     while True:
         socketSeq.listen()
@@ -73,7 +74,7 @@ def seq_server():
         conn, address = socketSeq.accept()
 
         command = (conn.recv(4096)).decode("utf8")
-        database.store_obs_log({'sequencer_status': 'BUSY'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.BUSY})
         # store BUSY when a command is received
 
         separator = command[0]
@@ -105,7 +106,7 @@ def seq_server():
         check = cast_args(args)
         if check != 0:
             print("Error: casting of args went wrong")
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             continue
 
         # if abort command, stop last command with Queue object q
@@ -120,7 +121,7 @@ def seq_server():
             th.join()
             while not q.empty():
                 q.get()
-            database.store_obs_log({'sequencer_status': 'WAITING'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
             continue
         # if not abort, but a thread exist, wait for the thread end
         elif th is not None:
@@ -132,7 +133,7 @@ def seq_server():
 
         system.print_and_log("Starting " + commandList[0] + " on " +
                              str(kalao_time.now()))
-        database.store_obs_log({'sequencer_status': 'SETUP'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.SETUP})
 
         th = Thread(target=seq_command.commandDict[commandList[0]],
                     kwargs=args)

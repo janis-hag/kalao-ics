@@ -15,6 +15,8 @@ import math
 
 import pandas as pd
 
+from enum import StrEnum
+
 from kalao.utils import kalao_time
 from kalao.cacao import fake_data
 
@@ -84,6 +86,9 @@ def store_data(collection_name, data, definition):
         for key in data.keys():
             if not key in definition:
                 raise KeyError(f'Inserting unknown key "{key}" in database')
+
+            if isinstance(data[key], StrEnum):
+                data[key] = str(data[key])
 
         insertion_return = collection.insert_one(data)
 

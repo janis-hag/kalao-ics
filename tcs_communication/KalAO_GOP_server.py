@@ -11,8 +11,6 @@ KalAO_GOP_server.py is part of the KalAO Instrument Control Software
 This server is the communication interface between the Euler telescope software and the KalAO sequencer.
 """
 
-import os
-import sys
 import socket
 from time import sleep
 from itertools import zip_longest
@@ -21,7 +19,9 @@ from kalao.interface import status
 from kalao.utils import database, kalao_time
 from tcs_communication.pygop import tcs_srv_gop
 
-import config
+from kalao_enums import TrackingStatus
+
+import kalao_config as config
 
 #sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 #sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))+os.path(pymod_libgop))
@@ -109,7 +109,7 @@ def gop_server():
         # if commandList[0] == "STOPAO" or commandList[
         #         0] == "INSTRUMENTCHANGE" or commandList[0] == "NOTHING":
         #     # For the moment no difference is made for these three cases
-        #     database.store_obs_log({'tracking_status': 'IDLE'})
+        #     database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
         #     commandList[0] = 'K_END'
         #     command = 'K_END'
         #     #gop.write("/OK")
@@ -153,7 +153,7 @@ def gop_server():
                     'tcs_header_path': args['header'],
                     'telescope_ra': args['ra'],
                     'telescope_dec': args['dec'],
-                    'tracking_status': 'TRACKING'
+                    'tracking_status': TrackingStatus.TRACKING
             })
 
             gop_print_and_log("Received fits header path: " +
@@ -169,7 +169,7 @@ def gop_server():
         #     # Set tracking to no-tracking keyword
         #     # Disable manual centering flag
         #     message = "/OK"
-        #     database.store_obs_log({'tracking_status': 'IDLE'})
+        #     database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
         #     gop_print_and_log("Send acknowledge and quit: " + str(message))
         #     gop.write(message)
         #     #gop_print_and_log("Acknowledge sent")

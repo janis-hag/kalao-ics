@@ -21,7 +21,7 @@ from kalao.plc import core
 from kalao.interface import status
 from kalao.utils import database
 
-import config
+import kalao_config as config
 
 adc_name = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
 

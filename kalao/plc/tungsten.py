@@ -18,7 +18,7 @@ import pandas as pd
 from kalao.plc import core, filterwheel
 from kalao.utils import database, kalao_time
 
-import config
+import kalao_config as config
 
 node_path = 'Tungsten'
 

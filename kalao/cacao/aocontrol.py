@@ -28,7 +28,7 @@ from sequencer import system
 
 from pathlib import Path
 
-import config
+import kalao_config as config
 
 
 def check_stream(stream_name):

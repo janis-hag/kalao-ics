@@ -18,7 +18,7 @@ from opcua import ua
 from time import sleep
 import pandas as pd
 
-import config
+import kalao_config as config
 
 pump_node = 'bRelayPump'
 fan_node = 'bRelayFan'

@@ -33,7 +33,7 @@ from sequencer import system
 import numpy as np
 from astropy.io import fits
 
-import config
+import kalao_config as config
 
 
 def centre_on_target(kao='NO_AO'):
@@ -164,12 +164,12 @@ def center_on_laser():
 
     if filterwheel.set_position('ND') == -1:
         system.print_and_log("Error: problem with filter selection")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
     #
@@ -177,7 +177,7 @@ def center_on_laser():
 
     if flip_mirror.up() != 'UP':
         system.print_and_log("Error: flip mirror did not go up")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
     # Reset tip tilt offset to 0

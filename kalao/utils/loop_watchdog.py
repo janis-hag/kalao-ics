@@ -14,16 +14,19 @@ import schedule
 
 from kalao.plc import adc
 from kalao.cacao import aocontrol
+from kalao.interface import status
 
-import config
+import kalao_config as config
 
 
 def _update_adc(beck=None):
-    adc.config_adc(beck=beck)
+    if status.loop_running():
+        adc.config_adc(beck=beck)
 
 
 def _offload_ttm(beck=None):
-    aocontrol.tip_tilt_offload(beck=beck)
+    if status.loop_running():
+        aocontrol.tip_tilt_offload(beck=beck)
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ from kalao.cacao import aocontrol
 from kalao.fli import camera
 from sequencer import system
 
-import config
+import kalao_config as config
 
 # TODO switch EM gain off after inactivity
 

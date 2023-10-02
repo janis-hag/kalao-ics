@@ -20,7 +20,7 @@ from kalao.plc import core
 from kalao.utils import database, kalao_time
 from kalao.cacao import aocontrol
 
-import config
+import kalao_config as config
 
 
 def status(beck=None):

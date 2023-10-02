@@ -20,7 +20,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from kalao.utils import database
 
-import config
+import kalao_config as config
 
 # Create bidirect dict with filter id (str and int)
 

@@ -24,7 +24,7 @@ from kalao.utils import database
 from sequencer import system
 from kalao.cacao import telemetry, aocontrol
 
-import config
+import kalao_config as config
 
 
 def handler(signal_received, frame):

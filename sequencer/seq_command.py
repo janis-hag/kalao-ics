@@ -25,8 +25,8 @@ from kalao.cacao import cacaomanager, aocontrol
 from sequencer import system
 from tcs_communication import t120
 
-import config
-
+from kalao_enums import SequencerStatus, TrackingStatus
+import kalao_config as config
 
 def dark(**seq_args):
     """
@@ -48,24 +48,24 @@ def dark(**seq_args):
     dit = seq_args.get('dit')
     nbPic = seq_args.get('nbPic')
 
-    database.store_obs_log({'tracking_status': 'IDLE'})
+    database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
     if nbPic is None:
         nbPic = 1
 
     if None in (q, dit, nbPic):
         system.print_and_log('Missing keyword in dark function call')
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if core.lamps_off() != 0:
         system.print_and_log("Error: failed to turn off lamps")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     # Check if an abort was requested before taking image was send
@@ -87,15 +87,15 @@ def dark(**seq_args):
 
         if rValue != 0:
             system.print_and_log('Error' + str(rValue))
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
         # block for each picture and check if an abort was requested
         if check_abort(q, dit) == -1:
-            database.store_obs_log({'sequencer_status': 'WAITING'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
             return -1
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def dark_abort(**seq_args):
@@ -116,7 +116,7 @@ def dark_abort(**seq_args):
         # TODO handle error
         system.print_and_log('Error' + str(rValue))
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def tungsten_FLAT(**seq_args):
@@ -141,24 +141,24 @@ def tungsten_FLAT(**seq_args):
     if (rValue != 'ON'):
         system.print_and_log('Could not turn on tungsten lamp: ' +
                              tungsten.status()['sErrorText'])
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     q = seq_args.get('q')
     filter_list = seq_args.get('filter_list')
     filepath = seq_args.get('filepath')
 
-    database.store_obs_log({'tracking_status': 'IDLE'})
+    database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
     # Commented out as it is not clear what is meant to be checked
     # if None in (q):
     #     system.print_and_log('Missing keyword in target_observation function call')
-    #     database.store_obs_log({'sequencer_status': 'ERROR'})
+    #     database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
     #     return -1
 
     if aocontrol.emgain_off() == -1:
         system.print_and_log("Error: failed to disable EM gain on WFS")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if filter_list is None:
@@ -168,22 +168,22 @@ def tungsten_FLAT(**seq_args):
         system.print_and_log(
                 "Error: failed to move calibration unit to tungsten lamp position"
         )
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if flip_mirror.up() != 'UP':
         system.print_and_log('Error: flip mirror did not go up')
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if filterwheel.set_position(filter_list[0]) == -1:
         system.print_and_log('Error: problem with filter selection')
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     # Check if an abort was requested
@@ -201,31 +201,31 @@ def tungsten_FLAT(**seq_args):
         # Wait for tungsten to warm up
         # Check if an abort was requested
         # block for each picture and check if an abort was requested
-        database.store_obs_log({'sequencer_status': 'WAITLAMP'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.WAITLAMP})
         if check_abort(q, 1) == -1:
             return -1
 
         # Check if lamp is still on
         if tungsten.status()['nStatus'] != 2:
             system.print_and_log('Tungsten lamp unexpectedly turned off.')
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
         time.sleep(config.Tungsten.Sleep)
     else:
-        database.store_obs_log({'sequencer_status': 'BUSY'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.BUSY})
 
     for filter_name in filter_list:
 
         # Check if lamp is still on
         if tungsten.status()['nStatus'] != 2:
             system.print_and_log('Tungsten lamp unexpectedly turned off.')
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
         if filterwheel.set_position(filter_name) == -1:
             system.print_and_log('Error: problem with filter selection.')
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
         # Take nbPic image
@@ -242,7 +242,7 @@ def tungsten_FLAT(**seq_args):
         if rValue != 0:
             system.print_and_log(rValue)
             #tungsten.off()
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
         # block for each picture and check if an abort was requested
@@ -252,7 +252,7 @@ def tungsten_FLAT(**seq_args):
 
     # TODO move tungsen.off() to start of other commands so that the lamp stays on if needed
     #tungsten.off()
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def tungsten_FLAT_abort(**seq_args):
@@ -274,7 +274,7 @@ def tungsten_FLAT_abort(**seq_args):
         # TODO handle error
         system.print_and_log(rValue)
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def sky_flat(**seq_args):
@@ -298,18 +298,18 @@ def sky_flat(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
 
-    database.store_obs_log({'tracking_status': 'CENTERING'})
+    database.store_obs_log({'tracking_status': TrackingStatus.CENTERING})
 
     #if None in (q, dit, filepath):
     if q is None:
         # TODO verify which arguments are actually needed.
         system.print_and_log('Missing keyword in flat function call')
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if aocontrol.emgain_off() == -1:
         system.print_and_log("Error: failed to disable EM gain on WFS")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if filter_list is None:
@@ -317,22 +317,22 @@ def sky_flat(**seq_args):
 
     if core.lamps_off() != 0:
         system.print_and_log("Error: failed to turn off lamps")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
     if flip_mirror.down() != 'DOWN':
         system.print_and_log("Error: flip mirror did not go down")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
     if shutter.shutter_open() != 'OPEN':
         system.print_and_log("Error: failed to open the shutter")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
     if filterwheel.set_position(filter_list[0]) == -1:
         system.print_and_log("Error: problem with filter selection")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
     # Check if an abort was requested
     if q != None and not q.empty():
@@ -340,7 +340,7 @@ def sky_flat(**seq_args):
         return
 
     if waitfortracking() == -1:
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     current_filter = filter_list[0]
@@ -360,7 +360,7 @@ def sky_flat(**seq_args):
             current_filter = filter_name
             if filterwheel.set_position(filter_name) == -1:
                 system.print_and_log('Error: problem with filter selection')
-                database.store_obs_log({'sequencer_status': 'ERROR'})
+                database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
                 return -1
 
         # Take nbPic image
@@ -374,7 +374,7 @@ def sky_flat(**seq_args):
 
         if rValue != 0:
             system.print_and_log(rValue)
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
         # block for each picture and check if an abort was requested
@@ -384,7 +384,7 @@ def sky_flat(**seq_args):
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def target_observation(**seq_args):
@@ -418,27 +418,27 @@ def target_observation(**seq_args):
     kao = seq_args.get('kao').upper()
     centering = seq_args.get('centering')
 
-    database.store_obs_log({'tracking_status': 'CENTERING'})
+    database.store_obs_log({'tracking_status': TrackingStatus.CENTERING})
 
     if None in (q, dit):
         system.print_and_log(
                 'Missing keyword in target_observation function call')
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if core.lamps_off() != 0:
         system.print_and_log("Error: failed to turn off lamps")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if flip_mirror.down() != 'DOWN':
         system.print_and_log("Error: flip mirror did not go down")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if shutter.shutter_open() != 'OPEN':
         system.print_and_log("Error: failed to open the shutter")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if kalfilter is None:
@@ -449,7 +449,7 @@ def target_observation(**seq_args):
     # Put filter on clear to center on target
     if filterwheel.set_position('clear') == -1:
         system.print_and_log("Error: problem with filter selection")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     fo_delta = starfinder.get_latest_fo_delta()
@@ -458,19 +458,19 @@ def target_observation(**seq_args):
         t120.request_autofocus()
 
     if waitfortracking() == -1:
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if centering == 'aut':
         if starfinder.centre_on_target(kao=kao) == -1:
             system.print_and_log("Error: problem with center on target")
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
     # Move filter to correct position for science
     if filterwheel.set_position(kalfilter) == -1:
         system.print_and_log("Error: problem with filter selection")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
 
         return -1
 
@@ -485,7 +485,7 @@ def target_observation(**seq_args):
 
         if aocontrol.close_loop() == -1:
             system.print_and_log("Error: unable to close loop")
-            database.store_obs_log({'sequencer_status': 'ERROR'})
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
     image_path = file_handling.create_night_filepath()
@@ -500,13 +500,13 @@ def target_observation(**seq_args):
 
     if rValue != 0:
         system.print_and_log(rValue)
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if check_abort(q, dit) == -1:
         return -1
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def target_observation_abort(**seq_args):
@@ -525,7 +525,7 @@ def target_observation_abort(**seq_args):
     if (rValue != 0):
         system.print_and_log(rValue)
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def focusing(**seq_args):
@@ -552,42 +552,42 @@ def focusing(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
 
-    database.store_obs_log({'tracking_status': 'CENTERING'})
+    database.store_obs_log({'tracking_status': TrackingStatus.CENTERING})
 
     if q is None:
         system.print_and_log(
                 'Missing keyword in target_observation function call')
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if core.lamps_off() != 0:
         system.print_and_log("Error: failed to turn off lamps")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if flip_mirror.down() != 'DOWN':
         system.print_and_log("Error: flip mirror did not go down")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if shutter.shutter_open() != 'OPEN':
         system.print_and_log("Error: failed to open the shutter")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if waitfortracking() == -1:
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     # if starfinder.centre_on_target() == -1:
     #     system.print_and_log("Error: problem with centre on target")
-    #     database.store_obs_log({'sequencer_status': 'ERROR'})
+    #     database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
     #     return -1
 
     # if dit is None:# in (q, dit):
     #     system.print_and_log(
     #             'No focusing dit given. Searching for optimal dit')
-    #     database.store_obs_log({'sequencer_status': 'ERROR'})
+    #     database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
     #     return -1
 
     if kalfilter is None:
@@ -596,7 +596,7 @@ def focusing(**seq_args):
 
     if filterwheel.set_position(kalfilter) == -1:
         system.print_and_log("Error: problem with filter selection")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     rValue = starfinder.focus_sequence(focus_points=6, focusing_dit=dit,
@@ -604,13 +604,13 @@ def focusing(**seq_args):
 
     if rValue != 0:
         system.print_and_log(rValue)
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
     if check_abort(q, dit) == -1:
         return -1
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def focusing_abort(**seq_args):
@@ -631,7 +631,7 @@ def focusing_abort(**seq_args):
     if rValue != 0:
         system.print_and_log(rValue)
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def AO_loop_calibration(**seq_args):  #q = None, intensity = 0, **kwargs):
@@ -653,12 +653,12 @@ def AO_loop_calibration(**seq_args):  #q = None, intensity = 0, **kwargs):
 
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
     if flip_mirror.up() != 'UP':
         system.print_and_log("Error: flip mirror did not go up")
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
     laser.set_intensity(intensity)
@@ -668,7 +668,7 @@ def AO_loop_calibration(**seq_args):  #q = None, intensity = 0, **kwargs):
 
     laser.disable()
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def lamp_on(**seq_args):
@@ -685,7 +685,7 @@ def lamp_on(**seq_args):
         # TODO handle error
         system.print_and_log(rValue)
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def waitfortracking(**seq_args):
@@ -700,7 +700,7 @@ def waitfortracking(**seq_args):
         tracking_status = database.get_latest_record(
                 collection_name='obs_log',
                 key='tracking_status')['tracking_status']
-        if tracking_status == 'TRACKING':
+        if tracking_status == TrackingStatus.TRACKING:
             file_handling.update_db_from_telheader()
             return 0
         time.sleep(config.SEQ.pointing_wait_time)
@@ -721,16 +721,16 @@ def lamp_off(**seq_args):
     # rValue = shutter.shutter_close()
     # if rValue != 'CLOSED':
     #     system.print_and_log("Error: failed to close the shutter "+str(rValue)})
-    #     database.store_obs_log({'sequencer_status': 'ERROR'})
+    #     database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
     #     return
 
     rValue = core.lamps_off()
     if rValue != 0:
         system.print_and_log("Error: failed to turn off lamps " + str(rValue))
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def any_abort(**seq_args):
@@ -750,7 +750,7 @@ def any_abort(**seq_args):
     if rValue != 0:
         system.print_and_log(rValue)
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def instrument_change(**seq_args):
@@ -761,7 +761,7 @@ def instrument_change(**seq_args):
     """
     # TODO set EM gain to 1
 
-    database.store_obs_log({'tracking_status': 'IDLE'})
+    database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
     rValue = tungsten.off()
     if (rValue != 0):
@@ -785,7 +785,7 @@ def instrument_change(**seq_args):
 
     system.print_and_log('INSTRUMENTCHANGE received moving into standby.')
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def end(**seq_args):
@@ -796,7 +796,7 @@ def end(**seq_args):
     """
     # TODO set EM gain to 1
 
-    database.store_obs_log({'tracking_status': 'IDLE'})
+    database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
     rValue = tungsten.off()
     if (rValue != 0):
@@ -814,13 +814,13 @@ def end(**seq_args):
         system.print_and_log(rValue)
 
     # Set to waiting for the Euler synchro to be released
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
     database.store_obs_log({'tracking_manual_centering': False})
 
     time.sleep(2)
 
-    database.store_obs_log({'sequencer_status': 'BUSY'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.BUSY})
     # Generate darks for this night
     starfinder.generate_night_darks()
 
@@ -829,7 +829,7 @@ def end(**seq_args):
 
     system.print_and_log('END received moving into standby.')
 
-    database.store_obs_log({'sequencer_status': 'WAITING'})
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
 def check_abort(q, dit, AO=False):

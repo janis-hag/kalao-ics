@@ -29,7 +29,8 @@ from kalao.fli import camera
 
 from sequencer import system
 
-import config
+from kalao_enums import SequencerStatus
+import kalao_config as config
 
 
 def create_night_filepath(tmp_night_folder=None):
@@ -105,7 +106,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
                         'ERROR: unable to save ' + image_path + ' to ' +
                         target_path_name
         })
-        database.store_obs_log({'sequencer_status': 'ERROR'})
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
 
         return -1
 

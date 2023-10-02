@@ -21,7 +21,8 @@ from kalao.cacao import fake_data, telemetry
 
 from kalao.utils import database, kalao_time
 
-import config
+from kalao_enums import SequencerStatus, TrackingStatus
+import kalao_config as config
 
 def short():
     """
@@ -105,14 +106,14 @@ def kalao_status():
     if not sequencer_status:
         # If the status is not set assume that the sequencer is down
         status_string = '/status/ERROR/0/DOWN'
-    elif sequencer_status[0] == 'WAITING':
+    elif sequencer_status[0] == SequencerStatus.WAITING:
         status_string = '|status|' + sequencer_status[
                 0] + '|path|' + _last_filepath_archived()
-    elif sequencer_status[0] == 'ERROR':
+    elif sequencer_status[0] == SequencerStatus.ERROR:
         status_string = '/status/' + sequencer_status[0]
-    elif sequencer_status[0] == 'WAITLAMP':
+    elif sequencer_status[0] == SequencerStatus.WAITLAMP:
         status_string = '|status|BUSY|' + elapsed_time(sequencer_status[0])
-    elif sequencer_status[0] == 'EXP':
+    elif sequencer_status[0] == SequencerStatus.EXP:
         # sequencer_command_received = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']
         # if sequencer_command_received['type'] == 'K_LMPFLT':
         texp = int(
@@ -140,7 +141,7 @@ def elapsed_time(sequencer_status):
     :return: Time in seconds (str)
     """
 
-    if sequencer_status == 'INITIALISING':
+    if sequencer_status == SequencerStatus.INITIALISING:
         status_time = database.get_latest_record(
                 'obs_log', key='sequencer_status')['time_utc'].replace(
                         tzinfo=datetime.timezone.utc)
@@ -148,7 +149,7 @@ def elapsed_time(sequencer_status):
         return str(config.SEQ.init_duration - (kalao_time.now() -
                                    status_time).total_seconds()).split('.')[0]
 
-    elif sequencer_status == 'SETUP':
+    elif sequencer_status == SequencerStatus.SETUP:
         k_type = database.get_latest_record(
                 'obs_log', key='sequencer_command_received'
         )['sequencer_command_received']['type'][2:]
@@ -165,7 +166,7 @@ def elapsed_time(sequencer_status):
         return str(setup_time - (kalao_time.now() -
                                  status_time).total_seconds()).split('.')[0]
 
-    elif sequencer_status == 'WAITLAMP':
+    elif sequencer_status == SequencerStatus.WAITLAMP:
         return str(config.Tungsten.stabilisation_time -
                    tungsten.get_switch_time()).split('.')[0]
 
@@ -243,8 +244,12 @@ def outside_temperature():
     return config.Euler.default_temperature
 
 
-def star_coord():
+def loop_running():
+    tracking_status = database.get_latest_record(collection_name='obs_log', key='tracking_status')['tracking_status']
+    return  tracking_status == TrackingStatus.TRACKING
 
+
+def star_coord():
     star_ra = database.get_latest_record('obs_log',
                                          key='target_ra')['target_ra']
     star_dec = database.get_latest_record('obs_log',
@@ -258,7 +263,6 @@ def star_coord():
 
 
 def telescope_coord():
-
     tel_ra = float(
             database.get_latest_record('obs_log',
                                        key='telescope_ra')['telescope_ra'])

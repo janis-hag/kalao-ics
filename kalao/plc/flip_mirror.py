@@ -15,7 +15,7 @@ from kalao.plc import core
 from opcua import ua
 from time import sleep
 
-import config
+import kalao_config as config
 
 
 def status(beck=None):

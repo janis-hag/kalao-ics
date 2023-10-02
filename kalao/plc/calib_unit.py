@@ -18,7 +18,7 @@ import numbers
 from opcua import ua
 from time import sleep
 
-import config
+import kalao_config as config
 
 # TODO store errors in obs_log
 

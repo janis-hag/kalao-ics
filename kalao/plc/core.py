@@ -20,7 +20,7 @@ from kalao.utils import database
 
 from opcua import Client
 
-import config
+import kalao_config as config
 
 
 def connect(addr=config.PLC.ip, port=config.PLC.port):
