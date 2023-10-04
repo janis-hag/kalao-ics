@@ -15,7 +15,8 @@ import math
 
 import pandas as pd
 
-from enum import StrEnum
+#from enum import StrEnum
+from kalao_enums import StrEnum
 
 from kalao.utils import kalao_time
 from kalao.cacao import fake_data
