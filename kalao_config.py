@@ -14,6 +14,10 @@ class PLC:
     temp_water_in_offset = -3.6  # °C, 19 - 22.7
     temp_water_out_offset = -1.7  # °C, 19 - 20.3
 
+class CalibUnit:
+    # Should be 13e-3 * 14.3819 / 49.2726 = 0.00379 mm / px
+    px_to_mm = 0.00355
+    initial_offset = 22.23
 
 class ADC:
     # Angles on the ADC to have max vertical dispersion

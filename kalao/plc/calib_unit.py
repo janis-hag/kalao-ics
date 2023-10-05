@@ -105,16 +105,16 @@ def pixel_move(pixel, absolute=False):
     current_position = status()['lrPosActual']
 
     if absolute:
-        position = mmOffset + Pixel2mm * pixel
+        position = config.CalibUnit.initial_offset + config.CalibUnit.px_to_mm * pixel
     else:
-        position = current_position + Pixel2mm * pixel
+        position = current_position + config.CalibUnit.px_to_mm * pixel
 
     new_position = move(position)
 
     return new_position
 
 
-def move(position=23.36, beck=None):
+def move(position=23.36, velocity=0.1, beck=None):
     """
     Move the calibration unit to position
 
@@ -138,14 +138,14 @@ def move(position=23.36, beck=None):
     if not init_result == 0:
         return init_result
 
-    # Set velocity to 0.5 in case is has been changed
+    # Set velocity
     motor_lrVelocity = beck.get_node(
             "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrVelocity")
     motor_lrVelocity.set_attribute(
             ua.AttributeIds.Value,
             ua.DataValue(
                     ua.Variant(
-                            float(0.5),
+                            float(velocity),
                             motor_lrVelocity.get_data_type_as_variant_type())))
     motor_lrPosition = beck.get_node(
             "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
