@@ -5,4 +5,4 @@ source /home/kalao/kalao-config/_bash_aliases
 
 cd /home/kalao/kalao-ics/kalao/utils
 
-python /home/kalao/kalao-ics/kalao/utils/database_updater.py
+MILK_SHM_DIR='/tmp/milk' python /home/kalao/kalao-ics/kalao/utils/database_updater.py
