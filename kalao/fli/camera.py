@@ -319,7 +319,8 @@ def _send_request(request_type, params):
             req.status_code = 200
 
         else:
-            url = 'http://' + config.FLI.ip + ':' + config.FLI.port + '/' + request_type
+            url = 'http://' + config.FLI.ip + ':' + str(
+                    config.FLI.port) + '/' + request_type
             if params == 'GET':
                 req = requests.get(url, timeout=config.FLI.request_timeout)
             else:
