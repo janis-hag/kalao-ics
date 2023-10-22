@@ -56,7 +56,7 @@ def create_night_folder():
 
     tmp_night_folder = os.path.join(config.FLI.temporary_data_storage,
                                     kalao_time.get_start_of_night())
-    science_night_folder = os.path.join(config.FLI.Science_folder,
+    science_night_folder = os.path.join(config.FLI.science_data_storage,
                                         kalao_time.get_start_of_night())
 
     # Check if tmp and science folders exist
@@ -82,14 +82,14 @@ def save_tmp_image(image_path, sequencer_arguments=None):
     :param sequencer_arguments: argument list received by the sequencer
     :return:
     '''
-    Science_night_folder = config.FLI.Science_folder + os.sep + kalao_time.get_start_of_night(
+    science_night_folder = config.FLI.science_data_storage + os.sep + kalao_time.get_start_of_night(
     )
 
     # Remove tmp_ from filename
-    target_path_name = Science_night_folder + os.sep + os.path.basename(
+    target_path_name = science_night_folder + os.sep + os.path.basename(
             image_path).replace('tmp_', '')
 
-    if os.path.exists(image_path) and os.path.exists(Science_night_folder):
+    if os.path.exists(image_path) and os.path.exists(science_night_folder):
         update_header(image_path, sequencer_arguments=sequencer_arguments)
         shutil.move(image_path, target_path_name)
         # TODO Remove write permission
@@ -330,7 +330,6 @@ def _get_last_telescope_header():
     :return:
     """
 
-    # TODO verify if latest_record['time_utc'] is recent enough
     gls_home = Path(config.SEQ.T4_root)
 
     tcs_header_path_record = database.get_latest_record(
@@ -348,8 +347,8 @@ def _get_last_telescope_header():
 
     if header_age > config.SEQ.tcs_header_validity:
         system.print_and_log(
-                f'WARN: {tcs_header_path_record["tcs_header_path"]} is {header_age / 60} minutes old. Discarding obsolete header'
-        )
+                f'WARN: {tcs_header_path_record["tcs_header_path"]} is {header_age / 60} minutes old. '
+                f'Discarding obsolete header')
 
         tcs_header_df = None
 
@@ -359,9 +358,6 @@ def _get_last_telescope_header():
         system.print_and_log(
                 ('ERROR: header file not found: ' + str(tcs_header_path)))
         tcs_header_df = None
-
-    # TODO uncomment the unlink line in order to remove the tmp fits
-    #tcs_header_path.unlink()
 
     return tcs_header_df, str(tcs_header_path)
 
@@ -498,7 +494,6 @@ def _dynamic_cards_update(header_df, seq_args=None):
     # TODO add RA comment: [deg] 16:22:51.8 RA (J2000) pointing
     # TODO add DEC comment: [deg] -23:07:08.8 DEC (J2000) pointing
     # TODO add radecsys value in EQUINOX comment
-    # TODO Change shutter comment to "Shutter open" or "Shutter closed" and put only T/F in value
 
 
     header_df['comment']['HIERARCH ESO INS SHUT ST'] = header_df['comment']['HIERARCH ESO INS SHUT ST'] + ' ' \
