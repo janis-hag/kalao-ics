@@ -39,7 +39,7 @@ def create_shm_stream(name):
         return None
 
 
-def _get_stream(name, min_value_th, max_value_th, sigma_clip=2.0, shm_stream=None):
+def _get_stream(name, min_value_th, max_value_th, shm_stream=None):
     """
     Get stream data, after having verified that the stream with that name exists.
 
@@ -47,7 +47,6 @@ def _get_stream(name, min_value_th, max_value_th, sigma_clip=2.0, shm_stream=Non
     :param name: stream name
     :param min_value_th: theoretical minimal value in the stream
     :param max_value_th: theoretical maximal value in the stream
-    :param sigma_clip: Apply sigma clipping
     :param shm_stream: Stream already opened
     :return: Dictionary with: data, width, height, min, max, min_th, max_th
     """
@@ -61,12 +60,6 @@ def _get_stream(name, min_value_th, max_value_th, sigma_clip=2.0, shm_stream=Non
 
             data = shm_stream.get_data(check=False)
 
-            if sigma_clip is not None:
-                data, min_value, max_value = stats.sigmaclip(data, low=sigma_clip, high=sigma_clip)
-            else:
-                min_value = np.min(data)
-                max_value = np.max(data)
-
             if len(data.shape) == 1:
                 # One dimensional stream
                 width = 1
@@ -74,6 +67,9 @@ def _get_stream(name, min_value_th, max_value_th, sigma_clip=2.0, shm_stream=Non
             else:
                 width = data.shape[1]
                 height = data.shape[0]
+
+            min_value = np.min(data)
+            max_value = np.max(data)
 
             return {
                     "data": data.flatten().tolist(),
