@@ -22,6 +22,8 @@ from CacaoProcessTools import fps, FPS_status
 from kalao.utils import database
 from kalao.cacao import fake_data, aocontrol
 
+import traceback
+
 
 def create_shm_stream(name):
     """
@@ -75,12 +77,13 @@ def _get_stream(name, min_value_th, max_value_th, shm_stream=None):
                     "data": data.flatten().tolist(),
                     "width": width,
                     "height": height,
-                    "min": min_value,
-                    "max": max_value,
+                    "min": float(min_value),
+                    "max": float(max_value),
                     "min_th": min_value_th,
                     "max_th": max_value_th,
             }
         except:
+            print(traceback.format_exc())
             return {
                     "data": 0,
                     "width": 0,
