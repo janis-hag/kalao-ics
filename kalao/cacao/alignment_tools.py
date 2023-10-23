@@ -15,7 +15,6 @@ import pyqtgraph as pg
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
-#from kalao.cacao.toolbox import *
 from kalao.cacao.toolbox import *
 
 
@@ -52,9 +51,9 @@ def run():
     dm_actuators_amplitude_max = 1.5
     dm_wait_after_poke = 15e-3
 
-    dm_subap_indexes = ()
+    dm_subap_indexes = []
     for i in dm_actuators_poke:
-        dm_subap_indexes += get_subapertures_around_actuator(i)
+        dm_subap_indexes.append(get_subapertures_around_actuator(i))
 
     ##### General configuration
 
@@ -79,10 +78,10 @@ def run():
     loop = True
 
     def keyPressed(event):
-        global loop, display, dm_actuators_amplitude
+        nonlocal loop, display, dm_actuators_amplitude
 
         if event.key() == QtCore.Qt.Key_Q or event.key(
-        ) == QtCore.Qt.Key_Escape:
+        ) == QtCore.Qt.Key_X or event.key() == QtCore.Qt.Key_Escape:
             loop = False
         elif event.key() == QtCore.Qt.Key_Space:
             display = (display + 1) % 3
@@ -92,11 +91,15 @@ def run():
             if dm_actuators_amplitude < 0:
                 dm_actuators_amplitude = 0
 
+            print(f"New poke amplitude: {dm_actuators_amplitude}")
+
         elif event.key() == QtCore.Qt.Key_Plus:
             dm_actuators_amplitude += dm_actuators_amplitude_change
 
             if dm_actuators_amplitude > dm_actuators_amplitude_max:
                 dm_actuators_amplitude = dm_actuators_amplitude_max
+
+            print(f"New poke amplitude: {dm_actuators_amplitude}")
 
     pg.setConfigOption('background', GREY)
     pg.setConfigOption('imageAxisOrder', 'row-major')
@@ -176,7 +179,7 @@ def run():
     dm_window.keyPressEvent = keyPressed
     dm_window.show()
 
-    dm_viewboxes = ()
+    dm_viewboxes = []
 
     def dm_layout_add_viewboxes(layout):
         dm_viewbox_topleft = layout.addViewBox(row=0, col=0, invertY=True)
@@ -184,9 +187,9 @@ def run():
         dm_viewbox_bottomleft = layout.addViewBox(row=1, col=0, invertY=True)
         dm_viewbox_bottomright = layout.addViewBox(row=1, col=1, invertY=True)
 
-        global dm_viewboxes
-        dm_viewboxes += (dm_viewbox_topleft, dm_viewbox_topright,
-                         dm_viewbox_bottomleft, dm_viewbox_bottomright)
+        nonlocal dm_viewboxes
+        dm_viewboxes.append((dm_viewbox_topleft, dm_viewbox_topright,
+                             dm_viewbox_bottomleft, dm_viewbox_bottomright))
 
     dm_layout_topleft = dm_window.addLayout(row=0, col=0)
     dm_layout_add_viewboxes(dm_layout_topleft)
@@ -210,53 +213,68 @@ def run():
     dm_window.ci.layout.setRowStretchFactor(1, 1)
     dm_window.ci.layout.setRowStretchFactor(2, 5)
 
-    dm_subap_images = ()
-    dm_crosses = ()
-    dm_text_inds = ()
+    dm_subap_images = []
+    dm_crosses = []
+    dm_text_inds = []
 
-    for viewbox in dm_viewboxes:
-        viewbox.setAspectLocked(True)
+    for dm_viewbox in dm_viewboxes:
+        subap_images = ()
+        crosses = ()
+        text_inds = ()
 
-        dm_subap_image = pg.ImageItem()
-        dm_cross_vert_ref = pg.InfiniteLine(angle=90, movable=False, pen=BLUE)
-        dm_cross_hori_ref = pg.InfiniteLine(angle=0, movable=False, pen=BLUE)
-        dm_cross_vert_down = pg.InfiniteLine(angle=90, movable=False, pen=RED)
-        dm_cross_hori_down = pg.InfiniteLine(angle=0, movable=False, pen=RED)
-        dm_cross_vert_up = pg.InfiniteLine(angle=90, movable=False, pen=GREEN)
-        dm_cross_hori_up = pg.InfiniteLine(angle=0, movable=False, pen=GREEN)
-        dm_text_ind = pg.TextItem("", color=RED)
-        viewbox.addItem(dm_subap_image)
-        viewbox.addItem(dm_cross_vert_ref)
-        viewbox.addItem(dm_cross_hori_ref)
-        viewbox.addItem(dm_cross_hori_down)
-        viewbox.addItem(dm_cross_vert_down)
-        viewbox.addItem(dm_cross_hori_up)
-        viewbox.addItem(dm_cross_vert_up)
-        viewbox.addItem(dm_text_ind)
+        for viewbox in dm_viewbox:
+            viewbox.setAspectLocked(True)
 
-        dm_subap_images += (dm_subap_image, )
-        dm_crosses += ({
-                FLAT: {
-                        VERT: dm_cross_vert_ref,
-                        HORI: dm_cross_hori_ref
-                },
-                DOWN: {
-                        VERT: dm_cross_vert_down,
-                        HORI: dm_cross_hori_down
-                },
-                UP: {
-                        VERT: dm_cross_vert_up,
-                        HORI: dm_cross_hori_up
-                }
-        }, )
-        dm_text_inds += (dm_text_ind, )
+            dm_subap_image = pg.ImageItem()
+            dm_cross_vert_ref = pg.InfiniteLine(angle=90, movable=False,
+                                                pen=BLUE)
+            dm_cross_hori_ref = pg.InfiniteLine(angle=0, movable=False,
+                                                pen=BLUE)
+            dm_cross_vert_down = pg.InfiniteLine(angle=90, movable=False,
+                                                 pen=RED)
+            dm_cross_hori_down = pg.InfiniteLine(angle=0, movable=False,
+                                                 pen=RED)
+            dm_cross_vert_up = pg.InfiniteLine(angle=90, movable=False,
+                                               pen=GREEN)
+            dm_cross_hori_up = pg.InfiniteLine(angle=0, movable=False,
+                                               pen=GREEN)
+            dm_text_ind = pg.TextItem("", color=RED)
+            viewbox.addItem(dm_subap_image)
+            viewbox.addItem(dm_cross_vert_ref)
+            viewbox.addItem(dm_cross_hori_ref)
+            viewbox.addItem(dm_cross_hori_down)
+            viewbox.addItem(dm_cross_vert_down)
+            viewbox.addItem(dm_cross_hori_up)
+            viewbox.addItem(dm_cross_vert_up)
+            viewbox.addItem(dm_text_ind)
+
+            subap_images += (dm_subap_image, )
+            crosses += ({
+                    FLAT: {
+                            VERT: dm_cross_vert_ref,
+                            HORI: dm_cross_hori_ref
+                    },
+                    DOWN: {
+                            VERT: dm_cross_vert_down,
+                            HORI: dm_cross_hori_down
+                    },
+                    UP: {
+                            VERT: dm_cross_vert_up,
+                            HORI: dm_cross_hori_up
+                    }
+            }, )
+            text_inds += (dm_text_ind, )
+
+        dm_subap_images.append(subap_images)
+        dm_crosses.append(crosses)
+        dm_text_inds.append(text_inds)
 
     ##### Help
     warning = "WARNING:<br /><br />'bmc_display', 'nuvu_acquire' and 'DMcomb' must be set-up and running,<br />and the dm flat must be loaded for this tool to work properly"
 
     config = "CONFIG:<br /><br />The following configs are supported:<br />• binning = 1 (will take ROI Start X/Y = 9, ROI End X/Y = 119)<br />• binning = 2 (will take ROI Start X/Y = 4, ROI End X/Y = 60)"
 
-    manual = "MANUAL:<br /><br />• Press 'Q' or 'Esc' to exit cleanly (DM cleared)<br />• Press 'Space' to cycle between the different wavefronts<br />• Press 'Plus' to increase poke amplitude<br />• Press 'Minus' to decrease poke amplitude"
+    manual = "MANUAL:<br /><br />• Press 'Q', 'X' or 'Esc' to exit cleanly (DM cleared)<br />• Press 'Space' to cycle between the different wavefronts<br />• Press 'Plus' to increase poke amplitude<br />• Press 'Minus' to decrease poke amplitude"
 
     print(warning.replace('<br />', ' '))
 
@@ -373,25 +391,45 @@ def run():
             subap_image.setImage(subapertures[display][i])
 
         # DM window
-        for i, subap_image, cross, text_ind in zip(dm_subap_indexes,
-                                                   dm_subap_images, dm_crosses,
-                                                   dm_text_inds):
-            pos = center_of_mass(subapertures[FLAT][i])
-            text_ind.setText(f"{i}")
-            cross[FLAT][VERT].setValue(pos[VERT])
-            cross[FLAT][HORI].setValue(pos[HORI])
+        dx = [0] * 4
+        dy = [0] * 4
+        r = [0] * 4
+        phi = [0] * 4
 
-            pos = center_of_mass(subapertures[DOWN][i])
-            cross[DOWN][VERT].setValue(pos[VERT])
-            cross[DOWN][HORI].setValue(pos[HORI])
+        for subap_indexes, subap_images, crosses, text_inds in zip(
+                dm_subap_indexes, dm_subap_images, dm_crosses, dm_text_inds):
+            for j, (i, subap_image, cross, text_ind) in enumerate(
+                    zip(subap_indexes, subap_images, crosses, text_inds)):
+                pos_flat = center_of_mass(subapertures[FLAT][i])
+                text_ind.setText(f"{i}")
+                cross[FLAT][VERT].setValue(pos_flat[VERT])
+                cross[FLAT][HORI].setValue(pos_flat[HORI])
 
-            pos = center_of_mass(subapertures[UP][i])
-            cross[UP][VERT].setValue(pos[VERT])
-            cross[UP][HORI].setValue(pos[HORI])
+                pos_down = center_of_mass(subapertures[DOWN][i])
+                cross[DOWN][VERT].setValue(pos_down[VERT])
+                cross[DOWN][HORI].setValue(pos_down[HORI])
 
-            subap_image.setImage(subapertures[display][i])
+                pos_up = center_of_mass(subapertures[UP][i])
+                cross[UP][VERT].setValue(pos_up[VERT])
+                cross[UP][HORI].setValue(pos_up[HORI])
 
-        pg.QtGui.QApplication.processEvents()
+                subap_image.setImage(subapertures[display][i])
+
+                dy[j] += 0.5 * (pos_up[HORI] - pos_down[HORI])
+                dx[j] += -0.5 * (pos_up[VERT] - pos_down[VERT])
+
+        for i in range(len(dx)):
+            dx[i] /= len(dx)
+            dy[i] /= len(dy)
+
+            r[i] += 0.5 * np.sqrt(dy[i]**2 + dx[i]**2)
+            phi[i] += np.arctan2(dy[i], dx[i]) * 180 / np.pi
+
+        #print(f"{dx[0]:.3f} {dy[0]:.3f}   {dx[1]:.3f} {dy[1]:.3f}   {dx[2]:.3f} {dy[2]:.3f}   {dx[3]:.3f} {dy[3]:.3f}")
+        print(f"{r[0]:.3f} {phi[0]: 3.0f}   {r[1]:.3f} {phi[1]: 3.0f}   {r[2]:.3f} {phi[2]: 3.0f}   {r[3]:.3f} {phi[3]: 3.0f}"
+              )
+
+        pg.QtWidgets.QApplication.processEvents()
 
     # Clear DM before exiting
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
