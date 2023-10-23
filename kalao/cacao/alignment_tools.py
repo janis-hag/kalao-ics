@@ -294,8 +294,10 @@ def run():
     roi_circle = pg.CircleROI([
             fli_x_pos - fli_circle_radius, fli_y_pos - fli_circle_radius
     ], [2 * fli_circle_radius, 2 * fli_circle_radius],
-                              pen=pg.mkPen(BLUE, width=2), movable=False)
+                              pen=pg.mkPen(BLUE, width=2), movable=False,
+                              rotatable=False, resizable=False)
     fli_viewbox_full.addItem(roi_circle)
+    roi_circle.removeHandle(0)  # Must be done after AddItem
 
     fli_text_line_1 = pg.LabelItem("", color=BLUE, bold=True)
     fli_window.addItem(fli_text_line_1, row=1, col=0)
@@ -470,12 +472,11 @@ def run():
         if fli_ok:
             fli_imageitem_full.setImage(fli_image)
 
-            fli_imageitem_zoom.setImage(fli_image[fli_y_pos -
-                                                3 * fli_circle_radius:fli_y_pos +
-                                                3 * fli_circle_radius,
-                                                fli_x_pos -
-                                                3 * fli_circle_radius:fli_x_pos +
-                                                3 * fli_circle_radius])
+            fli_imageitem_zoom.setImage(
+                    fli_image[fli_y_pos - 3 * fli_circle_radius:fli_y_pos +
+                              3 * fli_circle_radius,
+                              fli_x_pos - 3 * fli_circle_radius:fli_x_pos +
+                              3 * fli_circle_radius])
 
         pg.QtWidgets.QApplication.processEvents()
 
