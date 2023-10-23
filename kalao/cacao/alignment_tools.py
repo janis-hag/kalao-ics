@@ -55,6 +55,10 @@ def run():
     for i in dm_actuators_poke:
         dm_subap_indexes.append(get_subapertures_around_actuator(i))
 
+    fli_x_pos = 516
+    fli_y_pos = 409
+    fli_circle_radius = 16
+
     ##### General configuration
 
     FLAT = 0
@@ -269,6 +273,33 @@ def run():
         dm_crosses.append(crosses)
         dm_text_inds.append(text_inds)
 
+    ##### FLI window
+    fli_window = pg.GraphicsLayoutWidget(title="FLI alignment")
+    fli_window.keyPressEvent = keyPressed
+    fli_window.setGeometry(100, 100, 1200, 800)
+    fli_window.show()
+
+    fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True,
+                                             enableMouse=True)
+    fli_viewbox_full.setAspectLocked(True)
+    fli_imageitem_full = pg.ImageItem()
+    fli_viewbox_full.addItem(fli_imageitem_full)
+
+    fli_viewbox_zoom = fli_window.addViewBox(row=0, col=1, invertY=True)
+    fli_viewbox_zoom.setAspectLocked(True)
+    fli_imageitem_zoom = pg.ImageItem()
+    fli_viewbox_zoom.addItem(fli_imageitem_zoom)
+
+    roi_circle = pg.CircleROI([
+            fli_x_pos - fli_circle_radius, fli_y_pos - fli_circle_radius
+    ], [2 * fli_circle_radius, 2 * fli_circle_radius],
+                              pen=pg.mkPen(BLUE, width=2), movable=False)
+    fli_viewbox_full.addItem(roi_circle)
+
+    fli_text_line_1 = pg.LabelItem("", color=BLUE, bold=True)
+    fli_window.addItem(fli_text_line_1, row=1, col=0)
+    fli_text_line_1.setText(f"Mouse scroll on image to zoom")
+
     ##### Help
     warning = "WARNING:<br /><br />'bmc_display', 'nuvu_acquire' and 'DMcomb' must be set-up and running,<br />and the dm flat must be loaded for this tool to work properly"
 
@@ -297,6 +328,7 @@ def run():
     # Open needed streams
     nuvu_stream = SHM("nuvu_stream")
     dmdisp = SHM("dm01disp09")
+    fli_stream = SHM("fli_stream")
 
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
 
@@ -333,6 +365,8 @@ def run():
         time.sleep(dm_wait_after_poke)
         frame[FLAT], subapertures[FLAT] = get_roi_and_subapertures(
                 nuvu_stream.get_data(check=True))
+
+        fli_image = fli_stream.get_data(check=True)
 
         # Poke actuators down
         for act in dm_actuators_poke:
@@ -428,6 +462,15 @@ def run():
         #print(f"{dx[0]:.3f} {dy[0]:.3f}   {dx[1]:.3f} {dy[1]:.3f}   {dx[2]:.3f} {dy[2]:.3f}   {dx[3]:.3f} {dy[3]:.3f}")
         print(f"{r[0]:.3f} {phi[0]: 3.0f}   {r[1]:.3f} {phi[1]: 3.0f}   {r[2]:.3f} {phi[2]: 3.0f}   {r[3]:.3f} {phi[3]: 3.0f}"
               )
+
+        fli_imageitem_full.setImage(fli_image)
+
+        fli_imageitem_zoom.setImage(fli_image[fli_y_pos -
+                                              3 * fli_circle_radius:fli_y_pos +
+                                              3 * fli_circle_radius,
+                                              fli_x_pos -
+                                              3 * fli_circle_radius:fli_x_pos +
+                                              3 * fli_circle_radius])
 
         pg.QtWidgets.QApplication.processEvents()
 
