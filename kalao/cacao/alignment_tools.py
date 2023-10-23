@@ -16,6 +16,7 @@ import pyqtgraph as pg
 from pyMilk.interfacing.isio_shmlib import SHM
 
 from kalao.cacao.toolbox import *
+from kalao.cacao.aocontrol import check_stream
 
 
 def clamp(n, minn, maxn):
@@ -328,7 +329,9 @@ def run():
     # Open needed streams
     nuvu_stream = SHM("nuvu_stream")
     dmdisp = SHM("dm01disp09")
-    fli_stream = SHM("fli_stream")
+
+    fli_ok, _ = check_stream("fli_stream")
+    if fli_ok: fli_stream = SHM("fli_stream")
 
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
 
@@ -366,7 +369,8 @@ def run():
         frame[FLAT], subapertures[FLAT] = get_roi_and_subapertures(
                 nuvu_stream.get_data(check=True))
 
-        fli_image = fli_stream.get_data(check=True)
+        if fli_ok:
+            fli_image = fli_stream.get_data(check=True)
 
         # Poke actuators down
         for act in dm_actuators_poke:
@@ -463,14 +467,15 @@ def run():
         print(f"{r[0]:.3f} {phi[0]: 3.0f}   {r[1]:.3f} {phi[1]: 3.0f}   {r[2]:.3f} {phi[2]: 3.0f}   {r[3]:.3f} {phi[3]: 3.0f}"
               )
 
-        fli_imageitem_full.setImage(fli_image)
+        if fli_ok:
+            fli_imageitem_full.setImage(fli_image)
 
-        fli_imageitem_zoom.setImage(fli_image[fli_y_pos -
-                                              3 * fli_circle_radius:fli_y_pos +
-                                              3 * fli_circle_radius,
-                                              fli_x_pos -
-                                              3 * fli_circle_radius:fli_x_pos +
-                                              3 * fli_circle_radius])
+            fli_imageitem_zoom.setImage(fli_image[fli_y_pos -
+                                                3 * fli_circle_radius:fli_y_pos +
+                                                3 * fli_circle_radius,
+                                                fli_x_pos -
+                                                3 * fli_circle_radius:fli_x_pos +
+                                                3 * fli_circle_radius])
 
         pg.QtWidgets.QApplication.processEvents()
 
