@@ -39,14 +39,14 @@ def create_shm_stream(name):
         return None
 
 
-def _get_stream(name, min_value, max_value, sigma_clip=True, shm_stream=None):
+def _get_stream(name, min_value_th, max_value_th, sigma_clip=2.0, shm_stream=None):
     """
     Get stream data, after having verified that the stream with that name exists.
 
     :param shm_stream: The stream to read
     :param name: stream name
-    :param min_value: theoretical minimal value in the stream
-    :param max_value: theoretical maximal value in the stream
+    :param min_value_th: theoretical minimal value in the stream
+    :param max_value_th: theoretical maximal value in the stream
     :param sigma_clip: Apply sigma clipping
     :param shm_stream: Stream already opened
     :return: Dictionary with: data, width, height, min, max, min_th, max_th
@@ -61,10 +61,11 @@ def _get_stream(name, min_value, max_value, sigma_clip=True, shm_stream=None):
 
             data = shm_stream.get_data(check=False)
 
-            if sigma_clip:
-                data = stats.sigmaclip(data, low=2.0, high=2.0)
-
-            list = data.flatten().tolist()
+            if sigma_clip is not None:
+                data, min_value, max_value = stats.sigmaclip(data, low=sigma_clip, high=sigma_clip)
+            else:
+                min_value = np.min(data)
+                max_value = np.max(data)
 
             if len(data.shape) == 1:
                 # One dimensional stream
@@ -73,14 +74,15 @@ def _get_stream(name, min_value, max_value, sigma_clip=True, shm_stream=None):
             else:
                 width = data.shape[1]
                 height = data.shape[0]
+
             return {
                     "data": list,
                     "width": width,
                     "height": height,
-                    "min": min(list),
-                    "max": max(list),
-                    "min_th": min_value,
-                    "max_th": max_value,
+                    "min": min_value,
+                    "max": max_value,
+                    "min_th": min_value_th,
+                    "max_th": max_value_th,
             }
         except:
             return {
@@ -120,23 +122,23 @@ def streams(realData=True, shm_streams={}):
         stream_list = {}
 
         stream_list["nuvu_stream"] = _get_stream(
-                name="nuvu_stream", min_value=0, max_value=2**16 - 1,
+                name="nuvu_stream", min_value_th=0, max_value_th=2**16 - 1,
                 shm_stream=shm_streams.get("nuvu_stream"))
 
         stream_list["shwfs_slopes"] = _get_stream(
-                name="shwfs_slopes", min_value=-2, max_value=2,
+                name="shwfs_slopes", min_value_th=-2, max_value_th=2,
                 shm_stream=shm_streams.get("shwfs_slopes"))
 
         stream_list["dm01disp"] = _get_stream(
-                name="dm01disp", min_value=-1.75, max_value=1.75,
+                name="dm01disp", min_value_th=-1.75, max_value_th=1.75,
                 shm_stream=shm_streams.get("dm01disp"))
 
         stream_list["shwfs_slopes_flux"] = _get_stream(
-                name="shwfs_slopes_flux", min_value=0, max_value=4 *
+                name="shwfs_slopes_flux", min_value_th=0, max_value_th=4 *
                 (2**16 - 1), shm_stream=shm_streams.get("shwfs_slopes_flux"))
 
         stream_list["aol1_mgainfact"] = _get_stream(
-                name="aol1_mgainfact", min_value=0, max_value=1,
+                name="aol1_mgainfact", min_value_th=0, max_value_th=1,
                 shm_stream=shm_streams.get("aol1_mgainfact"))
 
         # streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) # TODO: uncomment when modal control is working
