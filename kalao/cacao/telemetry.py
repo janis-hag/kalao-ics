@@ -76,7 +76,7 @@ def _get_stream(name, min_value_th, max_value_th, sigma_clip=2.0, shm_stream=Non
                 height = data.shape[0]
 
             return {
-                    "data": list,
+                    "data": data.flatten().tolist(),
                     "width": width,
                     "height": height,
                     "min": min_value,
