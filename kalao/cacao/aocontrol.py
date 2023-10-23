@@ -453,7 +453,7 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
     tip_centered = False
     tilt_centered = False
 
-    fps_slopes = fps("shwfs_process")
+    fps_slopes = fps("shwfs_process-1")
     # fps_bmc = fps("bmc_display-01")
     stream_name = 'dm02disp04'
 
