@@ -39,66 +39,31 @@ def create_shm_stream(name):
         return None
 
 
-def _get_stream(name, min_value, max_value, sigma_clip=True):
+def _get_stream(name, min_value, max_value, sigma_clip=True, shm_stream=None):
     """
-    Opens an existing stream after having verified its existence.
-
-    :param name: Name of the stream to get
-    :param min_value: Maximum value to use
-    :param max_value: Minimum value to use
-    :param sigma_clip: Apply sigma clipping
-    :return:
-    """
-
-    exists, stream_path = aocontrol.check_stream(name)
-
-    if exists:
-        shm_stream = SHM(str(stream_path))
-        # Check turned off to prevent timeout. Data may be obsolete
-        data = shm_stream.get_data(check=False)
-
-        if sigma_clip:
-            data, min_value, max_value = stats.sigmaclip(
-                    data, low=2.0, high=2.0)
-
-        if len(data.shape) == 1:
-            # One dimensional stream
-            return {
-                    "data": data.flatten().tolist(),
-                    "width": 1,
-                    "height": data.shape[0],
-                    "min": min_value,
-                    "max": max_value
-            }
-        else:
-            return {
-                    "data": data.flatten().tolist(),
-                    "width": data.shape[1],
-                    "height": data.shape[0],
-                    "min": min_value,
-                    "max": max_value
-            }
-
-    else:
-        return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
-
-
-def get_stream_data(shm_stream, name, min_value, max_value):
-    """
-    Reads and already open shm_stream, after having verified that the stream with that name exists.
+    Get stream data, after having verified that the stream with that name exists.
 
     :param shm_stream: The stream to read
     :param name: stream name
-    :param min_value: minimal value in the stream
-    :param max_value: maximal value in the stream
-    :return: Dictionary with: data, width, height, min, max
+    :param min_value: theoretical minimal value in the stream
+    :param max_value: theoretical maximal value in the stream
+    :param sigma_clip: Apply sigma clipping
+    :param shm_stream: Stream already opened
+    :return: Dictionary with: data, width, height, min, max, min_th, max_th
     """
 
     exists, stream_path = aocontrol.check_stream(name)
 
     if exists:
         try:
+            if shm_stream is None:
+                shm_stream = SHM(str(stream_path))
+
             data = shm_stream.get_data(check=False)
+
+            if sigma_clip:
+                data = stats.sigmaclip(data, low=2.0, high=2.0)
+
             list = data.flatten().tolist()
 
             if len(data.shape) == 1:
@@ -113,19 +78,38 @@ def get_stream_data(shm_stream, name, min_value, max_value):
                     "width": width,
                     "height": height,
                     "min": min(list),
-                    "max": max(list)
+                    "max": max(list),
+                    "min_th": min_value,
+                    "max_th": max_value,
             }
         except:
-            return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
+            return {
+                    "data": 0,
+                    "width": 0,
+                    "height": 0,
+                    "min": 0,
+                    "max": 0,
+                    "min_th": 0,
+                    "max_th": 0
+            }
     else:
-        return {"data": 0, "width": 0, "height": 0, "min": 0, "max": 0}
+        return {
+                "data": 0,
+                "width": 0,
+                "height": 0,
+                "min": 0,
+                "max": 0,
+                "min_th": 0,
+                "max_th": 0
+        }
 
 
-def streams(realData=True):
+def streams(realData=True, shm_streams={}):
     """
     Provides all the streams needed for the KalAO GUI.
 
     :param realData: Flag to turn on random data for GUI testing purposes
+    :param shm_streams: Dictionary of open streams
     :return: dictionary with all the stream contents
     """
 
@@ -135,18 +119,26 @@ def streams(realData=True):
     else:
         stream_list = {}
 
-        stream_list["nuvu_stream"] = _get_stream(name="nuvu_stream",
-                                                 min_value=0,
-                                                 max_value=2**16 - 1)
-        stream_list["shwfs_slopes"] = _get_stream(name="shwfs_slopes",
-                                                  min_value=-2, max_value=2)
-        stream_list["dm01disp"] = _get_stream(name="dm01disp", min_value=-1.75,
-                                              max_value=1.75)
+        stream_list["nuvu_stream"] = _get_stream(
+                name="nuvu_stream", min_value=0, max_value=2**16 - 1,
+                shm_stream=shm_streams.get("nuvu_stream"))
+
+        stream_list["shwfs_slopes"] = _get_stream(
+                name="shwfs_slopes", min_value=-2, max_value=2,
+                shm_stream=shm_streams.get("shwfs_slopes"))
+
+        stream_list["dm01disp"] = _get_stream(
+                name="dm01disp", min_value=-1.75, max_value=1.75,
+                shm_stream=shm_streams.get("dm01disp"))
+
         stream_list["shwfs_slopes_flux"] = _get_stream(
-                name="shwfs_slopes_flux", min_value=0,
-                max_value=4 * (2**16 - 1))
-        stream_list["aol1_mgainfact"] = _get_stream(name="aol1_mgainfact",
-                                                    min_value=0, max_value=1)
+                name="shwfs_slopes_flux", min_value=0, max_value=4 *
+                (2**16 - 1), shm_stream=shm_streams.get("shwfs_slopes_flux"))
+
+        stream_list["aol1_mgainfact"] = _get_stream(
+                name="aol1_mgainfact", min_value=0, max_value=1,
+                shm_stream=shm_streams.get("aol1_mgainfact"))
+
         # streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) # TODO: uncomment when modal control is working
 
         return stream_list

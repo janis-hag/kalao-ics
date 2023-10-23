@@ -147,22 +147,8 @@ def create_app():
             app.config['shm_streams'] = shm_streams
 
         realData = not bool(request.args.get('random', default="", type=str))
-        stream_list = {}
 
-        stream_list["nuvu_stream"] = k_telemetry.get_stream_data(
-                shm_streams["nuvu_stream"], "nuvu_stream", 0, 2**16 - 1)
-        stream_list["shwfs_slopes"] = k_telemetry.get_stream_data(
-                shm_streams["shwfs_slopes"], "shwfs_slopes", -2, 2)
-        stream_list["dm01disp"] = k_telemetry.get_stream_data(
-                shm_streams["dm01disp"], "dm01disp", -1.75, 1.75)
-        stream_list["shwfs_slopes_flux"] = k_telemetry.get_stream_data(
-                shm_streams["shwfs_slopes_flux"], "shwfs_slopes_flux", 0,
-                4 * (2**16 - 1))
-        stream_list["aol1_mgainfact"] = k_telemetry.get_stream_data(
-                shm_streams["aol1_mgainfact"], "aol1_mgainfact", 0, 1)
-
-        #return k_telemetry.streams(shm_streams, realData)
-        return stream_list
+        return k_telemetry.streams(realData, shm_streams)
 
     @app.route('/data', methods=['GET'])
     def data():
