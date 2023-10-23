@@ -224,7 +224,7 @@ def switch(action_name, beck=None):
                     ua.Variant(True,
                                laser_switch.get_data_type_as_variant_type())))
 
-    sleep(LASER_SWITCH_WAIT)
+    sleep(config.Laser.switch_wait)
     if beck.get_node("ns=4;s=MAIN.Laser.Status").get_value():
         laser_status = 'ON'
     else:
