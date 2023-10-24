@@ -43,10 +43,7 @@ def check_stream(stream_name):
     stream_name = isio_shmlib.check_SHM_name(stream_name) + '.im.shm'
     stream_path = stream_path / stream_name
 
-    if stream_path.exists():
-        return True, stream_path
-    else:
-        return False, stream_path
+    return stream_path.exists(), str(stream_path)
 
 
 def check_fps(fps_name):
@@ -87,7 +84,7 @@ def close_loop():
 
         return -1
 
-    fps_mfilt1 = fps("mfilt-1")
+    fps_mfilt1 = fps(looprun_fps_path)
 
     # TODO the value to be set is not a float! this line will fail it need to be changed to string
     fps_mfilt1.set_param_value_float('loopON', 'ON')
@@ -102,7 +99,7 @@ def close_loop():
 
         return -1
 
-    fps_mfilt2 = fps("mfilt-2")
+    fps_mfilt2 = fps(ttmloop_fps_path)
 
     # TODO the value to be set is not a float! this line will fail it need to be changed to string
     fps_mfilt2.set_param_value_float('loopON', 'ON')
@@ -172,12 +169,12 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
     :param stream_name:
     :return:
     """
-    exists, stream_path = check_stream(stream_name)
+    stream_exists, stream_path = check_stream(stream_name)
 
     mode = int(np.floort(mode))
 
-    if exists:
-        mgainfact_shm = SHM(stream_name)
+    if stream_exists:
+        mgainfact_shm = SHM(stream_path)
         mgainfact_array = mgainfact_shm.get_data(check=False)
 
         mgainfact_array[mode] = factor
@@ -273,10 +270,10 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
     elif last_mode is None:
         last_mode = cut_off
 
-    exists, stream_path = check_stream(stream_name)
+    stream_exists, stream_path = check_stream(stream_name)
 
-    if exists:
-        mgainfact_shm = SHM(stream_name)
+    if stream_exists:
+        mgainfact_shm = SHM(stream_path)
         mgainfact_array = mgainfact_shm.get_data(check=False)
 
         if not keep_existing_flat:
@@ -318,12 +315,12 @@ def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False):
 
     stream_name = "dm02disp"
 
-    tt_exists, tt_fps_path = check_stream(stream_name)
+    stream_exists, stream_path = check_stream(stream_name)
 
-    if not tt_exists:
+    if not stream_exists:
         return -1
 
-    stream_shm = SHM(stream_name)
+    stream_shm = SHM(stream_path)
 
     stream_data = stream_shm.get_data(check=False)
 
@@ -369,7 +366,7 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
 
         return -1
 
-    stream_shm = SHM(stream_name)
+    stream_shm = SHM(stream_path)
 
     stream_data = stream_shm.get_data(check=False)
 
@@ -428,7 +425,7 @@ def reset_stream(stream_name):
     stream_exists, stream_path = check_stream(stream_name)
 
     if stream_exists:
-        stream_shm = SHM(stream_name)
+        stream_shm = SHM(stream_path)
 
         stream_data = stream_shm.get_data(check=False)
 
@@ -453,20 +450,25 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
     tip_centered = False
     tilt_centered = False
 
-    fps_slopes = fps("shwfs_process-1")
-    # fps_bmc = fps("bmc_display-01")
-    stream_name = 'dm02disp04'
+    dm_stream_exists, dm_stream_path = check_stream('dm02disp04')
+    slopes_fps_exists, slopes_fps_path = check_fps('shwfs_process')
 
-    stream_exists, stream_path = check_stream(stream_name)
-
-    if not stream_exists:
-        message = f'ERROR: {stream_path} is missing'
+    if not dm_stream_exists:
+        message = f'ERROR: {dm_stream_path} is missing'
         print(message)
         database.store_obs_log({'ttm_log': message})
 
         return -1
 
-    stream_shm = SHM(stream_name)
+    if not slopes_fps_exists:
+        message = f'ERROR: {slopes_fps_path} is missing'
+        print(message)
+        database.store_obs_log({'ttm_log': message})
+
+        return -1
+
+    dm_stream_shm = SHM(dm_stream_path)
+    slopes_fps_shm = fps(slopes_fps_path)
 
     # TODO verify that shwfs enough illuminated for centering
 
@@ -478,13 +480,13 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
 
             return -1
 
-        stream_data = stream_shm.get_data(check=False)
+        stream_data = dm_stream_shm.get_data(check=False)
 
         tip_offset, tilt_offset = stream_data
 
-        tip_residual = fps_slopes.get_param_value_float(
+        tip_residual = slopes_fps_shm.get_param_value_float(
                 'slope_y') * config.AO.WFS_tip_to_TTM
-        tilt_residual = fps_slopes.get_param_value_float(
+        tilt_residual = slopes_fps_shm.get_param_value_float(
                 'slope_x') * config.AO.WFS_tilt_to_TTM
 
         if np.abs(tip_residual) < tt_threshold:
@@ -525,8 +527,10 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
     return 0
 
 
-def dm_poke_sequence(timestep=0.1):
-    dmdisp = SHM("dm01disp09")
+def dm_poke_sequence(timestep=0.1, stream_name="dm01disp09"):
+    stream_exists, stream_path = check_stream(stream_name)
+
+    dmdisp = SHM(stream_path)
 
     # initial_shape = dmdisp.get_data(check=False)
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
@@ -758,7 +762,7 @@ def _set_fps_floatvalue(fps_name, key, value):
 
         return -1
 
-    fps_handle = fps(fps_name)
+    fps_handle = fps(fps_path)
 
     fps_handle.set_param_value_float(key, str(value))
 
@@ -777,7 +781,7 @@ def _set_fps_intvalue(fps_name, key, value):
 
         return -1
 
-    fps_handle = fps(fps_name)
+    fps_handle = fps(fps_path)
 
     rValue = fps_handle.set_param_value_int(key, str(value))
 

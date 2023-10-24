@@ -36,7 +36,7 @@ def create_shm_stream(name):
     exists, stream_path = aocontrol.check_stream(name)
 
     if exists:
-        return SHM(str(stream_path))
+        return SHM(stream_path)
     else:
         return None
 
@@ -58,7 +58,7 @@ def _get_stream(name, min_value_th, max_value_th, shm_stream=None):
     if exists:
         try:
             if shm_stream is None:
-                shm_stream = SHM(str(stream_path))
+                shm_stream = SHM(stream_path)
 
             data = shm_stream.get_data(check=False)
 
@@ -172,7 +172,7 @@ def telemetry_save(stream_list):
 
     if nuvu_exists and session:
         if stream_list['nuvu_stream'] is None:
-            stream_list['nuvu_stream'] = SHM("nuvu_raw")
+            stream_list['nuvu_stream'] = SHM(nuvu_stream_path)
 
         stream_keywords = stream_list['nuvu_stream'].get_keywords()
 
@@ -201,7 +201,7 @@ def telemetry_save(stream_list):
     #
     # if nuvu_exists:
     #     sys.stdout = temp_out
-    #     fps_nuvu = fps("nuvu_acquire")
+    #     fps_nuvu = fps(nuvu_fps_path)
     #     sys.stdout = sys.__stdout__
     #
     #     # Check if it's running
@@ -227,7 +227,7 @@ def telemetry_save(stream_list):
 
     if shwfs_exists:
         if stream_list['fps_slopes'] is None:
-            stream_list['fps_slopes'] = fps("shwfs_process")
+            stream_list['fps_slopes'] = fps(shwfs_fps_path)
 
         # Check if it's running
         if stream_list['fps_slopes'].RUNrunning == 1:
@@ -241,14 +241,11 @@ def telemetry_save(stream_list):
 
     # Tip/tilt stream
     # check if fps exists and is running
-    tt_exists, tt_fps_path = aocontrol.check_stream("dm02disp")
+    tt_exists, tt_stream_path = aocontrol.check_stream("dm02disp")
 
     if tt_exists:
         if stream_list['tt_stream'] is None:
-            stream_list['tt_stream'] = SHM("dm02disp")
-            # stream_list['tt_stream'].close()
-        # else:
-        # stream_list['tt_stream'] = SHM("dm02disp")
+            stream_list['tt_stream'] = SHM(tt_stream_path)
 
         # Check turned off to prevent timeout. Data may be obsolete
         tt_data = stream_list['tt_stream'].get_data(check=False)
@@ -262,7 +259,7 @@ def telemetry_save(stream_list):
 
     if looprun_exists:
         if stream_list['mfilt-1'] is None:
-            stream_list['mfilt-1'] = fps("mfilt-1")
+            stream_list['mfilt-1'] = fps(looprun_fps_path)
 
         # Check if it's running
         if stream_list['mfilt-1'].RUNrunning == 1:
@@ -283,7 +280,7 @@ def telemetry_save(stream_list):
 
     if tt_loop_exists:
         if stream_list['mfilt-2'] is None:
-            stream_list['mfilt-2'] = fps("mfilt-2")
+            stream_list['mfilt-2'] = fps(looprun_fps_path)
 
         # Check if it's running
         if stream_list['mfilt-2'].RUNrunning == 1:

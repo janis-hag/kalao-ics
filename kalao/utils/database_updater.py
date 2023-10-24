@@ -80,27 +80,27 @@ def update_telemetry(stream_list):
     if stream_list['nuvu_stream'] is None:
         nuvu_exists, nuvu_stream_path = aocontrol.check_stream("nuvu_raw")
         if nuvu_exists:
-            stream_list['nuvu_stream'] = SHM("nuvu_raw")
+            stream_list['nuvu_stream'] = SHM(nuvu_stream_path)
 
     if stream_list['tt_stream'] is None:
         tt_exists, tt_stream_path = aocontrol.check_stream("dm02disp")
         if tt_exists:
-            stream_list['tt_stream'] = SHM("dm02disp")
+            stream_list['tt_stream'] = SHM(tt_stream_path)
 
     if stream_list['fps_slopes'] is None:
         shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process")
         if shwfs_exists:
-            stream_list['fps_slopes'] = fps("shwfs_process")
+            stream_list['fps_slopes'] = fps(shwfs_fps_path)
 
     if stream_list['mfilt-1'] is None:
         looprun_exists, looprun_fps_path = aocontrol.check_fps("mfilt-1")
         if looprun_exists:
-            stream_list['mfilt-1'] = fps("mfilt-1")
+            stream_list['mfilt-1'] = fps(looprun_fps_path)
 
     if stream_list['mfilt-2'] is None:
         looprun_exists, looprun_fps_path = aocontrol.check_fps("mfilt-2")
         if looprun_exists:
-            stream_list['mfilt-2'] = fps("mfilt-2")
+            stream_list['mfilt-2'] = fps(looprun_fps_path)
 
     telemetry.telemetry_save(stream_list)
 

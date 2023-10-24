@@ -60,6 +60,23 @@ def run():
     fli_y_pos = 409
     fli_circle_radius = 16
 
+    ##### Open needed streams
+    nuvu_exists, nuvu_stream_path = check_stream("nuvu_stream")
+    if not nuvu_exists:
+        print('nuvu_stream stream missing")
+        exit()
+    nuvu_stream = SHM(nuvu_stream_path)
+
+    dm_exists, dm_stream_path = check_stream("dm01disp09")
+    if not dm_exists:
+        print('dm01disp09 stream missing")
+        exit()
+    dm_stream = SHM(dm_stream_path)
+
+    fli_exists, fli_stream_path = check_stream("fli_stream")
+    if fli_exists:
+        fli_stream = SHM(fli_stream_path)
+
     ##### General configuration
 
     FLAT = 0
@@ -275,33 +292,34 @@ def run():
         dm_text_inds.append(text_inds)
 
     ##### FLI window
-    fli_window = pg.GraphicsLayoutWidget(title="FLI alignment")
-    fli_window.keyPressEvent = keyPressed
-    fli_window.setGeometry(100, 100, 1200, 800)
-    fli_window.show()
+    if fli_exists:
+        fli_window = pg.GraphicsLayoutWidget(title="FLI alignment")
+        fli_window.keyPressEvent = keyPressed
+        fli_window.setGeometry(100, 100, 1200, 800)
+        fli_window.show()
 
-    fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True,
-                                             enableMouse=True)
-    fli_viewbox_full.setAspectLocked(True)
-    fli_imageitem_full = pg.ImageItem()
-    fli_viewbox_full.addItem(fli_imageitem_full)
+        fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True,
+                                                enableMouse=True)
+        fli_viewbox_full.setAspectLocked(True)
+        fli_imageitem_full = pg.ImageItem()
+        fli_viewbox_full.addItem(fli_imageitem_full)
 
-    fli_viewbox_zoom = fli_window.addViewBox(row=0, col=1, invertY=True)
-    fli_viewbox_zoom.setAspectLocked(True)
-    fli_imageitem_zoom = pg.ImageItem()
-    fli_viewbox_zoom.addItem(fli_imageitem_zoom)
+        fli_viewbox_zoom = fli_window.addViewBox(row=0, col=1, invertY=True)
+        fli_viewbox_zoom.setAspectLocked(True)
+        fli_imageitem_zoom = pg.ImageItem()
+        fli_viewbox_zoom.addItem(fli_imageitem_zoom)
 
-    roi_circle = pg.CircleROI([
-            fli_x_pos - fli_circle_radius, fli_y_pos - fli_circle_radius
-    ], [2 * fli_circle_radius, 2 * fli_circle_radius],
-                              pen=pg.mkPen(BLUE, width=2), movable=False,
-                              rotatable=False, resizable=False)
-    fli_viewbox_full.addItem(roi_circle)
-    roi_circle.removeHandle(0)  # Must be done after AddItem
+        roi_circle = pg.CircleROI([
+                fli_x_pos - fli_circle_radius, fli_y_pos - fli_circle_radius
+        ], [2 * fli_circle_radius, 2 * fli_circle_radius],
+                                pen=pg.mkPen(BLUE, width=2), movable=False,
+                                rotatable=False, resizable=False)
+        fli_viewbox_full.addItem(roi_circle)
+        roi_circle.removeHandle(0)  # Must be done after AddItem
 
-    fli_text_line_1 = pg.LabelItem("", color=BLUE, bold=True)
-    fli_window.addItem(fli_text_line_1, row=1, col=0)
-    fli_text_line_1.setText(f"Mouse scroll on image to zoom")
+        fli_text_line_1 = pg.LabelItem("", color=BLUE, bold=True)
+        fli_window.addItem(fli_text_line_1, row=1, col=0)
+        fli_text_line_1.setText(f"Mouse scroll on image to zoom")
 
     ##### Help
     warning = "WARNING:<br /><br />'bmc_display', 'nuvu_acquire' and 'DMcomb' must be set-up and running,<br />and the dm flat must be loaded for this tool to work properly"
@@ -328,14 +346,7 @@ def run():
     popup_manual.setAttr("justify", "left")
     popup_window.addItem(popup_manual, row=2, col=0)
 
-    # Open needed streams
-    nuvu_stream = SHM("nuvu_stream")
-    dmdisp = SHM("dm01disp09")
-
-    fli_ok, _ = check_stream("fli_stream")
-    if fli_ok: fli_stream = SHM("fli_stream")
-
-    dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
+    dm_array = np.zeros(dm_stream.shape, dm_stream.nptype)
 
     # Add grid to pupil windows
     if nuvu_stream.shape == (128, 128):
@@ -366,19 +377,19 @@ def run():
         for act in dm_actuators_poke:
             dm_array[get_actuator_2d(act)] = 0
 
-        dmdisp.set_data(dm_array, True)
+        dm_stream.set_data(dm_array, True)
         time.sleep(dm_wait_after_poke)
         frame[FLAT], subapertures[FLAT] = get_roi_and_subapertures(
                 nuvu_stream.get_data(check=True))
 
-        if fli_ok:
+        if fli_exists:
             fli_image = fli_stream.get_data(check=True)
 
         # Poke actuators down
         for act in dm_actuators_poke:
             dm_array[get_actuator_2d(act)] = -dm_actuators_amplitude
 
-        dmdisp.set_data(dm_array, True)
+        dm_stream.set_data(dm_array, True)
         time.sleep(dm_wait_after_poke)
         frame[DOWN], subapertures[DOWN] = get_roi_and_subapertures(
                 nuvu_stream.get_data(check=True))
@@ -387,7 +398,7 @@ def run():
         for act in dm_actuators_poke:
             dm_array[get_actuator_2d(act)] = dm_actuators_amplitude
 
-        dmdisp.set_data(dm_array, True)
+        dm_stream.set_data(dm_array, True)
         time.sleep(dm_wait_after_poke)
         frame[UP], subapertures[UP] = get_roi_and_subapertures(
                 nuvu_stream.get_data(check=True))
@@ -469,7 +480,7 @@ def run():
         print(f"{r[0]:.3f} {phi[0]: 3.0f}   {r[1]:.3f} {phi[1]: 3.0f}   {r[2]:.3f} {phi[2]: 3.0f}   {r[3]:.3f} {phi[3]: 3.0f}"
               )
 
-        if fli_ok:
+        if fli_exists:
             fli_imageitem_full.setImage(fli_image)
 
             fli_imageitem_zoom.setImage(
@@ -481,8 +492,8 @@ def run():
         pg.QtWidgets.QApplication.processEvents()
 
     # Clear DM before exiting
-    dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
-    dmdisp.set_data(dm_array, True)
+    dm_array = np.zeros(dm_stream.shape, dm_stream.nptype)
+    dm_stream.set_data(dm_array, True)
 
     return 0
 
