@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source /home/kalao/kalao-venv/bin/activate
-source /home/kalao/kalao-config/_bash_aliases
+source /home/kalao/.bash_aliases
 
 cd /home/kalao/kalao-ics/tcs_communication
 
