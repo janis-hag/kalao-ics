@@ -14,10 +14,12 @@ class Zernike:
             return Zernike.N(n, -m) * Zernike.R(n, -m, rho) * np.sin(-m * phi)
 
     def N(n, m):
-        if m == 0:
-            return np.sqrt(n + 1)
-        else:
-            return np.sqrt(2 * n + 2)
+        return 1
+
+        # if m == 0:
+        #     return np.sqrt(n + 1)
+        # else:
+        #     return np.sqrt(2 * n + 2)
 
     def R(n, m, rho):
         if (n - m) % 2 == 1:
