@@ -9,6 +9,8 @@ Restart=always
 RestartSec=30
 StandardOutput=journal
 StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+Environment=MILK_SHM_DIR=/tmp/milk
 
 [Install]
 WantedBy=default.target
