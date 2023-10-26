@@ -17,7 +17,7 @@ import schedule
 
 from kalao.plc import temperature_control, shutter, laser
 from kalao.utils import database, kalao_time
-from kalao.cacao import aocontrol
+from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from sequencer import system
 
@@ -72,7 +72,7 @@ def _check_dm_inactive():
 
     if elapsed_time_since_activity > config.Watchdog.inactivity_timeout:
         # TODO add IPpower off if DM plug on IPpower (use existing FLI code)
-        aocontrol.reset_stream('dm01disp00')
+        toolbox.zero_stream('dm01disp00')
 
     return 0
 

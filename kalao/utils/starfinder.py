@@ -34,6 +34,7 @@ import numpy as np
 from astropy.io import fits
 
 import kalao_config as config
+from kalao_enums import SequencerStatus
 
 
 def centre_on_target(kao='NO_AO'):
@@ -50,6 +51,9 @@ def centre_on_target(kao='NO_AO'):
     """
 
     timeout_time = time.time() + config.Starfinder.centering_timeout
+
+    # Reset tip tilt stream to 0
+    aocontrol.reset_dm(2)
 
     while time.time() < timeout_time:
         # TODO use exptime given by nseq args
@@ -171,7 +175,6 @@ def center_on_laser():
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
-    #
     laser.set_intensity(config.Laser.calib_intensity)
 
     if flip_mirror.up() != 'UP':
@@ -179,11 +182,8 @@ def center_on_laser():
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
-    # Reset tip tilt offset to 0
-    aocontrol.tip_tilt_offset_fli_to_ttm(0, 0, absolute=True)
-
     # Reset tip tilt stream to 0
-    aocontrol.reset_stream("dm02disp")
+    aocontrol.reset_dm(2)
 
     # Rough centering loop with FLI
     for i in range(3):

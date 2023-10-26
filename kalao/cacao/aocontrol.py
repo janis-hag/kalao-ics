@@ -19,7 +19,7 @@ from pyMilk.interfacing import isio_shmlib
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
-from kalao.cacao import telemetry
+from kalao.cacao import telemetry, toolbox
 from kalao.utils import database
 from kalao.fli import camera
 
@@ -36,14 +36,14 @@ def check_stream(stream_name):
     Function verifies if stream_name exists
 
     :param stream_name: stream to check existence
-    :return: boolean, stream_full_path
+    :return: boolean, stream_name_clean
     """
     # stream_path = Path(os.environ["MILK_SHM_DIR"])
-    stream_path = Path('/tmp/milk')
-    stream_name = isio_shmlib.check_SHM_name(stream_name) + '.im.shm'
-    stream_path = stream_path / stream_name
+    milk_path = Path('/tmp/milk')
+    stream_name_clean = isio_shmlib.check_SHM_name(stream_name)
+    stream_path = milk_path / (stream_name_clean + '.im.shm')
 
-    return stream_path.exists(), str(stream_path)
+    return stream_path.exists(), stream_name_clean
 
 
 def check_fps(fps_name):
@@ -51,17 +51,14 @@ def check_fps(fps_name):
     Function verifies if fps_name exists
 
     :param fps_name: fps to check existence
-    :return: boolean, stream_full_path
+    :return: boolean, fps_name_clean
     """
     # fps_path = Path(os.environ["MILK_SHM_DIR"])
-    fps_path = Path('/tmp/milk')
-    fps_name = isio_shmlib.check_SHM_name(fps_name) + '.fps.shm'
-    fps_path = fps_path / fps_name
+    milk_path = Path('/tmp/milk')
+    fps_name_clean = isio_shmlib.check_SHM_name(fps_name)
+    fps_path = milk_path / (fps_name_clean + '.fps.shm')
 
-    if fps_path.exists():
-        return True, fps_path
-    else:
-        return False, fps_path
+    return fps_path.exists(), fps_name_clean
 
 
 def close_loop():
@@ -415,28 +412,23 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
     return 0
 
 
-def reset_stream(stream_name):
-    """
-    Reset the given stream to 0.
+def reset_dm(dm_number):
+    ret = 0
 
-    :return:
-    """
+    for i in range(0,12):
+        stream_name = f'dm{dm_number:02d}disp{i:02d}'
+        ret += toolbox.zero_stream(stream_name)
 
-    stream_exists, stream_path = check_stream(stream_name)
+    return ret
 
-    if stream_exists:
-        stream_shm = SHM(stream_path)
 
-        stream_data = stream_shm.get_data(check=False)
+def reset_all_dms(max_dm_number=2):
+    ret = 0
 
-        stream_data[:] = 0
+    for i in range(1, max_dm_number):
+        ret += reset_dm(i)
 
-        stream_shm.set_data(stream_data.astype(stream_shm.nptype))
-
-    else:
-        return -1
-
-    return 0
+    return ret
 
 
 def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):

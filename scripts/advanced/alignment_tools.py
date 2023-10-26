@@ -504,7 +504,7 @@ def run():
         pg.QtWidgets.QApplication.processEvents()
 
     # Clear DM before exiting
-    reset_stream("dm01disp09")
+    zero_stream("dm01disp09")
 
     return 0
 
