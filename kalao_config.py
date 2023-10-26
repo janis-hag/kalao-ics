@@ -58,9 +58,9 @@ class FLI:
     pix_scale_x = 0.0658  # arcsec / px
     pix_scale_y = 0.0512  # arcsec / px
 
-    center_x = 551  # px
+    center_x = 505  # px
     #535
-    center_y = 525  # px
+    center_y = 545  # px
     #520
 
     dummy_camera = False
@@ -205,7 +205,7 @@ class AO:
 
     # Should be 0.5 * 1/49.2726 * 1200 / 20 * 1000 * 13e-6 = 0.00792 mrad / px
     FLI_tip_to_TTM = 0.008497723325890764  # mrad / px
-    FLI_tilt_to_TTM = 0.008497723325890764  # mrad / px
+    FLI_tilt_to_TTM = -0.008497723325890764  # mrad / px
 
     # Should be 0.5 * 1/5.31532 * 1200 / 20 * 1000 * 48e-6 = 0.271 mrad / px (2x2 binning)
     WFS_tip_to_TTM = 0.28649303833986856  # mrad / px

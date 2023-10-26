@@ -161,7 +161,7 @@ def cast_args(args):
 
     # Create dictionary to translate EDP argument to KalAO arguments
     edp_translation_dict = {}
-    for key, val in config.SEQ.EDP_translate:
+    for key, val in config.SEQ.EDP_translate.items():
         edp_translation_dict[key] = val
 
     # Translate keyword if not already present

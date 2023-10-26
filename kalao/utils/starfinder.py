@@ -62,7 +62,6 @@ def centre_on_target(kao='NO_AO'):
         # file_handling.save_tmp_image(image_path)
 
         if rValue != 0:
-            # print(rValue)
             system.print_and_log(f'ERROR no image received. {rValue}')
             return -1
 

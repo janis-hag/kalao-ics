@@ -886,7 +886,7 @@ def check_abort(q, dit, AO=False):
     return 0
 
 
-def config(**seq_args):
+def edp_config(**seq_args):
     """
     Updates database with configuration parameters received from EDP.
 
@@ -921,7 +921,7 @@ commandDict = {
         "K_LAMPOF": lamp_off,
         "K_FOCUS": focusing,
         "K_FOCUS_ABORT": focusing_abort,
-        "K_CONFIG": config,
+        "K_CONFIG": edp_config,
         "ABORT": any_abort,
         "INSTRUMENTCHANGE": instrument_change,
         "THE_END": end,

@@ -26,7 +26,7 @@ node_path = 'Tungsten'
 def get_flat_dits():
     id_filter_dict = filterwheel.create_filter_id()
     flat_dit_dict = {}
-    for key, val in config.Tungsten.flat_dit_list:
+    for key, val in config.Tungsten.flat_dit_list.items():
         # Create dit dictionary based on named filters
         flat_dit_dict[key] = val
         # Create dit dictionary based on numbered filters
