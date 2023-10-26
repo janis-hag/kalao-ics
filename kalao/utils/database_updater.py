@@ -88,7 +88,7 @@ def update_telemetry(stream_list):
             stream_list['tt_stream'] = SHM(tt_stream_path)
 
     if stream_list['fps_slopes'] is None:
-        shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process")
+        shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process-1")
         if shwfs_exists:
             stream_list['fps_slopes'] = fps(shwfs_fps_path)
 

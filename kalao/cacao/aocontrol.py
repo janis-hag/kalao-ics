@@ -451,7 +451,7 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
     tilt_centered = False
 
     dm_stream_exists, dm_stream_path = check_stream('dm02disp04')
-    slopes_fps_exists, slopes_fps_path = check_fps('shwfs_process')
+    slopes_fps_exists, slopes_fps_path = check_fps('shwfs_process-1')
 
     if not dm_stream_exists:
         message = f'ERROR: {dm_stream_path} is missing'

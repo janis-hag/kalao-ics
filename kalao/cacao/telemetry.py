@@ -220,7 +220,7 @@ def telemetry_save(stream_list):
 
     # SHWFS process
     # check if fps exists and is running
-    shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process")
+    shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process-1")
 
     # APO-Q-P240-R8,6 FOV per subap / pixels_per_subap
     pixel_scale = 5.7929690265142 / 5

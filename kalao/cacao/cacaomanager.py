@@ -156,7 +156,7 @@ def init_hardware(workdir):
 def configure_hardware(dm_conf, ttm_conf):
     fps_bmc = fps("bmc_display")
     fps_nuvu = fps("nuvu_acquire")
-    fps_shwfs = fps("shwfs_process")
+    fps_shwfs = fps("shwfs_process-1")
 
     fps_bmc.CONFstart()
     fps_nuvu.CONFstart()
