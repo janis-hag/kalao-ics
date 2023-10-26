@@ -28,6 +28,7 @@ from tcs_communication import t120
 from kalao_enums import SequencerStatus, TrackingStatus
 import kalao_config as config
 
+
 def dark(**seq_args):
     """
     1. Turn off lamps
@@ -92,7 +93,9 @@ def dark(**seq_args):
 
         # block for each picture and check if an abort was requested
         if check_abort(q, dit) == -1:
-            database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
+            database.store_obs_log({
+                    'sequencer_status': SequencerStatus.WAITING
+            })
             return -1
 
     database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
@@ -293,6 +296,8 @@ def sky_flat(**seq_args):
     :return: nothing
     """
 
+    #TODO abort sequence when flux too low
+
     q = seq_args.get('q')
     filter_list = seq_args.get('filter_list')
     filepath = seq_args.get('filepath')
@@ -360,7 +365,9 @@ def sky_flat(**seq_args):
             current_filter = filter_name
             if filterwheel.set_position(filter_name) == -1:
                 system.print_and_log('Error: problem with filter selection')
-                database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+                database.store_obs_log({
+                        'sequencer_status': SequencerStatus.ERROR
+                })
                 return -1
 
         # Take nbPic image
@@ -452,10 +459,10 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
-    fo_delta = starfinder.get_latest_fo_delta()
-    if fo_delta is not None:
-        t120.update_fo_delta(fo_delta)
-        t120.request_autofocus()
+    #fo_delta = starfinder.get_latest_fo_delta()
+    #if fo_delta is not None:
+    #    t120.update_fo_delta(fo_delta)
+    #    t120.request_autofocus()
 
     if waitfortracking() == -1:
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
