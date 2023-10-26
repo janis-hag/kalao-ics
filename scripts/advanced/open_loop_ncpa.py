@@ -24,9 +24,10 @@ from subprocess import PIPE, STDOUT
 
 from sequencer import system
 from kalao.cacao.aocontrol import check_stream
+from kalao.cacao.toolbox import save_stream_to_fits, zero_stream
 from kalao.utils import kalao_time, zernike
 from kalao.plc import laser, filterwheel
-from kalao.fli import FLI
+from kalao.fli import FLI, camera
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
@@ -37,40 +38,12 @@ COEFF = 1
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
-    system.camera_service('start')
-    print('Restarted kalao_camera service')
+    ret = zero_stream(r"dm01disp08")
+
+    if ret == 0:
+        print('Resetted DM pattern')
+
     exit(0)
-
-
-def cut_image(img, window, center):
-
-    if window is not None:
-        hw = int(np.round(window / 2))
-        if center is None:
-            c = [img.shape[0] / 2, img.shape[1] / 2]
-        else:
-            c = center
-        img = img[c[0] - hw:c[0] + hw, c[1] - hw:c[1] + hw]
-
-    img = img.astype(float)
-
-    return img
-
-
-def save_stream_to_fits(stream_name, fits_file):
-
-    milk_input = f"""
-    readshmim "{stream_name}"
-    saveFITS "{stream_name}" "{fits_file}"
-    exitCLI
-    """
-
-    cp = subprocess.run(["milk"], input=milk_input, encoding='utf8',
-                        stdout=PIPE, stderr=STDOUT)
-    print("=========================== STDOUT")
-    print(cp.stdout)
-    print("=========================== STDERR")
-    print(cp.stderr)
 
 
 def generate_pattern(R, Theta, zernike_coeffs):
@@ -78,8 +51,8 @@ def generate_pattern(R, Theta, zernike_coeffs):
     pattern = np.zeros(R.shape)
 
     for i, coeff in enumerate(zernike_coeffs):
-        n, m = zernike.standard_inverse(i + 3)
-        pattern += coeff * zernike.Z(n, m, R, Theta)
+        n, m = zernike.Zernike.standard_inverse(i + 3)
+        pattern += coeff * zernike.Zernike.Z(n, m, R, Theta)
 
     return pattern
 
@@ -104,7 +77,7 @@ def run(cam, args):
     while (True):
         cam.set_exposure(new_dit)
         img = cam.take_photo()
-        img = cut_image(img, window, center)
+        img = camera.cut_image(img, window, center)
 
         print(new_dit, img.max())
         if img.max() >= max_flux:
@@ -127,7 +100,7 @@ def run(cam, args):
     print(f'Setting DIT to {new_dit}')
     cam.set_exposure(new_dit)
     img = cam.take_photo()
-    img = cut_image(img, window, center)
+    img = camera.cut_image(img, window, center)
 
     peak_value = img.max()
 
@@ -141,9 +114,10 @@ def run(cam, args):
 
     # Open DM stream
     dm_stream_exists, dm_stream_path = check_stream("dm01disp08")
-    if not nuvu_exists:
+    if not dm_stream_exists:
         print(f'{dm_stream_path} stream missing')
         exit()
+
     dm_stream = SHM(dm_stream_path)
 
     x = np.linspace(-1, 1, dm_stream.shape[0])
@@ -153,7 +127,7 @@ def run(cam, args):
     R = np.sqrt(X**2 + y**2)
     Theta = np.arctan2(Y, X)
 
-    zernike_coeffs = np.zeroes(orders_to_correct)
+    zernike_coeffs = np.zeros(orders_to_correct)
     print(f'Correcting {orders_to_correct} orders')
 
     df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step'] +
@@ -173,7 +147,7 @@ def run(cam, args):
             zernike_coeffs[order] = 0
 
             img = cam.take_photo()
-            img = cut_image(img, window, center)
+            img = camera.cut_image(img, window, center)
 
             peak_array = np.zeros((3, 2))
 
@@ -182,7 +156,7 @@ def run(cam, args):
 
             step = 0
             while step < steps and zernike_coeff_incr > min_incr:
-                print(f'Step {step}     Zernike amplitude {zernike_coeffs[order]}     Max flux: {img.max()}'
+                print(f'Step {step}     Increment {zernike_coeff_incr:.8f}     Zernike amplitude {zernike_coeffs[order]:.8f}     Max flux: {img.max():.0f}'
                       )
 
                 up = zernike_coeffs[order] + zernike_coeff_incr
@@ -191,12 +165,10 @@ def run(cam, args):
                 # Test up
                 zernike_coeffs[order] = up
 
-                dm_stream.set_data(
-                        generate_pattern(R, Theta, zernike_coeffs).astype(
-                                dm_stream.nptype))
+                dm_stream.set_data(generate_pattern(R, Theta, zernike_coeffs), True)
 
                 img = cam.take_photo()
-                img = cut_image(img, window, center)
+                img = camera.cut_image(img, window, center)
 
                 peak_array[2][PEAK_VALUE] = img.max()
                 peak_array[2][COEFF] = up
@@ -204,12 +176,10 @@ def run(cam, args):
                 # Test down
                 zernike_coeffs[order] = down
 
-                dm_stream.set_data(
-                        generate_pattern(R, Theta, zernike_coeffs).astype(
-                                dm_stream.nptype))
+                dm_stream.set_data(generate_pattern(R, Theta, zernike_coeffs), True)
 
                 img = cam.take_photo()
-                img = cut_image(img, window, center)
+                img = camesa.cut_image(img, window, center)
 
                 peak_array[0][PEAK_VALUE] = img.max()
                 peak_array[0][COEFF] = down
@@ -245,11 +215,9 @@ def run(cam, args):
 
     print(max_row)
 
-    zernike_array = max_row[-len(zernike_coeffs):].to_numpy()
+    zernike_coeffs = max_row[-len(zernike_coeffs):].to_numpy()
 
-    dm_stream.set_data(
-            generate_pattern(R, Theta,
-                             zernike_coeffs).astype(dm_stream.nptype))
+    dm_stream.set_data(generate_pattern(R, Theta, zernike_coeffs), True)
 
     # TODO update zp0 stream
     save_stream_to_fits('dm01disp', 'dmflat_ncpa_time_name.fits')

@@ -6,6 +6,7 @@
 
 import os
 import time
+from signal import signal, SIGINT
 
 import numpy as np
 from scipy import ndimage
@@ -17,6 +18,17 @@ from pyMilk.interfacing.isio_shmlib import SHM
 
 from kalao.cacao.toolbox import *
 from kalao.cacao.aocontrol import check_stream
+from kalao.cacao.toolbox import zero_stream
+
+def handler(signal_received, frame):
+    # Handle any cleanup here
+    print('\nSIGINT or CTRL-C detected. Exiting.')
+    ret = zero_stream("dm01disp09")
+
+    if ret == 0:
+        print('Resetted DM pattern')
+
+    exit(0)
 
 
 def clamp(n, minn, maxn):
@@ -44,6 +56,11 @@ def run():
 	"""
 
     ##### What to display/poke
+    pupil_flux_top = range(12, 20 + 1, 1)
+    pupil_flux_bottom = range(100, 108 + 1, 1)
+    pupil_flux_left = range(12, 100 + 1, 11)
+    pupil_flux_right = range(20, 108 + 1, 11)
+
     tiptilt_subap_indexes = (0, 10, 110, 120, 60)
 
     dm_actuators_poke = (50, 53, 86, 89)
@@ -63,13 +80,13 @@ def run():
     ##### Open needed streams
     nuvu_exists, nuvu_stream_path = check_stream("nuvu_stream")
     if not nuvu_exists:
-        print('nuvu_stream stream missing")
+        print('nuvu_stream stream missing')
         exit()
     nuvu_stream = SHM(nuvu_stream_path)
 
     dm_exists, dm_stream_path = check_stream("dm01disp09")
     if not dm_exists:
-        print('dm01disp09 stream missing")
+        print('dm01disp09 stream missing')
         exit()
     dm_stream = SHM(dm_stream_path)
 
@@ -142,11 +159,6 @@ def run():
 
     pupil_text_line_2 = pg.LabelItem("", color=BLUE, bold=True)
     pupil_window.addItem(pupil_text_line_2, row=2, col=0)
-
-    pupil_flux_top = range(12, 20 + 1, 1)
-    pupil_flux_bottom = range(100, 108 + 1, 1)
-    pupil_flux_left = range(12, 100 + 1, 11)
-    pupil_flux_right = range(20, 108 + 1, 11)
 
     ##### Tip-Tilt window
     tiptilt_window = pg.GraphicsLayoutWidget(title="Tip-Tilt alignment")
@@ -492,11 +504,13 @@ def run():
         pg.QtWidgets.QApplication.processEvents()
 
     # Clear DM before exiting
-    dm_array = np.zeros(dm_stream.shape, dm_stream.nptype)
-    dm_stream.set_data(dm_array, True)
+    reset_stream("dm01disp09")
 
     return 0
 
 
 if __name__ == "__main__":
+    # Tell Python to run the handler() function when SIGINT is recieved
+    signal(SIGINT, handler)
+
     run()
