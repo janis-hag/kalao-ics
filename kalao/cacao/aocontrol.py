@@ -519,7 +519,7 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
         stream_data[:] = [new_tip_value, new_tilt_value]
         print(f'Residual tip = {tip_residual}, Residual tilt = {tilt_residual}, previous tip_offset = {tip_offset}, previous tilt_offset = {tilt_offset}, {new_tip_value=}, {new_tilt_value=}'
               )
-        stream_shm.set_data(stream_data.astype(stream_shm.nptype))
+        dm_stream_shm.set_data(stream_data.astype(dm_stream_shm.nptype))
 
         time.sleep(1)
 
