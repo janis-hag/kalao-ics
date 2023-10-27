@@ -17,6 +17,7 @@ from datetime import timezone
 from astropy import wcs
 from astropy import units as u
 from astropy.stats import sigma_clipped_stats
+from astropy.io import fits
 
 from photutils.detection import DAOStarFinder
 
@@ -25,13 +26,12 @@ from photutils.detection import DAOStarFinder
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
 from kalao.utils import database, file_handling, kalao_time
-from kalao.cacao import telemetry, aocontrol
+from kalao.cacao import telemetry, aocontrol, toolbox
 from kalao.interface import status
 from tcs_communication import t120
 from sequencer import system
 
 import numpy as np
-from astropy.io import fits
 
 import kalao_config as config
 from kalao_enums import SequencerStatus
@@ -53,7 +53,7 @@ def centre_on_target(kao='NO_AO'):
     timeout_time = time.time() + config.Starfinder.centering_timeout
 
     # Reset tip tilt stream to 0
-    aocontrol.reset_dm(2)
+    aocontrol.reset_dm(config.AO.TTM_loop_number)
 
     while time.time() < timeout_time:
         # TODO use exptime given by nseq args
@@ -69,7 +69,7 @@ def centre_on_target(kao='NO_AO'):
             system.print_and_log(f'ERROR no image received. {rValue}')
             return -1
 
-        x, y = find_star(image_path)
+        x, y, peak = find_star(image_path)
 
         if x != -1 and y != -1:
 
@@ -80,7 +80,7 @@ def centre_on_target(kao='NO_AO'):
                 system.print_and_log(f'ERROR no image received. {rValue}')
                 return -1
 
-            x, y = find_star(image_path)
+            x, y, peak = find_star(image_path)
 
             if x != -1 and y != -1:
                 # Fine centering with TTM
@@ -92,7 +92,14 @@ def centre_on_target(kao='NO_AO'):
                 # Check if enough light is on the WFS for precise centering
                 if verify_centering() == 0:
                     # Start WFS centering procedure
+
                     # TODO set WFS exptime
+                    print("##### Starfinder: Peak value is {peak}")
+                    coeff = 0.1
+                    emgain = peak * coeff
+                    aocontrol.set_exptime_fps(0)
+                    aocontrol.set_emgain_fps(emgain)
+
                     aocontrol.wfs_centering(tt_threshold=config.AO.
                                             WFS_centering_slope_threshold)
                     request_manual_centering(False)
@@ -183,7 +190,7 @@ def center_on_laser():
         return
 
     # Reset tip tilt stream to 0
-    aocontrol.reset_dm(2)
+    aocontrol.reset_dm(config.AO.TTM_loop_number)
 
     # Rough centering loop with FLI
     for i in range(3):
@@ -266,13 +273,20 @@ def send_pixel_offset(x, y):
 
 def verify_centering():
     # TODO add docstring
-    # TODO verify if SHWFS is enough illuminated
-    illuminated_fraction = telemetry.wfs_illumination_fraction(
-            config.AO.WFS_illumination_threshold)
 
-    if illuminated_fraction > config.AO.WFS_illumination_fraction:
-        system.print_and_log('WFS on target')
-        return 0
+    slopes_flux_stream_exists, slopes_flux_stream_path = aocontrol.check_stream('shwfs_slopes_flux)
+
+    if slopes_flux_stream_exists:
+        slopes_flux_stream = SHM(slopes_flux_stream_path)
+        slopes_flux = slopes_flux_stream.get_data(check=False)
+
+        illuminated_fraction = toolbox.wfs_illumination_fraction(slopes_flux, config.AO.WFS_illumination_threshold, config.AO.fully_illuminated_subaps):
+
+        if illuminated_fraction > config.AO.WFS_illumination_fraction:
+            system.print_and_log('WFS on target')
+            return 0
+
+    return -1
 
 
 def find_star(image_path, df_output=False):
@@ -284,7 +298,6 @@ def find_star(image_path, df_output=False):
     :return: center of the star or (-1, -1) if an error has occurred. (float, float)
     """
 
-    tb = time.time()
     hdu_list = fits.open(image_path)
     hdu_list.info()
     image = hdu_list[0].data
@@ -297,21 +310,22 @@ def find_star(image_path, df_output=False):
     sources = daofind(image - median)
 
     if sources is None:
-        print("Star not found.. Human intervention needed !")
+        print("Star not found. Human intervention needed!")
         x_star = -1
         y_star = -1
+        peak = -1
 
     else:
         print(sources)
-        sources = sources.to_pandas()
-        x_star = sources.xcentroid.values[0]
-        y_star = sources.ycentroid.values[0]
+        x_star = sources[0]['xcentroid']
+        y_star = sources[0]['ycentroid']
+        peak = sources[0]['peak']
 
     if df_output:
-        return sources
+        return sources.to_pandas()
 
     else:
-        return x_star, y_star
+        return x_star, y_star, peak
 
 
 def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
@@ -387,7 +401,7 @@ def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
         x_mean = np.average(x_gauss, weights=star_spot)
         y_mean = np.average(y_gauss, weights=star_spot)
     else:
-        print("Star not found.. Human intervention needed !")
+        print("Star not found. Human intervention needed!")
         return -1, -1
 
     # standard deviation of the spot selected

@@ -232,6 +232,10 @@ def set_emgain_fps(egain=1):
         :param egain: EM gain to set. 1 by default for no gain.
         :return:
         """
+
+    if egain > config.AO.WFS_max_emgain:
+        egain = config.AO.WFS_max_emgain
+
     _set_fps_intvalue('nuvu_acquire-1', 'emgain', str(egain))
 
 

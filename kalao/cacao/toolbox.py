@@ -123,6 +123,17 @@ def get_wfs_flux_map(upsampling=4):
 
     return flux
 
+def wfs_illumination_fraction(slopes_flux, threshold, subaps_list):
+    slopes_flux_flat = slopes_flux.flatten()
+
+    illuminated_subaps = 0
+
+    for i in subaps_list:
+        if slopes_flux_flat[i] > threshold:
+            illuminated_subaps += 1
+
+    return illuminated_subaps / len(subaps_list)
+
 
 def zero_stream(stream_name):
     stream_exists, stream_path = check_stream(stream_name)
