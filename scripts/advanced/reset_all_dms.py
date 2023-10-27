@@ -7,5 +7,3 @@
 from kalao.cacao.aocontrol import reset_all_dms
 
 reset_all_dms()
-
-

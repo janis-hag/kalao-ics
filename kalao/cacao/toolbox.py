@@ -4,12 +4,15 @@
 @author: Nathanaël Restori
 """
 
+from pathlib import Path
+
 import numpy as np
 from astropy.nddata.blocks import block_reduce
 
 import subprocess
 from subprocess import PIPE, STDOUT
 
+from pyMilk.interfacing import isio_shmlib
 from pyMilk.interfacing.isio_shmlib import SHM
 
 def get_roi_and_subapertures(data):

@@ -59,11 +59,12 @@ class TTM:
     tip_to_onsky = 6.88  # arcsec / mrad
     tilt_to_onsky = 6.88  # arcsec / mrad
 
-    # Recommended: 5 * 0.1 (10% of TTM range)
-    offload_threshold = 0.5  # mrad
+    # Recommended: 0.5 * 5 * 0.05 (5% of TTM range)
+    offload_threshold = 0.125  # mrad
     offload_interval = 10  # s
 
-    max_tel_offload = 0.75  # arcsec
+    # Recommended: 0.5 * 5 * 0.25 (25% of TTM range)
+    max_tel_offload = 0.625  # arcsec
 
 
 class FLI:
@@ -84,9 +85,7 @@ class FLI:
     pix_scale_y = 0.0512  # arcsec / px
 
     center_x = 505  # px
-    #535
     center_y = 545  # px
-    #520
 
     dummy_camera = False
     dummy_image_path = "/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits"
@@ -130,11 +129,16 @@ class Tungsten:
 
 
 class Calib:
+    # yapf: disable
     default_flat_list = [
-            "g", "g", "g", "g", "g", "r", "r", "r", "r", "r", "i", "i", "i",
-            "i", "i", "z", "z", "z", "z", "z", "clear", "clear", "clear",
-            "clear", "clear", "nd", "nd", "nd", "nd", "nd"
+            "g", "g", "g", "g", "g",
+            "r", "r", "r", "r", "r",
+            "i", "i", "i", "i", "i",
+            "z", "z", "z", "z", "z",
+            "clear", "clear", "clear", "clear", "clear",
+            "nd", "nd", "nd", "nd", "nd"
     ]
+    # yapf: enable
 
 
 class SEQ:

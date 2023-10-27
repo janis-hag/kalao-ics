@@ -21,6 +21,8 @@ from astropy.io import fits
 
 from photutils.detection import DAOStarFinder
 
+from pyMilk.interfacing.isio_shmlib import SHM
+
 # add the necessary path to find the folder kalao for import
 # sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import camera
@@ -272,13 +274,13 @@ def send_pixel_offset(x, y):
 def check_wfs_flux():
     # TODO add docstring
 
-    slopes_flux_stream_exists, slopes_flux_stream_path = aocontrol.check_stream('shwfs_slopes_flux)
+    slopes_flux_stream_exists, slopes_flux_stream_path = aocontrol.check_stream('shwfs_slopes_flux')
 
     if slopes_flux_stream_exists:
         slopes_flux_stream = SHM(slopes_flux_stream_path)
         slopes_flux = slopes_flux_stream.get_data(check=False)
 
-        illuminated_fraction = toolbox.wfs_illumination_fraction(slopes_flux, config.AO.WFS_illumination_threshold, config.AO.fully_illuminated_subaps):
+        illuminated_fraction = toolbox.wfs_illumination_fraction(slopes_flux, config.AO.WFS_illumination_threshold, config.AO.fully_illuminated_subaps)
 
         if illuminated_fraction > config.AO.WFS_illumination_fraction:
             system.print_and_log('WFS on target')

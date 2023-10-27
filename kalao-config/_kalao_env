@@ -1,0 +1,16 @@
+export PYTHONUNBUFFERED=1
+
+export MILK_SHM_DIR=/tmp/milk
+mkdir -p $MILK_SHM_DIR
+
+export MILKCLI_ADD_LIBS="cacaoKalAONuvu,cacaoKalAOBMC,cacaoKalAOSHWFS"
+
+export MILK_ROOT=${HOME}/kalao-cacao/src/milk
+export MILK_INSTALLDIR=/usr/local/milk
+export PATH=${PATH}:${MILK_INSTALLDIR}/bin
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:${MILK_INSTALLDIR}/lib/pkgconfig
+
+export SCEXAO_HW=${HOME}/kalao-edtdriver
+export PATH=${SCEXAO_HW}/bin:${PATH}
+
+export PATH=/home/kalao/.local/bin:${PATH}

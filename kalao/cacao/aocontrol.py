@@ -194,14 +194,14 @@ def emgain_off():
     rValue = -1
 
     try:
-        _set_emgain_fps(egain=1)
+        _set_emgain_fps(emgain=1)
         rValue = 0
     except Exception as err:
         print('nuvu_acquire fps seems not to be running.')
         print(Exception, err)
 
     try:
-        _set_emgain_tmux(egain=1)
+        _set_emgain_tmux(emgain=1)
         rValue = 0
     except Exception as err:
         print('Unable to connect to nuvu_ctrl tmux. Is the WFS running?')
@@ -425,7 +425,7 @@ def reset_dm(dm_number):
 def reset_all_dms(max_dm_number=2):
     ret = 0
 
-    for i in range(1, max_dm_number):
+    for i in range(1, max_dm_number+1):
         ret += reset_dm(i)
 
     return ret
