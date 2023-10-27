@@ -95,10 +95,10 @@ def centre_on_target(kao='NO_AO'):
 
                     # TODO set WFS exptime
                     print("##### Starfinder: Peak value is {peak}")
-                    coeff = 0.1
+                    coeff = 0
                     emgain = peak * coeff
-                    aocontrol.set_exptime_fps(0)
-                    aocontrol.set_emgain_fps(emgain)
+                    aocontrol.set_exptime(0)
+                    aocontrol.set_emgain(emgain)
 
                     aocontrol.wfs_centering(tt_threshold=config.AO.
                                             WFS_centering_slope_threshold)

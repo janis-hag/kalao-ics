@@ -195,14 +195,14 @@ def emgain_off():
     rValue = -1
 
     try:
-        set_emgain_fps(egain=1)
+        _set_emgain_fps(egain=1)
         rValue = 0
     except Exception as err:
         print('nuvu_acquire fps seems not to be running.')
         print(Exception, err)
 
     try:
-        set_emgain_tmux(egain=1)
+        _set_emgain_tmux(egain=1)
         rValue = 0
     except Exception as err:
         print('Unable to connect to nuvu_ctrl tmux. Is the WFS running?')
@@ -211,35 +211,29 @@ def emgain_off():
     return rValue
 
 
-def set_emgain_tmux(egain=1):
-    server = libtmux.Server()
-
-    try:
-        session = server.find_where({"session_name": "nuvu_ctrl"})
-    except:
-        # TODO specify more precise exception
-        session = False
-
-    # If tmux session exists send query temperatures
-    if session:
-        session.attached_pane.send_keys(f'\ncam.SetEMCalibratedGain({egain})')
-
-
-def set_emgain_fps(egain=1):
+def set_emgain(emgain=1, method='fps'):
     """
-        Set the EM gain of the Nuvu WFS camera.
+    Set the EM gain of the Nuvu WFS camera.
 
-        :param egain: EM gain to set. 1 by default for no gain.
-        :return:
-        """
+    :param emgain: EM gain to set. 1 by default for no gain.
+    :return:
+    """
 
-    if egain > config.AO.WFS_max_emgain:
-        egain = config.AO.WFS_max_emgain
+    emgain = int(emgain)
 
-    _set_fps_intvalue('nuvu_acquire-1', 'emgain', str(egain))
+    if emgain > config.AO.WFS_max_emgain:
+        emgain = config.AO.WFS_max_emgain
+
+    elif emgain < 1:
+        emgain = 1
+
+    if method == 'fps':
+        _set_emgain_fps(emgain)
+    elif method == 'tmux':
+        _set_emgain_tmux(emgain)
 
 
-def set_exptime_fps(exptime=0):
+def set_exptime(exptime=0):
     """
     Set the exposure time of the Nuvu WFS camera.
 
@@ -247,7 +241,10 @@ def set_exptime_fps(exptime=0):
     :return:
     """
 
-    _set_fps_floatvalue('nuvu_acquire-1', 'exposuretime', str(exptime))
+    if exptime < 0:
+        exptime = 0
+
+    _set_exptime_fps(exptime)
 
 
 def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
@@ -782,3 +779,28 @@ def _set_fps_intvalue(fps_name, key, value):
     rValue = fps_handle.set_param_value_int(key, str(value))
 
     return rValue
+
+
+def _set_emgain_tmux(emgain=1):
+    server = libtmux.Server()
+
+    try:
+        session = server.find_where({"session_name": "nuvu_ctrl"})
+    except:
+        # TODO specify more precise exception
+        session = False
+
+    # If tmux session exists send query temperatures
+    if session:
+        session.attached_pane.send_keys(f'\ncam.SetEMCalibratedGain({emgain})')
+
+
+def _set_emgain_fps(emgain=1):
+    if emgain > config.AO.WFS_max_emgain:
+        emgain = config.AO.WFS_max_emgain
+
+    _set_fps_intvalue('nuvu_acquire-1', 'emgain', str(emgain))
+
+
+def _set_exptime_fps(exptime=0):
+    _set_fps_floatvalue('nuvu_acquire-1', 'exposuretime', str(exptime))
