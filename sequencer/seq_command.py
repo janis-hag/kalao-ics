@@ -471,7 +471,7 @@ def target_observation(**seq_args):
 
     if centering == 'aut':
         acq_dit = config.FLI.exp_time
-        if int(mag_v) > 9:
+        if float(mag_v) > 9:
             acq_dit = 60
 
         if starfinder.centre_on_target(kao=kao, dit=acq_dit) == -1:
