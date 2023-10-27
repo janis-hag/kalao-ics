@@ -24,6 +24,7 @@ from kalao.cacao import fake_data, aocontrol
 
 import traceback
 
+import kalao_config as config
 
 def create_shm_stream(name):
     """
@@ -222,9 +223,6 @@ def telemetry_save(stream_list):
     # check if fps exists and is running
     shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process-1")
 
-    # APO-Q-P240-R8,6 FOV per subap / pixels_per_subap
-    pixel_scale = 5.7929690265142 / 5
-
     if shwfs_exists:
         if stream_list['fps_slopes'] is None:
             stream_list['fps_slopes'] = fps(shwfs_fps_path)
@@ -237,7 +235,7 @@ def telemetry_save(stream_list):
                     'fps_slopes'].get_param_value_float('residual')
             telemetry_data["slopes_residual_arcsec"] = stream_list[
                     'fps_slopes'].get_param_value_float(
-                            'residual') * pixel_scale
+                            'residual') * config.WFS.plate_scale
 
     # Tip/tilt stream
     # check if fps exists and is running
@@ -301,24 +299,3 @@ def telemetry_save(stream_list):
     # return nuvu_stream, tt_stream, fps_slopes
 
     return 0
-
-
-def wfs_illumination_fraction(wfs_threshold):
-    """
-    Function reads the nuvu stream and return the summed flux in each subaperture
-
-    :return: subapertures summed flux
-    """
-
-    # TODO implement masking procedure in order to only consider useful subaps
-
-    shwfs_stream = _get_stream("shwfs_slopes_flux", 0, 4 * (2**16 - 1))
-
-    shwfs_array = np.array(shwfs_stream['data'])
-
-    illuminated_pupil_fraction = (shwfs_array >
-                                  wfs_threshold).sum() / len(shwfs_array)
-
-    # TODO reject subaps out of centering zone
-
-    return illuminated_pupil_fraction

@@ -1,7 +1,23 @@
 # -*- coding: utf-8 -*-
 
-# All times in seconds
-
+# A few useful numbers (from OpticStudio):
+#
+# EUL PD = 1.2m
+# TTM PD = 20e-3 m
+#
+# EUL WFNO = 11.9849
+# WFS WFNO = 7.09899 (with ENPD = 1.2 m)
+# FLI WFNO = 44.1023
+#
+# EUL EFL = 14.3819 m
+# WFS EFL = 5.31532 m
+# FLI EFL = 49.2726 m
+#
+# WFS Pixel size = 48e-6 m
+# FLI Pixel size = 13e-6 m
+#
+# WFS Plate scale = 1.16 arcsec / px
+# FlI Plate scale = 0.0507 arcsec / px
 
 class PLC:
     ip = "10.10.132.121"
@@ -16,7 +32,7 @@ class PLC:
 
 
 class CalibUnit:
-    # Should be 13e-3 * 14.3819 / 49.2726 = 0.00379 mm / px
+    # Should be 13e-3 * 11.9849 / 44.1023 = 0.00353 mm / px
     px_to_mm = 0.00355
     initial_offset = 22.23
 
@@ -54,7 +70,7 @@ class FLI:
     # Max exposure time limited to 10 minutes due to this timeout setting
     request_timeout = 3500  # s
 
-    # Should be 1/49.2726 * 3600 * 180/np.pi * 13e-6 = 0.0544 arcsec / px
+    # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
     pix_scale_x = 0.0658  # arcsec / px
     pix_scale_y = 0.0512  # arcsec / px
 
@@ -67,6 +83,10 @@ class FLI:
     dummy_image_path = "/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits"
     temperature_warn_threshold = -29.8
     laser_calib_dit = 0.01
+
+
+class WFS:
+    plate_scale = 1.16  # arcsec / px
 
 
 class FilterWheel:
@@ -139,15 +159,15 @@ class SEQ:
 
 class Starfinder:
     centering_timeout = 30
-    #focusing_step = 0.1
     focusing_step = 0.01
-    #focusing_step = 0.005
     focusing_pixels = 30
     focusing_dit = 20
     min_flux = 4096
     max_flux = 32768
     max_dit = 60
     dit_optimization_trials = 10
+
+    # For 1" seeing and with 0.0507"/px plate scale, should be 1 / 0.0507 = 20 px
     FWHM = 30
 
 
@@ -203,27 +223,45 @@ class AO:
     WFS_centering_timeout = 30
     WFS_centering_slope_threshold = 0.005
 
-    # Should be 0.5 * 1/49.2726 * 1200 / 20 * 1000 * 13e-6 = 0.00792 mrad / px
+    WFS_max_emgain = 1000
+
+    DM_loop_numer = 1
+    TTM_loop_number = 2
+
+    # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
     FLI_tip_to_TTM = 0.008497723325890764  # mrad / px
     FLI_tilt_to_TTM = -0.008497723325890764  # mrad / px
 
-    # Should be 0.5 * 1/5.31532 * 1200 / 20 * 1000 * 48e-6 = 0.271 mrad / px (2x2 binning)
+    # Should be 0.5 * 1/(1.2*7.09899) * 1200 / 20 * 1000 * 48e-6 = 0.169 mrad / px (2x2 binning)
     WFS_tip_to_TTM = 0.28649303833986856  # mrad / px
     WFS_tilt_to_TTM = -0.25807611836775707  # mrad / px
 
+    # yapf: disable
     fully_illuminated_subaps = [
-            14, 15, 16, 17, 18, 24, 25, 26, 27, 28, 29, 30, 34, 35, 36, 37, 38,
-            40, 41, 42, 45, 46, 47, 51, 52, 53, 56, 57, 58, 62, 63, 64, 67, 68,
-            69, 73, 74, 75, 78, 79, 80, 81, 82, 83, 84, 85, 86, 90, 91, 92, 93,
-            94, 95, 96, 102, 103, 104, 105, 106
+            14, 15, 16, 17, 18,
+            24, 25, 26, 27, 28, 29, 30,
+            34, 35, 36, 37, 38, 39, 40, 41, 42,
+            45, 46, 47, 51, 52, 53,
+            56, 57, 58, 62, 63, 64,
+            67, 68, 69, 73, 74, 75,
+            78, 79, 80, 81, 82, 83, 84, 85, 86,
+            90, 91, 92, 93, 94, 95, 96,
+            102, 103, 104, 105, 106
     ]
     all_illuminated_subaps = [
-            4, 5, 6, 13, 14, 15, 16, 17, 18, 19, 23, 24, 25, 26, 27, 28, 29,
-            30, 31, 34, 35, 36, 37, 38, 40, 41, 42, 44, 45, 46, 47, 51, 52, 53,
-            54, 55, 56, 57, 58, 62, 63, 64, 65, 66, 67, 68, 69, 70, 72, 73, 74,
-            75, 76, 78, 79, 80, 81, 82, 83, 84, 85, 86, 89, 90, 91, 92, 93, 94,
-            95, 96, 97, 101, 102, 103, 104, 105, 106, 107, 114, 115, 116
+            4, 5, 6,
+            13, 14, 15, 16, 17, 18, 19,
+            23, 24, 25, 26, 27, 28, 29, 30, 31,
+            34, 35, 36, 37, 38, 39, 40, 41, 42,
+            44, 45, 46, 47, 48, 50, 51, 52, 53, 54,
+            55, 56, 57, 58, 62, 63, 64, 65,
+            66, 67, 68, 69, 70, 72, 73, 74, 75, 76,
+            78, 79, 80, 81, 82, 83, 84, 85, 86,
+            89, 90, 91, 92, 93, 94, 95, 96, 97,
+            101, 102, 103, 104, 105, 106, 107,
+            114, 115, 116
     ]
+    # yapf: enable
 
 
 class Cooling:
