@@ -856,6 +856,9 @@ def check_abort(q, dit, AO=False):
 
     print('Check abort')
 
+    if True:
+        return 0
+
     t = 0
     t0 = kalao_time.now()
 
