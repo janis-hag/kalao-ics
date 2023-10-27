@@ -2,7 +2,7 @@
 #from enum import StrEnum
 
 # Emulate StrEnum for python < 3.11
-from enum import Enum
+from enum import Enum, IntEnum
 
 
 class StrEnum(str, Enum):
@@ -25,3 +25,8 @@ class SequencerStatus(StrEnum):
     WAITLAMP = 'WAITLAMP'
     BUSY = 'BUSY'
     EXP = 'EXP'
+
+
+class IPPowerStatus(IntEnum):
+    ON = 1
+    OFF = 0

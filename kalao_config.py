@@ -6,7 +6,7 @@
 # TTM PD = 20e-3 m
 #
 # EUL WFNO = 11.9849
-# WFS WFNO = 7.09899 (with ENPD = 1.2 m)
+# WFS WFNO = 7.09899 (for ENPD = 1.2 m, 78.0889 for ENPD = 0.109091 m)
 # FLI WFNO = 44.1023
 #
 # EUL EFL = 14.3819 m
@@ -29,6 +29,15 @@ class PLC:
     temp_bench_board_offset = -6.1  # °C, 19 - 25.1
     temp_water_in_offset = -3.6  # °C, 19 - 22.7
     temp_water_out_offset = -1.7  # °C, 19 - 20.3
+
+
+class IPPower:
+    url = 'http://10.10.132.94/statusjsn.js'
+
+    class Port:
+        PC = 5
+        Bench = 6
+        BMC_DM = 7
 
 
 class CalibUnit:

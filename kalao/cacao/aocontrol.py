@@ -796,9 +796,6 @@ def _set_emgain_tmux(emgain=1):
 
 
 def _set_emgain_fps(emgain=1):
-    if emgain > config.AO.WFS_max_emgain:
-        emgain = config.AO.WFS_max_emgain
-
     _set_fps_intvalue('nuvu_acquire-1', 'emgain', str(emgain))
 
 
