@@ -25,6 +25,18 @@ from kalao_enums import IPPowerStatus
 import kalao_config as config
 
 
+fps_list = {}
+
+def _get_fps(fps_name):
+    if fps_list[fps_name] is None:
+        fps_exists, fps_name = aocontrol.check_fps(fps_name)
+        if fps_exists:
+            return fps(fps_name)
+        else:
+            return None
+    else:
+        return fps_list[fps_name]
+
 def _get_elapsed_time_since_activity():
     latest_obs_entry_time = database.get_latest_record('obs_log')['time_utc']
 
@@ -61,11 +73,9 @@ def _check_dm_inactive():
     :return:
     """
 
-    bmc_display_fps_exists, bmc_display_fps_name = aocontrol.check_fps('bmc_display-01')
-    if bmc_display_fps_exists:
-        bmc_display_fps = fps(bmc_display_fps_name)
+    bmc_display_fps = _get_fps('bmc_display-01')
 
-    if (bmc_display_fps_exists and bmc_display_fps.RUNrunning) or ippower.ippower_status(config.IPPower.Port.BMC_DM) == IPPowerStatus.ON:
+    if (bmc_display_fps is not None and bmc_display_fps.RUNrunning) or ippower.ippower_status(config.IPPower.Port.BMC_DM) == IPPowerStatus.ON:
         if _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
             message = 'Turning off DM due to inactivity timeout'
             system.print_and_log(message)
@@ -94,11 +104,9 @@ def _check_wfs_inactive():
 
     # TODO: check also EMGAIN keyword in nuvu_stream
 
-    nuvu_acquire_fps_exists, nuvu_acquire_fps_name = aocontrol.check_fps('nuvu_acquire-1')
-    if nuvu_acquire_fps_exists:
-        nuvu_acquire_fps = fps(nuvu_acquire_fps_name)
+    nuvu_acquire_fps = _get_fps('nuvu_acquire-1')
 
-    if (nuvu_acquire_fps_exists and nuvu_acquire_fps.get_param_value_int('.emgain') > 1):
+    if (nuvu_acquire_fps is not None and nuvu_acquire_fps.get_param_value_int('.emgain') > 1):
         if _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
             message = 'Turning off EM gain due to inactivity timeout'
             system.print_and_log(message)
