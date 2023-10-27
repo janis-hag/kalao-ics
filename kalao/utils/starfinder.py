@@ -88,20 +88,18 @@ def centre_on_target(kao='NO_AO'):
                                                      y - config.FLI.center_y)
 
             if kao == 'AO':
+                print("##### Starfinder: Peak value is {peak}")
+                coeff = 0
+                emgain = peak * coeff
+                aocontrol.set_exptime(0)
+                aocontrol.set_emgain(emgain)
 
                 # Check if enough light is on the WFS for precise centering
-                if verify_centering() == 0:
+                if check_wfs_flux() == 0:
                     # Start WFS centering procedure
-
-                    # TODO set WFS exptime
-                    print("##### Starfinder: Peak value is {peak}")
-                    coeff = 0
-                    emgain = peak * coeff
-                    aocontrol.set_exptime(0)
-                    aocontrol.set_emgain(emgain)
-
                     aocontrol.wfs_centering(tt_threshold=config.AO.
                                             WFS_centering_slope_threshold)
+
                     request_manual_centering(False)
 
                     return 0
@@ -130,7 +128,7 @@ def centre_on_target(kao='NO_AO'):
             #     while time.time() < timeout_time:
             #
             #         # Check if we are centered and exit loop
-            #         rValue = verify_centering()
+            #         rValue = check_wfs_flux()
             #         if rValue == 0:
             #             request_manual_centering(False)
             #             return 0
@@ -243,7 +241,7 @@ def manual_centering(x, y, AO=False, sequencer_arguments=None):
     rValue, image_path = camera.take_image(
             dit=config.FLI.exp_time, sequencer_arguments=sequencer_arguments)
     if AO:
-        rValue = verify_centering()
+        rValue = check_wfs_flux()
 
     return rValue
 
@@ -271,7 +269,7 @@ def send_pixel_offset(x, y):
     return 0
 
 
-def verify_centering():
+def check_wfs_flux():
     # TODO add docstring
 
     slopes_flux_stream_exists, slopes_flux_stream_path = aocontrol.check_stream('shwfs_slopes_flux)
