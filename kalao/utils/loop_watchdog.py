@@ -30,7 +30,6 @@ def _offload_ttm(beck=None):
 
 
 if __name__ == "__main__":
-
     schedule.every(config.ADC.update_interval).seconds.do(_update_adc)
     schedule.every(config.TTM.offload_interval).seconds.do(_offload_ttm)
 

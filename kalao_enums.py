@@ -28,5 +28,5 @@ class SequencerStatus(StrEnum):
 
 
 class IPPowerStatus(IntEnum):
-    ON = 1
     OFF = 0
+    ON = 1

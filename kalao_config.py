@@ -234,7 +234,7 @@ class AO:
 
     WFS_max_emgain = 1000
 
-    DM_loop_numer = 1
+    DM_loop_number = 1
     TTM_loop_number = 2
 
     # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
@@ -290,3 +290,4 @@ class Watchdog:
     bench_update_interval = 30
     inactivity_timeout = 2700
     open_shutter_timeout = 2700
+    laser_on_timeout = 2700

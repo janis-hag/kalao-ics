@@ -5,8 +5,7 @@
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-aocontrol.py is part of the KalAO Instrument Control Software
-(KalAO-ICS).
+aocontrol.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
 
 import numpy as np
