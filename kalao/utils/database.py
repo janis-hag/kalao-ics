@@ -23,15 +23,14 @@ from kalao.cacao import fake_data
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-monitoring_definition_json = path + "/database_definition_monitoring.json"
-monitoring_definition_yaml = path + "/database_definition_monitoring.yml"
+monitoring_definition_json = path + "/database_definitions/monitoring.json"
+monitoring_definition_yaml = path + "/database_definitions/monitoring.yml"
 
-obs_log_definition_json = path + "/database_definition_obs_log.json"
-obs_log_definition_yaml = path + "/database_definition_obs_log.yml"
+obs_log_definition_json = path + "/database_definitions/obs_log.json"
+obs_log_definition_yaml = path + "/database_definitions/obs_log.yml"
 
-#telemetry
-telemetry_definition_json = path + "/database_definition_telemetry.json"
-telemetry_definition_yaml = path + "/database_definition_telemetry.yml"
+telemetry_definition_json = path + "/database_definitions/telemetry.json"
+telemetry_definition_yaml = path + "/database_definitions/telemetry.yml"
 
 definition_names = [
         ('monitoring', monitoring_definition_yaml, monitoring_definition_json),
