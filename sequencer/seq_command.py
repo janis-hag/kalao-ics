@@ -767,6 +767,7 @@ def instrument_change(**seq_args):
     :return: nothing
     """
     # TODO set EM gain to 1
+    # TODO turn off DM
 
     database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
@@ -802,6 +803,7 @@ def end(**seq_args):
     :return: nothing
     """
     # TODO set EM gain to 1
+    # TODO turn of DM
 
     database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
@@ -853,8 +855,6 @@ def check_abort(q, dit, AO=False):
     # TODO completely remove function if it's not needed
 
     print('Check abort')
-    if True:
-        return 0
 
     t = 0
     t0 = kalao_time.now()
