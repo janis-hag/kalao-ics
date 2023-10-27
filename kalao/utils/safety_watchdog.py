@@ -19,6 +19,8 @@ from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from sequencer import system
 
+from CacaoProcessTools import fps, FPS_status
+
 from kalao_enums import IPPowerStatus
 import kalao_config as config
 
@@ -59,18 +61,25 @@ def _check_dm_inactive():
     :return:
     """
 
-    if _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
-        message = 'Turning off DM due to inactivity timeout'
-        system.print_and_log(message)
+    bmc_display_fps_exists, bmc_display_fps_name = aocontrol.check_fps('bmc_display-01')
+    if bmc_display_fps_exists:
+        bmc_display_fps = fps(bmc_display_fps_name)
 
-        aocontrol.reset_dm(config.AO.DM_loop_number)
+    if (bmc_display_fps_exists and bmc_display_fps.RUNrunning) or ippower.ippower_status(config.IPPower.Port.BMC_DM) == IPPowerStatus.ON:
+        if _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
+            message = 'Turning off DM due to inactivity timeout'
+            system.print_and_log(message)
 
-        bmc_display_fps_exists, bmc_display_fps_name = check_fps('bmc_display-01')
-        if bmc_display_fps_exists:
-            bmc_display_fps = fps(bmc_display_fps_name)
-            bmc_display_fps.RUNstop()
+            aocontrol.reset_dm(config.AO.DM_loop_number)
 
-        ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
+            sleep(15)
+
+            if bmc_display_fps_exists:
+                bmc_display_fps.RUNstop()
+
+            sleep(15)
+
+            ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
 
     return 0
 
@@ -83,11 +92,18 @@ def _check_wfs_inactive():
     :return:
     """
 
-    if _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
-        message = 'Turning off EM gain due to inactivity timeout'
-        system.print_and_log(message)
+    # TODO: check also EMGAIN keyword in nuvu_stream
 
-        aocontrol.emgain_off()
+    nuvu_acquire_fps_exists, nuvu_acquire_fps_name = aocontrol.check_fps('nuvu_acquire-1')
+    if nuvu_acquire_fps_exists:
+        nuvu_acquire_fps = fps(nuvu_acquire_fps_name)
+
+    if (nuvu_acquire_fps_exists and nuvu_acquire_fps.get_param_value_int('.emgain') > 1):
+        if _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
+            message = 'Turning off EM gain due to inactivity timeout'
+            system.print_and_log(message)
+
+            aocontrol.emgain_off()
 
     return 0
 
