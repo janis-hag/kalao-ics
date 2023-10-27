@@ -470,11 +470,11 @@ def target_observation(**seq_args):
         return -1
 
     if centering == 'aut':
-        dit = config.FLI.exp_time
-        if mag_v > 9:
-            dit = 60
+        acq_dit = config.FLI.exp_time
+        if int(mag_v) > 9:
+            acq_dit = 60
 
-        if starfinder.centre_on_target(kao=kao, dit=dit) == -1:
+        if starfinder.centre_on_target(kao=kao, dit=acq_dit) == -1:
             system.print_and_log("Error: problem with center on target")
             database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
