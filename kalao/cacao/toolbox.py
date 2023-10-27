@@ -10,7 +10,6 @@ from astropy.nddata.blocks import block_reduce
 import subprocess
 from subprocess import PIPE, STDOUT
 
-from kalao.cacao.aocontrol import check_stream
 from pyMilk.interfacing.isio_shmlib import SHM
 
 def get_roi_and_subapertures(data):
@@ -133,6 +132,36 @@ def wfs_illumination_fraction(slopes_flux, threshold, subaps_list):
             illuminated_subaps += 1
 
     return illuminated_subaps / len(subaps_list)
+
+
+def check_stream(stream_name):
+    """
+    Function verifies if stream_name exists
+
+    :param stream_name: stream to check existence
+    :return: boolean, stream_name_clean
+    """
+    # stream_path = Path(os.environ["MILK_SHM_DIR"])
+    milk_path = Path('/tmp/milk')
+    stream_name_clean = isio_shmlib.check_SHM_name(stream_name)
+    stream_path = milk_path / (stream_name_clean + '.im.shm')
+
+    return stream_path.exists(), stream_name_clean
+
+
+def check_fps(fps_name):
+    """
+    Function verifies if fps_name exists
+
+    :param fps_name: fps to check existence
+    :return: boolean, fps_name_clean
+    """
+    # fps_path = Path(os.environ["MILK_SHM_DIR"])
+    milk_path = Path('/tmp/milk')
+    fps_name_clean = isio_shmlib.check_SHM_name(fps_name)
+    fps_path = milk_path / (fps_name_clean + '.fps.shm')
+
+    return fps_path.exists(), fps_name_clean
 
 
 def zero_stream(stream_name):
