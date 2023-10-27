@@ -39,7 +39,7 @@ import kalao_config as config
 from kalao_enums import SequencerStatus
 
 
-def centre_on_target(kao='NO_AO'):
+def centre_on_target(kao='NO_AO', dit=config.FLI.exp_time):
     """
     Start star centering sequence:
     - Sets this filter based on filter_arg request.
@@ -47,6 +47,7 @@ def centre_on_target(kao='NO_AO'):
     - Send telescope offsets based on the measured position.
     - If auto centering does not work request manual centering
 
+    :param dit:
     :param kao: flag to indicate if AO will be used, set to no by default.
 
     :return: 0 if centering succeded
@@ -59,7 +60,7 @@ def centre_on_target(kao='NO_AO'):
 
     while time.time() < timeout_time:
         # TODO use exptime given by nseq args
-        rValue, image_path = camera.take_image(dit=config.FLI.exp_time)
+        rValue, image_path = camera.take_image(dit=dit)
 
         # TODO add dit optimisation
         #  focusing_dit = optimise_dit(focusing_dit)
@@ -77,7 +78,7 @@ def centre_on_target(kao='NO_AO'):
 
             send_pixel_offset(x, y)
 
-            rValue, image_path = camera.take_image(dit=config.FLI.exp_time)
+            rValue, image_path = camera.take_image(dit=dit)
             if rValue != 0:
                 system.print_and_log(f'ERROR no image received. {rValue}')
                 return -1
@@ -274,13 +275,16 @@ def send_pixel_offset(x, y):
 def check_wfs_flux():
     # TODO add docstring
 
-    slopes_flux_stream_exists, slopes_flux_stream_path = aocontrol.check_stream('shwfs_slopes_flux')
+    slopes_flux_stream_exists, slopes_flux_stream_path = aocontrol.check_stream(
+            'shwfs_slopes_flux')
 
     if slopes_flux_stream_exists:
         slopes_flux_stream = SHM(slopes_flux_stream_path)
         slopes_flux = slopes_flux_stream.get_data(check=False)
 
-        illuminated_fraction = toolbox.wfs_illumination_fraction(slopes_flux, config.AO.WFS_illumination_threshold, config.AO.fully_illuminated_subaps)
+        illuminated_fraction = toolbox.wfs_illumination_fraction(
+                slopes_flux, config.AO.WFS_illumination_threshold,
+                config.AO.fully_illuminated_subaps)
 
         if illuminated_fraction > config.AO.WFS_illumination_fraction:
             system.print_and_log('WFS on target')
