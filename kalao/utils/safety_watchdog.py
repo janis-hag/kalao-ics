@@ -149,11 +149,12 @@ def _check_cooling_status():
             if not latest_log.startswith(message[:24]):
                 system.print_and_log(message)
 
-            if camera.ippower_status() == 1:
+            # IPPower has been moved to DM driver
+            #if camera.ippower_status() == 1:
 
-                system.print_and_log(f"Camera emergency power-off")
+            #    system.print_and_log(f"Camera emergency power-off")
 
-                camera.poweroff()
+            #    camera.poweroff()
 
             return -1
         else:
