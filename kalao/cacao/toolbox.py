@@ -176,10 +176,10 @@ def open_or_create_stream(stream_name, shape, type):
     if stream_exists:
         shm = SHM(stream_name)
     else:
-        img = np.zeros((shape, type))
+        img = np.zeros(shape, type)
 
         shm = SHM(
-            'fli_stream',
+            stream_name,
             img,
             location=-1,  # CPU
             shared=True,  # Shared

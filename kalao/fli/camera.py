@@ -20,6 +20,7 @@ from time import sleep
 import numpy as np
 
 from kalao.utils import database, database_updater, file_handling
+from kalao.cacao import toolbox
 from sequencer import system
 
 from pyMilk.interfacing.isio_shmlib import SHM
@@ -27,25 +28,12 @@ from pyMilk.interfacing.isio_shmlib import SHM
 from kalao_enums import SequencerStatus
 import kalao_config as config
 
-# Removing in order to only use take_image
-# def take_science_exposure(dit=0.05, filepath=None):
-#
-#     req_result = take_image(dit, filepath, obscategory='SCIENCE')
-#     if req_result == 0:
-#         image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
-#         target_path_name = file_handling.save_tmp_image(image_path)
-#
-#         return target_path_name
-#
-#     else:
-#         return req_result
-
+fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024), np.uint16)
 
 def take_image(
         dit=0.05, filepath=None,
         sequencer_arguments=None):  # obs_category='TEST', obs_type='LAMP'):
     """
-
     :param sequencer_arguments:
     :param dit: Detector integration time to use
     :param filepath: Path where the file should be stored
@@ -86,6 +74,9 @@ def take_image(
         ], 1)['fli_temporary_image_path']['values'][0]
         target_path_name = file_handling.save_tmp_image(
                 image_path, sequencer_arguments=sequencer_arguments)
+
+        img = fits.getdata(target_path_name)
+        fli_stream.set_data(img)
 
         return 0, target_path_name
     else:
