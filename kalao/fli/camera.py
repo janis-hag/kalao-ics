@@ -16,7 +16,6 @@ from requests.models import Response
 from unittest.mock import Mock
 import json
 from astropy.io import fits
-from time import sleep
 import numpy as np
 
 from kalao.utils import database, database_updater, file_handling
@@ -39,7 +38,7 @@ def take_frame(dit, filepath=None, do_not_log=False, update_stream=True):
     if req.status_code == 200:
         img = fits.getdata(filepath)
 
-        if update_stream:
+        if update_stream and fli_stream.shape == img.shape:
             fli_stream.set_data(img, True)
 
         return img, req
