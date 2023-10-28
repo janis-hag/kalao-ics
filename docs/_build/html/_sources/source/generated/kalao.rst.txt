@@ -1,4 +1,0 @@
-﻿kalao
-=====
-
-.. automodule:: kalao

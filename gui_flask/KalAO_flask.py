@@ -22,10 +22,6 @@ import logging
 
 from os import path
 
-#sys.path.append('../includes/kalao-ics')
-sys.path.append(
-        path.dirname(path.dirname(path.abspath(path.dirname(__file__)))))
-
 from kalao.cacao import aocontrol as k_aocontrol
 from kalao.cacao import toolbox as k_toolbox
 from kalao.cacao import telemetry as k_telemetry

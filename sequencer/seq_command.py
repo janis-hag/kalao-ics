@@ -15,9 +15,6 @@ import time
 import datetime
 import numpy as np
 
-# add the necessary path to find the folder kalao for import
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
 from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel, calib_unit
 from kalao.fli import camera
 from kalao.utils import file_handling, database, database_updater, kalao_time, starfinder

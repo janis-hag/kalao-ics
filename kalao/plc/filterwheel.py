@@ -15,9 +15,6 @@ import time
 
 from microscope.filterwheels import thorlabs
 
-# add the necessary path to find the folder kalao for import
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
 from kalao.utils import database
 
 import kalao_config as config

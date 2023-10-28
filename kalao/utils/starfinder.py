@@ -23,8 +23,6 @@ from photutils.detection import DAOStarFinder
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
-# add the necessary path to find the folder kalao for import
-# sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
 from kalao.utils import database, file_handling, kalao_time
