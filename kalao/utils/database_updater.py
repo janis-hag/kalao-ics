@@ -14,28 +14,15 @@ from sys import exit
 from time import sleep
 import schedule
 
-from pyMilk.interfacing.isio_shmlib import SHM
-
-from CacaoProcessTools import fps, FPS_status
 from kalao import plc
 from kalao.rtc import device_status
 from kalao import fli
 from kalao.utils import database
-from sequencer import system
-from kalao.cacao import telemetry, aocontrol
+from kalao.cacao import telemetry
 
 import kalao_config as config
 
-
-def handler(signal_received, frame):
-    # Handle any cleanup here
-    if signal_received == SIGTERM:
-        # Restarting using systemd framework
-        print('\nSIGTERM received. Restarting.')
-        system.database_service('RESTART')
-    elif signal_received == SIGINT:
-        print('\nSIGINT or CTRL-C detected. Exiting.')
-        exit(0)
+stream_and_fps_list = {}
 
 
 def update_plc_monitoring():
@@ -75,52 +62,14 @@ def update_plc_monitoring():
         database.store_monitoring(values)
 
 
-def update_telemetry(stream_list):
-
-    if stream_list['nuvu_stream'] is None:
-        nuvu_exists, nuvu_stream_path = aocontrol.check_stream("nuvu_raw")
-        if nuvu_exists:
-            stream_list['nuvu_stream'] = SHM(nuvu_stream_path)
-
-    if stream_list['tt_stream'] is None:
-        tt_exists, tt_stream_path = aocontrol.check_stream("dm02disp")
-        if tt_exists:
-            stream_list['tt_stream'] = SHM(tt_stream_path)
-
-    if stream_list['fps_slopes'] is None:
-        shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process-1")
-        if shwfs_exists:
-            stream_list['fps_slopes'] = fps(shwfs_fps_path)
-
-    if stream_list['mfilt-1'] is None:
-        looprun_exists, looprun_fps_path = aocontrol.check_fps("mfilt-1")
-        if looprun_exists:
-            stream_list['mfilt-1'] = fps(looprun_fps_path)
-
-    if stream_list['mfilt-2'] is None:
-        looprun_exists, looprun_fps_path = aocontrol.check_fps("mfilt-2")
-        if looprun_exists:
-            stream_list['mfilt-2'] = fps(looprun_fps_path)
-
-    telemetry.telemetry_save(stream_list)
+def update_telemetry():
+    telemetry.telemetry_save(stream_and_fps_list)
 
 
 if __name__ == "__main__":
-    # Tell Python to run the handler() function when SIGINT is recieved
-    # signal(SIGTERM, handler)
-    # signal(SIGINT, handler)
-
-    sl = {
-            'nuvu_stream': None,
-            'tt_stream': None,
-            'fps_slopes': None,
-            'mfilt-1': None,
-            'mfilt-2': None
-    }
-
     # Get monitoring and cacao
     schedule.every(config.Database.telemetry_update_interval).seconds.do(
-            update_telemetry, stream_list=sl)
+            update_telemetry)
     schedule.every(config.Database.PLC_monitoring_update_interval).seconds.do(
             update_plc_monitoring)
 

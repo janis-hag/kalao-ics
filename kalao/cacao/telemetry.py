@@ -20,26 +20,11 @@ from pyMilk.interfacing.isio_shmlib import SHM
 from CacaoProcessTools import fps, FPS_status
 
 from kalao.utils import database
-from kalao.cacao import fake_data, aocontrol
+from kalao.cacao import fake_data, aocontrol, toolbox
 
 import traceback
 
 import kalao_config as config
-
-def create_shm_stream(name):
-    """
-    Creates a new shared memory SHM stream. If the stream already exists it will reuse it instead of creating a new one.
-
-    :param name: The name to give to the stream.
-    :return: Pointer to the stream.
-    """
-
-    exists, stream_path = aocontrol.check_stream(name)
-
-    if exists:
-        return SHM(stream_path)
-    else:
-        return None
 
 
 def _get_stream(name, min_value_th, max_value_th, shm_stream=None):
@@ -146,7 +131,7 @@ def streams(realData=True, shm_streams={}):
         return stream_list
 
 
-def telemetry_save(stream_list):
+def telemetry_save(stream_and_fps_list):
     """
     Saves all the adaptive optics telemetry on the mongo database.
 
@@ -157,9 +142,6 @@ def telemetry_save(stream_list):
     telemetry_data = {}
 
     # NUVU process
-    # check if SHM exists and is running
-    nuvu_exists, nuvu_stream_path = aocontrol.check_stream("nuvu_raw")
-
     server = libtmux.Server()
     try:
         session = server.find_where({"session_name": "nuvu_ctrl"})
@@ -171,11 +153,10 @@ def telemetry_save(stream_list):
     if session:
         session.attached_pane.send_keys('\ncam.GetTemperature()')
 
-    if nuvu_exists and session:
-        if stream_list['nuvu_stream'] is None:
-            stream_list['nuvu_stream'] = SHM(nuvu_stream_path)
+    nuvu_stream = toolbox.open_stream_once('nuvu_raw', stream_and_fps_list)
 
-        stream_keywords = stream_list['nuvu_stream'].get_keywords()
+    if nuvu_stream is not None and session:
+        stream_keywords = nuvu_stream.get_keywords()
 
         # Check if it's running
         # if fps_nuvu.RUNrunning==1:
@@ -193,109 +174,73 @@ def telemetry_save(stream_list):
         # Return empty streams
         pass
 
-    # Create the in-memory "file"
-    # temp_out = io.StringIO()
-
-    # NUVU process
-    #check if fps exists and is running
-    # nuvu_exists, nuvu_fps_path = aocontrol.check_fps("nuvu_acquire")
-    #
-    # if nuvu_exists:
-    #     sys.stdout = temp_out
-    #     fps_nuvu = fps(nuvu_fps_path)
-    #     sys.stdout = sys.__stdout__
-    #
-    #     # Check if it's running
-    # 	if fps_nuvu.RUNrunning==1:
-    #         telemetry_data["nuvu_temp_ccd"]          = fps_nuvu["nuvu_acquire.temp_ccd"]
-    #         telemetry_data["nuvu_temp_controller"]   = fps_nuvu["nuvu_acquire.temp_controller"]
-    #         telemetry_data["nuvu_temp_power_supply"] = fps_nuvu["nuvu_acquire.temp_power_supply"]
-    #         telemetry_data["nuvu_temp_fpga"]         = fps_nuvu["nuvu_acquire.temp_fpga"]
-    #         telemetry_data["nuvu_temp_heatsink"]     = fps_nuvu["nuvu_acquire.temp_heatsink"]
-    #         telemetry_data["nuvu_emgain"]            = fps_nuvu["nuvu_acquire.emgain"]
-    #         telemetry_data["nuvu_exposuretime"]      = fps_nuvu["nuvu_acquire.exposuretime"]
-    #
-    # else:
-    #     pass # Return empty streams
-    #
-
     # SHWFS process
-    # check if fps exists and is running
-    shwfs_exists, shwfs_fps_path = aocontrol.check_fps("shwfs_process-1")
+    slopes_stream = toolbox.open_fps_once('shwfs_process-1',
+                                          stream_and_fps_list)
 
-    if shwfs_exists:
-        if stream_list['fps_slopes'] is None:
-            stream_list['fps_slopes'] = fps(shwfs_fps_path)
-
+    if slopes_stream is not None:
         # Check if it's running
-        if stream_list['fps_slopes'].RUNrunning == 1:
-            telemetry_data["slopes_flux_subaperture"] = stream_list[
-                    'fps_slopes'].get_param_value_float('flux_subaperture')
-            telemetry_data["slopes_residual_pix"] = stream_list[
-                    'fps_slopes'].get_param_value_float('residual')
-            telemetry_data["slopes_residual_arcsec"] = stream_list[
-                    'fps_slopes'].get_param_value_float(
+        if slopes_stream.RUNrunning == 1:
+            telemetry_data[
+                    "slopes_flux_subaperture"] = slopes_stream.get_param_value_float(
+                            'flux_subaperture')
+            telemetry_data[
+                    "slopes_residual_pix"] = slopes_stream.get_param_value_float(
+                            'residual')
+            telemetry_data[
+                    "slopes_residual_arcsec"] = slopes_stream.get_param_value_float(
                             'residual') * config.WFS.plate_scale
 
     # Tip/tilt stream
     # check if fps exists and is running
-    tt_exists, tt_stream_path = aocontrol.check_stream("dm02disp")
+    tt_stream = toolbox.open_stream_once('dm02disp', stream_and_fps_list)
 
-    if tt_exists:
-        if stream_list['tt_stream'] is None:
-            stream_list['tt_stream'] = SHM(tt_stream_path)
-
+    if tt_stream is not None:
         # Check turned off to prevent timeout. Data may be obsolete
-        tt_data = stream_list['tt_stream'].get_data(check=False)
+        tt_data = tt_stream.get_data(check=False)
 
         telemetry_data["pi_tip"] = float(tt_data[0])
         telemetry_data["pi_tilt"] = float(tt_data[1])
 
     # looopRUN process
     # check if fps exists and is running
-    looprun_exists, looprun_fps_path = aocontrol.check_fps("mfilt-1")
+    dm_loop_stream = toolbox.open_fps_once('mfilt-1', stream_and_fps_list)
 
-    if looprun_exists:
-        if stream_list['mfilt-1'] is None:
-            stream_list['mfilt-1'] = fps(looprun_fps_path)
-
+    if dm_loop_stream is not None:
         # Check if it's running
-        if stream_list['mfilt-1'].RUNrunning == 1:
-            telemetry_data["loop_gain"] = stream_list[
-                    'mfilt-1'].get_param_value_float('loopgain')
-            telemetry_data["loop_mult"] = stream_list[
-                    'mfilt-1'].get_param_value_float('loopmult')
-            # loopOn 0 = OFF, 1 = ON
-            telemetry_data["loop_on"] = stream_list[
-                    'mfilt-1'].get_param_value_int('loopON')
+        if dm_loop_stream.RUNrunning == 1:
+            telemetry_data["loop_gain"] = dm_loop_stream.get_param_value_float(
+                    'loopgain')
+            telemetry_data["loop_mult"] = dm_loop_stream.get_param_value_float(
+                    'loopmult')
+            telemetry_data["loop_on"] = dm_loop_stream.get_param_value_int(
+                    'loopON')
+
             if telemetry_data["loop_on"] == 1:
                 telemetry_data["loop_on"] = 'ON'
             elif telemetry_data["loop_on"] == 0:
                 telemetry_data["loop_on"] = 'OFF'
 
     # check if fps exists and is running
-    tt_loop_exists, looprun_fps_path = aocontrol.check_fps("mfilt-2")
+    ttm_loop_stream = toolbox.open_fps_once('mfilt-2', stream_and_fps_list)
 
-    if tt_loop_exists:
-        if stream_list['mfilt-2'] is None:
-            stream_list['mfilt-2'] = fps(looprun_fps_path)
-
+    if ttm_loop_stream is not None:
         # Check if it's running
-        if stream_list['mfilt-2'].RUNrunning == 1:
-            telemetry_data["tt_loop_gain"] = stream_list[
-                    'mfilt-2'].get_param_value_float('loopgain')
-            telemetry_data["tt_loop_mult"] = stream_list[
-                    'mfilt-2'].get_param_value_float('loopmult')
-            # loopOn 0 = OFF, 1 = ON
-            telemetry_data["tt_loop_on"] = stream_list[
-                    'mfilt-2'].get_param_value_int('loopON')
+        if ttm_loop_stream.RUNrunning == 1:
+            telemetry_data[
+                    "tt_loop_gain"] = ttm_loop_stream.get_param_value_float(
+                            'loopgain')
+            telemetry_data[
+                    "tt_loop_mult"] = ttm_loop_stream.get_param_value_float(
+                            'loopmult')
+            telemetry_data["tt_loop_on"] = ttm_loop_stream.get_param_value_int(
+                    'loopON')
+
             if telemetry_data["tt_loop_on"] == 1:
                 telemetry_data["tt_loop_on"] = 'ON'
             elif telemetry_data["tt_loop_on"] == 0:
                 telemetry_data["tt_loop_on"] = 'OFF'
 
     database.store_telemetry(telemetry_data)
-
-    # return nuvu_stream, tt_stream, fps_slopes
 
     return 0

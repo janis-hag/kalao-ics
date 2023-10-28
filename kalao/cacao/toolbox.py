@@ -15,6 +15,7 @@ from subprocess import PIPE, STDOUT
 from pyMilk.interfacing import isio_shmlib
 from pyMilk.interfacing.isio_shmlib import SHM
 
+
 def get_roi_and_subapertures(data):
     roi = None
     subapertures = None
@@ -125,6 +126,7 @@ def get_wfs_flux_map(upsampling=4):
 
     return flux
 
+
 def wfs_illumination_fraction(slopes_flux, threshold, subaps_list):
     slopes_flux_flat = slopes_flux.flatten()
 
@@ -167,6 +169,28 @@ def check_fps(fps_name):
     return fps_path.exists(), fps_name_clean
 
 
+def open_stream_once(stream_name, streams_list):
+    if streams_list.get(stream_name) is None:
+        stream_exists, stream_name = check_stream(stream_name)
+        if stream_exists:
+            return SHM(stream_name)
+        else:
+            return None
+    else:
+        return streams_list.get(stream_name)
+
+
+def open_fps_once(fps_name, fps_list):
+    if fps_list.get(fps_name) is None:
+        fps_exists, fps_name = check_fps(fps_name)
+        if fps_exists:
+            return fps(fps_name)
+        else:
+            return None
+    else:
+        return fps_list.get(fps_name)
+
+
 def zero_stream(stream_name):
     stream_exists, stream_path = check_stream(stream_name)
 
@@ -178,7 +202,6 @@ def zero_stream(stream_name):
         return 0
     else:
         return -1
-
 
     #milk_input = f"""
     #readshmim "{stream_name}"

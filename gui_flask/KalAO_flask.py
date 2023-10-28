@@ -27,6 +27,7 @@ sys.path.append(
         path.dirname(path.dirname(path.abspath(path.dirname(__file__)))))
 
 from kalao.cacao import aocontrol as k_aocontrol
+from kalao.cacao import toolbox as k_toolbox
 from kalao.cacao import telemetry as k_telemetry
 from kalao.interface import status as k_status
 from kalao.interface import star_centering as k_star_centering
@@ -67,7 +68,7 @@ def create_app():
         filterwheelMetaData = {}
 
         # Read parameters.yml
-        file_path = projectPath + '/kalao-ics/kalao/utils/database_definition_monitoring.yml'
+        file_path = projectPath + '/kalao-ics/kalao/utils/database_definitions/monitoring.yml'
         with open(file_path, 'r') as param:
             try:
                 monitoringMetaData = yaml.safe_load(param)
@@ -75,7 +76,7 @@ def create_app():
                 print("Error while trying to load parametersfrom " +
                       file_path + " file")
 
-        file_path = projectPath + '/kalao-ics/kalao/utils/database_definition_obs_log.yml'
+        file_path = projectPath + '/kalao-ics/kalao/utils/database_definitions/obs_log.yml'
         with open(file_path, 'r') as param:
             try:
                 obsLogMetaData = yaml.safe_load(param)
@@ -83,7 +84,7 @@ def create_app():
                 print("Error while trying to load parametersfrom " +
                       file_path + " file")
 
-        file_path = projectPath + '/kalao-ics/kalao/utils/database_definition_telemetry.yml'
+        file_path = projectPath + '/kalao-ics/kalao/utils/database_definitions/telemetry.yml'
         with open(file_path, 'r') as param:
             try:
                 telemetryMetaData = yaml.safe_load(param)
@@ -132,18 +133,14 @@ def create_app():
         if 'shm_streams' in app.config:
             shm_streams = app.config['shm_streams']
         else:
-            shm_streams = {
-                    "nuvu_stream":
-                            k_telemetry.create_shm_stream("nuvu_stream"),
-                    "shwfs_slopes":
-                            k_telemetry.create_shm_stream("shwfs_slopes"),
-                    "dm01disp":
-                            k_telemetry.create_shm_stream("dm01disp"),
-                    "shwfs_slopes_flux":
-                            k_telemetry.create_shm_stream("shwfs_slopes_flux"),
-                    "aol1_mgainfact":
-                            k_telemetry.create_shm_stream("aol1_mgainfact")
-            }
+            shm_streams = {}
+
+            k_toolbox.open_stream_once('nuvu_stream', shm_streams)
+            k_toolbox.open_stream_once('shwfs_slopes', shm_streams)
+            k_toolbox.open_stream_once('dm01disp', shm_streams)
+            k_toolbox.open_stream_once('shwfs_slopes_flux', shm_streams)
+            k_toolbox.open_stream_once('aol1_mgainfact', shm_streams)
+
             app.config['shm_streams'] = shm_streams
 
         realData = not bool(request.args.get('random', default="", type=str))

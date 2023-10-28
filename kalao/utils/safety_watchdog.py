@@ -24,23 +24,15 @@ from CacaoProcessTools import fps, FPS_status
 from kalao_enums import IPPowerStatus
 import kalao_config as config
 
-
 fps_list = {}
 
-def _get_fps(fps_name):
-    if fps_list[fps_name] is None:
-        fps_exists, fps_name = aocontrol.check_fps(fps_name)
-        if fps_exists:
-            return fps(fps_name)
-        else:
-            return None
-    else:
-        return fps_list[fps_name]
 
 def _get_elapsed_time_since_activity():
     latest_obs_entry_time = database.get_latest_record('obs_log')['time_utc']
 
-    return (kalao_time.now() - latest_obs_entry_time.replace(tzinfo=datetime.timezone.utc)).total_seconds()
+    return (kalao_time.now() - latest_obs_entry_time.replace(
+            tzinfo=datetime.timezone.utc)).total_seconds()
+
 
 def _check_shutteropen_inactive():
     """
@@ -56,7 +48,8 @@ def _check_shutteropen_inactive():
     if shutter.position() == 'OPEN':
         open_shutter_elapsed_time = shutter.get_switch_time()
 
-        if open_shutter_elapsed_time > config.Watchdog.open_shutter_timeout and _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
+        if open_shutter_elapsed_time > config.Watchdog.open_shutter_timeout and _get_elapsed_time_since_activity(
+        ) > config.Watchdog.inactivity_timeout:
             message = 'Closing shutter due to inactivity timeout'
             system.print_and_log(message)
             shutter.log(message)
@@ -73,10 +66,13 @@ def _check_dm_inactive():
     :return:
     """
 
-    bmc_display_fps = _get_fps('bmc_display-01')
+    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
 
-    if (bmc_display_fps is not None and bmc_display_fps.RUNrunning) or ippower.ippower_status(config.IPPower.Port.BMC_DM) == IPPowerStatus.ON:
-        if _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
+    if (bmc_display_fps is not None and
+                bmc_display_fps.RUNrunning) or ippower.ippower_status(
+                        config.IPPower.Port.BMC_DM) == IPPowerStatus.ON:
+        if _get_elapsed_time_since_activity(
+        ) > config.Watchdog.inactivity_timeout:
             message = 'Turning off DM due to inactivity timeout'
             system.print_and_log(message)
 
@@ -84,12 +80,13 @@ def _check_dm_inactive():
 
             sleep(15)
 
-            if bmc_display_fps_exists:
+            if bmc_display_fps is not None:
                 bmc_display_fps.RUNstop()
 
             sleep(15)
 
-            ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
+            ippower.switch_ippower(config.IPPower.Port.BMC_DM,
+                                   IPPowerStatus.OFF)
 
     return 0
 
@@ -104,10 +101,12 @@ def _check_wfs_inactive():
 
     # TODO: check also EMGAIN keyword in nuvu_stream
 
-    nuvu_acquire_fps = _get_fps('nuvu_acquire-1')
+    nuvu_acquire_fps = toolbox.open_fps_once('nuvu_acquire-1', fps_list)
 
-    if (nuvu_acquire_fps is not None and nuvu_acquire_fps.get_param_value_int('.emgain') > 1):
-        if _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
+    if nuvu_acquire_fps is not None and nuvu_acquire_fps.get_param_value_int(
+            '.emgain') > 1:
+        if _get_elapsed_time_since_activity(
+        ) > config.Watchdog.inactivity_timeout:
             message = 'Turning off EM gain due to inactivity timeout'
             system.print_and_log(message)
 
@@ -131,7 +130,8 @@ def _check_laseron_inactive():
     if not laser.status() == 'OFF':
         laser_on_elapsed_time = laser.get_switch_time()
 
-        if laser_on_elapsed_time > config.Watchdog.laser_on_timeout and _get_elapsed_time_since_activity() > config.Watchdog.inactivity_timeout:
+        if laser_on_elapsed_time > config.Watchdog.laser_on_timeout and _get_elapsed_time_since_activity(
+        ) > config.Watchdog.inactivity_timeout:
             message = 'Turning off laser due to inactivity timeout'
             system.print_and_log(message)
             laser.log(message)
