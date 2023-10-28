@@ -19,6 +19,7 @@
 # WFS Plate scale = 1.16 arcsec / px
 # FlI Plate scale = 0.0507 arcsec / px
 
+
 class PLC:
     ip = "10.10.132.121"
     port = 4840
@@ -230,7 +231,7 @@ class T120:
 
 
 class AO:
-    WFS_illumination_threshold = 45000
+    WFS_illumination_threshold = 10000
     WFS_illumination_fraction = 0.8
     WFS_centering_precision = 0.1
     WFS_centering_timeout = 30
