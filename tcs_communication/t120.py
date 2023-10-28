@@ -228,8 +228,8 @@ def _update_db_ra_dec_offsets(delta_alt_arcsec, delta_az_arcsec):
     """
     Update the telescope RA/DEC values in the database to take into account the new offsets
 
-    :param ra_offset: ra offset which has been sent to the telescope
-    :param dec_offset: ra offset which has been sent to the telescope
+    :param delta_alt_offset: alt offset which has been sent to the telescope
+    :param delta_az_offset: az offset which has been sent to the telescope
     :return:
     """
     latest_ra = database.get_latest_record('obs_log',
