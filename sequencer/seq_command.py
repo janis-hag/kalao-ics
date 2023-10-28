@@ -466,7 +466,7 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
-    if centering == 'aut':
+    if centering == 'aut' or kao == 'AO':
         acq_dit = config.FLI.exp_time
         if float(mag_v) > 9:
             acq_dit = 60
@@ -486,12 +486,19 @@ def target_observation(**seq_args):
     if kao == 'AO':
         system.print_and_log("Trying to close loop")
 
-        for i in range(5):
-            system.print_and_log("Initial tip/tilt offload")
-            aocontrol.tip_tilt_offload_ttm_to_telescope()
-            if starfinder.centre_on_target(kao=kao) == 0:
-                break
-            time.sleep(3)
+        system.print_and_log("Initial tip/tilt offload")
+        aocontrol.tip_tilt_offload_ttm_to_telescope()
+
+        # To be used and corrected if AO with manual is to be supported
+        # if centering != 'aut':
+        #     if starfinder.check_wfs_flux() != 0:
+        #         for i in range(5):
+        #             if starfinder.centre_on_target(kao=kao) == 0:
+        #                 break
+        #             time.sleep(3)
+        #
+        #     aocontrol.wfs_centering(tt_threshold=config.AO.
+        #                         WFS_centering_slope_threshold)
 
         if aocontrol.close_loop() == -1:
             system.print_and_log("Error: unable to close loop")
