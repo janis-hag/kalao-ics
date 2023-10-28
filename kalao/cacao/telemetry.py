@@ -9,15 +9,12 @@ The telemetry package contains the tools to store the Adaptive Optics telemetry 
 
 """
 
-from pathlib import Path
-from scipy import stats
+
 import numpy as np
 
 import libtmux
 
 from pyMilk.interfacing.isio_shmlib import SHM
-
-from CacaoProcessTools import fps, FPS_status
 
 from kalao.utils import database
 from kalao.cacao import fake_data, aocontrol, toolbox

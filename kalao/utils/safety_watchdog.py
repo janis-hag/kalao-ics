@@ -19,8 +19,6 @@ from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from sequencer import system
 
-from CacaoProcessTools import fps, FPS_status
-
 from kalao_enums import IPPowerStatus
 import kalao_config as config
 

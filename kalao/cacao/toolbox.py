@@ -15,6 +15,7 @@ from subprocess import PIPE, STDOUT
 from pyMilk.interfacing import isio_shmlib
 from pyMilk.interfacing.isio_shmlib import SHM
 
+from CacaoProcessTools import fps, FPS_status
 
 def get_roi_and_subapertures(data):
     roi = None
@@ -170,25 +171,35 @@ def check_fps(fps_name):
 
 
 def open_stream_once(stream_name, streams_list):
-    if streams_list.get(stream_name) is None:
+    opened_stream = streams_list.get(stream_name)
+
+    if opened_stream is None:
         stream_exists, stream_name = check_stream(stream_name)
+
         if stream_exists:
-            return SHM(stream_name)
+            opened_stream = SHM(stream_name)
+            streams_list[stream_name] = opened_stream
+            return opened_stream
         else:
             return None
     else:
-        return streams_list.get(stream_name)
+        return opened_stream
 
 
 def open_fps_once(fps_name, fps_list):
-    if fps_list.get(fps_name) is None:
+    opened_fps = fps_list.get(fps_name)
+
+    if opened_fps is None:
         fps_exists, fps_name = check_fps(fps_name)
+
         if fps_exists:
-            return fps(fps_name)
+            opened_fps = fps(fps_name)
+            fps_list[fps_name] = opened_fps
+            return opened_fps
         else:
             return None
     else:
-        return fps_list.get(fps_name)
+        return opened_fps
 
 
 def zero_stream(stream_name):
