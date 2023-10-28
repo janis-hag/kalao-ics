@@ -637,7 +637,8 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
               config.Starfinder.min_flux)
         if image.mean() >= config.Starfinder.max_flux:
             new_dit = int(
-                    np.floor(1.5 * config.Starfinder.max_flux / image.mean()))
+                    np.floor(config.Starfinder.max_flux /
+                             (1.5 * image.mean())))
             #new_dit = int(np.floor(0.8 * new_dit))
             if new_dit <= 1:
                 print('Max flux ' + str(image.max()) +
