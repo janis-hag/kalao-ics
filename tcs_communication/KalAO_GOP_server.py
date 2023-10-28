@@ -116,7 +116,8 @@ def gop_server():
 
         # Check if it's a KalAO command and send it
         if commandList[0][:1] == "K" or commandList[
-                0] == "INSTRUMENTCHANGE" or commandList[0] == "THE_END":
+                0] == "INSTRUMENTCHANGE" or commandList[
+                        0] == "THE_END" or commandList[0] == "ABORT":
 
             hostSeq, portSeq = (config.SEQ.ip, config.SEQ.port)
             socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -166,6 +167,8 @@ def gop_server():
         #     # TODO
         #     # Stop AO
         #     # Close shutter
+        #     # reset_dms:
+        #     aocontrol.reset_dm(config.AO.TTM_loop_number)
         #     # Set tracking to no-tracking keyword
         #     # Disable manual centering flag
         #     message = "/OK"
