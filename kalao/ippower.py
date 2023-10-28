@@ -6,8 +6,10 @@
 
 import requests
 
-from kalao_enums import IPPowerStatus
+from kalao.utils import database
 
+from kalao_enums import IPPowerStatus
+import kalao_config as config
 
 def switch_ippower(power_port, status):
     """
@@ -25,7 +27,7 @@ def switch_ippower(power_port, status):
     if req.status_code == 200:
         return status
     else:
-        error_message = f'Could not switch camera IP-power for port {power_port} to {value}. HTTP-response: {req.text}  ({req.status_code})'
+        error_message = f'Could not switch camera IP-power for port {power_port} to {status}. HTTP-response: {req.text}  ({req.status_code})'
         database.store_obs_log({'obs_log': error_message})
         print(error_message)
         return -1

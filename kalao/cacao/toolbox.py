@@ -170,6 +170,24 @@ def check_fps(fps_name):
     return fps_path.exists(), fps_name_clean
 
 
+def open_or_create_stream(stream_name, shape, type):
+    stream_exists, stream_name = check_stream(stream_name)
+
+    if stream_exists:
+        shm = SHM(stream_name)
+    else:
+        img = np.zeros((shape, type))
+
+        shm = SHM(
+            'fli_stream',
+            img,
+            location=-1,  # CPU
+            shared=True,  # Shared
+        )
+
+    return shm
+
+
 def open_stream_once(stream_name, streams_list):
     opened_stream = streams_list.get(stream_name)
 
