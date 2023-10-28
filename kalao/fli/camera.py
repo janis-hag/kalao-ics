@@ -23,12 +23,30 @@ from kalao.utils import database, database_updater, file_handling
 from kalao.cacao import toolbox
 from sequencer import system
 
-from pyMilk.interfacing.isio_shmlib import SHM
-
 from kalao_enums import SequencerStatus
 import kalao_config as config
 
 fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024), np.uint16)
+
+
+def take_frame(dit, filepath = None, do_not_log=False, cut_window=None, cut_center=None, update_stream=True):
+    if filepath is None:
+        filepath = '/tmp/fli_frame.fits'
+
+    params = {'exptime': dit, 'filepath': filepath}
+    req = _send_request('acquire', params, do_not_log=do_not_log)
+
+    if req.status_code == 200:
+        img = fits.getdata(filepath)
+        img = cut_image(img, window=cut_window, center=cut_center)
+
+        if update_stream:
+            fli_stream.set_data(img)
+
+        return img, req
+    else:
+        return None, req
+
 
 def take_image(
         dit=0.05, filepath=None,
@@ -53,8 +71,7 @@ def take_image(
     # Store monitoring status at start of exposure
     database_updater.update_plc_monitoring()
 
-    params = {'exptime': dit, 'filepath': filepath}
-    req = _send_request('acquire', params)
+    _, req = take_frame(dit, filepath)
 
     if get_temperatures(
     )['fli_temp_CCD'] > config.FLI.temperature_warn_threshold:
@@ -68,15 +85,11 @@ def take_image(
     log_temporary_image_path(filepath)
 
     if req.status_code == 200:
-
         image_path = database.get_obs_log([
                 'fli_temporary_image_path'
         ], 1)['fli_temporary_image_path']['values'][0]
         target_path_name = file_handling.save_tmp_image(
                 image_path, sequencer_arguments=sequencer_arguments)
-
-        img = fits.getdata(target_path_name)
-        fli_stream.set_data(img)
 
         return 0, target_path_name
     else:
@@ -130,48 +143,6 @@ def increment_image_counter():
     database.store_obs_log({'fli_image_count': image_count})
 
     return image_count
-
-
-def video_stream(dit=0.05, window=None, center=None):
-    # TODO add docstring
-
-    # initialise stream
-
-    # TODO verify first with check_server_status() before sending request
-
-    filepath = '/tmp/fli_image.fits'
-
-    req = _send_request('acquire', {'exptime': dit, 'filepath': filepath})
-
-    img = fits.getdata(filepath)
-
-    if window is not None:
-        img = cut_image(img, window=window, center=center)
-
-    # Creating a brand-new stream
-    shm = SHM(
-            'fli_stream',
-            img,
-            location=-1,  # CPU
-            shared=True,  # Shared
-    )
-
-    try:
-        while req.status_code == 200:
-            req = _send_request('acquire', {
-                    'exptime': dit,
-                    'filepath': filepath
-            })
-            img = fits.getdata(filepath)
-
-            if window is not None:
-                img = cut_image(img, window=window, center=center)
-
-            shm.set_data(img)
-            sleep(0.001)
-
-    except KeyboardInterrupt:
-        print('interrupted!')
 
 
 def cut_image(img, window=None, center=None):
@@ -273,10 +244,9 @@ def set_temperature(temperature):
         return req.text
 
 
-def _send_request(request_type, params):
+def _send_request(request_type, params, do_not_log=False):
 
     if not check_server_status() == 'OK':
-
         req = Mock(spec=Response)
 
         req.json.return_value = {}
@@ -284,15 +254,8 @@ def _send_request(request_type, params):
         # 503 Service Unavailable
         req.status_code = 503
 
-        # class Object(object):
-        #     pass
-        #
-        # req = Object()
-        # req.text = '-1'
-        # req.status_code = 200
-
     else:
-        if request_type == 'acquire':
+        if request_type == 'acquire' and not do_not_log:
             increment_image_counter()
             database.store_obs_log({'sequencer_status': SequencerStatus.EXP})
             if 'exptime' in params.keys():

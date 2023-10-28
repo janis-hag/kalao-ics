@@ -15,21 +15,18 @@ import sys
 from time import sleep
 from signal import signal, SIGINT
 from sys import exit
-from pprint import pprint
 import numpy as np
 import pandas as pd
 
-import subprocess
-from subprocess import PIPE, STDOUT
-
-from sequencer import system
 from kalao.cacao.aocontrol import check_stream
 from kalao.cacao.toolbox import save_stream_to_fits, zero_stream
 from kalao.utils import kalao_time, zernike
 from kalao.plc import laser, filterwheel
-from kalao.fli import FLI, camera
+from kalao.fli import camera
 
 from pyMilk.interfacing.isio_shmlib import SHM
+
+import kalao_config as config
 
 PEAK_VALUE = 0
 COEFF = 1
@@ -57,8 +54,7 @@ def generate_pattern(R, Theta, zernike_coeffs):
     return pattern
 
 
-def run(cam, args):
-    # initialise stream
+def run(args):
     dit = args.dit
     orders_to_correct = args.orders_to_correct
     steps = args.steps
@@ -75,20 +71,19 @@ def run(cam, args):
 
     # Search optimal dit
     while (True):
-        cam.set_exposure(new_dit)
-        img = cam.take_photo()
-        img = camera.cut_image(img, window, center)
+        img, _ = camera.take_frame(dit, do_not_log=True, cut_window=window,
+                                   cut_center=center)
 
         print(new_dit, img.max())
         if img.max() >= max_flux:
-            new_dit = int(np.floor(0.8 * new_dit))
+            new_dit = 0.8 * new_dit
             if new_dit <= 1:
                 print(f'Max flux {img.max()} above max permitted value {max_flux}'
                       )
                 sys.exit(1)
             continue
         elif img.max() <= min_flux:
-            new_dit = int(np.ceil(1.2 * new_dit))
+            new_dit = 1.2 * new_dit
             if new_dit >= max_dit:
                 print(f'Max flux {img.max()} below minimum permitted value {min_flux}'
                       )
@@ -98,19 +93,8 @@ def run(cam, args):
             break
 
     print(f'Setting DIT to {new_dit}')
-    cam.set_exposure(new_dit)
-    img = cam.take_photo()
-    img = camera.cut_image(img, window, center)
-
-    peak_value = img.max()
-
-    # Creating a brand new stream
-    fli_stream = SHM(
-            'fli_stream',
-            img,
-            location=-1,  # CPU
-            shared=True,  # Shared
-    )
+    img, _ = camera.take_frame(dit, do_not_log=True, cut_window=window,
+                               cut_center=center)
 
     # Open DM stream
     dm_stream_exists, dm_stream_path = check_stream("dm01disp08")
@@ -146,8 +130,8 @@ def run(cam, args):
             # Reset value to zero before starting search
             zernike_coeffs[order] = 0
 
-            img = cam.take_photo()
-            img = camera.cut_image(img, window, center)
+            img, _ = camera.take_frame(dit, do_not_log=True, cut_window=window,
+                                       cut_center=center)
 
             peak_array = np.zeros((3, 2))
 
@@ -165,10 +149,13 @@ def run(cam, args):
                 # Test up
                 zernike_coeffs[order] = up
 
-                dm_stream.set_data(generate_pattern(R, Theta, zernike_coeffs), True)
-
-                img = cam.take_photo()
-                img = camera.cut_image(img, window, center)
+                dm_stream.set_data(generate_pattern(R, Theta, zernike_coeffs),
+                                   True)
+                sleep(0.1)
+                img, _ = camera.take_frame(dit, do_not_log=True,
+                                           cut_window=window,
+                                           cut_center=center,
+                                           update_stream=False)
 
                 peak_array[2][PEAK_VALUE] = img.max()
                 peak_array[2][COEFF] = up
@@ -176,10 +163,13 @@ def run(cam, args):
                 # Test down
                 zernike_coeffs[order] = down
 
-                dm_stream.set_data(generate_pattern(R, Theta, zernike_coeffs), True)
-
-                img = cam.take_photo()
-                img = camesa.cut_image(img, window, center)
+                dm_stream.set_data(generate_pattern(R, Theta, zernike_coeffs),
+                                   True)
+                sleep(0.1)
+                img, _ = camera.take_frame(dit, do_not_log=True,
+                                           cut_window=window,
+                                           cut_center=center,
+                                           update_stream=False)
 
                 peak_array[0][PEAK_VALUE] = img.max()
                 peak_array[0][COEFF] = down
@@ -194,9 +184,6 @@ def run(cam, args):
                                         peak_array.max(), i, order, step
                                 ]), zernike_coeffs)), index=df.columns),
                         ignore_index=True)
-
-                fli_stream.set_data(img)
-                sleep(0.00001)
 
                 # Set new value of center
                 peak_array[1][PEAK_VALUE] = peak_array[:, PEAK_VALUE].max()
@@ -218,6 +205,9 @@ def run(cam, args):
     zernike_coeffs = max_row[-len(zernike_coeffs):].to_numpy()
 
     dm_stream.set_data(generate_pattern(R, Theta, zernike_coeffs), True)
+    sleep(0.1)
+    img, _ = camera.take_frame(dit, do_not_log=True, cut_window=window,
+                               cut_center=center)
 
     # TODO update zp0 stream
     save_stream_to_fits('dm01disp', 'dmflat_ncpa_time_name.fits')
@@ -227,7 +217,8 @@ def run(cam, args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
             description='Run open-loop NCPA optimisation.')
-    parser.add_argument('-d', action="store", dest="dit", type=int, default=1,
+    parser.add_argument('-d', action="store", dest="dit", type=float,
+                        default=config.FLI.laser_calib_dit,
                         help="Science camera integration time")
     parser.add_argument('-o', action="store", dest="orders_to_correct",
                         default=10, type=int,
@@ -241,10 +232,10 @@ if __name__ == '__main__':
     parser.add_argument('-min_flux', action="store", dest="min_flux",
                         default=2**11, type=int,
                         help='Minimum flux to have on the FLI')
-    parser.add_argument('-max_dit', action="store", dest="max_dit", default=20,
-                        type=int, help='Maximum dit of the FLI')
+    parser.add_argument('-max_dit', action="store", dest="max_dit",
+                        default=0.5, type=float, help='Maximum dit of the FLI')
     parser.add_argument('-filter', action="store", dest="filter_name",
-                        default='clear', help='Filter name to use')
+                        default='nd', help='Filter name to use')
     parser.add_argument('-min_incr', action="store", dest="min_incr",
                         default=0.0001, type=float,
                         help='Minimum increment for convergence')
@@ -253,8 +244,9 @@ if __name__ == '__main__':
                         help='x y position of the window center')
     parser.add_argument('-w', action="store", dest="window_size", default=100,
                         type=int, help='Size of the window to cut out. ')
-    parser.add_argument('-l', action="store", dest="laser_int", default=0.045,
-                        type=float, help='Laser intensity.')
+    parser.add_argument('-l', action="store", dest="laser_int",
+                        default=config.Laser.calib_intensity, type=float,
+                        help='Laser intensity.')
 
     args = parser.parse_args()
     dit = args.dit
@@ -271,21 +263,12 @@ if __name__ == '__main__':
     laser_int = args.laser_int
 
     laser.set_intensity(laser_int)
+
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)
-
-    system.camera_service('stop')
-    print('Stopped kalao_camera service')
-
-    #laser.set_intensity(0.3)
 
     if filterwheel.set_position(filter_name) == -1:
         print("Error with filter selection")
     sleep(2)
 
-    cam = FLI.USBCamera.find_devices()[0]
-    pprint(dict(cam.get_info()))
-    print(f'Temperature: {cam.get_temperature()}')
-    cam.set_temperature(-30)
-    cam.set_exposure(dit)
-    run(cam, args)
+    run(args)
