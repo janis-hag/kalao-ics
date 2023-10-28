@@ -861,6 +861,14 @@ def check_abort(q, dit, AO=False):
 
     print('Check abort')
 
+    if q is not None and not q.empty():
+        q.get()
+        # Update database
+        database_updater.update_plc_monitoring()
+        return -1
+    else:
+        return 0
+
     if True:
         return 0
 
