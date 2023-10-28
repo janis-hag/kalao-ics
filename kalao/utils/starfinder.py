@@ -93,7 +93,7 @@ def centre_on_target(kao='NO_AO', dit=config.FLI.exp_time):
                 coeff = 0
                 emgain = peak * coeff
                 aocontrol.set_exptime(0)
-                aocontrol.set_emgain(emgain)
+                #aocontrol.set_emgain(emgain)
 
                 # Check if enough light is on the WFS for precise centering
                 if check_wfs_flux() == 0:
