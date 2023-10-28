@@ -636,7 +636,9 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
         print(new_dit, image.max(), config.Starfinder.max_flux,
               config.Starfinder.min_flux)
         if image.mean() >= config.Starfinder.max_flux:
-            new_dit = int(np.floor(0.8 * new_dit))
+            new_dit = int(
+                    np.floor(1.5 * config.Starfinder.max_flux / image.mean()))
+            #new_dit = int(np.floor(0.8 * new_dit))
             if new_dit <= 1:
                 print('Max flux ' + str(image.max()) +
                       ' above max permitted value ' +
@@ -644,7 +646,9 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
                 return -1
             continue
         elif image.mean() <= config.Starfinder.min_flux:
-            new_dit = int(np.ceil(1.2 * new_dit))
+            new_dit = int(
+                    np.floor(1.5 * config.Starfinder.min_flux / image.mean()))
+            #new_dit = int(np.ceil(1.2 * new_dit))
             if new_dit >= config.Starfinder.max_dit:
                 print('Max flux ' + str(image.max()) +
                       ' below minimum permitted value: ' +
