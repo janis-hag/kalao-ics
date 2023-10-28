@@ -154,8 +154,7 @@ def initialisation():
     # dict where keys is string name of object <function> and values is object <function>
     init_dict = {
             "system.initialise_services": system.initialise_services,
-            #"control.initialise": camera.initialise,
-            "calib_unit.initialise": calib_unit.initialise,
+            #"calib_unit.initialise": calib_unit.initialise, #TODO uncomment after comm.
             "flip_mirror.initialise": flip_mirror.initialise,
             "shutter.initialise": shutter.initialise,
             "tungsten.initialise": tungsten.initialise,
