@@ -20,6 +20,7 @@ from kalao import fli
 from kalao.utils import database
 from kalao.cacao import telemetry
 
+from kalao_enums import CameraServerStatus
 import kalao_config as config
 
 stream_and_fps_list = {}
@@ -53,8 +54,8 @@ def update_plc_monitoring():
         print(e)
 
     fli_server_status = fli.camera.check_server_status()
-    values.update({'fli_status': fli_server_status})
-    if fli_server_status == 'OK':
+    values.update({'fli_status': str(fli_server_status)})
+    if fli_server_status == CameraServerStatus.OK:
         fli_temperatures = fli.camera.get_temperatures()
         values.update(fli_temperatures)
 

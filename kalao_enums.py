@@ -30,3 +30,9 @@ class SequencerStatus(StrEnum):
 class IPPowerStatus(IntEnum):
     OFF = 0
     ON = 1
+
+
+class CameraServerStatus(StrEnum):
+    OK = 'OK'
+    DOWN = 'DOWN'
+    ERROR = 'ERROR'

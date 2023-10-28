@@ -19,6 +19,8 @@ import numpy as np
 from kalao.fli import camera, FLI
 from kalao.cacao import toolbox
 
+from kalao_enums import CameraServerStatus
+
 parser = argparse.ArgumentParser(
         description='Opens stream with FLI camera images.')
 parser.add_argument('-d', action="store", dest="dit", type=float,
@@ -47,7 +49,7 @@ def handler(signal_received, frame):
 def run():
     camera_service_status = camera.check_server_status()
 
-    if camera_service_status == 'DOWN':
+    if camera_service_status == CameraServerStatus.DOWN:
         print('Connecting to camera directly')
 
         cam = FLI.USBCamera.find_devices()[0]
@@ -58,18 +60,19 @@ def run():
         while True:
             cam.set_exposure(int(dit * 1000))
             img = cam.take_photo()
-            img = camera.cut_image(img, window, center)
-            fli_stream.set_data(img)
+            #img = camera.cut_image(img, window, center)
+            fli_stream.set_data(img, True)
             sleep(0.00001)
-    elif camera_service_status == 'ERROR':
-        print('Please try to stop or restart the kalao_camera service')
-    else:
+    elif camera_service_status == CameraServerStatus.OK:
         print('Connecting to camera through REST API')
 
         while True:
-            camera.take_frame(dit, do_not_log=True, cut_window=window,
-                              cut_center=center)
+            img, _ = camera.take_frame(dit, do_not_log=True)
+            #img = camera.cut_image(img, window, center)
             sleep(0.00001)
+    else:
+        print('Error connecting to camera. Please try to stop or restart the kalao_camera service')
+
 
 
 if __name__ == '__main__':

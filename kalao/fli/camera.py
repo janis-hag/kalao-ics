@@ -23,13 +23,13 @@ from kalao.utils import database, database_updater, file_handling
 from kalao.cacao import toolbox
 from sequencer import system
 
-from kalao_enums import SequencerStatus
+from kalao_enums import SequencerStatus, CameraServerStatus
 import kalao_config as config
 
 fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024), np.uint16)
 
 
-def take_frame(dit, filepath = None, do_not_log=False, cut_window=None, cut_center=None, update_stream=True):
+def take_frame(dit, filepath=None, do_not_log=False, update_stream=True):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
 
@@ -38,10 +38,9 @@ def take_frame(dit, filepath = None, do_not_log=False, cut_window=None, cut_cent
 
     if req.status_code == 200:
         img = fits.getdata(filepath)
-        img = cut_image(img, window=cut_window, center=cut_center)
 
         if update_stream:
-            fli_stream.set_data(img)
+            fli_stream.set_data(img, True)
 
         return img, req
     else:
@@ -148,9 +147,9 @@ def increment_image_counter():
 def cut_image(img, window=None, center=None):
 
     if window is not None:
-        hw = int(np.round(window / 2))
+        hw = window // 2
         if center is None:
-            c = [img.shape[0] / 2, img.shape[1] / 2]
+            c = [img.shape[0] // 2, img.shape[1] // 2]
         else:
             c = center
         img = img[c[0] - hw:c[0] + hw, c[1] - hw:c[1] + hw]
@@ -246,7 +245,7 @@ def set_temperature(temperature):
 
 def _send_request(request_type, params, do_not_log=False):
 
-    if not check_server_status() == 'OK':
+    if not check_server_status() == CameraServerStatus.OK:
         req = Mock(spec=Response)
 
         req.json.return_value = {}
@@ -301,15 +300,15 @@ def check_server_status():
     server_status = system.camera_service('status')
 
     if server_status[0] == 'inactive':
-        return 'DOWN'
+        return CameraServerStatus.DOWN
 
     try:
         r = requests.get('http://' + config.FLI.ip + ':' +
                          str(config.FLI.port) + '/temperature')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-        return "DOWN"
+        return CameraServerStatus.DOWN
     except requests.exceptions.HTTPError:
-        return "ERROR"
+        return CameraServerStatus.ERROR
     else:
-        return "OK"
+        return CameraServerStatus.OK

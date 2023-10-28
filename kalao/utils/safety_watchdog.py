@@ -19,7 +19,7 @@ from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from sequencer import system
 
-from kalao_enums import IPPowerStatus
+from kalao_enums import IPPowerStatus, CameraServerStatus
 import kalao_config as config
 
 fps_list = {}
@@ -205,7 +205,7 @@ def _check_cooling_status():
         return -1
 
     # Check camera temperatures
-    if camera.check_server_status() == 'OK':
+    if camera.check_server_status() == CameraServerStatus.OK:
         # Verify if camera is running
         if cooling_status['camera_HS_temp'] > config.Cooling.max_heatsink_temp:
             message = f"ERROR: camera_HS_temp temperature {cooling_status['camera_HS_temp']} above maximum {config.Cooling.max_heatsink_temp}"
