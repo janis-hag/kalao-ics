@@ -89,7 +89,7 @@ def centre_on_target(kao='NO_AO', dit=config.FLI.exp_time):
                                                      y - config.FLI.center_y)
 
             if kao == 'AO':
-                print("##### Starfinder: Peak value is {peak}")
+                print(f"##### Starfinder: Peak value is {peak}")
                 coeff = 0
                 emgain = peak * coeff
                 aocontrol.set_exptime(0)
