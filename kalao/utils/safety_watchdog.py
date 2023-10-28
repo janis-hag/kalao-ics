@@ -32,7 +32,7 @@ def _get_elapsed_time_since_activity():
             tzinfo=datetime.timezone.utc)).total_seconds()
 
 
-def _check_shutteropen_inactive():
+def _check_shutteropen_inactive(inactivity_time):
     """
     Verify for how long the shutter is open and there is not observing activity.
     Close the shutter if inactivity is longer than the value set in kalao.config file.
@@ -46,8 +46,7 @@ def _check_shutteropen_inactive():
     if shutter.position() == 'OPEN':
         open_shutter_elapsed_time = shutter.get_switch_time()
 
-        if open_shutter_elapsed_time > config.Watchdog.open_shutter_timeout and _get_elapsed_time_since_activity(
-        ) > config.Watchdog.inactivity_timeout:
+        if open_shutter_elapsed_time > config.Watchdog.open_shutter_timeout and inactivity_time > config.Watchdog.inactivity_timeout:
             message = 'Closing shutter due to inactivity timeout'
             system.print_and_log(message)
             shutter.log(message)
@@ -56,7 +55,7 @@ def _check_shutteropen_inactive():
     return 0
 
 
-def _check_dm_inactive():
+def _check_dm_inactive(inactivity_time):
     """
     Verify for how long there is not observing activity.
     Turn off DM if inactivity is longer than the value set in kalao.config file.
@@ -69,8 +68,7 @@ def _check_dm_inactive():
     if (bmc_display_fps is not None and
                 bmc_display_fps.RUNrunning) or ippower.ippower_status(
                         config.IPPower.Port.BMC_DM) == IPPowerStatus.ON:
-        if _get_elapsed_time_since_activity(
-        ) > config.Watchdog.inactivity_timeout:
+        if inactivity_time > config.Watchdog.inactivity_timeout:
             message = 'Turning off DM due to inactivity timeout'
             system.print_and_log(message)
 
@@ -89,7 +87,7 @@ def _check_dm_inactive():
     return 0
 
 
-def _check_wfs_inactive():
+def _check_wfs_inactive(inactivity_time):
     """
     Verify for how long there is not observing activity.
     Set EM gain to 1 if inactivity is longer than the value set in kalao.config file.
@@ -103,8 +101,7 @@ def _check_wfs_inactive():
 
     if nuvu_acquire_fps is not None and nuvu_acquire_fps.get_param_value_int(
             '.emgain') > 1:
-        if _get_elapsed_time_since_activity(
-        ) > config.Watchdog.inactivity_timeout:
+        if inactivity_time > config.Watchdog.inactivity_timeout:
             message = 'Turning off EM gain due to inactivity timeout'
             system.print_and_log(message)
 
@@ -113,7 +110,7 @@ def _check_wfs_inactive():
     return 0
 
 
-def _check_laseron_inactive():
+def _check_laseron_inactive(inactivity_time):
     """
     Verify for how long the laser is on and there is not observing activity.
     Turn off laser if inactivity is longer than the value set in kalao.config file.
@@ -128,8 +125,7 @@ def _check_laseron_inactive():
     if not laser.status() == 'OFF':
         laser_on_elapsed_time = laser.get_switch_time()
 
-        if laser_on_elapsed_time > config.Watchdog.laser_on_timeout and _get_elapsed_time_since_activity(
-        ) > config.Watchdog.inactivity_timeout:
+        if laser_on_elapsed_time > config.Watchdog.laser_on_timeout and inactivity_time > config.Watchdog.inactivity_timeout:
             message = 'Turning off laser due to inactivity timeout'
             system.print_and_log(message)
             laser.log(message)
@@ -145,10 +141,11 @@ def _check_bench_status():
     :return: 0
     """
 
-    _check_shutteropen_inactive()
-    _check_laseron_inactive()
-    _check_dm_inactive()
-    _check_wfs_inactive()
+    inactivity_time = _get_elapsed_time_since_activity()
+    _check_shutteropen_inactive(inactivity_time)
+    _check_laseron_inactive(inactivity_time)
+    _check_dm_inactive(inactivity_time)
+    _check_wfs_inactive(inactivity_time)
 
     return 0
 
