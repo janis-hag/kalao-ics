@@ -73,7 +73,7 @@ class FLI:
     science_data_storage = "/gls/data/raw/kalao"
     temporary_data_storage = "/home/kalao/data/tmp/"
     file_mask = 0o440
-    exp_time = 0.05
+    exp_time = 5.0
     setup_time = 4
     ip = "127.0.0.1"
     port = 9080
