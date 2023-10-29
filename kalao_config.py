@@ -296,3 +296,4 @@ class Watchdog:
     inactivity_timeout = 2700
     open_shutter_timeout = 2700
     laser_on_timeout = 2700
+    dm_wait_betweeen_actions = 15
