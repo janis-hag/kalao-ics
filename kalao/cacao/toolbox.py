@@ -245,15 +245,25 @@ def zero_stream(stream_name):
 
 
 def save_stream_to_fits(stream_name, fits_file):
-    milk_input = f"""
-    readshmim "{stream_name}"
-    saveFITS "{stream_name}" "{fits_file}"
-    exitCLI
-    """
+    stream_exists, stream_path = check_stream(stream_name)
 
-    cp = subprocess.run(["milk"], input=milk_input, encoding='utf8',
-                        stdout=PIPE, stderr=STDOUT)
-    return cp
+    if stream_exists:
+        stream_shm = SHM(stream_path)
+        stream_shm.save_as_fits(fits_file)
+
+        return 0
+    else:
+        return -1
+
+    #milk_input = f"""
+    #readshmim "{stream_name}"
+    #saveFITS "{stream_name}" "{fits_file}"
+    #exitCLI
+    #"""
+    ##
+    #cp = subprocess.run(["milk"], input=milk_input, encoding='utf8',
+    #                    stdout=PIPE, stderr=STDOUT)
+    #return cp
 
 
 if __name__ == "__main__":
