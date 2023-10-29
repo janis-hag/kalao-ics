@@ -2,13 +2,20 @@
 #from enum import StrEnum
 
 # Emulate StrEnum for python < 3.11
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, Flag, auto
 
 
 class StrEnum(str, Enum):
 
     def __str__(self) -> str:
         return self.value
+
+
+class LoopStatus(Flag):
+    DM_LOOP_ON = auto()
+    TTM_LOOP_ON = auto()
+
+    ALL_LOOP_ON = DM_LOOP_ON & TTM_LOOP_ON
 
 
 class TrackingStatus(StrEnum):

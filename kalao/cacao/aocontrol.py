@@ -14,7 +14,6 @@ import libtmux
 import pandas as pd
 
 from CacaoProcessTools import fps, FPS_status
-from pyMilk.interfacing import isio_shmlib
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
@@ -27,7 +26,7 @@ from sequencer import system
 
 from pathlib import Path
 
-from kalao_enums import IPPowerStatus
+from kalao_enums import IPPowerStatus, LoopStatus
 import kalao_config as config
 
 
@@ -38,13 +37,10 @@ def close_loop():
     :return:
     """
 
-    # code not yet ready
-    return 0
-
     dmloop_exists, dmloop_fps_name = toolbox.check_fps("mfilt-1")
 
-    if not looprun_exists:
-        message = f'ERROR: {dmloop_fps_nam} is missing'
+    if not dmloop_exists:
+        message = f'ERROR: {dmloop_fps_name} is missing'
         print(message)
         database.store_obs_log({'ao_log': message})
         system.print_and_log(message)
@@ -53,8 +49,7 @@ def close_loop():
 
     fps_mfilt1 = fps(dmloop_fps_name)
 
-    # TODO the value to be set is not a float! this line will fail it need to be changed to string
-    fps_mfilt1.set_param_value_float('loopON', 'ON')
+    fps_mfilt1.set_param_value_onoff('loopON', '1')
 
     ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
 
@@ -66,17 +61,37 @@ def close_loop():
 
         return -1
 
-    fps_mfilt2 = fps(ttmloop_fps_path)
+    fps_mfilt2 = fps(ttmloop_fps_name)
 
-    # TODO the value to be set is not a float! this line will fail it need to be changed to string
-    fps_mfilt2.set_param_value_float('loopON', 'ON')
+    fps_mfilt2.set_param_value_onoff('loopON', '1')
 
     return 0
 
 
 def check_loop():
-    # TODO check if loop is running. If loop broken return -1
-    pass
+    status = LoopStatus(0)
+
+    dmloop_exists, dmloop_fps_name = toolbox.check_fps("mfilt-1")
+
+    if dmloop_exists:
+        fps_mfilt1 = fps(dmloop_fps_name)
+
+        loopON = fps_mfilt1.get_param_value_onoff('loopON')
+
+        if loopON == 1:
+            status &= LoopStatus.DM_LOOP_ON
+
+    ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
+
+    if ttmloop_exists:
+        fps_mfilt2 = fps(ttmloop_fps_name)
+
+        loopON = fps_mfilt2.get_param_value_onoff('loopON')
+
+        if loopON == 1:
+            status &= LoopStatus.TTM_LOOP_ON
+
+    return status
 
 
 def set_dmloop_gain(gain):
@@ -391,7 +406,7 @@ def turn_dm_on(fps_list = {}):
     time.sleep(config.Watchdog.dm_wait_betweeen_actions)
 
     if bmc_display_fps is not None:
-        bmc_display_fps.RUNstop()
+        bmc_display_fps.RUNstart()
 
     time.sleep(config.Watchdog.dm_wait_betweeen_actions)
 

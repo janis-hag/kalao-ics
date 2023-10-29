@@ -18,11 +18,10 @@ import numpy as np
 from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel, calib_unit
 from kalao.fli import camera
 from kalao.utils import file_handling, database, database_updater, kalao_time, starfinder
-from kalao.cacao import cacaomanager, aocontrol
+from kalao.cacao import aocontrol
 from sequencer import system
-from tcs_communication import t120
 
-from kalao_enums import SequencerStatus, TrackingStatus
+from kalao_enums import SequencerStatus, TrackingStatus, LoopStatus
 import kalao_config as config
 
 
@@ -890,7 +889,7 @@ def check_abort(q, dit, AO=False):
             # Update database
             database_updater.update_plc_monitoring()
             return -1
-        if AO and aocontrol.check_loop() == -1:
+        if AO and not aocontrol.check_loop() == LoopStatus.ALL_LOOP_ON:
             return -1
 
         #database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
