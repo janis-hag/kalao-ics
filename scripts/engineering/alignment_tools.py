@@ -16,14 +16,13 @@ import pyqtgraph as pg
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
-from kalao.cacao.toolbox import *
-from kalao.cacao.aocontrol import check_stream
-from kalao.cacao.toolbox import zero_stream
+from kalao.cacao import toolbox
+
 
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
-    ret = zero_stream("dm01disp09")
+    ret = toolbox.zero_stream("dm01disp09")
 
     if ret == 0:
         print('Resetted DM pattern')
@@ -71,28 +70,28 @@ def run():
 
     dm_subap_indexes = []
     for i in dm_actuators_poke:
-        dm_subap_indexes.append(get_subapertures_around_actuator(i))
+        dm_subap_indexes.append(toolbox.get_subapertures_around_actuator(i))
 
     fli_x_pos = 516
     fli_y_pos = 409
     fli_circle_radius = 16
 
     ##### Open needed streams
-    nuvu_exists, nuvu_stream_path = check_stream("nuvu_stream")
+    nuvu_exists, nuvu_stream_name = toolbox.check_stream("nuvu_stream")
     if not nuvu_exists:
-        print('nuvu_stream stream missing')
+        print(f'{nuvu_stream_name} stream missing')
         exit()
-    nuvu_stream = SHM(nuvu_stream_path)
+    nuvu_stream = SHM(nuvu_stream_name)
 
-    dm_exists, dm_stream_path = check_stream("dm01disp09")
+    dm_exists, dm_stream_name = toolbox.check_stream("dm01disp09")
     if not dm_exists:
-        print('dm01disp09 stream missing')
+        print(f'{dm_stream_name} stream missing')
         exit()
-    dm_stream = SHM(dm_stream_path)
+    dm_stream = SHM(dm_stream_name)
 
-    fli_exists, fli_stream_path = check_stream("fli_stream")
+    fli_exists, fli_stream_name = toolbox.check_stream("fli_stream")
     if fli_exists:
-        fli_stream = SHM(fli_stream_path)
+        fli_stream = SHM(fli_stream_name)
 
     ##### General configuration
 
@@ -311,7 +310,7 @@ def run():
         fli_window.show()
 
         fli_viewbox_full = fli_window.addViewBox(row=0, col=0, invertY=True,
-                                                enableMouse=True)
+                                                 enableMouse=True)
         fli_viewbox_full.setAspectLocked(True)
         fli_imageitem_full = pg.ImageItem()
         fli_viewbox_full.addItem(fli_imageitem_full)
@@ -324,8 +323,8 @@ def run():
         roi_circle = pg.CircleROI([
                 fli_x_pos - fli_circle_radius, fli_y_pos - fli_circle_radius
         ], [2 * fli_circle_radius, 2 * fli_circle_radius],
-                                pen=pg.mkPen(BLUE, width=2), movable=False,
-                                rotatable=False, resizable=False)
+                                  pen=pg.mkPen(BLUE, width=2), movable=False,
+                                  rotatable=False, resizable=False)
         fli_viewbox_full.addItem(roi_circle)
         roi_circle.removeHandle(0)  # Must be done after AddItem
 
@@ -387,11 +386,11 @@ def run():
     while loop:
         # Do not poke actuators
         for act in dm_actuators_poke:
-            dm_array[get_actuator_2d(act)] = 0
+            dm_array[toolbox.get_actuator_2d(act)] = 0
 
         dm_stream.set_data(dm_array, True)
         time.sleep(dm_wait_after_poke)
-        frame[FLAT], subapertures[FLAT] = get_roi_and_subapertures(
+        frame[FLAT], subapertures[FLAT] = toolbox.get_roi_and_subapertures(
                 nuvu_stream.get_data(check=True))
 
         if fli_exists:
@@ -399,20 +398,20 @@ def run():
 
         # Poke actuators down
         for act in dm_actuators_poke:
-            dm_array[get_actuator_2d(act)] = -dm_actuators_amplitude
+            dm_array[toolbox.get_actuator_2d(act)] = -dm_actuators_amplitude
 
         dm_stream.set_data(dm_array, True)
         time.sleep(dm_wait_after_poke)
-        frame[DOWN], subapertures[DOWN] = get_roi_and_subapertures(
+        frame[DOWN], subapertures[DOWN] = toolbox.get_roi_and_subapertures(
                 nuvu_stream.get_data(check=True))
 
         # Poke actuators up
         for act in dm_actuators_poke:
-            dm_array[get_actuator_2d(act)] = dm_actuators_amplitude
+            dm_array[toolbox.get_actuator_2d(act)] = dm_actuators_amplitude
 
         dm_stream.set_data(dm_array, True)
         time.sleep(dm_wait_after_poke)
-        frame[UP], subapertures[UP] = get_roi_and_subapertures(
+        frame[UP], subapertures[UP] = toolbox.get_roi_and_subapertures(
                 nuvu_stream.get_data(check=True))
 
         # Pupil window
@@ -504,7 +503,7 @@ def run():
         pg.QtWidgets.QApplication.processEvents()
 
     # Clear DM before exiting
-    zero_stream("dm01disp09")
+    toolbox.zero_stream("dm01disp09")
 
     return 0
 

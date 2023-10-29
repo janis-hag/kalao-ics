@@ -17,7 +17,7 @@ import libtmux
 from pyMilk.interfacing.isio_shmlib import SHM
 
 from kalao.utils import database
-from kalao.cacao import fake_data, aocontrol, toolbox
+from kalao.cacao import fake_data, toolbox
 
 import traceback
 
@@ -36,12 +36,12 @@ def _get_stream(name, min_value_th, max_value_th, shm_stream=None):
     :return: Dictionary with: data, width, height, min, max, min_th, max_th
     """
 
-    exists, stream_path = aocontrol.check_stream(name)
+    exists, stream_name = toolbox.check_stream(name)
 
     if exists:
         try:
             if shm_stream is None:
-                shm_stream = SHM(stream_path)
+                shm_stream = SHM(stream_name)
 
             data = shm_stream.get_data(check=False)
 

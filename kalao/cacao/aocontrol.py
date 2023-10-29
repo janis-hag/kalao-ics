@@ -18,46 +18,17 @@ from pyMilk.interfacing import isio_shmlib
 
 from pyMilk.interfacing.isio_shmlib import SHM
 
-from kalao.cacao import telemetry, toolbox
+from kalao import ippower
+from kalao.cacao import toolbox
 from kalao.utils import database
-from kalao.fli import camera
 
 from tcs_communication import t120
 from sequencer import system
 
 from pathlib import Path
 
+from kalao_enums import IPPowerStatus
 import kalao_config as config
-
-
-def check_stream(stream_name):
-    """
-    Function verifies if stream_name exists
-
-    :param stream_name: stream to check existence
-    :return: boolean, stream_name_clean
-    """
-    # stream_path = Path(os.environ["MILK_SHM_DIR"])
-    milk_path = Path('/tmp/milk')
-    stream_name_clean = isio_shmlib.check_SHM_name(stream_name)
-    stream_path = milk_path / (stream_name_clean + '.im.shm')
-
-    return stream_path.exists(), stream_name_clean
-
-
-def check_fps(fps_name):
-    """
-    Function verifies if fps_name exists
-
-    :param fps_name: fps to check existence
-    :return: boolean, fps_name_clean
-    """
-    # fps_path = Path(os.environ["MILK_SHM_DIR"])
-    milk_path = Path('/tmp/milk')
-    fps_name_clean = isio_shmlib.check_SHM_name(fps_name)
-    fps_path = milk_path / (fps_name_clean + '.fps.shm')
-
-    return fps_path.exists(), fps_name_clean
 
 
 def close_loop():
@@ -70,25 +41,25 @@ def close_loop():
     # code not yet ready
     return 0
 
-    looprun_exists, looprun_fps_path = check_fps("mfilt-1")
+    dmloop_exists, dmloop_fps_name = toolbox.check_fps("mfilt-1")
 
     if not looprun_exists:
-        message = f'ERROR: {looprun_fps_path} is missing'
+        message = f'ERROR: {dmloop_fps_nam} is missing'
         print(message)
         database.store_obs_log({'ao_log': message})
         system.print_and_log(message)
 
         return -1
 
-    fps_mfilt1 = fps(looprun_fps_path)
+    fps_mfilt1 = fps(dmloop_fps_name)
 
     # TODO the value to be set is not a float! this line will fail it need to be changed to string
     fps_mfilt1.set_param_value_float('loopON', 'ON')
 
-    ttmloop_exists, ttmloop_fps_path = check_fps("mfilt-2")
+    ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
 
     if not ttmloop_exists:
-        message = f'ERROR: {ttmloop_fps_path} is missing'
+        message = f'ERROR: {ttmloop_fps_name} is missing'
         print(message)
         database.store_obs_log({'ao_log': message})
         system.print_and_log(message)
@@ -165,12 +136,12 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
     :param stream_name:
     :return:
     """
-    stream_exists, stream_path = check_stream(stream_name)
+    stream_exists, stream_name = toolbox.check_stream(stream_name)
 
     mode = int(np.floort(mode))
 
     if stream_exists:
-        mgainfact_shm = SHM(stream_path)
+        mgainfact_shm = SHM(stream_name)
         mgainfact_array = mgainfact_shm.get_data(check=False)
 
         mgainfact_array[mode] = factor
@@ -267,10 +238,10 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
     elif last_mode is None:
         last_mode = cut_off
 
-    stream_exists, stream_path = check_stream(stream_name)
+    stream_exists, stream_name = toolbox.check_stream(stream_name)
 
     if stream_exists:
-        mgainfact_shm = SHM(stream_path)
+        mgainfact_shm = SHM(stream_name)
         mgainfact_array = mgainfact_shm.get_data(check=False)
 
         if not keep_existing_flat:
@@ -312,12 +283,12 @@ def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False):
 
     stream_name = "dm02disp"
 
-    stream_exists, stream_path = check_stream(stream_name)
+    stream_exists, stream_name = toolbox.check_stream(stream_name)
 
     if not stream_exists:
         return -1
 
-    stream_shm = SHM(stream_path)
+    stream_shm = SHM(stream_name)
 
     stream_data = stream_shm.get_data(check=False)
 
@@ -354,16 +325,16 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
     :return:
     """
 
-    stream_exists, stream_path = check_stream(stream_name)
+    stream_exists, stream_name = toolbox.check_stream(stream_name)
 
     if not stream_exists:
-        message = f'ERROR: {stream_path} is missing'
+        message = f'ERROR: {stream_name} is missing'
         print(message)
         database.store_obs_log({'ttm_log': message})
 
         return -1
 
-    stream_shm = SHM(stream_path)
+    stream_shm = SHM(stream_name)
 
     stream_data = stream_shm.get_data(check=False)
 
@@ -412,6 +383,36 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
     return 0
 
 
+def turn_dm_on(fps_list = {}):
+    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
+
+    ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
+
+    time.sleep(config.Watchdog.dm_wait_betweeen_actions)
+
+    if bmc_display_fps is not None:
+        bmc_display_fps.RUNstop()
+
+    time.sleep(config.Watchdog.dm_wait_betweeen_actions)
+
+    reset_dm(config.AO.DM_loop_number)
+
+
+def turn_dm_off(fps_list = {}):
+    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
+
+    reset_dm(config.AO.DM_loop_number)
+
+    time.sleep(config.Watchdog.dm_wait_betweeen_actions)
+
+    if bmc_display_fps is not None:
+        bmc_display_fps.RUNstop()
+
+    time.sleep(config.Watchdog.dm_wait_betweeen_actions)
+
+    ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
+
+
 def reset_dm(dm_number):
     ret = 0
 
@@ -442,25 +443,25 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
     tip_centered = False
     tilt_centered = False
 
-    dm_stream_exists, dm_stream_path = check_stream('dm02disp04')
-    slopes_fps_exists, slopes_fps_path = check_fps('shwfs_process-1')
+    dm_stream_exists, dm_stream_name = toolbox.check_stream('dm02disp04')
+    slopes_fps_exists, slopes_fps_name = toolbox.check_fps('shwfs_process-1')
 
     if not dm_stream_exists:
-        message = f'ERROR: {dm_stream_path} is missing'
+        message = f'ERROR: {dm_stream_name} is missing'
         print(message)
         database.store_obs_log({'ttm_log': message})
 
         return -1
 
     if not slopes_fps_exists:
-        message = f'ERROR: {slopes_fps_path} is missing'
+        message = f'ERROR: {slopes_fps_name} is missing'
         print(message)
         database.store_obs_log({'ttm_log': message})
 
         return -1
 
-    dm_stream_shm = SHM(dm_stream_path)
-    slopes_fps_shm = fps(slopes_fps_path)
+    dm_stream_shm = SHM(dm_stream_name)
+    slopes_fps_shm = fps(slopes_fps_name)
 
     # TODO verify that shwfs enough illuminated for centering
 
@@ -520,9 +521,9 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
 
 
 def dm_poke_sequence(timestep=0.1, stream_name="dm01disp09"):
-    stream_exists, stream_path = check_stream(stream_name)
+    stream_exists, stream_name = toolbox.check_stream(stream_name)
 
-    dmdisp = SHM(stream_path)
+    dmdisp = SHM(stream_name)
 
     # initial_shape = dmdisp.get_data(check=False)
     dm_array = np.zeros(dmdisp.shape, dmdisp.nptype)
@@ -744,17 +745,17 @@ def dm_flat_poke(timestep=0.1):
 
 def _set_fps_floatvalue(fps_name, key, value):
     # TODO implement
-    fps_exists, fps_path = check_fps(fps_name)
+    fps_exists, fps_name = toolbox.check_fps(fps_name)
 
     if not fps_exists:
-        message = f'ERROR: {fps_path} is missing'
+        message = f'ERROR: {fps_name} is missing'
         print(message)
         database.store_obs_log({'ao_log': message})
         system.print_and_log(message)
 
         return -1
 
-    fps_handle = fps(fps_path)
+    fps_handle = fps(fps_name)
 
     fps_handle.set_param_value_float(key, str(value))
 
@@ -763,17 +764,17 @@ def _set_fps_floatvalue(fps_name, key, value):
 
 def _set_fps_intvalue(fps_name, key, value):
     # TODO implement
-    fps_exists, fps_path = check_fps(fps_name)
+    fps_exists, fps_name = toolbox.check_fps(fps_name)
 
     if not fps_exists:
-        message = f'ERROR: {fps_path} is missing'
+        message = f'ERROR: {fps_name} is missing'
         print(message)
         database.store_obs_log({'ao_log': message})
         system.print_and_log(message)
 
         return -1
 
-    fps_handle = fps(fps_path)
+    fps_handle = fps(fps_name)
 
     rValue = fps_handle.set_param_value_int(key, str(value))
 

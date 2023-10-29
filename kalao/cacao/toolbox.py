@@ -9,8 +9,8 @@ from pathlib import Path
 import numpy as np
 from astropy.nddata.blocks import block_reduce
 
-import subprocess
-from subprocess import PIPE, STDOUT
+#import subprocess
+#from subprocess import PIPE, STDOUT
 
 from pyMilk.interfacing import isio_shmlib
 from pyMilk.interfacing.isio_shmlib import SHM
@@ -221,10 +221,10 @@ def open_fps_once(fps_name, fps_list):
 
 
 def zero_stream(stream_name):
-    stream_exists, stream_path = check_stream(stream_name)
+    stream_exists, stream_name = check_stream(stream_name)
 
     if stream_exists:
-        stream_shm = SHM(stream_path)
+        stream_shm = SHM(stream_name)
         pattern = np.zeros(stream_shm.shape, stream_shm.nptype)
         stream_shm.set_data(pattern)
 
@@ -245,10 +245,10 @@ def zero_stream(stream_name):
 
 
 def save_stream_to_fits(stream_name, fits_file):
-    stream_exists, stream_path = check_stream(stream_name)
+    stream_exists, stream_name = check_stream(stream_name)
 
     if stream_exists:
-        stream_shm = SHM(stream_path)
+        stream_shm = SHM(stream_name)
         stream_shm.save_as_fits(fits_file)
 
         return 0

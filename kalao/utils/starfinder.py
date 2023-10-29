@@ -27,7 +27,7 @@ from pyMilk.interfacing.isio_shmlib import SHM
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
 from kalao.utils import database, file_handling, kalao_time
-from kalao.cacao import telemetry, aocontrol, toolbox
+from kalao.cacao import aocontrol, toolbox
 from kalao.interface import status
 from tcs_communication import t120
 from sequencer import system
@@ -273,11 +273,11 @@ def send_pixel_offset(x, y):
 def check_wfs_flux():
     # TODO add docstring
 
-    slopes_flux_stream_exists, slopes_flux_stream_path = aocontrol.check_stream(
+    slopes_flux_stream_exists, slopes_flux_stream_name = toolbox.check_stream(
             'shwfs_slopes_flux')
 
     if slopes_flux_stream_exists:
-        slopes_flux_stream = SHM(slopes_flux_stream_path)
+        slopes_flux_stream = SHM(slopes_flux_stream_name)
         slopes_flux = slopes_flux_stream.get_data(check=False)
 
         illuminated_fraction = toolbox.wfs_illumination_fraction(

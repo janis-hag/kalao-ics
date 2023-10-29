@@ -25,36 +25,6 @@ import kalao_config as config
 fps_list = {}
 
 
-def turn_dm_on():
-    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
-
-    ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
-
-    sleep(config.Watchdog.dm_wait_betweeen_actions)
-
-    if bmc_display_fps is not None:
-        bmc_display_fps.RUNstop()
-
-    sleep(config.Watchdog.dm_wait_betweeen_actions)
-
-    aocontrol.reset_dm(config.AO.DM_loop_number)
-
-
-def turn_dm_off():
-    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
-
-    aocontrol.reset_dm(config.AO.DM_loop_number)
-
-    sleep(config.Watchdog.dm_wait_betweeen_actions)
-
-    if bmc_display_fps is not None:
-        bmc_display_fps.RUNstop()
-
-    sleep(config.Watchdog.dm_wait_betweeen_actions)
-
-    ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
-
-
 def _get_elapsed_time_since_activity():
     latest_obs_entry_time = database.get_latest_record('obs_log')['time_utc']
 
@@ -102,7 +72,7 @@ def _check_dm_inactive(inactivity_time):
             message = 'Turning off DM due to inactivity timeout'
             system.print_and_log(message)
 
-            turn_dm_off()
+            aocontrol.turn_dm_off(fps_list)
 
     return 0
 
