@@ -20,8 +20,7 @@ import pandas as pd
 
 from scipy import optimize
 
-from kalao.cacao.aocontrol import check_stream, reset_dm
-from kalao.cacao.toolbox import save_stream_to_fits, zero_stream
+from kalao.cacao import aocontrol, toolbox
 from kalao.utils import kalao_time, zernike
 from kalao.plc import laser, filterwheel
 from kalao.fli import camera
@@ -38,23 +37,13 @@ COEFF = 1
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
-    ret = zero_stream(r"dm01disp08")
+    ret = toolbox.zero_stream(r"dm01disp08")
 
     if ret == 0:
         print('Resetted DM pattern')
 
     exit(0)
 
-
-def generate_pattern(zernike_coeffs, R, Theta):
-
-    pattern = np.zeros(R.shape)
-
-    for i, coeff in enumerate(zernike_coeffs):
-        n, m = zernike.Zernike.standard_inverse(i + 3)
-        pattern += coeff * zernike.Zernike.Z(n, m, R, Theta)
-
-    return pattern
 
 # yapf: disable
 def gaussian_2d_rotated(x, y, mu_x = 0, mu_y = 0, sigma_x = 1, sigma_y = 1, theta = 0, A = None, C = 0):
@@ -68,8 +57,9 @@ def gaussian_2d_rotated(x, y, mu_x = 0, mu_y = 0, sigma_x = 1, sigma_y = 1, thet
     return A * np.exp(-(a*(x - mu_x)**2 + 2*b*(x - mu_x)*(y - mu_y) + c*(y - mu_y)**2)) + C
 # yapf: enable
 
-def take_and_measure(update_stream=False):
-    peak_hw = (args.peak_window-1) // 2
+
+def take_and_measure(args, update_stream=False):
+    peak_hw = (args.peak_window - 1) // 2
 
     max = 0
     x, y = np.mgrid[0:args.peak_window, 0:args.peak_window]
@@ -80,8 +70,8 @@ def take_and_measure(update_stream=False):
 
         peak_pos = np.unravel_index(np.argmax(img, axis=None), img.shape)
 
-        img_peak = img[peak_pos[0] - peak_hw:peak_pos[0] + peak_hw + 1, peak_pos[1] -
-                       peak_hw:peak_pos[1] + peak_hw + 1]
+        img_peak = img[peak_pos[0] - peak_hw:peak_pos[0] + peak_hw + 1,
+                       peak_pos[1] - peak_hw:peak_pos[1] + peak_hw + 1]
 
         p0 = (peak_hw, peak_hw, 2, 2, 0, img_peak[peak_hw, peak_hw])
         errorfunction = lambda p: np.ravel(
@@ -95,45 +85,33 @@ def take_and_measure(update_stream=False):
     return max / args.img_avg
 
 
-def display_and_measure(dm_stream, zernike_coeffs, R, Theta, args,
-                     update_stream=False):
-    dm_stream.set_data(generate_pattern(zernike_coeffs, R, Theta), True)
+def display_and_measure(dm_stream, zernike_coeffs, args, update_stream=False):
+    pattern = zernike.generate_pattern(zernike_coeffs, dm_stream.shape)
+    dm_stream.set_data(pattern, True)
     sleep(0.1)
 
-    return take_and_measure(update_stream)
-
+    return take_and_measure(args, update_stream)
 
 
 def run(args):
-    dit = args.dit
-    orders_to_correct = args.orders_to_correct
-    steps = args.steps
-    iterations = args.iterations
-    max_flux = args.max_flux
-    min_flux = args.min_flux
-    max_dit = args.max_dit
-    min_incr = args.min_incr
-
-    new_dit = dit
-
-    reset_dm(1)
+    aocontrol.reset_dm(config.AO.DM_loop_number)
 
     # Search optimal dit
     while True:
         peak = take_and_measure()
 
-        print(new_dit, peak)
-        if peak >= max_flux:
-            new_dit = 0.8 * new_dit
-            if new_dit <= 1e-3:
-                print(f'Max flux {img.max()} above max permitted value {max_flux}'
+        print(args.dit, peak)
+        if peak >= args.max_flux:
+            args.dit = 0.8 * args.dit
+            if args.dit <= 1e-3:
+                print(f'Max flux {peak} above max permitted value {args.max_flux}'
                       )
                 sys.exit(1)
             continue
-        elif peak <= min_flux:
-            new_dit = 1.2 * new_dit
-            if new_dit >= max_dit:
-                print(f'Max flux {img.max()} below minimum permitted value {min_flux}'
+        elif peak <= args.min_flux:
+            args.dit = 1.2 * args.dit
+            if args.dit >= args.max_dit:
+                print(f'Max flux {peak} below minimum permitted value {args.min_flux}'
                       )
                 sys.exit(1)
             continue
@@ -143,32 +121,26 @@ def run(args):
     print(f'Setting DIT to {args.dit}')
 
     # Open DM stream
-    dm_stream_exists, dm_stream_path = check_stream("dm01disp08")
+    dm_stream_exists, dm_stream_name = toolbox.check_stream("dm01disp08")
     if not dm_stream_exists:
-        print(f'{dm_stream_path} stream missing')
+        print(f'{dm_stream_name} stream missing')
         exit()
 
-    dm_stream = SHM(dm_stream_path)
-
-    x = np.linspace(-1, 1, dm_stream.shape[0])
-    y = np.linspace(-1, 1, dm_stream.shape[1])
-
-    X, Y = np.meshgrid(x, y)
-    R = np.sqrt(X**2 + Y**2)
-    Theta = np.arctan2(Y, X)
+    dm_stream = SHM(dm_stream_name)
 
     zernike_coeffs = np.zeros(args.orders_to_correct)
-    print(f'Correcting {args.orders_to_correct} orders with {args.orders_to_skip} first orders skipped')
+    print(f'Correcting {args.orders_to_correct} orders with {args.orders_to_skip} first orders skipped'
+          )
 
     df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step'] +
                       np.arange(len(zernike_coeffs)).tolist())
 
-    for i in range(iterations):
+    for i in range(args.iterations):
         print('=========================================')
-        print(f'Iteration {i + 1}/{iterations}')
+        print(f'Iteration {i + 1}/{args.iterations}')
 
         for order in range(args.orders_to_skip, args.orders_to_correct):
-            print(f'Iteration {i + 1}/{iterations}   Optimising order {order}'
+            print(f'Iteration {i + 1}/{args.iterations}   Optimising order {order}'
                   )
 
             step = 0
@@ -179,14 +151,14 @@ def run(args):
             zernike_coeffs[order] = 0
 
             peak_array[1][PEAK_VALUE] = display_and_measure(
-                    dm_stream, zernike_coeffs, R, Theta, args)
+                    dm_stream, zernike_coeffs, args)
             peak_array[1][COEFF] = zernike_coeffs[order]
 
             print(f'Step START     Increment       None     Zernike amplitude {peak_array[1][COEFF]: 11.8f}     Max flux: {peak_array[1][PEAK_VALUE]:.0f}'
                   )
             print(zernike_coeffs)
 
-            while step < steps and zernike_coeff_incr > min_incr:
+            while step < args.steps and zernike_coeff_incr > args.min_incr:
                 up = zernike_coeffs[order] + zernike_coeff_incr
                 down = zernike_coeffs[order] - zernike_coeff_incr
 
@@ -194,14 +166,14 @@ def run(args):
                 zernike_coeffs[order] = up
 
                 peak_array[2][PEAK_VALUE] = display_and_measure(
-                        dm_stream, zernike_coeffs, R, Theta, args)
+                        dm_stream, zernike_coeffs, args)
                 peak_array[2][COEFF] = up
 
                 # Test down
                 zernike_coeffs[order] = down
 
                 peak_array[0][PEAK_VALUE] = display_and_measure(
-                        dm_stream, zernike_coeffs, R, Theta, args)
+                        dm_stream, zernike_coeffs, args)
                 peak_array[0][COEFF] = down
 
                 # Get zernike value of max flux
@@ -226,8 +198,7 @@ def run(args):
                 zernike_coeff_incr = zernike_coeff_incr / 2
 
             peak_array[1][PEAK_VALUE] = display_and_measure(
-                    dm_stream, zernike_coeffs, R, Theta, args,
-                    update_stream=True)
+                    dm_stream, zernike_coeffs, args, update_stream=True)
             peak_array[1][COEFF] = zernike_coeffs[order]
             print(f'Step RESUL     Increment       None     Zernike amplitude {peak_array[1][COEFF]: 11.8f}     Max flux: {peak_array[1][PEAK_VALUE]:.0f}'
                   )
@@ -241,14 +212,15 @@ def run(args):
     #print(max_row)
     #zernike_coeffs = max_row[-len(zernike_coeffs):].to_numpy()
 
-    peak = display_and_measure(dm_stream, zernike_coeffs, R, Theta, args,
-                            update_stream=True)
+    peak = display_and_measure(dm_stream, zernike_coeffs, args,
+                               update_stream=True)
     print(f'Final peak value: {peak}')
     print(f'Final coefficients: {zernike_coeffs}')
 
     # TODO update zp0 stream
-    save_stream_to_fits('dm01disp', 'dmflat_ncpa_time_name.fits')
-    save_stream_to_fits('shwfs_slopes', 'slopes_ncpa_time_name.fits')
+    toolbox.save_stream_to_fits('dm01disp', f'ncpa_dm_{time_name}.fits')
+    toolbox.save_stream_to_fits('shwfs_slopes',
+                                f'ncpa_slopes_{time_name}.fits')
 
 
 if __name__ == '__main__':
@@ -261,14 +233,14 @@ if __name__ == '__main__':
                         default=10, type=int,
                         help='Numbers of orders to correct')
     parser.add_argument('-s', action="store", dest="orders_to_skip",
-                        default=10, type=int,
-                        help='Numbers of orders to skip')
+                        default=10, type=int, help='Numbers of orders to skip')
     parser.add_argument('-s', action="store", dest="steps", default=25,
                         type=int, help='Number of steps')
     parser.add_argument('-i', action="store", dest="iterations", default=10,
                         type=int, help='Number of iterations')
-    parser.add_argument('-max_flux', action="store", dest="max_flux", default=2**15,
-                        type=float, help='Maximum flux to have on the FLI')
+    parser.add_argument('-max_flux', action="store", dest="max_flux",
+                        default=2**15, type=float,
+                        help='Maximum flux to have on the FLI')
     parser.add_argument('-min_flux', action="store", dest="min_flux",
                         default=2**11, type=int,
                         help='Minimum flux to have on the FLI')
@@ -279,11 +251,6 @@ if __name__ == '__main__':
     parser.add_argument('-min_incr', action="store", dest="min_incr",
                         default=0.0001, type=float,
                         help='Minimum increment for convergence')
-    parser.add_argument('-c', action="store", dest="center",
-                        default=[512, 512], nargs='+', type=int,
-                        help='x y position of the window center')
-    parser.add_argument('-w', action="store", dest="window", default=100,
-                        type=int, help='Size of the window to cut out')
     parser.add_argument('-l', action="store", dest="laser_int",
                         default=config.Laser.calib_intensity, type=float,
                         help='Laser intensity')
