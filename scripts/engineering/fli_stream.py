@@ -53,23 +53,17 @@ def run():
         print('Connecting to camera directly')
 
         cam = FLI.USBCamera.find_devices()[0]
-        # print(dict(cam.get_info()))
-        # print('Temperature: ' + str(cam.get_temperature()))
         cam.set_temperature(-30)
 
         while True:
             cam.set_exposure(int(dit * 1000))
             img = cam.take_photo()
-            #img = camera.cut_image(img, window, center)
             fli_stream.set_data(img, True)
-            sleep(0.00001)
-    elif camera_service_status == CameraServerStatus.OK:
+    elif camera_service_status == CameraServerStatus.UP:
         print('Connecting to camera through REST API')
 
         while True:
-            img, _ = camera.take_frame(dit, do_not_log=True)
-            #img = camera.cut_image(img, window, center)
-            sleep(0.00001)
+            camera.take_frame(dit, do_not_log=True)
     else:
         print('Error connecting to camera. Please try to stop or restart the kalao_camera service')
 

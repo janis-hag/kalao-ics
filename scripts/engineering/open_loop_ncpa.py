@@ -157,8 +157,8 @@ def run(args):
     R = np.sqrt(X**2 + Y**2)
     Theta = np.arctan2(Y, X)
 
-    zernike_coeffs = np.zeros(orders_to_correct)
-    print(f'Correcting {orders_to_correct} orders')
+    zernike_coeffs = np.zeros(args.orders_to_correct)
+    print(f'Correcting {args.orders_to_correct} orders with {args.orders_to_skip} first orders skipped')
 
     df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step'] +
                       np.arange(len(zernike_coeffs)).tolist())
@@ -167,8 +167,8 @@ def run(args):
         print('=========================================')
         print(f'Iteration {i + 1}/{iterations}')
 
-        for order in range(0, orders_to_correct):
-            print(f'Iteration {i + 1}/{iterations}   Optimising order {order + 3}'
+        for order in range(args.orders_to_skip, args.orders_to_correct):
+            print(f'Iteration {i + 1}/{iterations}   Optimising order {order}'
                   )
 
             step = 0
@@ -260,6 +260,9 @@ if __name__ == '__main__':
     parser.add_argument('-o', action="store", dest="orders_to_correct",
                         default=10, type=int,
                         help='Numbers of orders to correct')
+    parser.add_argument('-s', action="store", dest="orders_to_skip",
+                        default=10, type=int,
+                        help='Numbers of orders to skip')
     parser.add_argument('-s', action="store", dest="steps", default=25,
                         type=int, help='Number of steps')
     parser.add_argument('-i', action="store", dest="iterations", default=10,
@@ -291,7 +294,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if camera.check_server_status() != CameraServerStatus.OK:
+    if camera.check_server_status() != CameraServerStatus.UP:
         print('Error connecting to camera. Please try to restart the kalao_camera service'
               )
         exit(-1)
