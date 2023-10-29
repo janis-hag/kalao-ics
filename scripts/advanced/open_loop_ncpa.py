@@ -20,7 +20,7 @@ import pandas as pd
 
 from scipy import optimize
 
-from kalao.cacao.aocontrol import check_stream
+from kalao.cacao.aocontrol import check_stream, reset_dm
 from kalao.cacao.toolbox import save_stream_to_fits, zero_stream
 from kalao.utils import kalao_time, zernike
 from kalao.plc import laser, filterwheel
@@ -65,39 +65,43 @@ def gaussian_2d_rotated(x, y, mu_x = 0, mu_y = 0, sigma_x = 1, sigma_y = 1, thet
     b = -np.sin(2*theta)/(4 * sigma_x**2) + np.sin(2*theta)/(4 * sigma_y**2)
     c = np.sin(theta)**2/(2 * sigma_x**2) + np.cos(theta)**2/(2 * sigma_y**2)
 
-    return A * np.exp(-(a*(x - mu_x)**2 + 2*b*(x - mu_x)(y - mu_y) + c*(y - mu_y)**2)) + C
+    return A * np.exp(-(a*(x - mu_x)**2 + 2*b*(x - mu_x)*(y - mu_y) + c*(y - mu_y)**2)) + C
 # yapf: enable
 
-def take_measurement(dm_stream, zernike_coeffs, R, Theta, args,
-                     update_stream=False):
+def take_and_measure(update_stream=False):
     peak_hw = (args.peak_window-1) // 2
 
     max = 0
     x, y = np.mgrid[0:args.peak_window, 0:args.peak_window]
 
-    dm_stream.set_data(generate_pattern(zernike_coeffs, R, Theta), True)
-    sleep(0.1)
-
     for i in range(args.img_avg):
         img, _ = camera.take_frame(args.dit, do_not_log=True,
                                    update_stream=update_stream)
-        img = camera.cut_image(img, args.window, args.center)
 
         peak_pos = np.unravel_index(np.argmax(img, axis=None), img.shape)
 
-        img_peak = img[peak_pos[0] - peak_hw:peak_pos[0] + peak_hw, :peak_pos[1] -
-                       peak_hw:peak_pos[1] + peak_hw]
+        img_peak = img[peak_pos[0] - peak_hw:peak_pos[0] + peak_hw + 1, peak_pos[1] -
+                       peak_hw:peak_pos[1] + peak_hw + 1]
 
         p0 = (peak_hw, peak_hw, 2, 2, 0, img_peak[peak_hw, peak_hw])
         errorfunction = lambda p: np.ravel(
                 gaussian_2d_rotated(x, y, *p) - img_peak)
         p, success = optimize.leastsq(errorfunction, p0)
 
-        print(f'mu_x: {p[0]}, mu_y: {p[1]}, sigma_x: {p[2]}, sigma_y: {p[3]}, theta: {p[4]}, A: {p[5]}, peak: {img_peak[peak_hw,peak_hw]}'
-              )
+        #print(f'mu_x: {p[0]}, mu_y: {p[1]}, sigma_x: {p[2]}, sigma_y: {p[3]}, theta: {p[4]}, A: {p[5]}, peak: {img_peak[peak_hw,peak_hw]}'
+        #      )
         max += p[5]
 
     return max / args.img_avg
+
+
+def display_and_measure(dm_stream, zernike_coeffs, R, Theta, args,
+                     update_stream=False):
+    dm_stream.set_data(generate_pattern(zernike_coeffs, R, Theta), True)
+    sleep(0.1)
+
+    return take_and_measure(update_stream)
+
 
 
 def run(args):
@@ -112,20 +116,21 @@ def run(args):
 
     new_dit = dit
 
+    reset_dm(1)
+
     # Search optimal dit
     while True:
-        img, _ = camera.take_frame(dit, do_not_log=True)
-        img = camera.cut_image(img, args.window, args.center)
+        peak = take_and_measure()
 
-        print(new_dit, img.max())
-        if img.max() >= max_flux:
+        print(new_dit, peak)
+        if peak >= max_flux:
             new_dit = 0.8 * new_dit
             if new_dit <= 1e-3:
                 print(f'Max flux {img.max()} above max permitted value {max_flux}'
                       )
                 sys.exit(1)
             continue
-        elif img.max() <= min_flux:
+        elif peak <= min_flux:
             new_dit = 1.2 * new_dit
             if new_dit >= max_dit:
                 print(f'Max flux {img.max()} below minimum permitted value {min_flux}'
@@ -135,10 +140,7 @@ def run(args):
         else:
             break
 
-    dit = args.dit = new_dit
     print(f'Setting DIT to {args.dit}')
-    img, _ = camera.take_frame(dit, do_not_log=True)
-    img = camera.cut_image(img, args.window, args.center)
 
     # Open DM stream
     dm_stream_exists, dm_stream_path = check_stream("dm01disp08")
@@ -176,7 +178,7 @@ def run(args):
             # Reset value to zero before starting search
             zernike_coeffs[order] = 0
 
-            peak_array[1][PEAK_VALUE] = take_measurement(
+            peak_array[1][PEAK_VALUE] = display_and_measure(
                     dm_stream, zernike_coeffs, R, Theta, args)
             peak_array[1][COEFF] = zernike_coeffs[order]
 
@@ -191,14 +193,14 @@ def run(args):
                 # Test up
                 zernike_coeffs[order] = up
 
-                peak_array[2][PEAK_VALUE] = take_measurement(
+                peak_array[2][PEAK_VALUE] = display_and_measure(
                         dm_stream, zernike_coeffs, R, Theta, args)
                 peak_array[2][COEFF] = up
 
                 # Test down
                 zernike_coeffs[order] = down
 
-                peak_array[0][PEAK_VALUE] = take_measurement(
+                peak_array[0][PEAK_VALUE] = display_and_measure(
                         dm_stream, zernike_coeffs, R, Theta, args)
                 peak_array[0][COEFF] = down
 
@@ -223,7 +225,7 @@ def run(args):
                 step += 1
                 zernike_coeff_incr = zernike_coeff_incr / 2
 
-            peak_array[1][PEAK_VALUE] = take_measurement(
+            peak_array[1][PEAK_VALUE] = display_and_measure(
                     dm_stream, zernike_coeffs, R, Theta, args,
                     update_stream=True)
             peak_array[1][COEFF] = zernike_coeffs[order]
@@ -239,7 +241,7 @@ def run(args):
     #print(max_row)
     #zernike_coeffs = max_row[-len(zernike_coeffs):].to_numpy()
 
-    peak = take_measurement(dm_stream, zernike_coeffs, R, Theta, args,
+    peak = display_and_measure(dm_stream, zernike_coeffs, R, Theta, args,
                             update_stream=True)
     print(f'Final peak value: {peak}')
     print(f'Final coefficients: {zernike_coeffs}')
@@ -277,7 +279,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', action="store", dest="center",
                         default=[512, 512], nargs='+', type=int,
                         help='x y position of the window center')
-    parser.add_argument('-w', action="store", dest="window_size", default=100,
+    parser.add_argument('-w', action="store", dest="window", default=100,
                         type=int, help='Size of the window to cut out')
     parser.add_argument('-l', action="store", dest="laser_int",
                         default=config.Laser.calib_intensity, type=float,
