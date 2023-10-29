@@ -58,6 +58,27 @@ ao_log:
   short: AO system log
   long: AO system log
   unit: text
+psf_file:
+  short: PSF file
+  long: File used for PSF fitting
+  unit: text
+psf_x:
+  short: PSF x center
+  long: PSF fitted x center
+  unit: pixels
+psf_y:
+  short: PSF y center
+  long: PSF fitted y center
+  unit: pixels
+psf_peak:
+  short: PSF peak
+  long: PSF peak
+  unit: pixels
+psf_fwhm:
+  short: PSF FWHM
+  long: PSF fitted FWHM
+  unit: pixels
+
 
 # PI Tip/Tilt
 ttm_log:

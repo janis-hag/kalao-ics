@@ -18,6 +18,7 @@ from astropy import wcs
 from astropy import units as u
 from astropy.stats import sigma_clipped_stats
 from astropy.io import fits
+from astropy.modeling import models, fitting
 
 from photutils.detection import DAOStarFinder
 
@@ -70,7 +71,7 @@ def centre_on_target(kao='NO_AO', dit=config.FLI.exp_time):
             system.print_and_log(f'ERROR no image received. {rValue}')
             return -1
 
-        x, y, peak = find_star(image_path)
+        x, y, peak, fwhm = find_star(image_path)
 
         if x != -1 and y != -1:
 
@@ -81,7 +82,7 @@ def centre_on_target(kao='NO_AO', dit=config.FLI.exp_time):
                 system.print_and_log(f'ERROR no image received. {rValue}')
                 return -1
 
-            x, y, peak = find_star(image_path)
+            x, y, peak, fwhm = find_star(image_path)
 
             if x != -1 and y != -1:
                 # Fine centering with TTM
@@ -315,6 +316,7 @@ def find_star(image_path, df_output=False):
         x_star = -1
         y_star = -1
         peak = -1
+        fwhm = -1
 
     else:
         print(sources)
@@ -322,11 +324,22 @@ def find_star(image_path, df_output=False):
         y_star = sources[0]['ycentroid']
         peak = sources[0]['peak']
 
+        fwhm = compute_fwhm(image, x_star, y_star)
+        print(f'{fwhm=}')
+
+        database.store_obs_log({
+                'psf_file': image_path.split('/')[-1],
+                'psf_x': x_star,
+                'psf_y': y_star,
+                'psf_peak': peak,
+                'psf_fwhm': fwhm
+        })
+
     if df_output:
         return sources.to_pandas()
 
     else:
-        return x_star, y_star, peak
+        return x_star, y_star, peak, fwhm
 
 
 def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
@@ -728,3 +741,63 @@ def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
     return status.telescope_coord_altaz().spherical_offsets_by(
             alt_offset_arcsec * u.arcsec,
             az_offset_arcsec * u.arcsec).transform_to('icrs')
+
+
+def compute_fwhm(image, xc, yc, psf_bb=200, bg_bb=20):
+    """
+    Compute the FWHM of a PSF by calculating the diamater of the area at half maximum.
+
+    :param image: array containing the PSF
+    :param xc: x position of the PSF center
+    :param yc: y position of the PSF center
+    :param psf_bb: window size to use for the psf fwhm
+    :param bg_bb: window size to use for the corner background estimation
+    :return:
+    """
+
+    xc = int(np.round(xc))
+    yc = int(np.round(yc))
+
+    # Take the median of every corners median
+    background = np.median([
+            np.median(image[0:bg_bb, 0:bg_bb]),
+            np.median(image[0:bg_bb, -bg_bb:]),
+            np.median(image[-bg_bb:, 0:bg_bb]),
+            np.median(image[-bg_bb:, -bg_bb:])
+    ])
+
+    box = image[yc - psf_bb:yc + psf_bb, xc - psf_bb:xc + psf_bb] - background
+
+    fwhm = 2 * np.sqrt((2 * box > box.max()).sum() / np.pi)
+
+    return fwhm
+
+
+def fit_2dgaussian(image, xc, yc, bb):
+    """
+    Fits a 2d gausssian model to the PSF.
+
+    :param image: array containing the PSF
+    :param xc: x position of the PSF center
+    :param yc: y position of the PSF center
+    :param bb: window size to use
+    :return:
+    """
+
+    xc = int(np.round(xc))
+    yc = int(np.round(yc))
+
+    box = image[yc - bb:yc + bb, xc - bb:xc + bb]
+    yp, xp = box.shape
+
+    # Generate grid of same size like box to put the fit on
+    y, x, = np.mgrid[:yp, :xp]
+    # Declare what function you want to fit to your data
+    f_init = models.Gaussian2D()
+    # Declare what fitting function you want to use
+    fit_f = fitting.LevMarLSQFitter()
+
+    # Fit the model to your data (box)
+    f = fit_f(f_init, x, y, box)
+
+    return f
