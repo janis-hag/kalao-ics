@@ -55,7 +55,7 @@ def update_plc_monitoring():
 
     fli_server_status = fli.camera.check_server_status()
     values.update({'fli_status': str(fli_server_status)})
-    if fli_server_status == CameraServerStatus.OK:
+    if fli_server_status == CameraServerStatus.UP:
         fli_temperatures = fli.camera.get_temperatures()
         values.update(fli_temperatures)
 

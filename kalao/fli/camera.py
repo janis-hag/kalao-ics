@@ -244,7 +244,7 @@ def set_temperature(temperature):
 
 def _send_request(request_type, params, do_not_log=False):
 
-    if not check_server_status() == CameraServerStatus.OK:
+    if not check_server_status() == CameraServerStatus.UP:
         req = Mock(spec=Response)
 
         req.json.return_value = {}
@@ -293,7 +293,7 @@ def check_server_status():
     """
     Verify if the camera server is up and running and check if the camera can be queried.
 
-    :return: status of the camera server (OK/DOWN/ERROR)
+    :return: status of the camera server (UP/DOWN/ERROR)
     """
 
     server_status = system.camera_service('status')
@@ -310,4 +310,4 @@ def check_server_status():
     except requests.exceptions.HTTPError:
         return CameraServerStatus.ERROR
     else:
-        return CameraServerStatus.OK
+        return CameraServerStatus.UP

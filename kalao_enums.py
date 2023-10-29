@@ -33,6 +33,6 @@ class IPPowerStatus(IntEnum):
 
 
 class CameraServerStatus(StrEnum):
-    OK = 'OK'
+    UP = 'UP'
     DOWN = 'DOWN'
     ERROR = 'ERROR'
