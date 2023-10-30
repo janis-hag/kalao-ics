@@ -278,15 +278,38 @@ def check_wfs_flux():
 
     if slopes_flux_stream_exists:
         slopes_flux_stream = SHM(slopes_flux_stream_name)
-        slopes_flux = slopes_flux_stream.get_data(check=False)
 
-        illuminated_fraction = toolbox.wfs_illumination_fraction(
-                slopes_flux, config.AO.WFS_illumination_threshold,
-                config.AO.fully_illuminated_subaps)
+        for emgain in range(0, 1001, 200):
+            if emgain == 0:
+                emgain = 1
 
-        if illuminated_fraction > config.AO.WFS_illumination_fraction:
-            system.print_and_log('WFS on target')
-            return 0
+            aocontrol.set_emgain(emgain)
+
+            slopes_flux = slopes_flux_stream.get_data(check=False)
+
+            illuminated_fraction = toolbox.wfs_illumination_fraction(
+                    slopes_flux, config.AO.WFS_illumination_threshold,
+                    config.AO.fully_illuminated_subaps)
+
+            if illuminated_fraction > config.AO.WFS_illumination_fraction:
+                system.print_and_log('WFS on target')
+                return 0
+
+        # Still no detection. Set EMGain to max and increse dit
+        aocontrol.set_emgain(1000)
+
+        for dit in range(0, 16):
+            aocontrol.set_exptime(dit)
+
+            slopes_flux = slopes_flux_stream.get_data(check=False)
+
+            illuminated_fraction = toolbox.wfs_illumination_fraction(
+                    slopes_flux, config.AO.WFS_illumination_threshold,
+                    config.AO.fully_illuminated_subaps)
+
+            if illuminated_fraction > config.AO.WFS_illumination_fraction:
+                system.print_and_log('WFS on target')
+                return 0
 
     return -1
 
