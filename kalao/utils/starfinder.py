@@ -52,7 +52,7 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
     :return: 0 if centering succeded
     """
 
-    timeout_time = time.time() + config.Starfinder.centering_timeout
+    timeout_time = time.time() + config.Starfinder.centering_timeout + 3 * dit
 
     # Reset tip tilt stream to 0
     aocontrol.reset_dm(config.AO.TTM_loop_number)
