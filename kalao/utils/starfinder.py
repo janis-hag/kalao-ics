@@ -38,7 +38,7 @@ import kalao_config as config
 from kalao_enums import SequencerStatus
 
 
-def centre_on_target(kao='NO_AO', dit=config.FLI.exp_time):
+def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
     """
     Start star centering sequence:
     - Sets this filter based on filter_arg request.
@@ -91,7 +91,7 @@ def centre_on_target(kao='NO_AO', dit=config.FLI.exp_time):
 
             if kao == 'AO':
                 print(f"##### Starfinder: Normalized peak value is {peak/dit}")
-                exptime = peak/dit * config.Starfinder.FLI_to_WFS_coeff
+                exptime = peak / dit * config.Starfinder.FLI_to_WFS_coeff
                 aocontrol.set_exptime(exptime)
                 #aocontrol.set_emgain(emgain)
 
@@ -768,7 +768,11 @@ def compute_fwhm(image, xc, yc, psf_bb=200, bg_bb=20):
 
     box = image[yc - psf_bb:yc + psf_bb, xc - psf_bb:xc + psf_bb] - background
 
-    fwhm = 2 * np.sqrt((2 * box > box.max()).sum() / np.pi)
+    circle = (2 * box > box.max()).sum()
+    if circle == 0:
+        fwhm = -1
+    else:
+        fwhm = 2 * np.sqrt((2 * box > box.max()).sum() / np.pi)
 
     return fwhm
 
