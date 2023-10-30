@@ -311,6 +311,10 @@ def check_wfs_flux():
                 system.print_and_log('WFS on target')
                 return 0
 
+        # Reset values
+        aocontrol.set_emgain(1)
+        aocontrol.set_exptime(0)
+
     return -1
 
 
