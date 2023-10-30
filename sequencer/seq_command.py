@@ -430,6 +430,11 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
+    if aocontrol.turn_dm_on() != 0:
+        system.print_and_log("Error: failed to power on DM driver")
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
     if core.lamps_off() != 0:
         system.print_and_log("Error: failed to turn off lamps")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})

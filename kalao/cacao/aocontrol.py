@@ -398,7 +398,7 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
     return 0
 
 
-def turn_dm_on(fps_list = {}):
+def turn_dm_on(fps_list={}):
     bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
 
     ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
@@ -412,8 +412,10 @@ def turn_dm_on(fps_list = {}):
 
     reset_dm(config.AO.DM_loop_number)
 
+    return 0
 
-def turn_dm_off(fps_list = {}):
+
+def turn_dm_off(fps_list={}):
     bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
 
     reset_dm(config.AO.DM_loop_number)
@@ -431,7 +433,7 @@ def turn_dm_off(fps_list = {}):
 def reset_dm(dm_number):
     ret = 0
 
-    for i in range(0,12):
+    for i in range(0, 12):
         stream_name = f'dm{dm_number:02d}disp{i:02d}'
         ret += toolbox.zero_stream(stream_name)
 
@@ -441,7 +443,7 @@ def reset_dm(dm_number):
 def reset_all_dms(max_dm_number=2):
     ret = 0
 
-    for i in range(1, max_dm_number+1):
+    for i in range(1, max_dm_number + 1):
         ret += reset_dm(i)
 
     return ret
