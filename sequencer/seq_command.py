@@ -470,7 +470,7 @@ def target_observation(**seq_args):
         if float(mag_v) > 9:
             acq_dit = 60
 
-        if starfinder.centre_on_target(kao=kao, dit=acq_dit) == -1:
+        if starfinder.center_on_target(kao=kao, dit=acq_dit) == -1:
             system.print_and_log("Error: problem with center on target")
             database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
@@ -492,7 +492,7 @@ def target_observation(**seq_args):
         # if centering != 'aut':
         #     if starfinder.check_wfs_flux() != 0:
         #         for i in range(5):
-        #             if starfinder.centre_on_target(kao=kao) == 0:
+        #             if starfinder.center_on_target(kao=kao) == 0:
         #                 break
         #             time.sleep(3)
         #
@@ -595,7 +595,7 @@ def focusing(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
-    # if starfinder.centre_on_target() == -1:
+    # if starfinder.center_on_target() == -1:
     #     system.print_and_log("Error: problem with centre on target")
     #     database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
     #     return -1
