@@ -287,15 +287,16 @@ def check_wfs_flux():
 
             aocontrol.set_emgain(emgain)
 
-            slopes_flux = slopes_flux_stream.get_data(check=False)
+            for i in range(10):
+                slopes_flux = slopes_flux_stream.get_data(check=False)
 
-            illuminated_fraction = toolbox.wfs_illumination_fraction(
-                    slopes_flux, config.AO.WFS_illumination_threshold,
-                    config.AO.fully_illuminated_subaps)
+                illuminated_fraction = toolbox.wfs_illumination_fraction(
+                        slopes_flux, config.AO.WFS_illumination_threshold,
+                        config.AO.fully_illuminated_subaps)
 
-            if illuminated_fraction > config.AO.WFS_illumination_fraction:
-                system.print_and_log('WFS on target')
-                return 0
+                if illuminated_fraction > config.AO.WFS_illumination_fraction:
+                    system.print_and_log('WFS on target')
+                    return 0
 
         # Still no detection. Set EMGain to max and increse dit
         aocontrol.set_emgain(1000)
@@ -303,15 +304,16 @@ def check_wfs_flux():
         for dit in range(0, 16):
             aocontrol.set_exptime(dit)
 
-            slopes_flux = slopes_flux_stream.get_data(check=False)
+            for i in range(10):
+                slopes_flux = slopes_flux_stream.get_data(check=False)
 
-            illuminated_fraction = toolbox.wfs_illumination_fraction(
-                    slopes_flux, config.AO.WFS_illumination_threshold,
-                    config.AO.fully_illuminated_subaps)
+                illuminated_fraction = toolbox.wfs_illumination_fraction(
+                        slopes_flux, config.AO.WFS_illumination_threshold,
+                        config.AO.fully_illuminated_subaps)
 
-            if illuminated_fraction > config.AO.WFS_illumination_fraction:
-                system.print_and_log('WFS on target')
-                return 0
+                if illuminated_fraction > config.AO.WFS_illumination_fraction:
+                    system.print_and_log('WFS on target')
+                    return 0
 
         # Reset values
         aocontrol.set_emgain(1)
