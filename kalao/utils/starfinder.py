@@ -279,6 +279,8 @@ def check_wfs_flux():
     if slopes_flux_stream_exists:
         slopes_flux_stream = SHM(slopes_flux_stream_name)
 
+        aocontrol.set_exptime(0)
+
         for emgain in range(0, 1001, 200):
             if emgain == 0:
                 emgain = 1
@@ -518,8 +520,6 @@ def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
     if not laser_spot and opti > estim_error:
         print("That's not enough.. Human intervention needed !")
         return -1, -1
-
-    return x_star, y_star
 
 
 def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
