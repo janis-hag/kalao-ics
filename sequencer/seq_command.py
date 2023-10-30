@@ -468,7 +468,7 @@ def target_observation(**seq_args):
     if centering == 'aut' or kao == 'AO':
         acq_dit = config.FLI.exp_time
         if float(mag_v) > 9:
-            acq_dit = 60
+            acq_dit = 20
 
         if starfinder.center_on_target(kao=kao, dit=acq_dit) == -1:
             system.print_and_log("Error: problem with center on target")
