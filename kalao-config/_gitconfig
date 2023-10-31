@@ -1,2 +1,26 @@
+[alias]
+    ci = commit
+    co = checkout
+    st = status
+    br = branch
+    ws = rebase --whitespace=fix
+    ri = rebase --interactive
+    dc = diff --cached
+    pr = pull --rebase
+    aliases = config --get-regexp alias
+    autoamend = commit --amend -CHEAD
+[color]
+    branch = auto
+    diff = auto
+    interactive = auto
+    status = auto
+    ui = true
+[core]
+    autocrlf = input
+    excludesfile = ~/.gitignore
+    whitespace = trailing-space,space-before-tab
+[push]
+    default = simple
 [user]
-	email = janis.hagelberg@unige.ch
+    name = KalAO PC
+    email = janis.hagelberg@unige.ch
