@@ -93,9 +93,9 @@ def generate_slopes(zernike_coeffs, sampling, upsampling_factor=4,
 
     pattern = generate_pattern(zernike_coeffs, sampling_up, indices_inverse)
 
-    slopes = np.hstack(
-            np.gradient(pattern, 2 / (sampling_up[0] - 1),
-                        2 / (sampling_up[1] - 1)))
+    slopes = np.gradient(pattern, 2 / (sampling_up[0] - 1),
+                         2 / (sampling_up[1] - 1))
+    slopes = np.hstack([slopes[1], slopes[0]])
 
     # Downsample
     slopes = np.mean(

@@ -77,7 +77,7 @@ def check_loop():
         loopON = fps_mfilt1.get_param_value_onoff('loopON')
 
         if loopON == 1:
-            status &= LoopStatus.DM_LOOP_ON
+            status |= LoopStatus.DM_LOOP_ON
 
     ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
 
@@ -87,7 +87,7 @@ def check_loop():
         loopON = fps_mfilt2.get_param_value_onoff('loopON')
 
         if loopON == 1:
-            status &= LoopStatus.TTM_LOOP_ON
+            status |= LoopStatus.TTM_LOOP_ON
 
     return status
 
@@ -217,8 +217,7 @@ def set_emgain(emgain=1, method='tmux'):
     else:
         message = f'ERROR: unknown {method=} in set_emgain'
         print(message)
-        database.store_obs_log({'ao_log': message})
-        system.print_and_log(message)
+        database.store_obs_log({'ao_log': message, 'obs_log': message})
 
 
 def set_exptime(exptime=0, method='tmux'):
@@ -239,8 +238,7 @@ def set_exptime(exptime=0, method='tmux'):
     else:
         message = f'ERROR: unknown {method=} in set_exptime'
         print(message)
-        database.store_obs_log({'ao_log': message})
-        system.print_and_log(message)
+        database.store_obs_log({'ao_log': message, 'obs_log': message})
 
 
 def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,

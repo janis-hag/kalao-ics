@@ -7,7 +7,9 @@
 from pathlib import Path
 
 import numpy as np
+
 from astropy.nddata.blocks import block_reduce
+from astropy.io import fits
 
 #import subprocess
 #from subprocess import PIPE, STDOUT
@@ -259,10 +261,14 @@ def save_stream_to_fits(stream_or_name, fits_file):
 
         stream_shm = SHM(stream_name)
 
-    stream_shm.save_as_fits(fits_file)
+    fits.PrimaryHDU(stream_shm.get_data(True)).writeto(fits_file)
 
     return 0
 
+    ### Option 2
+    # stream_shm.save_as_fits(fits_file)
+
+    ### Option 3
     #milk_input = f"""
     #readshmim "{stream_name}"
     #saveFITS "{stream_name}" "{fits_file}"

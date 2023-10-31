@@ -11,16 +11,17 @@ open_loop_ncpa.py is part of the KalAO Instrument Control Software
 
 import argparse
 import sys
+import time
 
-from time import sleep
 from signal import signal, SIGINT
 from sys import exit
 import numpy as np
-import pandas as pd
 
 from scipy import optimize
 
-from kalao.cacao import aocontrol, toolbox
+from astropy.io import fits
+
+from kalao.cacao import toolbox
 from kalao.utils import kalao_time, zernike
 from kalao.plc import laser, filterwheel
 from kalao.fli import camera
@@ -43,6 +44,12 @@ def handler(signal_received, frame):
         print('Resetted DM pattern')
 
     exit(0)
+
+
+def is_triangular(T):
+    n = round((np.sqrt(8 * T + 1) - 1) / 2)
+
+    return T == n * (n + 1) // 2
 
 
 # yapf: disable
@@ -88,17 +95,17 @@ def take_and_measure(args, update_stream=False):
 def display_and_measure(dm_stream, zernike_coeffs, args, update_stream=False):
     pattern = zernike.generate_pattern(zernike_coeffs, dm_stream.shape)
     dm_stream.set_data(pattern, True)
-    sleep(0.1)
+    time.sleep(0.1)
 
     return take_and_measure(args, update_stream)
 
 
 def run(args):
-    aocontrol.reset_dm(config.AO.DM_loop_number)
+    toolbox.zero_stream(r"dm01disp08")
 
     # Search optimal dit
     while True:
-        peak = take_and_measure()
+        peak = take_and_measure(args)
 
         print(args.dit, peak)
         if peak >= args.max_flux:
@@ -128,12 +135,18 @@ def run(args):
 
     dm_stream = SHM(dm_stream_name)
 
+    # Open slopes stream
+    slopes_stream_exists, slopes_stream_name = toolbox.check_stream(
+            "shwfs_slopes")
+    if not slopes_stream_exists:
+        print(f'{slopes_stream_name} stream missing')
+        exit()
+
+    slopes_stream = SHM(slopes_stream_name)
+
     zernike_coeffs = np.zeros(args.orders_to_correct)
     print(f'Correcting {args.orders_to_correct} orders with {args.orders_to_skip} first orders skipped'
           )
-
-    df = pd.DataFrame(columns=['peak_flux', 'iteration', 'order', 'step'] +
-                      np.arange(len(zernike_coeffs)).tolist())
 
     for i in range(args.iterations):
         print('=========================================')
@@ -180,13 +193,6 @@ def run(args):
                 zernike_coeffs[order] = peak_array[
                         peak_array[:, PEAK_VALUE].argmax(), COEFF]
 
-                df = df.append(
-                        pd.Series(
-                                np.concatenate((np.array([
-                                        peak_array.max(), i, order, step
-                                ]), zernike_coeffs)), index=df.columns),
-                        ignore_index=True)
-
                 # Set new value of center
                 peak_array[1][PEAK_VALUE] = peak_array[:, PEAK_VALUE].max()
                 peak_array[1][COEFF] = zernike_coeffs[order]
@@ -206,21 +212,28 @@ def run(args):
 
     time_name = kalao_time.get_isotime()
 
-    df.to_pickle(f'ncpa_scan_{time_name}.pickle')
+    laser.set_intensity(config.WFS.laser_calib_intensity)
 
-    #max_row = df.iloc[df.peak_flux.idxmax()]
-    #print(max_row)
-    #zernike_coeffs = max_row[-len(zernike_coeffs):].to_numpy()
+    time.sleep(10)
 
     peak = display_and_measure(dm_stream, zernike_coeffs, args,
                                update_stream=True)
     print(f'Final peak value: {peak}')
     print(f'Final coefficients: {zernike_coeffs}')
 
-    # TODO update zp0 stream
     toolbox.save_stream_to_fits('dm01disp', f'ncpa_dm_{time_name}.fits')
-    toolbox.save_stream_to_fits('shwfs_slopes',
-                                f'ncpa_slopes_{time_name}.fits')
+
+    print(f'Averaging slopes')
+    slopes = []
+
+    for i in range(5):
+        slopes.append(slopes_stream.get_data(True))
+
+    slopes = np.median(np.array(slopes), axis=0)
+
+    fits.PrimaryHDU(slopes).writeto(f'ncpa_slopes_{time_name}.fits')
+
+    print(f'Done')
 
 
 if __name__ == '__main__':
@@ -231,9 +244,9 @@ if __name__ == '__main__':
                         help="Science camera integration time")
     parser.add_argument('-o', action="store", dest="orders_to_correct",
                         default=10, type=int,
-                        help='Numbers of orders to correct')
-    parser.add_argument('-s', action="store", dest="orders_to_skip",
-                        default=10, type=int, help='Numbers of orders to skip')
+                        help='Number of orders to correct (including skipped)')
+    parser.add_argument('-skip', action="store", dest="orders_to_skip",
+                        default=3, type=int, help='Number of orders to skip')
     parser.add_argument('-s', action="store", dest="steps", default=25,
                         type=int, help='Number of steps')
     parser.add_argument('-i', action="store", dest="iterations", default=10,
@@ -247,12 +260,13 @@ if __name__ == '__main__':
     parser.add_argument('-max_dit', action="store", dest="max_dit",
                         default=0.5, type=float, help='Maximum dit of the FLI')
     parser.add_argument('-filter', action="store", dest="filter_name",
-                        default='nd', help='Filter name to use')
+                        default=config.FLI.laser_calib_filter,
+                        help='Filter name to use')
     parser.add_argument('-min_incr', action="store", dest="min_incr",
                         default=0.0001, type=float,
                         help='Minimum increment for convergence')
     parser.add_argument('-l', action="store", dest="laser_int",
-                        default=config.Laser.calib_intensity, type=float,
+                        default=config.FLI.laser_calib_intensity, type=float,
                         help='Laser intensity')
     parser.add_argument('-a', action="store", dest="img_avg", default=5,
                         type=int, help='Averaging over images')
@@ -260,6 +274,14 @@ if __name__ == '__main__':
                         type=int, help='Size of window for peak fitting')
 
     args = parser.parse_args()
+
+    if not is_triangular(args.orders_to_correct):
+        print("WARNING: the number of orders to correct is not triangular. Correction will be asymmetric"
+              )
+
+    if not is_triangular(args.orders_to_skip):
+        print("WARNING: the number of orders to skip is not triangular. Correction will be asymmetric"
+              )
 
     if camera.check_server_status() != CameraServerStatus.UP:
         print('Error connecting to camera. Please try to restart the kalao_camera service'
@@ -273,6 +295,6 @@ if __name__ == '__main__':
 
     if filterwheel.set_position(args.filter_name) == -1:
         print("Error with filter selection")
-    sleep(2)
+    time.sleep(2)
 
     run(args)
