@@ -286,7 +286,7 @@ def check_wfs_flux():
                 emgain = 1
 
             aocontrol.set_emgain(emgain)
-            time.sleep(0.1)
+            time.sleep(0.5)
 
             for i in range(10):
                 slopes_flux = slopes_flux_stream.get_data(check=False)
@@ -304,7 +304,7 @@ def check_wfs_flux():
 
         for dit in range(0, 16):
             aocontrol.set_exptime(dit)
-            time.sleep(0.1)
+            time.sleep(0.5)
 
             for i in range(10):
                 slopes_flux = slopes_flux_stream.get_data(check=False)
