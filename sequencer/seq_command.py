@@ -24,6 +24,8 @@ from sequencer import system
 from kalao_enums import SequencerStatus, TrackingStatus, LoopStatus
 import kalao_config as config
 
+from tcs_communication import t120
+
 
 def dark(**seq_args):
     """
@@ -430,6 +432,11 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
+    fo_delta = starfinder.get_latest_fo_delta()
+    if fo_delta is not None:
+        t120.update_fo_delta(fo_delta)
+        t120.request_autofocus()
+
     if aocontrol.turn_dm_on() != 0:
         system.print_and_log("Error: failed to power on DM driver")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
@@ -460,11 +467,6 @@ def target_observation(**seq_args):
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
-
-    #fo_delta = starfinder.get_latest_fo_delta()
-    #if fo_delta is not None:
-    #    t120.update_fo_delta(fo_delta)
-    #    t120.request_autofocus()
 
     if waitfortracking() == -1:
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
