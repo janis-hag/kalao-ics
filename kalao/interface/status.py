@@ -13,7 +13,7 @@ datasets specific for the KalAO flask graphic user interface (GUI).
 import datetime
 
 from astropy import units as u
-from astropy.coordinates import EarthLocation, SkyCoord, AltAz
+from astropy.coordinates import EarthLocation, SkyCoord, AltAz, get_sun
 from astropy.time import Time
 
 from kalao.plc import core, tungsten
@@ -246,13 +246,6 @@ def outside_temperature():
     return config.Euler.default_temperature
 
 
-def loop_running():
-    tracking_status = database.get_latest_record(
-            collection_name='obs_log',
-            key='tracking_status')['tracking_status']
-    return tracking_status == TrackingStatus.TRACKING
-
-
 def star_coord():
     star_ra = database.get_latest_record('obs_log',
                                          key='target_ra')['target_ra']
@@ -281,6 +274,12 @@ def telescope_coord():
     return c
 
 
+def observing_location():
+    return EarthLocation(lat=config.Euler.latitude,
+                         lon=config.Euler.longitude,
+                         height=config.Euler.altitude * u.m)
+
+
 def telescope_coord_altaz():
     #timezone_zone = timezone('Chile/Continental')
     # date of today time = zone.localize(dt.datetime.now())
@@ -289,10 +288,13 @@ def telescope_coord_altaz():
     # TODO check coordinates
     # La Silla coordinates
 
-    observing_location = EarthLocation(lat=config.Euler.latitude,
-                                       lon=config.Euler.longitude,
-                                       height=config.Euler.altitude * u.m)
-
-    altaz_frame = AltAz(location=observing_location, obstime=Time.now())
+    altaz_frame = AltAz(location=observing_location(), obstime=Time.now())
 
     return telescope_coord().transform_to(altaz_frame)
+
+
+def sun_elevation():
+    time = Time.now()
+    altaz_frame = AltAz(location=observing_location(), obstime=time)
+
+    return get_sun(time).transform_to(altaz_frame).alt.deg

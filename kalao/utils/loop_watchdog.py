@@ -20,17 +20,17 @@ import kalao_config as config
 
 
 def _update_adc(beck=None):
-    if status.loop_running():
+    if aocontrol.check_loop():
         adc.config_adc(beck=beck)
 
 
 def _offload_ttm(beck=None):
-    if status.loop_running():
+    if aocontrol.check_loop():
         aocontrol.tip_tilt_offload_ttm_to_telescope()
 
 
 if __name__ == "__main__":
-    #schedule.every(config.ADC.update_interval).seconds.do(_update_adc)
+    schedule.every(config.ADC.update_interval).seconds.do(_update_adc)
     schedule.every(config.TTM.offload_interval).seconds.do(_offload_ttm)
 
     while True:
