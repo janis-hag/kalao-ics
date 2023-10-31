@@ -802,6 +802,9 @@ def instrument_change(**seq_args):
         # TODO handle error
         system.print_and_log(rValue)
 
+    aocontrol.emgain_off()
+    aocontrol.set_exptime(0)
+
     database.store_obs_log({'tracking_manual_centering': False})
 
     database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
