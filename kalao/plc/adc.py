@@ -18,7 +18,7 @@ from numpy.polynomial import Polynomial
 from scipy.optimize import minimize_scalar
 
 from kalao.plc import core
-from kalao.interface import status
+from kalao.interface import info
 from kalao.utils import database
 
 import kalao_config as config

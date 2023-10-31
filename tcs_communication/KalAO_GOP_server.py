@@ -15,7 +15,7 @@ import socket
 from time import sleep
 from itertools import zip_longest
 
-from kalao.interface import status
+from kalao.interface import info
 from kalao.utils import database, kalao_time
 from tcs_communication.pygop import tcs_srv_gop
 
@@ -185,7 +185,7 @@ def gop_server():
             break
 
         elif commandList[0] == "STATUS":
-            message = status.kalao_status()
+            message = info.kalao_status()
             gop_print_and_log("Send status: " + str(message))
             gop.write(message)
 

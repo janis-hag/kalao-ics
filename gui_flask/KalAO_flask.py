@@ -25,7 +25,7 @@ from os import path
 from kalao.cacao import aocontrol as k_aocontrol
 from kalao.cacao import toolbox as k_toolbox
 from kalao.cacao import telemetry as k_telemetry
-from kalao.interface import status as k_status
+from kalao.interface import info as k_status
 from kalao.interface import star_centering as k_star_centering
 from kalao.utils import database as k_database
 from kalao.plc import filterwheel as k_filterwheel

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : status.py
+# @Filename : info.py
 # @Date : 2021-01-02-16-50
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg

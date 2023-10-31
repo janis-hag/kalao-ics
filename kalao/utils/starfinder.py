@@ -28,7 +28,7 @@ from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
 from kalao.utils import database, file_handling, kalao_time
 from kalao.cacao import aocontrol, toolbox
-from kalao.interface import status
+from kalao.interface import info
 from tcs_communication import t120
 from sequencer import system
 
@@ -760,7 +760,7 @@ def generate_wcs():
 
     # RA, DEC at reference
     #w.wcs.crval = [c.ra.to_value(), c.dec.to_value()]
-    coord = status.telescope_coord()
+    coord = info.telescope_coord()
 
     w.wcs.crval = [coord.ra.degree, coord.dec.degree]
 
@@ -771,7 +771,7 @@ def generate_wcs():
 
 
 def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
-    return status.telescope_coord_altaz().spherical_offsets_by(
+    return info.telescope_coord_altaz().spherical_offsets_by(
             alt_offset_arcsec * u.arcsec,
             az_offset_arcsec * u.arcsec).transform_to('icrs')
 

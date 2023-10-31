@@ -9,4 +9,4 @@ The interface package contains functions for interfacing with the Euler telescop
 the KalAO flask graphic user interface (GUI).
 
 """
-__all__ = ["status", "star_centering"]
+__all__ = ["info.py", "star_centering"]

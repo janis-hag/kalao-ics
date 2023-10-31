@@ -17,7 +17,7 @@ from kalao.plc import temperature_control, shutter, laser
 from kalao.utils import database, kalao_time
 from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
-from kalao.interface import status
+from kalao.interface import info
 from sequencer import system
 
 from kalao_enums import IPPowerStatus, CameraServerStatus
@@ -69,7 +69,7 @@ def _check_dm_inactive(inactivity_time):
     if (bmc_display_fps is not None and
                 bmc_display_fps.run_runs()) or ippower.ippower_status(
                         config.IPPower.Port.BMC_DM) == IPPowerStatus.ON:
-        if inactivity_time > config.Watchdog.inactivity_timeout and status.sun_elevation(
+        if inactivity_time > config.Watchdog.inactivity_timeout and info.sun_elevation(
         ) > config.Watchdog.dm_sun_min_elevation:
             message = 'Turning off DM due to inactivity timeout'
             system.print_and_log(message)

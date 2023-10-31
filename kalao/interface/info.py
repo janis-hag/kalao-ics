@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : status.py
+# @Filename : info.py
 # @Date : 2021-01-02-16-50
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
@@ -275,8 +275,7 @@ def telescope_coord():
 
 
 def observing_location():
-    return EarthLocation(lat=config.Euler.latitude,
-                         lon=config.Euler.longitude,
+    return EarthLocation(lat=config.Euler.latitude, lon=config.Euler.longitude,
                          height=config.Euler.altitude * u.m)
 
 

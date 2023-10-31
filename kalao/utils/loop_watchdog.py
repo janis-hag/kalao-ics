@@ -14,7 +14,7 @@ import schedule
 
 from kalao.plc import adc
 from kalao.cacao import aocontrol
-from kalao.interface import status
+from kalao.interface import info
 
 import kalao_config as config
 
