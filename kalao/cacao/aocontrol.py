@@ -194,7 +194,7 @@ def emgain_off():
     return rValue
 
 
-def set_emgain(emgain=1, method='fps'):
+def set_emgain(emgain=1, method='tmux'):
     """
     Set the EM gain of the Nuvu WFS camera.
 
@@ -214,9 +214,14 @@ def set_emgain(emgain=1, method='fps'):
         _set_emgain_fps(emgain)
     elif method == 'tmux':
         _set_emgain_tmux(emgain)
+    else:
+        message = f'ERROR: unknown {method=} in set_emgain'
+        print(message)
+        database.store_obs_log({'ao_log': message})
+        system.print_and_log(message)
 
 
-def set_exptime(exptime=0):
+def set_exptime(exptime=0, method='tmux'):
     """
     Set the exposure time of the Nuvu WFS camera.
 
@@ -227,7 +232,15 @@ def set_exptime(exptime=0):
     if exptime < 0:
         exptime = 0
 
-    _set_exptime_fps(exptime)
+    if method == 'fps':
+        _set_exptime_fps(exptime)
+    elif method == 'tmux':
+        _set_exptime_tmux(exptime)
+    else:
+        message = f'ERROR: unknown {method=} in set_exptime'
+        print(message)
+        database.store_obs_log({'ao_log': message})
+        system.print_and_log(message)
 
 
 def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
@@ -833,6 +846,20 @@ def _set_emgain_tmux(emgain=1):
     # If tmux session exists send query temperatures
     if session:
         session.attached_pane.send_keys(f'\ncam.SetEMCalibratedGain({emgain})')
+
+
+def _set_exptime_tmux(exptime=0):
+    server = libtmux.Server()
+
+    try:
+        session = server.find_where({"session_name": "nuvu_ctrl"})
+    except:
+        # TODO specify more precise exception
+        session = False
+
+    # If tmux session exists send query temperatures
+    if session:
+        session.attached_pane.send_keys(f'\nSetExposureTime({exptime})')
 
 
 def _set_emgain_fps(emgain=1):
