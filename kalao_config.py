@@ -91,11 +91,16 @@ class FLI:
     dummy_camera = False
     dummy_image_path = "/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits"
     temperature_warn_threshold = -29.8
-    laser_calib_dit = 0.01
+
+    laser_calib_intensity = 0.35  # mW
+    laser_calib_dit = 0.01  # s
+    laser_calib_filter = 'nd'
 
 
 class WFS:
     plate_scale = 1.16  # arcsec / px
+
+    laser_calib_intensity = 8  # mW
 
 
 class FilterWheel:
@@ -108,11 +113,9 @@ class FilterWheel:
 
 
 class Laser:
-    max_intensity = 10  # mW
+    max_intensity = 8  # mW
     switch_wait = 5  # s
     position = 24.12  # mm
-    calib_intensity = 1.5  # mW
-    AO_calib_intensity = 3.5  # mW
 
 
 class Tungsten:
@@ -295,7 +298,9 @@ class Cooling:
 class Watchdog:
     temperature_update_interval = 5
     bench_update_interval = 30
+
     inactivity_timeout = 2700
     open_shutter_timeout = 2700
     laser_on_timeout = 2700
-    dm_wait_betweeen_actions = 15
+
+    dm_wait_betweeen_actions = 10

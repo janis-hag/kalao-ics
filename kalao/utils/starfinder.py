@@ -171,7 +171,7 @@ def center_on_laser():
               config.Laser.position) > 0.5:
         calib_unit.laser_position()
 
-    if filterwheel.set_position('ND') == -1:
+    if filterwheel.set_position(config.FLI.laser_calib_filter) == -1:
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
@@ -181,7 +181,7 @@ def center_on_laser():
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return
 
-    laser.set_intensity(config.Laser.calib_intensity)
+    laser.set_intensity(config.FLI.laser_calib_intensity)
 
     if flip_mirror.up() != 'UP':
         system.print_and_log("Error: flip mirror did not go up")
@@ -221,7 +221,7 @@ def center_on_laser():
     # Precise centering with WFS
     aocontrol.emgain_off()
 
-    laser.set_intensity(config.Laser.AO_calib_intensity)
+    laser.set_intensity(config.WFS.laser_calib_intensity)
 
     aocontrol.wfs_centering(config.AO.WFS_centering_slope_threshold)
 

@@ -896,7 +896,7 @@ def check_abort(q, dit, AO=False):
             # Update database
             database_updater.update_plc_monitoring()
             return -1
-        if AO and not aocontrol.check_loop() == LoopStatus.ALL_LOOP_ON:
+        if AO and not aocontrol.check_loop() == LoopStatus.ALL_LOOPS_ON:
             return -1
 
         #database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]

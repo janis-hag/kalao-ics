@@ -170,13 +170,13 @@ def check_fps(fps_name):
     return fps_path.exists(), fps_name_clean
 
 
-def open_or_create_stream(stream_name, shape, type):
+def open_or_create_stream(stream_name, shape, dtype):
     stream_exists, stream_name = check_stream(stream_name)
 
     if stream_exists:
         shm = SHM(stream_name)
     else:
-        img = np.zeros(shape, type)
+        img = np.zeros(shape, dtype)
 
         shm = SHM(
             stream_name,
@@ -220,17 +220,21 @@ def open_fps_once(fps_name, fps_list):
         return opened_fps
 
 
-def zero_stream(stream_name):
-    stream_exists, stream_name = check_stream(stream_name)
-
-    if stream_exists:
-        stream_shm = SHM(stream_name)
-        pattern = np.zeros(stream_shm.shape, stream_shm.nptype)
-        stream_shm.set_data(pattern)
-
-        return 0
+def zero_stream(stream_or_name):
+    if isinstance(stream_or_name, SHM):
+        stream_shm = stream_or_name
     else:
-        return -1
+        stream_exists, stream_name = check_stream(stream_or_name)
+
+        if not stream_exists:
+            return -1
+
+        stream_shm = SHM(stream_name)
+
+    pattern = np.zeros(stream_shm.shape, stream_shm.nptype)
+    stream_shm.set_data(pattern)
+
+    return 0
 
     #milk_input = f"""
     #readshmim "{stream_name}"
@@ -244,16 +248,20 @@ def zero_stream(stream_name):
     #return cp
 
 
-def save_stream_to_fits(stream_name, fits_file):
-    stream_exists, stream_name = check_stream(stream_name)
-
-    if stream_exists:
-        stream_shm = SHM(stream_name)
-        stream_shm.save_as_fits(fits_file)
-
-        return 0
+def save_stream_to_fits(stream_or_name, fits_file):
+    if isinstance(stream_or_name, SHM):
+        stream_shm = stream_or_name
     else:
-        return -1
+        stream_exists, stream_name = check_stream(stream_or_name)
+
+        if not stream_exists:
+            return -1
+
+        stream_shm = SHM(stream_name)
+
+    stream_shm.save_as_fits(fits_file)
+
+    return 0
 
     #milk_input = f"""
     #readshmim "{stream_name}"

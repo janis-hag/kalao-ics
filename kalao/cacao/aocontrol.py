@@ -24,8 +24,6 @@ from kalao.utils import database
 from tcs_communication import t120
 from sequencer import system
 
-from pathlib import Path
-
 from kalao_enums import IPPowerStatus, LoopStatus
 import kalao_config as config
 
@@ -399,6 +397,10 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
 
 
 def turn_dm_on(fps_list={}):
+    system.print_and_log("Turning on DM")
+
+    time.sleep(1)
+
     bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
 
     ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
@@ -416,6 +418,10 @@ def turn_dm_on(fps_list={}):
 
 
 def turn_dm_off(fps_list={}):
+    system.print_and_log("Turning off DM")
+
+    time.sleep(1)
+
     bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
 
     reset_dm(config.AO.DM_loop_number)
@@ -428,6 +434,8 @@ def turn_dm_off(fps_list={}):
     time.sleep(config.Watchdog.dm_wait_betweeen_actions)
 
     ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
+
+    return 0
 
 
 def reset_dm(dm_number):

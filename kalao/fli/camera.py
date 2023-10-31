@@ -38,8 +38,11 @@ def take_frame(dit, filepath=None, do_not_log=False, update_stream=True):
     if req.status_code == 200:
         img = fits.getdata(filepath)
 
-        if update_stream and fli_stream.shape == img.shape:
-            fli_stream.set_data(img, True)
+        if update_stream:
+            if fli_stream.shape == img.shape:
+                fli_stream.set_data(img, True)
+            else:
+                print("fli_stream not updated, shapes are inconsistent")
 
         return img, req
     else:
