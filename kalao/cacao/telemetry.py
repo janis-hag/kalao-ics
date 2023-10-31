@@ -9,7 +9,6 @@ The telemetry package contains the tools to store the Adaptive Optics telemetry 
 
 """
 
-
 import numpy as np
 
 import libtmux
@@ -178,15 +177,12 @@ def telemetry_save(stream_and_fps_list):
     if slopes_stream is not None:
         # Check if it's running
         if slopes_stream.RUNrunning == 1:
-            telemetry_data[
-                    "slopes_flux_subaperture"] = slopes_stream.get_param_value_float(
-                            'flux_subaperture')
-            telemetry_data[
-                    "slopes_residual_pix"] = slopes_stream.get_param_value_float(
-                            'residual')
-            telemetry_data[
-                    "slopes_residual_arcsec"] = slopes_stream.get_param_value_float(
-                            'residual') * config.WFS.plate_scale
+            telemetry_data["slopes_flux_subaperture"] = slopes_stream.get_param(
+                    'flux_subaperture')
+            telemetry_data["slopes_residual_pix"] = slopes_stream.get_param(
+                    'residual')
+            telemetry_data["slopes_residual_arcsec"] = slopes_stream.get_param(
+                    'residual') * config.WFS.plate_scale
 
     # Tip/tilt stream
     # check if fps exists and is running
@@ -206,12 +202,9 @@ def telemetry_save(stream_and_fps_list):
     if dm_loop_stream is not None:
         # Check if it's running
         if dm_loop_stream.RUNrunning == 1:
-            telemetry_data["loop_gain"] = dm_loop_stream.get_param_value_float(
-                    'loopgain')
-            telemetry_data["loop_mult"] = dm_loop_stream.get_param_value_float(
-                    'loopmult')
-            telemetry_data["loop_on"] = dm_loop_stream.get_param_value_int(
-                    'loopON')
+            telemetry_data["loop_gain"] = dm_loop_stream.get_param('loopgain')
+            telemetry_data["loop_mult"] = dm_loop_stream.get_param('loopmult')
+            telemetry_data["loop_on"] = dm_loop_stream.get_param('loopON')
 
             if telemetry_data["loop_on"] == 1:
                 telemetry_data["loop_on"] = 'ON'
@@ -224,18 +217,15 @@ def telemetry_save(stream_and_fps_list):
     if ttm_loop_stream is not None:
         # Check if it's running
         if ttm_loop_stream.RUNrunning == 1:
-            telemetry_data[
-                    "tt_loop_gain"] = ttm_loop_stream.get_param_value_float(
-                            'loopgain')
-            telemetry_data[
-                    "tt_loop_mult"] = ttm_loop_stream.get_param_value_float(
-                            'loopmult')
-            telemetry_data["tt_loop_on"] = ttm_loop_stream.get_param_value_int(
-                    'loopON')
+            telemetry_data["tt_loop_gain"] = ttm_loop_stream.get_param(
+                    'loopgain')
+            telemetry_data["tt_loop_mult"] = ttm_loop_stream.get_param(
+                    'loopmult')
+            telemetry_data["tt_loop_on"] = ttm_loop_stream.get_param('loopON')
 
-            if telemetry_data["tt_loop_on"] == 1:
+            if telemetry_data["tt_loop_on"] is True:
                 telemetry_data["tt_loop_on"] = 'ON'
-            elif telemetry_data["tt_loop_on"] == 0:
+            elif telemetry_data["tt_loop_on"] is False:
                 telemetry_data["tt_loop_on"] = 'OFF'
 
     database.store_telemetry(telemetry_data)

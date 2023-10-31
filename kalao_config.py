@@ -308,11 +308,12 @@ class Cooling:
 
 
 class Watchdog:
-    temperature_update_interval = 5
-    bench_update_interval = 30
+    temperature_update_interval = 5  # s
+    bench_update_interval = 30  # s
 
-    inactivity_timeout = 2700
-    open_shutter_timeout = 2700
-    laser_on_timeout = 2700
+    inactivity_timeout = 2700  # s
+    open_shutter_timeout = 2700  # s
+    laser_on_timeout = 2700  # s
 
-    dm_wait_betweeen_actions = 10
+    dm_wait_betweeen_actions = 10  # s
+    dm_sun_min_elevation = 6  # °

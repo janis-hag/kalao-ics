@@ -45,7 +45,7 @@ def close_loop():
 
     fps_mfilt1 = FPS(dmloop_fps_name)
 
-    fps_mfilt1.set_param('loopON', 1)
+    fps_mfilt1.set_param('loopON', True)
 
     ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
 
@@ -58,7 +58,7 @@ def close_loop():
 
     fps_mfilt2 = FPS(ttmloop_fps_name)
 
-    fps_mfilt2.set_param('loopON', 1)
+    fps_mfilt2.set_param('loopON', True)
 
     return 0
 
@@ -71,9 +71,7 @@ def check_loop():
     if dmloop_exists:
         fps_mfilt1 = FPS(dmloop_fps_name)
 
-        loopON = fps_mfilt1.get_param_value_onoff('loopON')
-
-        if loopON == 1:
+        if fps_mfilt1.get_param('loopON'):
             status |= LoopStatus.DM_LOOP_ON
 
     ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
@@ -81,9 +79,7 @@ def check_loop():
     if ttmloop_exists:
         fps_mfilt2 = FPS(ttmloop_fps_name)
 
-        loopON = fps_mfilt2.get_param_value_onoff('loopON')
-
-        if loopON == 1:
+        if fps_mfilt2.get_param('loopON'):
             status |= LoopStatus.TTM_LOOP_ON
 
     return status
@@ -420,7 +416,7 @@ def turn_dm_on(fps_list={}):
     time.sleep(config.Watchdog.dm_wait_betweeen_actions)
 
     if bmc_display_fps is not None:
-        bmc_display_fps.RUNstart()
+        bmc_display_fps.run_start()
 
     time.sleep(config.Watchdog.dm_wait_betweeen_actions)
 
@@ -446,7 +442,7 @@ def turn_dm_off(fps_list={}):
     time.sleep(config.Watchdog.dm_wait_betweeen_actions)
 
     if bmc_display_fps is not None:
-        bmc_display_fps.RUNstop()
+        bmc_display_fps.run_stop()
 
     time.sleep(config.Watchdog.dm_wait_betweeen_actions)
 
@@ -525,9 +521,9 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
 
         tip_offset, tilt_offset = stream_data
 
-        tip_residual = slopes_fps_shm.get_param_value_float(
+        tip_residual = slopes_fps_shm.get_param(
                 'slope_y') * config.AO.WFS_tip_to_TTM
-        tilt_residual = slopes_fps_shm.get_param_value_float(
+        tilt_residual = slopes_fps_shm.get_param(
                 'slope_x') * config.AO.WFS_tilt_to_TTM
 
         if np.abs(tip_residual) < tt_threshold:
@@ -804,7 +800,7 @@ def _set_fps_floatvalue(fps_name, key, value):
 
     fps_handle = FPS(fps_name)
 
-    fps_handle.set_param_value_float(key, str(value))
+    fps_handle.set_param(key, value)
 
     return 0
 
