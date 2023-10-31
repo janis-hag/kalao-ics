@@ -15,9 +15,8 @@ from astropy.io import fits
 #from subprocess import PIPE, STDOUT
 
 from pyMilk.interfacing import isio_shmlib
-from pyMilk.interfacing.isio_shmlib import SHM
-
-from CacaoProcessTools import fps, FPS_status
+from pyMilk.interfacing.shm import SHM
+from pyMilk.interfacing.fps import FPS
 
 def get_roi_and_subapertures(data):
     roi = None
@@ -213,7 +212,7 @@ def open_fps_once(fps_name, fps_list):
         fps_exists, fps_name = check_fps(fps_name)
 
         if fps_exists:
-            opened_fps = fps(fps_name)
+            opened_fps = FPS(fps_name)
             fps_list[fps_name] = opened_fps
             return opened_fps
         else:

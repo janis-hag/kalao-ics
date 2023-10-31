@@ -14,7 +14,7 @@ import numpy as np
 
 import libtmux
 
-from pyMilk.interfacing.isio_shmlib import SHM
+from pyMilk.interfacing.shm import SHM
 
 from kalao.utils import database
 from kalao.cacao import fake_data, toolbox

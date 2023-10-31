@@ -14,7 +14,7 @@ from scipy import ndimage
 from pyqtgraph.Qt import QtCore
 import pyqtgraph as pg
 
-from pyMilk.interfacing.isio_shmlib import SHM
+from pyMilk.interfacing.shm import SHM
 
 from kalao.cacao import toolbox
 

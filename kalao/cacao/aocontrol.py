@@ -13,9 +13,8 @@ import time
 import libtmux
 import pandas as pd
 
-from CacaoProcessTools import fps, FPS_status
-
-from pyMilk.interfacing.isio_shmlib import SHM
+from pyMilk.interfacing.shm import SHM
+from pyMilk.interfacing.fps import FPS
 
 from kalao import ippower
 from kalao.cacao import toolbox
@@ -40,28 +39,26 @@ def close_loop():
     if not dmloop_exists:
         message = f'ERROR: {dmloop_fps_name} is missing'
         print(message)
-        database.store_obs_log({'ao_log': message})
-        system.print_and_log(message)
+        database.store_obs_log({'ao_log': message, 'obs_log': message})
 
         return -1
 
-    fps_mfilt1 = fps(dmloop_fps_name)
+    fps_mfilt1 = FPS(dmloop_fps_name)
 
-    fps_mfilt1.set_param_value_onoff('loopON', '1')
+    fps_mfilt1.set_param('loopON', 1)
 
     ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
 
     if not ttmloop_exists:
         message = f'ERROR: {ttmloop_fps_name} is missing'
         print(message)
-        database.store_obs_log({'ao_log': message})
-        system.print_and_log(message)
+        database.store_obs_log({'ao_log': message, 'obs_log': message})
 
         return -1
 
-    fps_mfilt2 = fps(ttmloop_fps_name)
+    fps_mfilt2 = FPS(ttmloop_fps_name)
 
-    fps_mfilt2.set_param_value_onoff('loopON', '1')
+    fps_mfilt2.set_param('loopON', 1)
 
     return 0
 
@@ -72,7 +69,7 @@ def check_loop():
     dmloop_exists, dmloop_fps_name = toolbox.check_fps("mfilt-1")
 
     if dmloop_exists:
-        fps_mfilt1 = fps(dmloop_fps_name)
+        fps_mfilt1 = FPS(dmloop_fps_name)
 
         loopON = fps_mfilt1.get_param_value_onoff('loopON')
 
@@ -82,7 +79,7 @@ def check_loop():
     ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
 
     if ttmloop_exists:
-        fps_mfilt2 = fps(ttmloop_fps_name)
+        fps_mfilt2 = FPS(ttmloop_fps_name)
 
         loopON = fps_mfilt2.get_param_value_onoff('loopON')
 
@@ -512,7 +509,7 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
         return -1
 
     dm_stream_shm = SHM(dm_stream_name)
-    slopes_fps_shm = fps(slopes_fps_name)
+    slopes_fps_shm = FPS(slopes_fps_name)
 
     # TODO verify that shwfs enough illuminated for centering
 
@@ -801,12 +798,11 @@ def _set_fps_floatvalue(fps_name, key, value):
     if not fps_exists:
         message = f'ERROR: {fps_name} is missing'
         print(message)
-        database.store_obs_log({'ao_log': message})
-        system.print_and_log(message)
+        database.store_obs_log({'ao_log': message, 'obs_log': message})
 
         return -1
 
-    fps_handle = fps(fps_name)
+    fps_handle = FPS(fps_name)
 
     fps_handle.set_param_value_float(key, str(value))
 
@@ -820,14 +816,13 @@ def _set_fps_intvalue(fps_name, key, value):
     if not fps_exists:
         message = f'ERROR: {fps_name} is missing'
         print(message)
-        database.store_obs_log({'ao_log': message})
-        system.print_and_log(message)
+        database.store_obs_log({'ao_log': message, 'obs_log': message})
 
         return -1
 
-    fps_handle = fps(fps_name)
+    fps_handle = FPS(fps_name)
 
-    rValue = fps_handle.set_param_value_int(key, str(value))
+    rValue = fps_handle.set_param(key, value)
 
     return rValue
 

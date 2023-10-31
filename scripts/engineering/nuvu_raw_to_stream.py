@@ -11,7 +11,7 @@ nuvu_raw_to_stream.py is part of the KalAO Instrument Control Software
 
 import numpy as np
 
-from pyMilk.interfacing.isio_shmlib import SHM
+from pyMilk.interfacing.shm import SHM
 
 
 def run():

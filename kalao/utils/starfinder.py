@@ -22,7 +22,7 @@ from astropy.modeling import models, fitting
 
 from photutils.detection import DAOStarFinder
 
-from pyMilk.interfacing.isio_shmlib import SHM
+from pyMilk.interfacing.shm import SHM
 
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit

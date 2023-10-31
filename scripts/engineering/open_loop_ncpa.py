@@ -26,7 +26,7 @@ from kalao.utils import kalao_time, zernike
 from kalao.plc import laser, filterwheel
 from kalao.fli import camera
 
-from pyMilk.interfacing.isio_shmlib import SHM
+from pyMilk.interfacing.shm import SHM
 
 from kalao_enums import CameraServerStatus
 import kalao_config as config
