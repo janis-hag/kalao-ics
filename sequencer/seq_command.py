@@ -804,6 +804,8 @@ def instrument_change(**seq_args):
 
     database.store_obs_log({'tracking_manual_centering': False})
 
+    database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
+
     # request_manual_centering(False)
     # change tracking flaf
 
@@ -838,6 +840,10 @@ def end(**seq_args):
         # TODO handle error
         system.print_and_log(rValue)
 
+    rValue = aocontrol.turn_dm_off()
+    if rValue != 0:
+        system.print_and_log('ERROR: Unable to turn off DM')
+
     # Set to waiting for the Euler synchro to be released
     database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
@@ -850,7 +856,7 @@ def end(**seq_args):
     starfinder.generate_night_darks()
 
     # request_manual_centering(False)
-    # change tracking flaf
+    # change tracking flag
 
     system.print_and_log('END received moving into standby.')
 
