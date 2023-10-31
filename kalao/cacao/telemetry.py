@@ -155,7 +155,7 @@ def telemetry_save(stream_and_fps_list):
         stream_keywords = nuvu_stream.get_keywords()
 
         # Check if it's running
-        # if fps_nuvu.RUNrunning==1:
+        # if fps_nuvu.run_runs():
         telemetry_data["nuvu_temp_ccd"] = stream_keywords['T_CCD']
         telemetry_data["nuvu_temp_controller"] = stream_keywords['T_CNTRLR']
         telemetry_data["nuvu_temp_power_supply"] = stream_keywords['T_PSU']
@@ -176,7 +176,7 @@ def telemetry_save(stream_and_fps_list):
 
     if slopes_stream is not None:
         # Check if it's running
-        if slopes_stream.RUNrunning == 1:
+        if slopes_stream.run_runs():
             telemetry_data["slopes_flux_subaperture"] = slopes_stream.get_param(
                     'flux_subaperture')
             telemetry_data["slopes_residual_pix"] = slopes_stream.get_param(
@@ -201,7 +201,7 @@ def telemetry_save(stream_and_fps_list):
 
     if dm_loop_stream is not None:
         # Check if it's running
-        if dm_loop_stream.RUNrunning == 1:
+        if dm_loop_stream.run_runs():
             telemetry_data["loop_gain"] = dm_loop_stream.get_param('loopgain')
             telemetry_data["loop_mult"] = dm_loop_stream.get_param('loopmult')
             telemetry_data["loop_on"] = dm_loop_stream.get_param('loopON')
@@ -216,7 +216,7 @@ def telemetry_save(stream_and_fps_list):
 
     if ttm_loop_stream is not None:
         # Check if it's running
-        if ttm_loop_stream.RUNrunning == 1:
+        if ttm_loop_stream.run_runs():
             telemetry_data["tt_loop_gain"] = ttm_loop_stream.get_param(
                     'loopgain')
             telemetry_data["tt_loop_mult"] = ttm_loop_stream.get_param(

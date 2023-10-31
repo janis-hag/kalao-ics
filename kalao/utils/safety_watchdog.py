@@ -67,7 +67,7 @@ def _check_dm_inactive(inactivity_time):
     bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
 
     if (bmc_display_fps is not None and
-                bmc_display_fps.RUNrunning) or ippower.ippower_status(
+                bmc_display_fps.run_runs()) or ippower.ippower_status(
                         config.IPPower.Port.BMC_DM) == IPPowerStatus.ON:
         if inactivity_time > config.Watchdog.inactivity_timeout and status.sun_elevation(
         ) > config.Watchdog.dm_sun_min_elevation:
