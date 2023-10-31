@@ -18,6 +18,7 @@ from pyMilk.interfacing import isio_shmlib
 from pyMilk.interfacing.shm import SHM
 from pyMilk.interfacing.fps import FPS
 
+
 def get_roi_and_subapertures(data):
     roi = None
     subapertures = None
@@ -93,6 +94,13 @@ def get_subapertures_around_actuator(i):
 
     return (get_subaperture_1d(x - 1, y - 1), get_subaperture_1d(x - 1, y),
             get_subaperture_1d(x, y - 1), get_subaperture_1d(x, y))
+
+
+def subaperture_to_slopes_index(i):
+    row = i // 11
+    col = i % 11
+
+    return row * 22 + col, row * 22 + col + 11
 
 
 def get_wfs_flux_map(upsampling=4):
@@ -180,10 +188,10 @@ def open_or_create_stream(stream_name, shape, dtype):
         img = np.zeros(shape, dtype)
 
         shm = SHM(
-            stream_name,
-            img,
-            location=-1,  # CPU
-            shared=True,  # Shared
+                stream_name,
+                img,
+                location=-1,  # CPU
+                shared=True,  # Shared
         )
 
     return shm
