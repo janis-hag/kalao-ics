@@ -403,7 +403,11 @@ def turn_dm_on(fps_list={}):
 
     bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
 
-    ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
+    rValue = ippower.switch_ippower(config.IPPower.Port.BMC_DM,
+                                    IPPowerStatus.ON)
+
+    if rValue != IPPowerStatus.ON:
+        return -1
 
     time.sleep(config.Watchdog.dm_wait_betweeen_actions)
 
@@ -414,7 +418,12 @@ def turn_dm_on(fps_list={}):
 
     reset_dm(config.AO.DM_loop_number)
 
-    return 0
+    # TODO check that the fps managed to start and adapt return value accordingly
+
+    if rValue == IPPowerStatus.ON:
+        return 0
+    else:
+        return -1
 
 
 def turn_dm_off(fps_list={}):
@@ -433,7 +442,13 @@ def turn_dm_off(fps_list={}):
 
     time.sleep(config.Watchdog.dm_wait_betweeen_actions)
 
-    ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
+    rValue = ippower.switch_ippower(config.IPPower.Port.BMC_DM,
+                                    IPPowerStatus.OFF)
+
+    if rValue == IPPowerStatus.OFF:
+        return 0
+    else:
+        return -1
 
     return 0
 
