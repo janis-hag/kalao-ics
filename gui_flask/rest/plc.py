@@ -1,15 +1,14 @@
-from flask import Blueprint, request, g
+import json
 
-from kalao.plc import laser as k_laser
-from kalao.plc import shutter as k_shutter
-from kalao.plc import flip_mirror as k_flip_mirror
-from kalao.plc import tungsten as k_tungsten
+from flask import Blueprint, g, request
+
 from kalao.plc import calib_unit as k_calib_unit
 from kalao.plc import filterwheel as k_filterwheel
-
+from kalao.plc import flip_mirror as k_flip_mirror
+from kalao.plc import laser as k_laser
+from kalao.plc import shutter as k_shutter
+from kalao.plc import tungsten as k_tungsten
 from kalao.utils import database as k_database
-
-import json
 
 plc_bp = Blueprint('plc', __name__, url_prefix='/plc')
 

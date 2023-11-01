@@ -4,9 +4,11 @@
 @author: Nathanaël Restori
 """
 
-import numpy
-from astropy.io import fits
 import sys
+
+import numpy
+
+from astropy.io import fits
 
 if len(sys.argv) != 3:
     print("This script take two args : flat_from_BMC (input) and fits (output)"

@@ -8,8 +8,9 @@ import requests
 
 from kalao.utils import database
 
-from kalao_enums import IPPowerStatus
 import kalao_config as config
+from kalao_enums import IPPowerStatus
+
 
 def switch_ippower(power_port, status):
     """
@@ -46,7 +47,7 @@ def ippower_status(power_port):
     req = requests.get(config.IPPower.url, params=params)
 
     if req.status_code == 200:
-        state = req.json()['outputs'][power_port-1]['state']
+        state = req.json()['outputs'][power_port - 1]['state']
 
         if state in [0, 1]:
             return IPPowerStatus(state)

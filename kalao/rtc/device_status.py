@@ -10,8 +10,9 @@ device_status.py is part of the KalAO Instrument Control Software
 """
 
 import sensors
-from kalao.utils import database
+
 from kalao.rtc import gpu_control
+from kalao.utils import database
 
 
 def read_all():

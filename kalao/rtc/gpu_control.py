@@ -8,8 +8,9 @@
 gpu_control.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
-import subprocess
 import io
+import subprocess
+
 import pandas as pd
 
 

@@ -4,22 +4,21 @@
 @author: Nathanaël Restori
 """
 
-from pymongo import MongoClient
-from pymongo import ASCENDING, DESCENDING
-
-from datetime import datetime, timezone, timedelta
-import yaml
 import json
-import os
 import math
+import os
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
+import yaml
+from pymongo import ASCENDING, DESCENDING, MongoClient
+
+from kalao.cacao import fake_data
+from kalao.utils import kalao_time
+
 #from enum import StrEnum
 from kalao_enums import StrEnum
-
-from kalao.utils import kalao_time
-from kalao.cacao import fake_data
 
 path = os.path.dirname(os.path.abspath(__file__))
 

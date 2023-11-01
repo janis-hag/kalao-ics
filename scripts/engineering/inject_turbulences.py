@@ -13,7 +13,7 @@ import subprocess
 from subprocess import PIPE, STDOUT
 
 input_fits = "cube12_12_60000_v10mps_1ms.fits"
-rate = 1000 # fps
+rate = 1000  # fps
 
 input = f"""
 loadfits "{input_fits}" turbulences_cube

@@ -11,14 +11,15 @@ laser.py is part of the KalAO Instrument Control Software
 
 import datetime
 from time import sleep
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 from opcua import ua
 
+from kalao.cacao import aocontrol
 from kalao.plc import core
 from kalao.utils import database, kalao_time
-from kalao.cacao import aocontrol
 
 import kalao_config as config
 

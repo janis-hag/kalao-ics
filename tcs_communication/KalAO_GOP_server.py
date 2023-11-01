@@ -12,16 +12,15 @@ This server is the communication interface between the Euler telescope software 
 """
 
 import socket
-from time import sleep
 from itertools import zip_longest
+from time import sleep
 
 from kalao.interface import info
 from kalao.utils import database, kalao_time
 from tcs_communication.pygop import tcs_srv_gop
 
-from kalao_enums import TrackingStatus
-
 import kalao_config as config
+from kalao_enums import TrackingStatus
 
 #sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 #sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))+os.path(pymod_libgop))

@@ -9,14 +9,18 @@ star_centering.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from astropy.io import fits
 import os
-import numpy as np
-from skimage.transform import resize
-#from scipy import stats
 
-from kalao.utils import database
+import numpy as np
+
+from astropy.io import fits
+
+from skimage.transform import resize
+
 from kalao.cacao import fake_data
+from kalao.utils import database
+
+#from scipy import stats
 
 
 def fli_view(x=None, y=None, percentile=99, last_file_date=None,

@@ -9,10 +9,8 @@ star_seq.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from sequencer import seq_init
-from sequencer import seq_server
-from sequencer import system
 from kalao.utils import database, kalao_time
+from sequencer import seq_init, seq_server, system
 
 from kalao_enums import SequencerStatus
 

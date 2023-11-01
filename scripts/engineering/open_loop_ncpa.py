@@ -12,24 +12,23 @@ open_loop_ncpa.py is part of the KalAO Instrument Control Software
 import argparse
 import sys
 import time
-
-from signal import signal, SIGINT
+from signal import SIGINT, signal
 from sys import exit
-import numpy as np
 
+import numpy as np
 from scipy import optimize
 
 from astropy.io import fits
 
-from kalao.cacao import toolbox
-from kalao.utils import kalao_time, zernike
-from kalao.plc import laser, filterwheel
-from kalao.fli import camera
-
 from pyMilk.interfacing.shm import SHM
 
-from kalao_enums import CameraServerStatus
+from kalao.cacao import toolbox
+from kalao.fli import camera
+from kalao.plc import filterwheel, laser
+from kalao.utils import kalao_time, zernike
+
 import kalao_config as config
+from kalao_enums import CameraServerStatus
 
 PEAK_VALUE = 0
 COEFF = 1

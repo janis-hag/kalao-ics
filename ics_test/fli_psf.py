@@ -9,8 +9,10 @@ fli_psf.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-import numpy as np
 import time
+
+import numpy as np
+
 import matplotlib
 
 matplotlib.use('GTK3Agg')

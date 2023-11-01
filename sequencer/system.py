@@ -9,14 +9,15 @@ system.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-import dbus
-from datetime import datetime
 import time
+from datetime import datetime
+
+import dbus
 
 from kalao.utils import database
 
-from kalao_enums import SequencerStatus
 import kalao_config as config
+from kalao_enums import SequencerStatus
 
 
 def _isDigit(x):

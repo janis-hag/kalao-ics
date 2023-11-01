@@ -3,25 +3,25 @@
 
 #from signal import SIGINT, SIGTERM
 import signal
-from sys import path as SysPath
 from os import path as OsPath
+from sys import path as SysPath
+
 # methode dirname return parent directory and methode abspath return absolut path
 SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
-from sequencer import seq_command, system
-
-from kalao.utils import database, kalao_time
-from kalao.plc import filterwheel
-
 import socket
-#import time
-
 from itertools import zip_longest
 from queue import Queue
 from threading import Thread
 
-from kalao_enums import SequencerStatus
+from kalao.plc import filterwheel
+from kalao.utils import database, kalao_time
+from sequencer import seq_command, system
+
 import kalao_config as config
+from kalao_enums import SequencerStatus
+
+#import time
 
 
 def seq_server():
@@ -121,7 +121,9 @@ def seq_server():
             th.join()
             while not q.empty():
                 q.get()
-            database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
+            database.store_obs_log({
+                    'sequencer_status': SequencerStatus.WAITING
+            })
             continue
         # if not abort, but a thread exist, wait for the thread end
         elif th is not None:

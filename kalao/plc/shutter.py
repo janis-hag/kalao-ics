@@ -10,10 +10,13 @@ shutter.py is part of the KalAO Instrument Control Software
 """
 
 import datetime
-import pandas as pd
-import numpy as np
-from opcua import ua
 from time import sleep
+
+import numpy as np
+import pandas as pd
+
+from opcua import ua
+
 from kalao.plc import core
 from kalao.utils import database, kalao_time
 

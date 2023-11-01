@@ -12,26 +12,28 @@ file_handling.py is part of the KalAO Instrument Control Software
 # TODO create functions:
 # - update_temporary_folder( current_folder, temporary_folder)
 
-import os
-from pathlib import Path
-import shutil
 import glob
+import os
+import shutil
 from datetime import datetime, timezone
-from astropy.io import fits
+from pathlib import Path
+
 import pandas as pd
-import yaml
+
 from astropy import units
 from astropy.coordinates import EarthLocation
+from astropy.io import fits
 from astropy.time import Time
 
-from kalao.utils import kalao_time, database, starfinder
-from kalao.fli import camera
-from kalao import euler
+import yaml
 
+from kalao import euler
+from kalao.fli import camera
+from kalao.utils import database, kalao_time, starfinder
 from sequencer import system
 
-from kalao_enums import SequencerStatus
 import kalao_config as config
+from kalao_enums import SequencerStatus
 
 
 def create_night_filepath(tmp_night_folder=None):

@@ -2,7 +2,7 @@
 #from enum import StrEnum
 
 # Emulate StrEnum for python < 3.11
-from enum import Enum, IntEnum, Flag, auto
+from enum import Enum, Flag, IntEnum, auto
 
 
 class StrEnum(str, Enum):

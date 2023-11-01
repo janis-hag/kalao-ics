@@ -5,13 +5,13 @@
 """
 
 import json
-import subprocess
 import os
 import shutil
-import time
+import subprocess
 import sys
+import time
 
-from CacaoProcessTools import fps, FPS_status
+from CacaoProcessTools import FPS_status, fps
 
 
 def source_conf(confname):

@@ -9,15 +9,16 @@ com_tools.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-import numpy as np
 import glob
-
-from astropy.io import fits
 from time import sleep, time
 
-from kalao.interface import star_centering
-from kalao.plc import calib_unit, tungsten, adc
+import numpy as np
+
+from astropy.io import fits
+
 from kalao.fli import camera
+from kalao.interface import star_centering
+from kalao.plc import adc, calib_unit, tungsten
 from kalao.utils import database, file_handling
 
 

@@ -18,13 +18,13 @@
 
 import pandas as pd
 
-from tcs_communication.pyipc import pymod_libipc as ipc
-#import tcs_communication.pygop as gop
-
 from kalao import euler
 from kalao.utils import database, kalao_time
+from tcs_communication.pyipc import pymod_libipc as ipc
 
 import kalao_config as config
+
+#import tcs_communication.pygop as gop
 
 #
 # The connection to ipcsrv on <host>:

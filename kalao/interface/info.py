@@ -12,13 +12,12 @@ datasets specific for the KalAO flask graphic user interface (GUI).
 
 import datetime
 
-from kalao.plc import core, tungsten
 from kalao.cacao import fake_data, telemetry
-
+from kalao.plc import core, tungsten
 from kalao.utils import database, kalao_time
 
-from kalao_enums import SequencerStatus
 import kalao_config as config
+from kalao_enums import SequencerStatus
 
 
 def short():
@@ -98,7 +97,8 @@ def kalao_status():
     :return: status_string to send to the Euler telescope
     """
 
-    sequencer_status = database.get_latest_record_value('obs_log', 'sequencer_status')
+    sequencer_status = database.get_latest_record_value(
+            'obs_log', 'sequencer_status')
     if not sequencer_status:
         # If the status is not set assume that the sequencer is down
         status_string = '/status/ERROR/0/DOWN'

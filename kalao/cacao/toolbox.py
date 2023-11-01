@@ -8,15 +8,15 @@ from pathlib import Path
 
 import numpy as np
 
-from astropy.nddata.blocks import block_reduce
 from astropy.io import fits
+from astropy.nddata.blocks import block_reduce
+
+from pyMilk.interfacing import isio_shmlib
+from pyMilk.interfacing.fps import FPS
+from pyMilk.interfacing.shm import SHM
 
 #import subprocess
 #from subprocess import PIPE, STDOUT
-
-from pyMilk.interfacing import isio_shmlib
-from pyMilk.interfacing.shm import SHM
-from pyMilk.interfacing.fps import FPS
 
 
 def get_roi_and_subapertures(data):

@@ -8,22 +8,24 @@
 camera.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
+import json
 import shutil
+from unittest.mock import Mock
+
+import numpy as np
+
+from astropy.io import fits
 
 import requests
 import requests.exceptions
 from requests.models import Response
-from unittest.mock import Mock
-import json
-from astropy.io import fits
-import numpy as np
 
-from kalao.utils import database, database_updater, file_handling
 from kalao.cacao import toolbox
+from kalao.utils import database, database_updater, file_handling
 from sequencer import system
 
-from kalao_enums import SequencerStatus, CameraServerStatus
 import kalao_config as config
+from kalao_enums import CameraServerStatus, SequencerStatus
 
 fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024),
                                            np.uint16)

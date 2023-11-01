@@ -9,14 +9,16 @@ calib_unit.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
+import numbers
+from time import sleep
+
+import numpy as np
+
+from opcua import ua
+
 from kalao.plc import core
 from kalao.utils import database
 from sequencer import system
-
-import numpy as np
-import numbers
-from opcua import ua
-from time import sleep
 
 import kalao_config as config
 

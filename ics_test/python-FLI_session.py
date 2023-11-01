@@ -6,12 +6,14 @@ Created on Wed Nov 18 16:53:39 2020
 @author: janis
 """
 
+import datetime
+import sys
+import time
+
+from astropy.io import fits
+
 import FLI
 from microscope.filterwheels import thorlabs
-from astropy.io import fits
-import datetime
-import time
-import sys
 
 sys.path.append('../kalao')
 

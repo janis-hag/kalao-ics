@@ -11,30 +11,27 @@ starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
 
 import time
+from datetime import datetime, timezone
+
+import numpy as np
 import pandas as pd
-from datetime import timezone, datetime
 
 from astropy import wcs
-from astropy.time import Time
-from astropy import units as u
-from astropy.stats import sigma_clipped_stats
 from astropy.io import fits
-from astropy.modeling import models, fitting
-
+from astropy.modeling import fitting, models
+from astropy.stats import sigma_clipped_stats
+from astropy.time import Time
 from photutils.detection import DAOStarFinder
 
 from pyMilk.interfacing.shm import SHM
 
 from kalao import euler
-from kalao.fli import camera
-from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
-from kalao.utils import database, file_handling, kalao_time
 from kalao.cacao import aocontrol, toolbox
-from tcs_communication import t120
+from kalao.fli import camera
+from kalao.plc import calib_unit, filterwheel, flip_mirror, laser, shutter
+from kalao.utils import database, file_handling, kalao_time
 from sequencer import system
-
-import numpy as np
-from numpy import sin, cos, arctan2, pi
+from tcs_communication import t120
 
 import kalao_config as config
 from kalao_enums import SequencerStatus
@@ -774,8 +771,8 @@ def generate_wcs():
 
 def calc_parang():
 
-    r2d = 180 / pi
-    d2r = pi / 180
+    r2d = 180 / np.pi
+    d2r = np.pi / 180
 
     coord = euler.telescope_coord()
 
@@ -792,11 +789,11 @@ def calc_parang():
     # ha_deg=(float(hdr['LST'])*15./3600)-ra_deg
 
     # VLT TCS formula
-    f1 = float(cos(geolat_rad) * sin(d2r * ha_deg))
+    f1 = float(np.cos(geolat_rad) * np.sin(d2r * ha_deg))
     f2 = float(
-            sin(geolat_rad) * cos(d2r * dec_deg) -
-            cos(geolat_rad) * sin(d2r * dec_deg) * cos(d2r * ha_deg))
-    parang = -r2d * arctan2(-f1, f2)  # Sign depends on focus
+            np.sin(geolat_rad) * np.cos(d2r * dec_deg) -
+            np.cos(geolat_rad) * np.sin(d2r * dec_deg) * np.cos(d2r * ha_deg))
+    parang = -r2d * np.arctan2(-f1, f2)  # Sign depends on focus
 
     return parang
 

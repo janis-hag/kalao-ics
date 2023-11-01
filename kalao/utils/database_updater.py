@@ -12,17 +12,17 @@ database_updater.py is part of the KalAO Instrument Control Software
 from signal import SIGINT, SIGTERM
 from sys import exit
 from time import sleep
+
 import schedule
 
-from kalao import plc
-from kalao.rtc import device_status
-from kalao import fli
-from kalao.plc import adc
-from kalao.utils import database
+from kalao import fli, plc
 from kalao.cacao import telemetry
+from kalao.plc import adc
+from kalao.rtc import device_status
+from kalao.utils import database
 
-from kalao_enums import CameraServerStatus
 import kalao_config as config
+from kalao_enums import CameraServerStatus
 
 stream_and_fps_list = {}
 
@@ -55,9 +55,7 @@ def update_plc_monitoring():
         print(e)
 
     # ADC
-    adc_status = {
-        'adc_angle': adc.get_angle()
-    }
+    adc_status = {'adc_angle': adc.get_angle()}
     values.update(adc_status)
 
     fli_server_status = fli.camera.check_server_status()

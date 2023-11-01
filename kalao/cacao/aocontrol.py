@@ -8,23 +8,24 @@
 aocontrol.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
 
-import numpy as np
 import time
-import libtmux
+
+import numpy as np
 import pandas as pd
 
-from pyMilk.interfacing.shm import SHM
 from pyMilk.interfacing.fps import FPS
+from pyMilk.interfacing.shm import SHM
+
+import libtmux
 
 from kalao import ippower
 from kalao.cacao import toolbox
 from kalao.utils import database
-
-from tcs_communication import t120
 from sequencer import system
+from tcs_communication import t120
 
-from kalao_enums import IPPowerStatus, LoopStatus
 import kalao_config as config
+from kalao_enums import IPPowerStatus, LoopStatus
 
 
 def close_loop():

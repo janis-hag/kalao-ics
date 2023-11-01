@@ -9,16 +9,12 @@ beck.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from . import shutter
-from . import calib_unit
-from . import flip_mirror
-from . import laser
-from . import tungsten
-from . import adc
-from . import temperature_control
+from opcua import Client
+
 from kalao.utils import database
 
-from opcua import Client
+from . import (adc, calib_unit, flip_mirror, laser, shutter,
+               temperature_control, tungsten)
 
 import kalao_config as config
 

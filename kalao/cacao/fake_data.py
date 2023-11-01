@@ -4,9 +4,9 @@
 @author: Nathanaël Restori
 """
 
+import builtins
 import math
 import random
-import builtins
 from datetime import datetime, timedelta, timezone
 
 from kalao.cacao.toolbox import *
@@ -300,8 +300,9 @@ def fake_latest_obs_log_entry():
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
     import numpy as np
+
+    import matplotlib.pyplot as plt
 
     streams = fake_streams()
 

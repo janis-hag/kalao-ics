@@ -2,14 +2,15 @@
 # Set the set_focus of M3 (1=Coralie 2=Necam 3=Kalao)
 #
 
-from opcua import Client
-from opcua import ua
-from opcua.common import methods
-from opcua.ua.uaerrors import UaError, BadNodeIdUnknown, BadSessionIdInvalid, BadTimeout
-import time
-import sys
-import logging
 import argparse
+import logging
+import sys
+import time
+
+from opcua import Client, ua
+from opcua.common import methods
+from opcua.ua.uaerrors import (BadNodeIdUnknown, BadSessionIdInvalid,
+                               BadTimeout, UaError)
 
 ready = 0  # global
 

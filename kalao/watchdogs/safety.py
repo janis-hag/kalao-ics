@@ -10,18 +10,18 @@ Watchdog to verify KalAO bench health (KalAO-ICS).
 
 import datetime
 from time import sleep
+
 import schedule
 
-from kalao import ippower, euler
-from kalao.plc import temperature_control, shutter, laser
-from kalao.utils import database, kalao_time
+from kalao import euler, ippower
 from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
-
+from kalao.plc import laser, shutter, temperature_control
+from kalao.utils import database, kalao_time
 from sequencer import system
 
-from kalao_enums import IPPowerStatus, CameraServerStatus
 import kalao_config as config
+from kalao_enums import CameraServerStatus, IPPowerStatus
 
 fps_list = {}
 

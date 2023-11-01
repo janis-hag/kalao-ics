@@ -6,15 +6,15 @@
 
 import os
 import time
-from signal import signal, SIGINT
+from signal import SIGINT, signal
 
 import numpy as np
 from scipy import ndimage
 
-from pyqtgraph.Qt import QtCore
-import pyqtgraph as pg
-
 from pyMilk.interfacing.shm import SHM
+
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtCore
 
 from kalao.cacao import toolbox
 

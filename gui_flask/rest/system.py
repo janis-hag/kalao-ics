@@ -1,9 +1,9 @@
-from flask import Blueprint, request, g
-
-from sequencer import system as s_system
-
 import json
 import time
+
+from flask import Blueprint, g, request
+
+from sequencer import system as s_system
 
 system_bp = Blueprint('system', __name__, url_prefix='/system')
 

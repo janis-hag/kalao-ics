@@ -12,10 +12,10 @@ TODO verify nuvu maximum flux and decrease EM gain or close shutter if needed.
 """
 
 from time import sleep
+
 import schedule
 
 from kalao.plc import core, temperature_control
-
 from sequencer import system
 
 

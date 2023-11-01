@@ -9,15 +9,14 @@ fli_stream.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 import argparse
-
-from time import sleep
-from signal import signal, SIGINT
+from signal import SIGINT, signal
 from sys import exit
+from time import sleep
 
 import numpy as np
 
-from kalao.fli import camera, FLI
 from kalao.cacao import toolbox
+from kalao.fli import FLI, camera
 
 from kalao_enums import CameraServerStatus
 
@@ -65,8 +64,8 @@ def run():
         while True:
             camera.take_frame(dit, do_not_log=True)
     else:
-        print('Error connecting to camera. Please try to stop or restart the kalao_camera service')
-
+        print('Error connecting to camera. Please try to stop or restart the kalao_camera service'
+              )
 
 
 if __name__ == '__main__':

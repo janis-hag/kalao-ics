@@ -1,9 +1,10 @@
 # test_server.py
 #
-import sys, os
 import logging
-import time
+import os
 import socket
+import sys
+import time
 
 # sys.path.append("/home/weber/src/pymod_libgop/")
 from tcs_communication.pygop import tcs_srv_gop

@@ -10,12 +10,13 @@ adc.py is part of the KalAO Instrument Control Software
 """
 
 import numbers
-import numpy as np
-from opcua import ua
 from time import sleep
 
+import numpy as np
 from numpy.polynomial import Polynomial
 from scipy.optimize import minimize_scalar
+
+from opcua import ua
 
 from kalao import euler
 from kalao.plc import core, filterwheel

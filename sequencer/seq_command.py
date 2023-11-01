@@ -9,22 +9,24 @@ seq_command.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-import sys
-import os
-import time
 import datetime
+import os
+import sys
+import time
+
 import numpy as np
 
-from kalao.plc import core, tungsten, laser, flip_mirror, shutter, filterwheel, calib_unit
-from kalao.fli import camera
-from kalao.utils import file_handling, database, database_updater, kalao_time, starfinder
 from kalao.cacao import aocontrol
+from kalao.fli import camera
+from kalao.plc import (calib_unit, core, filterwheel, flip_mirror, laser,
+                       shutter, tungsten)
+from kalao.utils import (database, database_updater, file_handling, kalao_time,
+                         starfinder)
 from sequencer import system
-
-from kalao_enums import SequencerStatus, TrackingStatus, LoopStatus
-import kalao_config as config
-
 from tcs_communication import t120
+
+import kalao_config as config
+from kalao_enums import LoopStatus, SequencerStatus, TrackingStatus
 
 
 def dark(**seq_args):

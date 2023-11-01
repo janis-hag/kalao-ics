@@ -10,11 +10,12 @@ Watchdog to do offloading and adc update
 """
 
 from time import sleep
+
 import schedule
 
-from kalao.plc import adc
 from kalao.cacao import aocontrol
 from kalao.interface import info
+from kalao.plc import adc
 
 import kalao_config as config
 

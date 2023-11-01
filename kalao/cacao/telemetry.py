@@ -9,16 +9,16 @@ The telemetry package contains the tools to store the Adaptive Optics telemetry 
 
 """
 
-import numpy as np
+import traceback
 
-import libtmux
+import numpy as np
 
 from pyMilk.interfacing.shm import SHM
 
-from kalao.utils import database
-from kalao.cacao import fake_data, toolbox
+import libtmux
 
-import traceback
+from kalao.cacao import fake_data, toolbox
+from kalao.utils import database
 
 import kalao_config as config
 
