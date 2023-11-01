@@ -12,9 +12,10 @@ starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 
 import time
 import pandas as pd
-from datetime import timezone
+from datetime import timezone, datetime
 
 from astropy import wcs
+from astropy.time import Time
 from astropy import units as u
 from astropy.stats import sigma_clipped_stats
 from astropy.io import fits
@@ -33,6 +34,7 @@ from tcs_communication import t120
 from sequencer import system
 
 import numpy as np
+from numpy import sin, cos, arctan2, pi
 
 import kalao_config as config
 from kalao_enums import SequencerStatus
@@ -768,6 +770,35 @@ def generate_wcs():
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
 
     return w
+
+
+def calc_parang():
+
+    r2d = 180 / pi
+    d2r = pi / 180
+
+    coord = euler.telescope_coord()
+
+    geolat_rad = config.Euler.latitude * d2r
+
+    la_silla_coord = euler.observing_location()
+
+    astro_time = Time(datetime.utcnow(), scale='utc', location=la_silla_coord)
+    lst = astro_time.sidereal_time('mean').hour
+
+    ha_deg = lst - coord.ra.value
+    dec_deg = coord.dec.value
+
+    # ha_deg=(float(hdr['LST'])*15./3600)-ra_deg
+
+    # VLT TCS formula
+    f1 = float(cos(geolat_rad) * sin(d2r * ha_deg))
+    f2 = float(
+            sin(geolat_rad) * cos(d2r * dec_deg) -
+            cos(geolat_rad) * sin(d2r * dec_deg) * cos(d2r * ha_deg))
+    parang = -r2d * arctan2(-f1, f2)  # Sign depends on focus
+
+    return parang
 
 
 def compute_fwhm(image, xc, yc, psf_bb=200, bg_bb=20):
