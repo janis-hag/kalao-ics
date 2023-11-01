@@ -76,8 +76,7 @@ def dark(**seq_args):
 
     # Take nbPic image
     for _ in range(nbPic):
-        #seq_command_received = database.get_latest_record('obs_log', key='sequencer_command_received')[
-        #    'sequencer_command_received']
+        #seq_command_received = database.get_latest_record_value('obs_log', key='sequencer_command_received')
         rValue, image_path = camera.take_image(dit=dit, filepath=filepath,
                                                sequencer_arguments=seq_args)
 
@@ -722,9 +721,8 @@ def waitfortracking(**seq_args):
     t0 = time.time()
 
     while time.time() - t0 < config.SEQ.pointing_timeout:
-        tracking_status = database.get_latest_record(
-                collection_name='obs_log',
-                key='tracking_status')['tracking_status']
+        tracking_status = database.get_latest_record_value(
+                collection_name='obs_log', key='tracking_status')
         if tracking_status == TrackingStatus.TRACKING:
             file_handling.update_db_from_telheader()
             return 0
@@ -912,8 +910,8 @@ def check_abort(q, dit, AO=False):
 
         #database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
 
-        status_time = database.get_latest_record(
-                'obs_log', key='fli_temporary_image_path')['time_utc'].replace(
+        status_time = database.get_latest_record_time(
+                'obs_log', key='fli_temporary_image_path').replace(
                         tzinfo=datetime.timezone.utc)
         print((t0 - status_time).total_seconds())
 

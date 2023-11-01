@@ -27,7 +27,7 @@ fps_list = {}
 
 
 def _get_elapsed_time_since_activity():
-    latest_obs_entry_time = database.get_latest_record('obs_log')['time_utc']
+    latest_obs_entry_time = database.get_latest_record_time('obs_log')
 
     return (kalao_time.now() - latest_obs_entry_time.replace(
             tzinfo=datetime.timezone.utc)).total_seconds()
@@ -152,8 +152,7 @@ def _check_cooling_status():
 
     cooling_status = temperature_control.get_cooling_values()
 
-    latest_log = database.get_latest_record('obs_log',
-                                            'sequencer_log')['sequencer_log']
+    latest_log = database.get_latest_record_value('obs_log', 'sequencer_log')
 
     if cooling_status['cooling_flow_value'] < config.Cooling.minimal_flow:
 

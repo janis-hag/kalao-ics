@@ -79,9 +79,8 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None,
             centering_image = np.zeros((256, 256))
             file_date = 'No data'
 
-        manual_centering_needed = database.get_latest_record(
-                'obs_log',
-                key='tracking_manual_centering')['tracking_manual_centering']
+        manual_centering_needed = database.get_latest_record_value(
+                'obs_log', key='tracking_manual_centering')
 
         return manual_centering_needed, centering_image, file_date
 

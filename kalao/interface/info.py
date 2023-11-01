@@ -98,8 +98,7 @@ def kalao_status():
     :return: status_string to send to the Euler telescope
     """
 
-    sequencer_status = database.get_data('obs_log', ['sequencer_status'],
-                                         1)['sequencer_status']['values']
+    sequencer_status = database.get_latest_record_value('obs_log', 'sequencer_status')
     if not sequencer_status:
         # If the status is not set assume that the sequencer is down
         status_string = '/status/ERROR/0/DOWN'
@@ -111,13 +110,11 @@ def kalao_status():
     elif sequencer_status[0] == SequencerStatus.WAITLAMP:
         status_string = '|status|BUSY|' + elapsed_time(sequencer_status[0])
     elif sequencer_status[0] == SequencerStatus.EXP:
-        # sequencer_command_received = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']
+        # sequencer_command_received = database.get_latest_record_value('obs_log', key='sequencer_command_received')
         # if sequencer_command_received['type'] == 'K_LMPFLT':
-        texp = int(
-                database.get_latest_record('obs_log',
-                                           key='fli_texp')['fli_texp'])
+        texp = int(database.get_latest_record_value('obs_log', key='fli_texp'))
         # if
-        # texp = database.get_latest_record('obs_log', key='sequencer_command_received')['sequencer_command_received']['texp']
+        # texp = database.get_latest_record_value('obs_log', key='sequencer_command_received')['texp']
         status_string = '|status|BUSY|elapsed_time|' + elapsed_time(
                 sequencer_status[0]) + '|requested_time|' + str(texp)
     else:
@@ -139,27 +136,26 @@ def elapsed_time(sequencer_status):
     """
 
     if sequencer_status == SequencerStatus.INITIALISING:
-        status_time = database.get_latest_record(
-                'obs_log', key='sequencer_status')['time_utc'].replace(
-                        tzinfo=datetime.timezone.utc)
-        # database.get_data('obs_log', ['sequencer_status'], 1)['sequencer_status']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
+        status_time = database.get_latest_record_time(
+                'obs_log',
+                key='sequencer_status').replace(tzinfo=datetime.timezone.utc)
+
         return str(config.SEQ.init_duration -
                    (kalao_time.now() -
                     status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == SequencerStatus.SETUP:
-        k_type = database.get_latest_record(
-                'obs_log', key='sequencer_command_received'
-        )['sequencer_command_received']['type'][2:]
+        k_type = database.get_latest_record_value(
+                'obs_log', key='sequencer_command_received')['type'][2:]
 
         if k_type.upper() in config.SEQ.timings:
             setup_time = config.SEQ.timings[k_type.upper()]
         else:
             setup_time = 0
 
-        status_time = database.get_latest_record(
-                'obs_log', key='sequencer_status')['time_utc'].replace(
-                        tzinfo=datetime.timezone.utc)
+        status_time = database.get_latest_record_time(
+                'obs_log',
+                key='sequencer_status').replace(tzinfo=datetime.timezone.utc)
 
         return str(setup_time - (kalao_time.now() -
                                  status_time).total_seconds()).split('.')[0]
@@ -179,14 +175,10 @@ def elapsed_exposure_seconds():
     :return: Elapsed time in seconds (int)
     """
 
-    # last_command_time = database.get_data('obs_log', ['sequencer_command_received'], 1)['sequencer_command_received']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-
     last_exposure_start = _last_exposure_start()
-    # last_exposure_end = database.get_data('obs_log', ['fli_log'], 1)['fli_log']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-    last_exposure_end = database.get_latest_record(
-            'obs_log', key='fli_temporary_image_path')['time_utc'].replace(
+    last_exposure_end = database.get_latest_record_time(
+            'obs_log', key='fli_temporary_image_path').replace(
                     tzinfo=datetime.timezone.utc)
-    # database.get_data('obs_log', ['fli_temporary_image_path'], 1)['fli_temporary_image_path']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
 
     if last_exposure_start > last_exposure_end:
         # An exposure is running
@@ -205,10 +197,10 @@ def _last_exposure_start():
 
     :return: Time of exposure start (datetime)
     """
-    # return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-    return database.get_latest_record(
-            'obs_log', key='fli_image_count')['time_utc'].replace(
-                    tzinfo=datetime.timezone.utc)
+
+    return database.get_latest_record_time(
+            'obs_log',
+            key='fli_image_count').replace(tzinfo=datetime.timezone.utc)
 
 
 def _last_filepath_archived():
@@ -218,6 +210,5 @@ def _last_filepath_archived():
     :return: Image file path (str)
     """
 
-    # return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
-    return database.get_latest_record(
-            'obs_log', key='fli_last_image_path')['fli_last_image_path']
+    return database.get_latest_record_value('obs_log',
+                                            key='fli_last_image_path')

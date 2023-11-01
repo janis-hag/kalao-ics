@@ -25,7 +25,8 @@ from sequencer import system
 from kalao_enums import SequencerStatus, CameraServerStatus
 import kalao_config as config
 
-fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024), np.uint16)
+fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024),
+                                           np.uint16)
 
 
 def take_frame(dit, filepath=None, do_not_log=False, update_stream=True):
@@ -139,8 +140,8 @@ def increment_image_counter():
     :return: new image counter value
     """
 
-    image_count = database.get_latest_record(
-            'obs_log', key='fli_image_count')['fli_image_count'] + 1
+    image_count = database.get_latest_record_value('obs_log',
+                                                   key='fli_image_count') + 1
     database.store_obs_log({'fli_image_count': image_count})
 
     return image_count

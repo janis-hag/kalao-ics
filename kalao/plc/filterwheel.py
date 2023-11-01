@@ -85,7 +85,8 @@ def set_position(filter_arg):
 
 def get_position(from_db=False):
     if from_db:
-        filter_name = database.get_latest_record('obs_log', key='filterwheel_status')['filterwheel_status']
+        filter_name = database.get_latest_record_value(
+                'obs_log', key='filterwheel_status')
         position = id_filter_dict[filter_name]
     else:
         fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)

@@ -119,6 +119,9 @@ def get_data(collection_name, keys, nb_of_point, dt=None):
     if dt is None:
         dt = kalao_time.now()
 
+    if isinstance(keys, str):
+        keys = [keys]
+
     with connect_db() as client:
 
         db = get_db(client, dt)
@@ -212,6 +215,14 @@ def get_latest_record(collection_name, key=None, no_id=True):
         return latest_record
     else:
         return {}
+
+
+def get_latest_record_value(collection_name, key=None, no_id=True):
+    return get_latest_record(collection_name, key, no_id).get(key)
+
+
+def get_latest_record_time(collection_name, key=None, no_id=True):
+    return get_latest_record(collection_name, key, no_id).get('time_utc')
 
 
 def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, sampling=1500,

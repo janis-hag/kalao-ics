@@ -142,8 +142,8 @@ def config_adc(beck=None, override_threshold=False):
     else:
         angle = get_optimal_adc_angle(alt, wavelength, T, P)
 
-    if override_threshold or np.abs(
-            angle - get_angle()) > config.ADC.angle_threshold:
+    if override_threshold or np.abs(angle -
+                                    get_angle()) > config.ADC.angle_threshold:
         set_angle(angle, beck=beck)
 
     if disconnect_on_exit:
@@ -185,7 +185,7 @@ def set_angle(angle, beck=None):
 
 
 def get_angle():
-    return database.get_latest_record('obs_log', key='adc_angle')['adc_angle']
+    return database.get_latest_record_value('obs_log', key='adc_angle')
 
 
 def _set_value(adc_id, value_path, value, beck=None):

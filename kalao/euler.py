@@ -30,10 +30,8 @@ def observing_location():
 
 
 def star_coord():
-    star_ra = database.get_latest_record('obs_log',
-                                         key='target_ra')['target_ra']
-    star_dec = database.get_latest_record('obs_log',
-                                          key='target_dec')['target_dec']
+    star_ra = database.get_latest_record_value('obs_log', key='target_ra')
+    star_dec = database.get_latest_record_value('obs_log', key='target_dec')
 
     # TODO verify star_ra and star_dec validity
 
@@ -43,10 +41,8 @@ def star_coord():
 
 
 def telescope_coord():
-    tel_ra = database.get_latest_record('obs_log',
-                                       key='telescope_ra')['telescope_ra']
-    tel_dec = database.get_latest_record('obs_log',
-                                       key='telescope_dec')['telescope_dec']
+    tel_ra = database.get_latest_record_value('obs_log', key='telescope_ra')
+    tel_dec = database.get_latest_record_value('obs_log', key='telescope_dec')
 
     # TODO verify tel_ra and tel_dec validity
 

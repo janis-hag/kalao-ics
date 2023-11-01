@@ -18,8 +18,6 @@
 
 import pandas as pd
 
-
-
 from tcs_communication.pyipc import pymod_libipc as ipc
 #import tcs_communication.pygop as gop
 
@@ -53,8 +51,8 @@ def send_offset(delta_alt_arcsec, delta_az_arcsec):
     :return:
     """
 
-    host = database.get_latest_record(
-            'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
+    host = database.get_latest_record_value('obs_log',
+                                            key='t120_host') + '.ls.eso.org'
 
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
                                       config.T120.rcmd, config.T120.port,
@@ -89,8 +87,8 @@ def send_focus_offset(focus_offset):
     #if focus_offset > focus_offset_limit:
     #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limit {focus_offset_limit}')
 
-    host = database.get_latest_record(
-            'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
+    host = database.get_latest_record_value('obs_log',
+                                            key='t120_host') + '.ls.eso.org'
 
     #Verify offset value below limit differentiate between offsets and absolute values
     if type(focus_offset) is str:
@@ -127,8 +125,8 @@ def update_fo_delta(focus_offset):
     #if focus_offset > focus_offset_limit:
     #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limit {focus_offset_limit}')
 
-    host = database.get_latest_record(
-            'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
+    host = database.get_latest_record_value('obs_log',
+                                            key='t120_host') + '.ls.eso.org'
 
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
                                       config.T120.rcmd, config.T120.port,
@@ -149,8 +147,8 @@ def update_fo_delta(focus_offset):
 
 def get_focus_value():
 
-    host = database.get_latest_record(
-            'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
+    host = database.get_latest_record_value('obs_log',
+                                            key='t120_host') + '.ls.eso.org'
 
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
                                       config.T120.rcmd, config.T120.port,
@@ -183,8 +181,8 @@ def get_focus_value():
 
 
 def request_autofocus():
-    host = database.get_latest_record(
-            'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
+    host = database.get_latest_record_value('obs_log',
+                                            key='t120_host') + '.ls.eso.org'
 
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
                                       config.T120.rcmd, config.T120.port,
@@ -211,8 +209,8 @@ def test_connection():
     """
     _t120_print_and_log(f'Sending show i')
 
-    host = database.get_latest_record(
-            'obs_log', key='t120_host')['t120_host'] + '.ls.eso.org'
+    host = database.get_latest_record_value('obs_log',
+                                            key='t120_host') + '.ls.eso.org'
 
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
                                       config.T120.rcmd, config.T120.port,
