@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : loop_watchdog.py
+# @Filename : loop.py
 # @Date : 2023-09-21-13-20
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
