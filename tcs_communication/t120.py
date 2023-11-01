@@ -238,8 +238,8 @@ def _update_db_ra_dec_offsets(delta_alt_arcsec, delta_az_arcsec):
     # TODO convert alt/az offset into ra/dec
     coord = euler.compute_altaz_offset(delta_alt_arcsec, delta_az_arcsec)
 
-    database.store_obs_log({'telescope_ra': coord.ra.value})
-    database.store_obs_log({'telescope_dec': coord.dec.value})
+    database.store_obs_log({'telescope_ra': coord.ra.deg})
+    database.store_obs_log({'telescope_dec': coord.dec.deg})
 
     return 0
 

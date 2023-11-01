@@ -115,7 +115,8 @@ def get_telemetry_series(realData=True):
 
 def get_data(collection_name, keys, nb_of_point, dt=None):
     # TODO get data from additional day in nb_of_points not reached
-    # If dt is None, get db for today, otherwise get db for the day/night specified  by dt
+
+    # If dt is None, get db for today, otherwise get db for the day/night specified by dt
     if dt is None:
         dt = kalao_time.now()
 
@@ -163,7 +164,7 @@ def get_all_last_telemetry(realData=True):
     return get_data('telemetry', definitions['telemetry'].keys(), 1, dt=None)
 
 
-def get_latest_record(collection_name, key=None, no_id=True):
+def get_latest_record(collection_name, key=None, no_id=True, max_days=100):
     """
     Searches for the last record in the database for a certain collection
 
@@ -207,14 +208,14 @@ def get_latest_record(collection_name, key=None, no_id=True):
                         del latest_record['_id']
         day_number += 1
 
-        if day_number > 100:
+        if day_number > max_days:
             break
     #client.close()
 
     if latest_record is None:
-        return latest_record
-    else:
         return {}
+    else:
+        return latest_record
 
 
 def get_latest_record_value(collection_name, key=None, no_id=True):
@@ -225,77 +226,37 @@ def get_latest_record_time(collection_name, key=None, no_id=True):
     return get_latest_record(collection_name, key, no_id).get('time_utc')
 
 
-def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, sampling=1500,
-                                      collection_name='monitoring'):
+def read_mongo_to_pandas_by_timestamp(dt_start, dt_end,
+                                      collection_name='monitoring',
+                                      sampling=None, no_id=True):
     """
     Read from Mongo and Store into DataFrame by timestamp
 
     :param dt_start:
     :param dt_end:
-    :param sampling:
     :param collection_name:
+    :param sampling:
+    :param no_id:
     :return:
     """
 
     dt_range = dt_end - dt_start
-    dt = dt_start
-    days = int(math.ceil(dt_range.days)) + 1
-    no_id = True
-    appended_df = []
+    days = math.ceil(dt_range.days) + 1
 
-    with connect_db() as client:
-
-        for day_number in range(days):
-            # Loop of days
-            db = get_db(client, dt + timedelta(days=day_number))
-
-            # Make a query to the specific DB and Collection
-            #cursor = db[collection].find(query)
-            cursor = db[collection_name].find()
-
-            # Expand the cursor and construct the DataFrame
-            appended_df.append(pd.DataFrame(list(cursor)))
-
-        # Check if the databse is empty for the given days
-        if all([df.empty for df in appended_df]):
-            # Search one more day back in time to look for database content
-            db = get_db(client, dt + timedelta(days=days))
-            df = pd.DataFrame(list(db[collection_name].find()))
-
-            # If it did not succeed return a NaN database with column names
-            if df.empty:
-                df = pd.DataFrame(
-                        columns=list(definitions['monitoring'].keys()),
-                        index=[0])
-                no_id = False  # Set to False because the '_id' column does not exist in this df
-
-        else:
-            df = pd.concat(appended_df).sort_values(by='time_utc',
-                                                    ignore_index=True)
-
-        # Delete the _id
-        if no_id:
-            del df['_id']
-
-    # Downsample using temporal binning
-    if sampling < len(df):
-        time_step = ((df['time_utc'][-1:] - df['time_utc'][0]) /
-                     sampling).iat[0]
-        df = df.resample(time_step, on='time_utc').mean()
-        #df['time_utc'] = df.index
-        df.reset_index(inplace=True)
+    df = read_mongo_to_pandas(dt_end, days, collection_name, sampling, no_id)
 
     return df
 
 
 def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
-                         no_id=True):
+                         sampling=None, no_id=True):
     """
     Read from Mongo and Store into DataFrame by date
 
     :param dt:
     :param days:
     :param collection_name:
+    :param sampling:
     :param no_id:
     :return:
     """
@@ -303,11 +264,10 @@ def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
     appended_df = []
 
     if dt is None:
-        dt = datetime.now(timezone.utc)
+        dt = kalao_time.now()
 
     # Connect to MongoDB
     with connect_db() as client:
-
         for day_number in range(days):
             # Loop of days
             db = get_db(client, dt - timedelta(days=day_number))
@@ -339,6 +299,14 @@ def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
         # Delete the _id
         if no_id:
             del df['_id']
+
+    # Downsample using temporal binning
+    if sampling is not None and len(df) > sampling:
+        time_step = ((df['time_utc'][-1:] - df['time_utc'][0]) /
+                     sampling).iat[0]
+        df = df.resample(time_step, on='time_utc').mean()
+        #df['time_utc'] = df.index
+        df.reset_index(inplace=True)
 
     return df
 

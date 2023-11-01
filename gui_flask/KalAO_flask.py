@@ -258,11 +258,11 @@ def create_app():
         startDay = startDay.astimezone(timezone.utc)
         endDay = endDay.astimezone(timezone.utc)
         monitoring_data = k_database.read_mongo_to_pandas_by_timestamp(
-                startDay, endDay,
-                collection_name='monitoring')  #.to_json(orient="split")*/
+                startDay, endDay, collection_name='monitoring',
+                sampling=1500)  #.to_json(orient="split")*/
         telemetry_data = k_database.read_mongo_to_pandas_by_timestamp(
-                startDay, endDay,
-                collection_name='telemetry')  #.to_json(orient="split")*/
+                startDay, endDay, collection_name='telemetry',
+                sampling=1500)  #.to_json(orient="split")*/
         #data = telemetry_data
         ts = {}
         ts_full = []

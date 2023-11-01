@@ -152,8 +152,8 @@ def gop_server():
 
             database.store_obs_log({
                     'tcs_header_path': args['header'],
-                    'telescope_ra': args['ra'],
-                    'telescope_dec': args['dec'],
+                    'telescope_ra': float(args['ra']),
+                    'telescope_dec': float(args['dec']),
                     'tracking_status': TrackingStatus.TRACKING
             })
 
