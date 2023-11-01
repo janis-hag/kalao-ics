@@ -82,7 +82,7 @@ def take_image(
         database.store_obs_log({'fli_log': message})
 
     # Logging exposure command into database
-    log(req)
+    log_request(req)
     log_temporary_image_path(filepath)
 
     if req.status_code == 200:
@@ -161,7 +161,7 @@ def cut_image(img, window=None, center=None):
     return img
 
 
-def log(req):
+def log_request(req):
     # TODO add docstring
 
     database.store_obs_log({

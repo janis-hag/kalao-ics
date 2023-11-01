@@ -18,10 +18,13 @@
 
 import pandas as pd
 
+
+
 from tcs_communication.pyipc import pymod_libipc as ipc
 #import tcs_communication.pygop as gop
 
-from kalao.utils import database, kalao_time, starfinder
+from kalao import euler
+from kalao.utils import database, kalao_time
 
 import kalao_config as config
 
@@ -41,12 +44,12 @@ def _t120_print_and_log(log_text):
     database.store_obs_log({'t120_log': log_text})
 
 
-def send_offset(delta_az_arcsec, delta_alt_arcsec):
+def send_offset(delta_alt_arcsec, delta_az_arcsec):
     """
     Send altitude azimuth offset to T120 telescope server.
 
-    :param delta_az_arcsec: altitude offset to apply
-    :param delta_alt_arcsec: azimuth offset to apply
+    :param delta_alt_arcsec: altitude offset to apply
+    :param delta_az_arcsec: azimuth offset to apply
     :return:
     """
 
@@ -68,7 +71,8 @@ def send_offset(delta_az_arcsec, delta_alt_arcsec):
     ipc.send_cmd(offset_cmd, config.T120.connection_timeout,
                  config.T120.altaz_timeout)
 
-    #_update_db_ra_dec_offsets(delta_alt, delta_az)
+    # Offsets are corrections to pointing error, not actual change of the center of the field
+    # _update_db_ra_dec_offsets(delta_alt_arcsec, delta_az_arcsec)
 
     return socketId
 
@@ -232,13 +236,9 @@ def _update_db_ra_dec_offsets(delta_alt_arcsec, delta_az_arcsec):
     :param delta_az_offset: az offset which has been sent to the telescope
     :return:
     """
-    latest_ra = database.get_latest_record('obs_log',
-                                           key='telescope_ra')['telescope_ra']
-    latest_dec = database.get_latest_record(
-            'obs_log', key='telescope_dec')['telescope_dec']
 
     # TODO convert alt/az offset into ra/dec
-    coord = starfinder.compute_altaz_offset(delta_alt_arcsec, delta_az_arcsec)
+    coord = euler.compute_altaz_offset(delta_alt_arcsec, delta_az_arcsec)
 
     database.store_obs_log({'telescope_ra': coord.ra.value})
     database.store_obs_log({'telescope_dec': coord.dec.value})

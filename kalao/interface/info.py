@@ -12,16 +12,12 @@ datasets specific for the KalAO flask graphic user interface (GUI).
 
 import datetime
 
-from astropy import units as u
-from astropy.coordinates import EarthLocation, SkyCoord, AltAz, get_sun
-from astropy.time import Time
-
 from kalao.plc import core, tungsten
 from kalao.cacao import fake_data, telemetry
 
 from kalao.utils import database, kalao_time
 
-from kalao_enums import SequencerStatus, TrackingStatus
+from kalao_enums import SequencerStatus
 import kalao_config as config
 
 
@@ -225,75 +221,3 @@ def _last_filepath_archived():
     # return database.get_data('obs_log', ['fli_image_count'], 1)['fli_image_count']['time_utc'][0].replace(tzinfo=datetime.timezone.utc)
     return database.get_latest_record(
             'obs_log', key='fli_last_image_path')['fli_last_image_path']
-
-
-def filter_name():
-    return database.get_latest_record(
-            'obs_log', key='filterwheel_status')['filterwheel_status']
-
-
-def adc_angle():
-    return database.get_latest_record('obs_log', key='adc_angle')['adc_angle']
-
-
-def outside_pressure():
-    # Might be updated to take actual value from weather station
-    return config.Euler.default_pressure
-
-
-def outside_temperature():
-    # Might be updated to take actual value from weather station
-    return config.Euler.default_temperature
-
-
-def star_coord():
-    star_ra = database.get_latest_record('obs_log',
-                                         key='target_ra')['target_ra']
-    star_dec = database.get_latest_record('obs_log',
-                                          key='target_dec')['target_dec']
-
-    # TODO verify star_ra and star_dec validity
-
-    c = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree, frame='icrs')
-
-    return c
-
-
-def telescope_coord():
-    tel_ra = float(
-            database.get_latest_record('obs_log',
-                                       key='telescope_ra')['telescope_ra'])
-    tel_dec = float(
-            database.get_latest_record('obs_log',
-                                       key='telescope_dec')['telescope_dec'])
-
-    # TODO verify tel_ra and tel_dec validity
-
-    c = SkyCoord(ra=tel_ra * u.degree, dec=tel_dec * u.degree, frame='icrs')
-
-    return c
-
-
-def observing_location():
-    return EarthLocation(lat=config.Euler.latitude, lon=config.Euler.longitude,
-                         height=config.Euler.altitude * u.m)
-
-
-def telescope_coord_altaz():
-    #timezone_zone = timezone('Chile/Continental')
-    # date of today time = zone.localize(dt.datetime.now())
-    # give location on the Earth observing_location = EarthLocation(lat=-lat*u.deg, lon=lng*u.deg, height = alt)
-
-    # TODO check coordinates
-    # La Silla coordinates
-
-    altaz_frame = AltAz(location=observing_location(), obstime=Time.now())
-
-    return telescope_coord().transform_to(altaz_frame)
-
-
-def sun_elevation():
-    time = Time.now()
-    altaz_frame = AltAz(location=observing_location(), obstime=time)
-
-    return get_sun(time).transform_to(altaz_frame).alt.deg

@@ -324,7 +324,7 @@ def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False):
         az_offload = np.clip(az_offload, -config.TTM.max_tel_offload,
                              config.TTM.max_tel_offload)
 
-        t120.send_offset(az_offload, alt_offload)
+        t120.send_offset(alt_offload, az_offload)
 
     return 0
 

@@ -17,8 +17,8 @@ from time import sleep
 from numpy.polynomial import Polynomial
 from scipy.optimize import minimize_scalar
 
-from kalao.plc import core
-from kalao.interface import info
+from kalao import euler
+from kalao.plc import core, filterwheel
 from kalao.utils import database
 
 import kalao_config as config
@@ -123,10 +123,10 @@ def config_adc(beck=None, override_threshold=False):
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
-    filter_name = status.filter_name()
-    T = status.outside_temperature()
-    P = status.outside_pressure()
-    alt = status.telescope_coord_altaz().alt.degrees
+    _, filter_name = filterwheel.get_position(from_db=True)
+    T = euler.outside_temperature()
+    P = euler.outside_pressure()
+    alt = euler.telescope_coord_altaz().alt.deg
 
     wavelength = filter_to_wavelength[filter_name]
 
@@ -142,10 +142,8 @@ def config_adc(beck=None, override_threshold=False):
     else:
         angle = get_optimal_adc_angle(alt, wavelength, T, P)
 
-    current_angle = status.adc_angle()
-
     if override_threshold or np.abs(
-            angle - current_angle) > config.ADC.angle_threshold:
+            angle - get_angle()) > config.ADC.angle_threshold:
         set_angle(angle, beck=beck)
 
     if disconnect_on_exit:
@@ -184,6 +182,10 @@ def set_angle(angle, beck=None):
 
     # TODO: check motors moved successfully
     database.store_obs_log({'adc_angle': angle})
+
+
+def get_angle():
+    return database.get_latest_record('obs_log', key='adc_angle')['adc_angle']
 
 
 def _set_value(adc_id, value_path, value, beck=None):

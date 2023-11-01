@@ -83,20 +83,19 @@ def set_position(filter_arg):
         return -1
 
 
-def get_position():
-    fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)
-    # fw.enable()
-    # time.sleep(config.FilterWheel.enable_wait)
-    # fw.initialize()
-    # time.sleep(config.FilterWheel.initialization_wait)
-    position = fw.get_position()
-    filter_name = id_filter_dict[position]
+def get_position(from_db=False):
+    if from_db:
+        filter_name = database.get_latest_record('obs_log', key='filterwheel_status')['filterwheel_status']
+        position = id_filter_dict[filter_name]
+    else:
+        fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)
+        position = fw.get_position()
+        filter_name = id_filter_dict[position]
 
     return position, filter_name
 
 
 def init():
-
     fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)
     fw.enable()
     time.sleep(config.FilterWheel.enable_wait)

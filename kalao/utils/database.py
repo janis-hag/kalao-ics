@@ -208,7 +208,10 @@ def get_latest_record(collection_name, key=None, no_id=True):
             break
     #client.close()
 
-    return latest_record
+    if latest_record is None:
+        return latest_record
+    else:
+        return {}
 
 
 def read_mongo_to_pandas_by_timestamp(dt_start, dt_end, sampling=1500,

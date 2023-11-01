@@ -24,11 +24,11 @@ from photutils.detection import DAOStarFinder
 
 from pyMilk.interfacing.shm import SHM
 
+from kalao import euler
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser, shutter, flip_mirror, calib_unit
 from kalao.utils import database, file_handling, kalao_time
 from kalao.cacao import aocontrol, toolbox
-from kalao.interface import info
 from tcs_communication import t120
 from sequencer import system
 
@@ -261,7 +261,7 @@ def send_pixel_offset(x, y):
     alt_offset = (x - config.FLI.center_x) * config.FLI.pix_scale_x
     az_offset = (y - config.FLI.center_y) * config.FLI.pix_scale_y
 
-    t120.send_offset(az_offset, alt_offset)
+    t120.send_offset(alt_offset, az_offset)
 
     system.print_and_log(f'Sending offset: {alt_offset=} {az_offset=}')
 
@@ -760,7 +760,7 @@ def generate_wcs():
 
     # RA, DEC at reference
     #w.wcs.crval = [c.ra.to_value(), c.dec.to_value()]
-    coord = info.telescope_coord()
+    coord = euler.telescope_coord()
 
     w.wcs.crval = [coord.ra.degree, coord.dec.degree]
 
@@ -768,12 +768,6 @@ def generate_wcs():
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
 
     return w
-
-
-def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
-    return info.telescope_coord_altaz().spherical_offsets_by(
-            alt_offset_arcsec * u.arcsec,
-            az_offset_arcsec * u.arcsec).transform_to('icrs')
 
 
 def compute_fwhm(image, xc, yc, psf_bb=200, bg_bb=20):
