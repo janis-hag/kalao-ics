@@ -26,6 +26,7 @@ from astropy.time import Time
 
 from kalao.utils import kalao_time, database, starfinder
 from kalao.fli import camera
+from kalao import euler
 
 from sequencer import system
 
@@ -511,9 +512,7 @@ def _dynamic_cards_update(header_df, seq_args=None):
 
     dt_obs = datetime.fromisoformat(date_obs).replace(tzinfo=timezone.utc)
 
-    la_silla_coord = EarthLocation.from_geocentric(1838554.9580025,
-                                                   -5258914.42492168,
-                                                   -3099898.78073271, units.m)
+    la_silla_coord = euler.observing_location()
 
     astro_time = Time(date_obs, scale='utc', location=la_silla_coord)
     sidereal_seconds = astro_time.sidereal_time('mean').hour * 3600
