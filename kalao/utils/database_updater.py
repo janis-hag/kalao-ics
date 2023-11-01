@@ -17,6 +17,7 @@ import schedule
 from kalao import plc
 from kalao.rtc import device_status
 from kalao import fli
+from kalao.plc import adc
 from kalao.utils import database
 from kalao.cacao import telemetry
 
@@ -52,6 +53,12 @@ def update_plc_monitoring():
         values.update(filter_status)
     except Exception as e:
         print(e)
+
+    # ADC
+    adc_status = {
+        'adc_angle': adc.get_angle()
+    }
+    values.update(adc_status)
 
     fli_server_status = fli.camera.check_server_status()
     values.update({'fli_status': str(fli_server_status)})

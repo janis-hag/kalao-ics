@@ -49,6 +49,12 @@ fli_filter_name:
   main_gui: 3
   group:
 
+# ADC
+adc_angle:
+  short: ADC Angle
+  long: Angle between the ADC prisms
+  unit: °
+
 # PLC
 shutter:
   short: Shutter position

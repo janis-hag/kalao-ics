@@ -52,16 +52,12 @@ def telescope_coord():
 
 
 def telescope_coord_altaz():
-    #timezone_zone = timezone('Chile/Continental')
-    # date of today time = zone.localize(dt.datetime.now())
-    # give location on the Earth observing_location = EarthLocation(lat=-lat*u.deg, lon=lng*u.deg, height = alt)
-
-    # TODO check coordinates
-    # La Silla coordinates
-
     altaz_frame = AltAz(location=observing_location(), obstime=Time.now())
 
     return telescope_coord().transform_to(altaz_frame)
+
+def telescope_zenith_angle():
+    return 90 - telescope_coord_altaz().alt.deg
 
 
 def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):

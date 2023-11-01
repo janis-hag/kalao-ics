@@ -94,20 +94,18 @@ def air_refractive_index_EDLEN(lambda0_, T, P, H=None):
     return 1 + n * 1e-8
 
 
-def dispersion_air(alt, wavelength, T, P, H=0):
+def dispersion_air(zenith_angle, wavelength, T, P, H=0):
     wavelength_ref = 715e-9
     air_refractive_index = air_refractive_index_EDLEN
 
-    zenith_angle = (90 - alt) * np.pi / 180
-
-    return np.tan(zenith_angle) * (
+    return np.tan(zenith_angle * np.pi / 180) * (
             air_refractive_index(wavelength, T, P, H) -
             air_refractive_index(wavelength_ref, T, P, H)) * 180 / np.pi * 3600
 
 
-def get_optimal_adc_angle(alt, wavelength, T, P):
+def get_optimal_adc_angle(zenith_angle, wavelength, T, P):
     # Check the dispersion of the ADC is big enough for small elevations
-    target_dispersion = dispersion_air(alt, wavelength, T, P)
+    target_dispersion = dispersion_air(zenith_angle, wavelength, T, P)
     dispersion = dispersion_adc[wavelength]
 
     res = minimize_scalar(lambda x: np.abs(dispersion(x) - target_dispersion),
@@ -126,7 +124,7 @@ def config_adc(beck=None, override_threshold=False):
     _, filter_name = filterwheel.get_position(from_db=True)
     T = euler.outside_temperature()
     P = euler.outside_pressure()
-    alt = euler.telescope_coord_altaz().alt.deg
+    zenith_angle = euler.telescope_zenith_angle()
 
     wavelength = filter_to_wavelength[filter_name]
 
@@ -136,11 +134,11 @@ def config_adc(beck=None, override_threshold=False):
         angle = 0
 
         for w in wavelength:
-            angle += get_optimal_adc_angle(alt, w, T, P)
+            angle += get_optimal_adc_angle(zenith_angle, w, T, P)
 
         angle /= len(wavelength)
     else:
-        angle = get_optimal_adc_angle(alt, wavelength, T, P)
+        angle = get_optimal_adc_angle(zenith_angle, wavelength, T, P)
 
     if override_threshold or np.abs(angle -
                                     get_angle()) > config.ADC.angle_threshold:

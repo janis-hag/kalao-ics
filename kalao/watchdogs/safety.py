@@ -98,6 +98,7 @@ def _check_wfs_inactive(inactivity_time):
             system.print_and_log(message)
 
             aocontrol.emgain_off()
+            aocontrol.set_exptime(0)
 
     return 0
 
