@@ -538,8 +538,9 @@ def _dynamic_cards_update(header_df, seq_args=None):
     #     idx = idx[0]
     header_df['comment']['UTC'] = '[s] ' + dt_obs.strftime(
             '%H:%M:%S.%f')[:-3] + ' UTC'
-    header_df['value']['UTC'] = str((dt_obs.hour * 60 + dt_obs.minute) * 60 + dt_obs.second) \
-                                    + '.' + str(dt_obs.microsecond)
+    header_df['value']['UTC'] = (
+            dt_obs.hour * 60 +
+            dt_obs.minute) * 60 + dt_obs.second + dt_obs.microsecond * 10**(-6)
 
     # # Update LST
     # idx = header_df.index[header_df['keyword'] == 'LST']
