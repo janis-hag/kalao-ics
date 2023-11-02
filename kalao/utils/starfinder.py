@@ -366,8 +366,11 @@ def find_star(image_path, df_output=False):
         y_star = sources[0]['ycentroid']
         peak = sources[0]['peak']
 
-        fwhm = compute_fwhm(image, x_star, y_star)
-        print(f'{fwhm=}')
+        if 50 < y_star < 1024 - 50 and 50 < y_star < 1024 - 50:
+            fwhm = compute_fwhm(image, x_star, y_star)
+            print(f'{fwhm=}')
+        else:
+            fhwm = -1
 
         database.store_obs_log({
                 'psf_file': image_path.split('/')[-1],
@@ -808,7 +811,7 @@ def calc_parang():
     return parang
 
 
-def compute_fwhm(image, xc, yc, psf_bb=200, bg_bb=20):
+def compute_fwhm(image, xc, yc, psf_bb=50, bg_bb=20):
     """
     Compute the FWHM of a PSF by calculating the diamater of the area at half maximum.
 
