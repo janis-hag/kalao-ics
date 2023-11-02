@@ -232,6 +232,21 @@
   value: loop_mult
   comment: AO loop mult coeff
 
+- keyword: HIERARCH ESO AOS TT LOOP ST
+  keygroup: Telemetry
+  value: tt_loop_on
+  comment: AO loop ON/OFF
+
+- keyword: HIERARCH ESO AOS TT LOOP GAIN
+  keygroup: Telemetry
+  value: tt_loop_gain
+  comment: AO loop gain
+
+- keyword: HIERARCH ESO AOS TT LOOP MULT
+  keygroup: Telemetry
+  value: tt_loop_mult
+  comment: AO loop mult coeff
+
 - keyword: HIERARCH ESO AOS WFS DIT
   keygroup: Telemetry
   value: nuvu_exposuretime
