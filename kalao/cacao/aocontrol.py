@@ -26,7 +26,7 @@ from tcs_communication import t120
 import kalao_config as config
 from kalao_enums import IPPowerStatus, LoopStatus
 
-shm_and_fps_cache = []
+shm_and_fps_cache = {}
 
 
 def close_loop():
