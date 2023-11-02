@@ -19,6 +19,8 @@
 # WFS Plate scale = 1.16 arcsec / px
 # FlI Plate scale = 0.0507 arcsec / px
 
+from numpy.polynomial import Polynomial
+
 
 class PLC:
     ip = "10.10.132.121"
@@ -51,8 +53,30 @@ class ADC:
     # Angles on the ADC to have max vertical dispersion
     max_disp_angle_1 = 314.556259  # °
     max_disp_angle_2 = 45.4437409  # °
+
     angle_threshold = 0.1  # °
     update_interval = 10  # s
+
+    dispersion = {
+            450e-9:
+                    Polynomial([4.689e-2, 1.444e-5, -2.170e-6, 3.551e-9]) *
+                    20 / 1200 * 3600,  # ADC design start
+            475e-9:
+                    Polynomial([3.795e-2, 1.169e-5, -1.756e-6, 2.874e-9]) *
+                    20 / 1200 * 3600,  # Sloan g'
+            622e-9:
+                    Polynomial([8.897e-3, 2.739e-6, -4.117e-7, 6.738e-10]) *
+                    20 / 1200 * 3600,  # Sloan r'
+            763e-9:
+                    Polynomial([-3.217e-3, -9.905e-7, 1.489e-7, -2.437e-10]) *
+                    20 / 1200 * 3600,  # Sloan i'
+            905e-9:
+                    Polynomial([-1.013e-2, -3.119e-6, 4.689e-7, -7.675e-10]) *
+                    20 / 1200 * 3600,  # Sloan z'
+            1018e-9:
+                    Polynomial([-1.375e-2, -4.233e-6, 6.364e-7, -1.042e-9]) *
+                    20 / 1200 * 3600,  # ADC design end
+    }
 
 
 class TTM:
@@ -101,6 +125,7 @@ class WFS:
     plate_scale = 1.16  # arcsec / px
 
     laser_calib_intensity = 8  # mW
+    laser_calib_exptime = 1.5  # ms
 
 
 class FilterWheel:
@@ -110,6 +135,15 @@ class FilterWheel:
     initialization_wait = 2.0  # s
     position_change_wait = 6.0  # s
     position_list = ['clear', 'g', 'r', 'i', 'z', 'nd']
+
+    filter_to_wavelength = {
+            'g': 475e-9,  # m
+            'r': 622e-9,  # m
+            'i': 763e-9,  # m
+            'z': 905e-9,  # m
+            'clear': [450e-9, 1018e-9],  # m
+            'nd': [450e-9, 1018e-9],  # m
+    }
 
 
 class Laser:

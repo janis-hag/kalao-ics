@@ -120,22 +120,22 @@ def create_app():
     @app.route('/pixelImages', methods=['GET'])
     def pixelImages():
 
-        if 'shm_streams' in app.config:
-            shm_streams = app.config['shm_streams']
+        if 'shm_cache' in app.config:
+            shm_cache = app.config['shm_cache']
         else:
-            shm_streams = {}
+            shm_cache = {}
 
-            k_toolbox.open_stream_once('nuvu_stream', shm_streams)
-            k_toolbox.open_stream_once('shwfs_slopes', shm_streams)
-            k_toolbox.open_stream_once('dm01disp', shm_streams)
-            k_toolbox.open_stream_once('shwfs_slopes_flux', shm_streams)
-            k_toolbox.open_stream_once('aol1_mgainfact', shm_streams)
+            k_toolbox.open_stream_once('nuvu_stream', shm_cache)
+            k_toolbox.open_stream_once('shwfs_slopes', shm_cache)
+            k_toolbox.open_stream_once('dm01disp', shm_cache)
+            k_toolbox.open_stream_once('shwfs_slopes_flux', shm_cache)
+            k_toolbox.open_stream_once('aol1_mgainfact', shm_cache)
 
-            app.config['shm_streams'] = shm_streams
+            app.config['shm_cache'] = shm_cache
 
         realData = not bool(request.args.get('random', default="", type=str))
 
-        return k_telemetry.streams(realData, shm_streams)
+        return k_telemetry.streams(realData, shm_cache)
 
     @app.route('/data', methods=['GET'])
     def data():

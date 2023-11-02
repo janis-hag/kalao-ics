@@ -22,10 +22,6 @@ from tcs_communication.pygop import tcs_srv_gop
 import kalao_config as config
 from kalao_enums import TrackingStatus
 
-#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))+os.path(pymod_libgop))
-#sys.path.append('/home/kalao/kalao-ics/tcs_communication/pymod_libgop')
-
 #TODO check if socket is available  and handle case when "Error: connection to sequencer refused" with retry and timeout
 
 

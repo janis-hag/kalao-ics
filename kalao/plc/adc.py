@@ -13,7 +13,6 @@ import numbers
 from time import sleep
 
 import numpy as np
-from numpy.polynomial import Polynomial
 from scipy.optimize import minimize_scalar
 
 from opcua import ua
@@ -25,36 +24,6 @@ from kalao.utils import database
 import kalao_config as config
 
 adc_name = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
-
-dispersion_adc = {
-        450e-9:
-                Polynomial([4.689e-2, 1.444e-5, -2.170e-6, 3.551e-9]) * 20 /
-                1200 * 3600,  # ADC design start
-        475e-9:
-                Polynomial([3.795e-2, 1.169e-5, -1.756e-6, 2.874e-9]) * 20 /
-                1200 * 3600,  # Sloan g'
-        622e-9:
-                Polynomial([8.897e-3, 2.739e-6, -4.117e-7, 6.738e-10]) * 20 /
-                1200 * 3600,  # Sloan r'
-        763e-9:
-                Polynomial([-3.217e-3, -9.905e-7, 1.489e-7, -2.437e-10]) * 20 /
-                1200 * 3600,  # Sloan i'
-        905e-9:
-                Polynomial([-1.013e-2, -3.119e-6, 4.689e-7, -7.675e-10]) * 20 /
-                1200 * 3600,  # Sloan z'
-        1018e-9:
-                Polynomial([-1.375e-2, -4.233e-6, 6.364e-7, -1.042e-9]) * 20 /
-                1200 * 3600,  # ADC design end
-}
-
-filter_to_wavelength = {
-        'g': 475e-9,
-        'r': 622e-9,
-        'i': 763e-9,
-        'z': 905e-9,
-        'clear': [450e-9, 1018e-9],
-        'nd': [450e-9, 1018e-9],
-}
 
 # Temperature in K
 # Pressure in Pa
@@ -107,7 +76,7 @@ def dispersion_air(zenith_angle, wavelength, T, P, H=0):
 def get_optimal_adc_angle(zenith_angle, wavelength, T, P):
     # Check the dispersion of the ADC is big enough for small elevations
     target_dispersion = dispersion_air(zenith_angle, wavelength, T, P)
-    dispersion = dispersion_adc[wavelength]
+    dispersion = config.ADC.dispersion[wavelength]
 
     res = minimize_scalar(lambda x: np.abs(dispersion(x) - target_dispersion),
                           bounds=(0, 180))
@@ -127,7 +96,7 @@ def config_adc(beck=None, override_threshold=False):
     P = euler.outside_pressure()
     zenith_angle = euler.telescope_zenith_angle()
 
-    wavelength = filter_to_wavelength[filter_name]
+    wavelength = config.FilterWheel.filter_to_wavelength[filter_name]
 
     # TODO: in case if filter_name is not in filter_to_wavelength
 

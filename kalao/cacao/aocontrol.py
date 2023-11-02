@@ -13,7 +13,6 @@ import time
 import numpy as np
 import pandas as pd
 
-from pyMilk.interfacing.fps import FPS
 from pyMilk.interfacing.shm import SHM
 
 import libtmux
@@ -27,6 +26,8 @@ from tcs_communication import t120
 import kalao_config as config
 from kalao_enums import IPPowerStatus, LoopStatus
 
+shm_and_fps_cache = []
+
 
 def close_loop():
     """
@@ -35,29 +36,25 @@ def close_loop():
     :return:
     """
 
-    dmloop_exists, dmloop_fps_name = toolbox.check_fps("mfilt-1")
+    fps_mfilt1 = toolbox.open_fps_once("mfilt-1", shm_and_fps_cache)
 
-    if not dmloop_exists:
-        message = f'ERROR: {dmloop_fps_name} is missing'
+    if fps_mfilt1 is None:
+        message = f'ERROR: mfilt-1 is missing'
         print(message)
         database.store_obs_log({'ao_log': message, 'obs_log': message})
 
         return -1
-
-    fps_mfilt1 = FPS(dmloop_fps_name)
 
     fps_mfilt1.set_param('loopON', True)
 
-    ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
+    fps_mfilt2 = toolbox.open_fps_once("mfilt-2", shm_and_fps_cache)
 
-    if not ttmloop_exists:
-        message = f'ERROR: {ttmloop_fps_name} is missing'
+    if fps_mfilt2 is None:
+        message = f'ERROR: mfilt-2 is missing'
         print(message)
         database.store_obs_log({'ao_log': message, 'obs_log': message})
 
         return -1
-
-    fps_mfilt2 = FPS(ttmloop_fps_name)
 
     fps_mfilt2.set_param('loopON', True)
 
@@ -67,21 +64,15 @@ def close_loop():
 def check_loop():
     status = LoopStatus(0)
 
-    dmloop_exists, dmloop_fps_name = toolbox.check_fps("mfilt-1")
+    fps_mfilt1 = toolbox.open_fps_once("mfilt-1", shm_and_fps_cache)
 
-    if dmloop_exists:
-        fps_mfilt1 = FPS(dmloop_fps_name)
+    if fps_mfilt1 is not None and fps_mfilt1.get_param('loopON'):
+        status |= LoopStatus.DM_LOOP_ON
 
-        if fps_mfilt1.get_param('loopON'):
-            status |= LoopStatus.DM_LOOP_ON
+    fps_mfilt2 = toolbox.open_fps_once("mfilt-2", shm_and_fps_cache)
 
-    ttmloop_exists, ttmloop_fps_name = toolbox.check_fps("mfilt-2")
-
-    if ttmloop_exists:
-        fps_mfilt2 = FPS(ttmloop_fps_name)
-
-        if fps_mfilt2.get_param('loopON'):
-            status |= LoopStatus.TTM_LOOP_ON
+    if fps_mfilt2 is not None and fps_mfilt2.get_param('loopON'):
+        status |= LoopStatus.TTM_LOOP_ON
 
     return status
 
@@ -143,17 +134,17 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
     :param stream_name:
     :return:
     """
-    stream_exists, stream_name = toolbox.check_stream(stream_name)
+    mgainfact_stream = toolbox.open_stream_once(stream_name,
+                                                shm_and_fps_cache)
 
     mode = int(np.floort(mode))
 
-    if stream_exists:
-        mgainfact_shm = SHM(stream_name)
-        mgainfact_array = mgainfact_shm.get_data(check=False)
+    if mgainfact_stream is not None:
+        mgainfact_array = mgainfact_stream.get_data(check=False)
 
         mgainfact_array[mode] = factor
 
-        mgainfact_shm.set_data(mgainfact_array.astype(mgainfact_shm.nptype))
+        mgainfact_stream.set_data(mgainfact_array, True)
 
         return 0
 
@@ -256,11 +247,11 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
     elif last_mode is None:
         last_mode = cut_off
 
-    stream_exists, stream_name = toolbox.check_stream(stream_name)
+    mgainfact_stream = toolbox.open_stream_once(stream_name,
+                                                shm_and_fps_cache)
 
-    if stream_exists:
-        mgainfact_shm = SHM(stream_name)
-        mgainfact_array = mgainfact_shm.get_data(check=False)
+    if mgainfact_stream is not None:
+        mgainfact_array = mgainfact_stream.get_data(check=False)
 
         if not keep_existing_flat:
             mgainfact_array = np.ones(len(mgainfact_array))
@@ -282,7 +273,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
             down = np.linspace(1, 0, last_mode - cut_off + 2)[1:-1]
             mgainfact_array[cut_off:last_mode] = down
 
-        mgainfact_shm.set_data(mgainfact_array.astype(mgainfact_shm.nptype))
+        mgainfact_stream.set_data(mgainfact_array, True)
 
         return 0
 
@@ -290,7 +281,8 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
         return -1
 
 
-def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False):
+def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False,
+                                      stream_name="dm02disp"):
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
@@ -299,16 +291,12 @@ def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False):
     :return:
     """
 
-    stream_name = "dm02disp"
+    ttm_stream = toolbox.open_stream_once(stream_name, shm_and_fps_cache)
 
-    stream_exists, stream_name = toolbox.check_stream(stream_name)
-
-    if not stream_exists:
+    if ttm_stream is None:
         return -1
 
-    stream_shm = SHM(stream_name)
-
-    stream_data = stream_shm.get_data(check=False)
+    stream_data = ttm_stream.get_data(check=False)
 
     tip = stream_data[0]
     tilt = stream_data[1]
@@ -343,18 +331,16 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
     :return:
     """
 
-    stream_exists, stream_name = toolbox.check_stream(stream_name)
+    ttm_stream = toolbox.open_stream_once(stream_name, shm_and_fps_cache)
 
-    if not stream_exists:
+    if ttm_stream is None:
         message = f'ERROR: {stream_name} is missing'
         print(message)
         database.store_obs_log({'ttm_log': message})
 
         return -1
 
-    stream_shm = SHM(stream_name)
-
-    stream_data = stream_shm.get_data(check=False)
+    stream_data = ttm_stream.get_data(check=False)
 
     tip, tilt = stream_data
 
@@ -386,7 +372,7 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
 
     stream_data[:] = [new_tip_value, new_tilt_value]
 
-    stream_shm.set_data(stream_data.astype(stream_shm.nptype))
+    ttm_stream.set_data(stream_data, True)
 
     message = f'Changing Tip and Tilt offset to  {new_tip_value} and {new_tilt_value}'
     print(message)
@@ -488,25 +474,22 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
     tip_centered = False
     tilt_centered = False
 
-    dm_stream_exists, dm_stream_name = toolbox.check_stream('dm02disp04')
-    slopes_fps_exists, slopes_fps_name = toolbox.check_fps('shwfs_process-1')
+    dm_stream = toolbox.open_stream_once('dm02disp04', shm_and_fps_cache)
+    slopes_fps = toolbox.open_fps_once('shwfs_process-1', shm_and_fps_cache)
 
-    if not dm_stream_exists:
-        message = f'ERROR: {dm_stream_name} is missing'
+    if dm_stream is None:
+        message = f'ERROR: dm02disp04 is missing'
         print(message)
         database.store_obs_log({'ttm_log': message})
 
         return -1
 
-    if not slopes_fps_exists:
-        message = f'ERROR: {slopes_fps_name} is missing'
+    if slopes_fps is None:
+        message = f'ERROR: shwfs_process is missing'
         print(message)
         database.store_obs_log({'ttm_log': message})
 
         return -1
-
-    dm_stream_shm = SHM(dm_stream_name)
-    slopes_fps_shm = FPS(slopes_fps_name)
 
     # TODO verify that shwfs enough illuminated for centering
 
@@ -518,13 +501,13 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
 
             return -1
 
-        stream_data = dm_stream_shm.get_data(check=False)
+        stream_data = dm_stream.get_data(check=False)
 
         tip_offset, tilt_offset = stream_data
 
-        tip_residual = slopes_fps_shm.get_param(
+        tip_residual = slopes_fps.get_param(
                 'slope_y') * config.AO.WFS_tip_to_TTM
-        tilt_residual = slopes_fps_shm.get_param(
+        tilt_residual = slopes_fps.get_param(
                 'slope_x') * config.AO.WFS_tilt_to_TTM
 
         if np.abs(tip_residual) < tt_threshold:
@@ -557,7 +540,7 @@ def wfs_centering(tt_threshold=config.AO.WFS_centering_slope_threshold):
         stream_data[:] = [new_tip_value, new_tilt_value]
         print(f'Residual tip = {tip_residual}, Residual tilt = {tilt_residual}, previous tip_offset = {tip_offset}, previous tilt_offset = {tilt_offset}, {new_tip_value=}, {new_tilt_value=}'
               )
-        dm_stream_shm.set_data(stream_data.astype(dm_stream_shm.nptype))
+        dm_stream.set_data(stream_data.astype(dm_stream.nptype))
 
         time.sleep(1)
 
@@ -790,36 +773,32 @@ def dm_flat_poke(timestep=0.1):
 
 def _set_fps_floatvalue(fps_name, key, value):
     # TODO implement
-    fps_exists, fps_name = toolbox.check_fps(fps_name)
+    fps = toolbox.open_fps_once(fps_name, shm_and_fps_cache)
 
-    if not fps_exists:
+    if fps is None:
         message = f'ERROR: {fps_name} is missing'
         print(message)
         database.store_obs_log({'ao_log': message, 'obs_log': message})
 
         return -1
 
-    fps_handle = FPS(fps_name)
+    rValue = fps.set_param(key, value)
 
-    fps_handle.set_param(key, value)
-
-    return 0
+    return rValue
 
 
 def _set_fps_intvalue(fps_name, key, value):
     # TODO implement
-    fps_exists, fps_name = toolbox.check_fps(fps_name)
+    fps = toolbox.open_fps_once(fps_name, shm_and_fps_cache)
 
-    if not fps_exists:
+    if fps is None:
         message = f'ERROR: {fps_name} is missing'
         print(message)
         database.store_obs_log({'ao_log': message, 'obs_log': message})
 
         return -1
 
-    fps_handle = FPS(fps_name)
-
-    rValue = fps_handle.set_param(key, value)
+    rValue = fps.set_param(key, value)
 
     return rValue
 

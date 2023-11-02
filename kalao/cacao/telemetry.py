@@ -128,11 +128,11 @@ def streams(realData=True, shm_streams={}):
         return stream_list
 
 
-def telemetry_save(stream_and_fps_list):
+def telemetry_save(shm_and_fps_cache):
     """
     Saves all the adaptive optics telemetry on the mongo database.
 
-    :param stream_and_fps_list: A list containing pointers to all the already opened streams.
+    :param shm_and_fps_cache: A list containing pointers to all the already opened streams.
     :return: status code
     """
 
@@ -150,7 +150,7 @@ def telemetry_save(stream_and_fps_list):
     if session:
         session.attached_pane.send_keys('\ncam.GetTemperature()')
 
-    nuvu_stream = toolbox.open_stream_once('nuvu_raw', stream_and_fps_list)
+    nuvu_stream = toolbox.open_stream_once('nuvu_raw', shm_and_fps_cache)
 
     if nuvu_stream is not None and session:
         stream_keywords = nuvu_stream.get_keywords()
@@ -173,7 +173,7 @@ def telemetry_save(stream_and_fps_list):
 
     # SHWFS process
     slopes_stream = toolbox.open_fps_once('shwfs_process-1',
-                                          stream_and_fps_list)
+                                          shm_and_fps_cache)
 
     if slopes_stream is not None:
         # Check if it's running
@@ -187,7 +187,7 @@ def telemetry_save(stream_and_fps_list):
 
     # Tip/tilt stream
     # check if fps exists and is running
-    tt_stream = toolbox.open_stream_once('dm02disp', stream_and_fps_list)
+    tt_stream = toolbox.open_stream_once('dm02disp', shm_and_fps_cache)
 
     if tt_stream is not None:
         # Check turned off to prevent timeout. Data may be obsolete
@@ -198,7 +198,7 @@ def telemetry_save(stream_and_fps_list):
 
     # looopRUN process
     # check if fps exists and is running
-    dm_loop_stream = toolbox.open_fps_once('mfilt-1', stream_and_fps_list)
+    dm_loop_stream = toolbox.open_fps_once('mfilt-1', shm_and_fps_cache)
 
     if dm_loop_stream is not None:
         # Check if it's running
@@ -213,7 +213,7 @@ def telemetry_save(stream_and_fps_list):
                 telemetry_data["loop_on"] = 'OFF'
 
     # check if fps exists and is running
-    ttm_loop_stream = toolbox.open_fps_once('mfilt-2', stream_and_fps_list)
+    ttm_loop_stream = toolbox.open_fps_once('mfilt-2', shm_and_fps_cache)
 
     if ttm_loop_stream is not None:
         # Check if it's running

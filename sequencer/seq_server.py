@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#from signal import SIGINT, SIGTERM
 import signal
-from os import path as OsPath
-from sys import path as SysPath
-
-# methode dirname return parent directory and methode abspath return absolut path
-SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
-
 import socket
 from itertools import zip_longest
 from queue import Queue
@@ -20,8 +13,6 @@ from sequencer import seq_command, system
 
 import kalao_config as config
 from kalao_enums import SequencerStatus
-
-#import time
 
 
 def seq_server():

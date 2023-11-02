@@ -24,7 +24,7 @@ from kalao.utils import database
 import kalao_config as config
 from kalao_enums import CameraServerStatus
 
-stream_and_fps_list = {}
+shm_and_fps_cache = {}
 
 
 def update_plc_monitoring():
@@ -69,7 +69,7 @@ def update_plc_monitoring():
 
 
 def update_telemetry():
-    telemetry.telemetry_save(stream_and_fps_list)
+    telemetry.telemetry_save(shm_and_fps_cache)
 
 
 if __name__ == "__main__":

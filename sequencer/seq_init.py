@@ -9,16 +9,10 @@ seq_init.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from os import path as OsPath
-from sys import path as SysPath
-
-# methode dirname return parent directory and methode abspath return absolut path
-SysPath.append(OsPath.dirname(OsPath.abspath(OsPath.dirname(__file__))))
 
 from multiprocessing import Process, Queue
 from threading import Thread
 
-from kalao.fli import camera
 from kalao.plc import calib_unit, flip_mirror, laser, shutter, tungsten
 from sequencer import system
 

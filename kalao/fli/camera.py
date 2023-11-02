@@ -65,7 +65,7 @@ def take_image(
     # TODO verify first with check_server_status() before sending request
 
     if dit < 0:
-        database.store_obs_log({'fli_log': 'Abort before exposure started.'})
+        database.store_obs_log({'fli_log': 'Abort before exposure started. Negative dit.'})
         return 0
 
     if filepath is None:
