@@ -85,8 +85,8 @@ class FLI:
     pix_scale_x = 0.0658  # arcsec / px
     pix_scale_y = 0.0512  # arcsec / px
 
-    center_x = 505  # px
-    center_y = 545  # px
+    center_x = 522  # px 505
+    center_y = 522  # px 545
 
     dummy_camera = False
     dummy_image_path = "/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits"
