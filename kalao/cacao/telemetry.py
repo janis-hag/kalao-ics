@@ -115,9 +115,8 @@ def streams(realData=True, shm_streams={}):
                 shm_stream=shm_streams.get("dm01disp"))
 
         stream_list["shwfs_slopes_flux"] = _get_stream(
-                name="shwfs_slopes_flux", min_value_th=0,
-                max_value_th=4 * (2**16 - 1),
-                shm_stream=shm_streams.get("flux_subaperture_brightest"))
+                name="shwfs_slopes_flux", min_value_th=0, max_value_th=4 *
+                (2**16 - 1), shm_stream=shm_streams.get("shwfs_slopes_flux"))
 
         stream_list["aol1_mgainfact"] = _get_stream(
                 name="aol1_mgainfact", min_value_th=0, max_value_th=1,
