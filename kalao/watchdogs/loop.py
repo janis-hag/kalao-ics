@@ -14,19 +14,19 @@ from time import sleep
 import schedule
 
 from kalao.cacao import aocontrol
-from kalao.interface import info
 from kalao.plc import adc
 
+from kalao_enums import LoopStatus
 import kalao_config as config
 
 
 def _update_adc(beck=None):
-    if aocontrol.check_loop():
+    if aocontrol.check_loop() == LoopStatus.ALL_LOOPS_ON:
         adc.config_adc(beck=beck)
 
 
-def _offload_ttm(beck=None):
-    if aocontrol.check_loop():
+def _offload_ttm():
+    if aocontrol.check_loop() == LoopStatus.ALL_LOOPS_ON:
         aocontrol.tip_tilt_offload_ttm_to_telescope()
 
 
