@@ -438,7 +438,7 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
-    if adc.config_adc() != 0:
+    if adc.configure() != 0:
         system.print_and_log("Error: failed to configure ADC")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1

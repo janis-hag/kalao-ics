@@ -26,7 +26,6 @@ from kalao_enums import CameraServerStatus
 
 shm_and_fps_cache = {}
 
-
 def update_plc_monitoring():
     values = {}
 

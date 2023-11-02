@@ -31,11 +31,11 @@ fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024),
                                            np.uint16)
 
 
-def take_frame(dit, filepath=None, do_not_log=False, update_stream=True):
+def take_frame(dit, filepath=None, nbflushes=None, do_not_log=False, update_stream=True):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
 
-    params = {'exptime': dit, 'filepath': filepath}
+    params = {'exptime': dit, 'filepath': filepath, 'nbflushes': nbflushes}
     req = _send_request('acquire', params, do_not_log=do_not_log)
 
     if req.status_code == 200:
@@ -48,6 +48,27 @@ def take_frame(dit, filepath=None, do_not_log=False, update_stream=True):
                 print("fli_stream not updated, shapes are inconsistent")
 
         return img, req
+    else:
+        return None, req
+
+
+def take_cube(dit, nbframes, filepath=None, nbflushes=None, do_not_log=False, update_stream=True):
+    if filepath is None:
+        filepath = '/tmp/fli_cube.fits'
+
+    params = {'exptime': dit, 'nbframes': nbframes, 'filepath': filepath, 'nbflushes': nbflushes}
+    req = _send_request('acquireCube', params, do_not_log=do_not_log)
+
+    if req.status_code == 200:
+        img_cube = fits.getdata(filepath)
+
+        if update_stream:
+            if fli_stream.shape == img_cube.shape[-1]:
+                fli_stream.set_data(img_cube.shape[-1], True)
+            else:
+                print("fli_stream not updated, shapes are inconsistent")
+
+        return img_cube, req
     else:
         return None, req
 
@@ -75,7 +96,7 @@ def take_image(
     # Store monitoring status at start of exposure
     database_updater.update_plc_monitoring()
 
-    _, req = take_frame(dit, filepath)
+    _, req = take_frame(dit, filepath=filepath)
 
     if get_temperatures(
     )['fli_temp_CCD'] > config.FLI.temperature_warn_threshold:
@@ -249,6 +270,10 @@ def set_temperature(temperature):
 
 
 def _send_request(request_type, params, do_not_log=False):
+    # Clean params
+    for key, value in list(params.items()):
+        if value is None:
+            del params[key]
 
     if not check_server_status() == CameraServerStatus.UP:
         req = Mock(spec=Response)

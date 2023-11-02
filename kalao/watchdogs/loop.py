@@ -22,7 +22,7 @@ import kalao_config as config
 
 def _update_adc(beck=None):
     if aocontrol.check_loop() == LoopStatus.ALL_LOOPS_ON:
-        adc.config_adc(beck=beck)
+        adc.configure(beck=beck)
 
 
 def _offload_ttm():

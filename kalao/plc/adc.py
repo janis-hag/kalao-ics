@@ -87,7 +87,7 @@ def get_optimal_adc_angle(zenith_angle, wavelength, T, P):
         return 0
 
 
-def config_adc(beck=None, override_threshold=False):
+def configure(beck=None, override_threshold=False):
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 

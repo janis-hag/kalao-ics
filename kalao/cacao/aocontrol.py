@@ -158,6 +158,7 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
     :param stream_name:
     :return:
     """
+
     mgainfact_stream = toolbox.open_stream_once(stream_name, shm_and_fps_cache)
 
     mode = int(np.floort(mode))
@@ -798,7 +799,6 @@ def dm_flat_poke(timestep=0.1):
 
 
 def _set_fps_floatvalue(fps_name, key, value):
-    # TODO implement
     fps = toolbox.open_fps_once(fps_name, shm_and_fps_cache)
 
     if fps is None:
@@ -814,7 +814,6 @@ def _set_fps_floatvalue(fps_name, key, value):
 
 
 def _set_fps_intvalue(fps_name, key, value):
-    # TODO implement
     fps = toolbox.open_fps_once(fps_name, shm_and_fps_cache)
 
     if fps is None:
