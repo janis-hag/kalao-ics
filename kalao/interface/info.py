@@ -102,25 +102,24 @@ def kalao_status():
     if not sequencer_status:
         # If the status is not set assume that the sequencer is down
         status_string = '/status/ERROR/0/DOWN'
-    elif sequencer_status[0] == SequencerStatus.WAITING:
-        status_string = '|status|' + sequencer_status[
-                0] + '|path|' + _last_filepath_archived()
-    elif sequencer_status[0] == SequencerStatus.ERROR:
-        status_string = '/status/' + sequencer_status[0]
-    elif sequencer_status[0] == SequencerStatus.WAITLAMP:
-        status_string = '|status|BUSY|' + elapsed_time(sequencer_status[0])
-    elif sequencer_status[0] == SequencerStatus.EXP:
+    elif sequencer_status == SequencerStatus.WAITING:
+        status_string = '|status|' + sequencer_status + '|path|' + _last_filepath_archived()
+    elif sequencer_status == SequencerStatus.ERROR:
+        status_string = '/status/' + sequencer_status
+    elif sequencer_status == SequencerStatus.WAITLAMP:
+        status_string = '|status|BUSY|' + elapsed_time(sequencer_status)
+    elif sequencer_status == SequencerStatus.EXP:
         # sequencer_command_received = database.get_latest_record_value('obs_log', key='sequencer_command_received')
         # if sequencer_command_received['type'] == 'K_LMPFLT':
         texp = int(database.get_latest_record_value('obs_log', key='fli_texp'))
         # if
         # texp = database.get_latest_record_value('obs_log', key='sequencer_command_received')['texp']
         status_string = '|status|BUSY|elapsed_time|' + elapsed_time(
-                sequencer_status[0]) + '|requested_time|' + str(texp)
+                sequencer_status) + '|requested_time|' + str(texp)
     else:
         #  TODO get alt/az and focus offset from cacao.telemetry and add to string
         status_string = '|status|BUSY|elapsed_time|' + elapsed_time(
-                sequencer_status[0]) + '|requested_time|' + sequencer_status[0]
+                sequencer_status) + '|requested_time|' + sequencer_status
 
     # status_string = '/status/'+sequencer_status
 
