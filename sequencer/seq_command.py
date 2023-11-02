@@ -794,6 +794,10 @@ def instrument_change(**seq_args):
 
     database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
+    aocontrol.open_loop()
+    aocontrol.emgain_off()
+    aocontrol.set_exptime(0)
+
     rValue = tungsten.off()
     if (rValue != 0):
         # TODO handle error
@@ -808,9 +812,6 @@ def instrument_change(**seq_args):
     if rValue != 0:
         # TODO handle error
         system.print_and_log(rValue)
-
-    aocontrol.emgain_off()
-    aocontrol.set_exptime(0)
 
     database.store_obs_log({'tracking_manual_centering': False})
 
@@ -831,6 +832,7 @@ def stopao(**seq_args):
     :return: nothing
     """
 
+    aocontrol.open_loop()
     aocontrol.emgain_off()
     aocontrol.set_exptime(0)
 
@@ -854,6 +856,10 @@ def end(**seq_args):
     """
     # TODO set EM gain to 1
     # TODO turn of DM
+
+    aocontrol.open_loop()
+    aocontrol.emgain_off()
+    aocontrol.set_exptime(0)
 
     database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
