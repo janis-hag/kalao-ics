@@ -36,6 +36,26 @@ def close_loop():
     :return:
     """
 
+    toggle_loops(toggle=True)
+
+
+def open_loop():
+    """
+    Open the primary DM AO loop followed by the secondary TTM loop.
+
+    :return:
+    """
+
+    toggle_loops(toggle=False)
+
+
+def toggle_loops(toggle=True):
+    """
+    Toggle the loop value the primary DM AO loop followed by the secondary TTM loop.
+
+    :return:
+    """
+
     fps_mfilt1 = toolbox.open_fps_once("mfilt-1", shm_and_fps_cache)
 
     if fps_mfilt1 is None:
@@ -45,7 +65,7 @@ def close_loop():
 
         return -1
 
-    fps_mfilt1.set_param('loopON', True)
+    fps_mfilt1.set_param('loopON', toggle)
 
     fps_mfilt2 = toolbox.open_fps_once("mfilt-2", shm_and_fps_cache)
 
@@ -56,7 +76,7 @@ def close_loop():
 
         return -1
 
-    fps_mfilt2.set_param('loopON', True)
+    fps_mfilt2.set_param('loopON', toggle)
 
     return 0
 
@@ -134,8 +154,7 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
     :param stream_name:
     :return:
     """
-    mgainfact_stream = toolbox.open_stream_once(stream_name,
-                                                shm_and_fps_cache)
+    mgainfact_stream = toolbox.open_stream_once(stream_name, shm_and_fps_cache)
 
     mode = int(np.floort(mode))
 
@@ -168,6 +187,7 @@ def emgain_off():
     except Exception as err:
         print('nuvu_acquire fps seems not to be running.')
         print(Exception, err)
+        rValue = -1
 
     try:
         _set_emgain_tmux(emgain=1)
@@ -247,8 +267,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
     elif last_mode is None:
         last_mode = cut_off
 
-    mgainfact_stream = toolbox.open_stream_once(stream_name,
-                                                shm_and_fps_cache)
+    mgainfact_stream = toolbox.open_stream_once(stream_name, shm_and_fps_cache)
 
     if mgainfact_stream is not None:
         mgainfact_array = mgainfact_stream.get_data(check=False)
