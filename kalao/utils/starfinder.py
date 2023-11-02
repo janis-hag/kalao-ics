@@ -54,14 +54,14 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
     timeout_time = time.time() + config.Starfinder.centering_timeout + 3 * dit
 
     # Check if we are alread on the star
-    if check_wfs_flux() == 0:
-        # Start WFS centering procedure
-        aocontrol.wfs_centering(
-                tt_threshold=config.AO.WFS_centering_slope_threshold)
-
-        request_manual_centering(False)
-
-        return 0
+    # if check_wfs_flux() == 0:
+    #     # Start WFS centering procedure
+    #     aocontrol.wfs_centering(
+    #             tt_threshold=config.AO.WFS_centering_slope_threshold)
+    #
+    #     request_manual_centering(False)
+    #
+    #     return 0
 
     # Reset tip tilt stream to 0
     #aocontrol.reset_dm(config.AO.TTM_loop_number)
