@@ -213,7 +213,7 @@ def tungsten_FLAT(**seq_args):
             database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
-        time.sleep(config.Tungsten.Sleep)
+        time.sleep(config.Tungsten.switch_wait)
     else:
         database.store_obs_log({'sequencer_status': SequencerStatus.BUSY})
 
