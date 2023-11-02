@@ -824,6 +824,28 @@ def instrument_change(**seq_args):
     database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
 
+def stopao(**seq_args):
+    """
+    Change of target. Stopping AO
+
+    :return: nothing
+    """
+
+    aocontrol.emgain_off()
+    aocontrol.set_exptime(0)
+
+    database.store_obs_log({'tracking_manual_centering': False})
+
+    database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
+
+    # request_manual_centering(False)
+    # change tracking flaf
+
+    system.print_and_log('INSTRUMENTCHANGE received moving into standby.')
+
+    database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
+
+
 def end(**seq_args):
     """
     End of instrument operation, go into standby mode and starting morning calibrations.
@@ -969,6 +991,7 @@ commandDict = {
         "INSTRUMENTCHANGE": instrument_change,
         "THE_END": end,
         "K_ENDCAL": end,
+        "STOPAO": stopao,
         #"kal_AO_loop_calibration":      AO_loop_calibration
         # "kal_dark":                     dark,
         # "kal_dark_abort":               dark_abort,

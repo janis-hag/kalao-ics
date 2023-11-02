@@ -112,7 +112,10 @@ def gop_server():
         # Check if it's a KalAO command and send it
         if commandList[0][:1] == "K" or commandList[
                 0] == "INSTRUMENTCHANGE" or commandList[
-                        0] == "THE_END" or commandList[0] == "ABORT":
+                        0] == "THE_END" or commandList[
+                                0] == "ABORT" or commandList[0] == "STOPAO":
+
+            database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
             hostSeq, portSeq = (config.SEQ.ip, config.SEQ.port)
             socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
