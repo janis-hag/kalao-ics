@@ -115,14 +115,16 @@ def streams(realData=True, shm_streams={}):
                 shm_stream=shm_streams.get("dm01disp"))
 
         stream_list["shwfs_slopes_flux"] = _get_stream(
-                name="shwfs_slopes_flux", min_value_th=0, max_value_th=4 *
-                (2**16 - 1), shm_stream=shm_streams.get("shwfs_slopes_flux"))
+                name="shwfs_slopes_flux", min_value_th=0,
+                max_value_th=4 * (2**16 - 1),
+                shm_stream=shm_streams.get("flux_subaperture_brightest"))
 
         stream_list["aol1_mgainfact"] = _get_stream(
                 name="aol1_mgainfact", min_value_th=0, max_value_th=1,
                 shm_stream=shm_streams.get("aol1_mgainfact"))
 
-        # streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75) # TODO: uncomment when modal control is working
+        # streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75)
+        # TODO: uncomment when modal control is working
 
         return stream_list
 
@@ -131,7 +133,7 @@ def telemetry_save(stream_and_fps_list):
     """
     Saves all the adaptive optics telemetry on the mongo database.
 
-    :param stream_list: A list containing pointers to all the already opened streams.
+    :param stream_and_fps_list: A list containing pointers to all the already opened streams.
     :return: status code
     """
 
