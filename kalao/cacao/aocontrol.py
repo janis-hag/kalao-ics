@@ -411,16 +411,15 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
 
 
 def turn_dm_on(fps_list={}):
-    system.print_and_log("Turning on DM")
-
-    time.sleep(1)
 
     bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
 
     if ippower.ippower_status(config.IPPower.Port.BMC_DM) == IPPowerStatus.OFF:
+        system.print_and_log("Powering on DM")
+
+        time.sleep(1)
         rValue = ippower.switch_ippower(config.IPPower.Port.BMC_DM,
                                         IPPowerStatus.ON)
-
         if rValue != IPPowerStatus.ON:
             return -1
 
@@ -434,7 +433,12 @@ def turn_dm_on(fps_list={}):
 
             reset_dm(config.AO.DM_loop_number)
 
-        # TODO check that the fps managed to start and adapt return value accordingly
+        if not bmc_display_fps.run_runs():
+            system.print_and_log("Unable to start DM fps")
+
+            return -1
+        else:
+            system.print_and_log("DM fps started")
 
     return 0
 
