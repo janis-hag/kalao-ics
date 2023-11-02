@@ -36,7 +36,9 @@ def close_loop():
     :return:
     """
 
-    toggle_loops(toggle=True)
+    rValue = toggle_loops(toggle=True)
+
+    return rValue
 
 
 def open_loop():
@@ -46,7 +48,9 @@ def open_loop():
     :return:
     """
 
-    toggle_loops(toggle=False)
+    rValue = toggle_loops(toggle=False)
+
+    return rValue
 
 
 def toggle_loops(toggle=True):
