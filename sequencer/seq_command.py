@@ -18,7 +18,7 @@ import numpy as np
 
 from kalao.cacao import aocontrol
 from kalao.fli import camera
-from kalao.plc import (calib_unit, core, filterwheel, flip_mirror, laser,
+from kalao.plc import (adc, calib_unit, core, filterwheel, flip_mirror, laser,
                        shutter, tungsten)
 from kalao.utils import (database, database_updater, file_handling, kalao_time,
                          starfinder)
@@ -430,6 +430,11 @@ def target_observation(**seq_args):
     if None in (q, dit):
         system.print_and_log(
                 'Missing keyword in target_observation function call')
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
+    if adc.config_adc() != 0:
+        system.print_and_log("Error: failed to configure ADC")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
