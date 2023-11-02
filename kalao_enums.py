@@ -15,7 +15,7 @@ class LoopStatus(Flag):
     DM_LOOP_ON = auto()
     TTM_LOOP_ON = auto()
 
-    ALL_LOOPS_ON = DM_LOOP_ON & TTM_LOOP_ON
+    ALL_LOOPS_ON = DM_LOOP_ON | TTM_LOOP_ON
 
 
 class TrackingStatus(StrEnum):
