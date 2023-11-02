@@ -90,8 +90,8 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
 
             if kao == 'AO':
                 print(f"##### Starfinder: Normalized peak value is {peak/dit}")
-                exptime = peak / dit * config.Starfinder.FLI_to_WFS_coeff
-                aocontrol.set_exptime(exptime)
+                #exptime = peak / dit * config.Starfinder.FLI_to_WFS_coeff
+                #aocontrol.set_exptime(exptime)
                 #aocontrol.set_emgain(emgain)
 
                 # Check if enough light is on the WFS for precise centering
@@ -316,7 +316,7 @@ def check_wfs_flux():
                     system.print_and_log('WFS on target')
                     return 0
 
-        # Reset values if not signal detected
+        # Reset values if no signal detected
         aocontrol.set_emgain(1)
         aocontrol.set_exptime(0)
 
@@ -619,8 +619,8 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
 
     temps = t120.get_tube_temp()
 
-    if (time.time() - float(temps.tunix)) < float(
-            config.T120.temperature_file_timeout):
+    if (time.time() - float(
+            temps.tunix)) < float(config.T120.temperature_file_timeout):
 
         database.store_obs_log({
                 'focusing_best': best_focus,
