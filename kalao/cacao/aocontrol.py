@@ -36,7 +36,7 @@ def close_loop():
     :return:
     """
 
-    rValue = toggle_loops(toggle=True)
+    rValue = toggle_loops(close=True)
 
     return rValue
 
@@ -48,17 +48,19 @@ def open_loop():
     :return:
     """
 
-    rValue = toggle_loops(toggle=False)
+    rValue = toggle_loops(close=False)
 
     return rValue
 
 
-def toggle_loops(toggle=True):
+def toggle_loops(close=True):
     """
     Toggle the loop value the primary DM AO loop followed by the secondary TTM loop.
 
     :return:
     """
+
+    # DM Loop
 
     fps_mfilt1 = toolbox.open_fps_once("mfilt-1", shm_and_fps_cache)
 
@@ -69,7 +71,12 @@ def toggle_loops(toggle=True):
 
         return -1
 
-    fps_mfilt1.set_param('loopON', toggle)
+    fps_mfilt1.set_param('loopON', close)
+
+    if not close:
+        fps_mfilt1.set_param('loopZERO', True)
+
+    # TTM Loop
 
     fps_mfilt2 = toolbox.open_fps_once("mfilt-2", shm_and_fps_cache)
 
@@ -80,7 +87,10 @@ def toggle_loops(toggle=True):
 
         return -1
 
-    fps_mfilt2.set_param('loopON', toggle)
+    fps_mfilt2.set_param('loopON', close)
+
+    if not close:
+        fps_mfilt2.set_param('loopZERO', True)
 
     return 0
 
@@ -477,6 +487,10 @@ def reset_dm(dm_number):
     for i in range(0, 12):
         stream_name = f'dm{dm_number:02d}disp{i:02d}'
         ret += toolbox.zero_stream(stream_name)
+
+    dm_fps = toolbox.open_fps_once(f"mfilt-{dm_number:1d}", shm_and_fps_cache)
+    if dm_fps is not None:
+        dm_fps.set_param('loopZERO', True)
 
     return ret
 
