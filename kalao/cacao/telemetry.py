@@ -180,7 +180,7 @@ def telemetry_save(stream_and_fps_list):
         # Check if it's running
         if slopes_stream.run_runs():
             telemetry_data["slopes_flux_subaperture"] = slopes_stream.get_param(
-                    'flux_subaperture')
+                    'flux_subaperture_brightest')
             telemetry_data["slopes_residual_pix"] = slopes_stream.get_param(
                     'residual')
             telemetry_data["slopes_residual_arcsec"] = slopes_stream.get_param(
