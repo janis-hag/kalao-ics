@@ -664,7 +664,9 @@ def get_latest_fo_delta():
     return fo_delta
 
 
-def optimise_dit(starting_dit, sequencer_arguments=None):
+def optimise_dit(starting_dit, sequencer_arguments=None,
+                 min_flux=config.Starfinder.min_flux,
+                 max_flux=config.Starfinder.max_flux):
     """
     Search for optimal dit value to reach the requested ADU.
 
@@ -688,27 +690,21 @@ def optimise_dit(starting_dit, sequencer_arguments=None):
         # flux = image[np.argpartition(image, -6)][-6:].sum()
         #flux = np.sort(np.ravel(image))[-focusing_pixels:].sum()
 
-        print(new_dit, image.max(), config.Starfinder.max_flux,
-              config.Starfinder.min_flux)
-        if image.mean() >= config.Starfinder.max_flux:
-            new_dit = int(
-                    np.floor(config.Starfinder.max_flux /
-                             (1.5 * image.mean())))
+        print(new_dit, image.max(), max_flux, min_flux)
+        if image.mean() >= max_flux:
+            new_dit = int(np.floor(max_flux / (1.5 * image.mean())))
             #new_dit = int(np.floor(0.8 * new_dit))
             if new_dit <= 1:
                 print('Max flux ' + str(image.max()) +
-                      ' above max permitted value ' +
-                      str(config.Starfinder.max_flux))
+                      ' above max permitted value ' + str(max_flux))
                 return -1
             continue
-        elif image.mean() <= config.Starfinder.min_flux:
-            new_dit = int(
-                    np.floor(1.5 * config.Starfinder.min_flux / image.mean()))
+        elif image.mean() <= min_flux:
+            new_dit = int(np.floor(1.5 * min_flux / image.mean()))
             #new_dit = int(np.ceil(1.2 * new_dit))
             if new_dit >= config.Starfinder.max_dit:
                 print('Max flux ' + str(image.max()) +
-                      ' below minimum permitted value: ' +
-                      str(config.Starfinder.min_flux))
+                      ' below minimum permitted value: ' + str(min_flux))
                 return -1
             continue
         else:

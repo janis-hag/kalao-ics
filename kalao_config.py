@@ -177,6 +177,7 @@ class Calib:
             "nd", "nd", "nd", "nd", "nd"
     ]
     # yapf: enable
+    flat_min_flux = 10000
 
 
 class SEQ:

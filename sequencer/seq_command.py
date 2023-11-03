@@ -350,7 +350,8 @@ def sky_flat(**seq_args):
     current_filter = filter_list[0]
     dit_list = tungsten.get_flat_dits()
 
-    ref_dit = starfinder.optimise_dit(5, sequencer_arguments=seq_args)
+    ref_dit = starfinder.optimise_dit(5, sequencer_arguments=seq_args,
+                                      min_flux=config.Calib.flat_min_flux)
 
     coef = ref_dit / dit_list[filter_list[0]]
 
