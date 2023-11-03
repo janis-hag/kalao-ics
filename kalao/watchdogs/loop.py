@@ -13,15 +13,16 @@ from time import sleep
 
 import schedule
 
+from kalao import euler
 from kalao.cacao import aocontrol
 from kalao.plc import adc
 
-from kalao_enums import LoopStatus
 import kalao_config as config
+from kalao_enums import LoopStatus, TrackingStatus
 
 
 def _update_adc(beck=None):
-    if aocontrol.check_loop() == LoopStatus.ALL_LOOPS_ON:
+    if euler.telescope_tracking() == TrackingStatus.TRACKING:
         adc.configure(beck=beck)
 
 

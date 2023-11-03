@@ -61,6 +61,11 @@ def telescope_zenith_angle():
     return 90 - telescope_coord_altaz().alt.deg
 
 
+def telescope_tracking():
+    return database.get_latest_record_value(collection_name='obs_log',
+                                            key='tracking_status')
+
+
 def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
     return telescope_coord_altaz().spherical_offsets_by(
             alt_offset_arcsec * u.arcsec,
