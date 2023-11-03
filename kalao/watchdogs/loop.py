@@ -28,7 +28,8 @@ def _update_adc(beck=None):
 
 def _offload_ttm():
     if aocontrol.check_loop() == LoopStatus.ALL_LOOPS_ON:
-        aocontrol.tip_tilt_offload_ttm_to_telescope()
+        aocontrol.tip_tilt_offload_ttm_to_telescope(
+                port=config.T120.port_loop_watchdog)
 
 
 if __name__ == "__main__":

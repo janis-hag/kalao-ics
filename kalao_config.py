@@ -263,6 +263,7 @@ class T120:
     symb_name = "inter"
     rcmd = "ipcsrv"
     port = 17001
+    port_loop_watchdog = 17002
     semkey = 4000
     focus_offset_limit = 15
     temperature_file = "/disks/synology/gls/data/services/CURRENT/temperature_telescope.rdb"

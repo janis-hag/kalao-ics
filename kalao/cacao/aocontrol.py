@@ -316,7 +316,8 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
 
 
 def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False,
-                                      stream_name="dm02disp"):
+                                      stream_name="dm02disp",
+                                      port=config.T120.port):
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
@@ -347,7 +348,7 @@ def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False,
         az_offload = np.clip(az_offload, -config.TTM.max_tel_offload,
                              config.TTM.max_tel_offload)
 
-        t120.send_offset(alt_offload, az_offload)
+        t120.send_offset(alt_offload, az_offload, port=port)
 
     return 0
 
@@ -485,7 +486,8 @@ def reset_dm(dm_number):
     ret = 0
 
     for i in range(0, 12):
-        stream = toolbox.open_stream_once(f'dm{dm_number:02d}disp{i:02d}', shm_and_fps_cache)
+        stream = toolbox.open_stream_once(f'dm{dm_number:02d}disp{i:02d}',
+                                          shm_and_fps_cache)
         ret += toolbox.zero_stream(stream)
 
     dm_fps = toolbox.open_fps_once(f"mfilt-{dm_number:1d}", shm_and_fps_cache)

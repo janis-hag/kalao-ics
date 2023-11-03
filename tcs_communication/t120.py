@@ -32,7 +32,7 @@ def _t120_print_and_log(log_text):
     database.store_obs_log({'t120_log': log_text})
 
 
-def send_offset(delta_alt_arcsec, delta_az_arcsec):
+def send_offset(delta_alt_arcsec, delta_az_arcsec, port=config.T120.port):
     """
     Send altitude azimuth offset to T120 telescope server.
 
@@ -45,7 +45,7 @@ def send_offset(delta_alt_arcsec, delta_az_arcsec):
                                             key='t120_host') + '.ls.eso.org'
 
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
-                                      config.T120.rcmd, config.T120.port,
+                                      config.T120.rcmd, port,
                                       config.T120.semkey)
 
     #print ("ipc.init_remote_client, returns:",socketId)
