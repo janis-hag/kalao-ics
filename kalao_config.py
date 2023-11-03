@@ -262,7 +262,7 @@ class T120:
     host = "glslogin1.ls.eso.org"
     symb_name = "inter"
     rcmd = "ipcsrv"
-    port = 12345
+    port = 17001
     semkey = 4000
     focus_offset_limit = 15
     temperature_file = "/disks/synology/gls/data/services/CURRENT/temperature_telescope.rdb"

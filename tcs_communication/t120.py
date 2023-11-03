@@ -11,10 +11,6 @@
 #
 # sort 10 ligne de "show i" sur glslogin2
 #
-#import sys
-#import time
-#sys.path.append("/home/weber/src/pymod_libipc/")
-#sys.path.append("/home/weber/src/pymod_libgop/")
 
 import pandas as pd
 
@@ -23,12 +19,6 @@ from kalao.utils import database, kalao_time
 from tcs_communication.pyipc import pymod_libipc as ipc
 
 import kalao_config as config
-
-#import tcs_communication.pygop as gop
-
-#
-# The connection to ipcsrv on <host>:
-#
 
 
 def _t120_print_and_log(log_text):
@@ -57,6 +47,7 @@ def send_offset(delta_alt_arcsec, delta_az_arcsec):
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
                                       config.T120.rcmd, config.T120.port,
                                       config.T120.semkey)
+
     #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
         _t120_print_and_log('Error connecting to T120')
