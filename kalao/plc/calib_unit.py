@@ -172,6 +172,7 @@ def move(position=23.36, velocity=0.1, beck=None):
         # Execute
         send_execute(beck)
 
+        sleep(2)
         wait_move(beck=beck)
 
         # Get new position
@@ -195,10 +196,11 @@ def wait_move(beck=None):
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
-    while (beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").
-                   get_value() == 'MOVING in Positioning Mode'):
-        print('.')
+    while beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus"
+                        ).get_value().startswith('MOVING'):
+        print('.', end='', flush=True)
         sleep(5)
+    print()
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -305,11 +307,14 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
                          ).get_value() or force_init:
         send_init(beck, motor_nCommand)
         _log(f'Starting calib_unit init.')
+
         sleep(15)
-        while (beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").
-               get_value() == 'INITIALISING'):
-            print('.')
-            sleep(15)
+        while beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus"
+                            ).startswith('INITIALISING'):
+            print('.', end='', flush=True)
+            sleep(5)
+        print()
+
         if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised"
                              ).get_value():
             error = 'ERROR: ' + str(

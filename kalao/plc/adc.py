@@ -29,6 +29,7 @@ adc_name = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
 # Pressure in Pa
 # Hygrometry between 0 and 1
 
+
 # Owens 1967 formula
 def air_refractive_index_OWENS(lambda0_, T, P, H):
     sig = 1. / (lambda0_ * 1e6)
@@ -147,6 +148,8 @@ def set_angle(angle, beck=None):
     rotate(1, position=config.ADC.max_disp_angle_1 + angle / 2, beck=beck)
     rotate(2, position=config.ADC.max_disp_angle_2 + angle / 2, beck=beck)
 
+    sleep(2)
+
     wait_rotate_both(beck=beck)
 
     # TODO: check motors moved successfully
@@ -205,11 +208,9 @@ def rotate(adc_id, position=0, beck=None):
                 ))
         # Execute
         send_execute(motor_bExecute)
-        while beck.get_node(
-                "ns=4; s=MAIN." + adc_name[adc_id] +
-                ".stat.sStatus").get_value() == 'MOVING in Positioning Mode':
-            print('.')
-            sleep(5)
+
+        #TODO: We don't wait for position, so what to do with new_position?
+
         # Get new position
         new_position = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
                                      ".stat.lrPosActual").get_value()
@@ -228,10 +229,11 @@ def wait_rotate(adc_id, beck=None):
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
-    while (beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".stat.sStatus").
-                   get_value() == 'MOVING in Positioning Mode'):
-        print('.')
+    while beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
+                        ".stat.sStatus").get_value().startswith('MOVING'):
+        print('.', end='', flush=True)
         sleep(5)
+    print()
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -336,11 +338,15 @@ def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None,
                          ".stat.bInitialised").get_value() or force_init:
         send_init(motor_nCommand, motor_bExecute)
         print('Initalising ADC motor' + str(adc_id))
+
         sleep(15)
         while beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                            ".stat.sStatus").get_value() == 'INITIALISING':
-            print('.')
-            sleep(15)
+                            ".stat.sStatus").get_value().startswith(
+                                    'INITIALISING'):
+            print('.', end='', flush=True)
+            sleep(5)
+        print()
+
         if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
                              ".stat.bInitialised").get_value():
             error = 'ERROR: ' + str(
