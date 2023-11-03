@@ -596,6 +596,16 @@ def focusing(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
+    if adc.config_adc() != 0:
+        system.print_and_log("Error: failed to configure ADC")
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
+    if aocontrol.reset_all_dms() != 0:
+        system.print_and_log("Error: failed to reset DM to flat")
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
     if core.lamps_off() != 0:
         system.print_and_log("Error: failed to turn off lamps")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
