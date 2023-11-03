@@ -252,6 +252,11 @@
   value: nuvu_exposuretime
   comment: "[ms] WFS EMCCD exposure time"
 
+- keyword: HIERARCH ESO AOS WFS FRATE
+  keygroup: Telemetry
+  value: nuvu_mframerate
+  comment: "[Hz] EMCCD EM frame rate"
+
 - keyword: HIERARCH ESO AOS WFS EMGAIN
   keygroup: Telemetry
   value: nuvu_emgain
