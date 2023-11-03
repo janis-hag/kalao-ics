@@ -237,7 +237,7 @@ def get_temperatures():
     :return:
     """
 
-    req = _send_request('temperature', 'GET')
+    req = _send_request('temperature')
 
     if req.status_code == 200:
         temperatures = json.loads(req.text)
@@ -269,7 +269,7 @@ def set_temperature(temperature):
         return req.text
 
 
-def _send_request(request_type, params, do_not_log=False):
+def _send_request(request_type, params = {}, do_not_log=False):
     # Clean params
     for key, value in list(params.items()):
         if value is None:
@@ -304,7 +304,7 @@ def _send_request(request_type, params, do_not_log=False):
         else:
             url = 'http://' + config.FLI.ip + ':' + str(
                     config.FLI.port) + '/' + request_type
-            if params == 'GET':
+            if params == {}:
                 req = requests.get(url, timeout=config.FLI.request_timeout)
             else:
                 req = requests.post(url, json=params,
