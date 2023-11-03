@@ -342,6 +342,8 @@ class Cooling:
     max_heatsink_temp = 35  # °C
     heatsink_temp_warn = 30  # °C
     max_CCD_temp = -25  # °C
+    pump_restart_temp = 35  # °C
+    max_pump_temperature = 60  # °C
 
 
 class Watchdog:

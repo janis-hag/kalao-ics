@@ -18,6 +18,8 @@ import schedule
 from kalao.plc import core, temperature_control
 from sequencer import system
 
+import kalao_config as config
+
 
 def _check_pump_temp(beck=None):
     beck, disconnect_on_exit = core.check_beck(beck)
@@ -25,11 +27,11 @@ def _check_pump_temp(beck=None):
 
     pump_status = temperature_control.pump_status(beck)
 
-    if pump_temp > 40 and pump_status == 'ON':
+    if pump_temp > config.Cooling.max_pump_temperature and pump_status == 'ON':
         temperature_control.pump_off(beck)
         system.print_and_log("WARNING: Pump overheat, shutting off")
 
-    elif pump_temp < 38 and pump_status == 'OFF':
+    elif pump_temp < config.Cooling.pump_restart_temp and pump_status == 'OFF':
         temperature_control.pump_on(beck)
         system.print_and_log("WARNING: Pump cooled down, powering up")
 
