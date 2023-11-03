@@ -485,8 +485,8 @@ def reset_dm(dm_number):
     ret = 0
 
     for i in range(0, 12):
-        stream_name = f'dm{dm_number:02d}disp{i:02d}'
-        ret += toolbox.zero_stream(stream_name)
+        stream = toolbox.open_fps_once(f'dm{dm_number:02d}disp{i:02d}', shm_and_fps_cache)
+        ret += toolbox.zero_stream(stream)
 
     dm_fps = toolbox.open_fps_once(f"mfilt-{dm_number:1d}", shm_and_fps_cache)
     if dm_fps is not None:

@@ -171,11 +171,9 @@ def move(position=23.36, velocity=0.1, beck=None):
                 ))
         # Execute
         send_execute(beck)
-        sleep(2)
-        while (beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").
-               get_value() == 'MOVING in Positioning Mode'):
-            print('.')
-            sleep(5)
+
+        wait_move(beck=beck)
+
         # Get new position
         new_position = beck.get_node(
                 "ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value()
@@ -191,6 +189,21 @@ def move(position=23.36, velocity=0.1, beck=None):
         beck.disconnect()
 
     return new_position
+
+
+def wait_move(beck=None):
+    # Connect to OPCUA server
+    beck, disconnect_on_exit = core.check_beck(beck)
+
+    while (beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").
+                   get_value() == 'MOVING in Positioning Mode'):
+        print('.')
+        sleep(5)
+
+    if disconnect_on_exit:
+        beck.disconnect()
+
+    return 0
 
 
 def status(beck=None):

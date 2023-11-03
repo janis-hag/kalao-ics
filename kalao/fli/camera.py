@@ -277,7 +277,6 @@ def _send_request(request_type, params = {}, do_not_log=False):
 
     if not check_server_status() == CameraServerStatus.UP:
         req = Mock(spec=Response)
-
         req.json.return_value = {}
         req.text = 'Camera server down'
         # 503 Service Unavailable
@@ -294,11 +293,8 @@ def _send_request(request_type, params = {}, do_not_log=False):
             if request_type == 'acquire':
                 shutil.copy(config.FLI.dummy_image_path, params['filepath'])
 
-            class Object(object):
-                pass
-
-            req = Object()
-            req.text = '-1'
+            req = Mock(spec=Response)
+            req.text = 'Dummy image loaded'
             req.status_code = 200
 
         else:
