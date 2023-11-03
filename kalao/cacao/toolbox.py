@@ -230,7 +230,9 @@ def open_fps_once(fps_name, fps_list):
 
 
 def zero_stream(stream_or_name):
-    if isinstance(stream_or_name, SHM):
+    if stream_or_name is None:
+        return -1
+    elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
         stream_exists, stream_name = check_stream(stream_or_name)
@@ -258,7 +260,9 @@ def zero_stream(stream_or_name):
 
 
 def save_stream_to_fits(stream_or_name, fits_file):
-    if isinstance(stream_or_name, SHM):
+    if stream_or_name is None:
+        return -1
+    elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
         stream_exists, stream_name = check_stream(stream_or_name)

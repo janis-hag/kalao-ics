@@ -438,6 +438,8 @@ def turn_dm_on(fps_list={}):
 
     if bmc_display_fps is not None:
         if not bmc_display_fps.run_runs():
+            system.print_and_log("Starting BMC fps")
+
             bmc_display_fps.run_start()
 
             time.sleep(config.Watchdog.dm_wait_betweeen_actions)
@@ -445,11 +447,9 @@ def turn_dm_on(fps_list={}):
             reset_dm(config.AO.DM_loop_number)
 
         if not bmc_display_fps.run_runs():
-            system.print_and_log("Unable to start DM fps")
+            system.print_and_log("Unable to start BMC fps")
 
             return -1
-        else:
-            system.print_and_log("DM fps started")
 
     return 0
 
@@ -485,7 +485,7 @@ def reset_dm(dm_number):
     ret = 0
 
     for i in range(0, 12):
-        stream = toolbox.open_fps_once(f'dm{dm_number:02d}disp{i:02d}', shm_and_fps_cache)
+        stream = toolbox.open_stream_once(f'dm{dm_number:02d}disp{i:02d}', shm_and_fps_cache)
         ret += toolbox.zero_stream(stream)
 
     dm_fps = toolbox.open_fps_once(f"mfilt-{dm_number:1d}", shm_and_fps_cache)
