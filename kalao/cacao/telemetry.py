@@ -139,20 +139,20 @@ def telemetry_save(shm_and_fps_cache):
     telemetry_data = {}
 
     # NUVU process
-    server = libtmux.Server()
-    try:
-        session = server.find_where({"session_name": "nuvu_ctrl"})
-    except:
-        # TODO specify more precise exception
-        session = False
-
-    # If tmux session exists send query temperatures
-    if session:
-        session.attached_pane.send_keys('\ncam.GetTemperature()')
+    # server = libtmux.Server()
+    # try:
+    #     session = server.find_where({"session_name": "nuvu_ctrl"})
+    # except:
+    #     # TODO specify more precise exception
+    #     session = False
+    #
+    # # If tmux session exists send query temperatures
+    # if session:
+    #     session.attached_pane.send_keys('\ncam.GetTemperature()')
 
     nuvu_stream = toolbox.open_stream_once('nuvu_raw', shm_and_fps_cache)
 
-    if nuvu_stream is not None and session:
+    if nuvu_stream is not None:  # and session:
         stream_keywords = nuvu_stream.get_keywords()
 
         # Check if it's running
@@ -172,8 +172,7 @@ def telemetry_save(shm_and_fps_cache):
         pass
 
     # SHWFS process
-    slopes_stream = toolbox.open_fps_once('shwfs_process-1',
-                                          shm_and_fps_cache)
+    slopes_stream = toolbox.open_fps_once('shwfs_process-1', shm_and_fps_cache)
 
     if slopes_stream is not None:
         # Check if it's running
