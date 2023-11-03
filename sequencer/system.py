@@ -244,7 +244,7 @@ def gop_service(action):
     return status
 
 
-def watchdog_service(action):
+def safety_watchdog_service(action):
     """
     Control the flask server systemd service. It accepts one of the four systemctl commands:
     RESTART/START/STOP/STATUS
@@ -255,10 +255,50 @@ def watchdog_service(action):
 
     if not action.upper() == 'STATUS':
         database.store_obs_log({
-                'flask_log':
+                'safety_watchdog_log':
                         'Sending ' + action + ' command to safety watchdog.'
         })
     unit_name = config.SystemD.safety_watchdog
+    status = unit_control(unit_name, action)
+
+    return status
+
+
+def loop_watchdog_service(action):
+    """
+    Control the flask server systemd service. It accepts one of the four systemctl commands:
+    RESTART/START/STOP/STATUS
+
+    :param action: RESTART/START/STOP/STATUS
+    :return:
+    """
+
+    if not action.upper() == 'STATUS':
+        database.store_obs_log({
+                'loop_watchdog_log':
+                        'Sending ' + action + ' command to loop watchdog.'
+        })
+    unit_name = config.SystemD.loop_watchdog
+    status = unit_control(unit_name, action)
+
+    return status
+
+
+def pump_watchdog_service(action):
+    """
+    Control the flask server systemd service. It accepts one of the four systemctl commands:
+    RESTART/START/STOP/STATUS
+
+    :param action: RESTART/START/STOP/STATUS
+    :return:
+    """
+
+    if not action.upper() == 'STATUS':
+        database.store_obs_log({
+                'pump_watchdog_log':
+                        'Sending ' + action + ' command to pump watchdog.'
+        })
+    unit_name = config.SystemD.pump_watchdog
     status = unit_control(unit_name, action)
 
     return status
@@ -275,7 +315,9 @@ def initialise_services():
     camera_service('restart')
     flask_service('restart')
     gop_service('restart')
-    watchdog_service('restart')
+    safety_watchdog_service('restart')
+    loop_watchdog_service('restart')
+    pump_watchdog_service('restart')
 
     time.sleep(config.SystemD.service_restart_wait)
 

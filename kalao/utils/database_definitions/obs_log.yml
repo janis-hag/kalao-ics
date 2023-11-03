@@ -173,6 +173,18 @@ gop_log:
   short: gop log
   long: Log output of the GOP server
   unit: text
+safety_watchdog_log:
+  short: Safety watchdog log
+  long: Log output of the safety watchdog
+  unit: text
+loop_watchdog_log:
+  short: Safety watchdog log
+  long: Log output of the safety watchdog
+  unit: text
+pump_watchdog_log:
+  short: Pump watchdog log
+  long: Log output of the pump watchdog
+  unit: text
 status_txt:
   short: status text for EDP
   long: Text to send info the consigne text frame of the EDP

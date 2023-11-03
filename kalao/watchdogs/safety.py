@@ -226,7 +226,7 @@ def initialise():
 
     :return:
     """
-    system.watchdog_service('restart')
+    system.safety_watchdog_service('restart')
 
     return 0
 
