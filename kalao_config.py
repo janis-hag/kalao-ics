@@ -246,7 +246,8 @@ class SystemD:
     gop_server = "kalao_gop_server.service"
     # temperature_control = "kalao_temperature-control.service"
     safety_watchdog = "kalao_safety-watchdog.service"
-    # TODO: pump and loop services?
+    loop_watchdog = "kalao_loop-watchdog.service"
+    pump_watchdog = "kalao_pump-watchdog.service"
     service_restart_wait = 15
 
 
