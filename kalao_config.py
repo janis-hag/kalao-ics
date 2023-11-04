@@ -54,6 +54,8 @@ class ADC:
     max_disp_angle_1 = 314.556259  # °
     max_disp_angle_2 = 45.4437409  # °
 
+    max_disp_offset = 0  # °
+
     angle_threshold = 0.1  # °
     update_interval = 10  # s
 
@@ -85,8 +87,8 @@ class TTM:
     tilt_to_onsky = -6.88  # arcsec / mrad
 
     # Recommended: 0.5 * 5 * 0.05 (10% of TTM range)
-    offload_gain = 0.05  # -
     offload_threshold = 0.25  # mrad
+    offload_gain = 0.05  # -
     offload_interval = 10  # s
 
     # Recommended: 0.5 * 5 * 0.25 (25% of TTM range)
