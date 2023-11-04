@@ -29,73 +29,68 @@ from kalao_enums import IPPowerStatus, LoopStatus
 shm_and_fps_cache = {}
 
 
-def close_loop():
+def close_loops():
     """
     Close the primary DM AO loop followed by the secondary TTM loop.
 
     :return:
     """
 
-    rValue = toggle_loops(close=True)
+    rValue = switch_loops(close=True)
 
     return rValue
 
 
-def open_loop():
+def open_loops():
     """
     Open the primary DM AO loop followed by the secondary TTM loop.
 
     :return:
     """
 
-    rValue = toggle_loops(close=False)
+    rValue = switch_loops(close=False)
 
     return rValue
 
 
-def toggle_loops(close=True):
+def switch_loops(close=True):
     """
     Toggle the loop value the primary DM AO loop followed by the secondary TTM loop.
 
     :return:
     """
 
-    # DM Loop
+    if close:
+        loop_order = [1,2]
+    else:
+        loop_order = [2,1]
 
-    fps_mfilt1 = toolbox.open_fps_once("mfilt-1", shm_and_fps_cache)
+    for i in loop_order:
+        fps_mfilt = toolbox.open_fps_once(f"mfilt-{i}", shm_and_fps_cache)
 
-    if fps_mfilt1 is None:
-        message = f'ERROR: mfilt-1 is missing'
-        print(message)
-        database.store_obs_log({'ao_log': message, 'obs_log': message})
+        if fps_mfilt is None:
+            message = f'ERROR: mfilt-{i} is missing'
+            print(message)
+            database.store_obs_log({'ao_log': message, 'obs_log': message})
 
-        return -1
+            return -1
 
-    fps_mfilt1.set_param('loopON', close)
+        fps_mfilt.set_param('loopON', close)
 
-    if not close:
-        fps_mfilt1.set_param('loopZERO', True)
+        if not close:
+            fps_mfilt.set_param('loopZERO', True)
 
-    # TTM Loop
+        time.sleep(1)
 
-    fps_mfilt2 = toolbox.open_fps_once("mfilt-2", shm_and_fps_cache)
+        ret = autogain_switch(on = close)
 
-    if fps_mfilt2 is None:
-        message = f'ERROR: mfilt-2 is missing'
-        print(message)
-        database.store_obs_log({'ao_log': message, 'obs_log': message})
-
-        return -1
-
-    fps_mfilt2.set_param('loopON', close)
-
-    if not close:
-        fps_mfilt2.set_param('loopZERO', True)
+        if ret != 0:
+            return ret
 
     return 0
 
 
-def check_loop():
+def check_loops():
     status = LoopStatus(0)
 
     fps_mfilt1 = toolbox.open_fps_once("mfilt-1", shm_and_fps_cache)
@@ -109,6 +104,24 @@ def check_loop():
         status |= LoopStatus.TTM_LOOP_ON
 
     return status
+
+
+def autogain_on():
+    return autogain_switch(on=True)
+
+
+def autogain_off():
+    return autogain_switch(on=False)
+
+
+def autogain_switch(on=True):
+    nuvu_fps = toolbox.open_fps_once('nuvu_acquire-1', shm_and_fps_cache)
+
+    if nuvu_fps is not None:
+        nuvu_fps.set_param('autogain_on', on)
+        return 0
+
+    return -1
 
 
 def set_dmloop_gain(gain):
@@ -359,7 +372,6 @@ def tip_tilt_offload_ttm_to_telescope(gain=0.1, override_threshold=False,
                              config.TTM.max_tel_offload)
 
         t120.send_offset(alt_offload, az_offload, port=port)
-
     return 0
 
 

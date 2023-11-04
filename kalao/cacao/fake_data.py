@@ -146,7 +146,7 @@ def fake_streams():
             "max": max
     }
 
-    # Fake set_focus on the DM
+    # Fake focus on the DM
     rows = 12
     cols = 12
     min = -1.75

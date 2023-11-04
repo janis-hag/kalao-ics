@@ -520,7 +520,7 @@ def target_observation(**seq_args):
         #     aocontrol.wfs_centering(tt_threshold=config.AO.
         #                         WFS_centering_slope_threshold)
 
-        if aocontrol.close_loop() == -1:
+        if aocontrol.close_loops() == -1:
             system.print_and_log("Error: unable to close loop")
             database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
@@ -810,7 +810,7 @@ def instrument_change(**seq_args):
 
     database.store_obs_log({'tracking_status': TrackingStatus.IDLE})
 
-    aocontrol.open_loop()
+    aocontrol.open_loops()
     aocontrol.emgain_off()
     aocontrol.set_exptime(0)
 
@@ -848,7 +848,7 @@ def stopao(**seq_args):
     :return: nothing
     """
 
-    aocontrol.open_loop()
+    aocontrol.open_loops()
     aocontrol.emgain_off()
     aocontrol.set_exptime(0)
 
@@ -873,7 +873,7 @@ def end(**seq_args):
     # TODO set EM gain to 1
     # TODO turn of DM
 
-    aocontrol.open_loop()
+    aocontrol.open_loops()
     aocontrol.emgain_off()
     aocontrol.set_exptime(0)
 
@@ -956,7 +956,7 @@ def check_abort(q, dit, AO=False):
             # Update database
             database_updater.update_plc_monitoring()
             return -1
-        if AO and not aocontrol.check_loop() == LoopStatus.ALL_LOOPS_ON:
+        if AO and not aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON:
             return -1
 
         #database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
