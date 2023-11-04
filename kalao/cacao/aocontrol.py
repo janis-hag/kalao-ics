@@ -197,18 +197,27 @@ def emgain_off():
     rValue = -1
 
     try:
+        fps = toolbox.open_fps_once('nuvu_acquire-1', shm_and_fps_cache)
+
+        if fps is not None:
+            fps.set_param('autogain_on', False)
+            fps.set_param('autogain_setting', 0)
+    except Exception as err:
+        print('Can\'t turn off autogain, nuvu_acquire seems not to be running.')
+        print(Exception, err)
+
+    try:
         _set_emgain_fps(emgain=1)
         rValue = 0
     except Exception as err:
-        print('nuvu_acquire fps seems not to be running.')
+        print('Can\'t turn off emgain, nuvu_acquire seems not to be running.')
         print(Exception, err)
-        rValue = -1
 
     try:
         _set_emgain_tmux(emgain=1)
         rValue = 0
     except Exception as err:
-        print('Unable to connect to nuvu_ctrl tmux. Is the WFS running?')
+        print('Can\'t turn off emgain, nucu_ctrl seems not to be running.')
         print(Exception, err)
 
     return rValue
@@ -224,8 +233,8 @@ def set_emgain(emgain=1, method='tmux'):
 
     emgain = int(emgain)
 
-    if emgain > config.AO.WFS_max_emgain:
-        emgain = config.AO.WFS_max_emgain
+    if emgain > config.WFS.max_emgain:
+        emgain = config.WFS.max_emgain
 
     elif emgain < 1:
         emgain = 1
@@ -248,8 +257,8 @@ def set_exptime(exptime=0, method='tmux'):
     :return:
     """
 
-    if exptime < 0:
-        exptime = 0
+    if exptime < config.WFS.min_exposuretime:
+        exptime = config.WFS.min_exposuretime
 
     if method == 'fps':
         _set_exptime_fps(exptime)

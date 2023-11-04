@@ -24,6 +24,7 @@ from astropy.time import Time
 from photutils.detection import DAOStarFinder
 
 from pyMilk.interfacing.shm import SHM
+from pyMilk.interfacing.fps import FPS
 
 from kalao import euler
 from kalao.cacao import aocontrol, toolbox
@@ -284,39 +285,22 @@ def check_wfs_flux():
 
     slopes_flux_stream_exists, slopes_flux_stream_name = toolbox.check_stream(
             'shwfs_slopes_flux')
+    nuvu_acquire_fps_exists, nuvu_acquire_fps_name = toolbox.check_fps(
+            'nuvu_acquire-1')
 
-    if slopes_flux_stream_exists:
+    if slopes_flux_stream_exists and nuvu_acquire_fps_exists:
         slopes_flux_stream = SHM(slopes_flux_stream_name)
+        nuvu_acquire_fps = FPS(nuvu_acquire_fps_name)
 
-        aocontrol.set_exptime(0)
+        nuvu_acquire_fps.set_param('autogain_setting', 0)
 
-        for emgain in range(0, 1001, 200):
-            if emgain == 0:
-                emgain = 1
+        for setting in range(15):
+            nuvu_acquire_fps.set_param('autogain_setting', setting)
 
-            aocontrol.set_emgain(emgain)
-            time.sleep(0.5)
-
-            for i in range(10):
-                slopes_flux = slopes_flux_stream.get_data(check=False)
-
-                illuminated_fraction = toolbox.wfs_illumination_fraction(
-                        slopes_flux, config.AO.WFS_illumination_threshold,
-                        config.AO.fully_illuminated_subaps)
-
-                if illuminated_fraction > config.AO.WFS_illumination_fraction:
-                    system.print_and_log('WFS on target')
-                    return 0
-
-        # Still no detection. Set EMGain to max and increase dit
-        aocontrol.set_emgain(1000)
-
-        for dit in range(0, 16):
-            aocontrol.set_exptime(dit)
-            time.sleep(0.5)
+            time.sleep(nuvu_acquire_fps.get_param('autogain_wait')/1000)
 
             for i in range(10):
-                slopes_flux = slopes_flux_stream.get_data(check=False)
+                slopes_flux = slopes_flux_stream.get_data(check=True)
 
                 illuminated_fraction = toolbox.wfs_illumination_fraction(
                         slopes_flux, config.AO.WFS_illumination_threshold,
@@ -327,6 +311,7 @@ def check_wfs_flux():
                     return 0
 
         # Reset values if no signal detected
+        nuvu_acquire_fps.set_param('autogain_setting', 0)
         aocontrol.set_emgain(1)
         aocontrol.set_exptime(0)
 
@@ -632,8 +617,8 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
 
     temps = t120.get_tube_temp()
 
-    if (time.time() - float(
-            temps.tunix)) < float(config.T120.temperature_file_timeout):
+    if (time.time() - float(temps.tunix)) < float(
+            config.T120.temperature_file_timeout):
 
         database.store_obs_log({
                 'focusing_best': best_focus,

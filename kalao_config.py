@@ -122,6 +122,9 @@ class FLI:
 
 
 class WFS:
+    max_emgain = 1000
+    min_exposuretime = 0.5
+
     plate_scale = 1.16  # arcsec / px
 
     laser_calib_intensity = 8  # mW
@@ -136,6 +139,7 @@ class FilterWheel:
     position_change_wait = 6.0  # s
     position_list = ['clear', 'g', 'r', 'i', 'z', 'nd']
 
+    # According to manufacturer: g = 465, r = 611, i = 758, z = undefined
     filter_to_wavelength = {
             'g': 475e-9,  # m
             'r': 622e-9,  # m
@@ -278,8 +282,6 @@ class AO:
     WFS_centering_precision = 0.1
     WFS_centering_timeout = 30
     WFS_centering_slope_threshold = 0.005
-
-    WFS_max_emgain = 1000
 
     DM_loop_number = 1
     TTM_loop_number = 2
