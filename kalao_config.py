@@ -89,7 +89,7 @@ class TTM:
     offload_interval = 10  # s
 
     # Recommended: 0.5 * 5 * 0.25 (25% of TTM range)
-    max_tel_offload = 0.625  # arcsec
+    max_tel_offload = 0.05  # arcsec
 
 
 class FLI:

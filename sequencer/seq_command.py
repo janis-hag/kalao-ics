@@ -506,9 +506,6 @@ def target_observation(**seq_args):
     if kao == 'AO':
         system.print_and_log("Trying to close loop")
 
-        system.print_and_log("Initial tip/tilt offload")
-        aocontrol.tip_tilt_offload_ttm_to_telescope()
-
         # To be used and corrected if AO with manual is to be supported
         # if centering != 'aut':
         #     if starfinder.check_wfs_flux() != 0:
