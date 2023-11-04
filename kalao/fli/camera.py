@@ -31,7 +31,8 @@ fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024),
                                            np.uint16)
 
 
-def take_frame(dit, filepath=None, nbflushes=None, do_not_log=False, update_stream=True):
+def take_frame(dit, filepath=None, nbflushes=None, do_not_log=False,
+               update_stream=True):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
 
@@ -52,11 +53,17 @@ def take_frame(dit, filepath=None, nbflushes=None, do_not_log=False, update_stre
         return None, req
 
 
-def take_cube(dit, nbframes, filepath=None, nbflushes=None, do_not_log=False, update_stream=True):
+def take_cube(dit, nbframes, filepath=None, nbflushes=None, do_not_log=False,
+              update_stream=True):
     if filepath is None:
         filepath = '/tmp/fli_cube.fits'
 
-    params = {'exptime': dit, 'nbframes': nbframes, 'filepath': filepath, 'nbflushes': nbflushes}
+    params = {
+            'exptime': dit,
+            'nbframes': nbframes,
+            'filepath': filepath,
+            'nbflushes': nbflushes
+    }
     req = _send_request('acquireCube', params, do_not_log=do_not_log)
 
     if req.status_code == 200:
@@ -85,9 +92,12 @@ def take_image(
 
     # TODO verify first with check_server_status() before sending request
 
-    if dit < 0:
-        database.store_obs_log({'fli_log': 'Abort before exposure started. Negative dit.'})
-        return 0
+    if dit <= 0.001:
+        database.store_obs_log({
+                f'fli_log':
+                        'Abort before exposure started. {dit=} below min value 0.001'
+        })
+        return -1, None
 
     if filepath is None:
         # Generate filename including path
@@ -269,7 +279,7 @@ def set_temperature(temperature):
         return req.text
 
 
-def _send_request(request_type, params = {}, do_not_log=False):
+def _send_request(request_type, params={}, do_not_log=False):
     # Clean params
     for key, value in list(params.items()):
         if value is None:
