@@ -82,7 +82,7 @@ class ADC:
 class TTM:
     # Should be 2 * 20 / 1200 / 1000 * 180/np.pi * 3600 = 6.88 arcsec / mrad
     tip_to_onsky = 6.88  # arcsec / mrad
-    tilt_to_onsky = 6.88  # arcsec / mrad
+    tilt_to_onsky = -6.88  # arcsec / mrad
 
     # Recommended: 0.5 * 5 * 0.05 (5% of TTM range)
     offload_threshold = 0.125  # mrad

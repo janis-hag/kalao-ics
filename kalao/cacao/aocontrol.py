@@ -203,7 +203,8 @@ def emgain_off():
             fps.set_param('autogain_on', False)
             fps.set_param('autogain_setting', 0)
     except Exception as err:
-        print('Can\'t turn off autogain, nuvu_acquire seems not to be running.')
+        print('Can\'t turn off autogain, nuvu_acquire seems not to be running.'
+              )
         print(Exception, err)
 
     try:
@@ -324,7 +325,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
         return -1
 
 
-def tip_tilt_offload_ttm_to_telescope(gain=0.25, override_threshold=False,
+def tip_tilt_offload_ttm_to_telescope(gain=0.1, override_threshold=False,
                                       stream_name="dm02disp",
                                       port=config.T120.port):
     """
