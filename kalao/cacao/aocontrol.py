@@ -338,7 +338,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
         return -1
 
 
-def tip_tilt_offload_ttm_to_telescope(gain=0.05, override_threshold=False,
+def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain, override_threshold=False,
                                       stream_name="dm02disp",
                                       port=config.T120.port):
     """

@@ -84,8 +84,9 @@ class TTM:
     tip_to_onsky = 6.88  # arcsec / mrad
     tilt_to_onsky = -6.88  # arcsec / mrad
 
-    # Recommended: 0.5 * 5 * 0.05 (5% of TTM range)
-    offload_threshold = 0.125  # mrad
+    # Recommended: 0.5 * 5 * 0.05 (10% of TTM range)
+    offload_gain = 0.05  # -
+    offload_threshold = 0.25  # mrad
     offload_interval = 10  # s
 
     # Recommended: 0.5 * 5 * 0.25 (25% of TTM range)

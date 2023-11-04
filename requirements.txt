@@ -1,6 +1,6 @@
 # Install MilkWrap and pyMilk from sources ("pip install -e ." in their respective sources)
 
-astropy~=5.0.1
+astropy~=5.2.2
 
 # To debug fake streams generation anf flux map generation
 matplotlib~=3.5.1
