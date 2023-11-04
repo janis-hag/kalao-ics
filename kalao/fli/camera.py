@@ -120,7 +120,7 @@ def take_image(
     log_temporary_image_path(filepath)
 
     if req.status_code == 200:
-        image_path = database.get_latest_record_value(['fli_temporary_image_path'])
+        image_path = database.get_latest_record_value('obs_log', 'fli_temporary_image_path')
         target_path_name = file_handling.save_tmp_image(
                 image_path, sequencer_arguments=sequencer_arguments)
 
