@@ -61,9 +61,9 @@ def switch_loops(close=True):
     """
 
     if close:
-        loop_order = [1,2]
+        loop_order = [1, 2]
     else:
-        loop_order = [2,1]
+        loop_order = [2, 1]
 
     for i in loop_order:
         fps_mfilt = toolbox.open_fps_once(f"mfilt-{i}", shm_and_fps_cache)
@@ -82,7 +82,7 @@ def switch_loops(close=True):
 
         time.sleep(1)
 
-        ret = autogain_switch(on = close)
+        ret = autogain_switch(on=close)
 
         if ret != 0:
             return ret
@@ -338,7 +338,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
         return -1
 
 
-def tip_tilt_offload_ttm_to_telescope(gain=0.1, override_threshold=False,
+def tip_tilt_offload_ttm_to_telescope(gain=0.05, override_threshold=False,
                                       stream_name="dm02disp",
                                       port=config.T120.port):
     """
