@@ -564,6 +564,9 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
     image = fits.getdata(file_path)
     flux = np.sort(np.ravel(image))[-config.Starfinder.focusing_pixels:].sum()
 
+    if flux < config.Starfinder.min_flux:
+        system.print_and_log('ERROR no flux detected.')
+
     focus_flux = pd.DataFrame({'set_focus': [initial_focus], 'flux': [flux]})
 
     # Get even number of focus_points in order to include 0 in the sequence.
