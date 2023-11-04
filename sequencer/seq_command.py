@@ -522,6 +522,8 @@ def target_observation(**seq_args):
             database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
             return -1
 
+        time.sleep(config.Starfinder.AO_wait_settle)
+
     image_path = file_handling.create_night_filepath()
 
     rValue, image_path = camera.take_image(dit=dit, filepath=image_path,

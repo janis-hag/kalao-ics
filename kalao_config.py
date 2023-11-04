@@ -224,6 +224,8 @@ class Starfinder:
     max_dit = 60
     dit_optimization_trials = 10
 
+    AO_wait_settle = 2
+
     FLI_to_WFS_coeff = 0
 
     # For 1" seeing and with 0.0507"/px plate scale, should be 1 / 0.0507 = 20 px
