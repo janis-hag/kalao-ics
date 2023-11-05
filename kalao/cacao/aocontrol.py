@@ -527,7 +527,7 @@ def restart_wfs():
 
             nuvu_acquire_fps.run_stop()
 
-    subprocess.run(["~/kalao-camstack/scripts/cam-nuvustart"])
+    subprocess.run(["/home/kalao/kalao-camstack/scripts/cam-nuvustart"])
 
     time.sleep(30)
 
