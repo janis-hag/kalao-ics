@@ -356,7 +356,7 @@ def find_star(image_path, df_output=False):
             fwhm = compute_fwhm(image, x_star, y_star)
             print(f'{fwhm=}')
         else:
-            fhwm = -1
+            fwhm = -1
 
         database.store_obs_log({
                 'psf_file': image_path.split('/')[-1],
