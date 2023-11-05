@@ -781,7 +781,7 @@ def calc_parang(dt=None, coord=None):
 
     la_silla_coord = euler.observing_location()
 
-    if isinstance(dt, datetime.datetime):
+    if isinstance(dt, datetime):
         astro_time = Time(datetime.utcnow(), scale='utc',
                           location=la_silla_coord)
         print(f'Using custom date: {astro_time}')
