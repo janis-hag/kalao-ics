@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from astropy import wcs
+from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
@@ -766,12 +767,15 @@ def generate_wcs():
     return w
 
 
-def calc_parang(dt=None):
+def calc_parang(dt=None, coord=None):
 
     r2d = 180 / np.pi
     d2r = np.pi / 180
 
-    coord = euler.telescope_coord()
+    if isinstance(coord, SkyCoord):
+        print(f'Using custom coord: {coord}')
+    else:
+        coord = euler.telescope_coord()
 
     geolat_rad = config.Euler.latitude * d2r
 
