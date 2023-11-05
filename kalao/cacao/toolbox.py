@@ -291,6 +291,29 @@ def save_stream_to_fits(stream_or_name, fits_file):
     #return cp
 
 
+def load_fits_to_stream(fits_file, stream_or_name):
+    if stream_or_name is None:
+        return -1
+    elif isinstance(stream_or_name, SHM):
+        stream_shm = stream_or_name
+    else:
+        stream_exists, stream_name = check_stream(stream_or_name)
+
+        if not stream_exists:
+            return -1
+
+        stream_shm = SHM(stream_name)
+
+    pattern = fits.getdata(fits_file)
+
+    if pattern.shape != stream_shm.shape:
+        return -1
+
+    stream_shm.set_data(pattern, True)
+
+    return 0
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
