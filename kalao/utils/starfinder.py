@@ -23,8 +23,8 @@ from astropy.stats import sigma_clipped_stats
 from astropy.time import Time
 from photutils.detection import DAOStarFinder
 
-from pyMilk.interfacing.shm import SHM
 from pyMilk.interfacing.fps import FPS
+from pyMilk.interfacing.shm import SHM
 
 from kalao import euler
 from kalao.cacao import aocontrol, toolbox
@@ -297,7 +297,7 @@ def check_wfs_flux():
         for setting in range(15):
             nuvu_acquire_fps.set_param('autogain_setting', setting)
 
-            time.sleep(nuvu_acquire_fps.get_param('autogain_wait')/1000)
+            time.sleep(nuvu_acquire_fps.get_param('autogain_wait') / 1000)
 
             for i in range(10):
                 slopes_flux = slopes_flux_stream.get_data(check=True)
@@ -620,8 +620,8 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
 
     temps = t120.get_tube_temp()
 
-    if (time.time() - float(temps.tunix)) < float(
-            config.T120.temperature_file_timeout):
+    if (time.time() - float(
+            temps.tunix)) < float(config.T120.temperature_file_timeout):
 
         database.store_obs_log({
                 'focusing_best': best_focus,
@@ -766,7 +766,7 @@ def generate_wcs():
     return w
 
 
-def calc_parang():
+def calc_parang(dt=None):
 
     r2d = 180 / np.pi
     d2r = np.pi / 180
@@ -777,7 +777,15 @@ def calc_parang():
 
     la_silla_coord = euler.observing_location()
 
-    astro_time = Time(datetime.utcnow(), scale='utc', location=la_silla_coord)
+    if isinstance(dt, datetime.datetime):
+        astro_time = Time(datetime.utcnow(), scale='utc',
+                          location=la_silla_coord)
+        print(f'Using custom date: {astro_time}')
+
+    else:
+        astro_time = Time(datetime.utcnow(), scale='utc',
+                          location=la_silla_coord)
+
     lst = astro_time.sidereal_time('mean').hour
 
     ha_deg = lst - coord.ra.value
