@@ -494,6 +494,12 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
+    if kao == 'NO_AO':
+        if aocontrol.open_loops() != 0:
+            system.print_and_log("Error: unable to open loop.")
+            database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+            return -1
+
     if centering == 'aut' or kao == 'AO':
         acq_dit = config.FLI.exp_time
         if 8 < float(mag_v) < 10:
