@@ -185,7 +185,7 @@ def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
 
     mgainfact_stream = toolbox.open_stream_once(stream_name, shm_and_fps_cache)
 
-    mode = int(np.floort(mode))
+    mode = int(np.floor(mode))
 
     if mgainfact_stream is not None:
         mgainfact_array = mgainfact_stream.get_data(check=False)
@@ -250,7 +250,6 @@ def set_emgain(emgain=1, method='tmux'):
 
     if emgain > config.WFS.max_emgain:
         emgain = config.WFS.max_emgain
-
     elif emgain < 1:
         emgain = 1
 
@@ -446,16 +445,19 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
     return 0
 
 
-def turn_dm_on(fps_list={}):
+def turn_dm_on():
 
-    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
+    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', shm_and_fps_cache)
 
     if ippower.ippower_status(config.IPPower.Port.BMC_DM) == IPPowerStatus.OFF:
         system.print_and_log("Powering on DM")
 
+        # Avoid safety turning DM off immediately
         time.sleep(1)
+
         rValue = ippower.switch_ippower(config.IPPower.Port.BMC_DM,
                                         IPPowerStatus.ON)
+
         if rValue != IPPowerStatus.ON:
             return -1
 
@@ -464,6 +466,9 @@ def turn_dm_on(fps_list={}):
     if bmc_display_fps is not None:
         if not bmc_display_fps.run_runs():
             system.print_and_log("Starting BMC fps")
+
+            # Avoid safety turning DM off immediately
+            time.sleep(1)
 
             bmc_display_fps.run_start()
 
@@ -479,12 +484,10 @@ def turn_dm_on(fps_list={}):
     return 0
 
 
-def turn_dm_off(fps_list={}):
+def turn_dm_off():
     system.print_and_log("Turning off DM")
 
-    time.sleep(1)
-
-    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
+    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', shm_and_fps_cache)
 
     reset_dm(config.AO.DM_loop_number)
 

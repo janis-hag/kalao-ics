@@ -163,6 +163,11 @@ def tungsten_FLAT(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
+    if aocontrol.turn_dm_on() != 0:
+        system.print_and_log("Error: failed to power on DM driver")
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
     if filter_list is None:
         filter_list = config.Calib.default_flat_list
 
@@ -313,6 +318,11 @@ def sky_flat(**seq_args):
 
     if aocontrol.emgain_off() == -1:
         system.print_and_log("Error: failed to disable EM gain on WFS")
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
+    if aocontrol.turn_dm_on() != 0:
+        system.print_and_log("Error: failed to power on DM driver")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
@@ -596,7 +606,12 @@ def focusing(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
-    if adc.cconfigure() != 0:
+    if aocontrol.turn_dm_on() != 0:
+        system.print_and_log("Error: failed to power on DM driver")
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
+    if adc.configure() != 0:
         system.print_and_log("Error: failed to configure ADC")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
@@ -696,6 +711,11 @@ def AO_loop_calibration(**seq_args):  #q = None, intensity = 0, **kwargs):
 
     q = seq_args.get('q')
     intensity = seq_args.get('intensity')
+
+    if aocontrol.turn_dm_on() != 0:
+        system.print_and_log("Error: failed to power on DM driver")
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
 
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
