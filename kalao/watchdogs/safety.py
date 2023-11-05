@@ -74,7 +74,7 @@ def _check_dm_inactive(inactivity_time):
             message = 'Turning off DM due to inactivity timeout'
             system.print_and_log(message)
 
-            aocontrol.turn_dm_off(fps_list)
+            aocontrol.turn_dm_off()
 
     return 0
 
