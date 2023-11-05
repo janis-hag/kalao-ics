@@ -8,6 +8,7 @@
 aocontrol.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
 
+import subprocess
 import time
 
 import numpy as np
@@ -338,7 +339,8 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
         return -1
 
 
-def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain, override_threshold=False,
+def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain,
+                                      override_threshold=False,
                                       stream_name="dm02disp",
                                       port=config.T120.port):
     """
@@ -502,6 +504,56 @@ def turn_dm_off(fps_list={}):
         return -1
 
     return 0
+
+
+def restart_wfs():
+
+    shwfs_process_fps = toolbox.open_fps_once('shwfs_process-1',
+                                              shm_and_fps_cache)
+    nuvu_acquire_fps = toolbox.open_fps_once('nuvu_acquire-1',
+                                             shm_and_fps_cache)
+
+    if shwfs_process_fps is not None:
+        if shwfs_process_fps.run_runs():
+            system.print_and_log("Stopping shwfs_process-1 fps")
+
+            shwfs_process_fps.run_stop()
+
+    time.sleep(config.AO.wait_fps_run)
+
+    if nuvu_acquire_fps is not None:
+        if nuvu_acquire_fps.run_runs():
+            system.print_and_log("Stopping nuvu_acquire-1 fps")
+
+            nuvu_acquire_fps.run_stop()
+
+    subprocess.run(["kalao-camstack/scripts/cam-nuvustart"])
+
+    time.sleep(30)
+
+    if nuvu_acquire_fps is not None:
+        if not nuvu_acquire_fps.run_runs():
+            system.print_and_log("Starting nuvu_acquire-1 fps")
+
+            nuvu_acquire_fps.run_start()
+
+        if not nuvu_acquire_fps.run_runs():
+            system.print_and_log("Unable to start nuvu_acquire-1 fps")
+
+            return -1
+
+    time.sleep(config.AO.wait_fps_run)
+
+    if shwfs_process_fps is not None:
+        if not shwfs_process_fps.run_runs():
+            system.print_and_log("Starting shwfs_process-1 fps")
+
+            shwfs_process_fps.run_start()
+
+        if not shwfs_process_fps.run_runs():
+            system.print_and_log("Unable to start shwfs_process-1 fps")
+
+            return -1
 
 
 def reset_dm(dm_number):

@@ -338,6 +338,8 @@ class AO:
     ]
     # yapf: enable
 
+    wait_fps_run = 3
+
 
 class Cooling:
     minimal_flow = 0.5
