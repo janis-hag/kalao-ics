@@ -858,7 +858,7 @@ def stopao(**seq_args):
     # request_manual_centering(False)
     # change tracking flaf
 
-    system.print_and_log('INSTRUMENTCHANGE received moving into standby.')
+    system.print_and_log('STOPAO received, opening loop.')
 
     database.store_obs_log({'sequencer_status': SequencerStatus.WAITING})
 
