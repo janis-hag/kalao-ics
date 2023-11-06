@@ -542,18 +542,20 @@ def restart_wfs():
 
             nuvu_acquire_fps.run_start()
 
+            time.sleep(config.AO.wait_fps_run)
+
         if not nuvu_acquire_fps.run_runs():
             system.print_and_log("Unable to start nuvu_acquire-1 fps")
 
             return -1
-
-    time.sleep(config.AO.wait_fps_run)
 
     if shwfs_process_fps is not None:
         if not shwfs_process_fps.run_runs():
             system.print_and_log("Starting shwfs_process-1 fps")
 
             shwfs_process_fps.run_start()
+
+            time.sleep(config.AO.wait_fps_run)
 
         if not shwfs_process_fps.run_runs():
             system.print_and_log("Unable to start shwfs_process-1 fps")
