@@ -340,6 +340,7 @@ class AO:
     # yapf: enable
 
     wait_fps_run = 3
+    wait_camstack_start = 45
 
 
 class Cooling:

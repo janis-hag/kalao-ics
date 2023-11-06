@@ -447,7 +447,8 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
 
 def turn_dm_on():
 
-    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', shm_and_fps_cache)
+    bmc_display_fps = toolbox.open_fps_once('bmc_display-01',
+                                            shm_and_fps_cache)
 
     if ippower.ippower_status(config.IPPower.Port.BMC_DM) == IPPowerStatus.OFF:
         system.print_and_log("Powering on DM")
@@ -487,7 +488,8 @@ def turn_dm_on():
 def turn_dm_off():
     system.print_and_log("Turning off DM")
 
-    bmc_display_fps = toolbox.open_fps_once('bmc_display-01', shm_and_fps_cache)
+    bmc_display_fps = toolbox.open_fps_once('bmc_display-01',
+                                            shm_and_fps_cache)
 
     reset_dm(config.AO.DM_loop_number)
 
@@ -532,7 +534,7 @@ def restart_wfs():
 
     subprocess.run(["/home/kalao/kalao-camstack/scripts/cam-nuvustart"])
 
-    time.sleep(30)
+    time.sleep(config.AO.wait_camstack_start)
 
     if nuvu_acquire_fps is not None:
         if not nuvu_acquire_fps.run_runs():
