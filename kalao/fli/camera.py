@@ -120,7 +120,8 @@ def take_image(
     log_temporary_image_path(filepath)
 
     if req.status_code == 200:
-        image_path = database.get_latest_record_value('obs_log', 'fli_temporary_image_path')
+        image_path = database.get_latest_record_value(
+                'obs_log', 'fli_temporary_image_path')
         target_path_name = file_handling.save_tmp_image(
                 image_path, sequencer_arguments=sequencer_arguments)
 
@@ -157,6 +158,23 @@ def take_dark(dit=0.05, seq_args=None, filepath=None):
     :return:
     """
     seq_args = {'type': 'K_DARK'}
+
+    rValue, image_path = take_image(dit=dit, filepath=None,
+                                    sequencer_arguments=seq_args)
+
+    return rValue, image_path
+
+
+def take_tech(dit=0.05, seq_args=None, filepath=None):
+    """
+    Convenience function to interactively execute a dark exposure.
+
+    :param dit:  detector integration time in seconds.
+    :param seq_args: dictionary of sequencer arguments.
+    :param filepath:
+    :return:
+    """
+    seq_args = {'type': 'K_TECH'}
 
     rValue, image_path = take_image(dit=dit, filepath=None,
                                     sequencer_arguments=seq_args)

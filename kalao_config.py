@@ -203,6 +203,7 @@ class SEQ:
     pointing_wait_time = 2
     pointing_timeout = 210
 
+    # Setup time to report to EDP
     timings = {
             'DARK': 15,
             'LMPFLT': 15,

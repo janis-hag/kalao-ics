@@ -203,6 +203,11 @@ def update_header(image_path, sequencer_arguments=None):
             header_df['value']['HIERARCH ESO DPR TYPE'] = 'OBJECT'
             header_df['value']['HIERARCH ESO PROG ID'] = '199'
 
+        elif type == 'K_TECH':
+            header_df['value']['HIERARCH ESO DPR TECH'] = 'IMAGE'
+            header_df['value']['HIERARCH ESO DPR CATG'] = 'TECHNICAL'
+            header_df['value']['HIERARCH ESO DPR TYPE'] = ''
+
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
         fits_header = hdul[0].header
