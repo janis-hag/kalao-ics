@@ -196,6 +196,7 @@ def wait_move(beck=None):
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
+    print(f'Waiting for calibration unit movement', end='', flush=True)
     while beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus"
                         ).get_value().startswith('MOVING'):
         print('.', end='', flush=True)
@@ -306,9 +307,10 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
     if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised"
                          ).get_value() or force_init:
         send_init(beck, motor_nCommand)
-        _log(f'Starting calib_unit init.')
+        _log(f'Starting calibration unit init.')
 
         sleep(15)
+        print(f'Waiting for calibration unit initialisation', end='', flush=True)
         while beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus"
                             ).startswith('INITIALISING'):
             print('.', end='', flush=True)

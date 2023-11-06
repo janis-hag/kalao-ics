@@ -229,6 +229,7 @@ def wait_rotate(adc_id, beck=None):
     # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
+    print(f'Waiting for ADC {adc_id} rotation', end='', flush=True)
     while beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
                         ".stat.sStatus").get_value().startswith('MOVING'):
         print('.', end='', flush=True)
@@ -340,6 +341,7 @@ def initialise(adc_id, force_init=False, beck=None, motor_nCommand=None,
         print('Initalising ADC motor' + str(adc_id))
 
         sleep(15)
+        print(f'Waiting for ADC {adc_id} initialisation', end='', flush=True)
         while beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
                             ".stat.sStatus").get_value().startswith(
                                     'INITIALISING'):

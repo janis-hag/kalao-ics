@@ -10,6 +10,7 @@ open_loop_ncpa.py is part of the KalAO Instrument Control Software
 """
 
 import argparse
+import os
 import sys
 import time
 from signal import SIGINT, signal
@@ -22,10 +23,10 @@ from astropy.io import fits
 
 from pyMilk.interfacing.shm import SHM
 
-from kalao.cacao import toolbox
+from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser
-from kalao.utils import kalao_time, zernike
+from kalao.utils import kalao_math, kalao_time, zernike
 
 import kalao_config as config
 from kalao_enums import CameraServerStatus
@@ -45,34 +46,17 @@ def handler(signal_received, frame):
     exit(0)
 
 
-def is_triangular(T):
-    n = round((np.sqrt(8 * T + 1) - 1) / 2)
-
-    return T == n * (n + 1) // 2
-
-
-# yapf: disable
-def gaussian_2d_rotated(x, y, mu_x = 0, mu_y = 0, sigma_x = 1, sigma_y = 1, theta = 0, A = None, C = 0):
-    if A is None:
-        A = 1/(sigma_x * sigma_y * 2*np.pi)
-
-    a = np.cos(theta)**2/(2 * sigma_x**2) + np.sin(theta)**2/(2 * sigma_y**2)
-    b = -np.sin(2*theta)/(4 * sigma_x**2) + np.sin(2*theta)/(4 * sigma_y**2)
-    c = np.sin(theta)**2/(2 * sigma_x**2) + np.cos(theta)**2/(2 * sigma_y**2)
-
-    return A * np.exp(-(a*(x - mu_x)**2 + 2*b*(x - mu_x)*(y - mu_y) + c*(y - mu_y)**2)) + C
-# yapf: enable
-
-
 def take_and_measure(args, update_stream=False):
     peak_hw = (args.peak_window - 1) // 2
 
     max = 0
     x, y = np.mgrid[0:args.peak_window, 0:args.peak_window]
 
+    img_cube = camera.take_cube(args.dit, args.img_avg, do_not_log=True,
+                                update_stream=update_stream)
+
     for i in range(args.img_avg):
-        img, _ = camera.take_frame(args.dit, do_not_log=True,
-                                   update_stream=update_stream)
+        img = img_cube[i]
 
         peak_pos = np.unravel_index(np.argmax(img, axis=None), img.shape)
 
@@ -81,7 +65,7 @@ def take_and_measure(args, update_stream=False):
 
         p0 = (peak_hw, peak_hw, 2, 2, 0, img_peak[peak_hw, peak_hw])
         errorfunction = lambda p: np.ravel(
-                gaussian_2d_rotated(x, y, *p) - img_peak)
+                kalao_math.gaussian_2d_rotated(x, y, *p) - img_peak)
         p, success = optimize.leastsq(errorfunction, p0)
 
         #print(f'mu_x: {p[0]}, mu_y: {p[1]}, sigma_x: {p[2]}, sigma_y: {p[3]}, theta: {p[4]}, A: {p[5]}, peak: {img_peak[peak_hw,peak_hw]}'
@@ -211,26 +195,34 @@ def run(args):
 
     time_name = kalao_time.get_isotime()
 
-    laser.set_intensity(config.WFS.laser_calib_intensity)
-
-    time.sleep(10)
-
     peak = display_and_measure(dm_stream, zernike_coeffs, args,
                                update_stream=True)
+
     print(f'Final peak value: {peak}')
     print(f'Final coefficients: {zernike_coeffs}')
 
-    toolbox.save_stream_to_fits('dm01disp', f'ncpa_dm_{time_name}.fits')
+    laser.set_intensity(config.WFS.laser_calib_intensity)
+    aocontrol.set_exptime(config.WFS.laser_calib_exptime)
+
+    time.sleep(10)
+
+    folder = f'ncpa_{time_name}'
+    os.makedirs(folder)
+
+    np.savetxt(f'{folder}/dm_zernike_coeffs.txt', zernike_coeffs)
+    toolbox.save_stream_to_fits('dm01disp', f'{folder}/dm.fits')
 
     print(f'Averaging slopes')
     slopes = []
 
-    for i in range(5):
+    for i in range(args.slopes_avg):
         slopes.append(slopes_stream.get_data(True))
 
-    slopes = np.median(np.array(slopes), axis=0)
+    slopes = np.array(slopes)
+    fits.PrimaryHDU(slopes).writeto(f'{folder}/slopes_cube.fits')
 
-    fits.PrimaryHDU(slopes).writeto(f'ncpa_slopes_{time_name}.fits')
+    slopes = np.median(slopes, axis=0)
+    fits.PrimaryHDU(slopes).writeto(f'{folder}/slopes_median.fits')
 
     print(f'Done')
 
@@ -271,15 +263,22 @@ if __name__ == '__main__':
                         type=int, help='Averaging over images')
     parser.add_argument('-p', action="store", dest="peak_window", default=5,
                         type=int, help='Size of window for peak fitting')
+    parser.add_argument('-slopes_avg', action="store", dest="slopes_avg",
+                        default=1000, type=int,
+                        help='Number of frames to average slopes on')
 
     args = parser.parse_args()
 
-    if not is_triangular(args.orders_to_correct):
+    if not kalao_math.is_triangular(args.orders_to_correct):
         print("WARNING: the number of orders to correct is not triangular. Correction will be asymmetric"
               )
+        print("Recommended values are 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120"
+              )
 
-    if not is_triangular(args.orders_to_skip):
+    if not kalao_math.is_triangular(args.orders_to_skip):
         print("WARNING: the number of orders to skip is not triangular. Correction will be asymmetric"
+              )
+        print("Recommended values are 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120"
               )
 
     if camera.check_server_status() != CameraServerStatus.UP:

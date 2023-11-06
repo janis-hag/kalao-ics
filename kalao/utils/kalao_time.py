@@ -27,10 +27,6 @@ def get_start_of_night(dt=None):
 
     if dt is None:
         dt = now()
-    # elif type(dt) is not datetime:
-    #     raise TypeError('Invalid type for parameter "date" - expecting datetime')
-    # if datetime_is_naive(dt):
-    #     raise TypeError("Datetime must not be naive")
 
     check_time_format(dt)
 
@@ -45,14 +41,6 @@ def get_mjd(dt):
     #From: http://aa.usno.navy.mil/faq/docs/JD_Formula.php
 
     # Replace by astropy Time functionality
-
-    # # Ensure correct format
-    # if not isinstance(dt, datetime):
-    #     raise TypeError('Invalid type for parameter "date" - expecting datetime')
-    # elif datetime_is_naive(dt):
-    #     raise TypeError("Datetime must not be naive")
-    # elif dt.year < 1801 or dt.year > 2099:
-    #     raise ValueError('Datetime must be between year 1801 and 2099')
 
     check_time_format(dt)
 

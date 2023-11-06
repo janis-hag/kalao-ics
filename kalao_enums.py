@@ -15,6 +15,7 @@ class LoopStatus(Flag):
     DM_LOOP_ON = auto()
     TTM_LOOP_ON = auto()
 
+    ALL_LOOPS_OFF = 0
     ALL_LOOPS_ON = DM_LOOP_ON | TTM_LOOP_ON
 
 

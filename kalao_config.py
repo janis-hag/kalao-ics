@@ -362,8 +362,6 @@ class Watchdog:
     bench_update_interval = 30  # s
 
     inactivity_timeout = 2700  # s
-    open_shutter_timeout = 2700  # s
-    laser_on_timeout = 2700  # s
 
     dm_wait_betweeen_actions = 10  # s
     dm_sun_min_elevation = 6  # °

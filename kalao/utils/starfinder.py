@@ -101,11 +101,6 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
                                                      y - config.FLI.center_y)
 
             if kao == 'AO':
-                print(f"##### Starfinder: Normalized peak value is {peak/dit}")
-                #exptime = peak / dit * config.Starfinder.FLI_to_WFS_coeff
-                #aocontrol.set_exptime(exptime)
-                #aocontrol.set_emgain(emgain)
-
                 # Check if enough light is on the WFS for precise centering
                 if check_wfs_flux() == 0:
                     # Start WFS centering procedure
