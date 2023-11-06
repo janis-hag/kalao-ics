@@ -136,6 +136,7 @@ class WFS:
 
 class FilterWheel:
     device_port = "/dev/ttyUSB0"
+    connection_retries = 3
     # soon to be changed to /dev/fw102c
     enable_wait = 2.0  # s
     initialization_wait = 2.0  # s

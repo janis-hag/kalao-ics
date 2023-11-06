@@ -16,6 +16,7 @@ import time
 from microscope.filterwheels import thorlabs
 
 from kalao.utils import database
+from sequencer import system
 
 import kalao_config as config
 
@@ -59,7 +60,22 @@ def set_position(filter_arg):
         else:
             filter_arg = id_filter_dict[filter_arg]
 
-    fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)
+    for i in range(config.FilterWheel.connection_retries):
+        try:
+            fw = thorlabs.ThorlabsFilterWheel(
+                    com=config.FilterWheel.device_port)
+        except thorlabs.serial.SerialException:
+            database.store_obs_log({
+                    'filterwheel_log':
+                            'Warning: SerialException on filterwheel. Retrying'
+            })
+            time.sleep(config.FilterWheel.enable_wait)
+        else:
+            break
+    else:
+        system.print_and_log('ERROR unable to connect to filterwheel.')
+        return -1
+
     # fw.enable()
     # time.sleep(config.FilterWheel.enable_wait)
     # fw.initialize()
