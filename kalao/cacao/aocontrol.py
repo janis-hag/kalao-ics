@@ -524,8 +524,6 @@ def restart_wfs():
 
             shwfs_process_fps.run_stop()
 
-    time.sleep(config.AO.wait_fps_run)
-
     if nuvu_acquire_fps is not None:
         if nuvu_acquire_fps.run_runs():
             system.print_and_log("Stopping nuvu_acquire-1 fps")
