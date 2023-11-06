@@ -503,7 +503,7 @@ def target_observation(**seq_args):
     if centering == 'aut' or kao == 'AO':
         acq_dit = config.FLI.exp_time
         if 8 < float(mag_v) < 10:
-            dit = 10
+            acq_dit = 10
         if 10 < float(mag_v):
             acq_dit = 20
 
