@@ -28,19 +28,32 @@ def connect(addr=config.PLC.ip, port=config.PLC.port):
 
 
 def lamps_off():
+    """
+    Turns the tungsten and laser lamp off.
+
+    :return:
+    """
 
     laser_status = laser.disable()
     tungsten_status = tungsten.off()
 
     if tungsten_status == 'OFF' and laser_status == 'OFF':
         return 0
-    else:
+
+    if tungsten_status != 'OFF':
         database.store_obs_log({
                 'tungsten_log':
                         'WARNING: Unknown return status: ' +
                         str(tungsten_status)
         })
-        return 1
+
+    if laser_status != 'OFF':
+        database.store_obs_log({
+                'laser_log':
+                        'WARNING: Unknown return status: ' + str(laser_status)
+        })
+
+    return 1
 
 
 def plc_status(beck=None):
@@ -48,6 +61,7 @@ def plc_status(beck=None):
     Query status of all PLC connected devices
     :return: device status dictionary
     """
+
     # Connect to OPCUA server
     beck, disconnect_on_exit = check_beck(beck)
 
