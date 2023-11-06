@@ -22,7 +22,11 @@ systemctl --user start kalao_pump-watchdog.service
 systemctl --user start kalao_loop-watchdog.service
 
 # Printing out status
-systemctl --user status
+# systemctl --user status
+
+sudo ln -s -r /home/kalao/kalao-ics/kalao-config/kalao_system-setup.service /etc/systemd/system/
+sudo systemctl enable kalao_system-setup.service
+sudo systemctl start kalao_system-setup.service
 
 
 set +x

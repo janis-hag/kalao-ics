@@ -95,7 +95,7 @@ def take_image(
     if dit <= 0.001:
         database.store_obs_log({
                 f'fli_log':
-                        'Abort before exposure started. {dit=} below min value 0.001'
+                        f'Abort before exposure started. {dit} below min value 0.001'
         })
         return -1, None
 

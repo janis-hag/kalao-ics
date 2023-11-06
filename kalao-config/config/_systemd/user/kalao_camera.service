@@ -1,4 +1,3 @@
-
 [Unit]
 Description=KalAO Camera control service
 
@@ -14,4 +13,3 @@ Environment=MILK_SHM_DIR=/tmp/milk
 
 [Install]
 WantedBy=default.target
-#WantedBy=multi-user.target

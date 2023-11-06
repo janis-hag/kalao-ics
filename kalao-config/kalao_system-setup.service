@@ -1,0 +1,16 @@
+[Unit]
+Description=KalAO - Setup system at boot
+After=local-fs.target
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_system-setup.sh
+RemainAfterExit=true
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+Environment=MILK_SHM_DIR=/tmp/milk
+
+[Install]
+WantedBy=default.target
