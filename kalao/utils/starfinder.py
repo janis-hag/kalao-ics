@@ -36,7 +36,7 @@ from sequencer import system
 from tcs_communication import t120
 
 import kalao_config as config
-from kalao_enums import SequencerStatus
+from kalao_enums import LoopStatus, SequencerStatus
 
 
 def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
@@ -74,9 +74,10 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
         if kao == 'AO':
             # Check if enough light is on the WFS for precise centering
             if check_wfs_flux() == 0:
-                # Start WFS centering procedure
-                aocontrol.wfs_centering(
-                        tt_threshold=config.AO.WFS_centering_slope_threshold)
+                if aocontrol.check_loops() != LoopStatus.ALL_LOOPS_ON:
+                    # Start WFS centering procedure
+                    aocontrol.wfs_centering(tt_threshold=config.AO.
+                                            WFS_centering_slope_threshold)
                 return 0
 
         # TODO use exptime given by nseq args
