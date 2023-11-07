@@ -321,6 +321,7 @@ def _send_request(request_type, params={}):
             req.status_code = 200
 
         else:
+            increment_image_counter()
             url = 'http://' + config.FLI.ip + ':' + str(
                     config.FLI.port) + '/' + request_type
             if params == {}:
@@ -328,7 +329,6 @@ def _send_request(request_type, params={}):
             else:
                 req = requests.post(url, json=params,
                                     timeout=config.FLI.request_timeout)
-            increment_image_counter()
 
     return req
 
