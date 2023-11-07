@@ -436,11 +436,12 @@ def target_observation(**seq_args):
     centering = seq_args.get('centering')
     mag_v = seq_args.get('mv')
 
-    if not database.get_latest_record_value(
+    if centering == 'aut' or not database.get_latest_record_value(
             collection_name='obs_log',
             key='tracking_status') == TrackingStatus.TRACKING:
 
         database.store_obs_log({'tracking_status': TrackingStatus.CENTERING})
+        aocontrol.open_loops()
         aocontrol.reset_all_dms()
 
     if None in (q, dit):
