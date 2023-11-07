@@ -564,6 +564,7 @@ def target_observation(**seq_args):
 def target_observation_abort(**seq_args):
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
+
     :return: nothing
     """
     # two cancel are done to avoid concurrency problems

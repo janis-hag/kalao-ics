@@ -69,6 +69,16 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
     #aocontrol.reset_dm(config.AO.TTM_loop_number)
 
     while time.time() < timeout_time:
+
+        # Check if we are already on target
+        if kao == 'AO':
+            # Check if enough light is on the WFS for precise centering
+            if check_wfs_flux() == 0:
+                # Start WFS centering procedure
+                aocontrol.wfs_centering(
+                        tt_threshold=config.AO.WFS_centering_slope_threshold)
+                return 0
+
         # TODO use exptime given by nseq args
         rValue, image_path = camera.take_image(dit=dit)
 
