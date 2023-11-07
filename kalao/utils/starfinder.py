@@ -214,7 +214,7 @@ def center_on_laser():
     for i in range(3):
         print(f'Centering step {i}')
 
-        rValue, image = camera.take_frame(dit=config.FLI.laser_calib_dit)
+        image, rValue = camera.take_frame(dit=config.FLI.laser_calib_dit)
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
@@ -227,7 +227,7 @@ def center_on_laser():
             time.sleep(3)
 
         # Check the new x position after the calib unit has been moved
-        rValue, image = camera.take_frame(dit=config.FLI.laser_calib_dit)
+        image, rValue = camera.take_frame(dit=config.FLI.laser_calib_dit)
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
