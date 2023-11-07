@@ -456,6 +456,7 @@ def target_observation(**seq_args):
 
     fo_delta = starfinder.get_latest_fo_delta()
     if fo_delta is not None:
+        system.print_and_log("Updating autofocus")
         t120.update_fo_delta(fo_delta)
         t120.request_autofocus()
 
@@ -485,7 +486,7 @@ def target_observation(**seq_args):
         kalfilter = 'clear'
 
     # Put filter on clear to center on target
-    if filterwheel.set_position('clear') == -1:
+    if centering == 'aut' and filterwheel.set_position('clear') == -1:
         system.print_and_log("Error: problem with filter selection")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
