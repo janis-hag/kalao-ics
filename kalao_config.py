@@ -285,7 +285,7 @@ class T120:
 
 class AO:
     WFS_illumination_threshold = 1000
-    WFS_illumination_fraction = 0.35
+    WFS_illumination_fraction = 0.5
     WFS_centering_precision = 0.1
     WFS_centering_timeout = 30
     WFS_centering_slope_threshold = 0.005
