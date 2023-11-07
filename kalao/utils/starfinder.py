@@ -214,11 +214,11 @@ def center_on_laser():
     for i in range(3):
         print(f'Centering step {i}')
 
-        rValue, image_path = camera.take_frame(dit=config.FLI.laser_calib_dit)
+        rValue, image = camera.take_frame(dit=config.FLI.laser_calib_dit)
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
-        x, y = find_star_custom_algo(image_path, spot_size=7, estim_error=0.05,
+        x, y = find_star_custom_algo(image, spot_size=7, estim_error=0.05,
                                      nb_step=5, laser_spot=True)
 
         if x != -1 and y != -1:
@@ -227,11 +227,11 @@ def center_on_laser():
             time.sleep(3)
 
         # Check the new x position after the calib unit has been moved
-        rValue, image_path = camera.take_frame(dit=config.FLI.laser_calib_dit)
+        rValue, image = camera.take_frame(dit=config.FLI.laser_calib_dit)
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
-        x, y = find_star_custom_algo(image_path, spot_size=7, estim_error=0.05,
+        x, y = find_star_custom_algo(image, spot_size=7, estim_error=0.05,
                                      nb_step=5, laser_spot=True)
 
         if x != -1 and y != -1:
@@ -392,7 +392,7 @@ def find_star(image_path, df_output=False):
         return x_star, y_star, peak, fwhm
 
 
-def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
+def find_star_custom_algo(image, spot_size=7, estim_error=0.05, nb_step=5,
                           laser_spot=False):
     """
     Finds the position of a star or laser lamp spot in an image taken with the FLI camera
@@ -407,10 +407,6 @@ def find_star_custom_algo(image_path, spot_size=7, estim_error=0.05, nb_step=5,
     """
 
     tb = time.time()
-    hdu_list = fits.open(image_path)
-    hdu_list.info()
-    image = hdu_list[0].data
-    hdu_list.close()
 
     # middle of the spot
     mid = int(spot_size / 2)
