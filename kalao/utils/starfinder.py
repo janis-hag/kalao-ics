@@ -301,6 +301,17 @@ def check_wfs_flux():
         slopes_flux_stream = SHM(slopes_flux_stream_name)
         nuvu_acquire_fps = FPS(nuvu_acquire_fps_name)
 
+        # Check if we are already good
+        slopes_flux = slopes_flux_stream.get_data(check=True)
+
+        illuminated_fraction = toolbox.wfs_illumination_fraction(
+                slopes_flux, config.AO.WFS_illumination_threshold,
+                config.AO.fully_illuminated_subaps)
+
+        if illuminated_fraction > config.AO.WFS_illumination_fraction:
+            system.print_and_log('WFS on target')
+            return 0
+
         nuvu_acquire_fps.set_param('autogain_setting', 0)
 
         for setting in range(15):
