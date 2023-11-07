@@ -89,7 +89,7 @@ class TTM:
     # Recommended: 0.5 * 5 * 0.05 (10% of TTM range)
     offload_threshold = 0.25  # mrad
     offload_gain = 0.05  # -
-    offload_interval = 10  # s
+    offload_interval = 1  # s
 
     # Recommended: 0.5 * 5 * 0.25 (25% of TTM range)
     max_tel_offload = 0.05  # arcsec
