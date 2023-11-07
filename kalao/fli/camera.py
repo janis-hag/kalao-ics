@@ -31,13 +31,12 @@ fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024),
                                            np.uint16)
 
 
-def take_frame(dit, filepath=None, nbflushes=None, do_not_log=False,
-               update_stream=True):
+def take_frame(dit, filepath=None, nbflushes=None, update_stream=True):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
 
     params = {'exptime': dit, 'filepath': filepath, 'nbflushes': nbflushes}
-    req = _send_request('acquire', params, do_not_log=do_not_log)
+    req = _send_request('acquire', params)
 
     if req.status_code == 200:
         img = fits.getdata(filepath)
@@ -53,7 +52,7 @@ def take_frame(dit, filepath=None, nbflushes=None, do_not_log=False,
         return None, req
 
 
-def take_cube(dit, nbframes, filepath=None, nbflushes=None, do_not_log=False,
+def take_cube(dit, nbframes, filepath=None, nbflushes=None,
               update_stream=True):
     if filepath is None:
         filepath = '/tmp/fli_cube.fits'
@@ -64,7 +63,7 @@ def take_cube(dit, nbframes, filepath=None, nbflushes=None, do_not_log=False,
             'filepath': filepath,
             'nbflushes': nbflushes
     }
-    req = _send_request('acquireCube', params, do_not_log=do_not_log)
+    req = _send_request('acquireCube', params)
 
     if req.status_code == 200:
         img_cube = fits.getdata(filepath)
@@ -105,6 +104,9 @@ def take_image(
 
     # Store monitoring status at start of exposure
     database_updater.update_plc_monitoring()
+
+    database.store_obs_log({'sequencer_status': SequencerStatus.EXP})
+    database.store_obs_log({'fli_texp': dit})
 
     _, req = take_frame(dit, filepath=filepath)
 
@@ -295,7 +297,7 @@ def set_temperature(temperature):
         return req.text
 
 
-def _send_request(request_type, params={}, do_not_log=False):
+def _send_request(request_type, params={}):
     # Clean params
     for key, value in list(params.items()):
         if value is None:
@@ -309,11 +311,6 @@ def _send_request(request_type, params={}, do_not_log=False):
         req.status_code = 503
 
     else:
-        if request_type == 'acquire' and not do_not_log:
-            increment_image_counter()
-            database.store_obs_log({'sequencer_status': SequencerStatus.EXP})
-            if 'exptime' in params.keys():
-                database.store_obs_log({'fli_texp': params['exptime']})
 
         if config.FLI.dummy_camera:
             if request_type == 'acquire':
@@ -331,6 +328,7 @@ def _send_request(request_type, params={}, do_not_log=False):
             else:
                 req = requests.post(url, json=params,
                                     timeout=config.FLI.request_timeout)
+            increment_image_counter()
 
     return req
 
