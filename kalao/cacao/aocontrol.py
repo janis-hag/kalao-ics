@@ -49,6 +49,7 @@ def open_loops():
     :return:
     """
 
+    _log('Opening loop')
     rValue = switch_loops(close=False)
 
     return rValue
@@ -564,6 +565,7 @@ def restart_wfs():
 def reset_dm(dm_number):
     ret = 0
 
+    _log(f'Resetting {dm_number=}')
     for i in range(0, 12):
         stream = toolbox.open_stream_once(f'dm{dm_number:02d}disp{i:02d}',
                                           shm_and_fps_cache)
@@ -577,6 +579,7 @@ def reset_dm(dm_number):
 
 
 def reset_all_dms(max_dm_number=2):
+
     ret = 0
 
     for i in range(1, max_dm_number + 1):
@@ -957,3 +960,15 @@ def _set_emgain_fps(emgain=1):
 
 def _set_exptime_fps(exptime=0):
     _set_fps_floatvalue('nuvu_acquire-1', 'exposuretime', str(exptime))
+
+
+def _log(message):
+    """
+    Log message to shutter_log
+    :param message:
+    :return:
+    """
+
+    database.store_obs_log({'ao_log': message})
+
+    return 0
