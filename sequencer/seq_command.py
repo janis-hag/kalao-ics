@@ -541,6 +541,12 @@ def target_observation(**seq_args):
 
         time.sleep(config.Starfinder.AO_wait_settle)
 
+        system.print_and_log("Initial tip/tilt offload to telescope")
+
+        aocontrol.tip_tilt_offload_ttm_to_telescope(override_threshold=True)
+
+        time.sleep(config.Starfinder.AO_wait_settle)
+
     image_path = file_handling.create_night_filepath()
 
     rValue, image_path = camera.take_image(dit=dit, filepath=image_path,
