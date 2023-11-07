@@ -74,11 +74,11 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
         if kao == 'AO':
             # Check if enough light is on the WFS for precise centering
             if check_wfs_flux() == 0:
-                if aocontrol.check_loops() != LoopStatus.ALL_LOOPS_ON:
-                    # Start WFS centering procedure
-                    aocontrol.wfs_centering(tt_threshold=config.AO.
-                                            WFS_centering_slope_threshold)
-                    aocontrol.tip_tilt_offload_ttm_to_telescope()
+                # if aocontrol.check_loops() != LoopStatus.ALL_LOOPS_ON:
+                #     # Start WFS centering procedure
+                #     aocontrol.wfs_centering(tt_threshold=config.AO.
+                #                             WFS_centering_slope_threshold)
+                #     aocontrol.tip_tilt_offload_ttm_to_telescope()
 
                 return 0
 
