@@ -63,9 +63,9 @@ def update_plc_monitoring():
     values.update(adc_status)
 
     # Telescope
-    telescope = euler.telescope_coord_altaz()
-    telescope_status = {'tel_alt': telescope.alt.deg, 'tel_az': telescope.az.deg}
-    values.update(telescope_status)
+    #telescope = euler.telescope_coord_altaz()
+    #telescope_status = {'tel_alt': telescope.alt.deg, 'tel_az': telescope.az.deg}
+    #values.update(telescope_status)
 
     if not values == {}:
         database.store_monitoring(values)

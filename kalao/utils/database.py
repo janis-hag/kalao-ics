@@ -63,14 +63,14 @@ def _get_data(collection_name, keys=None, nb_of_point=1, dt=None):
 
     #yapf: disable
     if keys is None:
-        cursor = collection.find_one(
+        cursor = collection.find(
             {},
             {'_id': 0, 'key': 1, 'values': {'$slice': -nb_of_point}},
             sort=[('last_timestamp', DESCENDING)],
             limit=1)
 
     elif isinstance(keys, str):
-        cursor = collection.find_one(
+        cursor = collection.find(
             {'key': keys},
             {'_id': 0, 'key': 1, 'values': {'$slice': -nb_of_point}},
             limit=1)
@@ -188,13 +188,11 @@ def get_last_record(collection_name, key=None, max_days=100):
     data = {}
     day_number = 0
 
-    while data == {}:
+    while data == {} and day_number <= max_days:
         data = _get_data(collection_name,
                                   key, 1,
                                   dt=dt - timedelta(days=day_number))
-
-        if day_number > max_days:
-            break
+        day_number += 1
 
     if data == {}:
         return {}
