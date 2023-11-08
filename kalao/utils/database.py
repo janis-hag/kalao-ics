@@ -52,7 +52,7 @@ def _get_db(client, dt):
     return client[kalao_time.get_start_of_night(dt=dt)]
 
 
-def _get_data(collection_name, keys, nb_of_point=1, dt=None):
+def _get_data(collection_name, keys=None, nb_of_point=1, dt=None):
     # If dt is None, get db for today, otherwise get db for the day/night specified by dt
     if dt is None:
         dt = kalao_time.now()
@@ -88,8 +88,9 @@ def _get_data(collection_name, keys, nb_of_point=1, dt=None):
 
     data = {}
 
-    for document in cursor:
-        data[document['key']] = document['values']
+    if cursor is not None:
+        for document in cursor:
+            data[document['key']] = document['values']
 
     return data
 
