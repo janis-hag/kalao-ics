@@ -1,11 +1,5 @@
 ---
-# Times
-time_utc:
-  short: UTC time
-  long: UTC time
-  unit: python datetime object
-
-#Observing
+# Observing
 obs_type:
   short:
   long: k_lmpflt/k_aocal/k_trgobs/k_dark/k_skyflt
@@ -173,17 +167,17 @@ gop_log:
   short: gop log
   long: Log output of the GOP server
   unit: text
-safety_watchdog_log:
-  short: Safety watchdog log
-  long: Log output of the safety watchdog
+safety_timer_log:
+  short: Safety timer log
+  long: Log output of the safety timer
   unit: text
-loop_watchdog_log:
-  short: Safety watchdog log
-  long: Log output of the safety watchdog
+loop_timer_log:
+  short: Safety timer log
+  long: Log output of the safety timer
   unit: text
-pump_watchdog_log:
-  short: Pump watchdog log
-  long: Log output of the pump watchdog
+pump_timer_log:
+  short: Pump timer log
+  long: Log output of the pump timer
   unit: text
 status_txt:
   short: status text for EDP

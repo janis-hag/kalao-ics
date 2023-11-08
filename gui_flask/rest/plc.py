@@ -16,8 +16,6 @@ plc_bp = Blueprint('plc', __name__, url_prefix='/plc')
 @plc_bp.route('/status', methods=['GET'])
 def plcStatus():
 
-    monitoring = k_database.get_all_last_monitoring()
-    filter_position = monitoring["fli_filter_position"]["values"]
     return json.dumps({
             "laser": {
                     "status": k_laser.status()
@@ -35,7 +33,7 @@ def plcStatus():
                     "status": k_calib_unit.status()
             },
             "filterwheel": {
-                    "position": filter_position
+                    "position": k_filterwheel.get_position(from_db=True)
             }
     })
 

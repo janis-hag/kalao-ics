@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def is_triangular(T):
     n = round((np.sqrt(8 * T + 1) - 1) / 2)
 

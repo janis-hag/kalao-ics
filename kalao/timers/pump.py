@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : database_updater.py
+# @Filename : pump.py
 # @Date : 2021-03-15-10-29
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-Watchdog to verify KalAO bench health
+Timer to verify KalAO pump health
 
 TODO verify nuvu maximum flux and decrease EM gain or close shutter if needed.
 (KalAO-ICS).
 """
 
-from time import sleep
+import time
 
 import schedule
 
@@ -40,9 +40,14 @@ def _check_pump_temp(beck=None):
 
 
 if __name__ == "__main__":
-
     schedule.every(60).seconds.do(_check_pump_temp)
 
     while True:
+        n = schedule.idle_seconds()
+
+        if n is None:
+             break
+        elif n > 0:
+            time.sleep(n)
+
         schedule.run_pending()
-        sleep(5)

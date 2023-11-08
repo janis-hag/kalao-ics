@@ -21,7 +21,8 @@ import requests.exceptions
 from requests.models import Response
 
 from kalao.cacao import toolbox
-from kalao.utils import database, database_updater, file_handling
+from kalao.timers import database as database_timer
+from kalao.utils import database, file_handling
 from sequencer import system
 
 import kalao_config as config
@@ -106,17 +107,18 @@ def take_image(
         filepath = file_handling.create_night_filepath()
 
     # Store monitoring status at start of exposure
-    database_updater.update_plc_monitoring()
+    database_timer.update_plc_monitoring()
 
+    increment_image_counter()
     database.store_obs_log({'sequencer_status': SequencerStatus.EXP})
     database.store_obs_log({'fli_texp': dit})
 
     _, req = take_frame(dit, filepath=filepath)
 
-    if get_temperatures(
-    )['fli_temp_CCD'] > config.FLI.temperature_warn_threshold:
-        message = 'WARN: CCD temperature above threshold: ' + str(
-                get_temperatures()['fli_temp_CCD'])
+    temperatures = get_temperatures()
+
+    if temperatures['fli_temp_CCD'] > config.FLI.temperature_warn_threshold:
+        message = f'WARN: CCD temperature above threshold: {temperatures["fli_temp_CCD"]}'
         print(message)
         database.store_obs_log({'fli_log': message})
 
@@ -125,7 +127,7 @@ def take_image(
     log_temporary_image_path(filepath)
 
     if req.status_code == 200:
-        image_path = database.get_latest_record_value(
+        image_path = database.get_last_record_value(
                 'obs_log', 'fli_temporary_image_path')
         target_path_name = file_handling.save_tmp_image(
                 image_path, sequencer_arguments=sequencer_arguments)
@@ -194,8 +196,8 @@ def increment_image_counter():
     :return: new image counter value
     """
 
-    image_count = database.get_latest_record_value('obs_log',
-                                                   key='fli_image_count') + 1
+    image_count = database.get_last_record_value('obs_log',
+                                                 key='fli_image_count') + 1
     database.store_obs_log({'fli_image_count': image_count})
 
     return image_count
@@ -220,7 +222,7 @@ def log_request(req):
     # TODO add docstring
 
     database.store_obs_log({
-            'fli_log': req.text + ' (' + str(req.status_code) + ')'
+            'fli_log': f'{req.text} ({req.status_code})'
     })
 
 
@@ -314,7 +316,6 @@ def _send_request(request_type, params={}):
         req.status_code = 503
 
     else:
-
         if config.FLI.dummy_camera:
             if request_type == 'acquire':
                 shutil.copy(config.FLI.dummy_image_path, params['filepath'])
@@ -324,7 +325,6 @@ def _send_request(request_type, params={}):
             req.status_code = 200
 
         else:
-            increment_image_counter()
             url = 'http://' + config.FLI.ip + ':' + str(
                     config.FLI.port) + '/' + request_type
             if params == {}:

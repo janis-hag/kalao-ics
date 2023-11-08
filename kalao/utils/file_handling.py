@@ -340,22 +340,22 @@ def _get_last_telescope_header():
 
     gls_home = Path(config.SEQ.T4_root)
 
-    tcs_header_path_record = database.get_latest_record(
+    tcs_header_path_record = database.get_last_record(
             'obs_log', key='tcs_header_path')
 
     header_age = (kalao_time.now() -
-                  tcs_header_path_record['time_utc'].astimezone(
+                  tcs_header_path_record['timestamp'].astimezone(
                           timezone.utc)).total_seconds()
 
-    if 'home' in tcs_header_path_record['tcs_header_path']:
-        tcs_header_path = gls_home / tcs_header_path_record['tcs_header_path'][
+    if 'home' in tcs_header_path_record['value']:
+        tcs_header_path = gls_home / tcs_header_path_record['value'][
                 1:]
     else:
-        tcs_header_path = Path(tcs_header_path_record['tcs_header_path'])
+        tcs_header_path = Path(tcs_header_path_record['value'])
 
     if header_age > config.SEQ.tcs_header_validity:
         system.print_and_log(
-                f'WARN: {tcs_header_path_record["tcs_header_path"]} is {header_age / 60} minutes old. '
+                f'WARN: {tcs_header_path_record["value"]} is {header_age / 60} minutes old. '
                 f'Discarding obsolete header')
 
         tcs_header_df = None

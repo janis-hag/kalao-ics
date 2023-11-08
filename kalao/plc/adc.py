@@ -157,7 +157,7 @@ def set_angle(angle, beck=None):
 
 
 def get_angle():
-    return database.get_latest_record_value('obs_log', key='adc_angle')
+    return database.get_last_record_value('obs_log', key='adc_angle')
 
 
 def rotate(adc_id, position=0, beck=None):

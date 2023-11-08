@@ -654,16 +654,16 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
 
 def get_latest_fo_delta():
 
-    fo_delta_record = database.get_latest_record('obs_log',
-                                                 key='focusing_fo_delta')
+    fo_delta_record = database.get_last_record('obs_log',
+                                               key='focusing_fo_delta')
 
-    fo_delta_age = (kalao_time.now() - fo_delta_record['time_utc'].astimezone(
+    fo_delta_age = (kalao_time.now() - fo_delta_record['timestamp'].astimezone(
             timezone.utc)).total_seconds()
 
     if fo_delta_age > 12 * 3600:
         fo_delta = None
     else:
-        fo_delta = fo_delta_record['focusing_fo_delta']
+        fo_delta = fo_delta_record['value']
 
     return fo_delta
 

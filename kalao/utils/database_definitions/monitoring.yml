@@ -1,11 +1,4 @@
 ---
-# Times
-time_utc:
-  short: UTC time
-  long: UTC time
-  unit: ""
-  main_gui: 3
-
 # FLI
 fli_status:
   short: FLI camera status

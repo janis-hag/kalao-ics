@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : database_updater.py
+# @Filename : database.py
 # @Date : 2021-03-15-10-29
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-database_updater.py is part of the KalAO Instrument Control Software
+database.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from signal import SIGINT, SIGTERM
-from sys import exit
-from time import sleep
+import time
 
 import schedule
 
-from kalao import fli, plc
+from kalao import euler
 from kalao.cacao import telemetry
-from kalao.plc import adc
+from kalao.fli import camera
+from kalao.plc import adc, core, filterwheel
 from kalao.rtc import device_status
 from kalao.utils import database
 
@@ -30,7 +29,7 @@ def update_plc_monitoring():
     values = {}
 
     # get monitoring from plc and store
-    plc_values, plc_text = plc.core.plc_status()
+    plc_values, plc_text = core.plc_status()
 
     # Do not log status of disabled devices.
     for device_name in config.PLC.disabled:
@@ -44,7 +43,7 @@ def update_plc_monitoring():
 
     # FLI science camera status
     try:
-        filter_number, filter_name = plc.filterwheel.get_position()
+        filter_number, filter_name = filterwheel.get_position()
         filter_status = {
                 'fli_filter_position': filter_number,
                 'fli_filter_name': filter_name
@@ -53,15 +52,20 @@ def update_plc_monitoring():
     except Exception as e:
         print(e)
 
+    fli_server_status = camera.check_server_status()
+    values.update({'fli_status': str(fli_server_status)})
+    if fli_server_status == CameraServerStatus.UP:
+        fli_temperatures = camera.get_temperatures()
+        values.update(fli_temperatures)
+
     # ADC
     adc_status = {'adc_angle': adc.get_angle()}
     values.update(adc_status)
 
-    fli_server_status = fli.camera.check_server_status()
-    values.update({'fli_status': str(fli_server_status)})
-    if fli_server_status == CameraServerStatus.UP:
-        fli_temperatures = fli.camera.get_temperatures()
-        values.update(fli_temperatures)
+    # Telescope
+    telescope = euler.telescope_coord_altaz()
+    telescope_status = {'tel_alt': telescope.alt.deg, 'tel_az': telescope.az.deg}
+    values.update(telescope_status)
 
     if not values == {}:
         database.store_monitoring(values)
@@ -79,5 +83,11 @@ if __name__ == "__main__":
             update_plc_monitoring)
 
     while True:
+        n = schedule.idle_seconds()
+
+        if n is None:
+             break
+        elif n > 0:
+            time.sleep(n)
+
         schedule.run_pending()
-        sleep(5)

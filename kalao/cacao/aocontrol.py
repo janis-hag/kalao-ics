@@ -463,7 +463,7 @@ def turn_dm_on():
         if rValue != IPPowerStatus.ON:
             return -1
 
-        time.sleep(config.Watchdog.dm_wait_betweeen_actions)
+        time.sleep(config.Timers.dm_wait_betweeen_actions)
 
     if bmc_display_fps is not None:
         if not bmc_display_fps.run_runs():
@@ -474,7 +474,7 @@ def turn_dm_on():
 
             bmc_display_fps.run_start()
 
-            time.sleep(config.Watchdog.dm_wait_betweeen_actions)
+            time.sleep(config.Timers.dm_wait_betweeen_actions)
 
             reset_dm(config.AO.DM_loop_number)
 
@@ -494,12 +494,12 @@ def turn_dm_off():
 
     reset_dm(config.AO.DM_loop_number)
 
-    time.sleep(config.Watchdog.dm_wait_betweeen_actions)
+    time.sleep(config.Timers.dm_wait_betweeen_actions)
 
     if bmc_display_fps is not None:
         bmc_display_fps.run_stop()
 
-    time.sleep(config.Watchdog.dm_wait_betweeen_actions)
+    time.sleep(config.Timers.dm_wait_betweeen_actions)
 
     rValue = ippower.switch_ippower(config.IPPower.Port.BMC_DM,
                                     IPPowerStatus.OFF)

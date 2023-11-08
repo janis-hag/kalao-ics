@@ -1,12 +1,4 @@
 ---
-# Times
-time_utc:
-  short: UTC time
-  long: UTC time
-  unit: python datetime object
-  main_gui: 0 # main_gui: 2
-  group:
-
 # PI Tip/Tilt
 pi_tip:
   short: Tip

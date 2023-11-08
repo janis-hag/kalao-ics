@@ -10,8 +10,6 @@ seq_command.py is part of the KalAO Instrument Control Software
 """
 
 import datetime
-import os
-import sys
 import time
 
 import numpy as np
@@ -20,8 +18,8 @@ from kalao.cacao import aocontrol
 from kalao.fli import camera
 from kalao.plc import (adc, calib_unit, core, filterwheel, flip_mirror, laser,
                        shutter, tungsten)
-from kalao.utils import (database, database_updater, file_handling, kalao_time,
-                         starfinder)
+from kalao.timers import database as database_timer
+from kalao.utils import database, file_handling, kalao_time, starfinder
 from sequencer import system
 from tcs_communication import t120
 
@@ -436,7 +434,7 @@ def target_observation(**seq_args):
     centering = seq_args.get('centering')
     mag_v = seq_args.get('mv')
 
-    if centering == 'aut' or not database.get_latest_record_value(
+    if centering == 'aut' or not database.get_last_record_value(
             collection_name='obs_log',
             key='tracking_status') == TrackingStatus.TRACKING:
 
@@ -778,7 +776,7 @@ def waitfortracking(**seq_args):
     t0 = time.time()
 
     while time.time() - t0 < config.SEQ.pointing_timeout:
-        tracking_status = database.get_latest_record_value(
+        tracking_status = database.get_last_record_value(
                 collection_name='obs_log', key='tracking_status')
         if tracking_status == TrackingStatus.TRACKING:
             file_handling.update_db_from_telheader()
@@ -969,7 +967,7 @@ def check_abort(q, dit, AO=False):
     if q is not None and not q.empty():
         q.get()
         # Update database
-        database_updater.update_plc_monitoring()
+        database_timer.update_plc_monitoring()
         return -1
     else:
         return 0
@@ -988,14 +986,14 @@ def check_abort(q, dit, AO=False):
         if q is not None and not q.empty():
             q.get()
             # Update database
-            database_updater.update_plc_monitoring()
+            database_timer.update_plc_monitoring()
             return -1
         if AO and not aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON:
             return -1
 
         #database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
 
-        status_time = database.get_latest_record_time(
+        status_time = database.get_last_record_time(
                 'obs_log', key='fli_temporary_image_path').replace(
                         tzinfo=datetime.timezone.utc)
         print((t0 - status_time).total_seconds())

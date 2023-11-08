@@ -29,8 +29,6 @@ def _isDigit(x):
 
 
 def check_active(unit_name):
-    #unit_name = 'kalao_database_updater.service'
-
     bus, systemd, manager = connect_dbus()
 
     service = bus.get_object('org.freedesktop.systemd1',
@@ -61,8 +59,6 @@ def check_active(unit_name):
 
 
 def check_enabled(unit_name):
-    #unit_name = 'kalao_database_updater.service'
-
     bus, systemd, manager = connect_dbus()
 
     enabled_state = manager.GetUnitFileState(unit_name)
@@ -157,7 +153,7 @@ def check_status():
         database.store_obs_log({'fli_log': 'WARNING: Camera service down!'})
         return_status['camera_service'] = False
 
-    database_status = database_service('status')
+    database_status = database_timer_service('status')
     if not database_status[0] == 'active':
         database.store_obs_log({
                 'database_log': 'WARNING: Database service down!'
@@ -186,7 +182,7 @@ def camera_service(action):
     if not action.upper() == 'STATUS':
         database.store_obs_log({
                 'fli_log':
-                        'Sending ' + action + ' command to FLI camera server.'
+                        f'Sending {action} command to FLI camera server.'
         })
     unit_name = config.SystemD.camera_service
     status = unit_control(unit_name, action)
@@ -194,7 +190,7 @@ def camera_service(action):
     return status
 
 
-def database_service(action):
+def database_timer_service(action):
     """
     Control the database systemd service. It accepts one of the four systemctl commands:
     RESTART/START/STOP/STATUS
@@ -206,9 +202,9 @@ def database_service(action):
     if not action.upper() == 'STATUS':
         database.store_obs_log({
                 'database_log':
-                        'Sending ' + action + ' command to database system.'
+                        f'Sending {action} command to database system.'
         })
-    unit_name = config.SystemD.database_updater
+    unit_name = config.SystemD.database_timer
     status = unit_control(unit_name, action)
 
     return status
@@ -225,7 +221,7 @@ def flask_service(action):
 
     if not action.upper() == 'STATUS':
         database.store_obs_log({
-                'flask_log': 'Sending ' + action + ' command to flask server.'
+                'flask_log': f'Sending {action} command to flask server.'
         })
     unit_name = config.SystemD.flask_gui
     status = unit_control(unit_name, action)
@@ -236,7 +232,7 @@ def flask_service(action):
 def gop_service(action):
     if not action.upper() == 'STATUS':
         database.store_obs_log({
-                'gop_log': 'Sending ' + action + ' command to gop server.'
+                'gop_log': f'Sending {action} command to gop server.'
         })
     unit_name = config.SystemD.gop_server
     status = unit_control(unit_name, action)
@@ -244,7 +240,7 @@ def gop_service(action):
     return status
 
 
-def safety_watchdog_service(action):
+def safety_timer_service(action):
     """
     Control the flask server systemd service. It accepts one of the four systemctl commands:
     RESTART/START/STOP/STATUS
@@ -255,16 +251,16 @@ def safety_watchdog_service(action):
 
     if not action.upper() == 'STATUS':
         database.store_obs_log({
-                'safety_watchdog_log':
-                        'Sending ' + action + ' command to safety watchdog.'
+                'safety_timer_log':
+                        f'Sending {action} command to safety timer.'
         })
-    unit_name = config.SystemD.safety_watchdog
+    unit_name = config.SystemD.safety_timer
     status = unit_control(unit_name, action)
 
     return status
 
 
-def loop_watchdog_service(action):
+def loop_timer_service(action):
     """
     Control the flask server systemd service. It accepts one of the four systemctl commands:
     RESTART/START/STOP/STATUS
@@ -275,16 +271,16 @@ def loop_watchdog_service(action):
 
     if not action.upper() == 'STATUS':
         database.store_obs_log({
-                'loop_watchdog_log':
-                        'Sending ' + action + ' command to loop watchdog.'
+                'loop_timer_log':
+                        f'Sending {action} command to loop timer.'
         })
-    unit_name = config.SystemD.loop_watchdog
+    unit_name = config.SystemD.loop_timer
     status = unit_control(unit_name, action)
 
     return status
 
 
-def pump_watchdog_service(action):
+def pump_timer_service(action):
     """
     Control the flask server systemd service. It accepts one of the four systemctl commands:
     RESTART/START/STOP/STATUS
@@ -295,10 +291,10 @@ def pump_watchdog_service(action):
 
     if not action.upper() == 'STATUS':
         database.store_obs_log({
-                'pump_watchdog_log':
-                        'Sending ' + action + ' command to pump watchdog.'
+                'pump_timer_log':
+                        f'Sending {action} command to pump timer.'
         })
-    unit_name = config.SystemD.pump_watchdog
+    unit_name = config.SystemD.pump_timer
     status = unit_control(unit_name, action)
 
     return status
@@ -311,13 +307,13 @@ def initialise_services():
     :return:
     '''
 
-    database_service('restart')
     camera_service('restart')
     flask_service('restart')
     gop_service('restart')
-    safety_watchdog_service('restart')
-    loop_watchdog_service('restart')
-    pump_watchdog_service('restart')
+    database_timer_service('restart')
+    safety_timer_service('restart')
+    loop_timer_service('restart')
+    pump_timer_service('restart')
 
     time.sleep(config.SystemD.service_restart_wait)
 
@@ -325,8 +321,7 @@ def initialise_services():
     if not all(check_status().values()):
         database.store_obs_log({
                 'sequencer_log':
-                        'ERROR: a service is not running! ' +
-                        str(check_status())
+                        f'ERROR: a service is not running! {check_status()}'
         })
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
