@@ -80,8 +80,12 @@ def set_position(filter_arg):
     # time.sleep(config.FilterWheel.enable_wait)
     # fw.initialize()
     # time.sleep(config.FilterWheel.initialization_wait)
+
+    # TODO catch error with set_position
     fw.set_position(filter_arg)  # Same name of parent func ?
     time.sleep(config.FilterWheel.position_change_wait)
+
+    # TODO catch ValueError with get_position
     position = fw.get_position()
     filter_name = id_filter_dict[position]
 
