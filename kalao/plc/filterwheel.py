@@ -41,88 +41,117 @@ def get_filter_ids():
 
 
 def set_position(filter_arg):
-
-    if type(filter_arg) == int and filter_arg not in range(0, 6):
-        database.store_obs_log({
-                'filterwheel_log':
-                        "Error: wrong filter id got ({})".format(filter_arg)
-        })
-        return -1
-    elif type(filter_arg) == str:
-        filter_arg = filter_arg.lower()
-        if filter_arg not in id_filter_dict.keys():
-            database.store_obs_log({
-                    'filterwheel_log':
-                            "Error: wrong filter name (got {})".format(
-                                    filter_arg)
-            })
-            return -1
-        else:
-            filter_arg = id_filter_dict[filter_arg]
-
-    for i in range(config.FilterWheel.connection_retries):
+    for retry in range(config.FilterWheel.retries):
         try:
+            if type(filter_arg) == int and filter_arg not in range(0, 6):
+                database.store_obs_log({
+                        'filterwheel_log':
+                                f"Error: wrong filter id got ({filter_arg})"
+                })
+                return -1
+            elif type(filter_arg) == str:
+                filter_arg = filter_arg.lower()
+                if filter_arg not in id_filter_dict.keys():
+                    database.store_obs_log({
+                            'filterwheel_log':
+                                    f"Error: wrong filter name (got {filter_arg})"
+                    })
+                    return -1
+                else:
+                    filter_arg = id_filter_dict[filter_arg]
+
             fw = thorlabs.ThorlabsFilterWheel(
                     com=config.FilterWheel.device_port)
+
+            # fw.enable()
+            # time.sleep(config.FilterWheel.enable_wait)
+            # fw.initialize()
+            # time.sleep(config.FilterWheel.initialization_wait)
+
+            fw.set_position(filter_arg)  # Same name of parent func ?
+            time.sleep(config.FilterWheel.position_change_wait)
+
+            position = fw.get_position()
+            filter_name = id_filter_dict[position]
+
+            if position == filter_arg:
+                database.store_obs_log({
+                        'filterwheel_status': id_filter_dict[filter_arg]
+                })
+                return position, filter_name
+            else:
+                database.store_obs_log({
+                        'filterwheel_log':
+                                "Error: filter position expected {}, but got {}"
+                                .format(filter_arg, position)
+                })
+                return -1
+
         except thorlabs.serial.SerialException:
             database.store_obs_log({
                     'filterwheel_log':
-                            'Warning: SerialException on filterwheel. Retrying'
+                            f'WARNING: SerialException on filterwheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
             })
             time.sleep(config.FilterWheel.enable_wait)
-        else:
-            break
-    else:
-        system.print_and_log('ERROR unable to connect to filterwheel.')
-        return -1
 
-    # fw.enable()
-    # time.sleep(config.FilterWheel.enable_wait)
-    # fw.initialize()
-    # time.sleep(config.FilterWheel.initialization_wait)
-
-    # TODO catch error with set_position
-    fw.set_position(filter_arg)  # Same name of parent func ?
-    time.sleep(config.FilterWheel.position_change_wait)
-
-    # TODO catch ValueError with get_position
-    position = fw.get_position()
-    filter_name = id_filter_dict[position]
-
-    if position == filter_arg:
-        database.store_obs_log({
-                'filterwheel_status': id_filter_dict[filter_arg]
-        })
-        return position, filter_name
-    else:
-        database.store_obs_log({
-                'filterwheel_log':
-                        "Error: filter position expected {}, but got {}".
-                        format(filter_arg, position)
-        })
-        return -1
+    database.store_obs_log({
+            'filterwheel_log': 'ERROR: Filterwheel failed too many time.'
+    })
+    return -1
 
 
 def get_position(from_db=False):
     if from_db:
-        filter_name = database.get_last_record_value(
-                'obs_log', key='filterwheel_status')
+        filter_name = database.get_last_record_value('obs_log',
+                                                     key='filterwheel_status')
         position = id_filter_dict[filter_name]
     else:
-        fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)
-        position = fw.get_position()
-        filter_name = id_filter_dict[position]
+        for retry in range(config.FilterWheel.retries):
+            try:
+                fw = thorlabs.ThorlabsFilterWheel(
+                        com=config.FilterWheel.device_port)
+                position = fw.get_position()
+                filter_name = id_filter_dict[position]
 
-    return position, filter_name
+                return position, filter_name
+
+            except thorlabs.serial.SerialException:
+                database.store_obs_log({
+                        'filterwheel_log':
+                                f'WARNING: SerialException on filterwheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
+                })
+                time.sleep(config.FilterWheel.enable_wait)
+
+    database.store_obs_log({
+            'filterwheel_log': 'ERROR: Filterwheel failed too many time.'
+    })
+    return None, None
 
 
 def init():
-    fw = thorlabs.ThorlabsFilterWheel(com=config.FilterWheel.device_port)
-    fw.enable()
-    time.sleep(config.FilterWheel.enable_wait)
-    fw.initialize()
-    time.sleep(config.FilterWheel.initialization_wait)
+    for retry in range(config.FilterWheel.retries):
+        try:
+            fw = thorlabs.ThorlabsFilterWheel(
+                    com=config.FilterWheel.device_port)
+            fw.enable()
+            time.sleep(config.FilterWheel.enable_wait)
+            fw.initialize()
+            time.sleep(config.FilterWheel.initialization_wait)
 
-    database.store_obs_log({'filterwheel_log': "Initialising filterwheel"})
+            database.store_obs_log({
+                    'filterwheel_log': "Initialising filterwheel"
+            })
 
-    return 0
+            return 0
+
+        except thorlabs.serial.SerialException:
+            database.store_obs_log({
+                    'filterwheel_log':
+                            f'WARNING: SerialException on filterwheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
+            })
+            time.sleep(config.FilterWheel.enable_wait)
+
+    database.store_obs_log({
+            'filterwheel_log': 'ERROR: Filterwheel failed too many time.'
+    })
+    return -1
