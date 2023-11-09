@@ -47,7 +47,7 @@ def take_frame(dit, filepath=None, nbflushes=None, update_stream=True):
             else:
                 print("fli_stream not updated, shapes are inconsistent")
 
-    # TODO return req, img for coherence with other take_image
+    # TODO return req, img for coherence with other take_image or opposite
 
         return img, req
     else:
@@ -76,7 +76,7 @@ def take_cube(dit, nbframes, filepath=None, nbflushes=None,
             else:
                 print("fli_stream not updated, shapes are inconsistent")
 
-        # TODO return req, img for coherence with other take_image
+        # TODO return req, img for coherence with other take_image or
         return img_cube, req
     else:
         return None, req
