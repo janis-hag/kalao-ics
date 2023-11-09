@@ -27,7 +27,7 @@ def systemFStatus():
     before = time.process_time()
 
     try:
-        database_state, database_substate, database_start_date = s_system.database_service(
+        database_state, database_substate, database_start_date = s_system.database_timer_service(
                 "STATUS")
         database_start_date = database_start_date.isoformat()
         t2 = (time.process_time() - before) * 1000
@@ -92,13 +92,13 @@ def systemCameraStop():
 
 @system_bp.route('/database/start', methods=['GET'])
 def systemDatabaseStart():
-    s_system.database_service("RESTART")
+    s_system.database_timer_service("RESTART")
     return "", 200
 
 
 @system_bp.route('/database/stop', methods=['GET'])
 def systemDatabaseStop():
-    s_system.database_service("STOP")
+    s_system.database_timer_service("STOP")
     return "", 200
 
 

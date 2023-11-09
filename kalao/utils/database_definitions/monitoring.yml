@@ -1,11 +1,4 @@
 ---
-# Times
-time_utc:
-  short: UTC time
-  long: UTC time
-  unit: ""
-  main_gui: 3
-
 # FLI
 fli_status:
   short: FLI camera status
@@ -53,6 +46,17 @@ fli_filter_name:
 adc_angle:
   short: ADC Angle
   long: Angle between the ADC prisms
+  unit: °
+
+# Telescope
+tel_alt:
+  short: Tel. Altitude
+  long: Telescope altitude
+  unit: °
+
+tel_az:
+  short: Tel. Azimut
+  long: Telescope azimut
   unit: °
 
 # PLC

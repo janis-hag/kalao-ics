@@ -152,7 +152,11 @@ def gop_server():
                     'tcs_header_path': args['header'],
                     'telescope_ra': float(args['ra']),
                     'telescope_dec': float(args['dec']),
-                    'tracking_status': TrackingStatus.TRACKING
+            })
+
+            # Update tracking status separately to ensure ordering
+            database.store_obs_log({
+                'tracking_status': TrackingStatus.TRACKING
             })
 
             gop_print_and_log("Received fits header path: " +

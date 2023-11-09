@@ -83,7 +83,7 @@ def fli_view(x=None, y=None, percentile=99, last_file_date=None,
             centering_image = np.zeros((256, 256))
             file_date = 'No data'
 
-        manual_centering_needed = database.get_latest_record_value(
+        manual_centering_needed = database.get_last_record_value(
                 'obs_log', key='tracking_manual_centering')
 
         return manual_centering_needed, centering_image, file_date
@@ -96,11 +96,11 @@ def _get_image_path(image_type):
 
     if image_type in ['last', 'temporary']:
         # READ mongodb to find latest filename
-        last_image = database.get_latest_record(
+        last_image = database.get_last_record(
                 'obs_log', key='fli_' + image_type + '_image_path')
-        if last_image.get('fli_' + image_type + '_image_path'):
-            filename = last_image['fli_' + image_type + '_image_path']
-            file_date = last_image['time_utc']
+        if last_image:
+            filename = last_image.get('value')
+            file_date = last_image.get('timestamp')
         else:
             # Set to None is list is empty
             filename = None

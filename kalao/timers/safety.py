@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : database_updater.py
+# @Filename : safety.py
 # @Date : 2021-03-15-10-29
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-Watchdog to verify KalAO bench health (KalAO-ICS).
+Timer to verify KalAO bench health (KalAO-ICS).
 """
 
 import datetime
-from time import sleep
+import time
+
+import numpy as np
 
 import schedule
 
@@ -27,10 +29,13 @@ fps_list = {}
 
 
 def _get_elapsed_time_since_activity():
-    latest_obs_entry_time = database.get_latest_record_time('obs_log')
+    latest_obs_entry_time = database.get_last_record_time('obs_log')
 
-    return (kalao_time.now() - latest_obs_entry_time.replace(
-            tzinfo=datetime.timezone.utc)).total_seconds()
+    if latest_obs_entry_time is not None:
+        return (kalao_time.now() - latest_obs_entry_time.replace(
+                tzinfo=datetime.timezone.utc)).total_seconds()
+    else:
+        return np.inf
 
 
 def _check_shutteropen_inactive():
@@ -63,7 +68,7 @@ def _check_dm_inactive():
 
     bmc_display_fps = toolbox.open_fps_once('bmc_display-01', fps_list)
 
-    if euler.sun_elevation() > config.Watchdog.dm_sun_min_elevation and (
+    if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
             (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
             ippower.ippower_status(
                     config.IPPower.Port.BMC_DM) == IPPowerStatus.ON):
@@ -142,7 +147,7 @@ def _check_bench_status():
 
     inactivity_time = _get_elapsed_time_since_activity()
 
-    if inactivity_time > config.Watchdog.inactivity_timeout:
+    if inactivity_time > config.Timers.inactivity_timeout:
         _check_shutteropen_inactive()
         _check_laseron_inactive()
         _check_dm_inactive()
@@ -162,7 +167,7 @@ def _check_cooling_status():
 
     cooling_status = temperature_control.get_cooling_values()
 
-    latest_log = database.get_latest_record_value('obs_log', 'sequencer_log')
+    latest_log = database.get_last_record_value('obs_log', 'sequencer_log')
 
     if cooling_status['cooling_flow_value'] < config.Cooling.minimal_flow:
 
@@ -229,24 +234,18 @@ def _check_cooling_status():
     return 0
 
 
-def initialise():
-    """
-    Restart the systemd service for the watchdog.
-
-    :return:
-    """
-    system.safety_watchdog_service('restart')
-
-    return 0
-
-
 if __name__ == "__main__":
-
-    schedule.every(config.Watchdog.temperature_update_interval).seconds.do(
+    schedule.every(config.Timers.temperature_update_interval).seconds.do(
             _check_cooling_status)
-    schedule.every(config.Watchdog.bench_update_interval).seconds.do(
+    schedule.every(config.Timers.bench_update_interval).seconds.do(
             _check_bench_status)
 
     while True:
+        n = schedule.idle_seconds()
+
+        if n is None:
+             break
+        elif n > 0:
+            time.sleep(n)
+
         schedule.run_pending()
-        sleep(5)

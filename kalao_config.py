@@ -252,18 +252,23 @@ class GOP:
 
 class SystemD:
     camera_service = "kalao_camera.service"
-    database_updater = "kalao_database-updater.service"
     flask_gui = "kalao_flask-gui.service"
     sequencer_service = "kalao_sequencer.service"
     gop_server = "kalao_gop_server.service"
-    # temperature_control = "kalao_temperature-control.service"
-    safety_watchdog = "kalao_safety-watchdog.service"
-    loop_watchdog = "kalao_loop-watchdog.service"
-    pump_watchdog = "kalao_pump-watchdog.service"
+    database_timer = "kalao_database-timer.service"
+    safety_timer = "kalao_safety-timer.service"
+    loop_timer = "kalao_loop-timer.service"
+    pump_timer = "kalao_pump-timer.service"
+
     service_restart_wait = 15
 
 
 class Database:
+    ip = 'localhost'
+    port = 27017
+
+    max_days = 7
+
     telemetry_update_interval = 10
     PLC_monitoring_update_interval = 60
 
@@ -276,7 +281,7 @@ class T120:
     symb_name = "inter"
     rcmd = "ipcsrv"
     port = 17001
-    port_loop_watchdog = 17002
+    port_loop_timer = 17002
     semkey = 4000
     focus_offset_limit = 15
     temperature_file = "/disks/synology/gls/data/services/CURRENT/temperature_telescope.rdb"
@@ -346,9 +351,7 @@ class AO:
 
 class Cooling:
     minimal_flow = 0.5
-    #0.28
     flow_warn = 1.2
-    #0.35
     flow_grace_time = 120  # s
     max_water_temp = 28  # °C
     max_heatsink_temp = 35  # °C
@@ -358,7 +361,7 @@ class Cooling:
     max_pump_temperature = 60  # °C
 
 
-class Watchdog:
+class Timers:
     temperature_update_interval = 5  # s
     bench_update_interval = 30  # s
 

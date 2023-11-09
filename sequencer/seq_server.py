@@ -170,8 +170,7 @@ def cast_args(args):
             else:
                 database.store_obs_log({
                         'sequencer_log':
-                                "Error: {} value cannot be convert in int".
-                                format(k)
+                                f"Error: {k} value cannot be convert in int"
                 })
         elif k in config.SEQ.gop_arg_float:
             if v.replace('.', '', 1).isdigit():
@@ -179,8 +178,7 @@ def cast_args(args):
             else:
                 database.store_obs_log({
                         'sequencer_log':
-                                "Error: {} value cannot be convert in float".
-                                format(k)
+                                f"Error: {k} value cannot be convert in float"
                 })
         elif k in config.SEQ.gop_arg_string:
             # If filterposition arg is not a digit, then he must be a name

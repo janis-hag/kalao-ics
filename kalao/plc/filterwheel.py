@@ -105,7 +105,7 @@ def set_position(filter_arg):
 
 def get_position(from_db=False):
     if from_db:
-        filter_name = database.get_latest_record_value(
+        filter_name = database.get_last_record_value(
                 'obs_log', key='filterwheel_status')
         position = id_filter_dict[filter_name]
     else:

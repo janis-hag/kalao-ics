@@ -5,11 +5,11 @@
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-Watchdog to do offloading and adc update
+Timer to do offloading and adc update
 
 """
 
-from time import sleep
+import time
 
 import schedule
 
@@ -29,7 +29,7 @@ def _update_adc(beck=None):
 def _offload_ttm():
     if aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON:
         aocontrol.tip_tilt_offload_ttm_to_telescope(
-                port=config.T120.port_loop_watchdog)
+                port=config.T120.port_loop_timer)
 
 
 if __name__ == "__main__":
@@ -37,5 +37,11 @@ if __name__ == "__main__":
     schedule.every(config.TTM.offload_interval).seconds.do(_offload_ttm)
 
     while True:
+        n = schedule.idle_seconds()
+
+        if n is None:
+             break
+        elif n > 0:
+            time.sleep(n)
+
         schedule.run_pending()
-        sleep(5)

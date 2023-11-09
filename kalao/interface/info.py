@@ -42,20 +42,6 @@ def streams(realData=True):
         return fake_data.fake_streams()
 
 
-def monitoring(realData=True):
-    """
-    Unused function to be removed.
-
-    :param realData:
-    :return:
-    """
-
-    if realData:
-        return database.get_all_last_monitoring()
-    else:
-        return fake_data.fake_telemetry()
-
-
 def telemetry_series(nb_points, realData=True):
     if realData:
         return database.get_telemetry(['pi_tip', 'pi_tilt'], nb_points)
@@ -72,14 +58,14 @@ def latest_obs_log_entry(realData=True):
     """
 
     if realData:
-        latest_record = database.get_latest_record('obs_log')
+        latest_record = database._get_data('obs_log')
         if latest_record is None:
             formatted_entry_text = 'Obs logs empty'
         else:
-            time_string = latest_record['time_utc'].isoformat(
+            key_name = list(latest_record.keys())[0]
+            time_string = latest_record[key_name][0]['timestamp'].isoformat(
                     timespec='milliseconds')
-            key_name = list(latest_record.keys())[1]
-            record_text = latest_record[list(latest_record.keys())[1]]
+            record_text = latest_record[key_name][0]['value']
 
             formatted_entry_text = str(time_string) + ' ' + str(
                     key_name) + ': ' + str(record_text)
@@ -97,7 +83,7 @@ def kalao_status():
     :return: status_string to send to the Euler telescope
     """
 
-    sequencer_status = database.get_latest_record_value(
+    sequencer_status = database.get_last_record_value(
             'obs_log', 'sequencer_status')
     if not sequencer_status:
         # If the status is not set assume that the sequencer is down
@@ -111,7 +97,7 @@ def kalao_status():
     elif sequencer_status == SequencerStatus.EXP:
         # sequencer_command_received = database.get_latest_record_value('obs_log', key='sequencer_command_received')
         # if sequencer_command_received['type'] == 'K_LMPFLT':
-        texp = int(database.get_latest_record_value('obs_log', key='fli_texp'))
+        texp = int(database.get_last_record_value('obs_log', key='fli_texp'))
         # if
         # texp = database.get_latest_record_value('obs_log', key='sequencer_command_received')['texp']
         status_string = '|status|BUSY|elapsed_time|' + elapsed_time(
@@ -135,7 +121,7 @@ def elapsed_time(sequencer_status):
     """
 
     if sequencer_status == SequencerStatus.INITIALISING:
-        status_time = database.get_latest_record_time(
+        status_time = database.get_last_record_time(
                 'obs_log',
                 key='sequencer_status').replace(tzinfo=datetime.timezone.utc)
 
@@ -144,7 +130,7 @@ def elapsed_time(sequencer_status):
                     status_time).total_seconds()).split('.')[0]
 
     elif sequencer_status == SequencerStatus.SETUP:
-        k_type = database.get_latest_record_value(
+        k_type = database.get_last_record_value(
                 'obs_log', key='sequencer_command_received')['type'][2:]
 
         if k_type.upper() in config.SEQ.timings:
@@ -152,7 +138,7 @@ def elapsed_time(sequencer_status):
         else:
             setup_time = 0
 
-        status_time = database.get_latest_record_time(
+        status_time = database.get_last_record_time(
                 'obs_log',
                 key='sequencer_status').replace(tzinfo=datetime.timezone.utc)
 
@@ -175,7 +161,7 @@ def elapsed_exposure_seconds():
     """
 
     last_exposure_start = _last_exposure_start()
-    last_exposure_end = database.get_latest_record_time(
+    last_exposure_end = database.get_last_record_time(
             'obs_log', key='fli_temporary_image_path').replace(
                     tzinfo=datetime.timezone.utc)
 
@@ -197,7 +183,7 @@ def _last_exposure_start():
     :return: Time of exposure start (datetime)
     """
 
-    return database.get_latest_record_time(
+    return database.get_last_record_time(
             'obs_log',
             key='fli_image_count').replace(tzinfo=datetime.timezone.utc)
 
@@ -209,5 +195,5 @@ def _last_filepath_archived():
     :return: Image file path (str)
     """
 
-    return database.get_latest_record_value('obs_log',
-                                            key='fli_last_image_path')
+    return database.get_last_record_value('obs_log',
+                                          key='fli_last_image_path')

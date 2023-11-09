@@ -4,6 +4,7 @@
 @author: Nathanaël Restori
 """
 
+import argparse
 import os
 import time
 from signal import SIGINT, signal
@@ -18,6 +19,7 @@ from pyqtgraph.Qt import QtCore
 
 from kalao.cacao import toolbox
 
+import kalao_config as config
 
 def handler(signal_received, frame):
     # Handle any cleanup here
@@ -47,13 +49,7 @@ def center_of_mass(array):
     return (x, y)
 
 
-def run():
-    """
-	Run WFS the alignment tool
-
-	:return: exit code
-	"""
-
+def run(args):
     ##### What to display/poke
     pupil_flux_top = range(12, 20 + 1, 1)
     pupil_flux_bottom = range(100, 108 + 1, 1)
@@ -72,8 +68,8 @@ def run():
     for i in dm_actuators_poke:
         dm_subap_indexes.append(toolbox.get_subapertures_around_actuator(i))
 
-    fli_x_pos = 516
-    fli_y_pos = 409
+    fli_x_pos = config.FLI.center_x
+    fli_y_pos = config.FLI.center_y
     fli_circle_radius = 16
 
     ##### Open needed streams
@@ -89,9 +85,12 @@ def run():
         exit()
     dm_stream = SHM(dm_stream_name)
 
-    fli_exists, fli_stream_name = toolbox.check_stream("fli_stream")
-    if fli_exists:
-        fli_stream = SHM(fli_stream_name)
+    if args.show_fli:
+        fli_exists, fli_stream_name = toolbox.check_stream("fli_stream")
+        if fli_exists:
+            fli_stream = SHM(fli_stream_name)
+    else:
+        fli_exists = False
 
     ##### General configuration
 
@@ -333,27 +332,27 @@ def run():
         fli_text_line_1.setText(f"Mouse scroll on image to zoom")
 
     ##### Help
-    warning = "WARNING:<br /><br />'bmc_display', 'nuvu_acquire' and 'DMcomb' must be set-up and running,<br />and the dm flat must be loaded for this tool to work properly"
+    warning_str = "WARNING:<br /><br />'bmc_display', 'nuvu_acquire' and 'DMcomb' must be set-up and running,<br />and the dm flat must be loaded for this tool to work properly"
 
-    config = "CONFIG:<br /><br />The following configs are supported:<br />• binning = 1 (will take ROI Start X/Y = 9, ROI End X/Y = 119)<br />• binning = 2 (will take ROI Start X/Y = 4, ROI End X/Y = 60)"
+    config_str = "CONFIG:<br /><br />The following configs are supported:<br />• binning = 1 (will take ROI Start X/Y = 9, ROI End X/Y = 119)<br />• binning = 2 (will take ROI Start X/Y = 4, ROI End X/Y = 60)"
 
-    manual = "MANUAL:<br /><br />• Press 'Q', 'X' or 'Esc' to exit cleanly (DM cleared)<br />• Press 'Space' to cycle between the different wavefronts<br />• Press 'Plus' to increase poke amplitude<br />• Press 'Minus' to decrease poke amplitude"
+    manual_str = "MANUAL:<br /><br />• Press 'Q', 'X' or 'Esc' to exit cleanly (DM cleared)<br />• Press 'Space' to cycle between the different wavefronts<br />• Press 'Plus' to increase poke amplitude<br />• Press 'Minus' to decrease poke amplitude"
 
-    print(warning.replace('<br />', ' '))
+    print(warning_str.replace('<br />', ' '))
 
     popup_window = pg.GraphicsLayoutWidget(title="Help", size=(600, 300))
     popup_window.keyPressEvent = keyPressed
     popup_window.show()
 
-    popup_warning = pg.LabelItem(warning, color=ORANGE, bold=True)
+    popup_warning = pg.LabelItem(warning_str, color=ORANGE, bold=True)
     popup_warning.setAttr("justify", "left")
     popup_window.addItem(popup_warning, row=0, col=0)
 
-    popup_config = pg.LabelItem(config, color=GREEN, bold=True)
+    popup_config = pg.LabelItem(config_str, color=GREEN, bold=True)
     popup_config.setAttr("justify", "left")
     popup_window.addItem(popup_config, row=1, col=0)
 
-    popup_manual = pg.LabelItem(manual, color=BLUE, bold=True)
+    popup_manual = pg.LabelItem(manual_str, color=BLUE, bold=True)
     popup_manual.setAttr("justify", "left")
     popup_window.addItem(popup_manual, row=2, col=0)
 
@@ -509,7 +508,16 @@ def run():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+            description=
+            'Tool to align the WFS and the DM.'
+    )
+    parser.add_argument('-f', action="store_true", dest="show_fli",
+                        help='Display fli stream')
+
+    args = parser.parse_args()
+
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)
 
-    run()
+    run(args)

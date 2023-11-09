@@ -1,9 +1,9 @@
 [Unit]
-Description=KalAO pump watchdog service
+Description=KalAO loop timer service
 
 [Service]
 Type=simple
-ExecStart=/home/kalao/kalao-ics/scripts/kalao_pump-watchdog.sh
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_loop-timer.sh
 Restart=always
 RestartSec=30
 StandardOutput=journal

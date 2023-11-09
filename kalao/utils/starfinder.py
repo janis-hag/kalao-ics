@@ -185,6 +185,11 @@ def center_on_laser():
     :return:
     """
 
+    if aocontrol.turn_dm_on() != 0:
+        system.print_and_log("Error: failed to turn dm on")
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
     # Move calib unit to approximately correct position if too far
     if np.abs(calib_unit.status()['lrPosActual'] -
               config.Laser.position) > 0.5:
@@ -198,14 +203,14 @@ def center_on_laser():
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return
+        return -1
 
     laser.set_intensity(config.FLI.laser_calib_intensity)
 
     if flip_mirror.up() != 'UP':
         system.print_and_log("Error: flip mirror did not go up")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return
+        return -1
 
     # Reset tip tilt stream to 0
     aocontrol.reset_dm(config.AO.TTM_loop_number)
@@ -654,18 +659,19 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
 
 def get_latest_fo_delta():
 
-    fo_delta_record = database.get_latest_record('obs_log',
-                                                 key='focusing_fo_delta')
+    fo_delta_record = database.get_last_record('obs_log',
+                                               key='focusing_fo_delta')
 
-    fo_delta_age = (kalao_time.now() - fo_delta_record['time_utc'].astimezone(
+    if fo_delta_record == {}:
+        return None
+
+    fo_delta_age = (kalao_time.now() - fo_delta_record['timestamp'].astimezone(
             timezone.utc)).total_seconds()
 
     if fo_delta_age > 12 * 3600:
-        fo_delta = None
+        return None
     else:
-        fo_delta = fo_delta_record['focusing_fo_delta']
-
-    return fo_delta
+        return fo_delta_record['value']
 
 
 def optimise_dit(starting_dit, sequencer_arguments=None,

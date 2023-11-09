@@ -31,7 +31,7 @@ make_symlink() {
     else
         if ! $fake
         then
-            ln -s -r $source $dest
+            ln -s $source $dest
         fi
         echo -e "CREATED ${yellow}symlink$default    $blue$source$default -> $purple$dest$default"
      fi
