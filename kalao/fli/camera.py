@@ -109,7 +109,6 @@ def take_image(
     # Store monitoring status at start of exposure
     database_timer.update_plc_monitoring()
 
-    increment_image_counter()
     database.store_obs_log({'sequencer_status': SequencerStatus.EXP})
     database.store_obs_log({'fli_texp': dit})
 
@@ -221,9 +220,7 @@ def cut_image(img, window=None, center=None):
 def log_request(req):
     # TODO add docstring
 
-    database.store_obs_log({
-            'fli_log': f'{req.text} ({req.status_code})'
-    })
+    database.store_obs_log({'fli_log': f'{req.text} ({req.status_code})'})
 
 
 def log_last_image_path(fli_image_path):
@@ -325,6 +322,9 @@ def _send_request(request_type, params={}):
             req.status_code = 200
 
         else:
+            if request_type == 'acquire':
+                increment_image_counter()
+
             url = 'http://' + config.FLI.ip + ':' + str(
                     config.FLI.port) + '/' + request_type
             if params == {}:
