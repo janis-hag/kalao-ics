@@ -19,6 +19,7 @@ from kalao.cacao import fake_data
 from kalao.utils import kalao_time
 
 #from enum import StrEnum
+import kalao_config as config
 from kalao_enums import StrEnum
 
 path = os.path.dirname(os.path.abspath(__file__))
@@ -174,7 +175,7 @@ def get_all_last_telemetry(realData=True):
     return _get_data('telemetry', definitions['telemetry'].keys(), 1)
 
 
-def get_last_record(collection_name, key=None, max_days=100):
+def get_last_record(collection_name, key=None, max_days=config.Database.max_days):
     """
     Searches for the last record in the database for a certain collection
 
@@ -282,4 +283,4 @@ else:
         with open(definition_json) as file:
             definitions[def_name] = json.load(file)
 
-    client = MongoClient("127.0.0.1")
+    client = MongoClient(host=config.Database.ip, port=config.Database.port)

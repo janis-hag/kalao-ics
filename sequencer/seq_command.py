@@ -448,11 +448,6 @@ def target_observation(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
-    if adc.configure() != 0:
-        system.print_and_log("Error: failed to configure ADC")
-        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return -1
-
     fo_delta = starfinder.get_latest_fo_delta()
     if fo_delta is not None:
         system.print_and_log("Updating autofocus")
@@ -491,6 +486,12 @@ def target_observation(**seq_args):
         return -1
 
     if waitfortracking() == -1:
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
+    # Configure ADC once on target (otherwise RA/DEC coordinates are not up-to-date)
+    if adc.configure() != 0:
+        system.print_and_log("Error: failed to configure ADC")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
@@ -624,11 +625,6 @@ def focusing(**seq_args):
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 
-    if adc.configure() != 0:
-        system.print_and_log("Error: failed to configure ADC")
-        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return -1
-
     if aocontrol.reset_all_dms() != 0:
         system.print_and_log("Error: failed to reset DM to flat")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
@@ -650,6 +646,12 @@ def focusing(**seq_args):
         return -1
 
     if waitfortracking() == -1:
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
+    # Configure ADC once on target (otherwise RA/DEC coordinates are not up-to-date)
+    if adc.configure() != 0:
+        system.print_and_log("Error: failed to configure ADC")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1
 

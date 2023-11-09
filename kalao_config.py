@@ -264,6 +264,11 @@ class SystemD:
 
 
 class Database:
+    ip = 'localhost'
+    port = 27017
+
+    max_days = 7
+
     telemetry_update_interval = 10
     PLC_monitoring_update_interval = 60
 

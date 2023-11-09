@@ -48,6 +48,17 @@ adc_angle:
   long: Angle between the ADC prisms
   unit: °
 
+# Telescope
+tel_alt:
+  short: Tel. Altitude
+  long: Telescope altitude
+  unit: °
+
+tel_az:
+  short: Tel. Azimut
+  long: Telescope azimut
+  unit: °
+
 # PLC
 shutter:
   short: Shutter position

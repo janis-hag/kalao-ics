@@ -11,6 +11,8 @@ Timer to verify KalAO bench health (KalAO-ICS).
 import datetime
 import time
 
+import numpy as np
+
 import schedule
 
 from kalao import euler, ippower
@@ -29,8 +31,11 @@ fps_list = {}
 def _get_elapsed_time_since_activity():
     latest_obs_entry_time = database.get_last_record_time('obs_log')
 
-    return (kalao_time.now() - latest_obs_entry_time.replace(
-            tzinfo=datetime.timezone.utc)).total_seconds()
+    if latest_obs_entry_time is not None:
+        return (kalao_time.now() - latest_obs_entry_time.replace(
+                tzinfo=datetime.timezone.utc)).total_seconds()
+    else:
+        return np.inf
 
 
 def _check_shutteropen_inactive():

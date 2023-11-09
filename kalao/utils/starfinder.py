@@ -185,6 +185,11 @@ def center_on_laser():
     :return:
     """
 
+    if aocontrol.turn_dm_on() != 0:
+        system.print_and_log("Error: failed to turn dm on")
+        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
+        return -1
+
     # Move calib unit to approximately correct position if too far
     if np.abs(calib_unit.status()['lrPosActual'] -
               config.Laser.position) > 0.5:
@@ -198,14 +203,14 @@ def center_on_laser():
     if shutter.shutter_close() != 'CLOSED':
         system.print_and_log("Error: failed to close the shutter")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return
+        return -1
 
     laser.set_intensity(config.FLI.laser_calib_intensity)
 
     if flip_mirror.up() != 'UP':
         system.print_and_log("Error: flip mirror did not go up")
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return
+        return -1
 
     # Reset tip tilt stream to 0
     aocontrol.reset_dm(config.AO.TTM_loop_number)

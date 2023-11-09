@@ -21,7 +21,7 @@ from kalao.rtc import device_status
 from kalao.utils import database
 
 import kalao_config as config
-from kalao_enums import CameraServerStatus
+from kalao_enums import CameraServerStatus, TrackingStatus
 
 shm_and_fps_cache = {}
 
@@ -58,14 +58,15 @@ def update_plc_monitoring():
         fli_temperatures = camera.get_temperatures()
         values.update(fli_temperatures)
 
-    # ADC
-    adc_status = {'adc_angle': adc.get_angle()}
-    values.update(adc_status)
+    if euler.telescope_tracking() == TrackingStatus.TRACKING:
+        # ADC
+        adc_status = {'adc_angle': adc.get_angle()}
+        values.update(adc_status)
 
-    # Telescope
-    #telescope = euler.telescope_coord_altaz()
-    #telescope_status = {'tel_alt': telescope.alt.deg, 'tel_az': telescope.az.deg}
-    #values.update(telescope_status)
+        # Telescope
+        telescope = euler.telescope_coord_altaz()
+        telescope_status = {'tel_alt': telescope.alt.deg, 'tel_az': telescope.az.deg}
+        values.update(telescope_status)
 
     if not values == {}:
         database.store_monitoring(values)
