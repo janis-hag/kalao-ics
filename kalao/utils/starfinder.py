@@ -662,15 +662,16 @@ def get_latest_fo_delta():
     fo_delta_record = database.get_last_record('obs_log',
                                                key='focusing_fo_delta')
 
+    if fo_delta_record == {}:
+        return None
+
     fo_delta_age = (kalao_time.now() - fo_delta_record['timestamp'].astimezone(
             timezone.utc)).total_seconds()
 
     if fo_delta_age > 12 * 3600:
-        fo_delta = None
+        return None
     else:
-        fo_delta = fo_delta_record['value']
-
-    return fo_delta
+        return fo_delta_record['value']
 
 
 def optimise_dit(starting_dit, sequencer_arguments=None,

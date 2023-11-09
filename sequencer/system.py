@@ -308,7 +308,7 @@ def initialise_services():
     '''
 
     camera_service('restart')
-    flask_service('restart')
+    #flask_service('restart')
     gop_service('restart')
     database_timer_service('restart')
     safety_timer_service('restart')
