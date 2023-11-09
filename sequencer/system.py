@@ -20,12 +20,14 @@ import kalao_config as config
 from kalao_enums import SequencerStatus
 
 
-def _isDigit(x):
-    try:
-        float(x)
-        return True
-    except ValueError:
-        return False
+def connect_dbus():
+    bus = dbus.SessionBus()
+    systemd = bus.get_object('org.freedesktop.systemd1',
+                             '/org/freedesktop/systemd1')
+
+    manager = dbus.Interface(systemd, 'org.freedesktop.systemd1.Manager')
+
+    return bus, systemd, manager
 
 
 def check_active(unit_name):
@@ -68,6 +70,22 @@ def check_enabled(unit_name):
     return enabled_state
 
 
+def check_status():
+    return_status = {}
+
+    for service in config.SystemD.services.items():
+        status = _generic_service(service, 'status')
+        if not status[0] == 'active':
+            database.store_obs_log({
+                    service['log']: f'WARNING: {service["unit"]} down!'
+            })
+            return_status[service['unit']] = False
+        else:
+            return_status[service['unit']] = True
+
+    return return_status
+
+
 def unit_control(unit_name, action):
     """
     Function to control systemd unit services.
@@ -76,6 +94,7 @@ def unit_control(unit_name, action):
     :param action: RESTART/START/STOP/STATUS
     :return:
     """
+
     bus, systemd, manager = connect_dbus()
 
     action = action.upper()
@@ -101,203 +120,43 @@ def unit_control(unit_name, action):
     return check_active(unit_name)
 
 
-# def restart_unit(unit_name):
-#
-#     bus, systemd, manager = connect_dbus()
-#     #manager.EnableUnitFiles([‘picockpit - client.service’], False, True)
-#     #manager.Reload()
-#     job = manager.RestartUnit(unit_name, 'replace')
-#
-#     return job
-#
-#
-# def start_unit(unit_name):
-#
-#     bus, systemd, manager = connect_dbus()
-#     #manager.EnableUnitFiles([‘picockpit - client.service’], False, True)
-#     #manager.Reload()
-#     job = manager.StartUnit(unit_name, 'replace')
-#
-#     return job
-#
-#
-# def stop_unit(unit_name):
-#
-#     bus, systemd, manager = connect_dbus()
-#     #manager.EnableUnitFiles([‘picockpit - client.service’], False, True)
-#     #manager.Reload()
-#     job = manager.StopUnit(unit_name)
-#
-#     return job
-
-
-def connect_dbus():
-    bus = dbus.SessionBus()
-    systemd = bus.get_object('org.freedesktop.systemd1',
-                             '/org/freedesktop/systemd1')
-
-    manager = dbus.Interface(systemd, 'org.freedesktop.systemd1.Manager')
-
-    return bus, systemd, manager
-
-
-def check_status():
-    return_status = {
-            'camera_service': True,
-            'database_service': True,
-            'flask_service': True
-    }
-
-    camera_status = camera_service('status')
-    if not camera_status[0] == 'active':
-        database.store_obs_log({'fli_log': 'WARNING: Camera service down!'})
-        return_status['camera_service'] = False
-
-    database_status = database_timer_service('status')
-    if not database_status[0] == 'active':
+def _generic_service(service, action):
+    if not action.upper() == 'STATUS':
         database.store_obs_log({
-                'database_log': 'WARNING: Database service down!'
+                service['log']:
+                        f'Sending {action} command to {service["unit"]}.'
         })
-        return_status['database_service'] = False
+    status = unit_control(f'{service["unit"]}', action)
 
-    flask_status = flask_service('status')
-    if not flask_status[0] == 'active':
-        database.store_obs_log({
-                'flask_log': 'WARNING: Flask GUI server down!'
-        })
-        return_status['flask_service'] = False
-
-    return return_status
+    return status
 
 
 def camera_service(action):
-    """
-    Control the camera server systemd service. It accepts one of the four systemctl commands:
-    RESTART/START/STOP/STATUS
-
-    :param action: RESTART/START/STOP/STATUS
-    :return:
-    """
-
-    if not action.upper() == 'STATUS':
-        database.store_obs_log({
-                'fli_log':
-                        f'Sending {action} command to FLI camera server.'
-        })
-    unit_name = config.SystemD.camera_service
-    status = unit_control(unit_name, action)
-
-    return status
-
-
-def database_timer_service(action):
-    """
-    Control the database systemd service. It accepts one of the four systemctl commands:
-    RESTART/START/STOP/STATUS
-
-    :param action: RESTART/START/STOP/STATUS
-    :return:
-    """
-
-    if not action.upper() == 'STATUS':
-        database.store_obs_log({
-                'database_log':
-                        f'Sending {action} command to database system.'
-        })
-    unit_name = config.SystemD.database_timer
-    status = unit_control(unit_name, action)
-
-    return status
+    return _generic_service(config.SystemD.services['camera'])
 
 
 def flask_service(action):
-    """
-    Control the flask server systemd service. It accepts one of the four systemctl commands:
-    RESTART/START/STOP/STATUS
-
-    :param action: RESTART/START/STOP/STATUS
-    :return:
-    """
-
-    if not action.upper() == 'STATUS':
-        database.store_obs_log({
-                'flask_log': f'Sending {action} command to flask server.'
-        })
-    unit_name = config.SystemD.flask_gui
-    status = unit_control(unit_name, action)
-
-    return status
+    return _generic_service(config.SystemD.services['flask'])
 
 
 def gop_service(action):
-    if not action.upper() == 'STATUS':
-        database.store_obs_log({
-                'gop_log': f'Sending {action} command to gop server.'
-        })
-    unit_name = config.SystemD.gop_server
-    status = unit_control(unit_name, action)
+    return _generic_service(config.SystemD.services['gop'])
 
-    return status
+
+def database_timer_service(action):
+    return _generic_service(config.SystemD.services['database'])
 
 
 def safety_timer_service(action):
-    """
-    Control the flask server systemd service. It accepts one of the four systemctl commands:
-    RESTART/START/STOP/STATUS
-
-    :param action: RESTART/START/STOP/STATUS
-    :return:
-    """
-
-    if not action.upper() == 'STATUS':
-        database.store_obs_log({
-                'safety_timer_log':
-                        f'Sending {action} command to safety timer.'
-        })
-    unit_name = config.SystemD.safety_timer
-    status = unit_control(unit_name, action)
-
-    return status
+    return _generic_service(config.SystemD.services['safety'])
 
 
 def loop_timer_service(action):
-    """
-    Control the flask server systemd service. It accepts one of the four systemctl commands:
-    RESTART/START/STOP/STATUS
-
-    :param action: RESTART/START/STOP/STATUS
-    :return:
-    """
-
-    if not action.upper() == 'STATUS':
-        database.store_obs_log({
-                'loop_timer_log':
-                        f'Sending {action} command to loop timer.'
-        })
-    unit_name = config.SystemD.loop_timer
-    status = unit_control(unit_name, action)
-
-    return status
+    return _generic_service(config.SystemD.services['loop'])
 
 
 def pump_timer_service(action):
-    """
-    Control the flask server systemd service. It accepts one of the four systemctl commands:
-    RESTART/START/STOP/STATUS
-
-    :param action: RESTART/START/STOP/STATUS
-    :return:
-    """
-
-    if not action.upper() == 'STATUS':
-        database.store_obs_log({
-                'pump_timer_log':
-                        f'Sending {action} command to pump timer.'
-        })
-    unit_name = config.SystemD.pump_timer
-    status = unit_control(unit_name, action)
-
-    return status
+    return _generic_service(config.SystemD.services['pump'])
 
 
 def initialise_services():
@@ -307,21 +166,18 @@ def initialise_services():
     :return:
     '''
 
-    camera_service('restart')
-    #flask_service('restart')
-    gop_service('restart')
-    database_timer_service('restart')
-    safety_timer_service('restart')
-    loop_timer_service('restart')
-    pump_timer_service('restart')
+    for service in config.SystemD.services.items():
+        _generic_service(service, 'restart')
 
     time.sleep(config.SystemD.service_restart_wait)
 
+    all_statuses = check_status()
+
     # Loop as long as not all systems are active.
-    if not all(check_status().values()):
+    if not all(all_statuses.values()):
         database.store_obs_log({
                 'sequencer_log':
-                        f'ERROR: a service is not running! {check_status()}'
+                        f'ERROR: one or more services are not running! {all_statuses}'
         })
         database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
         return -1

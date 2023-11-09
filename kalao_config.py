@@ -251,14 +251,17 @@ class GOP:
 
 
 class SystemD:
-    camera_service = "kalao_camera.service"
-    flask_gui = "kalao_flask-gui.service"
-    sequencer_service = "kalao_sequencer.service"
-    gop_server = "kalao_gop_server.service"
-    database_timer = "kalao_database-timer.service"
-    safety_timer = "kalao_safety-timer.service"
-    loop_timer = "kalao_loop-timer.service"
-    pump_timer = "kalao_pump-timer.service"
+    # yapf: disable
+    services = {
+        'camera': {'unit': "kalao_camera.service", 'log': 'fli_log'},
+        #'flask': {'unit': "kalao_flask-gui.service", 'log': 'flask_log'},
+        'gop': {'unit': "kalao_gop_server.service", 'log': 'gop_log'},
+        'database': {'unit': "kalao_database-timer.service", 'log': 'database_log'},
+        'safety': {'unit': "kalao_safety-timer.service", 'log': 'safety_timer_log'},
+        'loop': {'unit': "kalao_loop-timer.service", 'log': 'loop_timer_log'},
+        'pump': {'unit': "kalao_pump-timer.service", 'log': 'pump_timer_log'},
+    }
+    # yapf: enable
 
     service_restart_wait = 15
 
