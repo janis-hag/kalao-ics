@@ -147,7 +147,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('-f', action="store", dest="ncpa_folder",
                         required=True, type=str,
-                        help='Folder containing teh NCPA results')
+                        help='Folder containing the NCPA results')
     parser.add_argument('-o', action="store", dest="orders_to_fit", default=15,
                         type=int, help='Number of orders to fit')
 
