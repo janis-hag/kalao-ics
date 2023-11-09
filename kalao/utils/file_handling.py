@@ -454,9 +454,8 @@ def _add_header_values(header_df, log_status, fits_header):
             header_df.loc[idx, 'comment'] = card.comment.strip()
 
         #header.set(card.keyword.upper(), card.value, card.comment.strip())
-        elif card.value in log_status.keys() and log_status[
-                card.value]['values']:
-            header_df.loc[idx, 'value'] = log_status[card.value]['values'][0]
+        elif card.value in log_status.keys():
+            header_df.loc[idx, 'value'] = log_status[card.value][0]['value']
             header_df.loc[idx, 'comment'] = card.comment.strip()
             #card.keyword =  'ESO '+ keycode + ' ' + card.keyword.upper()
             #header.set('HIERARCH ESO ' + keycode + ' ' + card.keyword.upper(), log_status[card.keyword]['values'][0],

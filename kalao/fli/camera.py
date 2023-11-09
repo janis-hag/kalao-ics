@@ -196,7 +196,13 @@ def increment_image_counter():
     """
 
     image_count = database.get_last_record_value('obs_log',
-                                                 key='fli_image_count') + 1
+                                                 key='fli_image_count')
+
+    if image_count is None:
+        image_count = 1
+    else:
+        image_count += 1
+
     database.store_obs_log({'fli_image_count': image_count})
 
     return image_count

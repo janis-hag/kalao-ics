@@ -161,9 +161,7 @@ def elapsed_exposure_seconds():
     """
 
     last_exposure_start = _last_exposure_start()
-    last_exposure_end = database.get_last_record_time(
-            'obs_log', key='fli_temporary_image_path').replace(
-                    tzinfo=datetime.timezone.utc)
+    last_exposure_end = _last_exposure_end()
 
     if last_exposure_start > last_exposure_end:
         # An exposure is running
@@ -183,9 +181,30 @@ def _last_exposure_start():
     :return: Time of exposure start (datetime)
     """
 
-    return database.get_last_record_time(
+    timestamp = database.get_last_record_time(
             'obs_log',
-            key='fli_image_count').replace(tzinfo=datetime.timezone.utc)
+            key='fli_image_count')
+
+    if timestamp is None:
+        return datetime.fromtimestamp(0)
+    else:
+        return timestamp.replace(tzinfo=datetime.timezone.utc)
+
+def _last_exposure_end():
+    """
+    Query the time of the last exposure end in the KalAO-ICS mongo database.
+
+    :return: Time of exposure end (datetime)
+    """
+
+    timestamp = database.get_last_record_time(
+            'obs_log',
+            key='fli_temporary_image_path')
+
+    if timestamp is None:
+        return datetime.fromtimestamp(0)
+    else:
+        return timestamp.replace(tzinfo=datetime.timezone.utc)
 
 
 def _last_filepath_archived():

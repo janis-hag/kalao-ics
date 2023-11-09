@@ -73,7 +73,7 @@ def check_enabled(unit_name):
 def check_status():
     return_status = {}
 
-    for service in config.SystemD.services.items():
+    for service in config.SystemD.services.values():
         status = _generic_service(service, 'status')
         if not status[0] == 'active':
             database.store_obs_log({
@@ -132,15 +132,15 @@ def _generic_service(service, action):
 
 
 def camera_service(action):
-    return _generic_service(config.SystemD.services['camera'])
+    return _generic_service(config.SystemD.services['camera'], action)
 
 
 def flask_service(action):
-    return _generic_service(config.SystemD.services['flask'])
+    return _generic_service(config.SystemD.services['flask'], action)
 
 
 def gop_service(action):
-    return _generic_service(config.SystemD.services['gop'])
+    return _generic_service(config.SystemD.services['gop'], action)
 
 
 def database_timer_service(action):
@@ -148,15 +148,15 @@ def database_timer_service(action):
 
 
 def safety_timer_service(action):
-    return _generic_service(config.SystemD.services['safety'])
+    return _generic_service(config.SystemD.services['safety'], action)
 
 
 def loop_timer_service(action):
-    return _generic_service(config.SystemD.services['loop'])
+    return _generic_service(config.SystemD.services['loop'], action)
 
 
 def pump_timer_service(action):
-    return _generic_service(config.SystemD.services['pump'])
+    return _generic_service(config.SystemD.services['pump'], action)
 
 
 def initialise_services():
@@ -166,7 +166,7 @@ def initialise_services():
     :return:
     '''
 
-    for service in config.SystemD.services.items():
+    for service in config.SystemD.services.values():
         _generic_service(service, 'restart')
 
     time.sleep(config.SystemD.service_restart_wait)
