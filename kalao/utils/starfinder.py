@@ -789,27 +789,26 @@ def generate_wcs():
 
 
 def calc_parang(dt=None, coord=None):
+    location = euler.observing_location()
 
-    r2d = 180 / np.pi
-    d2r = np.pi / 180
+    if isinstance(dt, datetime):
+        astro_time = Time(dt, scale='utc',
+                          location=location)
+        print(f'Using custom date: {astro_time}')
+
+    else:
+        astro_time = Time(datetime.utcnow(), scale='utc',
+                          location=location)
 
     if isinstance(coord, SkyCoord):
         print(f'Using custom coord: {coord}')
     else:
         coord = euler.telescope_coord()
 
+    r2d = 180 / np.pi
+    d2r = np.pi / 180
+
     geolat_rad = config.Euler.latitude * d2r
-
-    la_silla_coord = euler.observing_location()
-
-    if isinstance(dt, datetime):
-        astro_time = Time(datetime.utcnow(), scale='utc',
-                          location=la_silla_coord)
-        print(f'Using custom date: {astro_time}')
-
-    else:
-        astro_time = Time(datetime.utcnow(), scale='utc',
-                          location=la_silla_coord)
 
     lst = astro_time.sidereal_time('mean').hour
 

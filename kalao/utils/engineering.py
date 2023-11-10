@@ -17,7 +17,7 @@ import numpy as np
 from astropy.io import fits
 
 from kalao.fli import camera
-from kalao.interface import star_centering
+from kalao.interfaces import star_centering
 from kalao.plc import adc, calib_unit, tungsten
 from kalao.utils import database, file_handling
 

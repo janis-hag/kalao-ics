@@ -21,7 +21,6 @@ from pathlib import Path
 import pandas as pd
 
 from astropy import units
-from astropy.coordinates import EarthLocation
 from astropy.io import fits
 from astropy.time import Time
 
@@ -237,15 +236,15 @@ def update_header(image_path, sequencer_arguments=None):
         # Gather all the logs
         obs_log = database.get_obs_log(
                 header_df.loc[header_df['keygroup'] == 'Obs_log']
-                ['value'].tolist(), 1, dt=dt)
+                ['value'].tolist(), dt=dt)
 
         monitoring_log = database.get_monitoring(
                 header_df.loc[header_df['keygroup'] == 'Monitoring']
-                ['value'].tolist(), 1, dt=dt)
+                ['value'].tolist(), dt=dt)
 
         telemetry_log = database.get_telemetry(
                 header_df.loc[header_df['keygroup'] == 'Telemetry']
-                ['value'].tolist(), 1, dt=dt)
+                ['value'].tolist(), dt=dt)
 
         # obs_log needs to be first as it contains some non-hierarch keywords
         header_df = _add_header_values(
@@ -340,16 +339,15 @@ def _get_last_telescope_header():
 
     gls_home = Path(config.SEQ.T4_root)
 
-    tcs_header_path_record = database.get_last_record(
-            'obs_log', key='tcs_header_path')
+    tcs_header_path_record = database.get_last_record('obs_log',
+                                                      key='tcs_header_path')
 
     header_age = (kalao_time.now() -
                   tcs_header_path_record['timestamp'].astimezone(
                           timezone.utc)).total_seconds()
 
     if 'home' in tcs_header_path_record['value']:
-        tcs_header_path = gls_home / tcs_header_path_record['value'][
-                1:]
+        tcs_header_path = gls_home / tcs_header_path_record['value'][1:]
     else:
         tcs_header_path = Path(tcs_header_path_record['value'])
 
@@ -518,9 +516,9 @@ def _dynamic_cards_update(header_df, seq_args=None):
 
     dt_obs = datetime.fromisoformat(date_obs).replace(tzinfo=timezone.utc)
 
-    la_silla_coord = euler.observing_location()
+    location = euler.observing_location()
 
-    astro_time = Time(date_obs, scale='utc', location=la_silla_coord)
+    astro_time = Time(date_obs, scale='utc', location=location)
     sidereal_seconds = astro_time.sidereal_time('mean').hour * 3600
     #astro_time.sidereal_time('mean').to_string(units.hour, sep=':')
 
@@ -534,7 +532,7 @@ def _dynamic_cards_update(header_df, seq_args=None):
 
     header_df['comment']['MJD-END'] = date_end
     header_df['value']['MJD-END'] = Time(date_end, scale='utc',
-                                         location=la_silla_coord).mjd
+                                         location=location).mjd
 
     # Update UTC
     # idx = header_df.index[header_df['keyword'] == 'UTC']

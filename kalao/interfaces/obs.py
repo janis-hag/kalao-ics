@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : info.py
+# @Filename : obs.py
 # @Date : 2021-01-02-16-50
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
@@ -12,67 +12,11 @@ datasets specific for the KalAO flask graphic user interface (GUI).
 
 import datetime
 
-from kalao.cacao import fake_data, telemetry
-from kalao.plc import core, tungsten
+from kalao.plc import tungsten
 from kalao.utils import database, kalao_time
 
 import kalao_config as config
 from kalao_enums import SequencerStatus
-
-
-def short():
-    """
-    Query short status of all KalAO devices
-
-    :return: dictionary with all device short status
-    """
-
-    short_status = {'ccd_temp': 'ERROR', 'emccd_temp': 'ERROR'}
-
-    # Add status from PLC
-    short_status.update(core.plc_status())
-
-    return short_status
-
-
-def streams(realData=True):
-    if realData:
-        return telemetry.streams()
-    else:
-        return fake_data.fake_streams()
-
-
-def telemetry_series(nb_points, realData=True):
-    if realData:
-        return database.get_telemetry(['pi_tip', 'pi_tilt'], nb_points)
-    else:
-        return fake_data.fake_telemetry_series()
-
-
-def latest_obs_log_entry(realData=True):
-    """
-    Queries the latest entry in the *obs_log* mongo database,
-
-    :param realData:
-    :return: Text string with the latest entry
-    """
-
-    if realData:
-        latest_record = database._get_data('obs_log')
-        if latest_record is None:
-            formatted_entry_text = 'Obs logs empty'
-        else:
-            key_name = list(latest_record.keys())[0]
-            time_string = latest_record[key_name][0]['timestamp'].isoformat(
-                    timespec='milliseconds')
-            record_text = latest_record[key_name][0]['value']
-
-            formatted_entry_text = str(time_string) + ' ' + str(
-                    key_name) + ': ' + str(record_text)
-
-        return formatted_entry_text
-    else:
-        return fake_data.fake_latest_obs_log_entry()
 
 
 def kalao_status():

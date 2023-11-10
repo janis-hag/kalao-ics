@@ -1,27 +1,20 @@
-import csv
 import json
 import logging
 import math
-import random
-import sys
 import time as time_lib
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from os import path
 
-from numpy.random import randint, seed
-
-import pytz
 import yaml
-from flask import Blueprint, Flask, request, session
+from flask import Flask, request
 from flask_cors import CORS
 from rest.plc import plc_bp
 from rest.system import system_bp
 
 from kalao.cacao import aocontrol as k_aocontrol
-from kalao.cacao import telemetry as k_telemetry
 from kalao.cacao import toolbox as k_toolbox
-from kalao.interface import info as k_status
-from kalao.interface import star_centering as k_star_centering
+from kalao.interfaces import star_centering as k_star_centering
+from kalao.interfaces import web as k_web
 from kalao.plc import filterwheel as k_filterwheel
 from kalao.utils import database as k_database
 from kalao.utils import starfinder as s_starfinder
@@ -133,16 +126,16 @@ def create_app():
 
             app.config['shm_cache'] = shm_cache
 
-        realData = not bool(request.args.get('random', default="", type=str))
+        real_data = not bool(request.args.get('random', default="", type=str))
 
-        return k_telemetry.streams(realData, shm_cache)
+        return k_web.streams(shm_cache, real_data)
 
     @app.route('/data', methods=['GET'])
     def data():
-        realData = not bool(request.args.get('random', default="", type=str))
-        status = k_status.latest_obs_log_entry(realData)
-        monitoring = k_database.get_all_last_monitoring()
-        telemetry = k_database.get_all_last_telemetry(realData)
+        real_data = not bool(request.args.get('random', default="", type=str))
+        status = k_web.latest_obs_log_entry(real_data)
+        monitoring = k_web.get_all_last_monitoring()
+        telemetry = k_web.get_all_last_telemetry(real_data)
         time = datetime.now(timezone.utc)
 
         return {
@@ -170,7 +163,7 @@ def create_app():
             x = None
             y = None
 
-        realData = not bool(request.args.get('random', default="", type=str))
+        real_data = not bool(request.args.get('random', default="", type=str))
         #binFactor = not bool(request.args.get('binFactor', default = "", type = str))
         #x = not bool(request.args.get('x', default = "", type = str))
         #y = not bool(request.args.get('y', default = "", type = str))
@@ -178,12 +171,12 @@ def create_app():
          file_date) = k_star_centering.fli_view(x=x, y=y,
                                                 last_file_date=last_file_date,
                                                 percentile=percentile,
-                                                realData=realData)
+                                                real_data=real_data)
 
         if type(image) == type(None) and file_date is None:
             return "Not updated", 204
 
-        #if realData:
+        #if real_data:
         #    lat_list = [item for sublist in image for item in sublist]
         #else:
         #    image = [random.choices(range(1,100), k=1024) for _ in range(1024)]
@@ -207,20 +200,19 @@ def create_app():
     @app.route('/plots/<nb_points>', methods=['GET'])
     def plot(nb_points):
         nb_points = int(nb_points)
-        random = bool(request.args.get('random', default="", type=str))
-        if random:
-            series = k_status.telemetry_series(random)
-        else:
-            series = k_database.get_telemetry(['pi_tip', 'pi_tilt'], nb_points)
+        real_data = bool(request.args.get('random', default="", type=str))
 
-            for serie_name in series:
-                time_arr = []
-                for time in series[serie_name]["time_utc"]:
-                    time_arr.append(round(datetime.timestamp(time), 1))
-                series[serie_name]["time"] = time_arr
-                series[serie_name].pop("time_utc")
+        series = k_web.tip_tilt(nb_points, real_data)
 
-            return series
+        for serie_name in series:
+            time_arr = []
+            for time in series[serie_name]["time_utc"]:
+                time_arr.append(round(datetime.timestamp(time), 1))
+            series[serie_name]["time"] = time_arr
+            series[serie_name].pop("time_utc")
+
+        return series
+
         obj = {}
         for serie_name in series:
             obj[serie_name] = {"time": [], "values": []}
@@ -238,10 +230,6 @@ def create_app():
 
         return obj
 
-    @app.route('/measurements', methods=['GET'])
-    def measurements():
-        random = bool(request.args.get('random', default="", type=str))
-        return k_status.cacao_measurements(random)
 
     @app.route('/timeSeries/<t_start>/<t_end>', methods=['GET'])
     def timeSeries(t_start, t_end):

@@ -33,7 +33,7 @@ def plcStatus():
                     "status": k_calib_unit.status()
             },
             "filterwheel": {
-                    "position": k_filterwheel.get_position(from_db=True)
+                    "position": k_filterwheel.get_position(from_db=True)[1]
             }
     })
 

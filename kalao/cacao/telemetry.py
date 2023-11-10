@@ -15,9 +15,7 @@ import numpy as np
 
 from pyMilk.interfacing.shm import SHM
 
-import libtmux
-
-from kalao.cacao import fake_data, toolbox
+from kalao.cacao import toolbox
 from kalao.utils import database
 
 import kalao_config as config
@@ -73,7 +71,7 @@ def _get_stream(name, min_value_th, max_value_th, shm_stream=None):
                     "min": 0,
                     "max": 0,
                     "min_th": 0,
-                    "max_th": 0
+                    "max_th": 0,
             }
     else:
         return {
@@ -83,49 +81,44 @@ def _get_stream(name, min_value_th, max_value_th, shm_stream=None):
                 "min": 0,
                 "max": 0,
                 "min_th": 0,
-                "max_th": 0
+                "max_th": 0,
         }
 
 
-def streams(realData=True, shm_streams={}):
+def streams(shm_streams={}):
     """
     Provides all the streams needed for the KalAO GUI.
 
-    :param realData: Flag to turn on random data for GUI testing purposes
     :param shm_streams: Dictionary of open streams
     :return: dictionary with all the stream contents
     """
 
-    if not realData:
-        # Returning fake streams for testing purposes
-        return fake_data.fake_streams()
-    else:
-        stream_list = {}
+    stream_list = {}
 
-        stream_list["nuvu_stream"] = _get_stream(
-                name="nuvu_stream", min_value_th=0, max_value_th=2**16 - 1,
-                shm_stream=shm_streams.get("nuvu_stream"))
+    stream_list["nuvu_stream"] = _get_stream(
+            name="nuvu_stream", min_value_th=0, max_value_th=2**16 - 1,
+            shm_stream=shm_streams.get("nuvu_stream"))
 
-        stream_list["shwfs_slopes"] = _get_stream(
-                name="shwfs_slopes", min_value_th=-2, max_value_th=2,
-                shm_stream=shm_streams.get("shwfs_slopes"))
+    stream_list["shwfs_slopes"] = _get_stream(
+            name="shwfs_slopes", min_value_th=-2, max_value_th=2,
+            shm_stream=shm_streams.get("shwfs_slopes"))
 
-        stream_list["dm01disp"] = _get_stream(
-                name="dm01disp", min_value_th=-1.75, max_value_th=1.75,
-                shm_stream=shm_streams.get("dm01disp"))
+    stream_list["dm01disp"] = _get_stream(
+            name="dm01disp", min_value_th=-1.75, max_value_th=1.75,
+            shm_stream=shm_streams.get("dm01disp"))
 
-        stream_list["shwfs_slopes_flux"] = _get_stream(
-                name="shwfs_slopes_flux", min_value_th=0, max_value_th=4 *
-                (2**16 - 1), shm_stream=shm_streams.get("shwfs_slopes_flux"))
+    stream_list["shwfs_slopes_flux"] = _get_stream(
+            name="shwfs_slopes_flux", min_value_th=0, max_value_th=4 *
+            (2**16 - 1), shm_stream=shm_streams.get("shwfs_slopes_flux"))
 
-        stream_list["aol1_mgainfact"] = _get_stream(
-                name="aol1_mgainfact", min_value_th=0, max_value_th=1,
-                shm_stream=shm_streams.get("aol1_mgainfact"))
+    stream_list["aol1_mgainfact"] = _get_stream(
+            name="aol1_mgainfact", min_value_th=0, max_value_th=1,
+            shm_stream=shm_streams.get("aol1_mgainfact"))
 
-        # streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75)
-        # TODO: uncomment when modal control is working
+    # streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75)
+    # TODO: uncomment when modal control is working
 
-        return stream_list
+    return stream_list
 
 
 def telemetry_save(shm_and_fps_cache):

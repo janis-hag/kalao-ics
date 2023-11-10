@@ -9,8 +9,6 @@ camera.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-import os
-import sys
 import time
 
 from microscope.filterwheels import thorlabs
@@ -92,7 +90,7 @@ def set_position(filter_arg):
                     'filterwheel_log':
                             f'WARNING: SerialException on filterwheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
             })
-            time.sleep(config.FilterWheel.enable_wait)
+            time.sleep(config.FilterWheel.retry_wait)
 
     database.store_obs_log({
             'filterwheel_log': 'ERROR: Filterwheel failed too many time.'
@@ -104,7 +102,7 @@ def get_position(from_db=False):
     if from_db:
         filter_name = database.get_last_record_value('obs_log',
                                                      key='filterwheel_status')
-        position = id_filter_dict[filter_name]
+        return id_filter_dict[filter_name], filter_name
     else:
         for retry in range(config.FilterWheel.retries):
             try:
@@ -120,7 +118,7 @@ def get_position(from_db=False):
                         'filterwheel_log':
                                 f'WARNING: SerialException on filterwheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
                 })
-                time.sleep(config.FilterWheel.enable_wait)
+                time.sleep(config.FilterWheel.retry_wait)
 
     database.store_obs_log({
             'filterwheel_log': 'ERROR: Filterwheel failed too many time.'
@@ -149,7 +147,7 @@ def init():
                     'filterwheel_log':
                             f'WARNING: SerialException on filterwheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
             })
-            time.sleep(config.FilterWheel.enable_wait)
+            time.sleep(config.FilterWheel.retry_wait)
 
     database.store_obs_log({
             'filterwheel_log': 'ERROR: Filterwheel failed too many time.'

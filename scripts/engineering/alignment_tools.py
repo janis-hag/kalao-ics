@@ -21,6 +21,7 @@ from kalao.cacao import toolbox
 
 import kalao_config as config
 
+
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')

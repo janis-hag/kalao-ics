@@ -12,10 +12,9 @@ from datetime import timedelta
 import pandas as pd
 
 import yaml
-from pymongo import ASCENDING, DESCENDING, MongoClient, UpdateOne
+from pymongo import DESCENDING, MongoClient, UpdateOne
 from pymongo.errors import BulkWriteError
 
-from kalao.cacao import fake_data
 from kalao.utils import kalao_time
 
 #from enum import StrEnum
@@ -62,7 +61,7 @@ def _get_data(collection_name, keys=None, nb_of_point=1, dt=None):
 
     collection = db[collection_name]
 
-    #yapf: disable
+    # yapf: disable
     if keys is None:
         cursor = collection.find(
             {},
@@ -137,15 +136,15 @@ def _store_data(collection_name, data):
     return 0
 
 
-def get_monitoring(keys, nb_of_point, dt=None):
+def get_monitoring(keys, nb_of_point=1, dt=None):
     return _get_data('monitoring', keys, nb_of_point, dt=dt)
 
 
-def get_obs_log(keys, nb_of_point, dt=None):
+def get_obs_log(keys, nb_of_point=1, dt=None):
     return _get_data('obs_log', keys, nb_of_point, dt=dt)
 
 
-def get_telemetry(keys, nb_of_point, dt=None):
+def get_telemetry(keys, nb_of_point=1, dt=None):
     return _get_data('telemetry', keys, nb_of_point, dt=dt)
 
 
@@ -162,17 +161,15 @@ def store_telemetry(data):
 
 
 def get_all_last_monitoring():
-    return _get_data('monitoring', definitions['monitoring'].keys(), 1)
+    return _get_data('monitoring', definitions['monitoring'].keys())
 
 
 def get_all_last_obs_log():
-    return _get_data('obs_log', definitions['obs_log'].keys(), 1)
+    return _get_data('obs_log', definitions['obs_log'].keys())
 
 
-def get_all_last_telemetry(realData=True):
-    if realData is False:
-        return fake_data.fake_telemetry_for_db()
-    return _get_data('telemetry', definitions['telemetry'].keys(), 1)
+def get_all_last_telemetry():
+    return _get_data('telemetry', definitions['telemetry'].keys())
 
 
 def get_last_record(collection_name, key=None, max_days=config.Database.max_days):

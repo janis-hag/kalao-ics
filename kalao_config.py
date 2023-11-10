@@ -136,11 +136,11 @@ class WFS:
 
 class FilterWheel:
     device_port = "/dev/ttyUSB0"
-    retries = 3
-    # soon to be changed to /dev/fw102c
-    enable_wait = 2.0  # s
-    initialization_wait = 2.0  # s
-    position_change_wait = 6.0  # s
+    retries = 3  # -
+    retry_wait = 2  # s
+    enable_wait = 2  # s
+    initialization_wait = 2  # s
+    position_change_wait = 6  # s
     position_list = ['clear', 'g', 'r', 'i', 'z', 'nd']
 
     # According to manufacturer: g = 465, r = 611, i = 758, z = undefined
@@ -165,12 +165,12 @@ class Tungsten:
     position = 88  # mm
     switch_wait = 2  # s
     flat_dit_list = {
-            "clear": 300,
-            "g": 360,
-            "r": 480,
-            "i": 420,
-            "z": 420,
-            "nd": 300,
+            "clear": 300,  # s
+            "g": 360,  # s
+            "r": 480,  # s
+            "i": 420,  # s
+            "z": 420,  # s
+            "nd": 300,  # s
     }
 
 
@@ -185,7 +185,8 @@ class Calib:
             "nd", "nd", "nd", "nd", "nd"
     ]
     # yapf: enable
-    flat_min_flux = 10000
+
+    flat_min_flux = 10000  # ADU
 
 
 class SEQ:
@@ -200,16 +201,16 @@ class SEQ:
     tcs_header_validity = 3600
 
     # Pointing can be long when instrument change happens
-    pointing_wait_time = 2
-    pointing_timeout = 210
+    pointing_wait_time = 2  # s
+    pointing_timeout = 210  # s
 
     # Setup time to report to EDP
     timings = {
-            'DARK': 15,
-            'LMPFLT': 15,
-            'SKYFLT': 20,
-            'TRGOBS': 20,
-            'FOCUS': 20,
+            'DARK': 15,  # s
+            'LMPFLT': 15,  # s
+            'SKYFLT': 20,  # s
+            'TRGOBS': 20,  # s
+            'FOCUS': 20,  # s
     }
 
     EDP_translate = {
@@ -233,7 +234,7 @@ class Starfinder:
     FLI_to_WFS_coeff = 0
 
     # For 1" seeing and with 0.0507"/px plate scale, should be 1 / 0.0507 = 20 px
-    FWHM = 30
+    FWHM = 30  # px
 
 
 class Euler:
@@ -270,10 +271,10 @@ class Database:
     ip = 'localhost'
     port = 27017
 
-    max_days = 7
+    max_days = 7  # days
 
-    telemetry_update_interval = 10
-    PLC_monitoring_update_interval = 60
+    telemetry_update_interval = 10  # s
+    PLC_monitoring_update_interval = 60  # s
 
 
 class T120:

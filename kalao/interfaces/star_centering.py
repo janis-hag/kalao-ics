@@ -17,17 +17,17 @@ from astropy.io import fits
 
 from skimage.transform import resize
 
-from kalao.cacao import fake_data
+from kalao.interfaces import fake_data
 from kalao.utils import database
 
 #from scipy import stats
 
 
 def fli_view(x=None, y=None, percentile=99, last_file_date=None,
-             realData=True):
+             real_data=True):
 
     binfactor = 4
-    if not realData:
+    if not real_data:
         # Returning fake fli_view for testing purposes
         return False, fake_data.fake_fli_view()
 
