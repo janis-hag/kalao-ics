@@ -145,8 +145,12 @@ def set_zero_disp(beck=None):
 
 def set_angle(angle, beck=None):
     # Motors are face to face, offset by same angle so they are counter-rotating
-    rotate(1, position=config.ADC.max_disp_angle_1 + config.ADC.max_disp_offset + angle / 2, beck=beck)
-    rotate(2, position=config.ADC.max_disp_angle_2 + config.ADC.max_disp_offset + angle / 2, beck=beck)
+    rotate(
+            1, position=config.ADC.max_disp_angle_1 +
+            config.ADC.max_disp_offset + angle / 2, beck=beck)
+    rotate(
+            2, position=config.ADC.max_disp_angle_2 +
+            config.ADC.max_disp_offset + angle / 2, beck=beck)
 
     sleep(2)
 

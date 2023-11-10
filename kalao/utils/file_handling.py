@@ -325,9 +325,35 @@ def read_header_cards(header_config, items_name):
     return header_cards
 
 
-def update_default_header_keydict(default_cards, header_keydict):
+def get_last_image_path():
+    """
+    Retrieve the file path of the latest image
 
-    return header_keydict
+    :return: file_path and file_Date
+    """
+    return _get_image_path('last')
+
+
+def get_temporary_image_path():
+    """
+    Retrieve the file path of the latest temporary image
+
+    :return: file_path and file_Date
+    """
+
+    return _get_image_path('temporary')
+
+
+def _get_image_path(image_type):
+    if image_type in ['last', 'temporary']:
+        # READ mongodb to find latest filename
+        last_image = database.get_last_record(
+                'obs_log', key=f'fli_{image_type}_image_path')
+
+        if last_image is not None:
+            return last_image.get('value'), last_image.get('timestamp')
+
+    return None, None
 
 
 def _get_last_telescope_header():

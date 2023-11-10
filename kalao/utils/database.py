@@ -4,7 +4,6 @@
 @author: Nathanaël Restori
 """
 
-import json
 import math
 import os
 from datetime import timedelta
@@ -23,29 +22,13 @@ from kalao_enums import StrEnum
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-monitoring_definition_json = path + "/database_definitions/monitoring.json"
-monitoring_definition_yaml = path + "/database_definitions/monitoring.yml"
-
-obs_log_definition_json = path + "/database_definitions/obs_log.json"
-obs_log_definition_yaml = path + "/database_definitions/obs_log.yml"
-
-telemetry_definition_json = path + "/database_definitions/telemetry.json"
-telemetry_definition_yaml = path + "/database_definitions/telemetry.yml"
-
 definition_names = [
-        ('monitoring', monitoring_definition_yaml, monitoring_definition_json),
-        ('obs_log', obs_log_definition_yaml, obs_log_definition_json),
-        ('telemetry', telemetry_definition_yaml, telemetry_definition_json)
+        ('monitoring', path + "/database_definitions/monitoring.yml"),
+        ('obs_log', path + "/database_definitions/obs_log.yml"),
+        ('telemetry', path + "/database_definitions/telemetry.yml")
 ]
 
 definitions = {}
-
-
-def convert_database_definition():
-    for def_name, def_yaml, def_json in definition_names:
-        with open(def_yaml, 'r') as yaml_in, open(def_json, "w") as json_out:
-            yaml_object = yaml.safe_load(yaml_in)
-            json.dump(yaml_object, json_out)
 
 
 def _get_db(client, dt):
@@ -116,6 +99,7 @@ def _store_data(collection_name, data):
         if isinstance(data[key], StrEnum):
             data[key] = str(data[key])
 
+        # yapf: disable
         update_list.append(UpdateOne(
             {'key': key},
             {
@@ -123,8 +107,9 @@ def _store_data(collection_name, data):
                 '$inc': {'count': 1},
                 '$set': {'last_timestamp': timestamp},
             },
-            upsert=True
+            upsert = True
         ))
+        # yapf: enable
 
     try:
         collection.bulk_write(update_list, ordered=False)
@@ -172,7 +157,8 @@ def get_all_last_telemetry():
     return _get_data('telemetry', definitions['telemetry'].keys())
 
 
-def get_last_record(collection_name, key=None, max_days=config.Database.max_days):
+def get_last_record(collection_name, key=None,
+                    max_days=config.Database.max_days):
     """
     Searches for the last record in the database for a certain collection
 
@@ -187,9 +173,8 @@ def get_last_record(collection_name, key=None, max_days=config.Database.max_days
     day_number = 0
 
     while data == {} and day_number <= max_days:
-        data = _get_data(collection_name,
-                                  key, 1,
-                                  dt=dt - timedelta(days=day_number))
+        data = _get_data(collection_name, key, 1,
+                         dt=dt - timedelta(days=day_number))
         day_number += 1
 
     if data == {}:
@@ -201,7 +186,10 @@ def get_last_record(collection_name, key=None, max_days=config.Database.max_days
         return data[key][0]
 
 
-def get_last_record_value(collection_name, key=None,):
+def get_last_record_value(
+        collection_name,
+        key=None,
+):
     return get_last_record(collection_name, key).get('value')
 
 
@@ -248,17 +236,22 @@ def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
         dt = kalao_time.now()
 
     for day_number in range(days):
-        data = _get_data(collection_name, definitions[collection_name].keys(), nb_of_point=99999999, dt=dt - timedelta(days=day_number))
+        data = _get_data(collection_name, definitions[collection_name].keys(),
+                         nb_of_point=99999999,
+                         dt=dt - timedelta(days=day_number))
 
         for key in data.keys():
             data[key] = {d['timestamp']: d['value'] for d in data[key]}
 
         # Construct the DataFrame
-        appended_df.append(pd.DataFrame(data, columns=definitions[collection_name].keys()))
+        appended_df.append(
+                pd.DataFrame(data,
+                             columns=definitions[collection_name].keys()))
 
     # Check if the database is empty for the given days
     if all([df.empty for df in appended_df]):
-        df = pd.DataFrame(columns=definitions[collection_name].keys(), index=[0])
+        df = pd.DataFrame(columns=definitions[collection_name].keys(),
+                          index=[0])
     else:
         df = pd.concat(appended_df).sort_index()
 
@@ -272,12 +265,8 @@ def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
     return df
 
 
-if __name__ == "__main__":
-    print("Converting database definition")
-    convert_database_definition()
-else:
-    for def_name, def_yaml, definition_json in definition_names:
-        with open(definition_json) as file:
-            definitions[def_name] = json.load(file)
+for def_name, def_yaml in definition_names:
+    with open(def_yaml) as file:
+        definitions[def_name] = yaml.safe_load(file)
 
-    client = MongoClient(host=config.Database.ip, port=config.Database.port)
+client = MongoClient(host=config.Database.ip, port=config.Database.port)

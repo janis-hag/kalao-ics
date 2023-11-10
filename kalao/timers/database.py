@@ -25,6 +25,7 @@ from kalao_enums import CameraServerStatus, TrackingStatus
 
 shm_and_fps_cache = {}
 
+
 def update_plc_monitoring():
     values = {}
 
@@ -65,7 +66,10 @@ def update_plc_monitoring():
 
         # Telescope
         telescope = euler.telescope_coord_altaz()
-        telescope_status = {'tel_alt': telescope.alt.deg, 'tel_az': telescope.az.deg}
+        telescope_status = {
+                'tel_alt': telescope.alt.deg,
+                'tel_az': telescope.az.deg
+        }
         values.update(telescope_status)
 
     if not values == {}:
@@ -87,7 +91,7 @@ if __name__ == "__main__":
         n = schedule.idle_seconds()
 
         if n is None:
-             break
+            break
         elif n > 0:
             time.sleep(n)
 

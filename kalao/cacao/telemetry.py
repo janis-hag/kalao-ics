@@ -13,34 +13,38 @@ import traceback
 
 import numpy as np
 
-from pyMilk.interfacing.shm import SHM
-
 from kalao.cacao import toolbox
 from kalao.utils import database
 
 import kalao_config as config
 
 
-def _get_stream(name, min_value_th, max_value_th, shm_stream=None):
+def _get_stream(name, min_value_th, max_value_th, shm_cache={}):
     """
     Get stream data, after having verified that the stream with that name exists.
 
-    :param shm_stream: The stream to read
     :param name: stream name
     :param min_value_th: theoretical minimal value in the stream
     :param max_value_th: theoretical maximal value in the stream
-    :param shm_stream: Stream already opened
+    :param shm_cache: streams cache
     :return: Dictionary with: data, width, height, min, max, min_th, max_th
     """
 
-    exists, stream_name = toolbox.check_stream(name)
+    empty_stream = {
+            "data": 0,
+            "width": 0,
+            "height": 0,
+            "min": 0,
+            "max": 0,
+            "min_th": 0,
+            "max_th": 0,
+    }
 
-    if exists:
+    stream_shm = toolbox.open_stream_once(name, shm_cache)
+
+    if stream_shm is not None:
         try:
-            if shm_stream is None:
-                shm_stream = SHM(stream_name)
-
-            data = shm_stream.get_data(check=False)
+            data = stream_shm.get_data(check=False)
 
             if len(data.shape) == 1:
                 # One dimensional stream
@@ -64,59 +68,46 @@ def _get_stream(name, min_value_th, max_value_th, shm_stream=None):
             }
         except:
             print(traceback.format_exc())
-            return {
-                    "data": 0,
-                    "width": 0,
-                    "height": 0,
-                    "min": 0,
-                    "max": 0,
-                    "min_th": 0,
-                    "max_th": 0,
-            }
+            return empty_stream
     else:
-        return {
-                "data": 0,
-                "width": 0,
-                "height": 0,
-                "min": 0,
-                "max": 0,
-                "min_th": 0,
-                "max_th": 0,
-        }
+        return empty_stream
 
 
-def streams(shm_streams={}):
+def streams(shm_cache={}):
     """
     Provides all the streams needed for the KalAO GUI.
 
-    :param shm_streams: Dictionary of open streams
+    :param shm_cache: Dictionary of open streams
     :return: dictionary with all the stream contents
     """
 
     stream_list = {}
 
-    stream_list["nuvu_stream"] = _get_stream(
-            name="nuvu_stream", min_value_th=0, max_value_th=2**16 - 1,
-            shm_stream=shm_streams.get("nuvu_stream"))
+    stream_list["nuvu_stream"] = _get_stream(name="nuvu_stream",
+                                             min_value_th=0,
+                                             max_value_th=2**16 - 1,
+                                             shm_cache=shm_cache)
 
-    stream_list["shwfs_slopes"] = _get_stream(
-            name="shwfs_slopes", min_value_th=-2, max_value_th=2,
-            shm_stream=shm_streams.get("shwfs_slopes"))
+    stream_list["shwfs_slopes"] = _get_stream(name="shwfs_slopes",
+                                              min_value_th=-2, max_value_th=2,
+                                              shm_cache=shm_cache)
 
-    stream_list["dm01disp"] = _get_stream(
-            name="dm01disp", min_value_th=-1.75, max_value_th=1.75,
-            shm_stream=shm_streams.get("dm01disp"))
+    stream_list["dm01disp"] = _get_stream(name="dm01disp", min_value_th=-1.75,
+                                          max_value_th=1.75,
+                                          shm_cache=shm_cache)
 
     stream_list["shwfs_slopes_flux"] = _get_stream(
-            name="shwfs_slopes_flux", min_value_th=0, max_value_th=4 *
-            (2**16 - 1), shm_stream=shm_streams.get("shwfs_slopes_flux"))
+            name="shwfs_slopes_flux", min_value_th=0,
+            max_value_th=4 * (2**16 - 1), shm_cache=shm_cache)
 
-    stream_list["aol1_mgainfact"] = _get_stream(
-            name="aol1_mgainfact", min_value_th=0, max_value_th=1,
-            shm_stream=shm_streams.get("aol1_mgainfact"))
+    stream_list["aol1_mgainfact"] = _get_stream(name="aol1_mgainfact",
+                                                min_value_th=0, max_value_th=1,
+                                                shm_cache=shm_cache)
 
-    # streams["aol1_modeval"] = _get_stream("aol1_modeval", -1.75, 1.75)
-    # TODO: uncomment when modal control is working
+    streams["aol1_modeval"] = _get_stream(name="aol1_mgainfact",
+                                          min_value_th=-1.75,
+                                          max_value_th=1.75,
+                                          shm_cache=shm_cache)
 
     return stream_list
 

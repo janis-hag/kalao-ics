@@ -197,7 +197,7 @@ def fake_tip_tilt(nb_points):
     return telemetry
 
 
-def fake_fli_view(size=(1024, 1024)):
+def fake_fli_image(size=(1024, 1024)):
     x, y = np.mgrid[0:size[0], 0:size[1]].astype(np.float32)
 
     x -= (size[0] - 1) / 2
@@ -291,7 +291,7 @@ if __name__ == "__main__":
     _add_stream(1, 0, "shwfs_slopes")
     _add_stream(1, 1, "dm01disp")
 
-    axs[0, 2].imshow(fake_fli_view((1024, 1024)), cmap='gray')
-    axs[1, 2].imshow(fake_fli_view((256, 256)), cmap='gray')
+    axs[0, 2].imshow(fake_fli_image((1024, 1024)), cmap='gray')
+    axs[1, 2].imshow(fake_fli_image((256, 256)), cmap='gray')
 
     plt.show()

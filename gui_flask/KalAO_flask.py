@@ -5,6 +5,8 @@ import time as time_lib
 from datetime import datetime, timezone
 from os import path
 
+import numpy as np
+
 import yaml
 from flask import Flask, request
 from flask_cors import CORS
@@ -13,7 +15,6 @@ from rest.system import system_bp
 
 from kalao.cacao import aocontrol as k_aocontrol
 from kalao.cacao import toolbox as k_toolbox
-from kalao.interfaces import star_centering as k_star_centering
 from kalao.interfaces import web as k_web
 from kalao.plc import filterwheel as k_filterwheel
 from kalao.utils import database as k_database
@@ -134,7 +135,7 @@ def create_app():
     def data():
         real_data = not bool(request.args.get('random', default="", type=str))
         status = k_web.latest_obs_log_entry(real_data)
-        monitoring = k_web.get_all_last_monitoring()
+        monitoring = k_web.get_all_last_monitoring(real_data)
         telemetry = k_web.get_all_last_telemetry(real_data)
         time = datetime.now(timezone.utc)
 
@@ -164,31 +165,23 @@ def create_app():
             y = None
 
         real_data = not bool(request.args.get('random', default="", type=str))
-        #binFactor = not bool(request.args.get('binFactor', default = "", type = str))
-        #x = not bool(request.args.get('x', default = "", type = str))
-        #y = not bool(request.args.get('y', default = "", type = str))
-        (selection, image,
-         file_date) = k_star_centering.fli_view(x=x, y=y,
+
+        (selection, image, file_date) = k_web.get_fli_image(x=x, y=y,
                                                 last_file_date=last_file_date,
                                                 percentile=percentile,
                                                 real_data=real_data)
 
-        if type(image) == type(None) and file_date is None:
+        if image is None and file_date is None:
             return "Not updated", 204
 
-        #if real_data:
-        #    lat_list = [item for sublist in image for item in sublist]
-        #else:
-        #    image = [random.choices(range(1,100), k=1024) for _ in range(1024)]
-
-        #flat_list = [item for sublist in image for item in sublist]
-        flat_list = image.flatten().tolist()
         imageObject = {
-                "data": flat_list,
-                "height": math.sqrt(len(flat_list)),
-                "max": max(flat_list),
-                "min": min(flat_list),
-                "width": math.sqrt(len(flat_list))
+                "data": image.flatten().tolist(),
+                "width": image.shape[1],
+                "height": image.shape[0],
+                "max": np.max(image),
+                "min": np.min(image),
+                "min_th": 0,
+                "max_th": 2**16 -1,
         }
         jsonObject = json.dumps({
                 "selection": selection,

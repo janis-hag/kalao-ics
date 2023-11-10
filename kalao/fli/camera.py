@@ -208,21 +208,6 @@ def increment_image_counter():
     return image_count
 
 
-def cut_image(img, window=None, center=None):
-
-    if window is not None:
-        hw = window // 2
-        if center is None:
-            c = [img.shape[0] // 2, img.shape[1] // 2]
-        else:
-            c = center
-        img = img[c[0] - hw:c[0] + hw, c[1] - hw:c[1] + hw]
-
-    img = img.astype(float)
-
-    return img
-
-
 def log_request(req):
     # TODO add docstring
 
@@ -343,7 +328,6 @@ def _send_request(request_type, params={}):
 
 
 def initialise():
-    # TODO update fli file with content of kalao.config
     system.camera_service('restart')
 
     return 0

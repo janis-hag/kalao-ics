@@ -310,7 +310,8 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
         _log(f'Starting calibration unit init.')
 
         sleep(15)
-        print(f'Waiting for calibration unit initialisation', end='', flush=True)
+        print(f'Waiting for calibration unit initialisation', end='',
+              flush=True)
         while beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus"
                             ).startswith('INITIALISING'):
             print('.', end='', flush=True)

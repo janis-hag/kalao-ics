@@ -1,0 +1,15 @@
+[Unit]
+Description=KalAO - Launch CACAO
+
+[Service]
+Type=oneshot
+ExecStart=/home/kalao/kalao-cacao-workdir/launch_cacao.sh
+ExecStop=/home/kalao/kalao-cacao-workdir/clean_cacao.sh
+RemainAfterExit=true
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+Environment=MILK_SHM_DIR=/tmp/milk
+
+[Install]
+WantedBy=default.target

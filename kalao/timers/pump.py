@@ -46,7 +46,7 @@ if __name__ == "__main__":
         n = schedule.idle_seconds()
 
         if n is None:
-             break
+            break
         elif n > 0:
             time.sleep(n)
 
