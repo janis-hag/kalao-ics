@@ -4,7 +4,7 @@ from astropy.time import Time
 
 from kalao.utils import database
 
-import kalao_config as config
+import config
 
 
 def outside_pressure():
@@ -15,6 +15,11 @@ def outside_pressure():
 def outside_temperature():
     # Might be updated to take actual value from weather station
     return config.Euler.default_temperature
+
+
+def outside_hygrometry():
+    # Might be updated to take actual value from weather station
+    return config.Euler.default_hygrometry
 
 
 def sun_elevation():
@@ -30,8 +35,8 @@ def observing_location():
 
 
 def star_coord():
-    star_ra = database.get_last_record_value('obs_log', key='target_ra')
-    star_dec = database.get_last_record_value('obs_log', key='target_dec')
+    star_ra = database.get_last_value('obs', 'target_ra')
+    star_dec = database.get_last_value('obs', 'target_dec')
 
     # TODO verify star_ra and star_dec validity
 
@@ -41,8 +46,8 @@ def star_coord():
 
 
 def telescope_coord():
-    tel_ra = database.get_last_record_value('obs_log', key='telescope_ra')
-    tel_dec = database.get_last_record_value('obs_log', key='telescope_dec')
+    tel_ra = database.get_last_value('obs', 'telescope_ra')
+    tel_dec = database.get_last_value('obs', 'telescope_dec')
 
     # TODO verify tel_ra and tel_dec validity
 
@@ -62,11 +67,10 @@ def telescope_zenith_angle():
 
 
 def telescope_tracking():
-    return database.get_last_record_value(collection_name='obs_log',
-                                          key='tracking_status')
+    return database.get_last_value('obs', 'tracking_status')
 
 
 def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
     return telescope_coord_altaz().spherical_offsets_by(
-            alt_offset_arcsec * u.arcsec,
-            az_offset_arcsec * u.arcsec).transform_to('icrs')
+        alt_offset_arcsec * u.arcsec,
+        az_offset_arcsec * u.arcsec).transform_to('icrs')

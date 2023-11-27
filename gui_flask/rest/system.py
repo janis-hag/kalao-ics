@@ -1,9 +1,9 @@
 import json
 import time
 
-from flask import Blueprint, g, request
+from kalao import services as s_services
 
-from sequencer import system as s_system
+from flask import Blueprint
 
 system_bp = Blueprint('system', __name__, url_prefix='/system')
 
@@ -14,8 +14,8 @@ def systemFStatus():
     before = time.process_time()
 
     try:
-        camera_state, camera_substate, camera_start_date = s_system.camera_service(
-                "STATUS")
+        camera_state, camera_substate, camera_start_date = s_services.camera(
+            "STATUS")
         camera_start_date = camera_start_date.isoformat()
         t1 = (time.process_time() - before) * 1000
     except:
@@ -27,8 +27,8 @@ def systemFStatus():
     before = time.process_time()
 
     try:
-        database_state, database_substate, database_start_date = s_system.database_timer_service(
-                "STATUS")
+        database_state, database_substate, database_start_date = s_services.database_timer(
+            "STATUS")
         database_start_date = database_start_date.isoformat()
         t2 = (time.process_time() - before) * 1000
     except:
@@ -40,8 +40,8 @@ def systemFStatus():
     before = time.process_time()
 
     try:
-        flask_state, flask_substate, flask_start_date = s_system.flask_service(
-                "STATUS")
+        flask_state, flask_substate, flask_start_date = s_services.flask(
+            "STATUS")
         flask_start_date = flask_start_date.isoformat()
         t3 = (time.process_time() - before) * 1000
     except:
@@ -51,58 +51,58 @@ def systemFStatus():
         t3 = 999
 
     return json.dumps({
-            "camera": {
-                    "status": {
-                            "state": camera_state,
-                            "substate": camera_substate,
-                            "start_date": camera_start_date,
-                            "request_time": t1
-                    }
-            },
-            "database": {
-                    "status": {
-                            "state": database_state,
-                            "substate": database_substate,
-                            "start_date": database_start_date,
-                            "request_time": t2
-                    }
-            },
-            "flask": {
-                    "status": {
-                            "state": flask_state,
-                            "substate": flask_substate,
-                            "start_date": flask_start_date,
-                            "request_time": t3
-                    }
+        "camera": {
+            "status": {
+                "state": camera_state,
+                "substate": camera_substate,
+                "start_date": camera_start_date,
+                "request_time": t1
             }
+        },
+        "database": {
+            "status": {
+                "state": database_state,
+                "substate": database_substate,
+                "start_date": database_start_date,
+                "request_time": t2
+            }
+        },
+        "flask": {
+            "status": {
+                "state": flask_state,
+                "substate": flask_substate,
+                "start_date": flask_start_date,
+                "request_time": t3
+            }
+        }
     }), 200
 
 
 @system_bp.route('/camera/start', methods=['GET'])
 def systemCameraStart():
-    s_system.camera_service("RESTART")
+    s_services.camera("RESTART")
     return "", 200
 
 
 @system_bp.route('/camera/stop', methods=['GET'])
 def systemCameraStop():
-    s_system.camera_service("STOP")
+    s_services.camera("STOP")
     return "", 200
 
 
 @system_bp.route('/database/start', methods=['GET'])
 def systemDatabaseStart():
-    s_system.database_timer_service("RESTART")
+    s_services.database_timer("RESTART")
     return "", 200
 
 
 @system_bp.route('/database/stop', methods=['GET'])
 def systemDatabaseStop():
-    s_system.database_timer_service("STOP")
+    s_services.database_timer("STOP")
     return "", 200
 
 
 @system_bp.route('/flask/start', methods=['GET'])
 def systemFlaskStart():
-    s_system.flask_service("RESTART")
+    s_services.flask("RESTART")
     return "", 200

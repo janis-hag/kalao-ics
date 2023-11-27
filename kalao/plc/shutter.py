@@ -9,32 +9,30 @@ shutter.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-import datetime
 from time import sleep
 
-import numpy as np
-import pandas as pd
+from kalao.plc import core
+from kalao.timers import database as database_timer
+from kalao.utils import database, kalao_time
 
 from opcua import ua
 
-from kalao.plc import core
-from kalao.utils import database, kalao_time
+from kalao.definitions.enums import ShutterState
 
 
-def status(beck=None):
+def plc_status(beck=None):
     """
     Query the status of the shutter
 
     :return: complete status of shutter
     """
 
-    # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
     status_dict = core.device_status('Shutter.Shutter', beck=beck)
 
     if status_dict['sStatus'] == 'STANDING':
-        status_dict['sStatus'] = position(beck=beck)
+        status_dict['sStatus'] = get_state(beck=beck)
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -42,67 +40,58 @@ def status(beck=None):
     return status_dict
 
 
-def position(beck=None):
+def get_state(beck=None):
     """
     Query the single string status of the shutter.
 
     :return: single string status of shutter
     """
-    # Connect to OPCUA server
+
     beck, disconnect_on_exit = core.check_beck(beck)
 
     # Check error status
     error_code = beck.get_node(
-            "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
-    if error_code != 0:
-        #someting went wrong
-        error_text = beck.get_node(
-                "ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
-        database.store_obs_log({
-                'shutter_log':
-                        'ERROR' + str(error_code) + ': ' + str(error_text)
-        })
+        "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
 
-        position_status = error_text
+    if error_code != 0:
+        error_text = beck.get_node(
+            "ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
+
+        database.store('obs',
+                       {'shutter_log': f'[ERROR] {error_text} ({error_code})'})
+
+        state = ShutterState.ERROR
 
     else:
         if beck.get_node(
                 "ns=4; s=MAIN.Shutter.bStatus_Closed_Shutter").get_value():
-            bStatus = 'CLOSED'
+            state = ShutterState.CLOSED
         else:
-            bStatus = 'OPEN'
-
-        position_status = bStatus
+            state = ShutterState.OPEN
 
     if disconnect_on_exit:
         beck.disconnect()
 
-    return position_status
+    return state
 
 
-def initialise(beck=None):
+def init(beck=None):
     """
     Initialise the shutter.
 
     :return: status of shutter
     """
-    # Connect to OPCUA server
+    database.store('obs', {'shutter_log': 'Initialising shutter'})
+
     beck, disconnect_on_exit = core.check_beck(beck)
 
     init_status = beck.get_node(
-            "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
-
-    initial_position = position(beck=beck)
+        "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
 
     # Do the shutter gym
-    if initial_position == 'OPEN':
-        shutter_close(beck)
-        sleep(3)
-        shutter_open(beck)
-    elif initial_position == 'CLOSED':
-        shutter_open(beck)
-        sleep(3)
-        shutter_close(beck)
+    close(beck)
+    open(beck)
+    close(beck)
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -110,72 +99,55 @@ def initialise(beck=None):
     return init_status
 
 
-def shutter_open(beck=None):
+def open(beck=None):
     """
     Open the shutter.
 
     :return: status of shutter
     """
-    log('Opening shutter')
-    bStatus = switch('bOpen_Shutter', beck=beck)
 
-    return bStatus
+    return _switch('bOpen_Shutter', beck=beck)
 
 
-def shutter_close(beck=None):
+def close(beck=None):
     """
     Close the shutter.
 
     :return: status of shutter
     """
-    log('Closing shutter')
 
-    bStatus = switch('bClose_Shutter', beck=beck)
-
-    return bStatus
+    return _switch('bClose_Shutter', beck=beck)
 
 
-def switch(action_name, beck=None):
+def _switch(action_name, beck=None):
     """
      Open or Close the shutter depending on action_name
 
     :param action_name: bClose_Shutter or
     :return: status of shutter
     """
-    # Connect to OPCUA server
+
+    if action_name == 'bOpen_Shutter':
+        database.store('obs', {'shutter_log': 'Opening shutter'})
+    elif action_name == 'bClose_Shutter':
+        database.store('obs', {'shutter_log': 'Closing shutter'})
+
     beck, disconnect_on_exit = core.check_beck(beck)
 
     shutter_switch = beck.get_node("ns = 4; s = MAIN.Shutter." + action_name)
     shutter_switch.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                    ua.Variant(
-                            True,
-                            shutter_switch.get_data_type_as_variant_type())))
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
 
     sleep(1)
 
-    if beck.get_node(
-            "ns=4; s=MAIN.Shutter.bStatus_Closed_Shutter").get_value():
-        bStatus = 'CLOSED'
-    else:
-        bStatus = 'OPEN'
+    state = get_state(beck)
 
     if disconnect_on_exit:
         beck.disconnect()
 
-    return bStatus
-
-
-def _update_db(beck=None):
-    """
-    Update the database with the current shutter position
-
-    :param beck: handle to the beckhoff connection if it's already open
-    :return:
-    """
-
-    database.store_monitoring({'shutter': position(beck=beck)})
+    return state
 
 
 def get_switch_time():
@@ -186,46 +158,12 @@ def get_switch_time():
     """
 
     # Update db to make sure the latest data point is valid
-    _update_db()
-    # Load tungsten log into dataframe
-    nb_of_points = 600
-    dt = kalao_time.now()
+    database_timer.update_monitoring_db()
 
-    df = pd.DataFrame(
-            database.get_monitoring({'shutter'}, nb_of_points,
-                                    dt=dt)['shutter'])
-    if len(df) < nb_of_points:
-        df = pd.concat([
-                df,
-                pd.DataFrame(
-                        database.get_monitoring({'shutter'}, nb_of_points,
-                                                dt=dt - datetime.timedelta(
-                                                        days=1))['shutter'])
-        ])
+    data = database.get_time_since_state('monitoring', 'shutter_state')
 
-    if len(np.unique(status()['sStatus'])):
-        # There is no switch time value
-        switch_time = df.iloc[-1]['time_utc']
+    if data.get('since') is None:
+        return data['current']['value'], 0
 
-    else:
-        # Search for last occurrence of current status
-        switch_time = df.loc[
-                df[df['values'] != status()['sStatus']].first_valid_index() -
-                1]['time_utc']
-
-    elapsed_time = (kalao_time.now() - switch_time.to_pydatetime().replace(
-            tzinfo=datetime.timezone.utc)).total_seconds()
-
-    return elapsed_time
-
-
-def log(message):
-    """
-    Log message to shutter_log
-    :param message:
-    :return:
-    """
-
-    database.store_obs_log({'shutter_log': message})
-
-    return 0
+    return data['current']['value'], (
+        kalao_time.now() - data['since']['timestamp']).total_seconds()

@@ -1,5 +1,5 @@
 [Unit]
-Description=KalAO loop timer service
+Description=KalAO - Loop timer
 
 [Service]
 Type=simple

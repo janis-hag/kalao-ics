@@ -1,0 +1,15 @@
+[Unit]
+Description=KalAO - Nuvu
+After=kalao_system-setup.service
+
+[Service]
+Type=oneshot
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_nuvu_restart.sh
+RemainAfterExit=true
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+Environment=MILK_SHM_DIR=/tmp/milk
+
+[Install]
+WantedBy=default.target

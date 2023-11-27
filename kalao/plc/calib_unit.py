@@ -14,41 +14,17 @@ from time import sleep
 
 import numpy as np
 
-from opcua import ua
-
 from kalao.plc import core
 from kalao.utils import database
-from sequencer import system
 
-import kalao_config as config
+from opcua import ua
 
-# TODO store errors in obs_log
+import config
 
-
-def _update_db(beck=None):
-    """
-    Update the database with the current calib_unit position
-
-    :param beck: handle to the beckhoff connection if it's already open
-    :return:
-    """
-
-    database.store_monitoring({'calib_unit': status(beck=beck)['lrPosActual']})
+# TODO store errors in obs
 
 
-def _log(message):
-    """
-    Print and log to obs_log messages concerning the calibration unit
-
-    :param message: message to print and log
-    :return:
-    """
-
-    print('Calib unit: ' + str(message))
-    database.store_obs_log({'calib_unit_log': message})
-
-
-def tungsten_position():
+def move_to_tungsten_position():
     """
     Move calibration unit to the position where the tungsten lamp is
 
@@ -60,17 +36,19 @@ def tungsten_position():
     if np.around(new_position,
                  decimals=1) == np.around(config.Tungsten.position,
                                           decimals=1):
-        rValue = new_position
+        ret = new_position
     else:
-        system.print_and_log(
-                f'ERROR: Calib unit position requested {config.Tungsten.position} but moved to {new_position}'
-        )
-        rValue = -1
+        database.store(
+            'obs', {
+                'calib_unit_log':
+                    f'[ERROR] Calib unit position requested {config.Tungsten.position} but moved to {new_position}'
+            })
+        ret = -1
 
-    return rValue
+    return ret
 
 
-def laser_position():
+def move_to_laser_position():
     """
     Move calibration unit to the position where the laser lamp is
 
@@ -81,17 +59,19 @@ def laser_position():
 
     if np.around(new_position,
                  decimals=1) == np.around(config.Laser.position, decimals=1):
-        rValue = new_position
+        ret = new_position
     else:
-        system.print_and_log(
-                f'ERROR: Calib unit position requested {config.Laser.position} but moved to {new_position}'
-        )
-        rValue = -1
+        database.store(
+            'obs', {
+                'calib_unit_log':
+                    f'[ERROR] Calib unit position requested {config.Laser.position} but moved to {new_position}'
+            })
+        ret = -1
 
-    return rValue
+    return ret
 
 
-def pixel_move(pixel, absolute=False):
+def move_px(pixel, absolute=False):
     """
     Move calib unit by amount of pixels
 
@@ -100,11 +80,13 @@ def pixel_move(pixel, absolute=False):
     """
 
     if absolute and pixel < 0:
-        system.print_and_log(
-                'ERROR: Calib unit absolute value should not be negative')
+        database.store('obs', {
+            'calib_unit_log':
+                '[ERROR] Calib unit position should not be negative'
+        })
         return -1
 
-    current_position = status()['lrPosActual']
+    current_position = plc_status()['lrPosActual']
 
     if absolute:
         position = config.CalibUnit.initial_offset + config.CalibUnit.px_to_mm * pixel
@@ -125,50 +107,46 @@ def move(position=23.36, velocity=0.1, beck=None):
     :return: position the calib unit has been moved to
     """
 
-    _log(f'Moving to position: {position}')
+    database.store('obs', {
+        'calib_unit_log': f'Moving calibration unit to position: {position}mm'
+    })
 
-    # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
     # define commands
     motor_nCommand = beck.get_node(
-            "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
+        "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
 
     # Check if initialised
-    init_result = initialise(force_init=False, beck=beck,
-                             motor_nCommand=motor_nCommand)
+    init_result = init(force_init=False, beck=beck,
+                       motor_nCommand=motor_nCommand)
     if not init_result == 0:
         return init_result
 
     # Set velocity
     motor_lrVelocity = beck.get_node(
-            "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrVelocity")
+        "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrVelocity")
     motor_lrVelocity.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                    ua.Variant(
-                            float(velocity),
-                            motor_lrVelocity.get_data_type_as_variant_type())))
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(float(velocity),
+                       motor_lrVelocity.get_data_type_as_variant_type())))
     motor_lrPosition = beck.get_node(
-            "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
+        "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
 
     if isinstance(position, numbers.Number):
         # Set target position
         motor_lrPosition.set_attribute(
-                ua.AttributeIds.Value,
-                ua.DataValue(
-                        ua.Variant(
-                                float(position),
-                                motor_lrPosition.get_data_type_as_variant_type(
-                                ))))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                ua.Variant(float(position),
+                           motor_lrPosition.get_data_type_as_variant_type())))
         # Set move command
         motor_nCommand.set_attribute(
-                ua.AttributeIds.Value,
-                ua.DataValue(
-                        ua.Variant(
-                                int(3),
-                                motor_nCommand.get_data_type_as_variant_type())
-                ))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                ua.Variant(int(3),
+                           motor_nCommand.get_data_type_as_variant_type())))
         # Execute
         send_execute(beck)
 
@@ -177,13 +155,21 @@ def move(position=23.36, velocity=0.1, beck=None):
 
         # Get new position
         new_position = beck.get_node(
-                "ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value()
+            "ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value()
         # motor_lrPosition = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition")
-    else:
-        print('Expected position to be a number, received: ' + str(position))
-        new_position = -99
 
-    _log(f'Moved to position: {new_position}')
+        database.store(
+            'obs', {
+                'calib_unit_log':
+                    f'Moved calibration unit to position: {new_position}'
+            })
+    else:
+        database.store(
+            'obs', {
+                'calib_unit_log':
+                    f'Expected position to be a number, received: {position}'
+            })
+        new_position = -1
 
     # Disconnect from OPCUA server
     if disconnect_on_exit:
@@ -193,15 +179,12 @@ def move(position=23.36, velocity=0.1, beck=None):
 
 
 def wait_move(beck=None):
-    # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
-    print(f'Waiting for calibration unit movement', end='', flush=True)
-    while beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus"
-                        ).get_value().startswith('MOVING'):
-        print('.', end='', flush=True)
-        sleep(5)
-    print()
+    core.wait_loop(
+        f'Waiting for calibration unit movement',
+        lambda: beck.get_node(f"ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus"
+                              ).get_value().startswith('MOVING'), 5)
 
     if disconnect_on_exit:
         beck.disconnect()
@@ -209,32 +192,19 @@ def wait_move(beck=None):
     return 0
 
 
-def status(beck=None):
+def plc_status(beck=None):
     """
     Query the status of the calibration unit.
 
     :return: complete status of calibration unit
     """
-    # # Connect to OPCUA server
-    # if beck is None:
-    #     disconnect_on_exit = True
-    #     beck = core.connect()
-    # else:
-    #     disconnect_on_exit = False
 
-    status_dict = core.device_status('Linear_Standa_8MT', beck=beck)
-    # status_dict = {'sStatus': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value(),
-    #                'sErrorText': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value(),
-    #                'nErrorCode': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").get_value(),
-    #                'lrVelActual': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelActual").get_value(),
-    #                'lrVelTarget': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrVelTarget").get_value(),
-    #                'lrPosActual': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.lrPosActual").get_value(),
-    #                'lrPosition': beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.lrPosition").get_value()}
+    return core.device_status('Linear_Standa_8MT', beck=beck)
 
-    # if disconnect_on_exit:
-    #     beck.disconnect()
 
-    return status_dict
+def get_position(beck=None):
+
+    return plc_status()['lrPosActual']
 
 
 def check_error(beck):
@@ -246,16 +216,16 @@ def check_error(beck):
     """
 
     error_text = beck.get_node(
-            "ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value()
+        "ns=4; s=MAIN.Linear_Standa_8MT.stat.sErrorText").get_value()
 
     if error_text == 0:
         return 0
     else:
-        _log(f'ERROR: {error_text}')
+        database.store('obs', {'calib_unit_log': f'[ERROR] {error_text}'})
         return -1
 
 
-def initialise(force_init=True, beck=None, motor_nCommand=None):
+def init(force_init=True, beck=None, motor_nCommand=None):
     '''
     Initialise the calibration unit.
 
@@ -263,16 +233,15 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
     :param motor_nCommand: handle to send commands to the motor
     :return: returns 0 on success and error code on failure
     '''
-    #if beck is None:
-    #    # Connect to OPCUA server
-    #    beck = core.connect()
+
+    database.store('obs', {'calib_unit_log': 'Initialising calibration unit'})
 
     beck, disconnect_on_exit = core.check_beck(beck)
 
     if motor_nCommand is None:
         # define commands
         motor_nCommand = beck.get_node(
-                "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
+            "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.nCommand")
 
     # Set reset on error to true in case it has been changed
     #motor_bResetError = beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bResetError")
@@ -283,20 +252,17 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
     if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled"
                          ).get_value() or force_init:
         motor_bEnable = beck.get_node(
-                "ns = 4; s = MAIN.Linear_Standa_8MT.ctrl.bEnable")
+            "ns = 4; s = MAIN.Linear_Standa_8MT.ctrl.bEnable")
         motor_bEnable.set_attribute(
-                ua.AttributeIds.Value,
-                ua.DataValue(
-                        ua.Variant(
-                                True,
-                                motor_bEnable.get_data_type_as_variant_type()))
-        )
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                ua.Variant(True,
+                           motor_bEnable.get_data_type_as_variant_type())))
         if not beck.get_node(
                 "ns=4; s=MAIN.Linear_Standa_8MT.stat.bEnabled").get_value():
-            error = 'ERROR: ' + str(
-                    beck.get_node(
-                            "ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").
-                    get_value())
+            error = '[ERROR] ' + str(
+                beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode"
+                              ).get_value())
 
             if disconnect_on_exit:
                 beck.disconnect()
@@ -307,23 +273,21 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
     if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised"
                          ).get_value() or force_init:
         send_init(beck, motor_nCommand)
-        _log(f'Starting calibration unit init.')
+        database.store('obs',
+                       {'calib_unit_log': f'Starting calibration unit init.'})
 
         sleep(15)
-        print(f'Waiting for calibration unit initialisation', end='',
-              flush=True)
-        while beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus"
-                            ).get_value().startswith('INITIALISING'):
-            print('.', end='', flush=True)
-            sleep(5)
-        print()
+
+        core.wait_loop(
+            f'Waiting for calibration unit initialisation', lambda: beck.
+            get_node(f"ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus").get_value(
+            ).startswith('INITIALISING'), 5)
 
         if not beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.bInitialised"
                              ).get_value():
-            error = 'ERROR: ' + str(
-                    beck.get_node(
-                            "ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode").
-                    get_value())
+            error = '[ERROR] ' + str(
+                beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode"
+                              ).get_value())
 
             if disconnect_on_exit:
                 beck.disconnect()
@@ -338,22 +302,19 @@ def initialise(force_init=True, beck=None, motor_nCommand=None):
 
 def send_execute(beck):
     motor_bExecute = beck.get_node(
-            "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bExecute")
+        "ns=4; s=MAIN.Linear_Standa_8MT.ctrl.bExecute")
 
     motor_bExecute.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                    ua.Variant(
-                            True,
-                            motor_bExecute.get_data_type_as_variant_type())))
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(True, motor_bExecute.get_data_type_as_variant_type())))
 
 
 def send_init(beck, motor_nCommand):
     motor_nCommand.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                    ua.Variant(
-                            int(1),
-                            motor_nCommand.get_data_type_as_variant_type())))
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(int(1),
+                       motor_nCommand.get_data_type_as_variant_type())))
     # Execute
     send_execute(beck)

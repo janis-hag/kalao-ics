@@ -11,32 +11,34 @@ starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
 
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 
+from astropy import units as u
 from astropy import wcs
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import AltAz, SkyCoord
 from astropy.io import fits
 from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
 from astropy.time import Time
 from photutils.detection import DAOStarFinder
 
-from pyMilk.interfacing.fps import FPS
-from pyMilk.interfacing.shm import SHM
-
-from kalao import euler
-from kalao.cacao import aocontrol, toolbox
+from kalao import euler, system
+from kalao.cacao import aocontrol
 from kalao.fli import camera
 from kalao.plc import calib_unit, filterwheel, flip_mirror, laser, shutter
 from kalao.utils import database, file_handling, kalao_time
-from sequencer import system
+
 from tcs_communication import t120
 
-import kalao_config as config
-from kalao_enums import LoopStatus, SequencerStatus
+from kalao.definitions.enums import (FlipMirrorPosition, ReturnCode,
+                                     SequencerStatus, ShutterState)
+from kalao.definitions.exceptions import *
+from kalao.definitions.exceptions import DMNotOn
+
+import config
 
 
 def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
@@ -53,7 +55,8 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
     :return: 0 if centering succeded
     """
 
-    timeout_time = time.time() + config.Starfinder.centering_timeout + 3 * dit
+    timeout_time = time.monotonic(
+    ) + config.Starfinder.centering_timeout + 3*dit
 
     # Check if we are alread on the star
     # if check_wfs_flux() == 0:
@@ -68,31 +71,28 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
     # Reset tip tilt stream to 0
     #aocontrol.reset_dm(config.AO.TTM_loop_number)
 
-    while time.time() < timeout_time:
+    while time.monotonic() < timeout_time:
 
         # Check if we are already on target
         if kao == 'AO':
             # Check if enough light is on the WFS for precise centering
-            if check_wfs_flux() == 0:
+            if aocontrol.optimize_wfs_flux() == 0:
                 # if aocontrol.check_loops() != LoopStatus.ALL_LOOPS_ON:
                 #     # Start WFS centering procedure
                 #     aocontrol.wfs_centering(tt_threshold=config.AO.
                 #                             WFS_centering_slope_threshold)
                 #     aocontrol.tip_tilt_offload_ttm_to_telescope()
 
-                return 0
+                return ReturnCode.CENTERING_OK
 
         # TODO use exptime given by nseq args
-        rValue, image_path = camera.take_image(dit=dit)
+        image_path = camera.take_image(dit=dit)
 
         # TODO add dit optimisation
         #  focusing_dit = optimise_dit(focusing_dit)
 
-        # image_path = database.get_obs_log(['fli_temporary_image_path'], 1)['fli_temporary_image_path']['values'][0]
-        # file_handling.save_tmp_image(image_path)
-
-        if rValue != 0:
-            system.print_and_log(f'ERROR no image received. {rValue}')
+        if image_path is None:
+            system.print_and_log(f'ERROR no image received.')
             return -1
 
         x, y, peak, fwhm = find_star(image_path)
@@ -101,9 +101,9 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
 
             send_pixel_offset(x, y)
 
-            rValue, image_path = camera.take_image(dit=dit)
-            if rValue != 0:
-                system.print_and_log(f'ERROR no image received. {rValue}')
+            image_path = camera.take_image(dit=dit)
+            if image_path is None:
+                system.print_and_log(f'ERROR no image received.')
                 return -1
 
             x, y, peak, fwhm = find_star(image_path)
@@ -115,24 +115,24 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
 
             if kao == 'AO':
                 # Check if enough light is on the WFS for precise centering
-                if check_wfs_flux() == 0:
+                if aocontrol.optimize_wfs_flux() == 0:
                     # Start WFS centering procedure
                     #aocontrol.wfs_centering(tt_threshold=config.AO.
                     #                        WFS_centering_slope_threshold)
 
                     request_manual_centering(False)
 
-                    return 0
+                    return ReturnCode.CENTERING_OK
                 else:
                     # Retry centering
                     system.print_and_log(
-                            'No light on WFS, re-centering with FLI')
+                        'No light on WFS, re-centering with FLI')
                     continue
 
             else:
                 # Centering is good enough
                 request_manual_centering(False)
-                return 0
+                return ReturnCode.CENTERING_OK
 
         else:
             # Start manual centering
@@ -145,11 +145,11 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
             continue
 
             # if kao == 'AO':
-            #     while time.time() < timeout_time:
+            #     while time.monotonic() < timeout_time:
             #
             #         # Check if we are centered and exit loop
-            #         rValue = check_wfs_flux()
-            #         if rValue == 0:
+            #         ret = optimize_wfs_flux()
+            #         if ret == 0:
             #             request_manual_centering(False)
             #             return 0
 
@@ -166,9 +166,7 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
             #    return 0
 
     else:
-        system.print_and_log('ERROR centering timeout')
-
-        return -1
+        return ReturnCode.CENTERING_TIMEOUT
 
 
 def center_on_laser():
@@ -186,31 +184,24 @@ def center_on_laser():
     """
 
     if aocontrol.turn_dm_on() != 0:
-        system.print_and_log("Error: failed to turn dm on")
-        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return -1
+        raise DMNotOn
 
-    # Move calib unit to approximately correct position if too far
-    if np.abs(calib_unit.status()['lrPosActual'] -
+    # Move calib unit to approximately correct position if too far #TODO: make similar to others
+    if np.abs(calib_unit.plc_status()['lrPosActual'] -
               config.Laser.position) > 0.5:
-        calib_unit.laser_position()
+        calib_unit.move_to_laser_position()
 
-    if filterwheel.set_position(config.FLI.laser_calib_filter) == -1:
-        system.print_and_log("Error: problem with filter selection")
-        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return -1
+    if filterwheel.set_filter(
+            config.FLI.laser_calib_filter) != config.FLI.laser_calib_filter:
+        raise FilterWheelNotInPosition
 
-    if shutter.shutter_close() != 'CLOSED':
-        system.print_and_log("Error: failed to close the shutter")
-        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return -1
+    if shutter.close() != ShutterState.CLOSED:
+        raise ShutterNotClosed
+
+    if flip_mirror.up() != FlipMirrorPosition.UP:
+        raise FlipMirrorNotUp
 
     laser.set_intensity(config.FLI.laser_calib_intensity)
-
-    if flip_mirror.up() != 'UP':
-        system.print_and_log("Error: flip mirror did not go up")
-        database.store_obs_log({'sequencer_status': SequencerStatus.ERROR})
-        return -1
 
     # Reset tip tilt stream to 0
     aocontrol.reset_dm(config.AO.TTM_loop_number)
@@ -219,7 +210,7 @@ def center_on_laser():
     for i in range(3):
         print(f'Centering step {i}')
 
-        image, rValue = camera.take_frame(dit=config.FLI.laser_calib_dit)
+        image = camera.take_frame(dit=config.FLI.laser_calib_dit)
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
@@ -227,12 +218,11 @@ def center_on_laser():
                                      nb_step=5, laser_spot=True)
 
         if x != -1 and y != -1:
-            calib_unit.pixel_move(config.FLI.center_y - y)
-            print('Moved calib unit')
+            calib_unit.move_px(config.FLI.center_y - y)
             time.sleep(3)
 
         # Check the new x position after the calib unit has been moved
-        image, rValue = camera.take_frame(dit=config.FLI.laser_calib_dit)
+        image = camera.take_frame(dit=config.FLI.laser_calib_dit)
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
@@ -246,8 +236,9 @@ def center_on_laser():
     aocontrol.emgain_off()
 
     laser.set_intensity(config.WFS.laser_calib_intensity)
+    aocontrol.set_exptime(config.WFS.laser_calib_exptime)
 
-    aocontrol.wfs_centering(config.AO.WFS_centering_slope_threshold)
+    aocontrol.tip_tilt_wfs_to_ttm()
 
     return 0
 
@@ -255,7 +246,7 @@ def center_on_laser():
 def request_manual_centering(flag=True):
     # TODO add docstring
 
-    database.store_obs_log({'tracking_manual_centering': flag})
+    database.store('obs', {'tracking_manual_centering': flag})
 
 
 def manual_centering(x, y, AO=False, sequencer_arguments=None):
@@ -263,12 +254,17 @@ def manual_centering(x, y, AO=False, sequencer_arguments=None):
     # TODO verify value validity before sending
 
     send_pixel_offset(x, y)
-    rValue, image_path = camera.take_image(
-            dit=config.FLI.exp_time, sequencer_arguments=sequencer_arguments)
-    if AO:
-        rValue = check_wfs_flux()
+    image_path = camera.take_image(dit=config.FLI.exp_time,
+                                   sequencer_arguments=sequencer_arguments)
+    if image_path is None:
+        ret = -1
+    else:
+        ret = 0
 
-    return rValue
+    if AO:
+        ret = aocontrol.optimize_wfs_flux()
+
+    return ret
 
 
 def send_pixel_offset(x, y):
@@ -279,68 +275,15 @@ def send_pixel_offset(x, y):
     :param y: pixel offset along the y axis
     :return: success status
     """
-    # Found star
-    # TODO validate sign
-    # TODO X is AZ and Y is ALT!!!
-    alt_offset = (x - config.FLI.center_x) * config.FLI.pix_scale_x
-    az_offset = (y - config.FLI.center_y) * config.FLI.pix_scale_y
 
-    t120.send_offset(alt_offset, az_offset)
+    alt_offset = (x - config.FLI.center_x) * config.FLI.px_x_to_onsky
+    az_offset = (y - config.FLI.center_y) * config.FLI.px_y_to_onsky
 
-    system.print_and_log(f'Sending offset: {alt_offset=} {az_offset=}')
+    t120.send_altaz_offset(alt_offset, az_offset)
 
     time.sleep(2)
 
     return 0
-
-
-def check_wfs_flux():
-    # TODO add docstring
-
-    slopes_flux_stream_exists, slopes_flux_stream_name = toolbox.check_stream(
-            'shwfs_slopes_flux')
-    nuvu_acquire_fps_exists, nuvu_acquire_fps_name = toolbox.check_fps(
-            'nuvu_acquire-1')
-
-    if slopes_flux_stream_exists and nuvu_acquire_fps_exists:
-        slopes_flux_stream = SHM(slopes_flux_stream_name)
-        nuvu_acquire_fps = FPS(nuvu_acquire_fps_name)
-
-        # Check if we are already good
-        slopes_flux = slopes_flux_stream.get_data(check=True)
-
-        illuminated_fraction = toolbox.wfs_illumination_fraction(
-                slopes_flux, config.AO.WFS_illumination_threshold,
-                config.AO.fully_illuminated_subaps)
-
-        if illuminated_fraction > config.AO.WFS_illumination_fraction:
-            system.print_and_log('WFS on target')
-            return 0
-
-        nuvu_acquire_fps.set_param('autogain_setting', 0)
-
-        for setting in range(15):
-            nuvu_acquire_fps.set_param('autogain_setting', setting)
-
-            time.sleep(nuvu_acquire_fps.get_param('autogain_wait') / 1000)
-
-            for i in range(10):
-                slopes_flux = slopes_flux_stream.get_data(check=True)
-
-                illuminated_fraction = toolbox.wfs_illumination_fraction(
-                        slopes_flux, config.AO.WFS_illumination_threshold,
-                        config.AO.fully_illuminated_subaps)
-
-                if illuminated_fraction > config.AO.WFS_illumination_fraction:
-                    system.print_and_log('WFS on target')
-                    return 0
-
-        # Reset values if no signal detected
-        nuvu_acquire_fps.set_param('autogain_setting', 0)
-        aocontrol.set_emgain(1)
-        aocontrol.set_exptime(0)
-
-    return -1
 
 
 def find_star(image_path, df_output=False):
@@ -378,17 +321,18 @@ def find_star(image_path, df_output=False):
 
         if 50 < y_star < 1024 - 50 and 50 < y_star < 1024 - 50:
             fwhm = compute_fwhm(image, x_star, y_star)
-            print(f'{fwhm=}')
+            print(f'{fwhm}')
         else:
             fwhm = -1
 
-        database.store_obs_log({
+        database.store(
+            'obs', {
                 'psf_file': image_path.split('/')[-1],
                 'psf_x': x_star,
                 'psf_y': y_star,
                 'psf_peak': peak,
                 'psf_fwhm': fwhm
-        })
+            })
 
     if df_output:
         return sources.to_pandas()
@@ -411,7 +355,7 @@ def find_star_custom_algo(image, spot_size=7, estim_error=0.05, nb_step=5,
     :return: center of the star or (-1, -1) if an error has occurred. (float, float)
     """
 
-    tb = time.time()
+    tb = time.monotonic()
 
     # middle of the spot
     mid = int(spot_size / 2)
@@ -434,7 +378,7 @@ def find_star_custom_algo(image, spot_size=7, estim_error=0.05, nb_step=5,
         # Dirty hack in the black box...
         # Image quality insufficient for centering
         system.print_and_log(
-                f'Image quality insufficient for centering {lumino} < {image.max()}'
+            f'Image quality insufficient for centering {lumino} < {image.max()}'
         )
         return -1, -1
 
@@ -449,8 +393,8 @@ def find_star_custom_algo(image, spot_size=7, estim_error=0.05, nb_step=5,
                 if i + mid + 1 <= shape[0] and j + mid + 1 <= shape[
                         1] and i - mid >= 0 and j - mid >= 0:
                     score[i, j] = np.divide(
-                            image[i - mid:i + mid + 1, j - mid:j + mid + 1],
-                            weighting).sum()
+                        image[i - mid:i + mid + 1, j - mid:j + mid + 1],
+                        weighting).sum()
 
     # find the max of score matrix and get coordinate of it
     # argmax return flat index, unravel_index return right format
@@ -506,13 +450,13 @@ def find_star_custom_algo(image, spot_size=7, estim_error=0.05, nb_step=5,
             a_c = 0.5 / ((sigma + i)**2)
 
             for j in np.linspace(-rng_step / 2, rng_step / 2,
-                                 nb_step * 2 + 1)[1::2]:
-                ydiff = (y_gauss - (y_mean + j))**2
+                                 nb_step*2 + 1)[1::2]:
+                ydiff = (y_gauss - (y_mean+j))**2
 
                 for k in np.linspace(-rng_step / 2, rng_step / 2,
-                                     nb_step * 2 + 1)[1::2]:
-                    xdiff = (x_gauss - (x_mean + k))**2
-                    gauss = ampl * np.exp(-((a_c * ydiff) + (a_c * xdiff)))
+                                     nb_step*2 + 1)[1::2]:
+                    xdiff = (x_gauss - (x_mean+k))**2
+                    gauss = ampl * np.exp(-((a_c*ydiff) + (a_c*xdiff)))
                     ratio = np.mean(np.abs(star_spot - gauss)) / mean
 
                     if opti > ratio:
@@ -524,7 +468,7 @@ def find_star_custom_algo(image, spot_size=7, estim_error=0.05, nb_step=5,
         y_mean = y_f
         rng_step /= nb_step
 
-    tf = time.time()
+    tf = time.monotonic()
     print("time:", tf - tb)
 
     print("-----------------------")
@@ -576,17 +520,22 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
     #             'Error optimising dit for focusing sequence. Target brightness out of range'
     #     )
 
-    req, file_path = camera.take_image(dit=focusing_dit,
-                                       sequencer_arguments=sequencer_arguments)
+    file_path = camera.take_image(dit=focusing_dit,
+                                  sequencer_arguments=sequencer_arguments)
 
     #time.sleep(5)
-    file_handling.add_comment(file_path, "Focus sequence: 0")
+    file_handling.add_comment(file_path, 'Focus sequence: 0')
 
     image = fits.getdata(file_path)
     flux = np.sort(np.ravel(image))[-config.Starfinder.focusing_pixels:].sum()
 
     if flux < config.Starfinder.min_flux:
-        system.print_and_log('ERROR no flux detected.')
+        database.store(
+            'obs', {
+                'sequencer_log': '[ERROR] No flux detected',
+                'sequencer_status': SequencerStatus.ERROR
+            })
+        return -1
 
     focus_flux = pd.DataFrame({'set_focus': [initial_focus], 'flux': [flux]})
 
@@ -595,13 +544,16 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
         focus_points = focus_points + 1
 
     focusing_sequence = (np.arange(focus_points + 1) -
-                         focus_points / 2) * config.Starfinder.focusing_step
+                         focus_points/2) * config.Starfinder.focusing_step
 
     for step, focus_offset in enumerate(focusing_sequence):
-        system.print_and_log(f'Focus step: {step+1}/{len(focusing_sequence)}')
-        database.store_obs_log({
-                'sequencer_status': f'Focus {step+1}:{len(focusing_sequence)}'
-        })
+        database.store(
+            'obs',
+            {
+                'sequencer_log': f'Focus {step+1}:{len(focusing_sequence)}',
+                'sequencer_status':
+                    f'Focus {step+1}:{len(focusing_sequence)}'  #TODO: this is irregular, do better
+            })
 
         # Check if an abort was requested
         if q is not None and not q.empty():
@@ -615,19 +567,18 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
 
         t120.send_focus_offset(new_focus)
 
-        # Remove sleep if send_focus is blocking
+        # TODO: Remove sleep if send_focus is blocking
         time.sleep(15)
 
-        req, file_path = camera.take_image(
-                dit=focusing_dit, sequencer_arguments=sequencer_arguments)
+        file_path = camera.take_image(dit=focusing_dit,
+                                      sequencer_arguments=sequencer_arguments)
 
-        file_handling.add_comment(file_path,
-                                  "Focus sequence: " + str(new_focus))
+        file_handling.add_comment(file_path, f'Focus sequence: {new_focus}')
 
         image = fits.getdata(file_path)
 
         flux = np.sort(
-                np.ravel(image))[-config.Starfinder.focusing_pixels:].sum()
+            np.ravel(image))[-config.Starfinder.focusing_pixels:].sum()
 
         focus_flux.loc[len(focus_flux.index)] = [new_focus, flux]
 
@@ -636,20 +587,20 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
 
     print(focus_flux)
 
-    system.print_and_log('Best focus value: ' + str(best_focus))
-    database.store_obs_log({'tracking_log': best_focus})
+    database.store('obs', {'sequencer_log': f'Best focus value: {best_focus}'})
 
     temps = t120.get_tube_temp()
 
-    if (time.time() - float(
-            temps.tunix)) < float(config.T120.temperature_file_timeout):
+    if (time.time() -
+            float(temps.tunix)) < float(config.T120.temperature_file_timeout):
 
-        database.store_obs_log({
+        database.store(
+            'obs', {
                 'focusing_best': best_focus,
                 'focusing_temttb': temps.temttb,
                 'focusing_temtth': temps.temtth,
                 'focusing_fo_delta': best_focus - initial_focus
-        })
+            })
 
     # best_focus = initial_focus + correction
     t120.update_fo_delta(best_focus - initial_focus)
@@ -659,14 +610,13 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
 
 def get_latest_fo_delta():
 
-    fo_delta_record = database.get_last_record('obs_log',
-                                               key='focusing_fo_delta')
+    fo_delta_record = database.get_last('obs', 'focusing_fo_delta')
 
     if fo_delta_record == {}:
         return None
 
-    fo_delta_age = (kalao_time.now() - fo_delta_record['timestamp'].astimezone(
-            timezone.utc)).total_seconds()
+    fo_delta_age = (kalao_time.now() -
+                    fo_delta_record['timestamp']).total_seconds()
 
     if fo_delta_age > 12 * 3600:
         return None
@@ -689,8 +639,8 @@ def optimise_dit(starting_dit, sequencer_arguments=None,
 
     for i in range(config.Starfinder.dit_optimization_trials):
 
-        req, file_path = camera.take_image(
-                dit=new_dit, sequencer_arguments=sequencer_arguments)
+        file_path = camera.take_image(dit=new_dit,
+                                      sequencer_arguments=sequencer_arguments)
 
         #time.sleep(20)
         file_handling.add_comment(file_path,
@@ -725,7 +675,7 @@ def optimise_dit(starting_dit, sequencer_arguments=None,
     return new_dit
 
 
-def generate_night_darks(filepath=None):
+def generate_night_darks(science_folder=None):
     """
     Generate the darks needed for the calibration of the night which is assumed to have ended.
 
@@ -735,20 +685,20 @@ def generate_night_darks(filepath=None):
 
     # TODO add docstring
 
-    if filepath is None:
-        tmp_night_folder, filepath = file_handling.create_night_folder()
+    if science_folder is None:
+        _, science_folder = file_handling.create_night_folders()
 
-    exp_times = file_handling.get_exposure_times(filepath=filepath)
+    exp_times = file_handling.get_exposure_times(science_folder)
 
     if len(exp_times) == 0:
         system.print_and_log(
-                f'WARN: Not generating darks as {filepath} is empty.')
+            f'WARN: Not generating darks as {science_folder} is empty.')
         return 0
     else:
         for dit in exp_times:
             for i in range(10):
                 print(dit, i)
-                rValue, image_path = camera.take_dark(dit=dit)
+                image_path = camera.take_dark(dit=dit)
                 with fits.open(image_path, mode='update') as hdul:
                     hdul[0].header.set('HIERARCH ESO OBS TYPE', 'K_DARK')
                     hdul[0].header.set('HIERARCH ESO OBS TARGET NAME', 'Dark')
@@ -773,7 +723,7 @@ def generate_wcs():
 
     # Pixel scale in degrees
     w.wcs.cdelt = np.array([
-            config.FLI.pix_scale_x / 3600, config.FLI.pix_scale_y / 3600
+        config.FLI.plate_scale / 3600, config.FLI.plate_scale / 3600
     ])
 
     # RA, DEC at reference
@@ -792,13 +742,11 @@ def calc_parang(dt=None, coord=None):
     location = euler.observing_location()
 
     if isinstance(dt, datetime):
-        astro_time = Time(dt, scale='utc',
-                          location=location)
+        astro_time = Time(dt, scale='utc', location=location)
         print(f'Using custom date: {astro_time}')
 
     else:
-        astro_time = Time(datetime.utcnow(), scale='utc',
-                          location=location)
+        astro_time = Time(datetime.utcnow(), scale='utc', location=location)
 
     if isinstance(coord, SkyCoord):
         print(f'Using custom coord: {coord}')
@@ -820,9 +768,21 @@ def calc_parang(dt=None, coord=None):
     # VLT TCS formula
     f1 = float(np.cos(geolat_rad) * np.sin(d2r * ha_deg))
     f2 = float(
-            np.sin(geolat_rad) * np.cos(d2r * dec_deg) -
-            np.cos(geolat_rad) * np.sin(d2r * dec_deg) * np.cos(d2r * ha_deg))
+        np.sin(geolat_rad) * np.cos(d2r * dec_deg) -
+        np.cos(geolat_rad) * np.sin(d2r * dec_deg) * np.cos(d2r * ha_deg))
     parang = -r2d * np.arctan2(-f1, f2)  # Sign depends on focus
+
+    print('parang - VLT TCS formula', parang)
+
+    # Using astropy
+
+    altaz_frame = AltAz(location=location, obstime=astro_time)
+    coord_alt_az = coord.transform_to(altaz_frame)
+    probe = coord_alt_az.spherical_offsets_by(0 * u.arcsec, 0.1 *
+                                              u.arcsec).transform_to('icrs')
+    pa = coord_alt_az.position_angle(probe)
+
+    print('parang - Astropy', pa.deg)
 
     return parang
 
@@ -844,10 +804,10 @@ def compute_fwhm(image, xc, yc, psf_bb=50, bg_bb=20):
 
     # Take the median of every corners median
     background = np.median([
-            np.median(image[0:bg_bb, 0:bg_bb]),
-            np.median(image[0:bg_bb, -bg_bb:]),
-            np.median(image[-bg_bb:, 0:bg_bb]),
-            np.median(image[-bg_bb:, -bg_bb:])
+        np.median(image[0:bg_bb, 0:bg_bb]),
+        np.median(image[0:bg_bb, -bg_bb:]),
+        np.median(image[-bg_bb:, 0:bg_bb]),
+        np.median(image[-bg_bb:, -bg_bb:])
     ])
 
     box = image[yc - psf_bb:yc + psf_bb, xc - psf_bb:xc + psf_bb] - background

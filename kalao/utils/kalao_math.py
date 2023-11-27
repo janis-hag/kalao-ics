@@ -1,10 +1,13 @@
 import numpy as np
 
+SIGMA_TO_HWHM = np.sqrt(2 * np.log(2))
+SIGMA_TO_FWHM = 2 * np.sqrt(2 * np.log(2))
+
 
 def is_triangular(T):
-    n = round((np.sqrt(8 * T + 1) - 1) / 2)
+    n = round((np.sqrt(8*T + 1) - 1) / 2)
 
-    return T == n * (n + 1) // 2
+    return T == n * (n+1) // 2
 
 
 # yapf: disable

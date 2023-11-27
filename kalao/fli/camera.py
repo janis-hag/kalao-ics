@@ -10,23 +10,24 @@ camera.py is part of the KalAO Instrument Control Software
 """
 import json
 import shutil
-from unittest.mock import Mock
+import time
 
 import numpy as np
 
 from astropy.io import fits
 
-import requests
-import requests.exceptions
-from requests.models import Response
-
+from kalao import services
 from kalao.cacao import toolbox
 from kalao.timers import database as database_timer
 from kalao.utils import database, file_handling
-from sequencer import system
 
-import kalao_config as config
-from kalao_enums import CameraServerStatus, SequencerStatus
+import requests
+import requests.exceptions
+
+from kalao.definitions.enums import (CameraServerStatus, ReturnCode,
+                                     SequencerStatus)
+
+import config
 
 fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024),
                                            np.uint16)
@@ -37,9 +38,9 @@ def take_frame(dit, filepath=None, nbflushes=None, update_stream=True):
         filepath = '/tmp/fli_frame.fits'
 
     params = {'exptime': dit, 'filepath': filepath, 'nbflushes': nbflushes}
-    req = _send_request('acquire', params)
+    ret, _ = _send_request('acquire', params)
 
-    if req.status_code == 200:
+    if ret == ReturnCode.CAMERA_OK:
         img = fits.getdata(filepath)
 
         if update_stream:
@@ -48,11 +49,11 @@ def take_frame(dit, filepath=None, nbflushes=None, update_stream=True):
             else:
                 print("fli_stream not updated, shapes are inconsistent")
 
-    # TODO return req, img for coherence with other take_image or opposite
+        # TODO return req, img for coherence with other take_image or opposite
 
-        return img, req
+        return img
     else:
-        return None, req
+        return None
 
 
 def take_cube(dit, nbframes, filepath=None, nbflushes=None,
@@ -61,14 +62,14 @@ def take_cube(dit, nbframes, filepath=None, nbflushes=None,
         filepath = '/tmp/fli_cube.fits'
 
     params = {
-            'exptime': dit,
-            'nbframes': nbframes,
-            'filepath': filepath,
-            'nbflushes': nbflushes
+        'exptime': dit,
+        'nbframes': nbframes,
+        'filepath': filepath,
+        'nbflushes': nbflushes
     }
-    req = _send_request('acquireCube', params)
+    ret, _ = _send_request('acquireCube', params)
 
-    if req.status_code == 200:
+    if ret == ReturnCode.CAMERA_OK:
         img_cube = fits.getdata(filepath)
 
         if update_stream:
@@ -77,10 +78,9 @@ def take_cube(dit, nbframes, filepath=None, nbflushes=None,
             else:
                 print("fli_stream not updated, shapes are inconsistent")
 
-        # TODO return req, img for coherence with other take_image or
-        return img_cube, req
+        return img_cube
     else:
-        return None, req
+        return None
 
 
 def take_image(
@@ -93,47 +93,36 @@ def take_image(
     :return: path to the image
     """
 
-    # TODO verify first with check_server_status() before sending request
-
     if dit <= 0.001:
-        database.store_obs_log({
+        database.store(
+            'obs', {
                 f'fli_log':
-                        f'Abort before exposure started. {dit} below min value 0.001'
-        })
-        return -1, None
+                    f'[ERROR] Abort before exposure started. DIT={dit} below min value 0.001'
+            })
+        return None
 
     if filepath is None:
         # Generate filename including path
-        filepath = file_handling.create_night_filepath()
+        filepath = file_handling.generate_image_filepath()
 
     # Store monitoring status at start of exposure
-    database_timer.update_plc_monitoring()
+    database_timer.update_monitoring_db()
 
-    database.store_obs_log({'sequencer_status': SequencerStatus.EXP})
-    database.store_obs_log({'fli_texp': dit})
+    database.store('obs', {
+        'sequencer_status': SequencerStatus.EXP,
+        'fli_texp': dit
+    })
 
-    _, req = take_frame(dit, filepath=filepath)
+    img = take_frame(dit, filepath=filepath)
 
-    temperatures = get_temperatures()
-
-    if temperatures['fli_temp_CCD'] > config.FLI.temperature_warn_threshold:
-        message = f'WARN: CCD temperature above threshold: {temperatures["fli_temp_CCD"]}'
-        print(message)
-        database.store_obs_log({'fli_log': message})
-
-    # Logging exposure command into database
-    log_request(req)
-    log_temporary_image_path(filepath)
-
-    if req.status_code == 200:
-        image_path = database.get_last_record_value(
-                'obs_log', 'fli_temporary_image_path')
+    if img is not None:
+        database.store('obs', {'fli_temporary_image_path': filepath})
         target_path_name = file_handling.save_tmp_image(
-                image_path, sequencer_arguments=sequencer_arguments)
+            filepath, sequencer_arguments=sequencer_arguments)
 
-        return 0, target_path_name
+        return target_path_name
     else:
-        return req.text, None
+        return None
 
 
 def take_target(dit=0.05, seq_args=None, filepath=None):
@@ -148,10 +137,7 @@ def take_target(dit=0.05, seq_args=None, filepath=None):
 
     seq_args = {'type': 'K_TRGOBS'}
 
-    rValue, image_path = take_image(dit=dit, filepath=None,
-                                    sequencer_arguments=seq_args)
-
-    return rValue, image_path
+    return take_image(dit=dit, filepath=None, sequencer_arguments=seq_args)
 
 
 def take_dark(dit=0.05, seq_args=None, filepath=None):
@@ -165,10 +151,7 @@ def take_dark(dit=0.05, seq_args=None, filepath=None):
     """
     seq_args = {'type': 'K_DARK'}
 
-    rValue, image_path = take_image(dit=dit, filepath=None,
-                                    sequencer_arguments=seq_args)
-
-    return rValue, image_path
+    return take_image(dit=dit, filepath=None, sequencer_arguments=seq_args)
 
 
 def take_tech(dit=0.05, seq_args=None, filepath=None):
@@ -182,10 +165,7 @@ def take_tech(dit=0.05, seq_args=None, filepath=None):
     """
     seq_args = {'type': 'K_TECH'}
 
-    rValue, image_path = take_image(dit=dit, filepath=None,
-                                    sequencer_arguments=seq_args)
-
-    return rValue, image_path
+    return take_image(dit=dit, filepath=None, sequencer_arguments=seq_args)
 
 
 def increment_image_counter():
@@ -195,60 +175,24 @@ def increment_image_counter():
     :return: new image counter value
     """
 
-    image_count = database.get_last_record_value('obs_log',
-                                                 key='fli_image_count')
+    image_count = database.get_last_value('obs', 'fli_image_count')
 
     if image_count is None:
         image_count = 1
     else:
         image_count += 1
 
-    database.store_obs_log({'fli_image_count': image_count})
+    database.store('obs', {'fli_image_count': image_count})
 
     return image_count
-
-
-def log_request(req):
-    # TODO add docstring
-
-    database.store_obs_log({'fli_log': f'{req.text} ({req.status_code})'})
-
-
-def log_last_image_path(fli_image_path):
-    # TODO add docstring
-
-    database.store_obs_log({'fli_last_image_path': fli_image_path})
-
-
-def log_temporary_image_path(fli_image_path):
-    # TODO add docstring
-
-    database.store_obs_log({'fli_temporary_image_path': fli_image_path})
 
 
 def cancel():
     # TODO add docstring
 
-    params = {'cancelExposure': True}
-    req = _send_request('cancelExposure', params)
+    ret, _ = _send_request('cancelExposure')
 
-    if req.status_code == 200:
-        return 0
-    else:
-        return req.text
-
-
-def database_update():
-    """
-    Updates the monitoring database with the camera CCD and heatsink temperatures.
-
-    :return:
-    """
-
-    # fli_temp_heatsink
-    # fli_temp_CCD
-    values = get_temperatures()
-    database.store_monitoring(values)
+    return ret
 
 
 def get_temperatures():
@@ -258,18 +202,15 @@ def get_temperatures():
     :return:
     """
 
-    req = _send_request('temperature')
+    ret, temperatures = _send_request('temperature')
 
-    if req.status_code == 200:
-        temperatures = json.loads(req.text)
+    if ret == ReturnCode.CAMERA_OK:
         temperatures['fli_temp_CCD'] = temperatures.pop('ccd')
-        temperatures['fli_temp_heatsink'] = temperatures.pop('heatsink')
-        return temperatures
-    elif req.status_code == 503:
-        temperatures = {'fli_temp_CCD': 0, 'fli_temp_heatsink': 0}
+        temperatures['fli_temp_HS'] = temperatures.pop('heatsink')
         return temperatures
 
-    return req.text
+    else:
+        return {'fli_temp_CCD': np.inf, 'fli_temp_HS': np.inf}
 
 
 def set_temperature(temperature):
@@ -280,14 +221,8 @@ def set_temperature(temperature):
     :return:
     """
     params = {'temperature': temperature}
-    req = _send_request('temperature', params)
-
-    if req.status_code == 200:
-        return 0
-    elif req.status_code == 503:
-        return -1
-    else:
-        return req.text
+    ret, _ = _send_request('temperature', params)
+    return ret
 
 
 def _send_request(request_type, params={}):
@@ -297,40 +232,49 @@ def _send_request(request_type, params={}):
             del params[key]
 
     if not check_server_status() == CameraServerStatus.UP:
-        req = Mock(spec=Response)
-        req.json.return_value = {}
-        req.text = 'Camera server down'
-        # 503 Service Unavailable
-        req.status_code = 503
+        return ReturnCode.CAMERA_SERVER_DOWN, {}
 
     else:
         if config.FLI.dummy_camera:
             if request_type == 'acquire':
+                time.sleep(params['exptime'])
+
+                # fits.PrimaryHDU(fake_data.fake_fli_image()).writeto(params['filepath'])
                 shutil.copy(config.FLI.dummy_image_path, params['filepath'])
 
-            req = Mock(spec=Response)
-            req.text = 'Dummy image loaded'
-            req.status_code = 200
+            return ReturnCode.CAMERA_OK, {}
 
         else:
             if request_type == 'acquire':
                 increment_image_counter()
 
-            url = 'http://' + config.FLI.ip + ':' + str(
-                    config.FLI.port) + '/' + request_type
+            url = f'http://{config.FLI.ip}:{config.FLI.port}/{request_type}'
             if params == {}:
                 req = requests.get(url, timeout=config.FLI.request_timeout)
             else:
                 req = requests.post(url, json=params,
                                     timeout=config.FLI.request_timeout)
 
-    return req
+            data = json.loads(req.text)
 
+            if req.status_code == 200:
+                return ReturnCode.CAMERA_OK, data
+            else:
+                text = ''
 
-def initialise():
-    system.camera_service('restart')
+                if data.get('error_text') is not None:
+                    text += f' {data.get("error_text")}'
 
-    return 0
+                if data.get('error_status') is not None:
+                    text += f' (status = {data.get("error_status")})'
+
+                database.store(
+                    'obs', {
+                        f'fli_log':
+                            f'[ERROR] Camera server answered with an Error {req.status_code}.{text}'
+                    })
+
+                return ReturnCode.CAMERA_ERROR, data
 
 
 def check_server_status():
@@ -340,14 +284,13 @@ def check_server_status():
     :return: status of the camera server (UP/DOWN/ERROR)
     """
 
-    server_status = system.camera_service('status')
+    server_status = services.camera('status')
 
     if server_status[0] == 'inactive':
         return CameraServerStatus.DOWN
 
     try:
-        r = requests.get('http://' + config.FLI.ip + ':' +
-                         str(config.FLI.port) + '/temperature')
+        r = requests.get(f'http://{config.FLI.ip}:{config.FLI.port}/ping')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return CameraServerStatus.DOWN

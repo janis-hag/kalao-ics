@@ -1,10 +1,13 @@
 [Unit]
-Description=KalAO - Launch CACAO
+Description=KalAO - CACAO
+After=kalao_system-setup.service
+After=kalao_nuvu.service
 
 [Service]
 Type=oneshot
-ExecStart=/home/kalao/kalao-cacao-workdir/launch_cacao.sh
-ExecStop=/home/kalao/kalao-cacao-workdir/clean_cacao.sh
+ExecStart=/home/kalao/kalao-cacao-workdir/scripts/start.sh
+ExecStop=/home/kalao/kalao-cacao-workdir/scripts/stop.sh
+ExecReload=/home/kalao/kalao-cacao-workdir/scripts/reload.sh
 RemainAfterExit=true
 StandardOutput=journal
 StandardError=journal

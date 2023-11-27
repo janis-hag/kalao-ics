@@ -1,5 +1,5 @@
 [Unit]
-Description=KalAO safety timer service
+Description=KalAO - Safety timer
 
 [Service]
 Type=simple

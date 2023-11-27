@@ -26,14 +26,13 @@ def _swig_repr(self):
     except __builtin__.Exception:
         strthis = ""
     return "<%s.%s; %s >" % (
-            self.__class__.__module__,
-            self.__class__.__name__,
-            strthis,
+        self.__class__.__module__,
+        self.__class__.__name__,
+        strthis,
     )
 
 
 def _swig_setattr_nondynamic_instance_variable(set):
-
     def set_instance_attr(self, name, value):
         if name == "thisown":
             self.this.own(value)
@@ -50,7 +49,6 @@ def _swig_setattr_nondynamic_instance_variable(set):
 
 
 def _swig_setattr_nondynamic_class_variable(set):
-
     def set_class_attr(cls, name, value):
         if hasattr(cls, name) and not isinstance(getattr(cls, name), property):
             set(cls, name, value)
@@ -62,7 +60,6 @@ def _swig_setattr_nondynamic_class_variable(set):
 
 def _swig_add_metaclass(metaclass):
     """Class decorator for adding a metaclass to a SWIG wrapped class - a slimmed down version of six.add_metaclass"""
-
     def wrapper(cls):
         return metaclass(cls.__name__, cls.__bases__, cls.__dict__.copy())
 

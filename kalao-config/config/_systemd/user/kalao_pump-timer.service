@@ -1,5 +1,5 @@
 [Unit]
-Description=KalAO pump timer service
+Description=KalAO - Pump timer
 
 [Service]
 Type=simple

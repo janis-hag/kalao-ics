@@ -15,8 +15,9 @@ import datetime
 from kalao.plc import tungsten
 from kalao.utils import database, kalao_time
 
-import kalao_config as config
-from kalao_enums import SequencerStatus
+from kalao.definitions.enums import SequencerStatus
+
+import config
 
 
 def kalao_status():
@@ -27,23 +28,24 @@ def kalao_status():
     :return: status_string to send to the Euler telescope
     """
 
-    sequencer_status = database.get_last_record_value('obs_log',
-                                                      'sequencer_status')
-    if not sequencer_status:
+    sequencer_status = database.get_last('obs', 'sequencer_status')
+    sequencer_status_value = sequencer_status.get('value')
+
+    if not sequencer_status_value:
         # If the status is not set, assume that the sequencer is down
-        status_string = '/status/ERROR/0/DOWN'
-    elif sequencer_status == SequencerStatus.WAITING:
-        status_string = f'|status|{sequencer_status}|path|{_last_filepath_archived()}'
-    elif sequencer_status == SequencerStatus.ERROR:
-        status_string = f'/status/{sequencer_status}'
-    elif sequencer_status == SequencerStatus.WAITLAMP:
-        status_string = f'|status|BUSY|{elapsed_time(sequencer_status)}'
-    elif sequencer_status == SequencerStatus.EXP:
-        texp = database.get_last_record_value('obs_log', key='fli_texp')
-        status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status)}|requested_time|{texp}'
+        status_string = '|status|ERROR|0|DOWN'
+    elif sequencer_status_value == SequencerStatus.WAITING:
+        status_string = f'|status|{sequencer_status_value}|path|{_last_filepath_archived()}'
+    elif sequencer_status_value == SequencerStatus.ERROR:
+        status_string = f'|status|{sequencer_status_value}'
+    elif sequencer_status_value == SequencerStatus.WAITLAMP:
+        status_string = f'|status|BUSY|{elapsed_time(sequencer_status):.0f}'
+    elif sequencer_status_value == SequencerStatus.EXP:
+        texp = database.get_last_value('obs', 'fli_texp')
+        status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{texp:.0f}'
     else:
         #  TODO get alt/az and focus offset from cacao.telemetry and add to string
-        status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status)}|requested_time|{sequencer_status}'
+        status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{sequencer_status}'
 
     return status_string
 
@@ -52,41 +54,36 @@ def elapsed_time(sequencer_status):
     """
     Get the elapsed time since the current operation has started.
 
-    :param sequencer_status: INITIALISING/SETUP/WAITLAMP
-    :return: Time in seconds (str)
+    :param: sequencer_status
+    :return: Time in seconds
     """
 
-    if sequencer_status == SequencerStatus.INITIALISING:
-        status_time = database.get_last_record_time(
-                'obs_log',
-                key='sequencer_status').replace(tzinfo=datetime.timezone.utc)
+    sequencer_status_value = sequencer_status.get('value')
+    sequencer_status_time = sequencer_status.get('timestamp')
 
-        return str(config.SEQ.init_duration -
-                   (kalao_time.now() -
-                    status_time).total_seconds()).split('.')[0]
+    if sequencer_status_value == SequencerStatus.EXP:
+        elapsed_time = elapsed_exposure_seconds()
 
-    elif sequencer_status == SequencerStatus.SETUP:
-        k_type = database.get_last_record_value(
-                'obs_log', key='sequencer_command_received')['type'][2:]
-
-        if k_type.upper() in config.SEQ.timings:
-            setup_time = config.SEQ.timings[k_type.upper()]
-        else:
-            setup_time = 0
-
-        status_time = database.get_last_record_time(
-                'obs_log',
-                key='sequencer_status').replace(tzinfo=datetime.timezone.utc)
-
-        return str(setup_time - (kalao_time.now() -
-                                 status_time).total_seconds()).split('.')[0]
-
-    elif sequencer_status == SequencerStatus.WAITLAMP:
-        return str(config.Tungsten.stabilisation_time -
-                   tungsten.get_switch_time()).split('.')[0]
+    elif sequencer_status_value == SequencerStatus.WAITLAMP:
+        state, switch_time = tungsten.get_switch_time()
+        elapsed_time = config.Tungsten.stabilisation_time - switch_time
 
     else:
-        return elapsed_exposure_seconds()
+        expected_time = 0
+
+        if sequencer_status_value == SequencerStatus.INITIALISING:
+            expected_time = config.SEQ.init_duration
+
+        elif sequencer_status_value == SequencerStatus.SETUP:
+            k_type = database.get_last_value('obs', 'sequencer_obs_type')
+
+            if k_type in config.SEQ.timings:
+                expected_time = config.SEQ.timings[k_type]
+
+        elapsed_time = expected_time - (kalao_time.now() -
+                                        sequencer_status_time).total_seconds()
+
+    return elapsed_time
 
 
 def elapsed_exposure_seconds():
@@ -101,11 +98,10 @@ def elapsed_exposure_seconds():
 
     if last_exposure_start > last_exposure_end:
         # An exposure is running
-        elapsed_time = str((kalao_time.now() -
-                            last_exposure_start).total_seconds()).split('.')[0]
+        elapsed_time = (kalao_time.now() - last_exposure_start).total_seconds()
     else:
-        elapsed_time = str((last_exposure_end -
-                            last_exposure_start).total_seconds()).split('.')[0]
+        elapsed_time = (last_exposure_end -
+                        last_exposure_start).total_seconds()
 
     return elapsed_time
 
@@ -117,12 +113,12 @@ def _last_exposure_start():
     :return: Time of exposure start (datetime)
     """
 
-    timestamp = database.get_last_record_time('obs_log', key='fli_image_count')
+    timestamp = database.get_last_time('obs', 'fli_image_count')
 
     if timestamp is None:
         return datetime.fromtimestamp(0)
     else:
-        return timestamp.replace(tzinfo=datetime.timezone.utc)
+        return timestamp
 
 
 def _last_exposure_end():
@@ -132,13 +128,12 @@ def _last_exposure_end():
     :return: Time of exposure end (datetime)
     """
 
-    timestamp = database.get_last_record_time('obs_log',
-                                              key='fli_temporary_image_path')
+    timestamp = database.get_last_time('obs', 'fli_temporary_image_path')
 
     if timestamp is None:
         return datetime.fromtimestamp(0)
     else:
-        return timestamp.replace(tzinfo=datetime.timezone.utc)
+        return timestamp
 
 
 def _last_filepath_archived():
@@ -148,4 +143,4 @@ def _last_filepath_archived():
     :return: Image file path (str)
     """
 
-    return database.get_last_record_value('obs_log', key='fli_last_image_path')
+    return database.get_last_value('obs', 'fli_last_image_path')

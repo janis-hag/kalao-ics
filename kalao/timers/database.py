@@ -11,50 +11,57 @@ database.py is part of the KalAO Instrument Control Software
 
 import time
 
-import schedule
-
 from kalao import euler
 from kalao.cacao import telemetry
 from kalao.fli import camera
 from kalao.plc import adc, core, filterwheel
-from kalao.rtc import device_status
-from kalao.utils import database
+from kalao.rtc import rtc_status
+from kalao.utils import database, kalao_time
 
-import kalao_config as config
-from kalao_enums import CameraServerStatus, TrackingStatus
+import schedule
+
+from kalao.definitions.enums import CameraServerStatus, TrackingStatus
+
+import config
 
 shm_and_fps_cache = {}
 
 
-def update_plc_monitoring():
+def update_monitoring_db():
+    last_update = database.get_collection_last_update('monitoring')
+    if (kalao_time.now() - last_update
+        ).total_seconds() < config.Database.monitoring_min_update_interval:
+        return
+
+    database.store('obs',
+                   {'database_timer_log': 'Updating monitoring database'})
+
     values = {}
 
     # get monitoring from plc and store
-    plc_values, plc_text = core.plc_status()
+    plc_values = core.plc_status()
 
     # Do not log status of disabled devices.
     for device_name in config.PLC.disabled:
         plc_values.pop(device_name)
-        plc_text.pop(device_name)
     values.update(plc_values)
 
     # get RTC data and update
-    rtc_temperatures = device_status.read_all()
+    rtc_temperatures = rtc_status.read_all_sensors()
     values.update(rtc_temperatures)
 
-    # FLI science camera status
-    try:
-        filter_number, filter_name = filterwheel.get_position()
-        filter_status = {
-                'fli_filter_position': filter_number,
-                'fli_filter_name': filter_name
-        }
-        values.update(filter_status)
-    except Exception as e:
-        print(e)
+    # Filterwheel
+    filter_name = filterwheel.get_filter(type=str, from_db=True)
+    filter_position = filterwheel.translate_to_filter_position(filter_name)
+    filter_status = {
+        'fli_filter_position': filter_position,
+        'fli_filter_name': filter_name
+    }
+    values.update(filter_status)
 
+    # FLI science camera status
     fli_server_status = camera.check_server_status()
-    values.update({'fli_status': str(fli_server_status)})
+    values.update({'fli_status': fli_server_status})
     if fli_server_status == CameraServerStatus.UP:
         fli_temperatures = camera.get_temperatures()
         values.update(fli_temperatures)
@@ -67,25 +74,28 @@ def update_plc_monitoring():
         # Telescope
         telescope = euler.telescope_coord_altaz()
         telescope_status = {
-                'tel_alt': telescope.alt.deg,
-                'tel_az': telescope.az.deg
+            'tel_alt': telescope.alt.deg,
+            'tel_az': telescope.az.deg
         }
         values.update(telescope_status)
 
     if not values == {}:
-        database.store_monitoring(values)
+        database.store('monitoring', values)
 
 
-def update_telemetry():
+def update_telemetry_db():
+    database.store('obs',
+                   {'database_timer_log': 'Updating telemetry database'})
+
     telemetry.telemetry_save(shm_and_fps_cache)
 
 
 if __name__ == "__main__":
     # Get monitoring and cacao
     schedule.every(config.Database.telemetry_update_interval).seconds.do(
-            update_telemetry)
-    schedule.every(config.Database.PLC_monitoring_update_interval).seconds.do(
-            update_plc_monitoring)
+        update_telemetry_db)
+    schedule.every(config.Database.monitoring_update_interval).seconds.do(
+        update_monitoring_db)
 
     while True:
         n = schedule.idle_seconds()

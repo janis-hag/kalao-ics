@@ -1,5 +1,5 @@
 [Unit]
-Description=KalAO monitoring service
+Description=KalAO - Database timer
 
 [Service]
 Type=simple
