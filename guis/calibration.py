@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from signal import SIGINT, signal
 
@@ -11,11 +12,12 @@ from PySide2.QtWidgets import QApplication, QMainWindow
 
 from kalao.cacao import toolbox
 
-from guis.lib.kalao_widgets import KalAOChart, KalAOGraphicsView, KalAOLabel
+from guis.lib.kalao_widgets import KalAOChart, KalAOGraphicsView, KalAOLabel, HoverMixin
 from guis.lib.ui_loader import loadUi
 
 ui_path = Path(__file__).absolute().parent
 
+os.chdir('/home/kalao/kalao-cacao-workdir/')
 
 def global_key_press(event):
     if event.key() == Qt.Key_Q or event.key() == Qt.Key_X or event.key(
@@ -23,7 +25,7 @@ def global_key_press(event):
         app.quit()
 
 
-class CalibrationWindow(QMainWindow):
+class CalibrationWindow(QMainWindow, HoverMixin):
     def __init__(self, conf, loop, wfs_shape, dm_shape, parent=None):
         super().__init__(parent)
 
@@ -42,7 +44,8 @@ class CalibrationWindow(QMainWindow):
             attr = getattr(self, key)
 
             if isinstance(attr, KalAOGraphicsView):
-                attr.scene.hovered.connect(self.info_point)
+                pass
+                #attr.scene.hovered.connect(self.hover_event)
 
         self.reload_button.clicked.connect(self.load_data)
         self.frame_spinbox.valueChanged.connect(self.update_window)
@@ -145,7 +148,7 @@ class CalibrationWindow(QMainWindow):
             if len(self.fits_data[key].shape) == 2:
                 view.setImage(self.fits_data[key])
             else:
-                view.setImage(self.fits_data[key][self.frame, :, :])
+                view.setImage(self.fits_data[key][self.frame_spinbox.value(), :, :])
         else:
             if 'dm' in key or 'DM' in key:
                 shape = self.dm_shape
@@ -161,18 +164,17 @@ class CalibrationWindow(QMainWindow):
             if len(self.streams_data[key].shape) == 2:
                 view.setImage(self.streams_data[key])
             else:
-                view.setImage(self.streams_data[key][:, :, self.frame])
+                view.setImage(self.streams_data[key][:, :, self.frame_spinbox.value()])
         else:
             if 'dm' in key or 'DM' in key:
                 shape = self.dm_shape
             else:
                 shape = self.wfs_shape
-
             view.setImage(np.ones(shape))
 
-    def info_point(self, x, y, v):
-        if not np.isnan(v):
-            self.statusbar.showMessage(f'X: {x}, Y: {y}, V: {v:.3f}')
+    def info_point(self, string):
+        if string:
+            self.statusbar.showMessage(string)
         else:
             self.statusbar.clearMessage()
 

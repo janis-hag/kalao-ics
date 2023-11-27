@@ -90,12 +90,6 @@ class TungstenStatus:
 
 
 class ReturnCode(IntFlag):
-    @staticmethod
-    def _generate_next_value_(name, start, count, last_values):
-        cur = min(last_values)
-        high_bit = cur.bit_length() - 1
-        return -1 * 2**(high_bit + 1)
-
     NOERROR = 0
     GENERIC_ERROR = -1
 

@@ -6,7 +6,7 @@
 
 import sys
 
-import numpy
+import numpy as np
 
 from astropy.io import fits
 
@@ -22,9 +22,9 @@ def run():
 
     :return: exit status
     """
-    data = numpy.genfromtxt(sys.argv[1])
+    data = np.genfromtxt(sys.argv[1])
 
-    flat = numpy.zeros((12, 12))
+    flat = np.zeros((12, 12), dtype=np.float32)
 
     for i in range(0, 10):
         flat[(i+1) // 12, (i+1) % 12] = (data[i] - 0.5) * 3.5
@@ -35,8 +35,7 @@ def run():
     for i in range(130, 140):
         flat[(i+3) // 12, (i+3) % 12] = (data[i] - 0.5) * 3.5
 
-    hdu = fits.PrimaryHDU(flat.astype(numpy.float32))
-    hdu.writeto(sys.argv[2], overwrite=True)
+    fits.PrimaryHDU(flat).writeto(sys.argv[2], overwrite=True)
 
     return 0
 
