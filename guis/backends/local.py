@@ -70,9 +70,9 @@ class LocalBackend(GenericBackend):
                 'shwfs_slopes_flux': {
                     'data':
                         self.flux_stream.get_data(check=False),
-                    'flux_avg':
+                    'flux_subaperture_avg':
                         self.slopes_fps.get_param('flux_subaperture_avg'),
-                    'flux_brightest':
+                    'flux_subaperture_brightest':
                         self.slopes_fps.get_param('flux_subaperture_brightest')
                 }
             })

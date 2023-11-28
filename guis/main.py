@@ -9,7 +9,7 @@ import numpy as np
 
 from PySide2.QtCharts import QtCharts
 from PySide2.QtCore import QDateTime, QPointF, QTimer
-from PySide2.QtGui import QFont, QPen, Qt, QTextCursor
+from PySide2.QtGui import QFont, QPen, Qt, QTextCursor, QFontDatabase
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtWidgets import QApplication, QCheckBox, QGraphicsItem
 
@@ -719,6 +719,8 @@ class LogsWidget(KalAOWidget):
 
         loadUi(ui_path / 'ui/logs.ui', self)
         self.resize(600, 400)
+
+        self.logs_textedit.setFont(QFontDatabase.systemFont(QFontDatabase.FixedFont))
 
         self.logs_textedit.document().setDefaultStyleSheet(f"""
             span {{

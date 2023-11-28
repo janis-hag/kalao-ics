@@ -16,7 +16,7 @@ from kalao.plc import core
 from kalao.timers import database as database_timer
 from kalao.utils import database, kalao_time
 
-from enums import IntEnum
+from kalao.definitions.enums import IntEnum
 from opcua import ua
 
 import config
