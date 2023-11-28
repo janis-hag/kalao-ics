@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>654</width>
-    <height>400</height>
+    <width>678</width>
+    <height>399</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Deformable Mirror</string>
+   <string>Deformable Mirror - KalAO</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
@@ -29,7 +29,62 @@
    <property name="spacing">
     <number>0</number>
    </property>
+   <item row="4" column="0">
+    <widget class="KalAOLabel" name="stroke_raw_label">
+     <property name="text">
+      <string>Stroke (raw): {stroke_raw:.2f}{unit}</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="KalAOLabel" name="stroke_effective_label">
+     <property name="text">
+      <string>Stroke (actual): {stroke_effective:.2f}{unit}</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="KalAOGraphicsView" name="dm_view">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="verticalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QAbstractScrollArea::AdjustToContents</enum>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
+    <widget class="QLabel" name="title_label">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Deformable Mirror</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <spacer name="horizontalSpacer">
@@ -161,7 +216,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="reset_button">
+      <widget class="QPushButton" name="fullscale_button">
        <property name="text">
         <string>Full Scale</string>
        </property>
@@ -181,45 +236,6 @@
       </spacer>
      </item>
     </layout>
-   </item>
-   <item row="2" column="0">
-    <widget class="KalAOLabel" name="stroke_raw_label">
-     <property name="text">
-      <string>Stroke (raw): {stroke_raw:.2f}{unit}</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="KalAOLabel" name="stroke_effective_label">
-     <property name="text">
-      <string>Stroke (actual): {stroke_effective:.2f}{unit}</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="KalAOGraphicsView" name="dm_view">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
-     </property>
-     <property name="verticalScrollBarPolicy">
-      <enum>Qt::ScrollBarAlwaysOff</enum>
-     </property>
-     <property name="horizontalScrollBarPolicy">
-      <enum>Qt::ScrollBarAlwaysOff</enum>
-     </property>
-     <property name="sizeAdjustPolicy">
-      <enum>QAbstractScrollArea::AdjustToContents</enum>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

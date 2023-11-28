@@ -62,6 +62,6 @@ mask = np.array([[1., 1.]], dtype=np.float32)
 
 fits.PrimaryHDU(mask).writeto(f'ttm-dmmask.fits', overwrite=True)
 
-refc = np.zeros((12,12), dtype=np.float32)
+refc = np.zeros((12, 12), dtype=np.float32)
 
 fits.PrimaryHDU(refc).writeto(f'ttm-wfsrefc.fits', overwrite=True)

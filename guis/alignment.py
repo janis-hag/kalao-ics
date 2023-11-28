@@ -1,5 +1,4 @@
 import argparse
-import time
 from pathlib import Path
 from signal import SIGINT, signal
 
@@ -9,31 +8,22 @@ from scipy import ndimage
 from PySide2.QtCore import QTimer
 from PySide2.QtGui import QPen, Qt
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
+from PySide2.QtWidgets import QApplication, QWidget
 
-from kalao.cacao import toolbox
-from kalao.interfaces import fake_data
 from kalao.utils import kalao_tools
 
-from kalao_gui import SlopesWindow, Streams, WFSWindow, clean, streams
-
-from guis.lib.kalao_widgets import (Color, KalAOChart, KalAOGraphicsView,
-                                    KalAOLabel)
-from guis.lib.ui_loader import loadUi
-
-from kalao.definitions.enums import StrEnum
-
-ui_path = Path(__file__).absolute().parent
-
-
-class PokeState(StrEnum):
-    FLAT = "No poke"
-    DOWN = "Poke down"
-    UP = "Poke up"
-
+from guis.backends.alignment_local import AlignmentLocalBackend
+from guis.backends.alignment_simulation import AlignmentSimulationBackend
+from guis.kalao.definitions import Color, PokeState
+from guis.kalao.ui_loader import loadUi
+from guis.kalao.widgets import (KalAOChart, KalAOGraphicsView, KalAOLabel,
+                                KalAOMainWindow)
+from guis.main_gui import SlopesWidget, WFSWidget, clean
 
 HORI = 0
 VERT = 1
+
+ui_path = Path(__file__).absolute().parent
 
 
 class AlignmentSubwindow(QWidget):
@@ -43,9 +33,11 @@ class AlignmentSubwindow(QWidget):
         loadUi(ui_path / 'ui/alignment_subwindow.ui', self)
 
 
-class AlignmentWindow(QMainWindow):
-    def __init__(self, parent=None):
+class AlignmentWindow(KalAOMainWindow):
+    def __init__(self, backend, parent=None):
         super().__init__(parent)
+
+        self.backend = backend
 
         loadUi(ui_path / 'ui/alignment.ui', self)
 
@@ -56,12 +48,11 @@ class AlignmentWindow(QMainWindow):
         self.states_combobox.currentIndexChanged.connect(
             self.poke_state_changed)
 
-        #self.actuators_to_poke = (50, 53, 86, 89)
-        self.actuators_to_poke = (37, 42, 97, 102)
-        self.wait_after_poke = 15e-3
-
         self.poke_amplitude_changed(self.poke_spinbox.value())
         self.poke_state_changed(self.states_combobox.currentIndex())
+
+        self.actuators_to_poke = (37, 42, 97, 102)
+        self.wait_after_poke = 15e-3
 
         pen_yellow = QPen(Color.YELLOW, 1, Qt.SolidLine, Qt.SquareCap,
                           Qt.MiterJoin)
@@ -121,7 +112,11 @@ class AlignmentWindow(QMainWindow):
                     for k in [VERT, HORI]:
                         view.lines[j][k].setZValue(1)
 
-    def update_data(self, frames):
+        backend.updated.connect(self.update_data)
+
+    def update_data(self):
+        frames = self.backend.data['alignment']['data']
+
         dxs = [0] * 4
         dys = [0] * 4
         rs = [0] * 4
@@ -176,113 +171,18 @@ class AlignmentWindow(QMainWindow):
         self.poke_amplitude = d
 
 
-def update():
-    dm_array = np.zeros(poke_stream.shape, poke_stream.nptype)
-    data_nuvu = {}
-    data_slopes = {}
-
-    # Do not poke actuators
-    for act in alignment.actuators_to_poke:
-        dm_array[kalao_tools.get_actuator_2d(act)] = 0
-
-    poke_stream.set_data(dm_array, True)
-    time.sleep(alignment.wait_after_poke)
-    data_nuvu[PokeState.FLAT] = nuvu_stream.get_data(check=True)
-    data_slopes[PokeState.FLAT] = slopes_stream.get_data(check=True)
-
-    tip = slopes_fps.get_param('slope_x')
-    tilt = slopes_fps.get_param('slope_y')
-    residual = slopes_fps.get_param('residual')
-
-    # Poke actuators down
-    for act in alignment.actuators_to_poke:
-        dm_array[kalao_tools.get_actuator_2d(act)] = -alignment.poke_amplitude
-
-    poke_stream.set_data(dm_array, True)
-    time.sleep(alignment.wait_after_poke)
-    data_nuvu[PokeState.DOWN] = nuvu_stream.get_data(check=True)
-    data_slopes[PokeState.DOWN] = slopes_stream.get_data(check=True)
-
-    # Poke actuators up
-    for act in alignment.actuators_to_poke:
-        dm_array[kalao_tools.get_actuator_2d(act)] = alignment.poke_amplitude
-
-    poke_stream.set_data(dm_array, True)
-    time.sleep(alignment.wait_after_poke)
-    data_nuvu[PokeState.UP] = nuvu_stream.get_data(check=True)
-    data_slopes[PokeState.UP] = slopes_stream.get_data(check=True)
-
-    alignment.update_data(data_nuvu)
-    wfs.update_data(data_nuvu[alignment.display])
-    if alignment.display == PokeState.FLAT:
-        slopes.update_data(data_slopes[alignment.display], tip, tilt, residual)
-    else:
-        slopes.update_data(
-            data_slopes[alignment.display] - data_slopes[PokeState.FLAT], tip,
-            tilt, residual)
-
-
-def update_fake():
-    data_dm_down = np.zeros((12, 12))
-    for act in alignment.actuators_to_poke:
-        data_dm_down[kalao_tools.get_actuator_2d(
-            act)] = -alignment.poke_amplitude
-
-    data_dm_up = np.zeros((12, 12))
-    for act in alignment.actuators_to_poke:
-        data_dm_up[kalao_tools.get_actuator_2d(act)] = alignment.poke_amplitude
-
-    data_dm = {
-        PokeState.FLAT: np.zeros((12, 12)),
-        PokeState.DOWN: data_dm_down,
-        PokeState.UP: data_dm_up,
-    }
-
-    data_nuvu = {
-        PokeState.FLAT:
-            fake_data.nuvu_frame(tiptilt=[0, 0]),
-        PokeState.DOWN:
-            fake_data.nuvu_frame(tiptilt=[0, 0], dmdisp=data_dm_down),
-        PokeState.UP:
-            fake_data.nuvu_frame(tiptilt=[0, 0], dmdisp=data_dm_up),
-    }
-
-    data_slopes = {
-        PokeState.FLAT: fake_data.slopes(data_nuvu[PokeState.FLAT]).filled(),
-        PokeState.DOWN: fake_data.slopes(data_nuvu[PokeState.DOWN]).filled(),
-        PokeState.UP: fake_data.slopes(data_nuvu[PokeState.UP]).filled(),
-    }
-
-    slopes_data = data_slopes[PokeState.FLAT]
-    slopes_tip = slopes_data[0:11, 0:11]
-    slopes_tilt = slopes_data[0:11, 11:22]
-    tip = np.mean(slopes_tip)
-    tilt = np.mean(slopes_tilt)
-    residual = np.sqrt(np.mean(tip**2 + tilt**2))
-
-    alignment.update_data(data_nuvu)
-    wfs.update_data(data_nuvu[alignment.display])
-    if alignment.display == PokeState.FLAT:
-        slopes.update_data(data_slopes[alignment.display], tip, tilt, residual)
-    else:
-        slopes.update_data(
-            data_slopes[alignment.display] - data_slopes[PokeState.FLAT], tip,
-            tilt, residual)
-
-
 def handler(signal_received, frame):
     app.quit()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='KalAO - Tool to align the WFS and the DM.')
+    parser = argparse.ArgumentParser(description='KalAO - Alignment Tools.')
     parser.add_argument('--onsky', action="store_true", dest="onsky",
                         help='On sky units')
     parser.add_argument('--max-fps', action="store", dest="fps", default=10,
                         type=int, help='Max FPS')
-    parser.add_argument('--test', action="store_true", dest="test",
-                        help='Test')
+    parser.add_argument('--simulation', action="store_true", dest="simulation",
+                        help='Simulation mode')
 
     args = parser.parse_args()
 
@@ -299,45 +199,30 @@ if __name__ == "__main__":
     app.setQuitOnLastWindowClosed(True)
     app.aboutToQuit.connect(clean)
 
-    ##### Open needed streams
-
-    if not args.test:
-        nuvu_stream = toolbox.open_stream_once(Streams.NUVU, streams)
-        poke_stream = toolbox.open_stream_once("dm01disp09", streams)
-        dm_stream = toolbox.open_stream_once(Streams.DM, streams)
-        ttm_stream = toolbox.open_stream_once(Streams.TTM, streams)
-        slopes_stream = toolbox.open_stream_once(Streams.SLOPES, streams)
-        flux_stream = toolbox.open_stream_once(Streams.FLUX, streams)
-        fli_stream = toolbox.open_stream_once(Streams.FLI, streams)
-
-        slopes_fps = toolbox.open_fps_once('shwfs_process-1', streams)
-        nuvu_fps = toolbox.open_fps_once('nuvu_acquire-1', streams)
-        bmc_fps = toolbox.open_fps_once('bmc_display-1', streams)
-
     ##### Windows
 
-    update_fun = update
+    if args.simulation:
+        backend = AlignmentSimulationBackend()
+    else:
+        backend = AlignmentLocalBackend()
 
-    if Streams.NUVU in streams or args.test:
-        wfs = WFSWindow()
-        wfs.show()
+    wfs = WFSWidget(backend)
+    wfs.show()
 
-    if Streams.SLOPES in streams or args.test:
-        slopes = SlopesWindow()
-        slopes.show()
+    slopes = SlopesWidget(backend)
+    slopes.show()
 
-    alignment = AlignmentWindow()
+    alignment = AlignmentWindow(backend)
     alignment.show()
 
-    if args.test:
-        update_fun = update_fake
+    backend.alignment_window = alignment
 
-    update_fun()
+    backend.update()
 
     # Timing - monitor fps and trigger refresh
     timer = QTimer()
     timer.setInterval(int(1000. / args.fps))
-    timer.timeout.connect(update_fun)
+    timer.timeout.connect(backend.update)
     timer.start()
 
     app.exec_()

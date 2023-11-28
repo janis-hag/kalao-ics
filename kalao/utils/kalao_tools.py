@@ -109,7 +109,7 @@ def get_subapertures_from_file(file):
     return all_subaps, active_subaps, masked_subaps
 
 
-def get_wfs_flux_map(upsampling=64):
+def get_wfs_flux_map(upsampling=4):
     size = 64 * upsampling
 
     radius_out = 25 * upsampling  # Pupil radius in px on WFS

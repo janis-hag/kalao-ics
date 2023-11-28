@@ -449,13 +449,14 @@ class AO:
     WFS_tip_to_TTM = -0.28649303833986856  # mrad / px
     WFS_tilt_to_TTM = 0.25807611836775707  # mrad / px
 
-    spots_file = '/home/kalao/kalao-cacao-workdir/setupfiles/hw/KalAO-hwloop-rundir/spots_tel_pupil.txt'
+    spots_file = Path(
+        '/home/kalao/kalao-cacao-workdir/setupfiles/hw/KalAO-hwloop-rundir/spots_tel_pupil.txt'
+    )
 
     flux_map = kalao_tools.get_wfs_flux_map()
 
-    fully_illuminated_subaps = np.flatnonzero(flux_map > 0.15).tolist()
-    all_illuminated_subaps = np.flatnonzero(flux_map > 0.9).tolist()
-    #all_subaps, active_subaps, masked_subaps = kalao_tools.get_subapertures_from_file(spots_file)
+    fully_illuminated_subaps = np.flatnonzero(flux_map > 0.9).tolist()
+    all_illuminated_subaps = np.flatnonzero(flux_map > 0.15).tolist()
 
     all_subaps = list(range(121))
     masked_subaps = [
@@ -496,6 +497,12 @@ class Timers:
     dm_sun_min_elevation = 6  # °
 
 
+class GUI:
+    ttm_plot_length = 300  # s
+    logs_lines = 1000  # s
+    initial_logs_entries = 100
+
+
 class Streams(StrEnum):
     NUVU = 'nuvu_stream'
     FLI = 'fli_stream'
@@ -512,3 +519,10 @@ class StreamInfo:
     shwfs_slopes_flux = {'shape': (11, 11), 'min': 0, 'max': (2**16 - 1) * 4}
     dm01disp = {'shape': (12, 12), 'min': -1.75, 'max': 1.75}
     dm02disp = {'shape': (2, ), 'min': -2.5, 'max': 2.5}
+
+
+if AO.spots_file.exists():
+    AO.all_subaps, AO.active_subaps, AO.masked_subaps = kalao_tools.get_subapertures_from_file(
+        AO.spots_file)
+else:
+    print(f'CONFIG | [WARNING] {AO.spots_file} does not exists')

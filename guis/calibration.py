@@ -6,26 +6,22 @@ import numpy as np
 
 from astropy.io import fits
 
-from PySide2.QtGui import Qt
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QApplication, QMainWindow
+from PySide2.QtWidgets import QApplication
 
 from kalao.cacao import toolbox
 
-from guis.lib.kalao_widgets import KalAOChart, KalAOGraphicsView, KalAOLabel, HoverMixin
-from guis.lib.ui_loader import loadUi
+from guis.kalao.mixins import HoverMixin
+from guis.kalao.ui_loader import loadUi
+from guis.kalao.widgets import (KalAOChart, KalAOGraphicsView, KalAOLabel,
+                                KalAOMainWindow)
 
 ui_path = Path(__file__).absolute().parent
 
 os.chdir('/home/kalao/kalao-cacao-workdir/')
 
-def global_key_press(event):
-    if event.key() == Qt.Key_Q or event.key() == Qt.Key_X or event.key(
-    ) == Qt.Key_Escape:
-        app.quit()
 
-
-class CalibrationWindow(QMainWindow, HoverMixin):
+class CalibrationWindow(KalAOMainWindow, HoverMixin):
     def __init__(self, conf, loop, wfs_shape, dm_shape, parent=None):
         super().__init__(parent)
 
@@ -44,8 +40,7 @@ class CalibrationWindow(QMainWindow, HoverMixin):
             attr = getattr(self, key)
 
             if isinstance(attr, KalAOGraphicsView):
-                pass
-                #attr.scene.hovered.connect(self.hover_event)
+                attr.hovered.connect(self.hover_event)
 
         self.reload_button.clicked.connect(self.load_data)
         self.frame_spinbox.valueChanged.connect(self.update_window)
@@ -148,7 +143,8 @@ class CalibrationWindow(QMainWindow, HoverMixin):
             if len(self.fits_data[key].shape) == 2:
                 view.setImage(self.fits_data[key])
             else:
-                view.setImage(self.fits_data[key][self.frame_spinbox.value(), :, :])
+                view.setImage(
+                    self.fits_data[key][self.frame_spinbox.value(), :, :])
         else:
             if 'dm' in key or 'DM' in key:
                 shape = self.dm_shape
@@ -164,7 +160,9 @@ class CalibrationWindow(QMainWindow, HoverMixin):
             if len(self.streams_data[key].shape) == 2:
                 view.setImage(self.streams_data[key])
             else:
-                view.setImage(self.streams_data[key][:, :, self.frame_spinbox.value()])
+                view.setImage(
+                    self.streams_data[key][:, :,
+                                           self.frame_spinbox.value()])
         else:
             if 'dm' in key or 'DM' in key:
                 shape = self.dm_shape
@@ -177,11 +175,6 @@ class CalibrationWindow(QMainWindow, HoverMixin):
             self.statusbar.showMessage(string)
         else:
             self.statusbar.clearMessage()
-
-    def keyPressEvent(self, event):
-        global_key_press(event)
-
-        super().keyPressEvent(event)
 
 
 def handler(signal_received, frame):

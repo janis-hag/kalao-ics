@@ -14,6 +14,13 @@ class LogsOutputType(StrEnum):
     RAW = 'RAW'
     TEXT = 'TEXT'
     HTML = 'HTML'
+    QT = 'QT'
+
+
+class LogType(StrEnum):
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    ERROR = 'ERROR'
 
 
 class ServiceAction(StrEnum):

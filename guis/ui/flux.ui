@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Flux</string>
+   <string>Flux - KalAO</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
@@ -29,7 +29,62 @@
    <property name="spacing">
     <number>0</number>
    </property>
+   <item row="2" column="0">
+    <widget class="KalAOGraphicsView" name="flux_view">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="verticalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QAbstractScrollArea::AdjustToContents</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="KalAOLabel" name="flux_avg_label">
+     <property name="text">
+      <string>Average flux: {flux_avg:.0f}{unit}</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="KalAOLabel" name="flux_brightest_label">
+     <property name="text">
+      <string>Brightest Flux: {flux_brightest:.0f}{unit}</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
+    <widget class="QLabel" name="title_label">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Flux</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <spacer name="horizontalSpacer">
@@ -149,7 +204,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="reset_button">
+      <widget class="QPushButton" name="fullscale_button">
        <property name="text">
         <string>Full Scale</string>
        </property>
@@ -169,45 +224,6 @@
       </spacer>
      </item>
     </layout>
-   </item>
-   <item row="2" column="0">
-    <widget class="KalAOLabel" name="flux_avg_label">
-     <property name="text">
-      <string>Average flux: {flux_avg:.0f}{unit}</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="KalAOLabel" name="flux_brightest_label">
-     <property name="text">
-      <string>Brightest Flux: {flux_brightest:.0f}{unit}</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="KalAOGraphicsView" name="flux_view">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
-     </property>
-     <property name="verticalScrollBarPolicy">
-      <enum>Qt::ScrollBarAlwaysOff</enum>
-     </property>
-     <property name="horizontalScrollBarPolicy">
-      <enum>Qt::ScrollBarAlwaysOff</enum>
-     </property>
-     <property name="sizeAdjustPolicy">
-      <enum>QAbstractScrollArea::AdjustToContents</enum>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

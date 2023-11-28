@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>1038</width>
-    <height>812</height>
+    <height>613</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Unified View</string>
+   <string>GUI - KalAO</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -31,7 +31,7 @@
      <number>5</number>
     </property>
     <item row="0" column="0">
-     <widget class="QTabWidget" name="tabWidget">
+     <widget class="QTabWidget" name="tabwidget">
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -42,16 +42,82 @@
        <attribute name="title">
         <string>Main</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_8" rowstretch="2,1,1" columnstretch="1,1,0,0">
-        <item row="0" column="3" rowspan="3">
+       <layout class="QGridLayout" name="gridLayout_8" rowstretch="2,1,1" columnstretch="1,1,0">
+        <item row="1" column="1">
+         <widget class="QFrame" name="flux_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_5"/>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QFrame" name="ttm_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_6"/>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QFrame" name="fli_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_7"/>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QFrame" name="slopes_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_4"/>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QFrame" name="dm_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_3"/>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QFrame" name="wfs_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_2"/>
+         </widget>
+        </item>
+        <item row="0" column="2" rowspan="3">
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QLabel" name="logo_label">
-            <property name="text">
-             <string>KalAO Logo</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
+           <widget class="KalAOSvgWidget" name="logo_label" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>40</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -59,6 +125,13 @@
            <widget class="QCheckBox" name="onsky_checkbox">
             <property name="text">
              <string>On sky units</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="colormap_checkbox">
+            <property name="text">
+             <string>Grayscale</string>
             </property>
            </widget>
           </item>
@@ -84,78 +157,19 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="0">
-         <widget class="QFrame" name="dm_frame">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_3"/>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QFrame" name="slopes_frame">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_4"/>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QFrame" name="fli_frame">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_7"/>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QFrame" name="wfs_frame">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_2"/>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QFrame" name="flux_frame">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_5"/>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QFrame" name="ttm_frame">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_6"/>
-         </widget>
-        </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab_2">
+      <widget class="QWidget" name="plots_tab">
        <attribute name="title">
-        <string>Future</string>
+        <string>Plots</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2"/>
+      </widget>
+      <widget class="QWidget" name="logs_tab">
+       <attribute name="title">
+        <string>Logs</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3"/>
       </widget>
      </widget>
     </item>
@@ -173,8 +187,14 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <resources>
-  <include location="../logo.qrc"/>
- </resources>
+ <customwidgets>
+  <customwidget>
+   <class>KalAOSvgWidget</class>
+   <extends>QWidget</extends>
+   <header>kalaosvgwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
  <connections/>
 </ui>
