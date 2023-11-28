@@ -25,7 +25,7 @@ import requests
 import requests.exceptions
 
 from kalao.definitions.enums import (CameraServerStatus, ReturnCode,
-                                     SequencerStatus)
+                                     SequencerStatus, ServiceAction)
 
 import config
 
@@ -284,7 +284,7 @@ def check_server_status():
     :return: status of the camera server (UP/DOWN/ERROR)
     """
 
-    server_status = services.camera('status')
+    server_status = services.camera(ServiceAction.STATUS)
 
     if server_status[0] == 'inactive':
         return CameraServerStatus.DOWN

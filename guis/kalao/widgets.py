@@ -197,7 +197,6 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
             self.hovered.emit(-1, -1, np.nan)
 
 
-
 class KalAOChart(QtCharts.QChartView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

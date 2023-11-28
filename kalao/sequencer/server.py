@@ -325,7 +325,7 @@ def execute_command(command, seq_args):
         database.store(
             'obs', {
                 'sequencer_log':
-                    f'[ERROR] Unkown exception occured during {command}',
+                    f'[ERROR] Unknown exception occured during {command}',
                 'sequencer_status':
                     SequencerStatus.ERROR
             })
