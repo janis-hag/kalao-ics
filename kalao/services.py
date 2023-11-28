@@ -151,31 +151,31 @@ def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
 
 
 def camera(action):
-    return unit_control(config.Systemd.services['camera'], action)
+    return unit_control(config.Systemd.services['camera']['unit'], action)
 
 
 def flask(action):
-    return unit_control(config.Systemd.services['flask-gui'], action)
+    return unit_control(config.Systemd.services['flask-gui']['unit'], action)
 
 
 def gop(action):
-    return unit_control(config.Systemd.services['gop-server'], action)
+    return unit_control(config.Systemd.services['gop-server']['unit'], action)
 
 
 def database_timer(action):
-    return unit_control(config.Systemd.services['database-timer'], action)
+    return unit_control(config.Systemd.services['database-timer']['unit'], action)
 
 
 def safety_timer(action):
-    return unit_control(config.Systemd.services['safety-timer'], action)
+    return unit_control(config.Systemd.services['safety-timer']['unit'], action)
 
 
 def loop_timer(action):
-    return unit_control(config.Systemd.services['loop-timer'], action)
+    return unit_control(config.Systemd.services['loop-timer']['unit'], action)
 
 
 def pump_timer(action):
-    return unit_control(config.Systemd.services['pump-timer'], action)
+    return unit_control(config.Systemd.services['pump-timer']['unit'], action)
 
 
 def init():

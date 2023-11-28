@@ -19,9 +19,6 @@ class ArrayToImageMixin():
         if np.ma.is_masked(img):
             img = img.filled()
 
-        delta = img_max - img_min
-        delta = max(1e-9, delta)
-
         scale_max = 255
         scale_min = 0
 
@@ -34,14 +31,19 @@ class ArrayToImageMixin():
         if self.colormap.color_saturation_low is not None:
             scale_min += 0.51
 
-        rescale = (scale_max-scale_min) / delta
-        offset = img_min*rescale - scale_min
+        delta = img_max - img_min
 
-        array = img*rescale - offset
-        array = np.rint(array).astype(int)
-        array = np.clip(array, 0, 255)
+        if delta > 1e-12:
+            rescale = (scale_max-scale_min) / delta
+            offset = img_min*rescale - scale_min
 
-        self.img_uint8 = np.require(array, np.uint8, 'C')
+            img_scaled = img*rescale - offset
+            img_scaled = np.rint(img_scaled).astype(int)
+            img_scaled = np.clip(img_scaled, 0, 255)
+        else:
+            img_scaled = np.ones(img.shape) * 128
+
+        self.img_uint8 = np.require(img_scaled, np.uint8, 'C')
         self.image = QImage(self.img_uint8.data, self.img_uint8.shape[1],
                             self.img_uint8.shape[0], self.img_uint8.shape[1],
                             QImage.Format_Indexed8)
