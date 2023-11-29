@@ -8,7 +8,7 @@ from PySide2.QtCore import QThread, Signal
 
 from kalao.interfaces import fake_data
 
-from guis.backends.generic import GenericBackend
+from guis.backends.abstract import AbstractBackend
 
 from kalao.definitions.enums import LogType
 
@@ -17,63 +17,116 @@ import config
 #TODO: replace with Streams enum?
 
 
-class SimulationBackend(GenericBackend):
+class MainBackend(AbstractBackend):
     ttm_data = np.array([0, 0])
 
-    def update(self):
+    def update_data(self):
         self.ttm_data = fake_data.tiptilt(seed=self.ttm_data)
 
         self.data.update({
             'dm01disp': {
-                'data': fake_data.dm(),
+                'stream': fake_data.dm(),
                 'max_stroke': 0.9
             },
             'dm02disp': {
-                'data': self.ttm_data
+                'stream': self.ttm_data
             }
         })
 
         self.data.update({
             'nuvu_stream': {
-                'data':
+                'stream':
                     fake_data.nuvu_frame(
-                        tiptilt=self.data['dm02disp']['data'],
-                        dmdisp=np.ma.getdata(self.data['dm01disp']['data']))
+                        tiptilt=self.data['dm02disp']['stream'],
+                        dmdisp=np.ma.getdata(self.data['dm01disp']['stream']))
             },
             'fli_stream': {
-                'data':
+                'stream':
                     fake_data.fli_frame(
-                        tiptilt=self.data['dm02disp']['data'],
-                        dmdisp=np.ma.getdata(self.data['dm01disp']['data']))
+                        tiptilt=self.data['dm02disp']['stream'],
+                        dmdisp=np.ma.getdata(self.data['dm01disp']['stream']))
             }
         })
 
         self.data.update({
             'shwfs_slopes': {
-                'data': fake_data.slopes(self.data['nuvu_stream']['data'])
+                'stream': fake_data.slopes(self.data['nuvu_stream']['stream'])
             },
             'shwfs_slopes_flux': {
-                'data': fake_data.flux(self.data['nuvu_stream']['data'])
+                'stream': fake_data.flux(self.data['nuvu_stream']['stream'])
             }
         })
 
         self.data['shwfs_slopes'].update(
-            fake_data.slopes_params(self.data['shwfs_slopes']['data']))
+            fake_data.slopes_params(self.data['shwfs_slopes']['stream']))
         self.data['shwfs_slopes_flux'].update(
-            fake_data.flux_params(self.data['shwfs_slopes_flux']['data']))
-
-        self.updated.emit()
+            fake_data.flux_params(self.data['shwfs_slopes_flux']['stream']))
 
 
-class SimulationLogsThread(QThread):
-    log = Signal(object)
+class DMChannelsBackend(AbstractBackend):
+    def __init__(self, dm_number):
+        super().__init__()
+
+        self.dm_number = dm_number
+
+    def update_data(self):
+        if self.dm_number == 1:
+            dm_data = fake_data.dm([0])
+
+            for i in range(0, 12):
+                channel = f'dm{self.dm_number:02d}disp{i:02d}'
+
+                channel_data = fake_data.dm()
+                dm_data += channel_data
+
+                self.data.update({channel: {'stream': channel_data}})
+
+            self.data.update({
+                f'dm{self.dm_number:02d}disp': {
+                    'stream': dm_data
+                }
+            })
+
+        else:
+            dm_data = np.zeros((2, ))
+
+            for i in range(0, 12):
+                channel = f'dm{self.dm_number:02d}disp{i:02d}'
+
+                channel_data = fake_data.tiptilt()
+                dm_data += channel_data
+
+                self.data.update({
+                    channel: {
+                        'stream': channel_data.reshape((1, 2))
+                    }
+                })
+
+            self.data.update({
+                f'dm{self.dm_number:02d}disp': {
+                    'stream': dm_data.reshape((1, 2))
+                }
+            })
+
+    def reset_dm(self, dm_number):
+        print(f'Resetted DM {dm_number} (virtually)')
+
+    def reset_channel(self, dm_number, channel):
+        print(f'Resetted channel {channel} of DM {dm_number} (virtually)')
+
+
+class LogsThread(QThread):
+    new_log = Signal(object)
 
     def run(self):
         for _ in range(config.GUI.initial_logs_entries):
-            self.generate_log()
+            entry = self.generate_log()
+            entry['text'] = '<span class="init">' + entry['text'] + '<span>'
+            self.new_log.emit(entry)
 
         while not self.isInterruptionRequested():
-            self.generate_log()
+            entry = self.generate_log()
+            self.new_log.emit(entry)
 
             time.sleep(0.1)
 
@@ -101,12 +154,12 @@ class SimulationLogsThread(QThread):
             style_message = '<span class="bold yellow">'
             message = '[WARNING] ' + message
 
-        self.log.emit({
+        return {
             'type':
                 type,
             'text':
                 f'{style_timestamp}{timestamp}{style_end} {style_origin}{origin:>15s}{style_end}: {style_message}{message}{style_end}'
-        })
+        }
 
 
 lorem = (

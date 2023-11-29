@@ -4,13 +4,13 @@ import numpy as np
 
 from kalao.utils import kalao_tools
 
-from guis.backends.generic import GenericBackend
+from guis.backends.abstract import AbstractBackend
 from guis.kalao.definitions import PokeState
 
 from config import Streams
 
 
-class AlignmentLocalBackend(GenericBackend):
+class AlignmentBackend(AbstractBackend):
     alignment_window = None
 
     def __init__(self):
@@ -28,7 +28,7 @@ class AlignmentLocalBackend(GenericBackend):
         self.slopes_fps = toolbox.open_fps_once('shwfs_process-1',
                                                 self.streams_and_fps_cache)
 
-    def update(self):
+    def update_data(self):
         dm_array = np.zeros(self.poke_stream.shape, self.poke_stream.nptype)
         data_nuvu = {}
         data_slopes = {}
@@ -68,17 +68,17 @@ class AlignmentLocalBackend(GenericBackend):
 
         self.data.update({
             'nuvu_stream': {
-                'data': data_nuvu[self.alignment_window.display]
+                'stream': data_nuvu[self.alignment_window.display]
             },
             'alignment': {
-                'data': data_nuvu
+                'stream': data_nuvu
             }
         })
 
         if self.alignment_window.display == PokeState.FLAT:
             self.data.update({
                 'shwfs_slopes': {
-                    'data': data_slopes[PokeState.FLAT],
+                    'stream': data_slopes[PokeState.FLAT],
                     'tip': tip,
                     'tilt': tilt,
                     'residual': residual
@@ -87,7 +87,7 @@ class AlignmentLocalBackend(GenericBackend):
         else:
             self.data.update({
                 'shwfs_slopes': {
-                    'data':
+                    'stream':
                         data_slopes[self.alignment_window.display] -
                         data_slopes[PokeState.FLAT],
                     'tip':
@@ -98,5 +98,3 @@ class AlignmentLocalBackend(GenericBackend):
                         residual
                 }
             })
-
-        self.updated.emit()

@@ -702,15 +702,20 @@ def restart_wfs():
             return -1
 
 
+def reset_channel(dm_number, channel):
+    stream = toolbox.open_stream_once(f'dm{dm_number:02d}disp{channel:02d}',
+                                      shm_and_fps_cache)
+    toolbox.zero_stream(stream)
+
+
 def reset_dm(dm_number):
     ret = 0
 
     database.store('obs',
                    {'ao_log': f'Resetting {dm_number}'})  #TODO: ttm/dm log ?
+
     for i in range(0, 12):
-        stream = toolbox.open_stream_once(f'dm{dm_number:02d}disp{i:02d}',
-                                          shm_and_fps_cache)
-        ret += toolbox.zero_stream(stream)
+        reset_channel(dm_number, i)
 
     dm_fps = toolbox.open_fps_once(f"mfilt-{dm_number}", shm_and_fps_cache)
     if dm_fps is not None:

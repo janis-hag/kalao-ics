@@ -3,6 +3,8 @@ from pathlib import Path
 from PySide2.QtCore import QMetaObject
 from PySide2.QtUiTools import QUiLoader
 
+uipath = Path(__file__).absolute().parent.parent / 'ui'
+
 
 class UiLoader(QUiLoader):
     """
@@ -100,9 +102,6 @@ def loadUi(uifile, baseinstance=None, customWidgets=None,
     if workingDirectory is not None:
         loader.setWorkingDirectory(workingDirectory)
 
-    if isinstance(uifile, Path):
-        uifile = str(uifile)
-
-    widget = loader.load(uifile)
+    widget = loader.load(str(uipath / uifile))
     QMetaObject.connectSlotsByName(widget)
     return widget

@@ -163,11 +163,13 @@ def gop(action):
 
 
 def database_timer(action):
-    return unit_control(config.Systemd.services['database-timer']['unit'], action)
+    return unit_control(config.Systemd.services['database-timer']['unit'],
+                        action)
 
 
 def safety_timer(action):
-    return unit_control(config.Systemd.services['safety-timer']['unit'], action)
+    return unit_control(config.Systemd.services['safety-timer']['unit'],
+                        action)
 
 
 def loop_timer(action):

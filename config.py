@@ -502,6 +502,8 @@ class GUI:
     logs_lines = 1000  # s
     initial_logs_entries = 100
 
+    max_fps = 10
+
 
 class Streams(StrEnum):
     NUVU = 'nuvu_stream'

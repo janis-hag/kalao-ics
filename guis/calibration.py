@@ -16,8 +16,6 @@ from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import (KalAOChart, KalAOGraphicsView, KalAOLabel,
                                 KalAOMainWindow)
 
-ui_path = Path(__file__).absolute().parent
-
 os.chdir('/home/kalao/kalao-cacao-workdir/')
 
 
@@ -34,7 +32,7 @@ class CalibrationWindow(KalAOMainWindow, HoverMixin):
         self.fits_data = {}
         self.streams_data = {}
 
-        loadUi(ui_path / 'ui/calibration.ui', self)
+        loadUi('calibration.ui', self)
 
         for key in dir(self):
             attr = getattr(self, key)
@@ -183,6 +181,11 @@ def handler(signal_received, frame):
 
 if __name__ == "__main__":
     signal(SIGINT, handler)
+
+    # Numpy
+
+    np.ma.masked_print_option.set_display('--')
+    np.set_printoptions(nanstr='--')
 
     loader = QUiLoader()
     loader.registerCustomWidget(KalAOLabel)

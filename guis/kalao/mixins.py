@@ -8,6 +8,7 @@ from guis.kalao import colormaps
 
 class ArrayToImageMixin():
     colormap = colormaps.BlackBody()
+    image = None
 
     def prepare_array_for_qimage(self, img, img_min=None, img_max=None):
         if img_min is None:
@@ -16,8 +17,7 @@ class ArrayToImageMixin():
         if img_max is None:
             img_max = img.max()
 
-        if np.ma.is_masked(img):
-            img = img.filled()
+        delta = img_max - img_min
 
         scale_max = 255
         scale_min = 0
@@ -31,7 +31,11 @@ class ArrayToImageMixin():
         if self.colormap.color_saturation_low is not None:
             scale_min += 0.51
 
-        delta = img_max - img_min
+        if np.ma.is_masked(img):
+            mask = img.mask
+            img = img.filled()
+        else:
+            mask = None
 
         if delta > 1e-12:
             rescale = (scale_max-scale_min) / delta
@@ -42,6 +46,9 @@ class ArrayToImageMixin():
             img_scaled = np.clip(img_scaled, 0, 255)
         else:
             img_scaled = np.ones(img.shape) * 128
+
+        if mask is not None and self.colormap.has_transparency:
+            img_scaled[mask] = 255
 
         self.img_uint8 = np.require(img_scaled, np.uint8, 'C')
         self.image = QImage(self.img_uint8.data, self.img_uint8.shape[1],
@@ -82,6 +89,8 @@ class MinMaxMixin:
     def max_changed(self, d):
         self.data_max = d
         self.min_spinbox.setMaximum(d)
+        if self.max_spinbox.hasFocus():
+            print(f"New max: {d}")
 
     def autoscale_changed(self, state):
         self.min_spinbox.setEnabled(state == Qt.Unchecked)

@@ -29,3 +29,7 @@ class Logo:
     folder = Path(__file__).absolute().parent.parent.parent / 'logo'
     svg = folder / 'KalAO_logo.svg'
     ico = folder / 'KalAO_icon.ico'
+
+
+HORI = 0
+VERT = 1

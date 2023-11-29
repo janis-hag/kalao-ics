@@ -86,22 +86,22 @@ def process_entry(entry, output_type):
     if output_type == LogsOutputType.RAW:
         return pprint.pformat(entry, indent=4)
     else:
-        message = entry["MESSAGE"]
-        if message != "":
+        message = entry['MESSAGE']
+        if message != '':
             style = styles[output_type]
 
             style_timestamp = style['timestamp']
             style_message = style['message']
             style_origin = style['origin']
-            style_end = style["end"]
+            style_end = style['end']
 
             type = LogType.INFO
 
-            timestamp = entry["__REALTIME_TIMESTAMP"].strftime(
-                "%y-%m-%d %H:%M:%S")
+            timestamp = entry['__REALTIME_TIMESTAMP'].strftime(
+                '%y-%m-%d %H:%M:%S')
 
             if 'USER_UNIT' in entry:
-                origin = entry["_COMM"]
+                origin = entry['_COMM']
 
                 if entry.get('EXIT_STATUS', 0) != 0 or entry.get(
                         'UNIT_RESULT', '') == 'exit-code':
@@ -109,11 +109,11 @@ def process_entry(entry, output_type):
                 else:
                     style_message = style['message_good']
             else:
-                if "_SYSTEMD_USER_UNIT" in entry:
-                    origin = entry["_SYSTEMD_USER_UNIT"].replace(
+                if '_SYSTEMD_USER_UNIT' in entry:
+                    origin = entry['_SYSTEMD_USER_UNIT'].replace(
                         'kalao_', '').replace('.service', '')
                 elif '_COMM' in entry:
-                    origin = entry["_COMM"]
+                    origin = entry['_COMM']
                 else:
                     return None
 

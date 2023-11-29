@@ -18,7 +18,7 @@ from kalao.cacao import aocontrol
 from kalao.fli import camera
 from kalao.plc import (adc, calib_unit, core, filterwheel, flip_mirror, laser,
                        shutter, tungsten)
-from kalao.utils import database, file_handling, starfinder
+from kalao.utils import centering, database, file_handling, starfinder
 
 from tcs_communication import t120
 
@@ -291,7 +291,7 @@ def target_observation(**seq_args):
     if None in (q, dit):
         raise MissingKeyword
 
-    fo_delta = starfinder.get_latest_fo_delta()
+    fo_delta = centering.get_latest_fo_delta()
     if fo_delta is not None:
         system.print_and_log("Updating autofocus")
         t120.update_fo_delta(fo_delta)
@@ -440,8 +440,8 @@ def focusing(**seq_args):
     if filterwheel.set_filter(kalfilter) != kalfilter:
         raise FilterWheelNotInPosition
 
-    ret = starfinder.focus_sequence(focus_points=6, focusing_dit=dit,
-                                    sequencer_arguments=seq_args)
+    ret = centering.focus_sequence(focus_points=6, focusing_dit=dit,
+                                   sequencer_arguments=seq_args)
 
     if ret != 0:
         raise FLITakeImageFailed
@@ -603,7 +603,7 @@ def end(**seq_args):
 
     database.store('obs', {'sequencer_status': SequencerStatus.BUSY})
     # Generate darks for this night
-    starfinder.generate_night_darks()
+    centering.generate_night_darks()
 
     # request_manual_centering(False)
     # change tracking flag
@@ -688,7 +688,7 @@ def _center_on_target(kao, dit):
                                                  'tracking_status')  # TODO
     database.store('obs', {'tracking_status': TrackingStatus.CENTERING})
 
-    ret = starfinder.center_on_target(kao=kao, dit=dit)
+    ret = centering.center_on_target(kao=kao, dit=dit)
 
     if ret != ReturnCode.CENTERING_OK:
         raise CenteringFailed

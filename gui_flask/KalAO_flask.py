@@ -10,8 +10,9 @@ from kalao.cacao import aocontrol as k_aocontrol
 from kalao.cacao import toolbox as k_toolbox
 from kalao.interfaces import web as k_web
 from kalao.plc import filterwheel as k_filterwheel
+from kalao.utils import centering as k_centering
 from kalao.utils import database as k_database
-from kalao.utils import starfinder as s_starfinder
+from kalao.utils import starfinder as k_starfinder
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -266,7 +267,7 @@ def create_app():
         x = options["x"]
         y = options["y"]
 
-        s_starfinder.manual_centering(x, y)
+        centering.manual_centering(x, y)
         return "ok"
 
     @app.route('/loop/<type>', methods=['POST'])

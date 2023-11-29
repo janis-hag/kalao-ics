@@ -148,7 +148,8 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
     img = None
     pixmap = None
     pixmap_item = None
-    margins = (1, 1, 1, 1)
+    margins = (0, 0, 0, 0)
+    shape = (0, 0)
 
     hovered = Signal(int, int, float)
 
@@ -163,6 +164,19 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
     def viewSize(self):
         return self.pixmap.rect().adjusted(-self.margins[0], -self.margins[1],
                                            self.margins[2], self.margins[3])
+
+    def heightForWidth(self, width):
+        if self.pixmap is None:
+            super().heightForWidth()
+        else:
+            return self.pixmap.height() * width / self.pixmap.width()
+
+    def sizeHint(self):
+        if self.pixmap is None:
+            return super().sizeHint()
+        else:
+            w = self.width()
+            return QSize(w, self.heightForWidth(w))
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
@@ -187,8 +201,18 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
             self.pixmap_item.setPixmap(self.pixmap)
             self.scene.pixmap_updated()
 
-        #TODO: only on shape change
-        #self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
+        if self.shape != img.shape:
+            self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
+            self.adjustSize()
+            self.shape = img.shape
+
+    def setColormap(self, colormap):
+        self.colormap = colormap
+
+        if self.image is not None:
+            self.image.setColorTable(self.colormap.colormap)
+            self.pixmap = QPixmap.fromImage(self.image)
+            self.pixmap_item.setPixmap(self.pixmap)
 
     def hover_event(self, x, y):
         if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
@@ -205,6 +229,8 @@ class KalAOChart(QtCharts.QChartView):
 
         self.chart = QtCharts.QChart()
         self.chart.setMargins(QMargins(0, 0, 0, 0))
-        self.chart.setBackgroundVisible(True)
+
+        self.chart.setBackgroundVisible(False)
+        self.setStyleSheet("background: transparent")
 
         self.setChart(self.chart)
