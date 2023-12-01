@@ -144,11 +144,10 @@ def tiptilt(nb_points = 1, seed=np.zeros((2,)), sigma = 0.01, leak=0.01):
 
 
 def nuvu_frame(bias = 2000, readoutnoise = 20, flux = 5000, tiptilt=np.zeros((2,)), dmdisp=np.zeros((12,12)), upsampling=4):
-    frame = np.zeros((64*upsampling, 64*upsampling))
-    x, y = np.mgrid[0:frame.shape[0], 0:frame.shape[1]].astype(np.float32)
+    frame = np.zeros((64*upsampling, 64*upsampling), dtype=np.float32)
 
-    tip_px = tiptilt[0] * config.TTM.plate_scale / config.WFS.plate_scale
-    tilt_px = tiptilt[1] * config.TTM.plate_scale / config.WFS.plate_scale
+    tip_ttm_px = tiptilt[0] * config.TTM.plate_scale / config.WFS.plate_scale
+    tilt_ttm_px = tiptilt[1] * config.TTM.plate_scale / config.WFS.plate_scale
 
     slopes_px = zernike.slopes_from_pattern_interp(dmdisp) * config.DM.plate_scale / config.WFS.plate_scale
 
@@ -157,22 +156,37 @@ def nuvu_frame(bias = 2000, readoutnoise = 20, flux = 5000, tiptilt=np.zeros((2,
 
     intensity = 2 * flux / (np.pi * 4*sigma**2)
 
-    sigma = sigma * upsampling
+    sigma *= upsampling
+    hwindow = math.ceil(3 * sigma)
+
+    x, y = np.mgrid[0:2*hwindow, 0:2*hwindow]
 
     # yapf: disable
     for i in range(11):
         for j in range(11):
+            if config.AO.flux_map[i,j] < 1e-2:
+                continue
+
             tip_dm_px = slopes_px[j, i]
             tilt_dm_px = slopes_px[j, i+11]
 
-            mu_x = (5 * i + 3 + 4 + tip_px + tip_dm_px)*upsampling - 0.5
-            mu_y = (5 * j + 3 + 4 + tilt_px + tilt_dm_px)*upsampling - 0.5
+            psf_y = (5*j + 7 + tip_ttm_px + tip_dm_px) * upsampling
+            psf_x = (5*i + 7 + tilt_ttm_px + tilt_dm_px) * upsampling
+
+            psf_y_f, psf_y_i = math.modf(psf_y)
+            psf_x_f, psf_x_i = math.modf(psf_x)
+
+            psf_y_i = int(psf_y_i)
+            psf_x_i = int(psf_x_i)
+
+            mu_y = hwindow + psf_y_f - 0.5
+            mu_x = hwindow + psf_x_f - 0.5
 
             A = intensity * config.AO.flux_map[i,j]
 
-            frame += kalao_math.gaussian_2d_rotated(x, y, mu_x, mu_y, sigma, sigma, 0, A, 0)
+            frame[psf_y_i-hwindow:psf_y_i+hwindow, psf_x_i-hwindow:psf_x_i+hwindow] += kalao_math.gaussian_2d_rotated(y, x, mu_y, mu_x, sigma, sigma, 0, A, 0)
 
-    # Reduce with final size with photon shot noise
+    # Reduce to final size with photon shot noise
     frame = rng.poisson(block_reduce(frame, upsampling, func=np.mean)).astype(np.float64)
 
     # Add electronic noise
@@ -241,7 +255,6 @@ def dm(zernike_coeffs = None, orders = 15):
 
 def fli_frame(bias = 1070, readoutnoise = 7, psf_x = config.FLI.center_x, psf_y = config.FLI.center_y, fwhm = 10, intensity = 2**15, tiptilt=np.zeros((2,)), dmdisp=np.zeros((12,12)), upsampling = 1):
     frame = np.zeros((1024 * upsampling, 1024 * upsampling))
-    x, y = np.mgrid[0:frame.shape[0], 0:frame.shape[1]].astype(np.float32)
 
     sigma = fwhm / kalao_math.SIGMA_TO_FWHM
 
@@ -251,16 +264,26 @@ def fli_frame(bias = 1070, readoutnoise = 7, psf_x = config.FLI.center_x, psf_y 
     slopes_px = zernike.slopes_from_pattern_interp(dmdisp) * config.DM.plate_scale / config.FLI.plate_scale
     slopes_params_px = slopes_params(slopes_px)
 
-    psf_x += tip_px + slopes_params_px['tip']
-    psf_y += tilt_px + slopes_params_px['tilt']
-
-    psf_x *= upsampling
-    psf_y *= upsampling
     sigma *= upsampling
 
-    frame += kalao_math.gaussian_2d_rotated(x, y, psf_y, psf_x, sigma, sigma, 0, intensity, 0)
+    hwindow = math.ceil(3 * sigma)
+    x, y = np.mgrid[0:2 * hwindow, 0:2 * hwindow]
 
-    # Reduce with final size with photon shot noise
+    psf_y = (psf_y + tip_px + slopes_params_px['slope_x'])*upsampling
+    psf_x = (psf_x + tilt_px + slopes_params_px['slope_y'])*upsampling
+
+    psf_y_f, psf_y_i = math.modf(psf_y)
+    psf_x_f, psf_x_i = math.modf(psf_x)
+
+    psf_y_i = int(psf_y_i)
+    psf_x_i = int (psf_x_i)
+
+    mu_y = hwindow + psf_y_f - 0.5
+    mu_x = hwindow + psf_x_f - 0.5
+
+    frame[psf_y_i-hwindow:psf_y_i+hwindow, psf_x_i-hwindow:psf_x_i+hwindow] += kalao_math.gaussian_2d_rotated(y, x, mu_y, mu_x, sigma, sigma, 0, intensity, 0)
+
+    # Reduce to final size with photon shot noise
     frame = rng.poisson(block_reduce(frame, upsampling, func=np.mean)).astype(np.float64)
 
     # Add electronic noise
@@ -275,8 +298,8 @@ def slopes_params(slopes):
     tilt = slopes[0:11, 11:22]
 
     return {
-        'tip': tip.mean(),
-        'tilt': tilt.mean(),
+        'slope_x': tip.mean(),
+        'slope_y': tilt.mean(),
         'residual': np.sqrt((tip**2 + tilt**2).mean())
     }
 

@@ -49,6 +49,7 @@ def up(beck=None):
     return _switch('bUp_Flip', beck=beck)
 
 
+@core.beckhoff_autoconnect
 def _switch(action_name, beck=None):
     """
      Open or Close the shutter depending on action_name
@@ -62,8 +63,6 @@ def _switch(action_name, beck=None):
     elif action_name == 'bDown_Flip':
         database.store('obs', {'flip_mirror_log': 'Flipping mirror down'})
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     shutter_switch = beck.get_node("ns = 4; s = MAIN.Flip." + action_name)
     shutter_switch.set_attribute(
         ua.AttributeIds.Value,
@@ -74,20 +73,16 @@ def _switch(action_name, beck=None):
 
     position = get_position(beck)
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return position
 
 
+@core.beckhoff_autoconnect
 def get_position(beck=None):
     """
     Query the single string status of the shutter.
 
     :return: single string status of shutter
     """
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     # Check error status
     error_code = beck.get_node(
@@ -111,23 +106,16 @@ def get_position(beck=None):
         else:
             position = FlipMirrorPosition.ERROR
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return position
 
 
+@core.beckhoff_autoconnect
 def init(beck=None):
     database.store('obs', {'flip_mirror_log': 'Initialising flip mirror'})
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     # Do the flip mirror gym
     down(beck)
     up(beck)
     down(beck)
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return 0

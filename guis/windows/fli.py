@@ -2,8 +2,9 @@ from subprocess import Popen
 
 import numpy as np
 
-from PySide2.QtGui import QFont, QPen, Qt
-from PySide2.QtWidgets import QGraphicsItem
+from PySide6.QtCore import Slot
+from PySide6.QtGui import QFont, QPen, Qt
+from PySide6.QtWidgets import QGraphicsItem
 
 from guis.kalao import colormaps
 from guis.kalao.definitions import Color
@@ -68,7 +69,7 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         loadUi('fli.ui', self)
         self.resize(600, 400)
 
-        MinMaxMixin.__init__(self)
+        MinMaxMixin.init(self)
 
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
@@ -83,11 +84,8 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
         self.addTicks()
 
-        self.ds9_button.clicked.connect(self.open_ds9)
-        self.zoom_window_button.clicked.connect(self.open_zoom_window)
-
         self.fli_view.hovered.connect(self.hover_event)
-        backend.updated.connect(self.data_updated)
+        backend.streams_updated.connect(self.data_updated)
 
     def addTicks(self):
         self.fli_view.margins = (
@@ -125,12 +123,18 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
     def addVerticalTicks(self, start, end, tick_start, tick_end, pen):
         self.fli_view.scene.addLine(tick_start, start, tick_start, end, pen)
 
+        self.fli_view.scene.addLine(tick_start, start, tick_end, start, pen)
+        self.fli_view.scene.addLine(tick_start, end, tick_end, end, pen)
+
         for y in self.ticks_pos:
             self.fli_view.scene.addLine(tick_start, y + self.data_center_y,
                                         tick_end, y + self.data_center_y, pen)
 
     def addHorizontalTicks(self, start, end, tick_start, tick_end, pen):
         self.fli_view.scene.addLine(start, tick_start, end, tick_start, pen)
+
+        self.fli_view.scene.addLine(start, tick_start, start, tick_end, pen)
+        self.fli_view.scene.addLine(end, tick_start, end, tick_end, pen)
 
         for x in self.ticks_pos:
             self.fli_view.scene.addLine(x + self.data_center_x, tick_start,
@@ -202,30 +206,25 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
             self.tick_labels.append(text_item)
 
     def data_updated(self):
-        img = self.backend.data['fli_stream']['stream']
+        img = self.backend.consume_stream(self.backend.streams,
+                                          config.Streams.FLI)
 
-        if self.autoscale_checkbox.isChecked():
-            img_min = img.min()
-            img_max = img.max()
+        if img is not None:
+            img_min, img_max = self.compute_min_max(img)
 
-            self.min_spinbox.setValue(img_min)
-            self.max_spinbox.setValue(img_max)
-        else:
-            img_min = self.data_min
-            img_max = self.data_max
+            self.fli_view.setImage(img, img_min, img_max)
 
-        self.fli_view.setImage(img, img_min, img_max)
+            #x, y, peak, fwhm = starfinder.find_star(img)
+            x, y, peak, fwhm = np.nan, np.nan, np.nan, np.nan
 
-        #x, y, peak, fwhm = starfinder.find_star(img)
-        x, y, peak, fwhm = np.nan, np.nan, np.nan, np.nan
-
-        self.star_label.updateText(x=x * self.axis_scaling,
-                                   y=y * self.axis_scaling, peak=peak,
-                                   fwhm=fwhm * self.axis_scaling,
-                                   precision=self.axis_precision)
+            self.star_label.updateText(x=x * self.axis_scaling,
+                                       y=y * self.axis_scaling,
+                                       peak=peak * self.data_scaling,
+                                       fwhm=fwhm * self.axis_scaling,
+                                       precision=self.axis_precision)
 
     def change_units(self, state):
-        if state == Qt.Checked:
+        if Qt.CheckState(state) == Qt.Checked:
             self.axis_scaling = config.FLI.plate_scale
             self.axis_unit = ' asec'
             self.axis_precision = 1
@@ -238,13 +237,15 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         self.update_spinboxes_unit()
 
     def change_colormap(self, state):
-        if state == Qt.Checked:
+        if Qt.CheckState(state) == Qt.Checked:
             self.fli_view.setColormap(colormaps.GrayscaleSaturation())
         else:
             self.fli_view.setColormap(colormaps.BlackBody())
 
-    def open_ds9(self, checked):
+    @Slot(bool)
+    def on_ds9_button_clicked(self, checked):
         Popen(['ds9', get_latest_image_path()])
 
-    def open_zoom_window(self, checked):
+    @Slot(bool)
+    def on_zoom_window_button_clicked(self, checked):
         self.zoom_window = FLIZoomWindow(self.fli_view.img.copy())

@@ -1,18 +1,17 @@
 import time
 
-import numpy as np
-
-from PySide2.QtGui import Qt
-from PySide2.QtWidgets import QCheckBox
+from PySide6.QtCore import Slot
+from PySide6.QtGui import Qt
 
 from guis.kalao.definitions import Color, Logo
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOLabel, KalAOMainWindow
 from guis.windows.dm import DMWidget
-from guis.windows.dm_channels import DMChannelsWindow
+from guis.windows.engineering import EngineeringWidget
 from guis.windows.fli import FLIWidget
 from guis.windows.flux import FluxWidget
 from guis.windows.logs import LogsWidget
+from guis.windows.loop_controls import LoopControlsWidget
 from guis.windows.plots import PlotsWidget
 from guis.windows.slopes import SlopesWidget
 from guis.windows.ttm import TTMWidget
@@ -23,13 +22,15 @@ class MainWindow(KalAOMainWindow):
     previous_update_time = 0
 
     TAB_MAIN = 0
-    TAB_PLOTS = 1
-    TAB_ENGINEERING = 2
-    TAB_LOGS = 3
+    TAB_LOOP = 1
+    TAB_PLOTS = 2
+    TAB_ENGINEERING = 3
+    TAB_LOGS = 4
 
-    def __init__(self, backend, timer_images, parent=None):
+    def __init__(self, backends, backend, timer_images, parent=None):
         super().__init__(parent)
 
+        self.backends = backends
         self.backend = backend
         self.timer_images = timer_images
 
@@ -44,12 +45,6 @@ class MainWindow(KalAOMainWindow):
         self.logo_label.load(str(Logo.svg))
         self.logo_label.renderer().setAspectRatioMode(Qt.KeepAspectRatio)
 
-        checkbox = QCheckBox("DM Loop ON")
-        self.statusBar().addPermanentWidget(checkbox)
-
-        checkbox = QCheckBox("TTM Loop ON")
-        self.statusBar().addPermanentWidget(checkbox)
-
         self.fps_label = KalAOLabel(
             "Streams refresh rate : {fps:.1f} FPS | Data gathering: {duration:.3f} s"
         )
@@ -61,8 +56,10 @@ class MainWindow(KalAOMainWindow):
         self.flux = FluxWidget(backend, parent=self)
         self.dm = DMWidget(backend, parent=self)
         self.ttm = TTMWidget(backend, parent=self)
+        self.loop_controls = LoopControlsWidget(backend, parent=self)
+        self.engineering = EngineeringWidget(backends, backend, parent=self)
         self.plots = PlotsWidget(backend, parent=self)
-        self.logs = LogsWidget(backend, parent=self)
+        self.logs = LogsWidget(backends, parent=self)
 
         self.wfs_frame.layout().addWidget(self.wfs)
         self.fli_frame.layout().addWidget(self.fli)
@@ -70,6 +67,10 @@ class MainWindow(KalAOMainWindow):
         self.slopes_frame.layout().addWidget(self.slopes)
         self.flux_frame.layout().addWidget(self.flux)
         self.ttm_frame.layout().addWidget(self.ttm)
+
+        self.loop_tab.layout().addWidget(self.loop_controls)
+
+        self.engineering_tab.layout().addWidget(self.engineering)
 
         self.plots_tab.layout().addWidget(self.plots)
 
@@ -83,29 +84,26 @@ class MainWindow(KalAOMainWindow):
             self.colormap_checkbox.stateChanged.connect(widget.change_colormap)
             widget.change_colormap(self.colormap_checkbox.checkState())
 
-        self.freeze_checkbox.stateChanged.connect(self.freeze_checkbox_changed)
-
         self.wfs.hovered.connect(self.info_point)
         self.fli.hovered.connect(self.info_point)
         self.slopes.hovered.connect(self.info_point)
         self.flux.hovered.connect(self.info_point)
         self.dm.hovered.connect(self.info_point)
+        self.plots.hovered.connect(self.info_point)
 
-        self.tabwidget.currentChanged.connect(self.tab_changed)
-        self.tab_changed(self.tabwidget.currentIndex())
+        self.on_tabwidget_currentChanged(self.tabwidget.currentIndex())
 
-        self.logs.logged.connect(self.logs_error)
-        self.logs_tab_color = self.tabwidget.tabBar().tabTextColor(
+        self.logs_initial_tab_color = self.tabwidget.tabBar().tabTextColor(
             self.TAB_LOGS)
+        self.logs.logged.connect(self.on_logs_logged)
 
-        self.dm_window_button.clicked.connect(self.open_dm_window)
-        self.ttm_window_button.clicked.connect(self.open_ttm_window)
+        self.tabwidget.setCurrentIndex(self.TAB_MAIN)
 
-        backend.updated.connect(self.data_updated)
+        backend.streams_updated.connect(self.data_updated)
 
-    def logs_error(self, errors, warnings):
+    def on_logs_logged(self, errors, warnings):
         list = []
-        color = self.logs_tab_color
+        color = self.logs_initial_tab_color
         text = 'Logs'
 
         if warnings != 0:
@@ -122,10 +120,11 @@ class MainWindow(KalAOMainWindow):
         self.tabwidget.tabBar().setTabText(self.TAB_LOGS, text)
         self.tabwidget.tabBar().setTabTextColor(self.TAB_LOGS, color)
 
-    def freeze_checkbox_changed(self, state):
-        if state == Qt.Checked:
+    @Slot(int)
+    def on_freeze_checkbox_stateChanged(self, state):
+        if Qt.CheckState(state) == Qt.Checked:
             self.timer_images.stop()
-            self.fps_label.updateText(fps=np.nan, duration=np.nan)
+            self.fps_label.setText('')
         else:
             self.timer_images.start()
 
@@ -135,7 +134,8 @@ class MainWindow(KalAOMainWindow):
         else:
             self.statusbar.clearMessage()
 
-    def tab_changed(self, i):
+    @Slot(int)
+    def on_tabwidget_currentChanged(self, i):
         # Main tab
         if i == self.TAB_MAIN:
             self.timer_images.start()
@@ -146,18 +146,13 @@ class MainWindow(KalAOMainWindow):
 
         if i != self.TAB_MAIN:
             self.timer_images.stop()
-            self.fps_label.updateText(fps=np.nan, duration=np.nan)
+            self.fps_label.setText('')
 
     def data_updated(self):
         now = time.monotonic()
 
-        self.fps_label.updateText(fps=(1 / (now - self.previous_update_time)),
-                                  duration=self.backend.data['duration'])
+        self.fps_label.updateText(
+            fps=(1 / (now - self.previous_update_time)),
+            duration=self.backend.streams['metadata']['duration'])
 
         self.previous_update_time = now
-
-    def open_dm_window(self, checked):
-        self.dm_channels = DMChannelsWindow(1)
-
-    def open_ttm_window(self, checked):
-        self.ttm_channels = DMChannelsWindow(2)

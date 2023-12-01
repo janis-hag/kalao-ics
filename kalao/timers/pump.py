@@ -18,9 +18,8 @@ import schedule
 import config
 
 
+@core.beckhoff_autoconnect
 def _check_pump_temp(beck=None):
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     pump_temp = temperature_control.pump_temperature(beck)
     pump_status = temperature_control.pump_status(beck)
 
@@ -35,9 +34,6 @@ def _check_pump_temp(beck=None):
             'pump_timer_log': '[WARNING] Pump cooled down, powering up'
         })
         temperature_control.pump_on(beck)
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
 
 if __name__ == "__main__":

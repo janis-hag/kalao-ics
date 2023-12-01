@@ -10,6 +10,7 @@ beck.py is part of the KalAO Instrument Control Software
 """
 
 import time
+from functools import wraps
 
 from kalao.plc import (adc, calib_unit, flip_mirror, laser, shutter,
                        temperature_control, tungsten)
@@ -27,6 +28,25 @@ def connect(addr=config.PLC.ip, port=config.PLC.port):
     # objects = beck.get_objects_node()
     # child = objects.get_children()
     return beck
+
+
+def beckhoff_autoconnect(fun):
+    @wraps(fun)
+    def wrapper(*args, beck=None, **kwargs):
+        if beck is None:
+            disconnect_on_exit = True
+            beck = connect()
+        else:
+            disconnect_on_exit = False
+
+        ret = fun(*args, beck=beck, **kwargs)
+
+        if disconnect_on_exit:
+            beck.disconnect()
+
+        return ret
+
+    return wrapper
 
 
 def lamps_off():
@@ -54,13 +74,12 @@ def lamps_off():
     return 1
 
 
+@beckhoff_autoconnect
 def plc_status(beck=None):
     """
     Query status of all PLC connected devices
     :return: device status dictionary
     """
-
-    beck, disconnect_on_exit = check_beck(beck)
 
     # TODO check if all initialised
 
@@ -88,19 +107,16 @@ def plc_status(beck=None):
         'flow_value': cooling_system['flow_value']
     }
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return plc_status_values
 
 
+@beckhoff_autoconnect
 def device_status(node_path, beck=None):
     """
     Query the status of a PLC connected device based on its path
 
     :return: complete status of calibration unit
     """
-    beck, disconnect_on_exit = check_beck(beck)
 
     device_status_dict = dict(
         sStatus=beck.get_node("ns=4; s=MAIN." + node_path +
@@ -118,20 +134,7 @@ def device_status(node_path, beck=None):
         lrPosition=beck.get_node("ns=4; s=MAIN." + node_path +
                                  ".ctrl.lrPosition").get_value())
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return device_status_dict
-
-
-def check_beck(beck):
-    if beck is None:
-        disconnect_on_exit = True
-        beck = connect()
-    else:
-        disconnect_on_exit = False
-
-    return beck, disconnect_on_exit
 
 
 def wait_loop(message, test, wait_time):

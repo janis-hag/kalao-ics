@@ -65,7 +65,7 @@ def _check_dm_inactive():
     :return:
     """
 
-    bmc_display_fps = toolbox.open_fps_once(config.AO.bmc_fps, fps_list)
+    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, fps_list)
 
     if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
         (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
@@ -90,7 +90,7 @@ def _check_wfs_inactive():
 
     # TODO: check also EMGAIN keyword in nuvu_stream
 
-    nuvu_acquire_fps = toolbox.open_fps_once(config.AO.nuvu_fps, fps_list)
+    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU, fps_list)
 
     if nuvu_acquire_fps is not None and nuvu_acquire_fps.get_param(
             'emgain') > 1:

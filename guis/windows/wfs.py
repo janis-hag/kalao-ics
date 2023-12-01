@@ -1,4 +1,4 @@
-from PySide2.QtGui import QPen, Qt
+from PySide6.QtGui import QPen, Qt
 
 from kalao.utils import kalao_tools
 
@@ -20,15 +20,15 @@ class WFSWidget(KalAOWidget, MinMaxMixin, HoverMixin):
     axis_unit = ' px'
     axis_precision = 0
 
-    def __init__(self, backend, parent=None):
-        super().__init__(parent)
+    def __init__(self, backend, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.backend = backend
 
         loadUi('wfs.ui', self)
         self.resize(600, 400)
 
-        MinMaxMixin.__init__(self)
+        MinMaxMixin.init(self)
 
         self.change_colormap(Qt.Unchecked)
 
@@ -62,25 +62,19 @@ class WFSWidget(KalAOWidget, MinMaxMixin, HoverMixin):
             self.rois[i] = roi
 
         self.wfs_view.hovered.connect(self.hover_event)
-        backend.updated.connect(self.data_updated)
+        backend.streams_updated.connect(self.data_updated)
 
     def data_updated(self):
-        img = self.backend.data['nuvu_stream']['stream']
+        img = self.backend.consume_stream(self.backend.streams,
+                                          config.Streams.NUVU)
 
-        if self.autoscale_checkbox.isChecked():
-            img_min = img.min()
-            img_max = img.max()
+        if img is not None:
+            img_min, img_max = self.compute_min_max(img)
 
-            self.min_spinbox.setValue(img_min)
-            self.max_spinbox.setValue(img_max)
-        else:
-            img_min = self.data_min
-            img_max = self.data_max
-
-        self.wfs_view.setImage(img, img_min, img_max)
+            self.wfs_view.setImage(img, img_min, img_max)
 
     def change_colormap(self, state):
-        if state == Qt.Checked:
+        if Qt.CheckState(state) == Qt.Checked:
             self.wfs_view.setColormap(colormaps.GrayscaleSaturation())
         else:
             self.wfs_view.setColormap(colormaps.BlackBody())

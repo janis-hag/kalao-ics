@@ -3,8 +3,9 @@ import time
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
 
-from PySide2.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal
 
 from kalao.interfaces import fake_data
 
@@ -20,56 +21,122 @@ import config
 class MainBackend(AbstractBackend):
     ttm_data = np.array([0, 0])
 
-    def update_data(self):
+    streams_updated = Signal()
+    streams = {}
+
+    tiptilt_updated = Signal()
+    tiptilt = {}
+
+    @AbstractBackend.timeit('streams', 'streams_updated')
+    def update_streams(self, data):
+        data.update({
+            config.Streams.DM: {
+                'updated': True,
+                'data': fake_data.dm(),
+            },
+            'bmc_display-1': {
+                'max_stroke': {
+                    'updated': True,
+                    'value': 0.9
+                }
+            },
+        })
+
+        data.update({
+            config.Streams.NUVU: {
+                'updated':
+                    True,
+                'data':
+                    fake_data.nuvu_frame(
+                        tiptilt=self.ttm_data,
+                        dmdisp=np.ma.getdata(data[config.Streams.DM]['data']))
+            },
+            config.Streams.FLI: {
+                'updated':
+                    True,
+                'data':
+                    fake_data.fli_frame(
+                        tiptilt=self.ttm_data,
+                        dmdisp=np.ma.getdata(data[config.Streams.DM]['data']))
+            }
+        })
+
+        data.update({
+            config.Streams.SLOPES: {
+                'updated': True,
+                'data': fake_data.slopes(data[config.Streams.NUVU]['data'])
+            },
+            config.Streams.FLUX: {
+                'updated': True,
+                'data': fake_data.flux(data[config.Streams.NUVU]['data'])
+            }
+        })
+
+        data['shwfs_process-1'] = {}
+
+        for k, v in fake_data.slopes_params(
+                data[config.Streams.SLOPES]['data']).items():
+            data['shwfs_process-1'].update({k: {'updated': True, 'value': v}})
+
+        for k, v in fake_data.flux_params(
+                data[config.Streams.FLUX]['data']).items():
+            data['shwfs_process-1'].update({k: {'updated': True, 'value': v}})
+
+        if data.get('aol1_mgainfact') is None:
+            data.update({
+                'aol1_mgainfact': {
+                    'updated': True,
+                    'data': np.ones((90, ))
+                }
+            })
+
+    @AbstractBackend.timeit('tiptilt', 'tiptilt_updated')
+    def update_tiptilt(self, data):
         self.ttm_data = fake_data.tiptilt(seed=self.ttm_data)
 
-        self.data.update({
-            'dm01disp': {
-                'stream': fake_data.dm(),
-                'max_stroke': 0.9
-            },
-            'dm02disp': {
-                'stream': self.ttm_data
+        data.update({
+            config.Streams.TTM: {
+                'updated': True,
+                'data': self.ttm_data
             }
         })
 
-        self.data.update({
-            'nuvu_stream': {
-                'stream':
-                    fake_data.nuvu_frame(
-                        tiptilt=self.data['dm02disp']['stream'],
-                        dmdisp=np.ma.getdata(self.data['dm01disp']['stream']))
-            },
-            'fli_stream': {
-                'stream':
-                    fake_data.fli_frame(
-                        tiptilt=self.data['dm02disp']['stream'],
-                        dmdisp=np.ma.getdata(self.data['dm01disp']['stream']))
-            }
-        })
+    def get_plots_data(self, dt_start, dt_end, monitoring_keys,
+                       telemetry_keys):
+        timestamps = pd.date_range(dt_start, dt_end, 50)
 
-        self.data.update({
-            'shwfs_slopes': {
-                'stream': fake_data.slopes(self.data['nuvu_stream']['stream'])
-            },
-            'shwfs_slopes_flux': {
-                'stream': fake_data.flux(self.data['nuvu_stream']['stream'])
-            }
-        })
+        return {
+            'monitoring':
+                self._generate_plots_data(monitoring_keys, timestamps),
+            'telemetry':
+                self._generate_plots_data(telemetry_keys, timestamps),
+        }
 
-        self.data['shwfs_slopes'].update(
-            fake_data.slopes_params(self.data['shwfs_slopes']['stream']))
-        self.data['shwfs_slopes_flux'].update(
-            fake_data.flux_params(self.data['shwfs_slopes_flux']['stream']))
+    def _generate_plots_data(self, keys, timestamps):
+        data = {}
+        for key in keys:
+            data[key] = {
+                timestamp: value
+                for timestamp, value in zip(
+                    timestamps, np.random.normal(0, 1, len(timestamps)))
+            }
+
+        df = pd.DataFrame(data, columns=keys)
+
+        return df
 
 
 class DMChannelsBackend(AbstractBackend):
+    streams_updated = Signal()
+    streams = {}
+
     def __init__(self, dm_number):
         super().__init__()
 
         self.dm_number = dm_number
 
-    def update_data(self):
+    @AbstractBackend.timeit('streams', 'streams_updated')
+    def update(self, data):
         if self.dm_number == 1:
             dm_data = fake_data.dm([0])
 
@@ -79,11 +146,12 @@ class DMChannelsBackend(AbstractBackend):
                 channel_data = fake_data.dm()
                 dm_data += channel_data
 
-                self.data.update({channel: {'stream': channel_data}})
+                data.update({channel: {'updated': True, 'data': channel_data}})
 
-            self.data.update({
+            data.update({
                 f'dm{self.dm_number:02d}disp': {
-                    'stream': dm_data
+                    'updated': True,
+                    'data': dm_data
                 }
             })
 
@@ -96,15 +164,17 @@ class DMChannelsBackend(AbstractBackend):
                 channel_data = fake_data.tiptilt()
                 dm_data += channel_data
 
-                self.data.update({
+                data.update({
                     channel: {
-                        'stream': channel_data.reshape((1, 2))
+                        'updated': True,
+                        'data': channel_data.reshape((1, 2))
                     }
                 })
 
-            self.data.update({
+            data.update({
                 f'dm{self.dm_number:02d}disp': {
-                    'stream': dm_data.reshape((1, 2))
+                    'updated': True,
+                    'data': dm_data.reshape((1, 2))
                 }
             })
 

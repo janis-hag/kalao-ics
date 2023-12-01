@@ -34,6 +34,7 @@ print_name = {
 }
 
 
+@core.beckhoff_autoconnect
 def get_temperatures(beck=None):
     """
     Query all the temperature sensors.
@@ -41,8 +42,6 @@ def get_temperatures(beck=None):
     :param beck: handle of the beckhoff connection
     :return: dictionary of temperatures
     """
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     temp_values = {
         'temp_bench_air':
@@ -59,12 +58,10 @@ def get_temperatures(beck=None):
             beck.get_node('ns=4;s=MAIN.Temp_Water_Out').get_value() / 10
     }
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return temp_values
 
 
+@core.beckhoff_autoconnect
 def get_cooling_status(beck=None):
     """
     Query status of the cooling system.
@@ -72,7 +69,6 @@ def get_cooling_status(beck=None):
     :param beck: handle of the beckhoff connection
     :return:
     """
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     cooling_status = {
         'pump_status': pump_status(beck),
@@ -82,12 +78,10 @@ def get_cooling_status(beck=None):
         'flow_value': get_flow_value(beck)
     }
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return cooling_status
 
 
+@core.beckhoff_autoconnect
 def plc_status(relay_name, beck=None):
     """
     Open or Close the shutter depending on action_name
@@ -95,19 +89,16 @@ def plc_status(relay_name, beck=None):
     :param relay_name: bClose_Shutter or
     :return: position of flip_mirror
     """
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     if beck.get_node("ns=4;s=MAIN." + relay_name).get_value():
         relay_status = 'ON'
     else:
         relay_status = 'OFF'
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return relay_status
 
 
+@core.beckhoff_autoconnect
 def switch(relay_name, on, beck=None):
     """
      Open or Close the shutter depending on action_name
@@ -125,8 +116,6 @@ def switch(relay_name, on, beck=None):
             'temperature_log': f'Switching off {print_name[relay_name]}'
         })
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     relay_switch = beck.get_node("ns = 4; s = MAIN." + relay_name)
     relay_switch.set_attribute(
         ua.AttributeIds.Value,
@@ -136,9 +125,6 @@ def switch(relay_name, on, beck=None):
     sleep(1)
 
     relay_status = plc_status(relay_name, beck=beck)
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return relay_status
 
@@ -176,6 +162,7 @@ def pump_status(beck=None):
     return plc_status(pump_node, beck=beck)
 
 
+@core.beckhoff_autoconnect
 def pump_temperature(beck=None):
     """
     Convenience function to query the temperature of the pump
@@ -184,12 +171,7 @@ def pump_temperature(beck=None):
     :return: temperature of the pump in degrees
     """
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     pump_temp = beck.get_node("ns=4; s=MAIN.Temp_Pump").get_value() / 100
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return pump_temp
 
@@ -279,6 +261,7 @@ def get_flow_threshold_time(flow_threshold, beck=None):
     return (kalao_time.now() - data['since']['timestamp']).total_seconds()
 
 
+@core.beckhoff_autoconnect
 def get_flow_value(beck=None):
     """
     Convenience function to query the value of the water flow from the flowmeter
@@ -289,12 +272,7 @@ def get_flow_value(beck=None):
     :return: status of the fan
     """
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     flow_value = beck.get_node("ns=4;s=MAIN." + flowmeter_node).get_value()
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return flow_value
 

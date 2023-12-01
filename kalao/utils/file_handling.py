@@ -290,7 +290,7 @@ def _header_from_db(collection_name, dt):
             # Unit
             unit = v.get("unit")
             if unit is None or unit == '':
-                unit = ""
+                unit = ''
             else:
                 unit = f'[{unit}] '
             unit = unit.replace('°', 'deg')
@@ -298,11 +298,11 @@ def _header_from_db(collection_name, dt):
             max_comment_length = config.FITS.max_comment_length - len(unit)
 
             # Comment
-            comment = v.get("fits_comment")
+            comment = v.get('fits_comment')
             if comment is None:
-                comment = v.get("long")
+                comment = v.get('long')
             if comment is None or len(comment) > max_comment_length:
-                comment = v.get("short")
+                comment = v.get('short')
 
             comment = kalao_string.ellipsis(comment)
 

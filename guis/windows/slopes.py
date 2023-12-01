@@ -1,4 +1,4 @@
-from PySide2.QtGui import Qt
+from PySide6.QtGui import Qt
 
 from guis.kalao import colormaps
 from guis.kalao.mixins import HoverMixin, MinMaxMixin
@@ -25,43 +25,43 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         loadUi('slopes.ui', self)
         self.resize(600, 400)
 
-        MinMaxMixin.__init__(self)
+        MinMaxMixin.init(self)
 
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
 
         self.slopes_view.hovered.connect(self.hover_event)
-        backend.updated.connect(self.data_updated)
+        backend.streams_updated.connect(self.data_updated)
 
     def data_updated(self):
-        img = self.backend.data['shwfs_slopes']['stream'] * self.data_scaling
-        tip = self.backend.data['shwfs_slopes']['tip'] * self.data_scaling
-        tilt = self.backend.data['shwfs_slopes']['tilt'] * self.data_scaling
-        residual = self.backend.data['shwfs_slopes'][
-            'residual'] * self.data_scaling
+        img = self.backend.consume_stream(self.backend.streams,
+                                          config.Streams.SLOPES)
 
-        if self.autoscale_checkbox.isChecked():
-            img_min = img.min()
-            img_max = img.max()
+        if img is not None:
+            img_min, img_max = self.compute_min_max(img, symetric=True)
 
-            abs_max = max(abs(img_min), abs(img_max))
-            img_min = -abs_max
-            img_max = abs_max
+            self.slopes_view.setImage(img, img_min, img_max)
 
-            self.min_spinbox.setValue(img_min)
-            self.max_spinbox.setValue(img_max)
-        else:
-            img_min = self.data_min
-            img_max = self.data_max
+        slope_x = self.backend.consume_param(self.backend.streams,
+                                             'shwfs_process-1', 'slope_x')
+        if slope_x is not None:
+            self.tip_label.updateText(tip=slope_x * self.data_scaling,
+                                      unit=self.data_unit)
 
-        self.slopes_view.setImage(img, img_min, img_max)
+        slope_y = self.backend.consume_param(self.backend.streams,
+                                             'shwfs_process-1', 'slope_y')
+        if slope_y is not None:
+            self.tilt_label.updateText(tilt=slope_y * self.data_scaling,
+                                       unit=self.data_unit)
 
-        self.tip_label.updateText(tip=tip, unit=self.data_unit)
-        self.tilt_label.updateText(tilt=tilt, unit=self.data_unit)
-        self.residual_label.updateText(residual=residual, unit=self.data_unit)
+        residual = self.backend.consume_param(self.backend.streams,
+                                              'shwfs_process-1', 'residual')
+        if residual is not None:
+            self.residual_label.updateText(
+                residual=residual * self.data_scaling, unit=self.data_unit)
 
     def change_units(self, state):
-        if state == Qt.Checked:
+        if Qt.CheckState(state) == Qt.Checked:
             self.data_unit = ' asec'
             self.data_scaling = config.WFS.plate_scale
         else:
@@ -71,7 +71,7 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         self.update_spinboxes_unit()
 
     def change_colormap(self, state):
-        if state == Qt.Checked:
+        if Qt.CheckState(state) == Qt.Checked:
             self.slopes_view.setColormap(colormaps.GrayscaleSaturation())
         else:
             self.slopes_view.setColormap(colormaps.CoolWarm())

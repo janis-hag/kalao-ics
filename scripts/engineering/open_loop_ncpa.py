@@ -211,7 +211,7 @@ def run(args):
     folder.mkdir(parents=True)
 
     np.savetxt(folder / 'dm_zernike_coeffs.txt', zernike_coeffs)
-    toolbox.save_stream_to_fits('dm01disp', f'{folder}/dm.fits')
+    toolbox.save_stream_to_fits(config.Streams.DM, f'{folder}/dm.fits')
 
     print(f'Averaging slopes')
     slopes = []

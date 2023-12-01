@@ -1,7 +1,6 @@
-from PySide2.QtCore import Signal
-from PySide2.QtGui import QFontDatabase, QTextCursor
+from PySide6.QtCore import Signal, Slot
+from PySide6.QtGui import QFontDatabase, QTextCursor
 
-from guis.backends.simulation import LogsThread
 from guis.kalao.definitions import Color
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
@@ -16,10 +15,8 @@ class LogsWidget(KalAOWidget):
 
     lines = config.GUI.logs_lines
 
-    def __init__(self, backend, parent=None):
-        super().__init__(parent)
-
-        self.backend = backend
+    def __init__(self, backends, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         loadUi('logs.ui', self)
         self.resize(600, 400)
@@ -59,11 +56,9 @@ class LogsWidget(KalAOWidget):
             }}
             """)
 
-        self.thread = LogsThread(parent=self)
+        self.thread = backends.LogsThread(parent=self)
         self.thread.new_log.connect(self.add_log_entry)
         self.thread.start()
-
-        self.acknowledge_button.clicked.connect(self.acknowledge_clicked)
 
     def add_log_entry(self, log):
         if log is None:
@@ -88,7 +83,8 @@ class LogsWidget(KalAOWidget):
             cursor.removeSelectedText()
             cursor.deleteChar()
 
-    def acknowledge_clicked(self, checked):
+    @Slot(bool)
+    def on_acknowledge_button_clicked(self, checked):
         self.errors_spinbox.setValue(0)
         self.warnings_spinbox.setValue(0)
 

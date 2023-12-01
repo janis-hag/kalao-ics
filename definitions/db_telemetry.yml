@@ -62,7 +62,7 @@ nuvu_emgain:
 nuvu_detgain:
   short: Detector gain
   long: Analogic detector gain
-  unit: '-'
+  unit:
   main_gui: 3
   group: Nuvu
 
@@ -83,23 +83,30 @@ nuvu_mframerate:
   fits_keyword: HIERARCH ESO AOS WFS FRATE
 
 # Shack-Hartmann WFS
-slopes_flux_subaperture:
+slopes_flux_subaperture_avg:
+  short: Avg. flux
+  long: Average flux active subapertures
+  unit: ADU
+  main_gui: 3
+  group: SHWFS slopes
+
+slopes_flux_subaperture_brightest:
   short: Max. flux
-  long: Maximum flux in a subaperture
+  long: Maximum flux active subapertures
   unit: ADU
   main_gui: 3
   group: SHWFS slopes
 
 slopes_residual_pix:
-  short: WFS rms error
-  long: WFS rms residuals in pixels
+  short: WFS RMS error
+  long: WFS RMS residuals in pixels
   unit: pix
   main_gui: 0 # main_gui: 2
   group: SHWFS slopes
 
 slopes_residual_arcsec:
-  short: WFS rms error
-  long: WFS rms residuals in arcsec
+  short: WFS RMS error
+  long: WFS RMS residuals in arcsec
   unit: arcsec
   main_gui: 2 # main_gui: 2
   group: SHWFS slopes

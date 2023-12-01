@@ -19,7 +19,7 @@ from kalao.fli import FLI, camera
 
 from kalao.definitions.enums import CameraServerStatus
 
-fli_stream = toolbox.open_or_create_stream('fli_stream', (1024, 1024),
+fli_stream = toolbox.open_or_create_stream(config.Streams.FLI, (1024, 1024),
                                            np.uint16)
 
 

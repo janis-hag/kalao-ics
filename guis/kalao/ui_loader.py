@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from PySide2.QtCore import QMetaObject
-from PySide2.QtUiTools import QUiLoader
+from PySide6.QtCore import QMetaObject
+from PySide6.QtUiTools import QUiLoader
 
 uipath = Path(__file__).absolute().parent.parent / 'ui'
 

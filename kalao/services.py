@@ -25,8 +25,12 @@ import config
 # For documentation on the API
 
 
-def connect_dbus():
-    bus = dbus.SessionBus()
+def connect_dbus(system=False):
+    if system:
+        bus = dbus.SystemBus()
+    else:
+        bus = dbus.SessionBus()
+
     systemd = bus.get_object('org.freedesktop.systemd1',
                              '/org/freedesktop/systemd1')
 
@@ -35,8 +39,8 @@ def connect_dbus():
     return bus, systemd, manager
 
 
-def get_status(unit):
-    bus, systemd, manager = connect_dbus()
+def get_status(unit, system=False):
+    bus, systemd, manager = connect_dbus(system)
 
     service = bus.get_object('org.freedesktop.systemd1',
                              object_path=manager.GetUnit(unit))
@@ -62,8 +66,8 @@ def get_status(unit):
     return state, substate, timestamp
 
 
-def is_enabled(unit):
-    bus, systemd, manager = connect_dbus()
+def is_enabled(unit, system=False):
+    bus, systemd, manager = connect_dbus(system)
 
     enabled = str(manager.GetUnitFileState(unit))
 
@@ -77,8 +81,8 @@ def is_enabled(unit):
         return None
 
 
-def is_active(unit):
-    state, substate, timestamp = get_status(unit)
+def is_active(unit, system=False):
+    state, substate, timestamp = get_status(unit, system)
 
     if state == 'active':
         return True
@@ -105,7 +109,7 @@ def check_all_status():
 
 
 def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
-                 whom="all", signal=signal.SIGKILL):
+                 whom="all", signal=signal.SIGKILL, system=False):
     """
     Function to control systemd unit services.
 
@@ -119,7 +123,7 @@ def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
             'services_log': f'Sending {action} command to {unit}.'
         })
 
-    bus, systemd, manager = connect_dbus()
+    bus, systemd, manager = connect_dbus(system)
 
     if action == ServiceAction.STATUS:
         # Status is always returned as long as the action keyword is correct
@@ -187,7 +191,7 @@ def init():
     :return:
     '''
 
-    system_setup_active = is_active('kalao_system-setup.service')
+    system_setup_active = is_active('kalao_system-setup.service', system=True)
 
     if not system_setup_active:
         database.store('obs', {

@@ -38,7 +38,13 @@ condition_mapping = {'==': '$ne', '>=': '$lt', '<=': '$gt'}
 codec_options = CodecOptions(tz_aware=True, tzinfo=timezone.utc)
 
 
-def _get_db(client, dt=None):
+def _get_db(dt=None):
+    global client
+
+    if client is None:
+        client = MongoClient(host=config.Database.ip,
+                             port=config.Database.port)
+
     # If dt is None, get db for today, otherwise get db for the day/night specified by dt
     if dt is None:
         dt = kalao_time.now()
@@ -47,7 +53,7 @@ def _get_db(client, dt=None):
 
 
 def get_collection_last_update(collection_name, dt=None):
-    db = _get_db(client, dt)
+    db = _get_db(dt)
 
     collection = db.get_collection(collection_name,
                                    codec_options=codec_options)
@@ -67,7 +73,7 @@ def get_collection_last_update(collection_name, dt=None):
 
 
 def get(collection_name, keys=None, nb_of_point=1, dt=None):
-    db = _get_db(client, dt)
+    db = _get_db(dt)
 
     collection = db.get_collection(collection_name,
                                    codec_options=codec_options)
@@ -108,7 +114,7 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None):
 
 def get_time_since_state(collection_name, key, condition='==', value=None,
                          dt=None):
-    db = _get_db(client, dt)
+    db = _get_db(dt)
 
     collection = db.get_collection(collection_name,
                                    codec_options=codec_options)
@@ -158,7 +164,7 @@ def store(collection_name, data):
 
             print(f'{log_name} | {value}', flush=True)
 
-    db = _get_db(client, now_utc)
+    db = _get_db(now_utc)
 
     timestamp = now_utc
     #timestamp = kalao_time.get_isotime(now_utc)
@@ -248,7 +254,7 @@ def get_last_time(collection_name, key=None):
 
 
 def read_mongo_to_pandas_by_timestamp(collection_name, dt_start, dt_end,
-                                      sampling=None):
+                                      keys=None, sampling=None):
     """
     Read from Mongo and Store into DataFrame by timestamp
 
@@ -262,12 +268,13 @@ def read_mongo_to_pandas_by_timestamp(collection_name, dt_start, dt_end,
     dt_range = dt_end - dt_start
     days = math.ceil(dt_range.days) + 1
 
-    df = read_mongo_to_pandas(collection_name, dt_end, days, sampling)
+    df = read_mongo_to_pandas(collection_name, keys, dt_end, days, sampling)
 
     return df[(df.index >= dt_start) & (df.index <= dt_end)]
 
 
-def read_mongo_to_pandas(collection_name, dt=None, days=1, sampling=None):
+def read_mongo_to_pandas(collection_name, keys=None, dt=None, days=1,
+                         sampling=None):
     """
     Read from Mongo and Store into DataFrame by date
 
@@ -278,28 +285,27 @@ def read_mongo_to_pandas(collection_name, dt=None, days=1, sampling=None):
     :return:
     """
 
+    if keys is None:
+        keys = definitions[collection_name]['metadata'].keys()
+
     appended_df = []
 
     if dt is None:
         dt = kalao_time.now()
 
     for day_number in range(days):
-        data = get(collection_name,
-                   definitions[collection_name]['metadata'].keys(),
-                   nb_of_point=99999999, dt=dt - timedelta(days=day_number))
+        data = get(collection_name, keys, nb_of_point=99999999,
+                   dt=dt - timedelta(days=day_number))
 
         for key in data.keys():
             data[key] = {d['timestamp']: d['value'] for d in data[key]}
 
         # Construct the DataFrame
-        appended_df.append(
-            pd.DataFrame(
-                data, columns=definitions[collection_name]['metadata'].keys()))
+        appended_df.append(pd.DataFrame(data, columns=keys))
 
     # Check if the database is empty for the given days
     if all([df.empty for df in appended_df]):
-        df = pd.DataFrame(
-            columns=definitions[collection_name]['metadata'].keys())
+        df = pd.DataFrame(columns=keys)
         df.index.name = 'timestamp'
     else:
         df = pd.concat(appended_df).sort_index()
@@ -309,8 +315,6 @@ def read_mongo_to_pandas(collection_name, dt=None, days=1, sampling=None):
         time_step = ((df.index[-1] - df.index[0]) / sampling)
         df = df.resample(time_step).mean()
 
-    df['timestamp'] = df.index
-
     return df
 
 
@@ -318,4 +322,4 @@ for name in definitions:
     with open(definitions[name]['path']) as file:
         definitions[name]['metadata'] = yaml.safe_load(file)
 
-client = MongoClient(host=config.Database.ip, port=config.Database.port)
+client = None

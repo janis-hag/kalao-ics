@@ -220,8 +220,8 @@ nvme_pci-Sensor_2:
   group: RTC
 
 acpitz_acpi-temp1:
-  short: mainboard temp.
-  long:  mainboard temperature
+  short: Mainboard temp.
+  long:  Mainboard temperature
   unit: °C
   main_gui: 2
   group: RTC
@@ -321,6 +321,6 @@ gpu_free_memory:
 gpu_load:
   short: GPU load
   long: Current load on the GPU
-  unit: \%
+  unit: '%'
   main_gui: 2
   group: RTC. GPU

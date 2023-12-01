@@ -145,17 +145,20 @@ def telemetry_save(shm_and_fps_cache):
         pass
 
     # SHWFS process
-    shwfs_fps = toolbox.open_fps_once(config.AO.shwfs_fps, shm_and_fps_cache)
+    shwfs_fps = toolbox.open_fps_once(config.FPS.SHWFS, shm_and_fps_cache)
 
     if shwfs_fps is not None and shwfs_fps.run_runs():
-        telemetry_data["slopes_flux_subaperture"] = shwfs_fps.get_param(
-            'flux_subaperture_brightest')
+        telemetry_data["slopes_flux_subaperture_avg"] = shwfs_fps.get_param(
+            'flux_subaperture_avg')
+        telemetry_data[
+            "slopes_flux_subaperture_brightest"] = shwfs_fps.get_param(
+                'flux_subaperture_brightest')
         telemetry_data["slopes_residual_pix"] = shwfs_fps.get_param('residual')
         telemetry_data["slopes_residual_arcsec"] = shwfs_fps.get_param(
             'residual') * config.WFS.plate_scale
 
     # Tip/tilt stream
-    tt_stream = toolbox.open_stream_once('dm02disp', shm_and_fps_cache)
+    tt_stream = toolbox.open_stream_once(config.Streams.TTM, shm_and_fps_cache)
 
     if tt_stream is not None:
         # Check turned off to prevent timeout. Data may be obsolete

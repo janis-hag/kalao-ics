@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide2.QtGui import QColor
+from PySide6.QtGui import QColor
 
 from kalao.definitions.enums import StrEnum
 

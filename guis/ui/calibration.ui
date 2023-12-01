@@ -152,12 +152,12 @@
        </spacer>
       </item>
       <item>
-       <widget class="QSpinBox" name="frame_spinbox">
+       <widget class="QSpinBox" name="mode_spinbox">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="prefix">
-         <string>Frame </string>
+         <string>Mode </string>
         </property>
         <property name="maximum">
          <number>9999</number>
@@ -202,7 +202,7 @@
      <x>0</x>
      <y>0</y>
      <width>776</width>
-     <height>30</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>

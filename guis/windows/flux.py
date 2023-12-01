@@ -1,4 +1,4 @@
-from PySide2.QtGui import Qt
+from PySide6.QtGui import Qt
 
 from guis.kalao import colormaps
 from guis.kalao.mixins import HoverMixin, MinMaxMixin
@@ -25,38 +25,39 @@ class FluxWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         loadUi('flux.ui', self)
         self.resize(600, 400)
 
-        MinMaxMixin.__init__(self)
+        MinMaxMixin.init(self)
 
         self.change_colormap(Qt.Unchecked)
 
         self.flux_view.hovered.connect(self.hover_event)
-        backend.updated.connect(self.data_updated)
+        backend.streams_updated.connect(self.data_updated)
 
     def data_updated(self):
-        img = self.backend.data['shwfs_slopes_flux']['stream']
-        flux_avg = self.backend.data['shwfs_slopes_flux'][
-            'flux_subaperture_avg']
-        flux_brightest = self.backend.data['shwfs_slopes_flux'][
-            'flux_subaperture_brightest']
+        img = self.backend.consume_stream(self.backend.streams,
+                                          config.Streams.FLUX)
 
-        if self.autoscale_checkbox.isChecked():
-            img_min = img.min()
-            img_max = img.max()
+        if img is not None:
+            img_min, img_max = self.compute_min_max(img)
 
-            self.min_spinbox.setValue(img_min)
-            self.max_spinbox.setValue(img_max)
-        else:
-            img_min = self.data_min
-            img_max = self.data_max
+            self.flux_view.setImage(img, img_min, img_max)
 
-        self.flux_view.setImage(img, img_min, img_max)
+        flux_avg = self.backend.consume_param(self.backend.streams,
+                                              'shwfs_process-1',
+                                              'flux_subaperture_avg')
+        if flux_avg is not None:
+            self.flux_avg_label.updateText(
+                flux_avg=flux_avg * self.data_scaling, unit=self.data_unit)
 
-        self.flux_avg_label.updateText(flux_avg=flux_avg, unit=self.data_unit)
-        self.flux_brightest_label.updateText(flux_brightest=flux_brightest,
-                                             unit=self.data_unit)
+        flux_brightest = self.backend.consume_param(
+            self.backend.streams, 'shwfs_process-1',
+            'flux_subaperture_brightest')
+        if flux_brightest is not None:
+            self.flux_brightest_label.updateText(
+                flux_brightest=flux_brightest * self.data_scaling,
+                unit=self.data_unit)
 
     def change_colormap(self, state):
-        if state == Qt.Checked:
+        if Qt.CheckState(state) == Qt.Checked:
             self.flux_view.setColormap(colormaps.GrayscaleSaturation())
         else:
             self.flux_view.setColormap(colormaps.BlackBody())

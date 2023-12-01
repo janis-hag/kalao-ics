@@ -22,6 +22,7 @@ from opcua import ua
 import config
 
 
+@core.beckhoff_autoconnect
 def plc_status(beck=None):
     """
     Query the current status of the laser
@@ -29,15 +30,10 @@ def plc_status(beck=None):
     :return: intensity of laser
     """
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     device_status_dict = {
         'Status': beck.get_node('ns = 4;s = MAIN.Laser.Status').get_value(),
         'Current': beck.get_node('ns = 4;s = MAIN.Laser.Current').get_value(),
     }
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return device_status_dict
 
@@ -110,6 +106,7 @@ def get_switch_time():
         kalao_time.now() - data['since']['timestamp']).total_seconds()
 
 
+@core.beckhoff_autoconnect
 def set_intensity(intensity=0.4, beck=None):
     """
     Set light intensity of the laser source
@@ -122,8 +119,6 @@ def set_intensity(intensity=0.4, beck=None):
                    {'laser_log': f'Setting laser intensity to {intensity}'})
 
     aocontrol.emgain_off()
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     # Limit intensity to protect the WFS
     if intensity > config.Laser.max_intensity:
@@ -155,12 +150,10 @@ def set_intensity(intensity=0.4, beck=None):
     sleep(config.Laser.switch_wait)
     current = beck.get_node("ns=4;s=MAIN.Laser.Current").get_value()
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return current
 
 
+@core.beckhoff_autoconnect
 def _switch(action_name, beck=None):
     """
      Enable or Disable the laser depending on action_name
@@ -180,8 +173,6 @@ def _switch(action_name, beck=None):
     elif action_name == 'bUnlock':
         database.store('obs', {'laser_log': 'Unlocking laser'})
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     laser_switch = beck.get_node("ns = 4; s = MAIN.Laser." + action_name)
     laser_switch.set_attribute(
         ua.AttributeIds.Value,
@@ -193,9 +184,6 @@ def _switch(action_name, beck=None):
         laser_status = 'ON'
     else:
         laser_status = 'OFF'
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return laser_status
 

@@ -79,10 +79,10 @@ def create_app():
         else:
             shm_cache = {}
 
-            k_toolbox.open_stream_once('nuvu_stream', shm_cache)
-            k_toolbox.open_stream_once('shwfs_slopes', shm_cache)
-            k_toolbox.open_stream_once('dm01disp', shm_cache)
-            k_toolbox.open_stream_once('shwfs_slopes_flux', shm_cache)
+            k_toolbox.open_stream_once(config.Streams.NUVU, shm_cache)
+            k_toolbox.open_stream_once(config.Streams.SLOPES, shm_cache)
+            k_toolbox.open_stream_once(config.Streams.DM, shm_cache)
+            k_toolbox.open_stream_once(config.Streams.FLUX, shm_cache)
             k_toolbox.open_stream_once('aol1_mgainfact', shm_cache)
 
             app.config['shm_cache'] = shm_cache

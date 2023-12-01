@@ -15,8 +15,8 @@ systemd-python
 # DB
 pymongo~=3.11.0
 
-# For alignment tools
-PySide2
+# For GUIs
+PySide6
 pytz~=2021.1
 PyYAML~=5.4.1
 requests~=2.25.1

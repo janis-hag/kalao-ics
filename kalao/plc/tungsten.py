@@ -59,6 +59,7 @@ def off(beck=None):
     return send_command(TungstenCommand.OFF, beck=beck)
 
 
+@core.beckhoff_autoconnect
 def send_command(nCommand_value, beck=None):
     """
     Send a command to the tungsten lamp
@@ -73,8 +74,6 @@ def send_command(nCommand_value, beck=None):
     elif nCommand_value == TungstenCommand.OFF:
         database.store('obs', {'tungsten_log': f'Turning tungsten lamp off'})
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     tungsten_nCommand = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.nCommand")
 
     tungsten_nCommand.set_attribute(
@@ -88,12 +87,10 @@ def send_command(nCommand_value, beck=None):
     sleep(config.Tungsten.switch_wait)
     state = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return state
 
 
+@core.beckhoff_autoconnect
 def init(beck=None):
     """
     Initialise the calibration unit.
@@ -102,8 +99,6 @@ def init(beck=None):
     :return: returns 0 on success and error code on failure
     """
     database.store('obs', {'tungsten_log': f'Initialising tungsten lamp'})
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     tungsten_status = 'ERROR'
 
@@ -122,13 +117,9 @@ def init(beck=None):
                 beck.get_node(
                     "ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value())
         else:
-            tungsten_status = beck.get_node(
-                "ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
+            tungsten_status = 0
     else:
         tungsten_status = 0
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return tungsten_status
 
@@ -143,14 +134,13 @@ def send_execute(beck):
                        tungsten_bExecute.get_data_type_as_variant_type())))
 
 
+@core.beckhoff_autoconnect
 def plc_status(beck=None):
     """
     Query the status of the tungsten lamp.
 
     :return: complete status of tungsten lamp
     """
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     device_status_dict = {
         'sStatus':
@@ -162,9 +152,6 @@ def plc_status(beck=None):
         'nStatus':
             beck.get_node("ns=4; s=MAIN.Tungsten.stat.nStatus").get_value()
     }
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return device_status_dict
 

@@ -3,9 +3,9 @@ from signal import SIGINT, signal
 
 import numpy as np
 
-from PySide2.QtCore import QTimer
-from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QApplication
+from PySide6.QtCore import QTimer
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtWidgets import QApplication
 
 from guis.kalao.widgets import KalAOChart, KalAOGraphicsView, KalAOLabel
 from guis.main import clean
@@ -22,8 +22,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='KalAO - Alignment Tools.')
     parser.add_argument('--onsky', action="store_true", dest="onsky",
                         help='On sky units')
-    parser.add_argument('--max-fps', action="store", dest="fps", default=10,
-                        type=int, help='Max FPS')
     parser.add_argument('--simulation', action="store_true", dest="simulation",
                         help='Simulation mode')
 
@@ -62,17 +60,17 @@ if __name__ == "__main__":
     slopes = SlopesWidget(backend)
     slopes.show()
 
-    alignment = AlignmentWindow(backend)
+    alignment = AlignmentWindow(backend, wfs)
     alignment.show()
 
     backend.alignment_window = alignment
 
-    backend.update()
+    backend.update_streams()
 
     # Timing - monitor fps and trigger refresh
     timer = QTimer()
-    timer.setInterval(int(1000. / args.fps))
-    timer.timeout.connect(backend.update)
+    timer.setInterval(int(1000. / config.GUI.max_fps))
+    timer.timeout.connect(backend.update_streams)
     timer.start()
 
     app.exec_()

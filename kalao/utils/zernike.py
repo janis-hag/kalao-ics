@@ -93,9 +93,8 @@ def _slopes_from_pattern(pattern):
     # Differentiate
     slopes = np.gradient(pattern, 2 / (pattern.shape[0] - 1),
                          2 / (pattern.shape[1] - 1))
-    slopes = np.hstack([slopes[1], slopes[0]])
 
-    return slopes
+    return np.hstack(slopes)
 
 
 def generate_slopes(zernike_coeffs, shape, upsampling=4,
@@ -106,9 +105,7 @@ def generate_slopes(zernike_coeffs, shape, upsampling=4,
     slopes = _slopes_from_pattern(pattern)
 
     # Downsample
-    slopes = block_reduce(slopes, upsampling, np.mean)
-
-    return slopes
+    return block_reduce(slopes, upsampling, np.mean)
 
 
 def fit_pattern(pattern, orders=None, mask=None):

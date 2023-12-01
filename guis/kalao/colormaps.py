@@ -1,10 +1,12 @@
+import inspect
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from PySide2.QtGui import QColor, QImage, QPixmap
-from PySide2.QtWidgets import QApplication, QLabel
+from PySide6.QtGui import QColor, QImage, QPixmap
+from PySide6.QtWidgets import QApplication, QLabel, QStyle
 
 colormap_path = Path(__file__).absolute().parent.parent / 'colormaps'
 
@@ -57,8 +59,6 @@ class ColormapExtrapolated(Colormap):
                                                                         1][1]
             blue = (1-coeff) * self.colors[j][2] + coeff * self.colors[j + 1][2]
 
-            #print(i, red* color_max, green* color_max, blue* color_max)
-
             self.colormap.append(
                 QColor(red * color_max, green * color_max,
                        blue * color_max).rgba())
@@ -87,16 +87,8 @@ class ColormapCSV(Colormap):
                        row['RGB_b'] * self.scale).rgba())
 
 
-class BWR(ColormapExtrapolated):
-    colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
-
-
 class Grayscale(ColormapExtrapolated):
     colors = [(0, 0, 0), (1, 1, 1)]
-
-
-class Hot(ColormapExtrapolated):
-    colors = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (1, 1, 1)]
 
 
 class GrayscaleSaturation(ColormapExtrapolated):
@@ -117,7 +109,23 @@ class Inferno(ColormapCSV):
     file = colormap_path / 'inferno-table-byte-0256.csv'
 
 
+class Plasma(ColormapCSV):
+    file = colormap_path / 'plasma-table-byte-0256.csv'
+
+
+class Kindlmann(ColormapCSV):
+    file = colormap_path / 'kindlmann-table-byte-0256.csv'
+
+
+class Viridis(ColormapCSV):
+    file = colormap_path / 'viridis-table-byte-0256.csv'
+
+
 def show_colormap(colormap):
+    if not hasattr(show_colormap, "pos_y"):
+        show_colormap.pos_y = 100
+        show_colormap.labels = []
+
     label = QLabel()
 
     array = np.arange(0, 256).reshape(1, 256)
@@ -129,25 +137,38 @@ def show_colormap(colormap):
     pixmap = QPixmap.fromImage(image).scaled(1024, 50)
     label.setPixmap(pixmap)
 
-    labels.append(label)
+    show_colormap.labels.append(label)
 
     label.setWindowTitle(colormap.__class__.__name__)
 
     label.show()
+
+    label.move(
+        label.screen().geometry().center().x() - label.rect().center().x(),
+        show_colormap.pos_y)
+
+    show_colormap.pos_y += label.size().height() + QApplication.style(
+    ).pixelMetric(QStyle.PM_TitleBarHeight)
+
+
+def get_all_colormaps():
+    colormaps = []
+
+    for name, obj in inspect.getmembers(sys.modules[__name__],
+                                        inspect.isclass):
+        if issubclass(obj, Colormap) and name not in [
+                'Colormap', 'ColormapCSV', 'ColormapExtrapolated'
+        ]:
+            colormaps.append(obj)
+
+    return colormaps
 
 
 if __name__ == "__main__":
     app = QApplication(['KalAO - Colormaps'])
     app.setQuitOnLastWindowClosed(True)
 
-    labels = []
+    for obj in get_all_colormaps():
+        show_colormap(obj())
 
-    show_colormap(GrayscaleSaturation())
-    show_colormap(Grayscale())
-    show_colormap(BWR())
-    show_colormap(Hot())
-    show_colormap(CoolWarm())
-    show_colormap(BlackBody())
-    show_colormap(Inferno())
-
-    app.exec_()
+    app.exec()

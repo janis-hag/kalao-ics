@@ -4,10 +4,10 @@ from signal import SIGINT, signal
 
 import numpy as np
 
-from PySide2.QtCore import QTimer
-from PySide2.QtGui import Qt
-from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QApplication
+from PySide6.QtCore import QTimer
+from PySide6.QtGui import Qt
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtWidgets import QApplication
 
 from guis.kalao.widgets import (KalAOChart, KalAOGraphicsView, KalAOLabel,
                                 KalAOSvgWidget)
@@ -45,8 +45,6 @@ if __name__ == "__main__":
                         help='Split windows')
     parser.add_argument('--onsky', action="store_true", dest="onsky",
                         help='On sky units')
-    parser.add_argument('--max-fps', action="store", dest="fps", default=10,
-                        type=int, help='Max FPS')
     parser.add_argument('--simulation', action="store_true", dest="simulation",
                         help='Simulation mode')
 
@@ -81,23 +79,20 @@ if __name__ == "__main__":
     # Backend
 
     if args.simulation:
-        from guis.backends.simulation import MainBackend
+        import guis.backends.simulation as backends
     else:
-        from guis.backends.local import MainBackend
+        import guis.backends.local as backends
 
-    backend = MainBackend()
+    backend = backends.MainBackend()
 
     # Timer
     timer_images = QTimer()
-    timer_images.setInterval(int(1000. / args.fps))
-    timer_images.timeout.connect(backend.update)
-    #timer_images.start()
+    timer_images.setInterval(int(1000. / config.GUI.max_fps))
+    timer_images.timeout.connect(backend.update_streams)
 
-    # TODO
-    #timer_tiptilt = QTimer()
-    #timer_tiptilt.setInterval(int(1000. / args.fps))
-    #timer_tiptilt.timeout.connect(backend.update_tiptilt)
-    #timer_tiptilt.start()
+    timer_tiptilt = QTimer()
+    timer_tiptilt.setInterval(int(1000. / config.GUI.max_fps))
+    timer_tiptilt.timeout.connect(backend.update_tiptilt)
 
     # Windows
 
@@ -120,7 +115,7 @@ if __name__ == "__main__":
         ttm = TTMWidget(backend)
         ttm.show()
 
-        logs_window = LogsWidget(backend)
+        logs_window = LogsWidget(backends)
         logs_window.show()
 
         if args.onsky:
@@ -130,14 +125,18 @@ if __name__ == "__main__":
             ttm.change_units(Qt.Checked)
 
     else:
-        unified = MainWindow(backend, timer_images)
+        unified = MainWindow(backends, backend, timer_images)
 
         if args.onsky:
             unified_view.onsky_checkbox.setChecked(True)
 
-    backend.update()
+    backend.update_streams()
+    backend.update_tiptilt()
 
-    app.exec_()
+    timer_images.start()
+    timer_tiptilt.start()
+
+    app.exec()
 
     #TODO
     #def closeEvent(self, event):

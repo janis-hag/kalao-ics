@@ -1,9 +1,12 @@
 import select
 
-from PySide2.QtCore import QThread, Signal
+import numpy as np
+
+from PySide6.QtCore import QThread, Signal
 
 from kalao import logs
 from kalao.cacao import aocontrol, toolbox
+from kalao.utils import database
 
 from guis.backends.abstract import AbstractBackend
 
@@ -13,112 +16,107 @@ import config
 from config import Streams
 
 
-class MainBackend(AbstractBackend):
+class SHMFPSBackend(AbstractBackend):
     streams_and_fps_cache = {}
 
-    def __init__(self):
-        super().__init__()
+    def _update_stream(self, data, stream_name):
+        stream = toolbox.open_stream_once(stream_name,
+                                          self.streams_and_fps_cache)
 
-        self.nuvu_stream = toolbox.open_stream_once(Streams.NUVU,
-                                                    self.streams_and_fps_cache)
-        self.dm_stream = toolbox.open_stream_once(Streams.DM,
-                                                  self.streams_and_fps_cache)
-        self.ttm_stream = toolbox.open_stream_once(Streams.TTM,
-                                                   self.streams_and_fps_cache)
-        self.slopes_stream = toolbox.open_stream_once(
-            Streams.SLOPES, self.streams_and_fps_cache)
-        self.flux_stream = toolbox.open_stream_once(Streams.FLUX,
-                                                    self.streams_and_fps_cache)
-        self.fli_stream = toolbox.open_stream_once(Streams.FLI,
-                                                   self.streams_and_fps_cache)
+        if stream is None:
+            return
 
-        self.slopes_fps = toolbox.open_fps_once('shwfs_process-1',
-                                                self.streams_and_fps_cache)
-        self.nuvu_fps = toolbox.open_fps_once('nuvu_acquire-1',
-                                              self.streams_and_fps_cache)
-        self.bmc_fps = toolbox.open_fps_once('bmc_display-1',
-                                             self.streams_and_fps_cache)
+        cnt0 = stream.IMAGE.md.cnt0
 
-    def update_data(self):
-        if self.nuvu_stream is not None:
-            self.data.update({
-                'nuvu_stream': {
-                    'stream': self.nuvu_stream.get_data(check=False)
+        if data.get(stream_name, {}).get('cnt0') == cnt0:
+            data.update({stream_name: {'data': None, }})
+        else:
+            data.update({
+                stream_name: {
+                    'updated': True,
+                    'cnt0': cnt0,
+                    'data': stream.get_data(check=False),
                 }
             })
 
-        if self.fli_stream is not None:
-            self.data.update({
-                'fli_stream': {
-                    'stream': self.fli_stream.get_data(check=False)
-                }
-            })
+    def _update_params(self, data, fps_name, param_name):
+        fps = toolbox.open_fps_once(fps_name, self.streams_and_fps_cache)
 
-        if self.slopes_stream is not None:
-            self.data.update({
-                'shwfs_slopes': {
-                    'stream': self.slopes_stream.get_data(check=False),
-                    'tip': self.slopes_fps.get_param('slope_x'),
-                    'tilt': self.slopes_fps.get_param('slope_y'),
-                    'residual': self.slopes_fps.get_param('residual')
-                }
-            })
+        if fps is None:
+            return
 
-        if self.flux_stream is not None:
-            self.data.update({
-                'shwfs_slopes_flux': {
-                    'stream':
-                        self.flux_stream.get_data(check=False),
-                    'flux_subaperture_avg':
-                        self.slopes_fps.get_param('flux_subaperture_avg'),
-                    'flux_subaperture_brightest':
-                        self.slopes_fps.get_param('flux_subaperture_brightest')
-                }
-            })
+        param = fps.get_param(param_name)
 
-        if self.dm_stream is not None:
-            self.data.update({
-                'dm01disp': {
-                    'stream': self.dm_stream.get_data(check=False),
-                    'max_stroke': self.bmc_fps.get_param('max_stroke')
-                }
-            })
-
-        if self.ttm_stream is not None:
-            self.data.update({
-                'dm02disp': {
-                    'stream': self.ttm_stream.get_data(check=False)
+        #TODO cnt0 or else
+        if data.get(fps_name, {}).get(param_name, {}).get('cnt0') != param:
+            data.update({
+                fps_name: {
+                    param_name: {
+                        'updated': True,
+                        'cnt0': param,
+                        'value': param
+                    }
                 }
             })
 
 
-class DMChannelsBackend(AbstractBackend):
+class MainBackend(SHMFPSBackend):
+    streams_updated = Signal()
+    streams = {}
+
+    tiptilt_updated = Signal()
+    tiptilt = {}
+
+    @AbstractBackend.timeit('streams', 'streams_updated')
+    def update_streams(self, data):
+        self._update_stream(data, config.Streams.DM)
+        self._update_params(data, 'bmc_display-1', 'max_stroke')
+
+        self._update_stream(data, config.Streams.NUVU)
+
+        self._update_stream(data, config.Streams.SLOPES)
+        self._update_params(data, 'shwfs_process-1', 'slope_x')
+        self._update_params(data, 'shwfs_process-1', 'slope_y')
+        self._update_params(data, 'shwfs_process-1', 'residual')
+
+        self._update_stream(data, 'shwfs_slopes_flux')
+        self._update_params(data, 'shwfs_process-1', 'flux_subaperture_avg')
+        self._update_params(data, 'shwfs_process-1',
+                            'flux_subaperture_brightest')
+
+        self._update_stream(data, config.Streams.FLI)
+
+    @AbstractBackend.timeit('tiptilt', 'tiptilt_updated')
+    def update_tiptilt(self, data):
+        self._update_stream(data, config.Streams.TTM)
+
+    def get_plots_data(self, dt_start, dt_end, monitoring_keys,
+                       telemetry_keys):
+        return {
+            'monitoring':
+                database.read_mongo_to_pandas_by_timestamp(
+                    'monitoring', dt_start, dt_end, monitoring_keys),
+            'telemetry':
+                database.read_mongo_to_pandas_by_timestamp(
+                    'telemetry', dt_start, dt_end, telemetry_keys),
+        }
+
+
+class DMChannelsBackend(SHMFPSBackend):
+    streams_updated = Signal()
+    streams = {}
+
     def __init__(self, dm_number):
         super().__init__()
 
         self.dm_number = dm_number
 
-    def update_data(self):
-        stream = toolbox.open_stream_once(f'dm{self.dm_number:02d}disp',
-                                          self.streams_and_fps_cache)
-        if stream is not None:
-            self.data.update({
-                f'dm{self.dm_number:02d}disp': {
-                    'stream': self.stream.get_data(check=False)
-                }
-            })
+    @AbstractBackend.timeit('streams', 'streams_updated')
+    def update_data(self, data):
+        self._update_stream(data, f'dm{self.dm_number:02d}disp')
 
         for i in range(0, 12):
-            channel = f'dm{self.dm_number:02d}disp{i:02d}'
-
-            stream = toolbox.open_stream_once(channel,
-                                              self.streams_and_fps_cache)
-            if stream is not None:
-                self.data.update({
-                    channel: {
-                        'stream': self.stream.get_data(check=False)
-                    }
-                })
+            self._update_stream(data, f'dm{self.dm_number:02d}disp{i:02d}')
 
     def reset_dm(self, dm_number):
         aocontrol.reset_dm(dm_number)

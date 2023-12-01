@@ -1,11 +1,12 @@
 import numpy as np
 
-from PySide2.QtCharts import QtCharts
-from PySide2.QtCore import QEvent, QMargins, QRectF, QSize, Signal
-from PySide2.QtGui import QIcon, QPainter, QPixmap, Qt
-from PySide2.QtSvg import QSvgWidget
-from PySide2.QtWidgets import (QGraphicsScene, QGraphicsSimpleTextItem,
-                               QGraphicsView, QLabel, QMainWindow, QWidget)
+from PySide6.QtCharts import QChart, QChartView
+from PySide6.QtCore import QEvent, QMargins, QPointF, QRectF, QSize, Signal
+from PySide6.QtGui import QIcon, QPainter, QPixmap, Qt
+from PySide6.QtSvgWidgets import QSvgWidget
+from PySide6.QtWidgets import (QGraphicsScene, QGraphicsSimpleTextItem,
+                               QGraphicsView, QLabel, QListWidgetItem,
+                               QMainWindow, QWidget)
 
 from guis.kalao.definitions import Logo
 from guis.kalao.mixins import ArrayToImageMixin
@@ -34,10 +35,11 @@ class KalAOLabel(QLabel, ArrayToImageMixin):
     pixmap_ = None
     text_format = None
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, arg0=None, *args, **kwargs):
+        super().__init__(arg0, *args, **kwargs)
 
-        #self.setScaledContents(False)
+        if isinstance(arg0, str):
+            self.text_format = arg0
 
     def setPixmap(self, p):
         self.pixmap_ = p
@@ -97,14 +99,21 @@ class KalAOWidget(QWidget):
     associated_stream = None
     opened = 0
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, parent=None, **kwargs):
+        super().__init__(parent)
 
         self.setWindowIcon(QIcon(str(Logo.ico)))
         self.resize(600, 400)
         self.move(100 + 50 * KalAOWidget.opened, 100 + 30 * KalAOWidget.opened)
 
         KalAOWidget.opened += 1
+
+
+class KalAOListWidgetItem(QListWidgetItem):
+    def __init__(self, key, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.key = key
 
 
 class HoverScene(QGraphicsScene):
@@ -125,7 +134,7 @@ class HoverScene(QGraphicsScene):
 
             return True
 
-        elif event.type() == QEvent.Type.Leave:
+        elif event.type() == QEvent.Type.GraphicsSceneLeave:
             self.x = -1
             self.y = -1
 
@@ -133,7 +142,7 @@ class HoverScene(QGraphicsScene):
 
             return True
 
-        elif event.type() == QEvent.Type.Enter:
+        elif event.type() == QEvent.Type.GraphicsSceneHoverEnter:
             return True
 
         else:
@@ -195,8 +204,6 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
             self.pixmap_item = self.scene.addPixmap(self.pixmap)
             self.pixmap_item.setAcceptHoverEvents(True)
             self.scene.hovered.connect(self.hover_event)
-
-            self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
         else:
             self.pixmap_item.setPixmap(self.pixmap)
             self.scene.pixmap_updated()
@@ -221,16 +228,35 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
             self.hovered.emit(-1, -1, np.nan)
 
 
-class KalAOChart(QtCharts.QChartView):
+class KalAOChart(QChartView):
+    drag_max = 1
+    drag_min = 0
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setRenderHint(QPainter.Antialiasing)
 
-        self.chart = QtCharts.QChart()
+        self.chart = QChart()
         self.chart.setMargins(QMargins(0, 0, 0, 0))
 
         self.chart.setBackgroundVisible(False)
         self.setStyleSheet("background: transparent")
 
         self.setChart(self.chart)
+
+        self.chart.current_series = None
+        self.chart.current_point = None
+        self.chart.current_index = None
+
+    def mouseMoveEvent(self, event):
+        if self.chart.current_index is not None:
+            pos = self.chart.mapToValue(event.pos(), self.chart.current_series)
+
+            y = max(min(pos.y(), self.drag_max), self.drag_min)
+
+            self.chart.current_series.replace(
+                self.chart.current_index,
+                QPointF(self.chart.current_point.x(), y))
+
+        super().mouseMoveEvent(event)

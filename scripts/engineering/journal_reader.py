@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.raw:
+    if args.type:
         args.type = LogsOutputType.RAW
     else:
         args.type = LogsOutputType.TEXT

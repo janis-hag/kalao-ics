@@ -1,12 +1,11 @@
 import numpy as np
 from scipy import ndimage
 
-from PySide2.QtGui import QPen, Qt
-from PySide2.QtWidgets import QWidget
+from PySide6.QtGui import QPen, Qt
+from PySide6.QtWidgets import QWidget
 
 from kalao.utils import kalao_tools
 
-from guis.alignment import wfs
 from guis.kalao.definitions import HORI, VERT, Color, PokeState
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOMainWindow
@@ -20,8 +19,8 @@ class AlignmentSubwindow(QWidget):
 
 
 class AlignmentWindow(KalAOMainWindow):
-    def __init__(self, backend, parent=None):
-        super().__init__(parent)
+    def __init__(self, backend, wfs):
+        super().__init__()
 
         self.backend = backend
 
@@ -97,10 +96,10 @@ class AlignmentWindow(KalAOMainWindow):
                     for k in [VERT, HORI]:
                         view.lines[j][k].setZValue(1)
 
-        backend.updated.connect(self.data_updated)
+        backend.streams_updated.connect(self.data_updated)
 
     def data_updated(self):
-        frames = self.backend.data['alignment']['stream']
+        frames = self.backend.streams['alignment']['data']
 
         dxs = [0] * 4
         dys = [0] * 4

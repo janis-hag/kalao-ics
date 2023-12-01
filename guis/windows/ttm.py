@@ -2,9 +2,9 @@ from datetime import datetime
 
 import numpy as np
 
-from PySide2.QtCharts import QtCharts
-from PySide2.QtCore import QDateTime, QPointF
-from PySide2.QtGui import QPen, Qt
+from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis
+from PySide6.QtCore import QDateTime, QPointF
+from PySide6.QtGui import QPen, Qt
 
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import MinMaxMixin
@@ -29,19 +29,21 @@ class TTMWidget(KalAOWidget, MinMaxMixin):
         loadUi('ttm.ui', self)
         self.resize(600, 400)
 
-        MinMaxMixin.__init__(self)
+        MinMaxMixin.init(self)
 
         pen = QPen(Color.RED, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        self.tip = QtCharts.QLineSeries()
+        self.tip = QLineSeries()
         self.tip.setPen(pen)
+        self.tip.setName('Tip')
 
         pen = QPen(Color.BLUE, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        self.tilt = QtCharts.QLineSeries()
+        self.tilt = QLineSeries()
         self.tilt.setPen(pen)
+        self.tilt.setName('Tilt')
 
         # Create Chart and set General Chart setting
         chart = self.tiptilt_plot.chart
@@ -49,7 +51,7 @@ class TTMWidget(KalAOWidget, MinMaxMixin):
         chart.addSeries(self.tilt)
 
         # X Axis Settings
-        self.axisX = QtCharts.QDateTimeAxis()
+        self.axisX = QDateTimeAxis()
         self.axisX.setTickCount(5)
         self.axisX.setFormat("HH:mm")
         chart.addAxis(self.axisX, Qt.AlignBottom)
@@ -57,7 +59,7 @@ class TTMWidget(KalAOWidget, MinMaxMixin):
         self.tilt.attachAxis(self.axisX)
 
         # Y Axis Settings
-        self.axisY = QtCharts.QValueAxis()
+        self.axisY = QValueAxis()
         self.axisY.setTickCount(3)
         chart.addAxis(self.axisY, Qt.AlignLeft)
         self.tip.attachAxis(self.axisY)
@@ -65,23 +67,27 @@ class TTMWidget(KalAOWidget, MinMaxMixin):
 
         chart.legend().hide()
 
-        backend.updated.connect(self.data_updated)
+        backend.tiptilt_updated.connect(self.data_updated)
 
     def data_updated(self):
-        timestamp = QDateTime(datetime.now()).toMSecsSinceEpoch()
-        tip, tilt = self.backend.data['dm02disp']['stream'] * self.data_scaling
+        img = self.backend.consume_stream(self.backend.tiptilt,
+                                          config.Streams.TTM)
 
-        self.tip.append(QPointF(timestamp, tip))
-        self.tilt.append(QPointF(timestamp, tilt))
+        if img is not None:
+            timestamp = QDateTime(datetime.now()).toMSecsSinceEpoch()
+            tip, tilt = img * self.data_scaling
 
-        while self.tip.at(0).x() < timestamp - self.plot_length:
-            self.tip.remove(0)
-            self.tilt.remove(0)
+            self.tip.append(QPointF(timestamp, tip))
+            self.tilt.append(QPointF(timestamp, tilt))
 
-        self.tip_label.updateText(tip=tip, unit=self.data_unit)
-        self.tilt_label.updateText(tilt=tilt, unit=self.data_unit)
+            while self.tip.at(0).x() < timestamp - self.plot_length:
+                self.tip.remove(0)
+                self.tilt.remove(0)
 
-        self.update_axis()
+            self.tip_label.updateText(tip=tip, unit=self.data_unit)
+            self.tilt_label.updateText(tilt=tilt, unit=self.data_unit)
+
+            self.update_axis()
 
     def update_axis(self):
         if self.autoscale_checkbox.isChecked():
@@ -102,7 +108,6 @@ class TTMWidget(KalAOWidget, MinMaxMixin):
             y_min = self.data_min
             y_max = self.data_max
 
-        x_min = self.tip.at(0).x()
         x_max = self.tip.at(self.tip.count() - 1).x()
 
         self.axisX.setRange(
@@ -111,7 +116,7 @@ class TTMWidget(KalAOWidget, MinMaxMixin):
         self.axisY.setRange(y_min, y_max)
 
     def change_units(self, state):
-        if state == Qt.Checked:
+        if Qt.CheckState(state) == Qt.Checked:
             self.data_unit = ' asec'
             self.data_scaling = config.TTM.plate_scale
         else:

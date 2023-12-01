@@ -110,7 +110,7 @@ def autogain_off():
 
 
 def autogain_switch(on=True):
-    nuvu_fps = toolbox.open_fps_once(config.AO.nuvu_fps, shm_and_fps_cache)
+    nuvu_fps = toolbox.open_fps_once(config.FPS.NUVU, shm_and_fps_cache)
 
     if nuvu_fps is not None:
         nuvu_fps.set_param('autogain_on', on)
@@ -205,14 +205,14 @@ def emgain_off():
     ret = -1
 
     try:
-        fps = toolbox.open_fps_once(config.AO.nuvu_fps, shm_and_fps_cache)
+        fps = toolbox.open_fps_once(config.FPS.NUVU, shm_and_fps_cache)
 
         if fps is not None:
             fps.set_param('autogain_on', False)
             fps.set_param('autogain_setting', 0)
     except Exception as err:
         print(
-            f'Can\'t turn off autogain, {config.AO.nuvu_fps} seems not to be running.'
+            f'Can\'t turn off autogain, {config.FPS.NUVU} seems not to be running.'
         )
         print(Exception, err)
 
@@ -221,7 +221,7 @@ def emgain_off():
         ret = 0
     except Exception as err:
         print(
-            f'Can\'t turn off emgain, {config.AO.nuvu_fps} seems not to be running.'
+            f'Can\'t turn off emgain, {config.FPS.NUVU} seems not to be running.'
         )
         print(Exception, err)
 
@@ -441,7 +441,7 @@ def tip_tilt_wfs_to_ttm(tt_threshold=config.AO.WFS_centering_slope_threshold,
     tilt_centered = False
 
     ttm_stream = toolbox.open_stream_once(output_stream, shm_and_fps_cache)
-    slopes_fps = toolbox.open_fps_once(config.AO.shwfs_fps, shm_and_fps_cache)
+    slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS, shm_and_fps_cache)
 
     if ttm_stream is None:
         database.store('obs',
@@ -449,9 +449,8 @@ def tip_tilt_wfs_to_ttm(tt_threshold=config.AO.WFS_centering_slope_threshold,
         return -1
 
     if slopes_fps is None:
-        database.store('obs', {
-            'ttm_log': f'[ERROR] {config.AO.shwfs_fps} is missing'
-        })
+        database.store('obs',
+                       {'ttm_log': f'[ERROR] {config.FPS.SHWFS} is missing'})
         return -1
 
     # TODO verify that shwfs enough illuminated for centering
@@ -525,12 +524,12 @@ def check_ttm_saturation(tip, tilt):
 
 
 def optimize_wfs_flux():
-    nuvu_acquire_fps = toolbox.open_fps_once(config.AO.nuvu_fps,
+    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU,
                                              shm_and_fps_cache)
 
     if nuvu_acquire_fps is None:
         database.store('obs',
-                       {'ao_log': f'[ERROR] {config.AO.nuvu_fps} is missing'})
+                       {'ao_log': f'[ERROR] {config.FPS.NUVU} is missing'})
         return -1
 
     # Check if we are already good
@@ -557,7 +556,7 @@ def optimize_wfs_flux():
 
 
 def check_wfs_flux():
-    slopes_flux_stream = toolbox.open_stream_once('shwfs_slopes_flux',
+    slopes_flux_stream = toolbox.open_stream_once(config.Streams.FLUX,
                                                   shm_and_fps_cache)
 
     if slopes_flux_stream is None:
@@ -576,8 +575,7 @@ def check_wfs_flux():
 
 def turn_dm_on():
 
-    bmc_display_fps = toolbox.open_fps_once(config.AO.bmc_fps,
-                                            shm_and_fps_cache)
+    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
 
     if ippower.ippower_status(config.IPPower.Port.BMC_DM) == IPPowerStatus.OFF:
         database.store('obs', {'dm_log': 'Powering on DM ippower'})
@@ -595,7 +593,7 @@ def turn_dm_on():
 
     if bmc_display_fps is not None:
         if not bmc_display_fps.run_runs():
-            database.store('obs', {'dm_log': f'Starting {config.AO.bmc_fps}'})
+            database.store('obs', {'dm_log': f'Starting {config.FPS.BMC}'})
 
             # Avoid safety turning DM off immediately
             time.sleep(1)
@@ -608,7 +606,7 @@ def turn_dm_on():
 
         if not bmc_display_fps.run_runs():
             database.store('obs',
-                           {'dm_log': f'Unable to start {config.AO.bmc_fps}'})
+                           {'dm_log': f'Unable to start {config.FPS.BMC}'})
 
             return -1
 
@@ -618,8 +616,7 @@ def turn_dm_on():
 def turn_dm_off():
     database.store('obs', {'dm_log': 'Turning off DM'})
 
-    bmc_display_fps = toolbox.open_fps_once(config.AO.bmc_fps,
-                                            shm_and_fps_cache)
+    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
 
     database.store('obs', {'dm_log': 'Resetting DM'})
     reset_dm(config.AO.DM_loop_number)
@@ -627,7 +624,7 @@ def turn_dm_off():
     time.sleep(config.Timers.dm_wait_between_actions)
 
     if bmc_display_fps is not None:
-        database.store('obs', {'dm_log': f'Stopping {config.AO.bmc_fps}'})
+        database.store('obs', {'dm_log': f'Stopping {config.FPS.BMC}'})
         bmc_display_fps.run_stop()
 
         time.sleep(config.Timers.dm_wait_between_actions)
@@ -642,9 +639,9 @@ def turn_dm_off():
 
 
 def restart_wfs():
-    shwfs_process_fps = toolbox.open_fps_once(config.AO.shwfs_fps,
+    shwfs_process_fps = toolbox.open_fps_once(config.FPS.SHWFS,
                                               shm_and_fps_cache)
-    nuvu_acquire_fps = toolbox.open_fps_once(config.AO.nuvu_fps,
+    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU,
                                              shm_and_fps_cache)
 
     shwfs_process_was_running = False
@@ -654,8 +651,7 @@ def restart_wfs():
         if shwfs_process_fps.run_runs():
             shwfs_process_was_running = True
 
-            database.store('obs',
-                           {'ao_log': f'Stopping {config.AO.shwfs_fps}'})
+            database.store('obs', {'ao_log': f'Stopping {config.FPS.SHWFS}'})
 
             shwfs_process_fps.run_stop()
 
@@ -663,7 +659,7 @@ def restart_wfs():
         if nuvu_acquire_fps.run_runs():
             nuvu_acquire_was_running = True
 
-            database.store('obs', {'ao_log': f'Stopping {config.AO.nuvu_fps}'})
+            database.store('obs', {'ao_log': f'Stopping {config.FPS.NUVU}'})
 
             nuvu_acquire_fps.run_stop()
 
@@ -675,7 +671,7 @@ def restart_wfs():
 
     if nuvu_acquire_fps is not None and nuvu_acquire_was_running:
         if not nuvu_acquire_fps.run_runs():
-            database.store('obs', {'ao_log': f'Starting {config.AO.nuvu_fps}'})
+            database.store('obs', {'ao_log': f'Starting {config.FPS.NUVU}'})
 
             nuvu_acquire_fps.run_start()
 
@@ -683,47 +679,62 @@ def restart_wfs():
 
         if not nuvu_acquire_fps.run_runs():
             database.store('obs',
-                           {'ao_log': f'Unable to start {config.AO.nuvu_fps}'})
+                           {'ao_log': f'Unable to start {config.FPS.NUVU}'})
 
             return -1
 
     if shwfs_process_fps is not None and shwfs_process_was_running:
         if not shwfs_process_fps.run_runs():
-            database.store('obs',
-                           {'ao_log': f'Starting {config.AO.shwfs_fps}'})
+            database.store('obs', {'ao_log': f'Starting {config.FPS.SHWFS}'})
 
             shwfs_process_fps.run_start()
 
             time.sleep(config.AO.wait_fps_run)
 
         if not shwfs_process_fps.run_runs():
-            database.store('obs', {
-                'ao_log': f'Unable to start {config.AO.shwfs_fps}'
-            })
+            database.store('obs',
+                           {'ao_log': f'Unable to start {config.FPS.SHWFS}'})
 
             return -1
 
 
 def reset_channel(dm_number, channel):
+    log = 'ao_log'
+    if dm_number == config.AO.DM_loop_number:
+        log = 'dm_log'
+    elif dm_number == config.AO.TTM_loop_number:
+        log = 'ttm_log'
+
+    database.store('obs', {
+        log: f'Resetting channel {channel:02d} of DM {dm_number:02d}'
+    })
+
     stream = toolbox.open_stream_once(f'dm{dm_number:02d}disp{channel:02d}',
                                       shm_and_fps_cache)
     toolbox.zero_stream(stream)
 
+    return 0
+
 
 def reset_dm(dm_number):
-    ret = 0
+    log = 'ao_log'
+    if dm_number == config.AO.DM_loop_number:
+        log = 'dm_log'
+    elif dm_number == config.AO.TTM_loop_number:
+        log = 'ttm_log'
 
-    database.store('obs',
-                   {'ao_log': f'Resetting {dm_number}'})  #TODO: ttm/dm log ?
+    database.store('obs', {log: f'Resetting DM {dm_number:02d}'})
 
     for i in range(0, 12):
         reset_channel(dm_number, i)
 
     dm_fps = toolbox.open_fps_once(f"mfilt-{dm_number}", shm_and_fps_cache)
     if dm_fps is not None:
+        database.store('obs', {log: f'Zeroing loop {dm_number}'})
+
         dm_fps.set_param('loopZERO', True)
 
-    return ret
+    return 0
 
 
 def reset_all_dms(max_dm_number=2):
@@ -791,8 +802,8 @@ def _set_exptime_tmux(exptime=0):
 
 
 def _set_emgain_fps(emgain=1):
-    _set_fps_intvalue(config.AO.nuvu_fps, 'emgain', str(emgain))
+    _set_fps_intvalue(config.FPS.NUVU, 'emgain', str(emgain))
 
 
 def _set_exptime_fps(exptime=0):
-    _set_fps_floatvalue(config.AO.nuvu_fps, 'exposuretime', str(exptime))
+    _set_fps_floatvalue(config.FPS.NUVU, 'exposuretime', str(exptime))

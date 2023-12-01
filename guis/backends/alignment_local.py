@@ -2,33 +2,38 @@ import time
 
 import numpy as np
 
+from kalao.cacao import toolbox
 from kalao.utils import kalao_tools
+
+from PySide2.QtCore import Signal
 
 from guis.backends.abstract import AbstractBackend
 from guis.kalao.definitions import PokeState
 
-from config import Streams
+import config
 
 
 class AlignmentBackend(AbstractBackend):
     alignment_window = None
 
+    streams_updated = Signal()
+    streams = {}
+
     def __init__(self):
         super().__init__()
 
-        from kalao.cacao import toolbox
-
-        self.nuvu_stream = toolbox.open_stream_once(Streams.NUVU,
+        self.nuvu_stream = toolbox.open_stream_once(config.Streams.NUVU,
                                                     self.streams_and_fps_cache)
         self.poke_stream = toolbox.open_stream_once("dm01disp09",
                                                     self.streams_and_fps_cache)
         self.slopes_stream = toolbox.open_stream_once(
-            Streams.SLOPES, self.streams_and_fps_cache)
+            config.Streams.SLOPES, self.streams_and_fps_cache)
 
         self.slopes_fps = toolbox.open_fps_once('shwfs_process-1',
                                                 self.streams_and_fps_cache)
 
-    def update_data(self):
+    @AbstractBackend.timeit('streams', 'streams_updated')
+    def update_streams(self, data):
         dm_array = np.zeros(self.poke_stream.shape, self.poke_stream.nptype)
         data_nuvu = {}
         data_slopes = {}
@@ -66,33 +71,33 @@ class AlignmentBackend(AbstractBackend):
         data_nuvu[PokeState.UP] = self.nuvu_stream.get_data(check=True)
         data_slopes[PokeState.UP] = self.slopes_stream.get_data(check=True)
 
-        self.data.update({
-            'nuvu_stream': {
-                'stream': data_nuvu[self.alignment_window.display]
+        data.update({
+            config.Streams.NUVU: {
+                'data': data_nuvu[self.alignment_window.display]
             },
             'alignment': {
-                'stream': data_nuvu
+                'data': data_nuvu
             }
         })
 
         if self.alignment_window.display == PokeState.FLAT:
-            self.data.update({
-                'shwfs_slopes': {
-                    'stream': data_slopes[PokeState.FLAT],
-                    'tip': tip,
-                    'tilt': tilt,
+            data.update({
+                config.Streams.SLOPES: {
+                    'data': data_slopes[PokeState.FLAT],
+                    'slope_x': tip,
+                    'slope_y': tilt,
                     'residual': residual
                 }
             })
         else:
-            self.data.update({
-                'shwfs_slopes': {
-                    'stream':
+            data.update({
+                config.Streams.SLOPES: {
+                    'data':
                         data_slopes[self.alignment_window.display] -
                         data_slopes[PokeState.FLAT],
-                    'tip':
+                    'slope_x':
                         tip,
-                    'tilt':
+                    'slope_y':
                         tilt,
                     'residual':
                         residual

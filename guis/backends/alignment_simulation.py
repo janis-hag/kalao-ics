@@ -1,10 +1,14 @@
 import numpy as np
 
+from PySide6.QtCore import Signal
+
 from kalao.interfaces import fake_data
 from kalao.utils import kalao_tools
 
 from guis.backends.abstract import AbstractBackend
 from guis.kalao.definitions import PokeState
+
+import config
 
 #TODO: replace with Streams enum?
 
@@ -12,7 +16,11 @@ from guis.kalao.definitions import PokeState
 class AlignmentBackend(AbstractBackend):
     alignment_window = None
 
-    def update_data(self):
+    streams_updated = Signal()
+    streams = {}
+
+    @AbstractBackend.timeit('streams', 'streams_updated')
+    def update_streams(self, data):
         data_dm_down = np.zeros((12, 12))
         for act in self.alignment_window.actuators_to_poke:
             data_dm_down[kalao_tools.get_actuator_2d(
@@ -41,28 +49,28 @@ class AlignmentBackend(AbstractBackend):
                 fake_data.slopes(data_nuvu[PokeState.UP]).filled(),
         }
 
-        self.data.update({
-            'nuvu_stream': {
-                'stream': data_nuvu[self.alignment_window.display]
+        data.update({
+            config.Streams.NUVU: {
+                'data': data_nuvu[self.alignment_window.display]
             },
             'alignment': {
-                'stream': data_nuvu
+                'data': data_nuvu
             }
         })
 
         if self.alignment_window.display == PokeState.FLAT:
-            self.data.update({
-                'shwfs_slopes': {
-                    'stream': data_slopes[PokeState.FLAT]
+            data.update({
+                config.Streams.SLOPES: {
+                    'data': data_slopes[PokeState.FLAT]
                 }
             })
         else:
-            self.data.update({
-                'shwfs_slopes': {
-                    'stream':
+            data.update({
+                config.Streams.SLOPES: {
+                    'data':
                         data_slopes[self.alignment_window.display] -
                         data_slopes[PokeState.FLAT]
                 }
             })
-        self.data['shwfs_slopes'].update(
-            fake_data.slopes_params(self.data['shwfs_slopes']['stream']))
+        data[config.Streams.SLOPES].update(
+            fake_data.slopes_params(data[config.Streams.SLOPES]['data']))

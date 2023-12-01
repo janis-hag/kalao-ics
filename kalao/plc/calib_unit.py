@@ -98,6 +98,7 @@ def move_px(pixel, absolute=False):
     return new_position
 
 
+@core.beckhoff_autoconnect
 def move(position=23.36, velocity=0.1, beck=None):
     """
     Move the calibration unit to position
@@ -110,8 +111,6 @@ def move(position=23.36, velocity=0.1, beck=None):
     database.store('obs', {
         'calib_unit_log': f'Moving calibration unit to position: {position}mm'
     })
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     # define commands
     motor_nCommand = beck.get_node(
@@ -171,23 +170,15 @@ def move(position=23.36, velocity=0.1, beck=None):
             })
         new_position = -1
 
-    # Disconnect from OPCUA server
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return new_position
 
 
+@core.beckhoff_autoconnect
 def wait_move(beck=None):
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     core.wait_loop(
         f'Waiting for calibration unit movement',
         lambda: beck.get_node(f"ns=4; s=MAIN.Linear_Standa_8MT.stat.sStatus"
                               ).get_value().startswith('MOVING'), 5)
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return 0
 
@@ -225,6 +216,7 @@ def check_error(beck):
         return -1
 
 
+@core.beckhoff_autoconnect
 def init(force_init=True, beck=None, motor_nCommand=None):
     '''
     Initialise the calibration unit.
@@ -235,8 +227,6 @@ def init(force_init=True, beck=None, motor_nCommand=None):
     '''
 
     database.store('obs', {'calib_unit_log': 'Initialising calibration unit'})
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     if motor_nCommand is None:
         # define commands
@@ -264,9 +254,6 @@ def init(force_init=True, beck=None, motor_nCommand=None):
                 beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode"
                               ).get_value())
 
-            if disconnect_on_exit:
-                beck.disconnect()
-
             return error
 
     # Check if init, if not do init
@@ -289,13 +276,7 @@ def init(force_init=True, beck=None, motor_nCommand=None):
                 beck.get_node("ns=4; s=MAIN.Linear_Standa_8MT.stat.nErrorCode"
                               ).get_value())
 
-            if disconnect_on_exit:
-                beck.disconnect()
-
             return error
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return 0
 

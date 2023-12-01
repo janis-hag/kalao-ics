@@ -20,6 +20,7 @@ from opcua import ua
 from kalao.definitions.enums import ShutterState
 
 
+@core.beckhoff_autoconnect
 def plc_status(beck=None):
     """
     Query the status of the shutter
@@ -27,27 +28,21 @@ def plc_status(beck=None):
     :return: complete status of shutter
     """
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     status_dict = core.device_status('Shutter.Shutter', beck=beck)
 
     if status_dict['sStatus'] == 'STANDING':
         status_dict['sStatus'] = get_state(beck=beck)
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return status_dict
 
 
+@core.beckhoff_autoconnect
 def get_state(beck=None):
     """
     Query the single string status of the shutter.
 
     :return: single string status of shutter
     """
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     # Check error status
     error_code = beck.get_node(
@@ -69,12 +64,10 @@ def get_state(beck=None):
         else:
             state = ShutterState.OPEN
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return state
 
 
+@core.beckhoff_autoconnect
 def init(beck=None):
     """
     Initialise the shutter.
@@ -83,8 +76,6 @@ def init(beck=None):
     """
     database.store('obs', {'shutter_log': 'Initialising shutter'})
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     init_status = beck.get_node(
         "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
 
@@ -92,9 +83,6 @@ def init(beck=None):
     close(beck)
     open(beck)
     close(beck)
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return init_status
 
@@ -119,6 +107,7 @@ def close(beck=None):
     return _switch('bClose_Shutter', beck=beck)
 
 
+@core.beckhoff_autoconnect
 def _switch(action_name, beck=None):
     """
      Open or Close the shutter depending on action_name
@@ -132,8 +121,6 @@ def _switch(action_name, beck=None):
     elif action_name == 'bClose_Shutter':
         database.store('obs', {'shutter_log': 'Closing shutter'})
 
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     shutter_switch = beck.get_node("ns = 4; s = MAIN.Shutter." + action_name)
     shutter_switch.set_attribute(
         ua.AttributeIds.Value,
@@ -143,9 +130,6 @@ def _switch(action_name, beck=None):
     sleep(1)
 
     state = get_state(beck)
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return state
 

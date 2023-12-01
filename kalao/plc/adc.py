@@ -168,9 +168,8 @@ def get_angle():
         return angle
 
 
+@core.beckhoff_autoconnect
 def rotate(adc_id, position=0, beck=None):
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     # define commands
     motor_nCommand = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
                                    ".ctrl.nCommand")
@@ -225,22 +224,15 @@ def rotate(adc_id, position=0, beck=None):
             })
         new_position = -1
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return new_position
 
 
+@core.beckhoff_autoconnect
 def wait_rotate(adc_id, beck=None):
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     core.wait_loop(
         f'Waiting for ADC {adc_id} rotation',
         lambda: beck.get_node(f"ns=4; s=MAIN.{adc_name[adc_id]}.stat.sStatus"
                               ).get_value().startswith('MOVING'), 5)
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return 0
 
@@ -262,21 +254,18 @@ def plc_status(adc_id, beck=None):
     return core.device_status(adc_name[adc_id], beck=beck)
 
 
+@core.beckhoff_autoconnect
 def check_error(adc_id, beck=None):
-    beck, disconnect_on_exit = core.check_beck(beck)
-
     if beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
                      ".stat.sErrorText").get_value() == 0:
         adc_status = 0
     else:
         adc_status = 'ERROR'
 
-    if disconnect_on_exit:
-        beck.disconnect()
-
     return adc_status
 
 
+@core.beckhoff_autoconnect
 def init(adc_id, force_init=False, beck=None, motor_nCommand=None,
          motor_bExecute=None):
     """
@@ -290,8 +279,6 @@ def init(adc_id, force_init=False, beck=None, motor_nCommand=None,
     :return: returns 0 on success and error code on failure
     """
     database.store('obs', {'adc_log': f'Initialising ADC {adc_id}'})
-
-    beck, disconnect_on_exit = core.check_beck(beck)
 
     init_status = 0
 
@@ -338,9 +325,6 @@ def init(adc_id, force_init=False, beck=None, motor_nCommand=None,
                 beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
                               ".stat.nErrorCode").get_value())
             init_status = error
-
-    if disconnect_on_exit:
-        beck.disconnect()
 
     return init_status
 

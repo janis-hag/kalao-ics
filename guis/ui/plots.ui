@@ -29,34 +29,71 @@
      <item row="0" column="1">
       <widget class="QDateTimeEdit" name="start_datetimeedit"/>
      </item>
-     <item row="1" column="1">
-      <widget class="QDateTimeEdit" name="stop_datetimeedit"/>
-     </item>
      <item row="1" column="0">
-      <widget class="QLabel" name="stop_label">
+      <widget class="QLabel" name="end_label">
        <property name="text">
-        <string>Stop:</string>
+        <string>End</string>
        </property>
       </widget>
      </item>
+     <item row="1" column="1">
+      <widget class="QDateTimeEdit" name="end_datetimeedit"/>
+     </item>
      <item row="2" column="0" colspan="2">
-      <widget class="QListWidget" name="plots_list">
-       <property name="selectionMode">
-        <enum>QAbstractItemView::MultiSelection</enum>
+      <widget class="QLabel" name="telemetry_label">
+       <property name="font">
+        <font>
+         <bold>true</bold>
+        </font>
        </property>
-       <item>
-        <property name="text">
-         <string>TODO1</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>TODO2</string>
-        </property>
-       </item>
+       <property name="text">
+        <string>Telemetry</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
       </widget>
      </item>
      <item row="3" column="0" colspan="2">
+      <widget class="QListWidget" name="telemetry_list">
+       <property name="selectionMode">
+        <enum>QAbstractItemView::MultiSelection</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0" colspan="2">
+      <widget class="QLabel" name="monitoring_label">
+       <property name="font">
+        <font>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Monitoring</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0" colspan="2">
+      <widget class="QListWidget" name="monitoring_list">
+       <property name="selectionMode">
+        <enum>QAbstractItemView::MultiSelection</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="live_label">
+       <property name="text">
+        <string>Live view</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QCheckBox" name="live_checkbox"/>
+     </item>
+     <item row="7" column="0" colspan="2">
       <widget class="QPushButton" name="plot_button">
        <property name="text">
         <string>Plot</string>

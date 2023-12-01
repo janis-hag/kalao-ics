@@ -1,7 +1,7 @@
 import numpy as np
 
-from PySide2.QtCore import Signal
-from PySide2.QtGui import QImage, Qt
+from PySide6.QtCore import Signal, Slot
+from PySide6.QtGui import QImage, Qt
 
 from guis.kalao import colormaps
 
@@ -9,6 +9,7 @@ from guis.kalao import colormaps
 class ArrayToImageMixin():
     colormap = colormaps.BlackBody()
     image = None
+    epsilon = 1e-12
 
     def prepare_array_for_qimage(self, img, img_min=None, img_max=None):
         if img_min is None:
@@ -37,7 +38,7 @@ class ArrayToImageMixin():
         else:
             mask = None
 
-        if delta > 1e-12:
+        if delta > self.epsilon:
             rescale = (scale_max-scale_min) / delta
             offset = img_min*rescale - scale_min
 
@@ -71,32 +72,33 @@ class MinMaxMixin:
     axis_scaling = 1
     axis_precision = 0
 
-    def __init__(self):
-        self.min_spinbox.valueChanged.connect(self.min_changed)
-        self.max_spinbox.valueChanged.connect(self.max_changed)
-        self.autoscale_checkbox.stateChanged.connect(self.autoscale_changed)
-        self.fullscale_button.clicked.connect(self.fullscale_clicked)
-
-        self.autoscale_changed(self.autoscale_checkbox.checkState())
-        self.min_changed(self.min_spinbox.value())
-        self.max_changed(self.max_spinbox.value())
+    def init(self):
+        self.on_autoscale_checkbox_stateChanged(
+            self.autoscale_checkbox.checkState())
+        self.on_min_spinbox_valueChanged(self.min_spinbox.value())
+        self.on_max_spinbox_valueChanged(self.max_spinbox.value())
         self.update_spinboxes_unit()
 
-    def min_changed(self, d):
+    @Slot(float)
+    def on_min_spinbox_valueChanged(self, d):
         self.data_min = d
         self.max_spinbox.setMinimum(d)
 
-    def max_changed(self, d):
+    @Slot(float)
+    def on_max_spinbox_valueChanged(self, d):
         self.data_max = d
         self.min_spinbox.setMaximum(d)
-        if self.max_spinbox.hasFocus():
+
+        if not self.autoscale_checkbox.isChecked():
             print(f"New max: {d}")
 
-    def autoscale_changed(self, state):
-        self.min_spinbox.setEnabled(state == Qt.Unchecked)
-        self.max_spinbox.setEnabled(state == Qt.Unchecked)
+    @Slot(int)
+    def on_autoscale_checkbox_stateChanged(self, state):
+        self.min_spinbox.setReadOnly(Qt.CheckState(state) == Qt.Checked)
+        self.max_spinbox.setReadOnly(Qt.CheckState(state) == Qt.Checked)
 
-    def fullscale_clicked(self, checked):
+    @Slot(bool)
+    def on_fullscale_button_clicked(self, checked):
         self.autoscale_checkbox.setChecked(False)
         self.min_spinbox.setValue(self.stream_info['min'] * self.data_scaling)
         self.max_spinbox.setValue(self.stream_info['max'] * self.data_scaling)
@@ -112,16 +114,31 @@ class MinMaxMixin:
 
         self.data_scaling_prev = self.data_scaling
 
+    def compute_min_max(self, img, symetric=False):
+        if self.autoscale_checkbox.isChecked():
+            img_min = img.min()
+            img_max = img.max()
+
+            if symetric:
+                abs_max = max(abs(img_min), abs(img_max))
+                img_min = -abs_max
+                img_max = abs_max
+
+            self.min_spinbox.setValue(img_min * self.data_scaling)
+            self.max_spinbox.setValue(img_max * self.data_scaling)
+        else:
+            img_min = self.data_min / self.data_scaling
+            img_max = self.data_max / self.data_scaling
+
+        return img_min, img_max
+
 
 class HoverMixin():
     hovered = Signal(str)
 
-    def __init__(self, view):
-        self.view = view
-
     def hover_event(self, x, y, v):
         if x != -1 and y != -1:
-            string = f'X: {(x-self.data_center_x)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, Y: {(y-self.data_center_y)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, V: {v:.{self.data_precision}f}{self.data_unit}'
+            string = f'X: {(x-self.data_center_x)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, Y: {(y-self.data_center_y)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, V: {v*self.data_scaling:.{self.data_precision}f}{self.data_unit}'
 
             self.hovered.emit(string)
         else:

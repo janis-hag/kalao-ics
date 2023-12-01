@@ -434,12 +434,10 @@ class AO:
     WFS_centering_timeout = 30  # s
     WFS_centering_slope_threshold = 0.005  # px
 
+    cacao_workdir = Path('/home/kalao/kalao-cacao-workdir/')
+
     DM_loop_number = 1
     TTM_loop_number = 2
-
-    nuvu_fps = 'nuvu_acquire-1'
-    shwfs_fps = 'shwfs_process-1'
-    bmc_fps = 'bmc_display-1'
 
     # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
     FLI_tip_to_TTM = 0.008497723325890764  # mrad / px
@@ -499,10 +497,20 @@ class Timers:
 
 class GUI:
     ttm_plot_length = 300  # s
-    logs_lines = 1000  # s
+
+    logs_lines = 10000  # s
     initial_logs_entries = 100
 
+    plots_map_to_0 = [False, 'OFF', 'CLOSED', 'DOWN']
+    plots_map_to_1 = [True, 'ON', 'OPEN', 'UP']
+
     max_fps = 10
+
+
+class FPS(StrEnum):
+    NUVU = 'nuvu_acquire-1'
+    SHWFS = 'shwfs_process-1'
+    BMC = 'bmc_display-1'
 
 
 class Streams(StrEnum):

@@ -2,8 +2,8 @@ from subprocess import Popen
 
 import numpy as np
 
-from PySide2.QtGui import QFont, QPen, Qt
-from PySide2.QtWidgets import QGraphicsItem
+from PySide6.QtGui import QFont, QPen, Qt
+from PySide6.QtWidgets import QGraphicsItem
 
 from guis.kalao import colormaps
 from guis.kalao.definitions import Color
@@ -32,7 +32,7 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, HoverMixin):
         loadUi('fli_zoom.ui', self)
         self.resize(600, 400)
 
-        MinMaxMixin.__init__(self)
+        MinMaxMixin.init(self)
 
         self.fli_view.setImage(img)
 
