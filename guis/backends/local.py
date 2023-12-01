@@ -47,15 +47,15 @@ class SHMFPSBackend(AbstractBackend):
 
         param = fps.get_param(param_name)
 
-        #TODO cnt0 or else
+        if data.get(fps_name) is None:
+            data[fps_name] = {}
+
         if data.get(fps_name, {}).get(param_name, {}).get('cnt0') != param:
-            data.update({
-                fps_name: {
-                    param_name: {
-                        'updated': True,
-                        'cnt0': param,
-                        'value': param
-                    }
+            data[fps_name].update({
+                param_name: {
+                    'updated': True,
+                    'cnt0': param,
+                    'value': param
                 }
             })
 
@@ -70,21 +70,23 @@ class MainBackend(SHMFPSBackend):
     @AbstractBackend.timeit('streams', 'streams_updated')
     def update_streams(self, data):
         self._update_stream(data, config.Streams.DM)
-        self._update_params(data, 'bmc_display-1', 'max_stroke')
+        self._update_params(data, config.FPS.BMC, 'max_stroke')
 
         self._update_stream(data, config.Streams.NUVU)
 
         self._update_stream(data, config.Streams.SLOPES)
-        self._update_params(data, 'shwfs_process-1', 'slope_x')
-        self._update_params(data, 'shwfs_process-1', 'slope_y')
-        self._update_params(data, 'shwfs_process-1', 'residual')
+        self._update_params(data, config.FPS.SHWFS, 'slope_x')
+        self._update_params(data, config.FPS.SHWFS, 'slope_y')
+        self._update_params(data, config.FPS.SHWFS, 'residual')
 
-        self._update_stream(data, 'shwfs_slopes_flux')
-        self._update_params(data, 'shwfs_process-1', 'flux_subaperture_avg')
-        self._update_params(data, 'shwfs_process-1',
+        self._update_stream(data, config.Streams.FLUX)
+        self._update_params(data, config.FPS.SHWFS, 'flux_subaperture_avg')
+        self._update_params(data, config.FPS.SHWFS,
                             'flux_subaperture_brightest')
 
         self._update_stream(data, config.Streams.FLI)
+
+        self._update_stream(data, 'aol1_mgainfact')
 
     @AbstractBackend.timeit('tiptilt', 'tiptilt_updated')
     def update_tiptilt(self, data):
@@ -140,8 +142,8 @@ class LogsThread(QThread):
         for entry in logs.seek(self.reader, LogsOutputType.QT,
                                config.GUI.initial_logs_entries):
             entry['text'] = '<span class="init">' + entry['text'] + '<span>'
-            self.log.emit(entry)
+            self.new_log.emit(entry)
 
         while self.logs_poll.poll() and not self.isInterruptionRequested():
             for entry in logs.get_last_entries(self.reader, LogsOutputType.QT):
-                self.log.emit(entry)
+                self.new_log.emit(entry)

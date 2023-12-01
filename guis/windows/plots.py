@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 
@@ -87,6 +87,9 @@ class PlotsWidget(KalAOWidget):
 
         dt_start = self.start_datetimeedit.dateTime().toUTC().toPython()
         dt_end = self.end_datetimeedit.dateTime().toUTC().toPython()
+
+        dt_start = dt_start.replace(tzinfo=timezone.utc)
+        dt_end = dt_end.replace(tzinfo=timezone.utc)
 
         data = self.backend.get_plots_data(dt_start, dt_end, monitoring_keys,
                                            telemetry_keys)

@@ -43,19 +43,19 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, HoverMixin):
             self.slopes_view.setImage(img, img_min, img_max)
 
         slope_x = self.backend.consume_param(self.backend.streams,
-                                             'shwfs_process-1', 'slope_x')
+                                             config.FPS.SHWFS, 'slope_x')
         if slope_x is not None:
             self.tip_label.updateText(tip=slope_x * self.data_scaling,
                                       unit=self.data_unit)
 
         slope_y = self.backend.consume_param(self.backend.streams,
-                                             'shwfs_process-1', 'slope_y')
+                                             config.FPS.SHWFS, 'slope_y')
         if slope_y is not None:
             self.tilt_label.updateText(tilt=slope_y * self.data_scaling,
                                        unit=self.data_unit)
 
         residual = self.backend.consume_param(self.backend.streams,
-                                              'shwfs_process-1', 'residual')
+                                              config.FPS.SHWFS, 'residual')
         if residual is not None:
             self.residual_label.updateText(
                 residual=residual * self.data_scaling, unit=self.data_unit)

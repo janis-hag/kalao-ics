@@ -29,7 +29,7 @@ class AlignmentBackend(AbstractBackend):
         self.slopes_stream = toolbox.open_stream_once(
             config.Streams.SLOPES, self.streams_and_fps_cache)
 
-        self.slopes_fps = toolbox.open_fps_once('shwfs_process-1',
+        self.slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS,
                                                 self.streams_and_fps_cache)
 
     @AbstractBackend.timeit('streams', 'streams_updated')

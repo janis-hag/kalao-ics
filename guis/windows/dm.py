@@ -44,7 +44,7 @@ class DMWidget(KalAOWidget, MinMaxMixin, HoverMixin):
                                           config.Streams.DM)
 
         max_stroke = self.backend.consume_param(self.backend.streams,
-                                                'bmc_display-1', 'max_stroke')
+                                                config.FPS.BMC, 'max_stroke')
 
         if max_stroke is not None:
             self.max_stroke = max_stroke

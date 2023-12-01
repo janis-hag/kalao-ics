@@ -34,7 +34,7 @@ class MainBackend(AbstractBackend):
                 'updated': True,
                 'data': fake_data.dm(),
             },
-            'bmc_display-1': {
+            config.FPS.BMC: {
                 'max_stroke': {
                     'updated': True,
                     'value': 0.9
@@ -72,15 +72,15 @@ class MainBackend(AbstractBackend):
             }
         })
 
-        data['shwfs_process-1'] = {}
+        data[config.FPS.SHWFS] = {}
 
         for k, v in fake_data.slopes_params(
                 data[config.Streams.SLOPES]['data']).items():
-            data['shwfs_process-1'].update({k: {'updated': True, 'value': v}})
+            data[config.FPS.SHWFS].update({k: {'updated': True, 'value': v}})
 
         for k, v in fake_data.flux_params(
                 data[config.Streams.FLUX]['data']).items():
-            data['shwfs_process-1'].update({k: {'updated': True, 'value': v}})
+            data[config.FPS.SHWFS].update({k: {'updated': True, 'value': v}})
 
         if data.get('aol1_mgainfact') is None:
             data.update({

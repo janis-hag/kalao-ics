@@ -34,8 +34,8 @@ class CalibrationWindow(KalAOMainWindow, HoverMixin):
             if isinstance(attr, KalAOGraphicsView):
                 attr.hovered.connect(self.hover_event)
 
-        self.load_data()
-        self.update_window(self.mode_spinbox.value())
+        self.on_reload_button_clicked()
+        self.on_mode_spinbox_valueChanged(self.mode_spinbox.value())
 
         self.show()
 

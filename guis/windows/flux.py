@@ -42,14 +42,14 @@ class FluxWidget(KalAOWidget, MinMaxMixin, HoverMixin):
             self.flux_view.setImage(img, img_min, img_max)
 
         flux_avg = self.backend.consume_param(self.backend.streams,
-                                              'shwfs_process-1',
+                                              config.FPS.SHWFS,
                                               'flux_subaperture_avg')
         if flux_avg is not None:
             self.flux_avg_label.updateText(
                 flux_avg=flux_avg * self.data_scaling, unit=self.data_unit)
 
         flux_brightest = self.backend.consume_param(
-            self.backend.streams, 'shwfs_process-1',
+            self.backend.streams, config.FPS.SHWFS,
             'flux_subaperture_brightest')
         if flux_brightest is not None:
             self.flux_brightest_label.updateText(
