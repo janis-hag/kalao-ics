@@ -12,43 +12,42 @@ laser.py is part of the KalAO Instrument Control Software
 import datetime
 from time import sleep
 
-import numpy as np
-import pandas as pd
+from kalao.cacao import aocontrol
+from kalao.plc import core
+from kalao.timers import database as database_timer
+from kalao.utils import database, kalao_time
 
 from opcua import ua
 
-from kalao.cacao import aocontrol
-from kalao.plc import core
-from kalao.utils import database, kalao_time
-
-import kalao_config as config
+import config
 
 
-def status(beck=None):
+def plc_status(beck=None):
     """
-    Query the current intensity of the laser
+    Query the current status of the laser
 
     :return: intensity of laser
     """
-    # Connect to OPCUA server
-    # if beck is None:
-    #     disconnect_on_exit = True
-    #     beck = core.connect()
-    # else:
-    #     disconnect_on_exit = False
 
     beck, disconnect_on_exit = core.check_beck(beck)
 
-    if beck.get_node('ns = 4;s = MAIN.Laser.Status').get_value():
-        laser_status = beck.get_node(
-                'ns = 4;s = MAIN.Laser.Current').get_value()
-    else:
-        laser_status = 'OFF'
+    device_status_dict = {
+        'Status': beck.get_node('ns = 4;s = MAIN.Laser.Status').get_value(),
+        'Current': beck.get_node('ns = 4;s = MAIN.Laser.Current').get_value(),
+    }
 
     if disconnect_on_exit:
         beck.disconnect()
 
-    return laser_status
+    return device_status_dict
+
+
+def get_state():
+    return plc_status()['Status']
+
+
+def get_power():
+    return plc_status()['Current']
 
 
 def disable(beck=None):
@@ -58,10 +57,7 @@ def disable(beck=None):
     :return: status of the laser
     """
 
-    set_intensity(0, beck=beck)
-    laser_status = switch('bDisable', beck=beck)
-
-    return laser_status
+    return _switch('bDisable', beck=beck)
 
 
 def enable(beck=None):
@@ -72,12 +68,7 @@ def enable(beck=None):
     :return: status of the laser
     """
 
-    aocontrol.emgain_off()
-
-    laser_status = switch('bEnable', beck=beck)
-    laser_status = set_intensity(beck=beck)
-
-    return laser_status
+    return _switch('bEnable', beck=beck)
 
 
 def lock(beck=None):
@@ -86,8 +77,8 @@ def lock(beck=None):
 
     :return: status of the laser lock
     """
-    laser_status = switch('bLock', beck=beck)
-    return laser_status
+
+    return _switch('bLock', beck=beck)
 
 
 def unlock(beck=None):
@@ -96,8 +87,8 @@ def unlock(beck=None):
 
     :return: status of the laser lock
     """
-    laser_status = switch('bUnlock', beck=beck)
-    return laser_status
+
+    return _switch('bUnlock', beck=beck)
 
 
 def get_switch_time():
@@ -108,49 +99,15 @@ def get_switch_time():
     """
 
     # Update db to make sure the latest data point is valid
-    _update_db()
+    database_timer.update_monitoring_db()
 
-    nb_of_points = 600
-    dt = kalao_time.now()
+    data = database.get_time_since_state('monitoring', 'laser_state')
 
-    # Load laser log into dataframe
-    df = pd.DataFrame(
-            database.get_monitoring({'laser'}, nb_of_points, dt=dt)['laser'])
+    if data.get('since') is None:
+        return data['current']['value'], 0
 
-    if len(df) < nb_of_points:
-        df = pd.concat([
-                df,
-                pd.DataFrame(
-                        database.get_monitoring({'laser'}, nb_of_points,
-                                                dt=dt - datetime.timedelta(
-                                                        days=1))['laser'])
-        ])
-
-    # Search for last occurence of current status
-    if len(np.unique(status())):
-        # There is no switch time value
-        switch_time = df.iloc[-1]['time_utc']
-
-    else:
-        switch_time = df.loc[df[df['values'] != status()].first_valid_index() -
-                             1]['time_utc']
-
-    elapsed_time = (kalao_time.now() - switch_time.to_pydatetime().replace(
-            tzinfo=datetime.timezone.utc)).total_seconds()
-
-    return elapsed_time
-
-
-def log(message):
-    """
-    Log message to shutter_log
-    :param message:
-    :return:
-    """
-
-    database.store_obs_log({'laser_log': message})
-
-    return 0
+    return data['current']['value'], (
+        kalao_time.now() - data['since']['timestamp']).total_seconds()
 
 
 def set_intensity(intensity=0.4, beck=None):
@@ -161,10 +118,11 @@ def set_intensity(intensity=0.4, beck=None):
 
     :return: value of the new intensity
     """
+    database.store('obs',
+                   {'laser_log': f'Setting laser intensity to {intensity}'})
 
     aocontrol.emgain_off()
 
-    # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
     # Limit intensity to protect the WFS
@@ -173,31 +131,26 @@ def set_intensity(intensity=0.4, beck=None):
     if not beck.get_node("ns=4;s=MAIN.Laser.bEnable").get_value():
         laser_enable = beck.get_node("ns=4;s=MAIN.Laser.bEnable")
         laser_enable.set_attribute(
-                ua.AttributeIds.Value,
-                ua.DataValue(
-                        ua.Variant(
-                                True,
-                                laser_enable.get_data_type_as_variant_type())))
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                ua.Variant(True,
+                           laser_enable.get_data_type_as_variant_type())))
 
     # Give new intensity value
     laser_setIntensity = beck.get_node("ns=4;s=MAIN.Laser.setIntensity")
     laser_setIntensity.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                    ua.Variant(
-                            float(intensity),
-                            laser_setIntensity.get_data_type_as_variant_type())
-            ))
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(float(intensity),
+                       laser_setIntensity.get_data_type_as_variant_type())))
 
     # Apply new intensity value
     laser_bSetIntensity = beck.get_node("ns=4;s=MAIN.Laser.bSetIntensity")
     laser_bSetIntensity.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                    ua.Variant(
-                            True,
-                            laser_bSetIntensity.get_data_type_as_variant_type(
-                            ))))
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(True,
+                       laser_bSetIntensity.get_data_type_as_variant_type())))
 
     sleep(config.Laser.switch_wait)
     current = beck.get_node("ns=4;s=MAIN.Laser.Current").get_value()
@@ -208,22 +161,32 @@ def set_intensity(intensity=0.4, beck=None):
     return current
 
 
-def switch(action_name, beck=None):
+def _switch(action_name, beck=None):
     """
      Enable or Disable the laser depending on action_name
 
     :param action_name: bDisable or bEnable
     :return: status of laser
     """
-    # Connect to OPCUA server
+
+    if action_name == 'bEnable':
+        database.store('obs', {'laser_log': 'Enabling laser'})
+        aocontrol.emgain_off()
+    elif action_name == 'bDisable':
+        database.store('obs', {'laser_log': 'Disabling laser'})
+        set_intensity(0, beck=beck)
+    elif action_name == 'bLock':
+        database.store('obs', {'laser_log': 'Locking laser'})
+    elif action_name == 'bUnlock':
+        database.store('obs', {'laser_log': 'Unlocking laser'})
+
     beck, disconnect_on_exit = core.check_beck(beck)
 
     laser_switch = beck.get_node("ns = 4; s = MAIN.Laser." + action_name)
     laser_switch.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                    ua.Variant(True,
-                               laser_switch.get_data_type_as_variant_type())))
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
 
     sleep(config.Laser.switch_wait)
     if beck.get_node("ns=4;s=MAIN.Laser.Status").get_value():
@@ -237,16 +200,7 @@ def switch(action_name, beck=None):
     return laser_status
 
 
-def initialise():
+def init():
+    database.store('obs', {'laser_log': 'Initialising laser'})
+
     return 0
-
-
-def _update_db(beck=None):
-    """
-    Update the database with the current shutter position
-
-    :param beck: handle to the beckhoff connection if it's already open
-    :return:
-    """
-
-    database.store_monitoring({'laser': status(beck=beck)})

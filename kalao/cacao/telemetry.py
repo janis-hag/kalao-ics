@@ -16,7 +16,17 @@ import numpy as np
 from kalao.cacao import toolbox
 from kalao.utils import database
 
-import kalao_config as config
+import config
+
+empty_stream = {
+    "data": 0,
+    "width": 0,
+    "height": 0,
+    "min": 0,
+    "max": 0,
+    "min_th": 0,
+    "max_th": 0,
+}
 
 
 def _get_stream(name, min_value_th, max_value_th, shm_cache={}):
@@ -29,16 +39,6 @@ def _get_stream(name, min_value_th, max_value_th, shm_cache={}):
     :param shm_cache: streams cache
     :return: Dictionary with: data, width, height, min, max, min_th, max_th
     """
-
-    empty_stream = {
-            "data": 0,
-            "width": 0,
-            "height": 0,
-            "min": 0,
-            "max": 0,
-            "min_th": 0,
-            "max_th": 0,
-    }
 
     stream_shm = toolbox.open_stream_once(name, shm_cache)
 
@@ -58,13 +58,13 @@ def _get_stream(name, min_value_th, max_value_th, shm_cache={}):
             max_value = np.max(data)
 
             return {
-                    "data": data.flatten().tolist(),
-                    "width": width,
-                    "height": height,
-                    "min": float(min_value),
-                    "max": float(max_value),
-                    "min_th": min_value_th,
-                    "max_th": max_value_th,
+                "data": data.flatten().tolist(),
+                "width": width,
+                "height": height,
+                "min": float(min_value),
+                "max": float(max_value),
+                "min_th": min_value_th,
+                "max_th": max_value_th,
             }
         except:
             print(traceback.format_exc())
@@ -97,8 +97,8 @@ def streams(shm_cache={}):
                                           shm_cache=shm_cache)
 
     stream_list["shwfs_slopes_flux"] = _get_stream(
-            name="shwfs_slopes_flux", min_value_th=0,
-            max_value_th=4 * (2**16 - 1), shm_cache=shm_cache)
+        name="shwfs_slopes_flux", min_value_th=0, max_value_th=4 * (2**16 - 1),
+        shm_cache=shm_cache)
 
     stream_list["aol1_mgainfact"] = _get_stream(name="aol1_mgainfact",
                                                 min_value_th=0, max_value_th=1,
@@ -122,18 +122,7 @@ def telemetry_save(shm_and_fps_cache):
 
     telemetry_data = {}
 
-    # NUVU process
-    # server = libtmux.Server()
-    # try:
-    #     session = server.find_where({"session_name": "nuvu_ctrl"})
-    # except:
-    #     # TODO specify more precise exception
-    #     session = False
-    #
-    # # If tmux session exists send query temperatures
-    # if session:
-    #     session.attached_pane.send_keys('\ncam.GetTemperature()')
-
+    # Nuvu stream
     nuvu_stream = toolbox.open_stream_once('nuvu_raw', shm_and_fps_cache)
 
     if nuvu_stream is not None:  # and session:
@@ -156,20 +145,16 @@ def telemetry_save(shm_and_fps_cache):
         pass
 
     # SHWFS process
-    slopes_stream = toolbox.open_fps_once('shwfs_process-1', shm_and_fps_cache)
+    shwfs_fps = toolbox.open_fps_once(config.AO.shwfs_fps, shm_and_fps_cache)
 
-    if slopes_stream is not None:
-        # Check if it's running
-        if slopes_stream.run_runs():
-            telemetry_data["slopes_flux_subaperture"] = slopes_stream.get_param(
-                    'flux_subaperture_brightest')
-            telemetry_data["slopes_residual_pix"] = slopes_stream.get_param(
-                    'residual')
-            telemetry_data["slopes_residual_arcsec"] = slopes_stream.get_param(
-                    'residual') * config.WFS.plate_scale
+    if shwfs_fps is not None and shwfs_fps.run_runs():
+        telemetry_data["slopes_flux_subaperture"] = shwfs_fps.get_param(
+            'flux_subaperture_brightest')
+        telemetry_data["slopes_residual_pix"] = shwfs_fps.get_param('residual')
+        telemetry_data["slopes_residual_arcsec"] = shwfs_fps.get_param(
+            'residual') * config.WFS.plate_scale
 
     # Tip/tilt stream
-    # check if fps exists and is running
     tt_stream = toolbox.open_stream_once('dm02disp', shm_and_fps_cache)
 
     if tt_stream is not None:
@@ -179,39 +164,33 @@ def telemetry_save(shm_and_fps_cache):
         telemetry_data["pi_tip"] = float(tt_data[0])
         telemetry_data["pi_tilt"] = float(tt_data[1])
 
-    # looopRUN process
-    # check if fps exists and is running
-    dm_loop_stream = toolbox.open_fps_once('mfilt-1', shm_and_fps_cache)
+    # DM loop process
+    dm_loop_fps = toolbox.open_fps_once('mfilt-1', shm_and_fps_cache)
 
-    if dm_loop_stream is not None:
-        # Check if it's running
-        if dm_loop_stream.run_runs():
-            telemetry_data["loop_gain"] = dm_loop_stream.get_param('loopgain')
-            telemetry_data["loop_mult"] = dm_loop_stream.get_param('loopmult')
-            telemetry_data["loop_on"] = dm_loop_stream.get_param('loopON')
+    if dm_loop_fps is not None and dm_loop_fps.run_runs():
+        telemetry_data["loop_gain"] = dm_loop_fps.get_param('loopgain')
+        telemetry_data["loop_mult"] = dm_loop_fps.get_param('loopmult')
+        telemetry_data["loop_on"] = dm_loop_fps.get_param('loopON')
 
-            if telemetry_data["loop_on"] == 1:
-                telemetry_data["loop_on"] = 'ON'
-            elif telemetry_data["loop_on"] == 0:
-                telemetry_data["loop_on"] = 'OFF'
+        if telemetry_data["loop_on"] is True:
+            telemetry_data["loop_on"] = 'ON'
+        elif telemetry_data["loop_on"] is False:
+            telemetry_data["loop_on"] = 'OFF'
 
-    # check if fps exists and is running
-    ttm_loop_stream = toolbox.open_fps_once('mfilt-2', shm_and_fps_cache)
+    # TTM loop process
+    ttm_loop_fps = toolbox.open_fps_once('mfilt-2', shm_and_fps_cache)
 
-    if ttm_loop_stream is not None:
-        # Check if it's running
-        if ttm_loop_stream.run_runs():
-            telemetry_data["tt_loop_gain"] = ttm_loop_stream.get_param(
-                    'loopgain')
-            telemetry_data["tt_loop_mult"] = ttm_loop_stream.get_param(
-                    'loopmult')
-            telemetry_data["tt_loop_on"] = ttm_loop_stream.get_param('loopON')
+    if ttm_loop_fps is not None and ttm_loop_fps.run_runs():
+        telemetry_data["tt_loop_gain"] = ttm_loop_fps.get_param('loopgain')
+        telemetry_data["tt_loop_mult"] = ttm_loop_fps.get_param('loopmult')
+        telemetry_data["tt_loop_on"] = ttm_loop_fps.get_param('loopON')
 
-            if telemetry_data["tt_loop_on"] is True:
-                telemetry_data["tt_loop_on"] = 'ON'
-            elif telemetry_data["tt_loop_on"] is False:
-                telemetry_data["tt_loop_on"] = 'OFF'
+        if telemetry_data["tt_loop_on"] is True:
+            telemetry_data["tt_loop_on"] = 'ON'
+        elif telemetry_data["tt_loop_on"] is False:
+            telemetry_data["tt_loop_on"] = 'OFF'
 
-    database.store_telemetry(telemetry_data)
+    # Store everything
+    database.store('telemetry', telemetry_data)
 
     return 0

@@ -1,0 +1,125 @@
+from PySide2.QtGui import QPen, Qt
+
+from kalao.utils import kalao_tools
+
+from guis.kalao import colormaps
+from guis.kalao.definitions import Color
+from guis.kalao.mixins import HoverMixin, MinMaxMixin
+from guis.kalao.ui_loader import loadUi
+from guis.kalao.widgets import KalAOWidget
+
+import config
+
+
+class WFSWidget(KalAOWidget, MinMaxMixin, HoverMixin):
+    associated_stream = config.Streams.NUVU
+    stream_info = config.StreamInfo.nuvu_stream
+    data_unit = ' ADU'
+    data_precision = 0
+
+    axis_unit = ' px'
+    axis_precision = 0
+
+    def __init__(self, backend, parent=None):
+        super().__init__(parent)
+
+        self.backend = backend
+
+        loadUi('wfs.ui', self)
+        self.resize(600, 400)
+
+        MinMaxMixin.__init__(self)
+
+        self.change_colormap(Qt.Unchecked)
+
+        if self.stream_info['shape'] == (128, 128):
+            self.subaps_size = 10
+            self.subaps_offset = 10
+            self.subaps_pitch = 10
+        elif self.stream_info['shape'] == (64, 64):
+            self.subaps_size = 4
+            self.subaps_offset = 5
+            self.subaps_pitch = 5
+
+        # Add grid to window
+        self.rois = {}
+        for i in config.AO.all_subaps:
+            j, k = kalao_tools.get_subaperture_2d(i)
+
+            if i in config.AO.masked_subaps:
+                color = Color.DARK_GREY
+            else:
+                color = Color.BLUE
+
+            pen = QPen(color, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+            pen.setCosmetic(True)
+
+            roi = self.wfs_view.scene.addRect(
+                self.subaps_pitch * k + self.subaps_offset,
+                self.subaps_pitch * j + self.subaps_offset, self.subaps_size,
+                self.subaps_size, pen)
+            roi.setZValue(1)
+            self.rois[i] = roi
+
+        self.wfs_view.hovered.connect(self.hover_event)
+        backend.updated.connect(self.data_updated)
+
+    def data_updated(self):
+        img = self.backend.data['nuvu_stream']['stream']
+
+        if self.autoscale_checkbox.isChecked():
+            img_min = img.min()
+            img_max = img.max()
+
+            self.min_spinbox.setValue(img_min)
+            self.max_spinbox.setValue(img_max)
+        else:
+            img_min = self.data_min
+            img_max = self.data_max
+
+        self.wfs_view.setImage(img, img_min, img_max)
+
+    def change_colormap(self, state):
+        if state == Qt.Checked:
+            self.wfs_view.setColormap(colormaps.GrayscaleSaturation())
+        else:
+            self.wfs_view.setColormap(colormaps.BlackBody())
+
+    subap_current = None
+
+    def hover_event(self, x, y, v):
+        #self.tooltip= QToolTip()
+
+        pen = QPen(Color.GREEN, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen.setCosmetic(True)
+
+        if x != -1 and y != -1:
+            string = f'X: {(x-self.data_center_x)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, Y: {(y-self.data_center_y)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, V: {v:.{self.data_precision}f}{self.data_unit}'
+
+            subap = kalao_tools.subap_at(x, y)
+            if subap is not None:
+                self.reset_subap_color()
+
+                self.subap_current = subap
+                self.subap_previous_pen = self.rois[subap].pen()
+                self.rois[subap].setPen(pen)
+
+                #i,j = kalao_tools.get_subaperture_2d(subap)
+                #self.tooltip.showText(QPoint(screenPos.x(), screenPos.y()), f'Subap: {subap} ({i},{j})\nX: 1\nY: 1\nValue: {img[y,x]}\nFlux\nSlope')
+            else:
+                self.reset_subap_color()
+                #self.tooltip.hideText()
+
+            self.hovered.emit(string)
+        else:
+            self.reset_subap_color()
+            #self.tooltip.hideText()
+
+            self.hovered.emit('')
+
+    def reset_subap_color(self):
+        if self.subap_current is not None:
+            self.rois[self.subap_current].setPen(self.subap_previous_pen)
+
+            self.subap_current = None
+            self.subap_previous_pen = None

@@ -11,14 +11,15 @@ Timer to do offloading and adc update
 
 import time
 
-import schedule
-
 from kalao import euler
 from kalao.cacao import aocontrol
 from kalao.plc import adc
 
-import kalao_config as config
-from kalao_enums import LoopStatus, TrackingStatus
+import schedule
+
+from kalao.definitions.enums import LoopStatus, TrackingStatus
+
+import config
 
 
 def _update_adc(beck=None):
@@ -29,7 +30,7 @@ def _update_adc(beck=None):
 def _offload_ttm():
     if aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON:
         aocontrol.tip_tilt_offload_ttm_to_telescope(
-                port=config.T120.port_loop_timer)
+            port=config.T120.port_loop_timer)
 
 
 if __name__ == "__main__":

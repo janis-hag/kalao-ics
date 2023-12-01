@@ -264,7 +264,7 @@
          x="249.96738"
          y="1022.9729"><tspan
    style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold'"
-   id="tspan1007">kalao.interface.status.latest_obs_log_entry()</tspan> -&gt; string</tspan></text>
+   id="tspan1007">kalao.interface.status.latest_obs_entry()</tspan> -&gt; string</tspan></text>
     <g
        id="g1166">
       <rect

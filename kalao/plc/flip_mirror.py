@@ -11,24 +11,22 @@ flip_mirror.py is part of the KalAO Instrument Control Software
 
 from time import sleep
 
-from opcua import ua
-
 from kalao.plc import core
 from kalao.utils import database
 
-import kalao_config as config
+from opcua import ua
+
+from kalao.definitions.enums import FlipMirrorPosition
 
 
-def status(beck=None):
+def plc_status(beck=None):
     """
     Query the status of the flip mirror.
 
     :return: complete status of flip mirror
     """
 
-    status_dict = core.device_status('Flip.FlipMirror', beck=beck)
-
-    return status_dict
+    return core.device_status('Flip.FlipMirror', beck=beck)
 
 
 def down(beck=None):
@@ -37,8 +35,8 @@ def down(beck=None):
 
     :return: status of the flip_mirror
     """
-    flip_position = switch('bDown_Flip', beck=beck)
-    return flip_position
+
+    return _switch('bDown_Flip', beck=beck)
 
 
 def up(beck=None):
@@ -47,94 +45,87 @@ def up(beck=None):
 
     :return: status of the flip_mirror
     """
-    flip_position = switch('bUp_Flip', beck=beck)
-    return flip_position
+
+    return _switch('bUp_Flip', beck=beck)
 
 
-def switch(action_name, beck=None):
+def _switch(action_name, beck=None):
     """
      Open or Close the shutter depending on action_name
 
     :param action_name: bClose_Shutter or
     :return: position of flip_mirror
     """
-    # Connect to OPCUA server
+
+    if action_name == 'bUp_Flip':
+        database.store('obs', {'flip_mirror_log': 'Flipping mirror up'})
+    elif action_name == 'bDown_Flip':
+        database.store('obs', {'flip_mirror_log': 'Flipping mirror down'})
+
     beck, disconnect_on_exit = core.check_beck(beck)
 
     shutter_switch = beck.get_node("ns = 4; s = MAIN.Flip." + action_name)
     shutter_switch.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                    ua.Variant(
-                            True,
-                            shutter_switch.get_data_type_as_variant_type())))
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
 
     sleep(1)
-    if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Up_Flip").get_value():
-        flip_position = 'UP'
-    elif beck.get_node("ns=4;s=MAIN.Flip.bStatus_Down_Flip").get_value():
-        flip_position = 'DOWN'
-    else:
-        flip_position = 'ERROR'
+
+    position = get_position(beck)
 
     if disconnect_on_exit:
         beck.disconnect()
 
-    return flip_position
+    return position
 
 
-def position(beck=None):
+def get_position(beck=None):
     """
     Query the single string status of the shutter.
 
     :return: single string status of shutter
     """
-    if 'flip_mirror' in config.PLC.disabled:
-        return 1
 
-    # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
-
-    # TODO check if initialised and not disabled
 
     # Check error status
     error_code = beck.get_node(
-            'ns=4;s=MAIN.Flip.FlipMirror.stat.nErrorCode').get_value()
+        'ns=4;s=MAIN.Flip.FlipMirror.stat.nErrorCode').get_value()
+
     if error_code != 0:
-        #someting went wrong
-        # Logging error
         error_text = beck.get_node(
-                "ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
-        database.store_obs_log({
-                'flip_mirror_log':
-                        'ERROR' + str(error_code) + ': ' + error_text
+            "ns=4; s=MAIN.Flip.FlipMirror.stat.sErrorText").get_value()
+
+        database.store('obs', {
+            'flip_mirror_log': f'[ERROR] {error_text} ({error_code})'
         })
-        flip_position = error_text
+
+        position = FlipMirrorPosition.ERROR
 
     else:
         if beck.get_node("ns=4;s=MAIN.Flip.bStatus_Up_Flip").get_value():
-            flip_position = 'UP'
+            position = FlipMirrorPosition.UP
         elif beck.get_node("ns=4;s=MAIN.Flip.bStatus_Down_Flip").get_value():
-            flip_position = 'DOWN'
+            position = FlipMirrorPosition.DOWN
         else:
-            flip_position = 'ERROR'
+            position = FlipMirrorPosition.ERROR
 
     if disconnect_on_exit:
         beck.disconnect()
 
-    return flip_position
+    return position
 
 
-def initialise(beck=None):
+def init(beck=None):
+    database.store('obs', {'flip_mirror_log': 'Initialising flip mirror'})
 
-    # Connect to OPCUA server
     beck, disconnect_on_exit = core.check_beck(beck)
 
+    # Do the flip mirror gym
     down(beck)
-    sleep(1)
-    up(beck=beck)
-    sleep(1)
-    down(beck=beck)
+    up(beck)
+    down(beck)
 
     if disconnect_on_exit:
         beck.disconnect()

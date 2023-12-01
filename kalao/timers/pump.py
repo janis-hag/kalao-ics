@@ -5,35 +5,36 @@
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-Timer to verify KalAO pump health
-
-TODO verify nuvu maximum flux and decrease EM gain or close shutter if needed.
-(KalAO-ICS).
+Timer to verify KalAO pump health (KalAO-ICS).
 """
 
 import time
 
+from kalao.plc import core, temperature_control
+from kalao.utils import database
+
 import schedule
 
-from kalao.plc import core, temperature_control
-from sequencer import system
-
-import kalao_config as config
+import config
 
 
 def _check_pump_temp(beck=None):
     beck, disconnect_on_exit = core.check_beck(beck)
-    pump_temp = temperature_control.pump_temperature(beck)
 
+    pump_temp = temperature_control.pump_temperature(beck)
     pump_status = temperature_control.pump_status(beck)
 
     if pump_temp > config.Cooling.max_pump_temperature and pump_status == 'ON':
+        database.store('obs', {
+            'pump_timer_log': '[WARNING] Pump overheat, shutting off'
+        })
         temperature_control.pump_off(beck)
-        system.print_and_log("WARNING: Pump overheat, shutting off")
 
     elif pump_temp < config.Cooling.pump_restart_temp and pump_status == 'OFF':
+        database.store('obs', {
+            'pump_timer_log': '[WARNING] Pump cooled down, powering up'
+        })
         temperature_control.pump_on(beck)
-        system.print_and_log("WARNING: Pump cooled down, powering up")
 
     if disconnect_on_exit:
         beck.disconnect()

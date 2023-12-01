@@ -36,12 +36,12 @@ def initializeGopConnection():
     global gc
     gc = pymod_libgop.gop_alloc_connect_structure()
     pymod_libgop.gop_init_server_socket_unix(
-            gc,  # connect struct
-            "opcuacli",  # symbolic name
-            "opcuacli",  # socket name
-            1024,  # packet size
-            4,  # verbosity (0..9)
-            0)  # timeout [s]
+        gc,  # connect struct
+        "opcuacli",  # symbolic name
+        "opcuacli",  # socket name
+        1024,  # packet size
+        4,  # verbosity (0..9)
+        0)  # timeout [s]
     #
     # create the socket
     #

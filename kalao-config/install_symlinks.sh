@@ -4,6 +4,7 @@
 # ./_file1         -> /home/kalao/.file1
 # ./_folder1       -> /home/kalao/.folder1
 # ./folder2/_file2 -> /home/kalao/.folder2/file2
+# ./folder2/_folder3 -> /home/kalao/.folder2/folder3
 # ...
 
 # Colors

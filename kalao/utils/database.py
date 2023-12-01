@@ -5,44 +5,72 @@
 """
 
 import math
-import os
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
+from kalao.utils import kalao_time
+
 import yaml
+from bson.codec_options import CodecOptions
 from pymongo import DESCENDING, MongoClient, UpdateOne
 from pymongo.errors import BulkWriteError
 
-from kalao.utils import kalao_time
+from kalao.definitions.enums import StrEnum
 
 #from enum import StrEnum
-import kalao_config as config
-from kalao_enums import StrEnum
+import config
 
-path = os.path.dirname(os.path.abspath(__file__))
+definitions = {
+    'obs': {
+        'path': config.kalao_path / "definitions/db_obs.yml"
+    },
+    'monitoring': {
+        'path': config.kalao_path / "definitions/db_monitoring.yml"
+    },
+    'telemetry': {
+        'path': config.kalao_path / "definitions/db_telemetry.yml"
+    },
+}
 
-definition_names = [
-        ('monitoring', path + "/database_definitions/monitoring.yml"),
-        ('obs_log', path + "/database_definitions/obs_log.yml"),
-        ('telemetry', path + "/database_definitions/telemetry.yml")
-]
+condition_mapping = {'==': '$ne', '>=': '$lt', '<=': '$gt'}
 
-definitions = {}
+codec_options = CodecOptions(tz_aware=True, tzinfo=timezone.utc)
 
 
-def _get_db(client, dt):
-    return client[kalao_time.get_start_of_night(dt=dt)]
-
-
-def _get_data(collection_name, keys=None, nb_of_point=1, dt=None):
+def _get_db(client, dt=None):
     # If dt is None, get db for today, otherwise get db for the day/night specified by dt
     if dt is None:
         dt = kalao_time.now()
 
+    return client[kalao_time.get_start_of_night(dt=dt)]
+
+
+def get_collection_last_update(collection_name, dt=None):
     db = _get_db(client, dt)
 
-    collection = db[collection_name]
+    collection = db.get_collection(collection_name,
+                                   codec_options=codec_options)
+
+    # yapf: disable
+    cursor = collection.find(
+        {},
+        {'_id': 0, 'last_timestamp': 1},
+        sort=[('last_timestamp', DESCENDING)],
+        limit=1)
+    # yapf: enable
+
+    try:
+        return cursor[0]['last_timestamp']
+    except (IndexError, KeyError):
+        return datetime.fromtimestamp(0)
+
+
+def get(collection_name, keys=None, nb_of_point=1, dt=None):
+    db = _get_db(client, dt)
+
+    collection = db.get_collection(collection_name,
+                                   codec_options=codec_options)
 
     # yapf: disable
     if keys is None:
@@ -78,8 +106,57 @@ def _get_data(collection_name, keys=None, nb_of_point=1, dt=None):
     return data
 
 
-def _store_data(collection_name, data):
+def get_time_since_state(collection_name, key, condition='==', value=None,
+                         dt=None):
+    db = _get_db(client, dt)
+
+    collection = db.get_collection(collection_name,
+                                   codec_options=codec_options)
+
+    if value is None:
+        value = '$current.value'
+
+    if condition in condition_mapping:
+        cond = {condition_mapping[condition]: ['$$previous.value', value]}
+    else:
+        return {}
+
+    # yapf: disable
+    cursor = collection.aggregate([
+        {'$match': {'key': key}},
+        {'$project': {'_id': 0, 'key': 1, 'values': 1}},
+        {'$addFields': {'current': {'$last': '$values'}}},
+        {'$addFields': {'previous': {'$last': {'$filter': {'input': '$values', 'cond': cond, 'as': "previous"}}}}},
+        {'$addFields': {'since': {'$first': {'$filter': {'input': '$values', 'cond': {'$gt': ['$$since.timestamp', '$previous.timestamp']}, 'as': "since"}}}}},
+        {'$project': {'values': 0}},
+    ])
+    # yapf: enable
+
+    data = {}
+
+    if cursor is not None:
+        for document in cursor:
+            data[document['key']] = {
+                'current': document.get('current'),
+                'previous': document.get('previous'),
+                'since': document.get('since')
+            }
+
+    return data
+
+
+def store(collection_name, data):
+    if len(data) == 0:
+        return 0
+
     now_utc = kalao_time.now()
+
+    # If it's a message for a log, also print it
+    for key, value in data.items():
+        if '_log' in key:
+            log_name = key.replace('_log', '').replace('_', ' ').upper()
+
+            print(f'{log_name} | {value}', flush=True)
 
     db = _get_db(client, now_utc)
 
@@ -88,12 +165,18 @@ def _store_data(collection_name, data):
     #timestamp = now_utc.strftime('%Y-%m-%dT%H:%M:%SZ') # ISO 8601: YYYY-MM-DDThh:mm:ssZ
     #timestamp = kalao_time.get_mjd(now_utc)
 
-    collection = db[collection_name]
+    if not collection_name in definitions:
+        raise KeyError(
+            f'Inserting into unknown collection "{collection_name}" in database'
+        )
+
+    collection = db.get_collection(collection_name,
+                                   codec_options=codec_options)
 
     update_list = []
 
     for key in data.keys():
-        if not key in definitions[collection_name]:
+        if not key in definitions[collection_name]['metadata']:
             raise KeyError(f'Inserting unknown key "{key}" in database')
 
         if isinstance(data[key], StrEnum):
@@ -114,55 +197,23 @@ def _store_data(collection_name, data):
     try:
         collection.bulk_write(update_list, ordered=False)
     except BulkWriteError as bwe:
-        print('ERROR: write to database failed')
+        print('[ERROR] Write to database failed')
         print(bwe.details)
         return -1
 
     return 0
 
 
-def get_monitoring(keys, nb_of_point=1, dt=None):
-    return _get_data('monitoring', keys, nb_of_point, dt=dt)
+def get_all_last(collection_name):
+    return get(collection_name,
+               definitions[collection_name]['metadata'].keys())
 
 
-def get_obs_log(keys, nb_of_point=1, dt=None):
-    return _get_data('obs_log', keys, nb_of_point, dt=dt)
-
-
-def get_telemetry(keys, nb_of_point=1, dt=None):
-    return _get_data('telemetry', keys, nb_of_point, dt=dt)
-
-
-def store_monitoring(data):
-    return _store_data('monitoring', data)
-
-
-def store_obs_log(data):
-    return _store_data('obs_log', data)
-
-
-def store_telemetry(data):
-    return _store_data('telemetry', data)
-
-
-def get_all_last_monitoring():
-    return _get_data('monitoring', definitions['monitoring'].keys())
-
-
-def get_all_last_obs_log():
-    return _get_data('obs_log', definitions['obs_log'].keys())
-
-
-def get_all_last_telemetry():
-    return _get_data('telemetry', definitions['telemetry'].keys())
-
-
-def get_last_record(collection_name, key=None,
-                    max_days=config.Database.max_days):
+def get_last(collection_name, key=None, max_days=config.Database.max_days):
     """
     Searches for the last record in the database for a certain collection
 
-    :param collection_name: the collection to search in 'obs_log', 'monitoring_log', 'telemetry_log'
+    :param collection_name: the collection to search in 'obs', 'monitoring_log', 'telemetry_log'
     :param key: optional key to search for the last record of a specific key
     :return: last record
     """
@@ -173,8 +224,7 @@ def get_last_record(collection_name, key=None,
     day_number = 0
 
     while data == {} and day_number <= max_days:
-        data = _get_data(collection_name, key, 1,
-                         dt=dt - timedelta(days=day_number))
+        data = get(collection_name, key, 1, dt=dt - timedelta(days=day_number))
         day_number += 1
 
     if data == {}:
@@ -183,22 +233,21 @@ def get_last_record(collection_name, key=None,
         if key is None:
             key = list(data.keys())[0]
 
-        return data[key][0]
+        data = data[key][0]
+        data['key'] = key
+
+        return data
 
 
-def get_last_record_value(
-        collection_name,
-        key=None,
-):
-    return get_last_record(collection_name, key).get('value')
+def get_last_value(collection_name, key=None):
+    return get_last(collection_name, key).get('value')
 
 
-def get_last_record_time(collection_name, key=None):
-    return get_last_record(collection_name, key).get('timestamp')
+def get_last_time(collection_name, key=None):
+    return get_last(collection_name, key).get('timestamp')
 
 
-def read_mongo_to_pandas_by_timestamp(dt_start, dt_end,
-                                      collection_name='monitoring',
+def read_mongo_to_pandas_by_timestamp(collection_name, dt_start, dt_end,
                                       sampling=None):
     """
     Read from Mongo and Store into DataFrame by timestamp
@@ -213,13 +262,12 @@ def read_mongo_to_pandas_by_timestamp(dt_start, dt_end,
     dt_range = dt_end - dt_start
     days = math.ceil(dt_range.days) + 1
 
-    df = read_mongo_to_pandas(dt_end, days, collection_name, sampling)
+    df = read_mongo_to_pandas(collection_name, dt_end, days, sampling)
 
     return df[(df.index >= dt_start) & (df.index <= dt_end)]
 
 
-def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
-                         sampling=None):
+def read_mongo_to_pandas(collection_name, dt=None, days=1, sampling=None):
     """
     Read from Mongo and Store into DataFrame by date
 
@@ -236,22 +284,23 @@ def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
         dt = kalao_time.now()
 
     for day_number in range(days):
-        data = _get_data(collection_name, definitions[collection_name].keys(),
-                         nb_of_point=99999999,
-                         dt=dt - timedelta(days=day_number))
+        data = get(collection_name,
+                   definitions[collection_name]['metadata'].keys(),
+                   nb_of_point=99999999, dt=dt - timedelta(days=day_number))
 
         for key in data.keys():
             data[key] = {d['timestamp']: d['value'] for d in data[key]}
 
         # Construct the DataFrame
         appended_df.append(
-                pd.DataFrame(data,
-                             columns=definitions[collection_name].keys()))
+            pd.DataFrame(
+                data, columns=definitions[collection_name]['metadata'].keys()))
 
     # Check if the database is empty for the given days
     if all([df.empty for df in appended_df]):
-        df = pd.DataFrame(columns=definitions[collection_name].keys(),
-                          index=[0])
+        df = pd.DataFrame(
+            columns=definitions[collection_name]['metadata'].keys())
+        df.index.name = 'timestamp'
     else:
         df = pd.concat(appended_df).sort_index()
 
@@ -265,8 +314,8 @@ def read_mongo_to_pandas(dt=None, days=1, collection_name='monitoring',
     return df
 
 
-for def_name, def_yaml in definition_names:
-    with open(def_yaml) as file:
-        definitions[def_name] = yaml.safe_load(file)
+for name in definitions:
+    with open(definitions[name]['path']) as file:
+        definitions[name]['metadata'] = yaml.safe_load(file)
 
 client = MongoClient(host=config.Database.ip, port=config.Database.port)

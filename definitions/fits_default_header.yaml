@@ -1,0 +1,78 @@
+---
+- keyword: INSTRUME
+  value: KalAO
+  comment: Instrument used
+
+- keyword: TELESCOP
+  value: EULER
+  comment: Telescope name
+
+- keyword: SITE
+  value: ESO La Silla, Chile
+  comment: Observing site
+
+- keyword: ORIGIN
+  value: ESO-LASILLA
+  comment: Observatory
+
+- keyword: BUNIT
+  value: adu
+  comment: Physical unit of array values
+
+- keyword: BLANK
+  value: 0
+  comment: Value used for NULL pixels
+
+- keyword: HIERARCH ESO DPR TECH
+  value: IMAGE
+  comment: Observation technique
+
+- keyword: HIERARCH ESO DPR CATG
+  value: TECHNICAL
+  comment: Observation category
+
+- keyword: HIERARCH ESO DPR TYPE
+  value:
+  comment: Observation type
+
+- keyword: HIERARCH ESO PROG ID
+  value:
+  comment: Euler program identification
+
+- keyword: HIERARCH ESO INS DATE
+  value: '2022-11-17'
+  comment: Instrument release date (yyyy-mm-dd).
+
+- keyword: HIERARCH ESO DET ID
+  value: KalAO-FLI
+  comment: Detector system ID
+
+- keyword: HIERARCH ESO DET NAME
+  value: KalAO-FLI
+  comment: Detector system NAME
+
+- keyword: MJD-OBS
+  value:
+  comment: Value of date-obs
+
+- keyword: MJD-END
+  value:
+  comment: Value of date-end
+
+- keyword: UTC
+  value:
+  comment: utc-hms
+
+- keyword: LST
+  value:
+  comment: lst-hms
+
+- keyword: EQUINOX
+  value:
+  comment: Standard radecsys_value
+
+# TODO check if FK5 or ICRS
+# RADECSYS keyword is deprecated, use RADESYSa.
+- keyword: RADECSYS
+  value:
+  comment: Coordinate system

@@ -28,12 +28,12 @@ class gop():
         #
         self.gc = pymod_libgop.gop_alloc_connect_structure()
         pymod_libgop.gop_init_server_socket_unix(
-                self.gc,  # connect struct
-                myName,  # symbolic name
-                myName,  # socket name
-                1024,  # packet size
-                verbosity,  # verbosity (0..9)
-                0)  # timeout [s]
+            self.gc,  # connect struct
+            myName,  # symbolic name
+            myName,  # socket name
+            1024,  # packet size
+            verbosity,  # verbosity (0..9)
+            0)  # timeout [s]
         #
         # create the socket
         #
@@ -64,12 +64,12 @@ class gop():
         #
         self.gc = pymod_libgop.gop_alloc_connect_structure()
         pymod_libgop.gop_init_client_socket_unix(
-                self.gc,  # connect struct
-                myName,  # symbolic name
-                myName,  # socket name
-                1024,  # packet size
-                verbosity,  # verbosity (0..9)
-                0)  # timeout [s]
+            self.gc,  # connect struct
+            myName,  # symbolic name
+            myName,  # socket name
+            1024,  # packet size
+            verbosity,  # verbosity (0..9)
+            0)  # timeout [s]
         #
         # create the socket
         #
@@ -99,12 +99,12 @@ class gop():
         #
         self.gc = pymod_libgop.gop_alloc_connect_structure()
         pymod_libgop.gop_init_server_socket(
-                self.gc,  # connect struct
-                myName,  # symbolic name
-                port,  # socket port
-                1024,  # packet size
-                verbosity,  # verbosity (0..9)
-                0)  # timeout [s]
+            self.gc,  # connect struct
+            myName,  # symbolic name
+            port,  # socket port
+            1024,  # packet size
+            verbosity,  # verbosity (0..9)
+            0)  # timeout [s]
         #
         # create the socket
         #
@@ -135,13 +135,13 @@ class gop():
         #
         self.gc = pymod_libgop.gop_alloc_connect_structure()
         pymod_libgop.gop_init_client_socket(
-                self.gc,  # connect struct
-                myName,  # symbolic name
-                host,  # socket host
-                port,  # socket port
-                1024,  # packet size
-                verbosity,  # verbosity (0..9)
-                0)  # timeout [s]
+            self.gc,  # connect struct
+            myName,  # symbolic name
+            host,  # socket host
+            port,  # socket port
+            1024,  # packet size
+            verbosity,  # verbosity (0..9)
+            0)  # timeout [s]
         #
         # create the socket
         #

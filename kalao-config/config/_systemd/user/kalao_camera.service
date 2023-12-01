@@ -1,5 +1,5 @@
 [Unit]
-Description=KalAO Camera control service
+Description=KalAO - Camera control server
 
 [Service]
 Type=simple

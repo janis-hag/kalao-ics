@@ -1,5 +1,5 @@
 [Unit]
-Description=KalAO Flask GUI service
+Description=KalAO - Flask GUI
 
 [Service]
 Type=simple

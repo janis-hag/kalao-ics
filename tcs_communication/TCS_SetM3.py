@@ -35,7 +35,6 @@ class SubHandler(object):
 
 
 class plc():
-
     def manageCommand_Wait(self, client, nodeId):
         global ready  # updated by SubHandler
         print("%.6f" % (time.time()), "Waiting for SM completion")

@@ -1,5 +1,6 @@
 [Unit]
-Description=KalAO sequencer service
+Description=KalAO - Sequencer
+After=kalao_system-setup.service
 
 [Service]
 Type=simple

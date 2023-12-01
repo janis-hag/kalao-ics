@@ -17,7 +17,7 @@ def datetime_is_naive(d):
     return d.tzinfo is None or d.tzinfo.utcoffset(d) is None
 
 
-def get_start_of_night(dt=None):
+def get_start_of_night_dt(dt=None):
     """
     Get the night date for the time given by dt. By definition a night date is valid from noon to noon the next day in Chilean local time.
 
@@ -33,7 +33,22 @@ def get_start_of_night(dt=None):
     timezone_chile = pytz.timezone("America/Santiago")
     dt_chile = dt.astimezone(timezone_chile)
 
-    return (dt_chile - timedelta(hours=12)).strftime("%Y-%m-%d")
+    if dt_chile.hour < 12:
+        return dt_chile.replace(hour=12, minute=0, second=0,
+                                microsecond=0) + timedelta(days=-1)
+    else:
+        return dt_chile.replace(hour=12, minute=0, second=0, microsecond=0)
+
+
+def get_start_of_night(dt=None):
+    """
+    Get the night date for the time given by dt. By definition a night date is valid from noon to noon the next day in Chilean local time.
+
+    :param dt: datetime object defining the time for which the night-date is requested. By default, returns the current night date.
+    :return: String object containing the night-date in YYYY-MM-DDD format.
+    """
+
+    return get_start_of_night_dt(dt).strftime("%Y-%m-%d")
 
 
 def get_mjd(dt):
@@ -69,7 +84,7 @@ def check_time_format(dt):
     # Ensure correct format
     if not isinstance(dt, datetime):
         raise TypeError(
-                'Invalid type for parameter "date" - expecting datetime')
+            'Invalid type for parameter "date" - expecting datetime')
     elif datetime_is_naive(dt):
         raise TypeError("Datetime must not be naive")
     elif dt.year < 1801 or dt.year > 2099:
@@ -102,4 +117,4 @@ def now():
     :return: datetime object
     """
 
-    return datetime.now(timezone.utc)
+    return datetime.now(tz=timezone.utc)

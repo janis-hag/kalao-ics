@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : device_status.py
+# @Filename : rtc_status.py
 # @Date : 2021-02-24-10-32
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
@@ -22,15 +22,15 @@ def status():
     '''
 
     out_str = subprocess.run([
-            'nvidia-smi',
-            '--query-gpu=memory.total,memory.used,memory.free,temperature.gpu,power.draw,utilization.gpu,utilization.memory',
-            '--format=csv,nounits'
+        'nvidia-smi',
+        '--query-gpu=memory.total,memory.used,memory.free,temperature.gpu,power.draw,utilization.gpu,utilization.memory',
+        '--format=csv,nounits'
     ], capture_output=True).stdout.decode('utf8')
 
     status_frame = pd.read_csv(io.StringIO(out_str))
     #status_frame.columns = status_frame.columns.str.strip()
     status_frame.columns = [
-            c.split(' ')[0] for c in list(status_frame.columns.str.strip())
+        c.split(' ')[0] for c in list(status_frame.columns.str.strip())
     ]
 
     status_frame = status_frame.to_dict('records')[0]
@@ -76,7 +76,7 @@ def status_parse():
     full_dict = full_status_parse()
 
     status_dict['gpu_current_temp'] = full_dict['GPU Current Temp'].split(
-            ' ')[0]
+        ' ')[0]
     status_dict['gpu_power_draw'] = full_dict['Power Draw'].split(' ')[0]
     status_dict['gpu_used_memory'] = full_dict['Used'].split(' ')[0]
     status_dict['gpu_free_memory'] = full_dict['Free'].split(' ')[0]

@@ -3,22 +3,21 @@ import logging
 import math
 import time as time_lib
 from datetime import datetime, timezone
-from os import path
 
 import numpy as np
-
-import yaml
-from flask import Flask, request
-from flask_cors import CORS
-from rest.plc import plc_bp
-from rest.system import system_bp
 
 from kalao.cacao import aocontrol as k_aocontrol
 from kalao.cacao import toolbox as k_toolbox
 from kalao.interfaces import web as k_web
 from kalao.plc import filterwheel as k_filterwheel
+from kalao.utils import centering as k_centering
 from kalao.utils import database as k_database
-from kalao.utils import starfinder as s_starfinder
+from kalao.utils import starfinder as k_starfinder
+
+from flask import Flask, request
+from flask_cors import CORS
+from rest.plc import plc_bp
+from rest.system import system_bp
 
 
 def create_app():
@@ -43,43 +42,6 @@ def create_app():
 
     @app.route('/metaData', methods=['GET'])
     def metaData():
-        projectPath = path.dirname(
-                path.dirname(path.abspath(path.dirname(__file__))))
-
-        monitoringMetaData = {}
-        obsLogMetaData = {}
-        telemetryMetaData = {}
-        filterwheelMetaData = {}
-
-        # Read parameters.yml
-        file_path = projectPath + '/kalao-ics/kalao/utils/database_definitions/monitoring.yml'
-        with open(file_path, 'r') as param:
-            try:
-                monitoringMetaData = yaml.safe_load(param)
-            except yaml.YAMLError as exc:
-                print("Error while trying to load parametersfrom " +
-                      file_path + " file")
-
-        file_path = projectPath + '/kalao-ics/kalao/utils/database_definitions/obs_log.yml'
-        with open(file_path, 'r') as param:
-            try:
-                obsLogMetaData = yaml.safe_load(param)
-            except yaml.YAMLError as exc:
-                print("Error while trying to load parametersfrom " +
-                      file_path + " file")
-
-        file_path = projectPath + '/kalao-ics/kalao/utils/database_definitions/telemetry.yml'
-        with open(file_path, 'r') as param:
-            try:
-                telemetryMetaData = yaml.safe_load(param)
-            except yaml.YAMLError as exc:
-                print("Error while trying to load parametersfrom " +
-                      file_path + " file")
-
-        filterwheelMetaData = k_filterwheel.get_filter_ids()
-
-        colormapsMetaData = {}
-
         def csv_to_json(csvFilePath):
             jsonArray = []
 
@@ -93,22 +55,20 @@ def create_app():
             return jsonArray
 
         colormapsMetaData = {
-                "diverging_bwg_20-95_c41_n256":
-                        csv_to_json(
-                                'colormaps/diverging_bwg_20-95_c41_n256.csv'),
-                "linear_worb_100-25_c53_n256":
-                        csv_to_json('colormaps/linear_worb_100-25_c53_n256.csv'
-                                    ),
-                "glasbey_hv_n256":
-                        csv_to_json('colormaps/glasbey_hv_n256.csv')
+            "diverging_bwg_20-95_c41_n256":
+                csv_to_json('colormaps/diverging_bwg_20-95_c41_n256.csv'),
+            "linear_worb_100-25_c53_n256":
+                csv_to_json('colormaps/linear_worb_100-25_c53_n256.csv'),
+            "glasbey_hv_n256":
+                csv_to_json('colormaps/glasbey_hv_n256.csv')
         }
 
         return {
-                "monitoring": monitoringMetaData,
-                "telemetry": telemetryMetaData,
-                "obsLog": obsLogMetaData,
-                "filterwheel": filterwheelMetaData,
-                "colormaps": colormapsMetaData
+            "obs": k_database.definitions['obs']['metadata'],
+            "monitoring": k_database.definitions['monitoring']['metadata'],
+            "telemetry": k_database.definitions['telemetry']['metadata'],
+            "filterwheel": k_filterwheel.get_names_to_positions(),
+            "colormaps": colormapsMetaData
         }
 
     @app.route('/pixelImages', methods=['GET'])
@@ -134,16 +94,16 @@ def create_app():
     @app.route('/data', methods=['GET'])
     def data():
         real_data = not bool(request.args.get('random', default="", type=str))
-        status = k_web.latest_obs_log_entry(real_data)
+        status = k_web.latest_obs_entry(real_data)
         monitoring = k_web.get_all_last_monitoring(real_data)
         telemetry = k_web.get_all_last_telemetry(real_data)
         time = datetime.now(timezone.utc)
 
         return {
-                "time": time,
-                "status": status,
-                "monitoring": monitoring,
-                "telemetry": telemetry
+            "time": time,
+            "status": status,
+            "monitoring": monitoring,
+            "telemetry": telemetry
         }, 200
 
     @app.route('/centeringImage', methods=['POST'])
@@ -166,27 +126,28 @@ def create_app():
 
         real_data = not bool(request.args.get('random', default="", type=str))
 
-        (selection, image, file_date) = k_web.get_fli_image(x=x, y=y,
-                                                last_file_date=last_file_date,
-                                                percentile=percentile,
-                                                real_data=real_data)
+        (selection, image,
+         file_date) = k_web.get_fli_image(x=x, y=y,
+                                          last_file_date=last_file_date,
+                                          percentile=percentile,
+                                          real_data=real_data)
 
         if image is None and file_date is None:
             return "Not updated", 204
 
         imageObject = {
-                "data": image.flatten().tolist(),
-                "width": image.shape[1],
-                "height": image.shape[0],
-                "max": np.max(image),
-                "min": np.min(image),
-                "min_th": 0,
-                "max_th": 2**16 -1,
+            "data": image.flatten().tolist(),
+            "width": image.shape[1],
+            "height": image.shape[0],
+            "max": np.max(image),
+            "min": np.min(image),
+            "min_th": 0,
+            "max_th": 2**16 - 1,
         }
         jsonObject = json.dumps({
-                "selection": selection,
-                "image": imageObject,
-                "file_date": file_date
+            "selection": selection,
+            "image": imageObject,
+            "file_date": file_date
         })
         return jsonObject
 
@@ -213,7 +174,7 @@ def create_app():
             for time in series[serie_name]["time_utc"]:
                 if nb < nb_points:
                     obj[serie_name]["time"].append(
-                            round(datetime.timestamp(time), 1))
+                        round(datetime.timestamp(time), 1))
                 nb += 1
             nb = 0
             for values in series[serie_name]["values"]:
@@ -222,7 +183,6 @@ def create_app():
                 nb += 1
 
         return obj
-
 
     @app.route('/timeSeries/<t_start>/<t_end>', methods=['GET'])
     def timeSeries(t_start, t_end):
@@ -233,11 +193,11 @@ def create_app():
         startDay = startDay.astimezone(timezone.utc)
         endDay = endDay.astimezone(timezone.utc)
         monitoring_data = k_database.read_mongo_to_pandas_by_timestamp(
-                startDay, endDay, collection_name='monitoring',
-                sampling=1500)  #.to_json(orient="split")*/
+            'monitoring', startDay, endDay,
+            sampling=1500)  #.to_json(orient="split")*/
         telemetry_data = k_database.read_mongo_to_pandas_by_timestamp(
-                startDay, endDay, collection_name='telemetry',
-                sampling=1500)  #.to_json(orient="split")*/
+            'telemetry', startDay, endDay,
+            sampling=1500)  #.to_json(orient="split")*/
         #data = telemetry_data
         ts = {}
         ts_full = []
@@ -254,8 +214,7 @@ def create_app():
 
                 ts[col] = {"time": [], "values": []}
                 for i in range(len(values)):
-                    if time_values[i] >= float(
-                            t_start) and time_values[i] <= float(t_end):
+                    if float(t_start) <= time_values[i] <= float(t_end):
                         ts[col]["time"].append(time_values[i])
                         ts[col]["values"].append(values[i])
 
@@ -273,8 +232,7 @@ def create_app():
 
                 ts[col] = {"time": [], "values": []}
                 for i in range(len(values)):
-                    if time_values[i] >= float(
-                            t_start) and time_values[i] <= float(t_end):
+                    if float(t_start) <= time_values[i] <= float(t_end):
                         ts[col]["time"].append(time_values[i])
                         ts[col]["values"].append(values[i])
 
@@ -294,10 +252,10 @@ def create_app():
         if "cut_off" in options:
             if "last_mode" in options:
                 k_aocontrol.linear_low_pass_modal_gain_filter(
-                        options["cut_off"], options["last_mode"])
+                    options["cut_off"], options["last_mode"])
             else:
                 k_aocontrol.linear_low_pass_modal_gain_filter(
-                        options["cut_off"])
+                    options["cut_off"])
 
         return "ok"
 
@@ -309,7 +267,7 @@ def create_app():
         x = options["x"]
         y = options["y"]
 
-        s_starfinder.manual_centering(x, y)
+        centering.manual_centering(x, y)
         return "ok"
 
     @app.route('/loop/<type>', methods=['POST'])

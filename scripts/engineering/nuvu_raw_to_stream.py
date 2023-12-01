@@ -23,10 +23,10 @@ def run():
 
     # Create stream
     nuvu_out_stream = SHM(
-            'nuvu_proc_stream',
-            data,  # 30x30 int16 np.array
-            location=-1,  # CPU
-            shared=True,  # Shared
+        'nuvu_proc_stream',
+        data,  # 30x30 int16 np.array
+        location=-1,  # CPU
+        shared=True,  # Shared
     )
 
     while True:

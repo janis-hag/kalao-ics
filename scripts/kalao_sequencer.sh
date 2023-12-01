@@ -3,6 +3,6 @@
 source /home/kalao/.kalao_env
 source /home/kalao/kalao-venv/bin/activate
 
-cd /home/kalao/kalao-ics/sequencer
+cd /home/kalao/kalao-ics
 
-python /home/kalao/kalao-ics/sequencer/start_seq.py
+python /home/kalao/kalao-ics/kalao/sequencer/server.py

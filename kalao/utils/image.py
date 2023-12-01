@@ -38,7 +38,7 @@ def cut(img, window, center=None, overflow='recenter'):
 
 
 def percentile_clip(img, percentile_to_use):
-    percentile_to_use = (100 - percentile_to_use) / 2
+    percentile_to_use = (100-percentile_to_use) / 2
 
     low = np.percentile(img, percentile_to_use)
     high = np.percentile(img, 100 - percentile_to_use)
