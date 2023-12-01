@@ -1,5 +1,4 @@
 import argparse
-from pathlib import Path
 from signal import SIGINT, signal
 
 import numpy as np
@@ -22,17 +21,12 @@ from guis.windows.wfs import WFSWidget
 
 import config
 
-##### Update functions
-
 
 def clean():
-    #if poke_stream is not None:
-    print('Resetted DM pattern')
-    #toolbox.zero_stream(poke_stream)
-
     unified.logs.thread.requestInterruption()
     unified.logs.thread.quit()
-    unified.logs.thread.wait()
+    unified.logs.thread.wait(5000)
+    unified.logs.thread.terminate()
 
 
 def handler(signal_received, frame):

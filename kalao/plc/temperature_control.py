@@ -68,11 +68,11 @@ def get_cooling_status(beck=None):
     """
 
     cooling_status = {
-        'pump_status': pump_status(beck),
-        'pump_temp': pump_temperature(beck),
-        'heater_status': heater_status(beck),
-        'fan_status': fan_status(beck),
-        'flow_value': get_flow_value(beck)
+        'pump_status': pump_status(beck=beck),
+        'pump_temp': pump_temperature(beck=beck),
+        'heater_status': heater_status(beck=beck),
+        'fan_status': fan_status(beck=beck),
+        'flow_value': get_flow_value(beck=beck)
     }
 
     return cooling_status

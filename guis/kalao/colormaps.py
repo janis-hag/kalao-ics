@@ -20,6 +20,8 @@ class Colormap:
     color_saturation_high = None
     has_transparency = False
 
+    no_data_value = 0
+
 
 class ColormapExtrapolated(Colormap):
     colors = None
@@ -99,6 +101,7 @@ class GrayscaleSaturation(ColormapExtrapolated):
 
 class CoolWarm(ColormapCSV):
     file = colormap_path / 'smooth-cool-warm-table-byte-0256.csv'
+    no_data_value = 128
 
 
 class BlackBody(ColormapCSV):

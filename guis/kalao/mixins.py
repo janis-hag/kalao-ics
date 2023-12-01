@@ -46,7 +46,7 @@ class ArrayToImageMixin():
             img_scaled = np.rint(img_scaled).astype(int)
             img_scaled = np.clip(img_scaled, 0, 255)
         else:
-            img_scaled = np.ones(img.shape) * 128
+            img_scaled = np.ones(img.shape) * self.colormap.no_data_value
 
         if mask is not None and self.colormap.has_transparency:
             img_scaled[mask] = 255

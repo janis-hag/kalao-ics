@@ -112,6 +112,7 @@ class PlotsWidget(KalAOWidget):
                     self.get_display_name(
                         database.definitions[name]['metadata'][key]))
 
+                #TODO: if values is a string
                 plot_min = min(plot_min, values.min())
                 plot_max = max(plot_max, values.max())
 
@@ -146,8 +147,7 @@ class PlotsWidget(KalAOWidget):
     def point_hovered(self, point, state, name, key):
         points = self.series[key].points()
 
-        p = min(points, key=lambda x: abs((x - point).x()))
-        i = points.index(p)
+        closest_point, closest_index = self.find_closest_point(point, points)
 
         metadata = database.definitions[name]['metadata'][key]
 
@@ -157,20 +157,33 @@ class PlotsWidget(KalAOWidget):
             })
 
         if state:
-            self.series[key].setPointConfiguration(i, {
+            self.series[key].setPointConfiguration(closest_index, {
                 QXYSeries.PointConfiguration.Size: 2 * self.point_size
             })
 
             x = QDateTime.fromMSecsSinceEpoch(int(
-                p.x())).toString("HH:mm:ss dd-MM-yy")
+                closest_point.x())).toString("HH:mm:ss dd-MM-yy")
 
             self.hovered.emit(
-                f'{metadata["short"]}: {p.y():.5g} {metadata["unit"]} at {x}')
+                f'{metadata["short"]}: {closest_point.y():.5g} {metadata["unit"]} at {x}')
         else:
-            self.series[key].setPointConfiguration(i, {
+            self.series[key].setPointConfiguration(closest_index, {
                 QXYSeries.PointConfiguration.Size: self.point_size
             })
 
             self.hovered.emit('')
 
-        self.current_index = i
+        self.current_index = closest_index
+
+    def find_closest_point(self, point, points):
+        closest_point = min(points, key=lambda p: self.points_distance(p, point))
+        closest_index = points.index(closest_point)
+
+        return closest_point, closest_index
+
+    def points_distance(self, point1, point2):
+        diff = point2 - point1
+        x = diff.x() / (self.axisX.max().toMSecsSinceEpoch() - self.axisX.min().toMSecsSinceEpoch())
+        y = diff.y() / (self.axisY.max() - self.axisY.min())
+
+        return x**2 + y **2

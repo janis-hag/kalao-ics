@@ -28,9 +28,7 @@ class SHMFPSBackend(AbstractBackend):
 
         cnt0 = stream.IMAGE.md.cnt0
 
-        if data.get(stream_name, {}).get('cnt0') == cnt0:
-            data.update({stream_name: {'data': None, }})
-        else:
+        if data.get(stream_name, {}).get('cnt0') != cnt0:
             data.update({
                 stream_name: {
                     'updated': True,
@@ -118,7 +116,7 @@ class DMChannelsBackend(SHMFPSBackend):
         self.dm_number = dm_number
 
     @AbstractBackend.timeit('streams', 'streams_updated')
-    def update_data(self, data):
+    def update(self, data):
         self._update_stream(data, f'dm{self.dm_number:02d}disp')
 
         for i in range(0, 12):
