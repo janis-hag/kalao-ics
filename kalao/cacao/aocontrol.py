@@ -320,11 +320,13 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
 
         if last_mode is None:
             last_mode = len(mgainfact_array)  # -1
-        elif last_mode < cut_off:
+        elif last_mode + 1 < cut_off:
             last_mode = cut_off
-            mgainfact_array[last_mode:] = 0
+            mgainfact_array[last_mode + 1:] = 0
+        elif last_mode > len(mgainfact_array):
+            last_mode = len(mgainfact_array)
         else:
-            mgainfact_array[last_mode:] = 0
+            mgainfact_array[last_mode + 1:] = 0
 
         if not cut_off == last_mode:
             # down = np.linspace(1, 0, len(mgainfact_array) - cut_off + 2 - (len(mgainfact_array) - last_mode) )[1:-1]

@@ -17,32 +17,34 @@ La version originale du fichier config se trouve sur:
 Pour obtenir la ligne de de commande générée par un OB.
 ### Liste de poses:
 
-| Nom	   | Autre nom	| Arguments | Commentaire   |
-|----------|-----------|-----------|----|
-| k_trgobs |           |  expotype, pointing, program, kalCode, mv,       |       |
-| k_dark   |           |  expotype, kalcode, texp     |        |
-| l_lampon |           | ?? | |
-| k_lpmflt |           | flatlist     |         |
+| Nom	     | Autre nom	| Arguments                                                                 | Commentaire                                                       |
+|----------|-----------|---------------------------------------------------------------------------|-------------------------------------------------------------------|
+| K_TRGOBS |           | expotype, pointing, program, kalCode, mv, texp, kalfilter, centering, kao | Observations d'une cible                                          |
+| K_DARK   |           | expotype, kalcode, texp                                                   | Dakr                                                              |
+| K_LAMPON |           | ---                                                                       | Allumage lampe tungsten                                           |
+| K_LMPFLT |           | ---                                                                       | Flat sur lampe tungsten selon liste de définis dans kalao_config.py                           |
+| K_SKYFLT |           | ---                                                                       | Flat sur ciel selon liste de filtres définis dans kalao_config.py |
+| K_ENDCAL |           | ---                                                                       | Démarrage des calibrations de fin de nuit                         |
 
 
 ### Listes des poses à implementer éventuellement:
 
 | Nom	    | Autre nom	| Arguments | Commentaire   |
 |-----------|-----------|-----------|----|
-|  k_skyflt |           | flatlist     |         |
 |  k_aocal  |           |        |       |
 |  k_rmatrx |           |        |       |
 
 
 
-### Listes des commandes
+### Listes des commandes envoyée depuis le télescope
 
-| Nom    | Description |
-|--------|-------------|
-| status | Demande le status de KalAO |
-| stopao | Open AO loop |
-| abort  | Interromp la sequence en cours |
-| end    | Signale la fin d'utilisation de KalAO  |
+| Nom              | Description |
+|------------------|-------------|
+| STATUS           | Demande le status de KalAO |
+| INSTRUMENTCHANGE | Demande le status de KalAO |
+| STOPAO           | Open AO loop |
+| ABORT            | Interromp la sequence en cours |
+| END               | Signale la fin d'utilisation de KalAO  |
 
 
 La configuration des parametres de pose se fait dans **$THOME/config/general/edp_poses_definition.cfg**
@@ -81,4 +83,4 @@ LUC: faire un programme de test qui envoye en permanence des commandes d'offset 
 
 
 
-L'arrêt de l'AO se fait en envoyant une commande via le synchro, donc avec un type de pose spécifique style K_ENDAO (TBC).
+L'arrêt de l'AO se fait en envoyant une commande via le synchro avec la commande /STOPAO.

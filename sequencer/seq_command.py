@@ -434,6 +434,7 @@ def target_observation(**seq_args):
     centering = seq_args.get('centering')
     mag_v = seq_args.get('mv')
 
+    euler.update_coord_deb(seq_args=seq_args)
     if centering == 'aut' or not database.get_last_record_value(
             collection_name='obs_log',
             key='tracking_status') == TrackingStatus.TRACKING:

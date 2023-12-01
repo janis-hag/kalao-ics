@@ -792,13 +792,11 @@ def calc_parang(dt=None, coord=None):
     location = euler.observing_location()
 
     if isinstance(dt, datetime):
-        astro_time = Time(dt, scale='utc',
-                          location=location)
+        astro_time = Time(dt, scale='utc', location=location)
         print(f'Using custom date: {astro_time}')
 
     else:
-        astro_time = Time(datetime.utcnow(), scale='utc',
-                          location=location)
+        astro_time = Time(datetime.utcnow(), scale='utc', location=location)
 
     if isinstance(coord, SkyCoord):
         print(f'Using custom coord: {coord}')
@@ -810,18 +808,18 @@ def calc_parang(dt=None, coord=None):
 
     geolat_rad = config.Euler.latitude * d2r
 
-    lst = astro_time.sidereal_time('mean').hour
+    lst_ra = astro_time.sidereal_time('mean').hour * 15 * d2r  #(15./3600)*d2r
 
-    ha_deg = lst - coord.ra.value
-    dec_deg = coord.dec.value
+    ha_rad = lst_ra - coord.ra.rad
+    dec_rad = coord.dec.rad
 
     # ha_deg=(float(hdr['LST'])*15./3600)-ra_deg
 
     # VLT TCS formula
-    f1 = float(np.cos(geolat_rad) * np.sin(d2r * ha_deg))
+    f1 = float(np.cos(geolat_rad) * np.sin(ha_rad))
     f2 = float(
-            np.sin(geolat_rad) * np.cos(d2r * dec_deg) -
-            np.cos(geolat_rad) * np.sin(d2r * dec_deg) * np.cos(d2r * ha_deg))
+            np.sin(geolat_rad) * np.cos(dec_rad) -
+            np.cos(geolat_rad) * np.sin(dec_rad) * np.cos(ha_rad))
     parang = -r2d * np.arctan2(-f1, f2)  # Sign depends on focus
 
     return parang

@@ -51,6 +51,10 @@ def telescope_coord():
     return c
 
 
+#'alphacat': '1h15m10.6',
+# 'deltacat': '-45:31:56',
+
+
 def telescope_coord_altaz():
     altaz_frame = AltAz(location=observing_location(), obstime=Time.now())
 
@@ -70,3 +74,9 @@ def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
     return telescope_coord_altaz().spherical_offsets_by(
             alt_offset_arcsec * u.arcsec,
             az_offset_arcsec * u.arcsec).transform_to('icrs')
+
+
+def update_coord_db(seq_args=None):
+    if seq_args is not None:
+        c = SkyCoord(seq_args.get('alphacat'), seq_args.get('deltacat'),
+                     unit=(u.hourangle, u.deg))

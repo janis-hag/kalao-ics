@@ -9,15 +9,6 @@ The KalAO Instrument Control Software
 
 ---
 
-## Features
-- PLC control through OPCUA
-- Thorlabs Filterwheel control through TTYUSB
-
-## TODO
-- CACAO python control
-- EULER Telescope inter-process communication
-- Stand-alone filterwheel driver
-
 ---
 # System deployment
 - Pull into '~/kalao-ics/'
@@ -47,12 +38,10 @@ Edit content of
 - turn on the laser
 - run mlat
 - verifying output with gnuplot
-- _cd ~/kalao-cacao/workdir/kalao-workdir/dmloop-workdir/fps.mlat-1.datadir_
+- _cd /home/kalao/kalao-cacao/KalAO-cacao/kalaodmloop-rootdir/kalaodmloop-rundir/fps.mlat-1.datadir
 - _gnuplot_
 - gnuplot> _plot  "hardwlatency.dat" u 2:3_
 
-## acqlin_zRM
-## compsCM-1
 
 ## Sending turbulence on the DM
 
