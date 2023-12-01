@@ -16,6 +16,7 @@ from time import sleep
 import numpy as np
 from scipy.optimize import minimize_scalar
 
+import kalao.plc.core
 from kalao import euler
 from kalao.plc import core, filterwheel
 from kalao.utils import database
@@ -251,7 +252,7 @@ def plc_status(adc_id, beck=None):
     :return: complete status of calibration unit
     """
 
-    return core.device_status(adc_name[adc_id], beck=beck)
+    return kalao.plc.core.device_status(adc_name[adc_id], beck=beck)
 
 
 @core.beckhoff_autoconnect

@@ -11,6 +11,7 @@ flip_mirror.py is part of the KalAO Instrument Control Software
 
 from time import sleep
 
+import kalao.plc.core
 from kalao.plc import core
 from kalao.utils import database
 
@@ -26,7 +27,7 @@ def plc_status(beck=None):
     :return: complete status of flip mirror
     """
 
-    return core.device_status('Flip.FlipMirror', beck=beck)
+    return kalao.plc.core.device_status('Flip.FlipMirror', beck=beck)
 
 
 def down(beck=None):

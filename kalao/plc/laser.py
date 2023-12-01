@@ -9,7 +9,6 @@ laser.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-import datetime
 from time import sleep
 
 from kalao.cacao import aocontrol

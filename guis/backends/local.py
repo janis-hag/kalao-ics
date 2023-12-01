@@ -94,14 +94,18 @@ class MainBackend(SHMFPSBackend):
 
     def get_plots_data(self, dt_start, dt_end, monitoring_keys,
                        telemetry_keys):
-        return {
-            'monitoring':
-                database.read_mongo_to_pandas_by_timestamp(
-                    'monitoring', dt_start, dt_end, monitoring_keys),
-            'telemetry':
-                database.read_mongo_to_pandas_by_timestamp(
-                    'telemetry', dt_start, dt_end, telemetry_keys),
-        }
+
+        data = {}
+
+        if len(monitoring_keys) > 0:
+            data['monitoring'] = database.read_mongo_to_pandas_by_timestamp(
+                'monitoring', dt_start, dt_end, monitoring_keys)
+
+        if len(telemetry_keys) > 0:
+            data['telemetry'] = database.read_mongo_to_pandas_by_timestamp(
+                'telemetry', dt_start, dt_end, telemetry_keys)
+
+        return data
 
 
 class DMChannelsBackend(SHMFPSBackend):

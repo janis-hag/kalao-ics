@@ -14,6 +14,7 @@ from time import sleep
 
 import numpy as np
 
+import kalao.plc.core
 from kalao.plc import core
 from kalao.utils import database
 
@@ -190,7 +191,7 @@ def plc_status(beck=None):
     :return: complete status of calibration unit
     """
 
-    return core.device_status('Linear_Standa_8MT', beck=beck)
+    return kalao.plc.core.device_status('Linear_Standa_8MT', beck=beck)
 
 
 def get_position(beck=None):

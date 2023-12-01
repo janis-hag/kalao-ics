@@ -16,8 +16,8 @@ import numpy as np
 from kalao import system
 from kalao.cacao import aocontrol
 from kalao.fli import camera
-from kalao.plc import (adc, calib_unit, core, filterwheel, flip_mirror, laser,
-                       shutter, tungsten)
+from kalao.plc import (adc, calib_unit, filterwheel, flip_mirror, laser,
+                       plc_utils, shutter, tungsten)
 from kalao.utils import centering, database, file_handling, starfinder
 
 from tcs_communication import t120
@@ -49,7 +49,7 @@ def dark(**seq_args):
     if None in (q, dit, nbPic):
         raise MissingKeyword
 
-    if core.lamps_off() != 0:
+    if plc_utils.lamps_off() != 0:
         raise LampsNotOff
 
     if shutter.close() != ShutterState.CLOSED:
@@ -201,7 +201,7 @@ def sky_flat(**seq_args):
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
 
-    if core.lamps_off() != 0:
+    if plc_utils.lamps_off() != 0:
         raise LampsNotOff
 
     if flip_mirror.down() != FlipMirrorPosition.DOWN:
@@ -300,7 +300,7 @@ def target_observation(**seq_args):
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
 
-    if core.lamps_off() != 0:
+    if plc_utils.lamps_off() != 0:
         raise LampsNotOff
 
     if flip_mirror.down() != FlipMirrorPosition.DOWN:
@@ -413,7 +413,7 @@ def focusing(**seq_args):
     if aocontrol.reset_all_dms() != 0:
         raise DMResetFailed
 
-    if core.lamps_off() != 0:
+    if plc_utils.lamps_off() != 0:
         raise LampsNotOff
 
     if flip_mirror.down() != FlipMirrorPosition.DOWN:
@@ -480,7 +480,7 @@ def lamp_off(**seq_args):
     :return: nothing
     """
 
-    if core.lamps_off() != 0:
+    if plc_utils.lamps_off() != 0:
         raise LampsNotOff
 
     return ReturnCode.SEQ_OK

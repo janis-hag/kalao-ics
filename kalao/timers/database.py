@@ -14,7 +14,7 @@ import time
 from kalao import euler
 from kalao.cacao import telemetry
 from kalao.fli import camera
-from kalao.plc import adc, core, filterwheel
+from kalao.plc import adc, filterwheel, plc_utils
 from kalao.rtc import rtc_status
 from kalao.utils import database, kalao_time
 
@@ -39,7 +39,7 @@ def update_monitoring_db():
     values = {}
 
     # get monitoring from plc and store
-    plc_values = core.plc_status()
+    plc_values = plc_utils.plc_status()
 
     # Do not log status of disabled devices.
     for device_name in config.PLC.disabled:

@@ -11,6 +11,7 @@ shutter.py is part of the KalAO Instrument Control Software
 
 from time import sleep
 
+import kalao.plc.core
 from kalao.plc import core
 from kalao.timers import database as database_timer
 from kalao.utils import database, kalao_time
@@ -28,7 +29,7 @@ def plc_status(beck=None):
     :return: complete status of shutter
     """
 
-    status_dict = core.device_status('Shutter.Shutter', beck=beck)
+    status_dict = kalao.plc.core.device_status('Shutter.Shutter', beck=beck)
 
     if status_dict['sStatus'] == 'STANDING':
         status_dict['sStatus'] = get_state(beck=beck)
