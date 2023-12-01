@@ -81,9 +81,9 @@ def init(beck=None):
         "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
 
     # Do the shutter gym
-    close(beck)
-    open(beck)
-    close(beck)
+    close(beck=beck)
+    open(beck=beck)
+    close(beck=beck)
 
     return init_status
 
@@ -130,7 +130,7 @@ def _switch(action_name, beck=None):
 
     sleep(1)
 
-    state = get_state(beck)
+    state = get_state(beck=beck)
 
     return state
 

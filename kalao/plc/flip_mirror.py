@@ -72,7 +72,7 @@ def _switch(action_name, beck=None):
 
     sleep(1)
 
-    position = get_position(beck)
+    position = get_position(beck=beck)
 
     return position
 
@@ -115,8 +115,8 @@ def init(beck=None):
     database.store('obs', {'flip_mirror_log': 'Initialising flip mirror'})
 
     # Do the flip mirror gym
-    down(beck)
-    up(beck)
-    down(beck)
+    down(beck=beck)
+    up(beck=beck)
+    down(beck=beck)
 
     return 0

@@ -165,7 +165,8 @@ class PlotsWidget(KalAOWidget):
                 closest_point.x())).toString("HH:mm:ss dd-MM-yy")
 
             self.hovered.emit(
-                f'{metadata["short"]}: {closest_point.y():.5g} {metadata["unit"]} at {x}')
+                f'{metadata["short"]}: {closest_point.y():.5g} {metadata["unit"]} at {x}'
+            )
         else:
             self.series[key].setPointConfiguration(closest_index, {
                 QXYSeries.PointConfiguration.Size: self.point_size
@@ -176,14 +177,16 @@ class PlotsWidget(KalAOWidget):
         self.current_index = closest_index
 
     def find_closest_point(self, point, points):
-        closest_point = min(points, key=lambda p: self.points_distance(p, point))
+        closest_point = min(points,
+                            key=lambda p: self.points_distance(p, point))
         closest_index = points.index(closest_point)
 
         return closest_point, closest_index
 
     def points_distance(self, point1, point2):
         diff = point2 - point1
-        x = diff.x() / (self.axisX.max().toMSecsSinceEpoch() - self.axisX.min().toMSecsSinceEpoch())
+        x = diff.x() / (self.axisX.max().toMSecsSinceEpoch() -
+                        self.axisX.min().toMSecsSinceEpoch())
         y = diff.y() / (self.axisY.max() - self.axisY.min())
 
-        return x**2 + y **2
+        return x**2 + y**2

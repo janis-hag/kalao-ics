@@ -5,6 +5,7 @@
 """
 
 import math
+import os
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -36,6 +37,12 @@ definitions = {
 condition_mapping = {'==': '$ne', '>=': '$lt', '<=': '$gt'}
 
 codec_options = CodecOptions(tz_aware=True, tzinfo=timezone.utc)
+
+
+def forked():
+    global client
+
+    client = None
 
 
 def _get_db(dt=None):
@@ -323,3 +330,4 @@ for name in definitions:
         definitions[name]['metadata'] = yaml.safe_load(file)
 
 client = None
+os.register_at_fork(after_in_child=forked)

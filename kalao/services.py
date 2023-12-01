@@ -212,7 +212,8 @@ def init():
             if is_enabled(unit):
                 unit_control(unit, ServiceAction.DISABLE)
 
-            unit_control(unit, ServiceAction.STOP)
+            if is_active(unit):
+                unit_control(unit, ServiceAction.STOP)
 
     time.sleep(config.Systemd.service_restart_wait)
 

@@ -20,20 +20,20 @@ import config
 
 @core.beckhoff_autoconnect
 def _check_pump_temp(beck=None):
-    pump_temp = temperature_control.pump_temperature(beck)
-    pump_status = temperature_control.pump_status(beck)
+    pump_temp = temperature_control.pump_temperature(beck=beck)
+    pump_status = temperature_control.pump_status(beck=beck)
 
     if pump_temp > config.Cooling.max_pump_temperature and pump_status == 'ON':
         database.store('obs', {
             'pump_timer_log': '[WARNING] Pump overheat, shutting off'
         })
-        temperature_control.pump_off(beck)
+        temperature_control.pump_off(beck=beck)
 
     elif pump_temp < config.Cooling.pump_restart_temp and pump_status == 'OFF':
         database.store('obs', {
             'pump_timer_log': '[WARNING] Pump cooled down, powering up'
         })
-        temperature_control.pump_on(beck)
+        temperature_control.pump_on(beck=beck)
 
 
 if __name__ == "__main__":
