@@ -57,7 +57,7 @@ class MainWindow(KalAOMainWindow):
         self.dm = DMWidget(backend, parent=self)
         self.ttm = TTMWidget(backend, parent=self)
         self.loop_controls = LoopControlsWidget(backend, parent=self)
-        self.engineering = EngineeringWidget(backends, backend, parent=self)
+        self.engineering = EngineeringWidget(backend, parent=self)
         self.plots = PlotsWidget(backend, parent=self)
         self.logs = LogsWidget(backends, parent=self)
 
@@ -148,11 +148,10 @@ class MainWindow(KalAOMainWindow):
             self.timer_images.stop()
             self.fps_label.setText('')
 
-    def data_updated(self):
+    def data_updated(self, data):
         now = time.monotonic()
 
-        self.fps_label.updateText(
-            fps=(1 / (now - self.previous_update_time)),
-            duration=self.backend.streams['metadata']['duration'])
+        self.fps_label.updateText(fps=(1 / (now - self.previous_update_time)),
+                                  duration=data['metadata']['duration'])
 
         self.previous_update_time = now

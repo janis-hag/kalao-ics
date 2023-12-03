@@ -6,10 +6,9 @@ from guis.windows.dm_channels import DMChannelsWindow
 
 
 class EngineeringWidget(KalAOWidget):
-    def __init__(self, backends, backend, *args, **kwargs):
+    def __init__(self, backend, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.backends = backends
         self.backend = backend
 
         loadUi('engineering.ui', self)
@@ -17,11 +16,11 @@ class EngineeringWidget(KalAOWidget):
 
     @Slot(bool)
     def on_dm_channels_button_clicked(self, checked):
-        self.dm_channels = DMChannelsWindow(self.backends, 1)
+        self.dm_channels = DMChannelsWindow(self.backend, 1)
 
     @Slot(bool)
     def on_ttm_channels_button_clicked(self, checked):
-        self.ttm_channels = DMChannelsWindow(self.backends, 2)
+        self.ttm_channels = DMChannelsWindow(self.backend, 2)
 
     @Slot(bool)
     def on_dm_calibration_button_clicked(self, checked):

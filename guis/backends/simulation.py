@@ -9,27 +9,29 @@ from PySide6.QtCore import QThread, Signal
 
 from kalao.interfaces import fake_data
 
-from guis.backends.abstract import AbstractBackend
+from guis.backends.abstract import AbstractBackend, emit, timeit
 
 from kalao.definitions.enums import LogType
 
 import config
 
-#TODO: replace with Streams enum?
-
 
 class MainBackend(AbstractBackend):
     ttm_data = np.array([0, 0])
 
-    streams_updated = Signal()
+    streams_updated = Signal(object)
     streams = {}
 
-    tiptilt_updated = Signal()
+    tiptilt_updated = Signal(object)
     tiptilt = {}
 
-    @AbstractBackend.timeit('streams', 'streams_updated')
-    def update_streams(self, data):
-        data.update({
+    dmdisp_updated = Signal(object)
+    dmdisp = {}
+
+    @emit('streams_updated')
+    @timeit
+    def update_streams(self):
+        self.streams.update({
             config.Streams.DM: {
                 'updated': True,
                 'data': fake_data.dm(),
@@ -42,64 +44,137 @@ class MainBackend(AbstractBackend):
             },
         })
 
-        data.update({
+        self.streams.update({
             config.Streams.NUVU: {
                 'updated':
                     True,
                 'data':
                     fake_data.nuvu_frame(
-                        tiptilt=self.ttm_data,
-                        dmdisp=np.ma.getdata(data[config.Streams.DM]['data']))
+                        tiptilt=self.ttm_data, dmdisp=np.ma.getdata(
+                            self.streams[config.Streams.DM]['data']))
             },
             config.Streams.FLI: {
                 'updated':
                     True,
                 'data':
                     fake_data.fli_frame(
-                        tiptilt=self.ttm_data,
-                        dmdisp=np.ma.getdata(data[config.Streams.DM]['data']))
+                        tiptilt=self.ttm_data, dmdisp=np.ma.getdata(
+                            self.streams[config.Streams.DM]['data']))
             }
         })
 
-        data.update({
+        self.streams.update({
             config.Streams.SLOPES: {
-                'updated': True,
-                'data': fake_data.slopes(data[config.Streams.NUVU]['data'])
+                'updated':
+                    True,
+                'data':
+                    fake_data.slopes(self.streams[config.Streams.NUVU]['data'])
             },
             config.Streams.FLUX: {
-                'updated': True,
-                'data': fake_data.flux(data[config.Streams.NUVU]['data'])
+                'updated':
+                    True,
+                'data':
+                    fake_data.flux(self.streams[config.Streams.NUVU]['data'])
             }
         })
 
-        data[config.FPS.SHWFS] = {}
+        self.streams[config.FPS.SHWFS] = {}
 
         for k, v in fake_data.slopes_params(
-                data[config.Streams.SLOPES]['data']).items():
-            data[config.FPS.SHWFS].update({k: {'updated': True, 'value': v}})
+                self.streams[config.Streams.SLOPES]['data']).items():
+            self.streams[config.FPS.SHWFS].update({
+                k: {
+                    'updated': True,
+                    'value': v
+                }
+            })
 
         for k, v in fake_data.flux_params(
-                data[config.Streams.FLUX]['data']).items():
-            data[config.FPS.SHWFS].update({k: {'updated': True, 'value': v}})
+                self.streams[config.Streams.FLUX]['data']).items():
+            self.streams[config.FPS.SHWFS].update({
+                k: {
+                    'updated': True,
+                    'value': v
+                }
+            })
 
-        if data.get('aol1_mgainfact') is None:
-            data.update({
+        if self.streams.get('aol1_mgainfact') is None:
+            self.streams.update({
                 'aol1_mgainfact': {
                     'updated': True,
                     'data': np.ones((90, ))
                 }
             })
 
-    @AbstractBackend.timeit('tiptilt', 'tiptilt_updated')
-    def update_tiptilt(self, data):
+        return self.streams
+
+    @emit('tiptilt_updated')
+    @timeit
+    def update_tiptilt(self):
         self.ttm_data = fake_data.tiptilt(seed=self.ttm_data)
 
-        data.update({
+        self.tiptilt.update({
             config.Streams.TTM: {
                 'updated': True,
                 'data': self.ttm_data
             }
         })
+
+        return self.tiptilt
+
+    @emit('dmdisp_updated')
+    @timeit
+    def update_dmdisp(self, dm_number):
+        if dm_number not in self.dmdisp:
+            self.dmdisp[dm_number] = {}
+
+        if dm_number == 1:
+            dm_data = fake_data.dm([0])
+
+            for i in range(0, 12):
+                channel = f'dm{dm_number:02d}disp{i:02d}'
+
+                channel_data = fake_data.dm()
+                dm_data += channel_data
+
+                self.dmdisp[dm_number].update({
+                    channel: {
+                        'updated': True,
+                        'data': channel_data
+                    }
+                })
+
+            self.dmdisp[dm_number].update({
+                f'dm{dm_number:02d}disp': {
+                    'updated': True,
+                    'data': dm_data
+                }
+            })
+
+        else:
+            dm_data = np.zeros((2, ))
+
+            for i in range(0, 12):
+                channel = f'dm{dm_number:02d}disp{i:02d}'
+
+                channel_data = fake_data.tiptilt()
+                dm_data += channel_data
+
+                self.dmdisp[dm_number].update({
+                    channel: {
+                        'updated': True,
+                        'data': channel_data.reshape((1, 2))
+                    }
+                })
+
+            self.dmdisp[dm_number].update({
+                f'dm{dm_number:02d}disp': {
+                    'updated': True,
+                    'data': dm_data.reshape((1, 2))
+                }
+            })
+
+        return self.dmdisp[dm_number]
 
     def get_plots_data(self, dt_start, dt_end, monitoring_keys,
                        telemetry_keys):
@@ -124,59 +199,6 @@ class MainBackend(AbstractBackend):
         df = pd.DataFrame(data, columns=keys)
 
         return df
-
-
-class DMChannelsBackend(AbstractBackend):
-    streams_updated = Signal()
-    streams = {}
-
-    def __init__(self, dm_number):
-        super().__init__()
-
-        self.dm_number = dm_number
-
-    @AbstractBackend.timeit('streams', 'streams_updated')
-    def update(self, data):
-        if self.dm_number == 1:
-            dm_data = fake_data.dm([0])
-
-            for i in range(0, 12):
-                channel = f'dm{self.dm_number:02d}disp{i:02d}'
-
-                channel_data = fake_data.dm()
-                dm_data += channel_data
-
-                data.update({channel: {'updated': True, 'data': channel_data}})
-
-            data.update({
-                f'dm{self.dm_number:02d}disp': {
-                    'updated': True,
-                    'data': dm_data
-                }
-            })
-
-        else:
-            dm_data = np.zeros((2, ))
-
-            for i in range(0, 12):
-                channel = f'dm{self.dm_number:02d}disp{i:02d}'
-
-                channel_data = fake_data.tiptilt()
-                dm_data += channel_data
-
-                data.update({
-                    channel: {
-                        'updated': True,
-                        'data': channel_data.reshape((1, 2))
-                    }
-                })
-
-            data.update({
-                f'dm{self.dm_number:02d}disp': {
-                    'updated': True,
-                    'data': dm_data.reshape((1, 2))
-                }
-            })
 
     def reset_dm(self, dm_number):
         print(f'Resetted DM {dm_number} (virtually)')

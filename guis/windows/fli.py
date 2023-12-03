@@ -205,9 +205,8 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
             self.tick_labels.append(text_item)
 
-    def data_updated(self):
-        img = self.backend.consume_stream(self.backend.streams,
-                                          config.Streams.FLI)
+    def data_updated(self, data):
+        img = self.backend.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
             img_min, img_max = self.compute_min_max(img)

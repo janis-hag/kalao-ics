@@ -33,29 +33,26 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         self.slopes_view.hovered.connect(self.hover_event)
         backend.streams_updated.connect(self.data_updated)
 
-    def data_updated(self):
-        img = self.backend.consume_stream(self.backend.streams,
-                                          config.Streams.SLOPES)
+    def data_updated(self, data):
+        img = self.backend.consume_stream(data, config.Streams.SLOPES)
 
         if img is not None:
             img_min, img_max = self.compute_min_max(img, symetric=True)
 
             self.slopes_view.setImage(img, img_min, img_max)
 
-        slope_x = self.backend.consume_param(self.backend.streams,
-                                             config.FPS.SHWFS, 'slope_x')
+        slope_x = self.backend.consume_param(data, config.FPS.SHWFS, 'slope_x')
         if slope_x is not None:
             self.tip_label.updateText(tip=slope_x * self.data_scaling,
                                       unit=self.data_unit)
 
-        slope_y = self.backend.consume_param(self.backend.streams,
-                                             config.FPS.SHWFS, 'slope_y')
+        slope_y = self.backend.consume_param(data, config.FPS.SHWFS, 'slope_y')
         if slope_y is not None:
             self.tilt_label.updateText(tilt=slope_y * self.data_scaling,
                                        unit=self.data_unit)
 
-        residual = self.backend.consume_param(self.backend.streams,
-                                              config.FPS.SHWFS, 'residual')
+        residual = self.backend.consume_param(data, config.FPS.SHWFS,
+                                              'residual')
         if residual is not None:
             self.residual_label.updateText(
                 residual=residual * self.data_scaling, unit=self.data_unit)

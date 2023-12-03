@@ -64,9 +64,8 @@ class WFSWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         self.wfs_view.hovered.connect(self.hover_event)
         backend.streams_updated.connect(self.data_updated)
 
-    def data_updated(self):
-        img = self.backend.consume_stream(self.backend.streams,
-                                          config.Streams.NUVU)
+    def data_updated(self, data):
+        img = self.backend.consume_stream(data, config.Streams.NUVU)
 
         if img is not None:
             img_min, img_max = self.compute_min_max(img)

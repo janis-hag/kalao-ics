@@ -69,9 +69,8 @@ class TTMWidget(KalAOWidget, MinMaxMixin):
 
         backend.tiptilt_updated.connect(self.data_updated)
 
-    def data_updated(self):
-        img = self.backend.consume_stream(self.backend.tiptilt,
-                                          config.Streams.TTM)
+    def data_updated(self, data):
+        img = self.backend.consume_stream(data, config.Streams.TTM)
 
         if img is not None:
             timestamp = QDateTime(datetime.now()).toMSecsSinceEpoch()

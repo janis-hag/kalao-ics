@@ -39,12 +39,11 @@ class DMWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         self.dm_view.hovered.connect(self.hover_event)
         backend.streams_updated.connect(self.data_updated)
 
-    def data_updated(self):
-        img = self.backend.consume_stream(self.backend.streams,
-                                          config.Streams.DM)
+    def data_updated(self, data):
+        img = self.backend.consume_stream(data, config.Streams.DM)
 
-        max_stroke = self.backend.consume_param(self.backend.streams,
-                                                config.FPS.BMC, 'max_stroke')
+        max_stroke = self.backend.consume_param(data, config.FPS.BMC,
+                                                'max_stroke')
 
         if max_stroke is not None:
             self.max_stroke = max_stroke

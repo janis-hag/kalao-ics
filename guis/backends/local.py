@@ -1,19 +1,16 @@
 import select
 
-import numpy as np
-
 from PySide6.QtCore import QThread, Signal
 
 from kalao import logs
 from kalao.cacao import aocontrol, toolbox
 from kalao.utils import database
 
-from guis.backends.abstract import AbstractBackend
+from guis.backends.abstract import AbstractBackend, emit, timeit
 
 from kalao.definitions.enums import LogsOutputType
 
 import config
-from config import Streams
 
 
 class SHMFPSBackend(AbstractBackend):
@@ -59,36 +56,61 @@ class SHMFPSBackend(AbstractBackend):
 
 
 class MainBackend(SHMFPSBackend):
-    streams_updated = Signal()
+    streams_updated = Signal(object)
     streams = {}
 
-    tiptilt_updated = Signal()
+    tiptilt_updated = Signal(object)
     tiptilt = {}
 
-    @AbstractBackend.timeit('streams', 'streams_updated')
-    def update_streams(self, data):
-        self._update_stream(data, config.Streams.DM)
-        self._update_params(data, config.FPS.BMC, 'max_stroke')
+    dmdisp_updated = Signal(object)
+    dmdisp = {}
 
-        self._update_stream(data, config.Streams.NUVU)
+    @emit('streams_updated')
+    @timeit
+    def update_streams(self):
+        self._update_stream(self.streams, config.Streams.DM)
+        self._update_params(self.streams, config.FPS.BMC, 'max_stroke')
 
-        self._update_stream(data, config.Streams.SLOPES)
-        self._update_params(data, config.FPS.SHWFS, 'slope_x')
-        self._update_params(data, config.FPS.SHWFS, 'slope_y')
-        self._update_params(data, config.FPS.SHWFS, 'residual')
+        self._update_stream(self.streams, config.Streams.NUVU)
 
-        self._update_stream(data, config.Streams.FLUX)
-        self._update_params(data, config.FPS.SHWFS, 'flux_subaperture_avg')
-        self._update_params(data, config.FPS.SHWFS,
+        self._update_stream(self.streams, config.Streams.SLOPES)
+        self._update_params(self.streams, config.FPS.SHWFS, 'slope_x')
+        self._update_params(self.streams, config.FPS.SHWFS, 'slope_y')
+        self._update_params(self.streams, config.FPS.SHWFS, 'residual')
+
+        self._update_stream(self.streams, config.Streams.FLUX)
+        self._update_params(self.streams, config.FPS.SHWFS,
+                            'flux_subaperture_avg')
+        self._update_params(self.streams, config.FPS.SHWFS,
                             'flux_subaperture_brightest')
 
-        self._update_stream(data, config.Streams.FLI)
+        self._update_stream(self.streams, config.Streams.FLI)
 
-        self._update_stream(data, 'aol1_mgainfact')
+        self._update_stream(self.streams, 'aol1_mgainfact')
 
-    @AbstractBackend.timeit('tiptilt', 'tiptilt_updated')
-    def update_tiptilt(self, data):
-        self._update_stream(data, config.Streams.TTM)
+        return self.streams
+
+    @emit('tiptilt_updated')
+    @timeit
+    def update_tiptilt(self):
+        self._update_stream(self.tiptilt, config.Streams.TTM)
+
+        return self.tiptilt
+
+    @emit('dmdisp_updated')
+    @timeit
+    def update_dmdisp(self, dm_number):
+        if dm_number not in self.dmdisp:
+            self.dmdisp[dm_number] = {}
+
+        self._update_stream(self.dmdisp[dm_number],
+                            f'dm{self.dm_number:02d}disp')
+
+        for i in range(0, 12):
+            self._update_stream(self.dmdisp[dm_number],
+                                f'dm{self.dm_number:02d}disp{i:02d}')
+
+        return self.dmdisp[dm_number]
 
     def get_plots_data(self, dt_start, dt_end, monitoring_keys,
                        telemetry_keys):
@@ -104,23 +126,6 @@ class MainBackend(SHMFPSBackend):
                 'telemetry', dt_start, dt_end, telemetry_keys)
 
         return data
-
-
-class DMChannelsBackend(SHMFPSBackend):
-    streams_updated = Signal()
-    streams = {}
-
-    def __init__(self, dm_number):
-        super().__init__()
-
-        self.dm_number = dm_number
-
-    @AbstractBackend.timeit('streams', 'streams_updated')
-    def update(self, data):
-        self._update_stream(data, f'dm{self.dm_number:02d}disp')
-
-        for i in range(0, 12):
-            self._update_stream(data, f'dm{self.dm_number:02d}disp{i:02d}')
 
     def reset_dm(self, dm_number):
         aocontrol.reset_dm(dm_number)

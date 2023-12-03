@@ -71,9 +71,8 @@ class LoopControlsWidget(KalAOWidget):
 
         backend.streams_updated.connect(self.data_updated)
 
-    def data_updated(self):
-        img = self.backend.consume_stream(self.backend.streams,
-                                          'aol1_mgainfact')
+    def data_updated(self, data):
+        img = self.backend.consume_stream(data, 'aol1_mgainfact')
 
         if img is not None:
             self.display_modalgains(img)

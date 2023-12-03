@@ -41,6 +41,8 @@ if __name__ == "__main__":
                         help='On sky units')
     parser.add_argument('--simulation', action="store_true", dest="simulation",
                         help='Simulation mode')
+    parser.add_argument('--http', action="store_true", dest="http",
+                        help='HTTP mode')
 
     args = parser.parse_args()
 
@@ -71,9 +73,10 @@ if __name__ == "__main__":
         """)
 
     # Backend
-
     if args.simulation:
         import guis.backends.simulation as backends
+    elif args.http:
+        import guis.backends.http_client as backends
     else:
         import guis.backends.local as backends
 

@@ -506,6 +506,8 @@ class GUI:
 
     max_fps = 10
 
+    http_port = 6666
+
 
 class FPS(StrEnum):
     NUVU = 'nuvu_acquire-1'

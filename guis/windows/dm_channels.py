@@ -19,18 +19,17 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
     axis_unit = ' px'
     axis_precision = 0
 
-    def __init__(self, backends, dm_number, parent=None):
+    def __init__(self, backend, dm_number, parent=None):
         super().__init__(parent)
 
         self.dm_number = dm_number
+        self.backend = backend
 
         if dm_number == 2:
             self.associated_stream = config.Streams.TTM
             self.stream_info = config.StreamInfo.dm02disp
             self.data_unit = ' mrad'
             self.data_precision = 2
-
-        self.backend = backends.DMChannelsBackend(dm_number)
 
         loadUi('dm_channels.ui', self)
         self.resize(400, 800)
@@ -39,7 +38,8 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
 
         self.timer = QTimer()
         self.timer.setInterval(int(1000. / config.GUI.max_fps))
-        self.timer.timeout.connect(self.backend.update)
+        self.timer.timeout.connect(lambda: self.backend.update_dmdisp(
+            self.dm_number))
         self.timer.start()
 
         self.dm_view.setColormap(colormaps.CoolWarm())
@@ -51,13 +51,12 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
             reset_button.clicked.connect(lambda checked=False, i=i: self.
                                          on_reset_button_clicked(checked, i))
 
-        self.backend.streams_updated.connect(self.data_updated)
+        self.backend.dmdisp_updated.connect(self.data_updated)
 
         self.show()
 
-    def data_updated(self):
-        img = self.backend.consume_stream(self.backend.streams,
-                                          f'dm{self.dm_number:02d}disp')
+    def data_updated(self, data):
+        img = self.backend.consume_stream(data, f'dm{self.dm_number:02d}disp')
 
         if img is not None:
             img_min, img_max = self.compute_min_max(img, symetric=True)
@@ -66,7 +65,7 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
 
         for i in range(0, 12):
             img = self.backend.consume_stream(
-                self.backend.streams, f'dm{self.dm_number:02d}disp{i:02d}')
+                data, f'dm{self.dm_number:02d}disp{i:02d}')
 
             if img is not None:
                 view = getattr(self, f'view_{i:02d}')
