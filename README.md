@@ -20,7 +20,7 @@ The KalAO Instrument Control Software
 - Start systemd serviced:
     ```console
   kalaortc01:~>cd kalao-ics/kalao-config/
-  kalaortc01:~/kalao-ics/kalao-config>bash ./enable_systems.sh
+  kalaortc01:~/kalao-ics/kalao-config> bash ./enable_systems.sh
     ```
 
 

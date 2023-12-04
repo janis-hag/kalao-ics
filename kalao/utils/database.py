@@ -76,7 +76,7 @@ def get_collection_last_update(collection_name, dt=None):
     try:
         return cursor[0]['last_timestamp']
     except (IndexError, KeyError):
-        return datetime.fromtimestamp(0)
+        return datetime.fromtimestamp(0, tzinfo=datetime.timezone.utc)
 
 
 def get(collection_name, keys=None, nb_of_point=1, dt=None):
