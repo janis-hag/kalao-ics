@@ -63,7 +63,7 @@ class TungstenSwitchedOff(SequencerException):
 
 
 class LampsNotOff(SequencerException):
-    """Lamps did not turned off"""
+    """Lamps did not turn off"""
 
 
 class TrackingTimeout(SequencerException):
