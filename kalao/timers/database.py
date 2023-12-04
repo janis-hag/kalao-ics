@@ -33,8 +33,8 @@ def update_monitoring_db():
         ).total_seconds() < config.Database.monitoring_min_update_interval:
         return
 
-    database.store('obs',
-                   {'database_timer_log': 'Updating monitoring database'})
+    #database.store('obs',
+    #               {'database_timer_log': 'Updating monitoring database'})
 
     values = {}
 
@@ -76,8 +76,8 @@ def update_monitoring_db():
 
 
 def update_telemetry_db():
-    database.store('obs',
-                   {'database_timer_log': 'Updating telemetry database'})
+    #database.store('obs',
+    #               {'database_timer_log': 'Updating telemetry database'})
 
     telemetry.telemetry_save(shm_and_fps_cache)
 
