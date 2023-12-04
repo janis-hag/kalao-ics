@@ -14,8 +14,6 @@ from functools import wraps
 
 import numpy as np
 
-from kalao.utils import database
-
 from opcua import Client, ua
 
 import config
@@ -62,6 +60,7 @@ def motor_send_init(motor_nCommand, motor_bExecute):
         ua.DataValue(
             ua.Variant(int(1),
                        motor_nCommand.get_data_type_as_variant_type())))
+
     # Execute
     motor_send_execute(motor_bExecute)
 

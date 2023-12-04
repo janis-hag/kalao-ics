@@ -122,18 +122,16 @@ def init(beck=None):
 @core.beckhoff_autoconnect
 def get_state(beck=None):
     """
-    Query the single string status of the shutter.
-
-    :return: single string status of shutter
+    Get the current state of the tungsten lamp.
     """
 
     # Check error status
     error_code = beck.get_node(
-        "ns=4; s=MAIN.Shutter.Tungsten.stat.nErrorCode").get_value()
+        "ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value()
 
     if error_code != 0:
         error_text = beck.get_node(
-            "ns=4; s=MAIN.Shutter.Tungsten.stat.sErrorText").get_value()
+            "ns=4; s=MAIN.Tungsten.stat.sErrorText").get_value()
 
         database.store('obs', {
             'tungsten_log': f'[ERROR] {error_text} ({error_code})'
