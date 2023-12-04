@@ -7,8 +7,6 @@ from PySide6.QtCore import QTimer
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
-from guis.kalao.widgets import KalAOChart, KalAOGraphicsView, KalAOLabel
-from guis.main import clean
 from guis.windows.alignment import AlignmentWindow
 from guis.windows.slopes import SlopesWidget
 from guis.windows.wfs import WFSWidget
@@ -37,13 +35,9 @@ if __name__ == "__main__":
     # Qt stuff
 
     loader = QUiLoader()
-    loader.registerCustomWidget(KalAOLabel)
-    loader.registerCustomWidget(KalAOGraphicsView)
-    loader.registerCustomWidget(KalAOChart)
 
     app = QApplication(['KalAO - Alignment tools'])
     app.setQuitOnLastWindowClosed(True)
-    app.aboutToQuit.connect(clean)
 
     # Windows
 

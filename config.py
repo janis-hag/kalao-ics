@@ -26,7 +26,7 @@ from numpy.polynomial import Polynomial
 
 from kalao.utils import kalao_tools
 
-from kalao.definitions.enums import StrEnum
+from kalao.definitions.enums import StrEnum, TrackingStatus
 
 kalao_path = Path(__file__).absolute().parent
 
@@ -163,7 +163,6 @@ class FilterWheel:
     position_change_wait = 6  # s
     position_list = ['clear', 'g', 'r', 'i', 'z', 'nd']
 
-    # According to manufacturer: g = 465, r = 611, i = 758, z = undefined
     filter_to_wavelength = {
         'g': 475e-9,  # m
         'r': 622e-9,  # m
@@ -171,6 +170,51 @@ class FilterWheel:
         'z': 905e-9,  # m
         'clear': [450e-9, 1018e-9],  # m
         'nd': [450e-9, 1018e-9],  # m
+    }
+
+    filter_infos = {
+        'g': {
+            'name': 'SDSS-g',
+            'center': 465.47e-9,
+            'fwhm': 131.71e-9,
+            'start': 399.62e-9,
+            'end': 531.33e-9,
+        },
+        'r': {
+            'name': 'SDSS-r',
+            'center': 610.83e-9,
+            'fwhm': 122.85e-9,
+            'start': 549.41e-9,
+            'end': 672.26e-9,
+        },
+        'i': {
+            'name': 'SDSS-i',
+            'center': 758.10e-9,
+            'fwhm': 123.69e-9,
+            'start': 696.26e-9,
+            'end': 819.95e-9,
+        },
+        'z': {
+            'name': 'SDSS-z',
+            'center': np.nan,
+            'fwhm': np.inf,
+            'start': 822.80e-9,
+            'end': np.inf,
+        },
+        'clear': {
+            'name': 'Clear',
+            'center': np.nan,
+            'fwhm': np.inf,
+            'start': -np.inf,
+            'end': np.inf,
+        },
+        'nd': {
+            'name': 'Neutral Density',
+            'center': np.nan,
+            'fwhm': np.inf,
+            'start': -np.inf,
+            'end': np.inf,
+        },
     }
 
 
@@ -501,8 +545,30 @@ class GUI:
     logs_lines = 10000  # s
     initial_logs_entries = 100
 
-    plots_map_to_0 = [False, 'OFF', 'CLOSED', 'DOWN']
-    plots_map_to_1 = [True, 'ON', 'OPEN', 'UP']
+    plots_mapping = {
+        # -1
+        'ERROR': -1,
+
+        # 0
+        False: 0,
+        'OFF': 0,
+        'CLOSED': 0,
+        'DOWN': 0,
+
+        # 1
+        True: 1,
+        'ON': 1,
+        'OPEN': 1,
+        'UP': 1,
+
+        # Tracking status
+        TrackingStatus.IDLE: 0,
+        TrackingStatus.POINTING: 1,
+        TrackingStatus.CENTERING: 2,
+        TrackingStatus.TRACKING: 3,
+    }
+
+    plots_exclude_list = ['observer_name', 'observer_email']
 
     max_fps = 10
 

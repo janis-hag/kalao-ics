@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QTimer, Signal, Slot
 from PySide6.QtGui import QFontDatabase, QTextCursor
 
 from guis.kalao.definitions import Color
@@ -15,8 +15,10 @@ class LogsWidget(KalAOWidget):
 
     lines = config.GUI.logs_lines
 
-    def __init__(self, backends, *args, **kwargs):
+    def __init__(self, backend, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.backend = backend
 
         loadUi('logs.ui', self)
         self.resize(600, 400)
@@ -56,9 +58,17 @@ class LogsWidget(KalAOWidget):
             }}
             """)
 
-        self.thread = backends.LogsThread(parent=self)
-        self.thread.new_log.connect(self.add_log_entry)
-        self.thread.start()
+        for entry in self.backend.init_logs():
+            self.add_log_entry(entry)
+
+        self.timer = QTimer()
+        self.timer.setInterval(int(1000. / config.GUI.max_fps * 10))
+        self.timer.timeout.connect(self.get_logs)
+        self.timer.start()
+
+    def get_logs(self):
+        for entry in self.backend.get_logs():
+            self.add_log_entry(entry)
 
     def add_log_entry(self, log):
         if log is None:

@@ -13,7 +13,7 @@ from kalao.definitions.enums import IPPowerStatus
 import config
 
 
-def switch_ippower(power_port, state):
+def switch(power_port, state):
     """
     Function to switch an ippower port between ON and OFF
 
@@ -42,7 +42,7 @@ def switch_ippower(power_port, state):
     return IPPowerStatus.ERROR
 
 
-def ippower_status(power_port):
+def status(power_port):
     """
     Check the ippower status of the power.
 
@@ -65,3 +65,10 @@ def ippower_status(power_port):
                 f'Could not get camera IP-power status for port {power_port}. HTTP-response: {req.text}  ({req.status_code})'
         })
     return IPPowerStatus.ERROR
+
+
+def status_all():
+    return {
+        'ippower_bench_status': status(config.IPPower.Port.Bench),
+        'ippower_dm_status': status(config.IPPower.Port.BMC_DM),
+    }

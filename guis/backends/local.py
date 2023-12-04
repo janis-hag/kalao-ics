@@ -1,6 +1,4 @@
-import select
-
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import Signal
 
 from kalao import logs
 from kalao.cacao import aocontrol, toolbox
@@ -33,6 +31,8 @@ class SHMFPSBackend(AbstractBackend):
                     'data': stream.get_data(check=False),
                 }
             })
+        else:
+            data.update({stream_name: {'updated': False, 'data': None}})
 
     def _update_params(self, data, fps_name, param_name):
         fps = toolbox.open_fps_once(fps_name, self.streams_and_fps_cache)
@@ -53,6 +53,13 @@ class SHMFPSBackend(AbstractBackend):
                     'value': param
                 }
             })
+        else:
+            data[fps_name].update({
+                param_name: {
+                    'updated': False,
+                    'value': None
+                }
+            })
 
 
 class MainBackend(SHMFPSBackend):
@@ -64,6 +71,11 @@ class MainBackend(SHMFPSBackend):
 
     dmdisp_updated = Signal(object)
     dmdisp = {}
+
+    def __init__(self):
+        super().__init__()
+
+        self.reader = logs.get_reader(True)
 
     @emit('streams_updated')
     @timeit
@@ -87,6 +99,18 @@ class MainBackend(SHMFPSBackend):
         self._update_stream(self.streams, config.Streams.FLI)
 
         self._update_stream(self.streams, 'aol1_mgainfact')
+
+        self._update_params(self.streams, config.FPS.NUVU, 'autogain_on')
+
+        self._update_params(self.streams, 'mfilt-1', 'loopON')
+        self._update_params(self.streams, 'mfilt-1', 'loopgain')
+        self._update_params(self.streams, 'mfilt-1', 'loopmult')
+        self._update_params(self.streams, 'mfilt-1', 'looplimit')
+
+        self._update_params(self.streams, 'mfilt-2', 'loopON')
+        self._update_params(self.streams, 'mfilt-2', 'loopgain')
+        self._update_params(self.streams, 'mfilt-2', 'loopmult')
+        self._update_params(self.streams, 'mfilt-2', 'looplimit')
 
         return self.streams
 
@@ -112,8 +136,8 @@ class MainBackend(SHMFPSBackend):
 
         return self.dmdisp[dm_number]
 
-    def get_plots_data(self, dt_start, dt_end, monitoring_keys,
-                       telemetry_keys):
+    def get_plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
+                       obs_keys):
 
         data = {}
 
@@ -125,7 +149,43 @@ class MainBackend(SHMFPSBackend):
             data['telemetry'] = database.read_mongo_to_pandas_by_timestamp(
                 'telemetry', dt_start, dt_end, telemetry_keys)
 
+        if len(obs_keys) > 0:
+            data['obs'] = database.read_mongo_to_pandas_by_timestamp(
+                'obs', dt_start, dt_end, obs_keys)
+
         return data
+
+    ##### Loop controls
+
+    # DM Loop
+
+    def set_dm_loop_on(self, state):
+        aocontrol.switch_loop(config.AO.DM_loop_number, state)
+
+    def set_dm_loop_gain(selfself, gain):
+        aocontrol.set_dmloop_gain(gain)
+
+    def set_dm_loop_mult(selfself, mult):
+        aocontrol.set_dmloop_mult(mult)
+
+    def set_dm_loop_limit(selfself, limit):
+        aocontrol.set_dmloop_limit(limit)
+
+    # TTM Loop
+
+    def set_ttm_loop_on(self, state):
+        aocontrol.switch_loop(config.AO.TTM_loop_number, state)
+
+    def set_ttm_loop_gain(selfself, gain):
+        aocontrol.set_ttmloop_gain(gain)
+
+    def set_ttm_loop_mult(selfself, mult):
+        aocontrol.set_ttmloop_mult(mult)
+
+    def set_ttm_loop_limit(selfself, limit):
+        aocontrol.set_ttmloop_limit(limit)
+
+    ##### DM channels
 
     def reset_dm(self, dm_number):
         aocontrol.reset_dm(dm_number)
@@ -133,24 +193,23 @@ class MainBackend(SHMFPSBackend):
     def reset_channel(self, dm_number, channel):
         aocontrol.reset_channel(dm_number, channel)
 
+    ##### Logs
 
-class LogsThread(QThread):
-    new_log = Signal(object)
+    def init_logs(self):
+        logs = []
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.reader = logs.get_reader(True)
-
-        self.logs_poll = select.poll()
-        self.logs_poll.register(self.reader, self.reader.get_events())
-
-    def run(self):
         for entry in logs.seek(self.reader, LogsOutputType.QT,
                                config.GUI.initial_logs_entries):
             entry['text'] = '<span class="init">' + entry['text'] + '<span>'
-            self.new_log.emit(entry)
 
-        while self.logs_poll.poll() and not self.isInterruptionRequested():
-            for entry in logs.get_last_entries(self.reader, LogsOutputType.QT):
-                self.new_log.emit(entry)
+            logs.append(entry)
+
+        return logs
+
+    def get_logs(self):
+        logs = []
+
+        for entry in logs.get_last_entries(self.reader, LogsOutputType.QT):
+            logs.append(entry)
+
+        return logs

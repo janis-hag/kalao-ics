@@ -3,7 +3,8 @@ import pickle
 
 from PySide6.QtCore import SignalInstance
 
-from flask import Flask, jsonify, request
+import lz4.frame
+from flask import Flask, jsonify, make_response, request
 from flask.json.provider import JSONProvider
 
 from guis.kalao.json_coder import (FakeSignal, KalAOJSONDecoder,
@@ -38,11 +39,18 @@ def catch_all(path):
 
     ret = attr(*tuple(request.json['args']), **request.json['kwargs'])
 
-    return pickle.dumps(ret)
+    content = pickle.dumps(ret)
+    #content = lz4.frame.compress(pickle.dumps(ret), compression_level=3)
+    response = make_response(content)
+    response.headers['Content-Length'] = len(content)
+    response.headers['Content-Type'] = 'application/octet-stream'
+    return response
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='KalAO - Server backend.')
+    parser.add_argument('--debug', action="store_true", dest="debug",
+                        help='Start Flask in debug mode')
     parser.add_argument('--simulation', action="store_true", dest="simulation",
                         help='Simulation mode')
 
@@ -62,4 +70,4 @@ if __name__ == "__main__":
             setattr(backend, key, FakeSignal(key))
 
     app.run(host='0.0.0.0', port=config.GUI.http_port, threaded=True,
-            debug=True)
+            debug=args.debug)

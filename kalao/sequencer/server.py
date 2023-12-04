@@ -10,7 +10,7 @@ from multiprocessing import Process, Queue
 from threading import Thread
 
 from kalao import services
-from kalao.plc import filterwheel, flip_mirror, laser, shutter, tungsten
+from kalao.plc import adc, filterwheel, flip_mirror, laser, shutter, tungsten
 from kalao.sequencer import commands
 from kalao.utils import database
 
@@ -50,6 +50,8 @@ def init():
         shutter.init,
         tungsten.init,
         laser.init,
+        lambda: adc.init(1),
+        lambda: adc.init(2),
     ]
 
     def get_name(f):

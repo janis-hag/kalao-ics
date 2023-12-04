@@ -3,6 +3,7 @@ import numpy as np
 from PySide6.QtCharts import QLineSeries, QValueAxis
 from PySide6.QtCore import QPointF, Qt, Slot
 
+from guis.kalao.mixins import BackendActionMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
@@ -26,7 +27,7 @@ laws = {
 }
 
 
-class LoopControlsWidget(KalAOWidget):
+class LoopControlsWidget(KalAOWidget, BackendActionMixin):
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 
@@ -59,8 +60,8 @@ class LoopControlsWidget(KalAOWidget):
         series = self.modalgains_series = QLineSeries()
         series.setName("Modal gains")
         series.setPointsVisible(True)
-        series.pressed.connect(self.on_modalgain_pressed)
-        series.released.connect(self.on_modalgain_released)
+        series.pressed.connect(self.on_modalgains_pressed)
+        series.released.connect(self.on_modalgains_released)
 
         chart.addSeries(series)
         series.attachAxis(self.axisX)
@@ -72,6 +73,50 @@ class LoopControlsWidget(KalAOWidget):
         backend.streams_updated.connect(self.data_updated)
 
     def data_updated(self, data):
+        # DM Loop
+
+        loopON = self.backend.consume_param(data, 'mfilt-1', 'loopON')
+        if loopON is not None:
+            if loopON == 1:
+                self.dm_loop_on_checkbox.setCheckState(Qt.Checked)
+            else:
+                self.dm_loop_on_checkbox.setCheckState(Qt.Unchecked)
+
+        loopgain = self.backend.consume_param(data, 'mfilt-1', 'loopgain')
+        if loopgain is not None:
+            self.dm_loop_gain_spinbox.setValue(loopgain)
+
+        loopmult = self.backend.consume_param(data, 'mfilt-1', 'loopmult')
+        if loopmult is not None:
+            self.dm_loop_mult_spinbox.setValue(loopmult)
+
+        looplimit = self.backend.consume_param(data, 'mfilt-1', 'looplimit')
+        if looplimit is not None:
+            self.dm_loop_limit_spinbox.setValue(looplimit)
+
+        # TTM Loop
+
+        loopON = self.backend.consume_param(data, 'mfilt-2', 'loopON')
+        if loopON is not None:
+            if loopON == 1:
+                self.ttm_loop_on_checkbox.setCheckState(Qt.Checked)
+            else:
+                self.ttm_loop_on_checkbox.setCheckState(Qt.Unchecked)
+
+        loopgain = self.backend.consume_param(data, 'mfilt-2', 'loopgain')
+        if loopgain is not None:
+            self.ttm_loop_gain_spinbox.setValue(loopgain)
+
+        loopmult = self.backend.consume_param(data, 'mfilt-2', 'loopmult')
+        if loopmult is not None:
+            self.ttm_loop_mult_spinbox.setValue(loopmult)
+
+        looplimit = self.backend.consume_param(data, 'mfilt-2', 'looplimit')
+        if looplimit is not None:
+            self.ttm_loop_limit_spinbox.setValue(looplimit)
+
+        # Modal gains
+
         img = self.backend.consume_stream(data, 'aol1_mgainfact')
 
         if img is not None:
@@ -82,7 +127,54 @@ class LoopControlsWidget(KalAOWidget):
             self.last_spinbox.setMaximum(img.size - 1)
             self.last_spinbox.setValue(img.size - 1)
 
-    def on_modalgain_pressed(self, point):
+    # DM Loop
+
+    @Slot(int)
+    def on_dm_loop_on_checkbox_stateChanged(self, state):
+        self.action_send(self.dm_loop_on_checkbox, self.backend.set_dm_loop_on,
+                         Qt.CheckState(state) == Qt.Checked)
+
+    @Slot(float)
+    def on_dm_loop_gain_spinbox_valueChanged(self, d):
+        self.action_send(self.dm_loop_gain_spinbox,
+                         self.backend.set_dm_loop_gain, d)
+
+    @Slot(float)
+    def on_dm_loop_mult_spinbox_valueChanged(self, d):
+        self.action_send(self.dm_loop_mult_spinbox,
+                         self.backend.set_dm_loop_mult, d)
+
+    @Slot(float)
+    def on_dm_loop_limit_spinbox_valueChanged(self, d):
+        self.action_send(self.dm_loop_limit_spinbox,
+                         self.backend.set_dm_loop_limit, d)
+
+    # TTM Loop
+
+    @Slot(int)
+    def on_ttm_loop_on_checkbox_stateChanged(self, state):
+        self.action_send(self.ttm_loop_on_checkbox,
+                         self.backend.set_ttm_loop_on,
+                         Qt.CheckState(state) == Qt.Checked)
+
+    @Slot(float)
+    def on_ttm_loop_gain_spinbox_valueChanged(self, d):
+        self.action_send(self.ttm_loop_gain_spinbox,
+                         self.backend.set_ttm_loop_gain, d)
+
+    @Slot(float)
+    def on_ttm_loop_mult_spinbox_valueChanged(self, d):
+        self.action_send(self.ttm_loop_mult_spinbox,
+                         self.backend.set_ttm_loop_mult, d)
+
+    @Slot(float)
+    def on_ttm_loop_limit_spinbox_valueChanged(self, d):
+        self.action_send(self.ttm_loop_limit_spinbox,
+                         self.backend.set_ttm_loop_limit, d)
+
+    # Modal gains
+
+    def on_modalgains_pressed(self, point):
         points = self.modalgains_series.points()
 
         p = min(points, key=lambda x: abs((x - point).x()))
@@ -92,7 +184,7 @@ class LoopControlsWidget(KalAOWidget):
         self.modalgains_plot.chart.current_point = p
         self.modalgains_plot.chart.current_index = i
 
-    def on_modalgain_released(self, point):
+    def on_modalgains_released(self, point):
         self.modalgains_plot.chart.current_series = None
         self.modalgains_plot.chart.current_point = None
         self.modalgains_plot.chart.current_index = None

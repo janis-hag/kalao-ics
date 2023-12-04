@@ -18,31 +18,24 @@ from kalao.utils import database, kalao_time
 
 from opcua import ua
 
+from kalao.definitions.enums import LaserState
+
 import config
 
 
 @core.beckhoff_autoconnect
-def plc_status(beck=None):
-    """
-    Query the current status of the laser
+def get_state(beck=None):
+    if beck.get_node("ns=4; s=MAIN.Laser.Status").get_value():
+        state = LaserState.ON
+    else:
+        state = LaserState.OFF
 
-    :return: intensity of laser
-    """
-
-    device_status_dict = {
-        'Status': beck.get_node('ns = 4;s = MAIN.Laser.Status').get_value(),
-        'Current': beck.get_node('ns = 4;s = MAIN.Laser.Current').get_value(),
-    }
-
-    return device_status_dict
+    return state
 
 
-def get_state():
-    return plc_status()['Status']
-
-
-def get_power():
-    return plc_status()['Current']
+@core.beckhoff_autoconnect
+def get_power(beck=None):
+    return beck.get_node('ns=4;s=MAIN.Laser.Current').get_value()
 
 
 def disable(beck=None):
@@ -172,19 +165,15 @@ def _switch(action_name, beck=None):
     elif action_name == 'bUnlock':
         database.store('obs', {'laser_log': 'Unlocking laser'})
 
-    laser_switch = beck.get_node("ns = 4; s = MAIN.Laser." + action_name)
+    laser_switch = beck.get_node("ns=4; s=MAIN.Laser." + action_name)
     laser_switch.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
             ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
 
     sleep(config.Laser.switch_wait)
-    if beck.get_node("ns=4;s=MAIN.Laser.Status").get_value():
-        laser_status = 'ON'
-    else:
-        laser_status = 'OFF'
 
-    return laser_status
+    return get_state(beck=beck)
 
 
 def init():

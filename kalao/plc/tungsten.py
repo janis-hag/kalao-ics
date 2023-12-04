@@ -18,7 +18,7 @@ from kalao.utils import database, kalao_time
 
 from opcua import ua
 
-from kalao.definitions.enums import IntEnum
+from kalao.definitions.enums import IntEnum, TungstenState
 
 import config
 
@@ -27,14 +27,6 @@ class TungstenCommand(IntEnum):
     INIT = 1
     OFF = 2
     ON = 3
-
-
-def check_error(beck):
-    if beck.get_node("ns=4; s=MAIN.Tungsten.stat.sErrorText").get_value() == 0:
-        return 0
-    else:
-        error_status = 'ERROR'
-        return error_status
 
 
 def on(beck=None):
@@ -75,19 +67,20 @@ def send_command(nCommand_value, beck=None):
         database.store('obs', {'tungsten_log': f'Turning tungsten lamp off'})
 
     tungsten_nCommand = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.nCommand")
+    tungsten_bExecute = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.bExecute")
 
     tungsten_nCommand.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
             ua.Variant(int(nCommand_value),
                        tungsten_nCommand.get_data_type_as_variant_type())))
+
     # Execute
-    send_execute(beck)
+    core.motor_send_execute(tungsten_bExecute, beck=beck)
 
     sleep(config.Tungsten.switch_wait)
-    state = beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
 
-    return state
+    return get_state(beck=beck)
 
 
 @core.beckhoff_autoconnect
@@ -106,11 +99,13 @@ def init(beck=None):
     if not beck.get_node(
             "ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
         # init
-        send_command(TungstenCommand.INIT, beck)
+        send_command(TungstenCommand.INIT, beck=beck)
+
         sleep(15)
         while (beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
                == 'INITIALISING'):
             sleep(15)
+
         if not beck.get_node(
                 "ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
             tungsten_status = '[ERROR] ' + str(
@@ -124,36 +119,44 @@ def init(beck=None):
     return tungsten_status
 
 
-def send_execute(beck):
-    tungsten_bExecute = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.bExecute")
-
-    tungsten_bExecute.set_attribute(
-        ua.AttributeIds.Value,
-        ua.DataValue(
-            ua.Variant(True,
-                       tungsten_bExecute.get_data_type_as_variant_type())))
-
-
 @core.beckhoff_autoconnect
-def plc_status(beck=None):
+def get_state(beck=None):
     """
-    Query the status of the tungsten lamp.
+    Query the single string status of the shutter.
 
-    :return: complete status of tungsten lamp
+    :return: single string status of shutter
     """
 
-    device_status_dict = {
-        'sStatus':
-            beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value(),
-        'sErrorText':
-            beck.get_node("ns=4; s=MAIN.Tungsten.stat.sErrorText").get_value(),
-        'nErrorCode':
-            beck.get_node("ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value(),
-        'nStatus':
-            beck.get_node("ns=4; s=MAIN.Tungsten.stat.nStatus").get_value()
-    }
+    # Check error status
+    error_code = beck.get_node(
+        "ns=4; s=MAIN.Shutter.Tungsten.stat.nErrorCode").get_value()
 
-    return device_status_dict
+    if error_code != 0:
+        error_text = beck.get_node(
+            "ns=4; s=MAIN.Shutter.Tungsten.stat.sErrorText").get_value()
+
+        database.store('obs', {
+            'tungsten_log': f'[ERROR] {error_text} ({error_code})'
+        })
+
+        state = TungstenState.ERROR
+
+    else:
+        state_plc = beck.get_node(
+            "ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
+
+        if state_plc == 'OFF':
+            state = TungstenState.OFF
+        elif state_plc == 'ON':
+            state = TungstenState.ON
+        else:
+            database.store('obs', {
+                'tungsten_log': f'[ERROR] Unknown state {state_plc}'
+            })
+
+            state = TungstenState.ERROR
+
+    return state
 
 
 def get_switch_time():

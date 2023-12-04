@@ -91,9 +91,16 @@ class FilterwheelStatus(Enum):
     ERROR_NAME = 'error'
 
 
-class TungstenStatus:
+class TungstenState:
     ON = 'ON'
     OFF = 'OFF'
+    ERROR = 'ERROR'
+
+
+class LaserState:
+    ON = 'ON'
+    OFF = 'OFF'
+    ERROR = 'ERROR'
 
 
 class ReturnCode(IntFlag):

@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import Signal
 
 from kalao.interfaces import fake_data
 
@@ -16,8 +16,44 @@ from kalao.definitions.enums import LogType
 import config
 
 
-class MainBackend(AbstractBackend):
+class FakeSHMFPSBackend(AbstractBackend):
+    streams_and_fps_cache = {}
+
+    def _update_stream(self, data, stream_name, stream):
+        cnt0 = data.get(stream_name, {}).get('cnt0', 0)
+
+        data.update({
+            stream_name: {
+                'updated': True,
+                'cnt0': cnt0 + 1,
+                'data': stream,
+            }
+        })
+
+    def _update_params(self, data, fps_name, param_name, param):
+        if data.get(fps_name) is None:
+            data[fps_name] = {}
+
+        if data.get(fps_name, {}).get(param_name, {}).get('cnt0') != param:
+            data[fps_name].update({
+                param_name: {
+                    'updated': True,
+                    'cnt0': param,
+                    'value': param
+                }
+            })
+        else:
+            data[fps_name].update({
+                param_name: {
+                    'updated': False,
+                    'value': None
+                }
+            })
+
+
+class MainBackend(FakeSHMFPSBackend):
     ttm_data = np.array([0, 0])
+    last_fli_update = 0
 
     streams_updated = Signal(object)
     streams = {}
@@ -31,80 +67,55 @@ class MainBackend(AbstractBackend):
     @emit('streams_updated')
     @timeit
     def update_streams(self):
-        self.streams.update({
-            config.Streams.DM: {
-                'updated': True,
-                'data': fake_data.dm(),
-            },
-            config.FPS.BMC: {
-                'max_stroke': {
-                    'updated': True,
-                    'value': 0.9
-                }
-            },
-        })
+        dm_data = fake_data.dm()
+        nuvu_data = fake_data.nuvu_frame(dmdisp=np.ma.getdata(dm_data))
+        slopes_data = fake_data.slopes(nuvu_data)
+        flux_data = fake_data.flux(nuvu_data)
+        fli_data = fake_data.fli_frame(dmdisp=np.ma.getdata(dm_data))
 
-        self.streams.update({
-            config.Streams.NUVU: {
-                'updated':
-                    True,
-                'data':
-                    fake_data.nuvu_frame(
-                        tiptilt=self.ttm_data, dmdisp=np.ma.getdata(
-                            self.streams[config.Streams.DM]['data']))
-            },
-            config.Streams.FLI: {
-                'updated':
-                    True,
-                'data':
-                    fake_data.fli_frame(
-                        tiptilt=self.ttm_data, dmdisp=np.ma.getdata(
-                            self.streams[config.Streams.DM]['data']))
-            }
-        })
+        slopes_params = fake_data.slopes_params(slopes_data)
+        flux_params = fake_data.flux_params(flux_data)
 
-        self.streams.update({
-            config.Streams.SLOPES: {
-                'updated':
-                    True,
-                'data':
-                    fake_data.slopes(self.streams[config.Streams.NUVU]['data'])
-            },
-            config.Streams.FLUX: {
-                'updated':
-                    True,
-                'data':
-                    fake_data.flux(self.streams[config.Streams.NUVU]['data'])
-            }
-        })
+        self._update_stream(self.streams, config.Streams.DM, dm_data)
+        self._update_params(self.streams, config.FPS.BMC, 'max_stroke', 0.9)
 
-        self.streams[config.FPS.SHWFS] = {}
+        self._update_stream(self.streams, config.Streams.NUVU, nuvu_data)
 
-        for k, v in fake_data.slopes_params(
-                self.streams[config.Streams.SLOPES]['data']).items():
-            self.streams[config.FPS.SHWFS].update({
-                k: {
-                    'updated': True,
-                    'value': v
-                }
-            })
+        self._update_stream(self.streams, config.Streams.SLOPES, slopes_data)
+        self._update_params(self.streams, config.FPS.SHWFS, 'slope_x',
+                            slopes_params['slope_x'])
+        self._update_params(self.streams, config.FPS.SHWFS, 'slope_y',
+                            slopes_params['slope_y'])
+        self._update_params(self.streams, config.FPS.SHWFS, 'residual',
+                            slopes_params['residual'])
 
-        for k, v in fake_data.flux_params(
-                self.streams[config.Streams.FLUX]['data']).items():
-            self.streams[config.FPS.SHWFS].update({
-                k: {
-                    'updated': True,
-                    'value': v
-                }
-            })
+        self._update_stream(self.streams, config.Streams.FLUX, flux_data)
+        self._update_params(self.streams, config.FPS.SHWFS,
+                            'flux_subaperture_avg',
+                            flux_params['flux_subaperture_avg'])
+        self._update_params(self.streams, config.FPS.SHWFS,
+                            'flux_subaperture_brightest',
+                            flux_params['flux_subaperture_brightest'])
 
-        if self.streams.get('aol1_mgainfact') is None:
-            self.streams.update({
-                'aol1_mgainfact': {
-                    'updated': True,
-                    'data': np.ones((90, ))
-                }
-            })
+        if time.monotonic() - self.last_fli_update > 10:
+            self._update_stream(self.streams, config.Streams.FLI, fli_data)
+            self.last_fli_update = time.monotonic()
+        else:
+            self._update_stream(self.streams, config.Streams.FLI, None)
+
+        self._update_stream(self.streams, 'aol1_mgainfact', np.ones((90, )))
+
+        self._update_params(self.streams, config.FPS.NUVU, 'autogain_on', 0)
+
+        self._update_params(self.streams, 'mfilt-1', 'loopON', 1)
+        self._update_params(self.streams, 'mfilt-1', 'loopgain', 0.8)
+        self._update_params(self.streams, 'mfilt-1', 'loopmult', 0.99)
+        self._update_params(self.streams, 'mfilt-1', 'looplimit', 1)
+
+        self._update_params(self.streams, 'mfilt-2', 'loopON', 0)
+        self._update_params(self.streams, 'mfilt-2', 'loopgain', 0.8)
+        self._update_params(self.streams, 'mfilt-2', 'loopmult', 0.99)
+        self._update_params(self.streams, 'mfilt-2', 'looplimit', 1)
 
         return self.streams
 
@@ -113,12 +124,7 @@ class MainBackend(AbstractBackend):
     def update_tiptilt(self):
         self.ttm_data = fake_data.tiptilt(seed=self.ttm_data)
 
-        self.tiptilt.update({
-            config.Streams.TTM: {
-                'updated': True,
-                'data': self.ttm_data
-            }
-        })
+        self._update_stream(self.tiptilt, config.Streams.TTM, self.ttm_data)
 
         return self.tiptilt
 
@@ -128,63 +134,49 @@ class MainBackend(AbstractBackend):
         if dm_number not in self.dmdisp:
             self.dmdisp[dm_number] = {}
 
+        dm = f'dm{dm_number:02d}disp'
+
         if dm_number == 1:
             dm_data = fake_data.dm([0])
 
             for i in range(0, 12):
-                channel = f'dm{dm_number:02d}disp{i:02d}'
+                channel = f'{dm}{i:02d}'
 
                 channel_data = fake_data.dm()
                 dm_data += channel_data
 
-                self.dmdisp[dm_number].update({
-                    channel: {
-                        'updated': True,
-                        'data': channel_data
-                    }
-                })
+                self._update_stream(self.dmdisp[dm_number], channel,
+                                    channel_data)
 
-            self.dmdisp[dm_number].update({
-                f'dm{dm_number:02d}disp': {
-                    'updated': True,
-                    'data': dm_data
-                }
-            })
-
+            self._update_stream(self.dmdisp[dm_number], dm, dm_data)
         else:
             dm_data = np.zeros((2, ))
 
             for i in range(0, 12):
-                channel = f'dm{dm_number:02d}disp{i:02d}'
+                channel = f'{dm}{i:02d}'
 
                 channel_data = fake_data.tiptilt()
                 dm_data += channel_data
 
-                self.dmdisp[dm_number].update({
-                    channel: {
-                        'updated': True,
-                        'data': channel_data.reshape((1, 2))
-                    }
-                })
+                self._update_stream(self.dmdisp[dm_number], channel,
+                                    channel_data.reshape((1, 2)))
 
-            self.dmdisp[dm_number].update({
-                f'dm{dm_number:02d}disp': {
-                    'updated': True,
-                    'data': dm_data.reshape((1, 2))
-                }
-            })
+            self._update_stream(self.dmdisp[dm_number], dm,
+                                dm_data.reshape((1, 2)))
 
         return self.dmdisp[dm_number]
 
-    def get_plots_data(self, dt_start, dt_end, monitoring_keys,
-                       telemetry_keys):
-        timestamps = pd.date_range(dt_start, dt_end, 50)
+    def get_plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
+                       obs_keys):
+        timestamps = pd.date_range(dt_start, dt_end, 100)
 
         return {
             'monitoring':
                 self._generate_plots_data(monitoring_keys, timestamps),
             'telemetry':
                 self._generate_plots_data(telemetry_keys, timestamps),
+            'obs':
+                self._generate_plots_data(obs_keys, timestamps),
         }
 
     def _generate_plots_data(self, keys, timestamps):
@@ -193,12 +185,45 @@ class MainBackend(AbstractBackend):
             data[key] = {
                 timestamp: value
                 for timestamp, value in zip(
-                    timestamps, np.random.normal(0, 1, len(timestamps)))
+                    timestamps,
+                    np.cumsum(np.random.normal(0, 1, len(timestamps))))
             }
 
         df = pd.DataFrame(data, columns=keys)
 
         return df
+
+    ##### Loop controls
+
+    # DM Loop
+
+    def set_dm_loop_on(self, state):
+        print(f'Set DM loop to {state} (virtually)')
+
+    def set_dm_loop_gain(selfself, gain):
+        print(f'Set DM gain to {gain} (virtually)')
+
+    def set_dm_loop_mult(selfself, mult):
+        print(f'Set DM mult to {mult} (virtually)')
+
+    def set_dm_loop_limit(selfself, limit):
+        print(f'Set DM limit to {limit} (virtually)')
+
+    # TTM Loop
+
+    def set_ttm_loop_on(self, state):
+        print(f'Set TTM loop to {state} (virtually)')
+
+    def set_ttm_loop_gain(selfself, gain):
+        print(f'Set TTM gain to {gain} (virtually)')
+
+    def set_ttm_loop_mult(selfself, mult):
+        print(f'Set TTM mult to {mult} (virtually)')
+
+    def set_ttm_loop_limit(selfself, limit):
+        print(f'Set TTM limit to {limit} (virtually)')
+
+    ##### DM channels
 
     def reset_dm(self, dm_number):
         print(f'Resetted DM {dm_number} (virtually)')
@@ -206,25 +231,29 @@ class MainBackend(AbstractBackend):
     def reset_channel(self, dm_number, channel):
         print(f'Resetted channel {channel} of DM {dm_number} (virtually)')
 
+    ##### Logs
 
-class LogsThread(QThread):
-    new_log = Signal(object)
+    def init_logs(self):
+        logs = []
 
-    def run(self):
         for _ in range(config.GUI.initial_logs_entries):
             entry = self.generate_log()
             entry['text'] = '<span class="init">' + entry['text'] + '<span>'
-            self.new_log.emit(entry)
 
-        while not self.isInterruptionRequested():
+            logs.append(entry)
+
+        return logs
+
+    def get_logs(self):
+        logs = []
+
+        for _ in range(10):
             entry = self.generate_log()
-            self.new_log.emit(entry)
+            logs.append(entry)
 
-            time.sleep(0.1)
+        return logs
 
     def generate_log(self):
-        type = random.random()
-
         timestamp = datetime.now().strftime("%y-%m-%d %H:%M:%S")
 
         style_timestamp = '<span class="grey">'
@@ -235,6 +264,8 @@ class LogsThread(QThread):
         origin = random.sample(lorem_words, 1)[0]
         message = ' '.join(random.sample(lorem_words, 8))
         message = message[0].upper() + message[1:] + '.'
+
+        type = random.random()
 
         if type <= 0.001:
             type = LogType.ERROR

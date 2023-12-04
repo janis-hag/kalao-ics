@@ -56,27 +56,55 @@ def switch_loops(close=True):
     """
 
     if close:
-        database.store('obs', {'ao_log': 'Closing loops'})
+        database.store('obs', {'ao_log': 'Closing both loops'})
         loop_order = [config.AO.DM_loop_number, config.AO.TTM_loop_number]
     else:
-        database.store('obs', {'ao_log': 'Opening loops'})
+        database.store('obs', {'ao_log': 'Opening both loops'})
         loop_order = [config.AO.TTM_loop_number, config.AO.DM_loop_number]
 
     for i in loop_order:
-        fps_mfilt = toolbox.open_fps_once(f"mfilt-{i}", shm_and_fps_cache)
+        switch_loop(i, close)
 
-        if fps_mfilt is None:
-            database.store('obs', {'ao_log': f'[ERROR] mfilt-{i} is missing'})
+    return check_loops()
 
-            return LoopStatus.ERROR
 
-        fps_mfilt.set_param('loopON', close)
+def close_loop(loop_number):
+    return switch_loop(loop_number, close=True)
 
-        if not close:
-            fps_mfilt.set_param('loopZERO', True)
 
-        time.sleep(1)
+def open_loop(loop_number):
+    return switch_loop(loop_number, close=False)
 
+
+def switch_loop(loop_number, close=True):
+    """
+    Toggle the loop value of one loop
+
+    :return:
+    """
+
+    if close:
+        database.store('obs', {'ao_log': f'Closing loop {loop_number}'})
+    else:
+        database.store('obs', {'ao_log': f'Opening loop {loop_number}'})
+
+    fps_mfilt = toolbox.open_fps_once(f"mfilt-{loop_number}",
+                                      shm_and_fps_cache)
+
+    if fps_mfilt is None:
+        database.store('obs',
+                       {'ao_log': f'[ERROR] mfilt-{loop_number} is missing'})
+
+        return LoopStatus.ERROR
+
+    fps_mfilt.set_param('loopON', close)
+
+    if not close:
+        fps_mfilt.set_param('loopZERO', True)
+
+    time.sleep(1)
+
+    if loop_number == 1:
         ret = autogain_switch(on=close)
 
         if ret != 0:
@@ -577,14 +605,13 @@ def turn_dm_on():
 
     bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
 
-    if ippower.ippower_status(config.IPPower.Port.BMC_DM) == IPPowerStatus.OFF:
+    if ippower.status(config.IPPower.Port.BMC_DM) == IPPowerStatus.OFF:
         database.store('obs', {'dm_log': 'Powering on DM ippower'})
 
         # Avoid safety turning DM off immediately
         time.sleep(1)
 
-        ret = ippower.switch_ippower(config.IPPower.Port.BMC_DM,
-                                     IPPowerStatus.ON)
+        ret = ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
 
         if ret != IPPowerStatus.ON:
             return -1
@@ -630,7 +657,7 @@ def turn_dm_off():
         time.sleep(config.Timers.dm_wait_between_actions)
 
     database.store('obs', {'dm_log': 'Powering off DM ippower'})
-    ret = ippower.switch_ippower(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
+    ret = ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
 
     if ret == IPPowerStatus.OFF:
         return 0

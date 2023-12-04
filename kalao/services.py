@@ -43,10 +43,11 @@ def get_status(unit, system=False):
     bus, systemd, manager = connect_dbus(system)
 
     service = bus.get_object('org.freedesktop.systemd1',
-                             object_path=manager.GetUnit(unit))
+                             object_path=manager.LoadUnit(unit))
 
     interface = dbus.Interface(
         service, dbus_interface='org.freedesktop.DBus.Properties')
+
     state = str(interface.Get('org.freedesktop.systemd1.Unit', 'ActiveState'))
 
     if state == 'active':

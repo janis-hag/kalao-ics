@@ -8,8 +8,6 @@ from PySide6.QtGui import Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
-from guis.kalao.widgets import (KalAOChart, KalAOGraphicsView, KalAOLabel,
-                                KalAOSvgWidget)
 from guis.windows.dm import DMWidget
 from guis.windows.fli import FLIWidget
 from guis.windows.flux import FluxWidget
@@ -20,13 +18,6 @@ from guis.windows.ttm import TTMWidget
 from guis.windows.wfs import WFSWidget
 
 import config
-
-
-def clean():
-    unified.logs.thread.requestInterruption()
-    unified.logs.thread.quit()
-    unified.logs.thread.wait(5000)
-    unified.logs.thread.terminate()
 
 
 def handler(signal_received, frame):
@@ -54,16 +45,10 @@ if __name__ == "__main__":
     np.set_printoptions(nanstr='--')
 
     # Qt stuff
-
     loader = QUiLoader()
-    loader.registerCustomWidget(KalAOLabel)
-    loader.registerCustomWidget(KalAOGraphicsView)
-    loader.registerCustomWidget(KalAOChart)
-    loader.registerCustomWidget(KalAOSvgWidget)
 
     app = QApplication(['KalAO - AO tools'])
     app.setQuitOnLastWindowClosed(True)
-    app.aboutToQuit.connect(clean)
 
     if False:
         app.setStyleSheet("""
@@ -112,7 +97,7 @@ if __name__ == "__main__":
         ttm = TTMWidget(backend)
         ttm.show()
 
-        logs_window = LogsWidget(backends)
+        logs_window = LogsWidget(backend)
         logs_window.show()
 
         if args.onsky:
@@ -126,9 +111,6 @@ if __name__ == "__main__":
 
         if args.onsky:
             unified_view.onsky_checkbox.setChecked(True)
-
-    backend.update_streams()
-    backend.update_tiptilt()
 
     timer_images.start()
     timer_tiptilt.start()

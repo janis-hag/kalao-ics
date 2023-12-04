@@ -11,23 +11,12 @@ flip_mirror.py is part of the KalAO Instrument Control Software
 
 from time import sleep
 
-import kalao.plc.core
 from kalao.plc import core
 from kalao.utils import database
 
 from opcua import ua
 
 from kalao.definitions.enums import FlipMirrorPosition
-
-
-def plc_status(beck=None):
-    """
-    Query the status of the flip mirror.
-
-    :return: complete status of flip mirror
-    """
-
-    return kalao.plc.core.device_status('Flip.FlipMirror', beck=beck)
 
 
 def down(beck=None):
@@ -64,7 +53,7 @@ def _switch(action_name, beck=None):
     elif action_name == 'bDown_Flip':
         database.store('obs', {'flip_mirror_log': 'Flipping mirror down'})
 
-    shutter_switch = beck.get_node("ns = 4; s = MAIN.Flip." + action_name)
+    shutter_switch = beck.get_node("ns=4; s=MAIN.Flip." + action_name)
     shutter_switch.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(

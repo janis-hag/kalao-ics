@@ -21,7 +21,7 @@ from kalao.utils import database, kalao_time
 import schedule
 
 from kalao.definitions.enums import (CameraServerStatus, IPPowerStatus,
-                                     LoopStatus, ShutterState)
+                                     LaserState, LoopStatus, ShutterState)
 
 import config
 
@@ -69,8 +69,7 @@ def _check_dm_inactive():
 
     if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
         (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
-            ippower.ippower_status(
-                config.IPPower.Port.BMC_DM) == IPPowerStatus.ON):
+            ippower.status(config.IPPower.Port.BMC_DM) == IPPowerStatus.ON):
         database.store('obs', {
             'safety_timer_log': 'Turning off DM due to inactivity timeout'
         })
@@ -129,7 +128,7 @@ def _check_laseron_inactive():
     :return:
     """
 
-    if laser.get_state() != 'OFF':
+    if laser.get_state() != LaserState.OFF:
         database.store('obs', {
             'safety_timer_log': 'Turning off laser due to inactivity timeout'
         })

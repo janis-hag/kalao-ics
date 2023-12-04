@@ -1,12 +1,14 @@
+import time
+
 import numpy as np
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot
 from PySide6.QtGui import QImage, Qt
 
 from guis.kalao import colormaps
 
 
-class ArrayToImageMixin():
+class ArrayToImageMixin:
     colormap = colormaps.BlackBody()
     image = None
     epsilon = 1e-12
@@ -133,7 +135,7 @@ class MinMaxMixin:
         return img_min, img_max
 
 
-class HoverMixin():
+class HoverMixin:
     hovered = Signal(str)
 
     def hover_event(self, x, y, v):
@@ -143,3 +145,40 @@ class HoverMixin():
             self.hovered.emit(string)
         else:
             self.hovered.emit('')
+
+
+class BackendWorker(QObject, QRunnable):
+    done = Signal()
+
+    def __init__(self, fun, *args, **kwargs):
+        super().__init__()
+        QRunnable.__init__(self)
+
+        self.fun = fun
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self):
+        self.fun(*self.args, **self.kwargs)
+        time.sleep(2)
+
+        self.done.emit()
+
+
+class BackendActionMixin:
+    def __init__(self):
+        super().__init__()
+
+        self.threadpool = QThreadPool()
+
+    def action_send(self, widget, fun, *args):
+        if widget.hasFocus():
+            widget.clearFocus()
+            widget.setEnabled(False)
+
+            worker = BackendWorker(fun, *args)
+            worker.done.connect(lambda: self.action_clean(widget))
+            self.threadpool.start(worker)
+
+    def action_clean(self, widget):
+        widget.setEnabled(True)

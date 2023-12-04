@@ -5,7 +5,6 @@ import numpy as np
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
-from guis.kalao.widgets import KalAOChart, KalAOGraphicsView, KalAOLabel
 from guis.windows.calibration import CalibrationWindow
 
 
@@ -17,14 +16,10 @@ if __name__ == "__main__":
     signal(SIGINT, handler)
 
     # Numpy
-
     np.ma.masked_print_option.set_display('--')
     np.set_printoptions(nanstr='--')
 
     loader = QUiLoader()
-    loader.registerCustomWidget(KalAOLabel)
-    loader.registerCustomWidget(KalAOGraphicsView)
-    loader.registerCustomWidget(KalAOChart)
 
     app = QApplication(['KalAO - Calibration tools'])
     app.setQuitOnLastWindowClosed(True)

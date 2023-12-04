@@ -113,7 +113,7 @@ def switch(relay_name, on, beck=None):
             'temperature_log': f'Switching off {print_name[relay_name]}'
         })
 
-    relay_switch = beck.get_node("ns = 4; s = MAIN." + relay_name)
+    relay_switch = beck.get_node("ns=4; s=MAIN." + relay_name)
     relay_switch.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(

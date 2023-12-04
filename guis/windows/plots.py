@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta, timezone
 
 import numpy as np
 
 from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis, QXYSeries
-from PySide6.QtCore import QDateTime, QPointF, Qt, QTimeZone, Signal, Slot
+from PySide6.QtCore import (QDateTime, QPointF, Qt, QTimer, QTimeZone, Signal,
+                            Slot)
 
 from kalao.utils import database, kalao_time
 
@@ -18,6 +19,8 @@ class PlotsWidget(KalAOWidget):
     point_size = 3
 
     current_index = -1
+
+    live_timer = QTimer()
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
@@ -46,13 +49,22 @@ class PlotsWidget(KalAOWidget):
             item.setToolTip(v['long'])
             self.telemetry_list.addItem(item)
 
+        for k, v in sorted(database.definitions['obs']['metadata'].items(),
+                           key=lambda t: t[1]['short']):
+            if k in config.GUI.plots_exclude_list or '_log' in k:
+                continue
+
+            item = KalAOListWidgetItem(k, self.get_display_name(v))
+            item.setToolTip(v['long'])
+            self.obs_list.addItem(item)
+
         # Create Chart and set General Chart setting
         chart = self.plots_view.chart
 
         # X Axis Settings
         self.axisX = QDateTimeAxis()
         self.axisX.setTickCount(13)
-        self.axisX.setFormat("yy-MM-dd HH:mm")
+        self.axisX.setFormat("HH:mm dd.MM.yy")
         self.axisX.setRange(self.start_datetimeedit.dateTime(),
                             self.end_datetimeedit.dateTime())
         chart.addAxis(self.axisX, Qt.AlignBottom)
@@ -74,16 +86,53 @@ class PlotsWidget(KalAOWidget):
 
         return f'{metadata["short"]}{unit}'
 
+    @Slot(QDateTime)
+    def on_start_datetimeedit_dateTimeChanged(self, datetime):
+        self.end_datetimeedit.setMinimumDateTime(datetime)
+
+    @Slot(QDateTime)
+    def on_end_datetimeedit_dateTimeChanged(self, datetime):
+        self.start_datetimeedit.setMaximumDateTime(datetime)
+
+    @Slot(int)
+    def on_live_checkbox_stateChanged(self, state):
+        if Qt.CheckState(state) == Qt.Checked:
+            self.live_timer.setInterval(
+                int(1000 * min(config.Database.monitoring_update_interval,
+                               config.Database.telemetry_update_interval)))
+            self.live_timer.timeout.connect(self.on_live_timer_timeout)
+
+            self.on_live_timer_timeout()
+            self.live_timer.start()
+        else:
+            self.live_timer.stop()
+
+    def on_live_timer_timeout(self):
+        time_delta = self.end_datetimeedit.dateTime().msecsTo(
+            self.start_datetimeedit.dateTime())
+
+        now = QDateTime.currentDateTime()
+        prev = now.addMSecs(time_delta)
+
+        self.end_datetimeedit.setDateTime(now)
+        self.start_datetimeedit.setDateTime(prev)
+
+        self.on_plot_button_clicked()
+
     @Slot(bool)
-    def on_plot_button_clicked(self, checked):
+    def on_plot_button_clicked(self, checked=None):
         monitoring_keys = []
         telemetry_keys = []
+        obs_keys = []
 
         for item in self.monitoring_list.selectedItems():
             monitoring_keys.append(item.key)
 
         for item in self.telemetry_list.selectedItems():
             telemetry_keys.append(item.key)
+
+        for item in self.obs_list.selectedItems():
+            obs_keys.append(item.key)
 
         dt_start = self.start_datetimeedit.dateTime().toUTC().toPython()
         dt_end = self.end_datetimeedit.dateTime().toUTC().toPython()
@@ -92,7 +141,7 @@ class PlotsWidget(KalAOWidget):
         dt_end = dt_end.replace(tzinfo=timezone.utc)
 
         data = self.backend.get_plots_data(dt_start, dt_end, monitoring_keys,
-                                           telemetry_keys)
+                                           telemetry_keys, obs_keys)
 
         chart = self.plots_view.chart
 
@@ -111,26 +160,35 @@ class PlotsWidget(KalAOWidget):
                 series.setName(
                     self.get_display_name(
                         database.definitions[name]['metadata'][key]))
-
-                #TODO: if values is a string
-                plot_min = min(plot_min, values.min())
-                plot_max = max(plot_max, values.max())
+                series.setMarkerSize(self.point_size)
+                series.setPointsVisible(True)
 
                 for t, v in values.items():
                     timestamp = QDateTime(t.date(), t.time(),
                                           QTimeZone.utc()).toMSecsSinceEpoch()
 
-                    if v in config.GUI.plots_map_to_0:
-                        v = 0
-                    elif v in config.GUI.plots_map_to_1:
-                        v = 1
+                    if v in config.GUI.plots_mapping:
+                        v = config.GUI.plots_mapping[v]
 
-                    #TODO: behavior with None
+                    if v is None:
+                        # TODO: interupt line
+                        continue
+
+                    if type(v) != int and type(v) != float:
+                        continue
+
+                    plot_min = min(plot_min, v)
+                    plot_max = max(plot_max, v)
+
+                    if name == 'obs' and series.count() > 0:
+                        prev = series.points()[-1]
+                        series.append(QPointF(timestamp, prev.y()))
+
+                        series.setPointConfiguration(series.count() - 1, {
+                            QXYSeries.PointConfiguration.Visibility: False
+                        })
 
                     series.append(QPointF(timestamp, v))
-
-                series.setMarkerSize(self.point_size)
-                series.setPointsVisible(True)
 
                 chart.addSeries(series)
                 series.attachAxis(self.axisX)
@@ -139,6 +197,13 @@ class PlotsWidget(KalAOWidget):
                 series.hovered.connect(lambda point, state, name=name, key=key:
                                        self.point_hovered(
                                            point, state, name, key))
+
+        time_delta = self.start_datetimeedit.dateTime().secsTo(
+            self.end_datetimeedit.dateTime())
+        if time_delta > 24 * 3600:
+            self.axisX.setFormat("HH:mm dd.MM.yy")
+        else:
+            self.axisX.setFormat("HH:mm")
 
         self.axisX.setRange(self.start_datetimeedit.dateTime().toUTC(),
                             self.end_datetimeedit.dateTime().toUTC())
@@ -155,6 +220,14 @@ class PlotsWidget(KalAOWidget):
             self.series[key].setPointConfiguration(self.current_index, {
                 QXYSeries.PointConfiguration.Size: self.point_size
             })
+
+        visible = True
+        for k, v in self.series[key].pointConfiguration(closest_index).items():
+            if k == QXYSeries.PointConfiguration.Visibility:
+                visible = v
+
+        if not visible:
+            return
 
         if state:
             self.series[key].setPointConfiguration(closest_index, {

@@ -4,8 +4,9 @@ from functools import partial
 from PySide6.QtCore import QByteArray, QEventLoop, QUrl, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 
+import lz4.frame
+
 from guis.backends.abstract import AbstractBackend
-from guis.backends.simulation import LogsThread
 from guis.kalao.json_coder import FakeSignal, KalAOJSONEncoder
 
 import config
@@ -24,7 +25,7 @@ class MainBackend(AbstractBackend):
         else:
             return partial(self.forward, path)
 
-    def add_signal(self, name, *args):
+    def add_signal(self, name):
         cls = self.__class__
 
         new_cls = type(
@@ -56,7 +57,9 @@ class MainBackend(AbstractBackend):
         loop.exec()
 
         #reply.error()
-        ret = pickle.loads(reply.readAll())  #.toStdString())
+        data = reply.readAll()
+        #data = lz4.frame.decompress(data.data())
+        ret = pickle.loads(data)  #.toStdString())
 
         if isinstance(ret, FakeSignal):
             return getattr(self, ret.name).emit(*ret.args)

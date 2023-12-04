@@ -4,9 +4,9 @@ from PySide6.QtCharts import QChart, QChartView
 from PySide6.QtCore import QEvent, QMargins, QPointF, QRectF, QSize, Signal
 from PySide6.QtGui import QIcon, QPainter, QPixmap, Qt
 from PySide6.QtSvgWidgets import QSvgWidget
-from PySide6.QtWidgets import (QGraphicsScene, QGraphicsSimpleTextItem,
-                               QGraphicsView, QLabel, QListWidgetItem,
-                               QMainWindow, QWidget)
+from PySide6.QtWidgets import (QDateTimeEdit, QGraphicsScene,
+                               QGraphicsSimpleTextItem, QGraphicsView, QLabel,
+                               QListWidgetItem, QMainWindow, QWidget)
 
 from guis.kalao.definitions import Logo
 from guis.kalao.mixins import ArrayToImageMixin
@@ -82,6 +82,53 @@ class KalAOLabel(QLabel, ArrayToImageMixin):
             self.text_format = self.text()
 
         self.setText(self.text_format.format(**kwargs))
+
+
+class KalAODateTimeEdit(QDateTimeEdit):
+    _overrideSteps = (
+        QDateTimeEdit.Section.MonthSection,
+        QDateTimeEdit.Section.DaySection,
+        QDateTimeEdit.Section.HourSection,
+        QDateTimeEdit.Section.MinuteSection,
+        QDateTimeEdit.Section.SecondSection,
+    )
+
+    def stepEnabled(self):
+        if self.currentSection() in self._overrideSteps:
+            step = self.StepEnabledFlag.StepNone
+
+            if self.dateTime() < self.maximumDateTime():
+                step |= self.StepEnabledFlag.StepUpEnabled
+
+            if self.dateTime() > self.minimumDateTime():
+                step |= self.StepEnabledFlag.StepDownEnabled
+
+            return step
+
+        return super().stepEnabled()
+
+    def stepBy(self, steps):
+        section = self.currentSection()
+
+        if section not in self._overrideSteps:
+            super().stepBy(steps)
+            return
+
+        dt = self.dateTime()
+        section = self.currentSection()
+
+        if section == self.Section.MonthSection:
+            dt = dt.addMonths(steps)
+        elif section == self.Section.DaySection:
+            dt = dt.addDays(steps)
+        elif section == self.Section.HourSection:
+            dt = dt.addSecs(3600 * steps)
+        elif section == self.Section.MinuteSection:
+            dt = dt.addSecs(60 * steps)
+        elif section == self.Section.SecondSection:
+            dt = dt.addSecs(steps)
+
+        self.setDateTime(dt)
 
 
 class KalAOSvgWidget(QSvgWidget):

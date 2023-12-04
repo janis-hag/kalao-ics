@@ -16,7 +16,6 @@ from time import sleep
 import numpy as np
 from scipy.optimize import minimize_scalar
 
-import kalao.plc.core
 from kalao import euler
 from kalao.plc import core, filterwheel
 from kalao.utils import database
@@ -27,7 +26,7 @@ from kalao.definitions.enums import TrackingStatus
 
 import config
 
-adc_name = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
+adc_node = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
 
 # Conventions:
 # Temperature in K
@@ -63,7 +62,7 @@ def air_refractive_index_OWENS(lambda0_, T, P, H):
 
 
 # Edlen 1966 formula
-def air_refractive_index_EDLEN(lambda0_, T, P, H=None):
+def air_refractive_index_EDLEN(lambda0_, T, P, _):
     sig = 1. / (lambda0_*1e6)
     p = P / 101325 * 760
     t = T - 273.15
@@ -145,10 +144,10 @@ def set_angle(angle, beck=None):
     # Motors are face to face, offset by same angle so they are counter-rotating
     rotate(
         1, position=config.ADC.max_disp_angle_1 + config.ADC.max_disp_offset +
-        angle/2, beck=beck)
+        angle/2, wait=False, beck=beck)
     rotate(
         2, position=config.ADC.max_disp_angle_2 - config.ADC.max_disp_offset +
-        angle/2, beck=beck)
+        angle/2, wait=False, beck=beck)
 
     sleep(2)
 
@@ -169,71 +168,25 @@ def get_angle():
         return angle
 
 
-@core.beckhoff_autoconnect
-def rotate(adc_id, position=0, beck=None):
-    # define commands
-    motor_nCommand = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                                   ".ctrl.nCommand")
-    motor_bExecute = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                                   ".ctrl.bExecute")
+def rotate(adc_id, position=0, velocity=1, wait=True, beck=None):
+    database.store('obs',
+                   {'adc_log': f'Moving ADC {adc_id} to position {position}°'})
 
-    # Check if initialised
-    init_result = init(adc_id, force_init=False, beck=beck,
-                       motor_nCommand=motor_nCommand,
-                       motor_bExecute=motor_bExecute)
-    if not init_result == 0:
-        return init_result
+    new_position = core.motor_move('Linear_Standa_8MT', position, velocity,
+                                   wait, beck=beck)
 
-    # Set velocity to 1 in case is has been changed
-    motor_lrVelocity = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                                     ".ctrl.lrVelocity")
-    motor_lrVelocity.set_attribute(
-        ua.AttributeIds.Value,
-        ua.DataValue(
-            ua.Variant(float(1),
-                       motor_lrVelocity.get_data_type_as_variant_type())))
-    motor_lrPosition = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                                     ".ctrl.lrPosition")
-
-    if isinstance(position, numbers.Number):
-        # Set target position
-        motor_lrPosition.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                ua.Variant(float(position),
-                           motor_lrPosition.get_data_type_as_variant_type())))
-        # Set move command
-        motor_nCommand.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                ua.Variant(int(3),
-                           motor_nCommand.get_data_type_as_variant_type())))
-        # Execute
-        send_execute(motor_bExecute)
-
-        #TODO: We don't wait for position, so what to do with new_position?
-
-        # Get new position
-        new_position = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                                     ".stat.lrPosActual").get_value()
-        # motor_lrPosition = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] + ".ctrl.lrPosition")
-    else:
-        database.store(
-            'obs', {
-                'calib_unit_log':
-                    f'Expected position to be a number, received: {position}'
-            })
-        new_position = -1
+    if wait:
+        database.store('obs', {
+            'adc_log': f'Moved ADC {adc_id} to position {new_position}°'
+        })
 
     return new_position
 
 
 @core.beckhoff_autoconnect
 def wait_rotate(adc_id, beck=None):
-    core.wait_loop(
-        f'Waiting for ADC {adc_id} rotation',
-        lambda: beck.get_node(f"ns=4; s=MAIN.{adc_name[adc_id]}.stat.sStatus"
-                              ).get_value().startswith('MOVING'), 5)
+    core.wait_loop(f'Waiting for ADC {adc_id} rotation',
+                   lambda: is_moving(adc_id, beck=beck), 5)
 
     return 0
 
@@ -245,103 +198,26 @@ def wait_rotate_both(beck=None):
     return 0
 
 
-def plc_status(adc_id, beck=None):
-    """
-    Query the status of the ADC motor.
+def get_position(adc_id, beck=None):
+    position = core.motor_get_position(adc_node[adc_id], beck=beck)
 
-    :return: complete status of calibration unit
-    """
+    if np.isnan(position):
+        error_code, error_text = core.get_error(adc_node[adc_id], beck=beck)
+        database.store('obs',
+                       {'adc_log': f'[ERROR] {error_text} ({error_code})'})
 
-    return kalao.plc.core.device_status(adc_name[adc_id], beck=beck)
+    return position
 
 
-@core.beckhoff_autoconnect
-def check_error(adc_id, beck=None):
-    if beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                     ".stat.sErrorText").get_value() == 0:
-        adc_status = 0
-    else:
-        adc_status = 'ERROR'
-
-    return adc_status
+def is_moving(adc_id, beck=None):
+    return core.motor_is_moving(adc_node[adc_id], beck=beck)
 
 
 @core.beckhoff_autoconnect
-def init(adc_id, force_init=False, beck=None, motor_nCommand=None,
-         motor_bExecute=None):
+def init(adc_id, force_init=False, beck=None):
     """
     Initialise the ADC motor.
-
-    :param motor_bExecute:
-    :param adc_id:
-    :param force_init:
-    :param beck: the handle for the plc connection
-    :param motor_nCommand: handle to send commands to the motor
-    :return: returns 0 on success and error code on failure
     """
     database.store('obs', {'adc_log': f'Initialising ADC {adc_id}'})
 
-    init_status = 0
-
-    if motor_nCommand is None:
-        # define commands
-        motor_nCommand = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                                       ".ctrl.nCommand")
-
-    if motor_bExecute is None:
-        motor_bExecute = beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                                       ".ctrl.bExecute")
-
-    # Check if enabled, if no do enable
-    if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                         ".stat.bEnabled").get_value() or force_init:
-        motor_bEnable = beck.get_node("ns = 4; s = MAIN." + adc_name[adc_id] +
-                                      ".ctrl.bEnable")
-        motor_bEnable.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                ua.Variant(True,
-                           motor_bEnable.get_data_type_as_variant_type())))
-        if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                             ".stat.bEnabled").get_value():
-            error = '[ERROR] ' + str(
-                beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                              ".stat.nErrorCode").get_value())
-            init_status = error
-
-    # Check if init, if not do init
-    if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                         ".stat.bInitialised").get_value() or force_init:
-        send_init(motor_nCommand, motor_bExecute)
-
-        sleep(15)
-        core.wait_loop(
-            f'Waiting for ADC {adc_id} initialisation', lambda: beck.get_node(
-                f"ns=4; s=MAIN.{adc_name[adc_id]}.stat.sStatus").get_value().
-            startswith('INITIALISING'), 5)
-
-        if not beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                             ".stat.bInitialised").get_value():
-            error = '[ERROR] ' + str(
-                beck.get_node("ns=4; s=MAIN." + adc_name[adc_id] +
-                              ".stat.nErrorCode").get_value())
-            init_status = error
-
-    return init_status
-
-
-def send_execute(motor_bExecute):
-    motor_bExecute.set_attribute(
-        ua.AttributeIds.Value,
-        ua.DataValue(
-            ua.Variant(True, motor_bExecute.get_data_type_as_variant_type())))
-
-
-def send_init(motor_nCommand, motor_bExecute):
-    motor_nCommand.set_attribute(
-        ua.AttributeIds.Value,
-        ua.DataValue(
-            ua.Variant(int(1),
-                       motor_nCommand.get_data_type_as_variant_type())))
-    # Execute
-    send_execute(motor_bExecute)
+    return core.motor_init(adc_node[adc_id], force_init, beck=beck)

@@ -47,7 +47,11 @@ def take_frame(dit, filepath=None, nbflushes=None, update_stream=True):
             if fli_stream.shape == img.shape:
                 fli_stream.set_data(img, True)
             else:
-                print("fli_stream not updated, shapes are inconsistent")
+                database.store(
+                    'obs', {
+                        f'fli_log':
+                            f'[ERROR] {config.Streams.FLI} not updated, shapes are inconsistent.'
+                    })
 
         # TODO return req, img for coherence with other take_image or opposite
 
@@ -76,7 +80,11 @@ def take_cube(dit, nbframes, filepath=None, nbflushes=None,
             if fli_stream.shape == img_cube.shape[-1]:
                 fli_stream.set_data(img_cube.shape[-1], True)
             else:
-                print("fli_stream not updated, shapes are inconsistent")
+                database.store(
+                    'obs', {
+                        f'fli_log':
+                            f'[ERROR] {config.Streams.FLI} not updated, shapes are inconsistent.'
+                    })
 
         return img_cube
     else:

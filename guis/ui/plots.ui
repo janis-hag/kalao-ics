@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>932</width>
-    <height>616</height>
+    <width>1831</width>
+    <height>1493</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,14 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QDateTimeEdit" name="start_datetimeedit"/>
+      <widget class="KalAODateTimeEdit" name="start_datetimeedit">
+       <property name="currentSection">
+        <enum>QDateTimeEdit::HourSection</enum>
+       </property>
+       <property name="displayFormat">
+        <string>HH:mm:ss dd.MM.yy</string>
+       </property>
+      </widget>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="end_label">
@@ -37,12 +44,20 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QDateTimeEdit" name="end_datetimeedit"/>
+      <widget class="KalAODateTimeEdit" name="end_datetimeedit">
+       <property name="currentSection">
+        <enum>QDateTimeEdit::HourSection</enum>
+       </property>
+       <property name="displayFormat">
+        <string>HH:mm:ss dd.MM.yy</string>
+       </property>
+      </widget>
      </item>
      <item row="2" column="0" colspan="2">
       <widget class="QLabel" name="telemetry_label">
        <property name="font">
         <font>
+         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -65,6 +80,7 @@
       <widget class="QLabel" name="monitoring_label">
        <property name="font">
         <font>
+         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -83,20 +99,39 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="0">
+     <item row="8" column="0">
       <widget class="QLabel" name="live_label">
        <property name="text">
         <string>Live view</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
+     <item row="8" column="1">
       <widget class="QCheckBox" name="live_checkbox"/>
      </item>
-     <item row="7" column="0" colspan="2">
+     <item row="9" column="0" colspan="2">
       <widget class="QPushButton" name="plot_button">
        <property name="text">
         <string>Plot</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0" colspan="2">
+      <widget class="QListWidget" name="obs_list"/>
+     </item>
+     <item row="6" column="0" colspan="2">
+      <widget class="QLabel" name="obs_label">
+       <property name="font">
+        <font>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Observation</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </item>
@@ -108,6 +143,11 @@
   <customwidget>
    <class>KalAOChart</class>
    <extends>QGraphicsView</extends>
+   <header>kalao</header>
+  </customwidget>
+  <customwidget>
+   <class>KalAODateTimeEdit</class>
+   <extends>QDateTimeEdit</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

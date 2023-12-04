@@ -1,8 +1,8 @@
 ---
 # FLI
-fli_status:
-  short: FLI camera status
-  long: FLI camera status
+fli_server_status:
+  short: FLI status
+  long: FLI Camera server status
   unit:
   main_gui: 3
   group: FLI
@@ -30,27 +30,16 @@ fli_temp_HS:
   group: FLI, Temperatures
   fits_keyword: HIERARCH ESO DET HS TEMP
 
-fli_filter_position:
-  short: Filter number
-  long: Filterwheel filter position
+# IPPower
+ippower_bench_status:
+  short: IPPower Bench
+  long: Status of the bench on th IPPower
   unit:
-  main_gui: 2
-  group: FLI, Motors
-  fits_keyword: HIERARCH ESO INS1 FILT NO
 
-fli_filter_name:
-  short: Filter name
-  long: Filterwheel filter name
+ippower_dm_status:
+  short: IPPower DM
+  long: Status of the DM on th IPPower
   unit:
-  main_gui: 3
-  group:
-  fits_keyword: HIERARCH ESO INS1 FILT ID
-
-# ADC
-adc_angle:
-  short: ADC Angle
-  long: Angle between the ADC prisms
-  unit: °
 
 # Telescope
 tel_alt:

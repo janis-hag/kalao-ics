@@ -24,7 +24,7 @@ from tcs_communication import t120
 
 from kalao.definitions.enums import (FlipMirrorPosition, LoopStatus,
                                      ReturnCode, SequencerStatus, ShutterState,
-                                     TrackingStatus, TungstenStatus)
+                                     TrackingStatus, TungstenState)
 from kalao.definitions.exceptions import *
 
 import config
@@ -110,10 +110,10 @@ def tungsten_FLAT(**seq_args):
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
 
-    if tungsten.on() != 'ON':
+    if tungsten.on() != TungstenState.ON:
         raise TungstenNotOn
 
-    if calib_unit.move_to_tungsten_position() == -1:
+    if np.isnan(calib_unit.move_to_tungsten_position()):
         raise TungstenNotInPosition
 
     if shutter.close() != ShutterState.CLOSED:
@@ -139,7 +139,7 @@ def tungsten_FLAT(**seq_args):
     for filter_name in filter_list:
 
         # Check if lamp is still on
-        if tungsten.plc_status()['nStatus'] != 2:
+        if tungsten.get_state() != TungstenState.ON:
             raise TungstenSwitchedOff
 
         if filterwheel.set_filter(filter_name) != filter_name:
@@ -706,7 +706,7 @@ def _wait_for_tungsten(q):
 
     while switch_time < config.Tungsten.stabilisation_time:
         # Check if lamp is still on
-        if state != TungstenStatus.ON:
+        if state != TungstenState.ON:
             raise TungstenSwitchedOff
 
         _check_abort(q)

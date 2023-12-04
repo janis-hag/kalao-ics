@@ -11,7 +11,6 @@ shutter.py is part of the KalAO Instrument Control Software
 
 from time import sleep
 
-import kalao.plc.core
 from kalao.plc import core
 from kalao.timers import database as database_timer
 from kalao.utils import database, kalao_time
@@ -22,21 +21,6 @@ from kalao.definitions.enums import ShutterState
 
 
 @core.beckhoff_autoconnect
-def plc_status(beck=None):
-    """
-    Query the status of the shutter
-
-    :return: complete status of shutter
-    """
-
-    status_dict = kalao.plc.core.device_status('Shutter.Shutter', beck=beck)
-
-    if status_dict['sStatus'] == 'STANDING':
-        status_dict['sStatus'] = get_state(beck=beck)
-
-    return status_dict
-
-
 @core.beckhoff_autoconnect
 def get_state(beck=None):
     """
@@ -122,7 +106,7 @@ def _switch(action_name, beck=None):
     elif action_name == 'bClose_Shutter':
         database.store('obs', {'shutter_log': 'Closing shutter'})
 
-    shutter_switch = beck.get_node("ns = 4; s = MAIN.Shutter." + action_name)
+    shutter_switch = beck.get_node("ns=4; s=MAIN.Shutter." + action_name)
     shutter_switch.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(

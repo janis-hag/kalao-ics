@@ -168,8 +168,7 @@ def center_on_laser():
         raise DMNotOn
 
     # Move calib unit to approximately correct position if too far #TODO: make similar to others
-    if np.abs(calib_unit.plc_status()['lrPosActual'] -
-              config.Laser.position) > 0.5:
+    if np.abs(calib_unit.get_position() - config.Laser.position) > 0.5:
         calib_unit.move_to_laser_position()
 
     if filterwheel.set_filter(

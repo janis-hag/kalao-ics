@@ -59,7 +59,7 @@ class MainWindow(KalAOMainWindow):
         self.loop_controls = LoopControlsWidget(backend, parent=self)
         self.engineering = EngineeringWidget(backend, parent=self)
         self.plots = PlotsWidget(backend, parent=self)
-        self.logs = LogsWidget(backends, parent=self)
+        self.logs = LogsWidget(backend, parent=self)
 
         self.wfs_frame.layout().addWidget(self.wfs)
         self.fli_frame.layout().addWidget(self.fli)
@@ -91,8 +91,6 @@ class MainWindow(KalAOMainWindow):
         self.dm.hovered.connect(self.info_point)
         self.plots.hovered.connect(self.info_point)
 
-        self.on_tabwidget_currentChanged(self.tabwidget.currentIndex())
-
         self.logs_initial_tab_color = self.tabwidget.tabBar().tabTextColor(
             self.TAB_LOGS)
         self.logs.logged.connect(self.on_logs_logged)
@@ -100,6 +98,8 @@ class MainWindow(KalAOMainWindow):
         self.tabwidget.setCurrentIndex(self.TAB_MAIN)
 
         backend.streams_updated.connect(self.data_updated)
+
+        self.on_tabwidget_currentChanged(self.tabwidget.currentIndex())
 
     def on_logs_logged(self, errors, warnings):
         list = []

@@ -11,7 +11,7 @@ database.py is part of the KalAO Instrument Control Software
 
 import time
 
-from kalao import euler
+from kalao import euler, ippower
 from kalao.cacao import telemetry
 from kalao.fli import camera
 from kalao.plc import adc, filterwheel, plc_utils
@@ -39,7 +39,7 @@ def update_monitoring_db():
     values = {}
 
     # get monitoring from plc and store
-    plc_values = plc_utils.plc_status()
+    plc_values = plc_utils.get_all_status()
 
     # Do not log status of disabled devices.
     for device_name in config.PLC.disabled:
@@ -50,27 +50,19 @@ def update_monitoring_db():
     rtc_temperatures = rtc_status.read_all_sensors()
     values.update(rtc_temperatures)
 
-    # Filterwheel
-    filter_name = filterwheel.get_filter(type=str, from_db=True)
-    filter_position = filterwheel.translate_to_filter_position(filter_name)
-    filter_status = {
-        'fli_filter_position': filter_position,
-        'fli_filter_name': filter_name
-    }
-    values.update(filter_status)
+    # IPPower
+    ippower_status = ippower.status_all()
+    values.update(ippower_status)
 
     # FLI science camera status
     fli_server_status = camera.check_server_status()
-    values.update({'fli_status': fli_server_status})
+    values.update({'fli_server_status': fli_server_status})
+
     if fli_server_status == CameraServerStatus.UP:
         fli_temperatures = camera.get_temperatures()
         values.update(fli_temperatures)
 
     if euler.telescope_tracking() == TrackingStatus.TRACKING:
-        # ADC
-        adc_status = {'adc_angle': adc.get_angle()}
-        values.update(adc_status)
-
         # Telescope
         telescope = euler.telescope_coord_altaz()
         telescope_status = {

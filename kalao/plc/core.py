@@ -12,7 +12,11 @@ beck.py is part of the KalAO Instrument Control Software
 import time
 from functools import wraps
 
-from opcua import Client
+import numpy as np
+
+from kalao.utils import database
+
+from opcua import Client, ua
 
 import config
 
@@ -45,31 +49,169 @@ def beckhoff_autoconnect(fun):
     return wrapper
 
 
+def motor_send_execute(motor_bExecute):
+    motor_bExecute.set_attribute(
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(True, motor_bExecute.get_data_type_as_variant_type())))
+
+
+def motor_send_init(motor_nCommand, motor_bExecute):
+    motor_nCommand.set_attribute(
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(int(1),
+                       motor_nCommand.get_data_type_as_variant_type())))
+    # Execute
+    motor_send_execute(motor_bExecute)
+
+
 @beckhoff_autoconnect
-def device_status(node_path, beck=None):
+def motor_init(node, force_init=True, beck=None):
+    motor_nCommand = beck.get_node(f"ns=4; s=MAIN.{node}.ctrl.nCommand")
+    motor_bExecute = beck.get_node(f"ns=4; s=MAIN.{node}.ctrl.bExecute")
+
+    # Check if enabled, if not do enable
+    if not beck.get_node(
+            f"ns=4; s=MAIN.{node}.stat.bEnabled").get_value() or force_init:
+        motor_bEnable = beck.get_node(f"ns=4; s=MAIN.{node}.ctrl.bEnable")
+
+        motor_bEnable.set_attribute(
+            ua.AttributeIds.Value,
+            ua.DataValue(
+                ua.Variant(True,
+                           motor_bEnable.get_data_type_as_variant_type())))
+
+        if not beck.get_node(f"ns=4; s=MAIN.{node}.stat.bEnabled").get_value():
+            return -1
+
+    # Check if init, if not do init
+    if not beck.get_node(f"ns=4; s=MAIN.{node}.stat.bInitialised").get_value(
+    ) or force_init:
+        motor_send_init(motor_nCommand, motor_bExecute)
+
+        time.sleep(15)
+        wait_loop(f'Waiting for {node} initialisation',
+                  lambda: motor_is_initialising(node, beck=beck), 5)
+
+        if not beck.get_node(
+                f"ns=4; s=MAIN.{node}.stat.bInitialised").get_value():
+            return -1
+
+    return 0
+
+
+@beckhoff_autoconnect
+def motor_move(node, position, velocity, wait, beck=None):
+    motor_nCommand = beck.get_node(f"ns=4; s=MAIN.{node}.ctrl.nCommand")
+    motor_bExecute = beck.get_node(f"ns=4; s=MAIN.{node}.ctrl.bExecute")
+
+    # Check if initialised
+    init_result = motor_init(node, force_init=False, beck=beck)
+    if not init_result == 0:
+        return init_result
+
+    # Set velocity
+    motor_lrVelocity = beck.get_node(f"ns=4; s=MAIN.{node}.ctrl.lrVelocity")
+
+    motor_lrVelocity.set_attribute(
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(float(velocity),
+                       motor_lrVelocity.get_data_type_as_variant_type())))
+
+    # Set target position
+    motor_lrPosition = beck.get_node(f"ns=4; s=MAIN.{node}.ctrl.lrPosition")
+
+    motor_lrPosition.set_attribute(
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(float(position),
+                       motor_lrPosition.get_data_type_as_variant_type())))
+
+    # Set move command
+    motor_nCommand.set_attribute(
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(int(3),
+                       motor_nCommand.get_data_type_as_variant_type())))
+
+    # Execute
+    motor_send_execute(motor_bExecute)
+
+    if wait:
+        # Wait for movement
+        time.sleep(2)
+        wait_loop(f'Waiting for {node} movement',
+                  lambda: motor_is_moving(node, beck=beck), 5)
+
+        # Get new position
+        return motor_get_position(node, beck=beck)
+    else:
+        return np.nan
+
+
+@beckhoff_autoconnect
+def motor_get_status(node, beck=None):
     """
     Query the status of a PLC connected device based on its path
 
     :return: complete status of calibration unit
     """
 
-    device_status_dict = dict(
-        sStatus=beck.get_node("ns=4; s=MAIN." + node_path +
-                              ".stat.sStatus").get_value(),
-        sErrorText=beck.get_node("ns=4; s=MAIN." + node_path +
-                                 ".stat.sErrorText").get_value(),
-        nErrorCode=beck.get_node("ns=4; s=MAIN." + node_path +
-                                 ".stat.nErrorCode").get_value(),
-        lrVelActual=beck.get_node("ns=4; s=MAIN." + node_path +
-                                  ".stat.lrVelActual").get_value(),
-        lrVelTarget=beck.get_node("ns=4; s=MAIN." + node_path +
-                                  ".stat.lrVelTarget").get_value(),
-        lrPosActual=beck.get_node("ns=4; s=MAIN." + node_path +
-                                  ".stat.lrPosActual").get_value(),
-        lrPosition=beck.get_node("ns=4; s=MAIN." + node_path +
-                                 ".ctrl.lrPosition").get_value())
+    return {
+        'sStatus':
+            beck.get_node(f'ns=4; s=MAIN.{node}.stat.sStatus').get_value(),
+        'sErrorText':
+            beck.get_node(f'ns=4; s=MAIN.{node}.stat.sErrorText').get_value(),
+        'nErrorCode':
+            beck.get_node(f'ns=4; s=MAIN.{node}.stat.nErrorCode').get_value(),
+        'lrVelActual':
+            beck.get_node(f'ns=4; s=MAIN.{node}.stat.lrVelActual').get_value(),
+        'lrVelTarget':
+            beck.get_node(f'ns=4; s=MAIN.{node}.stat.lrVelTarget').get_value(),
+        'lrPosActual':
+            beck.get_node(f'ns=4; s=MAIN.{node}.stat.lrPosActual').get_value(),
+        'lrPosition':
+            beck.get_node(f'ns=4; s=MAIN.{node}.ctrl.lrPosition').get_value(),
+    }
 
-    return device_status_dict
+
+@beckhoff_autoconnect
+def motor_get_position(node, beck=None):
+    error_code, error_text = get_error(node, beck=beck)
+
+    if error_code != 0:
+        return np.nan
+    else:
+        return beck.get_node(
+            f'ns=4; s=MAIN.{node}.stat.lrPosActual').get_value()
+
+
+@beckhoff_autoconnect
+def motor_is_moving(node, beck=None):
+    return beck.get_node(
+        f'ns=4; s=MAIN.{node}.stat.sStatus').get_value().startswith('MOVING')
+
+
+@beckhoff_autoconnect
+def motor_is_initialising(node, beck=None):
+    return beck.get_node(f'ns=4; s=MAIN.{node}.stat.sStatus').get_value(
+    ).startswith('INITIALISING')
+
+
+@beckhoff_autoconnect
+def get_error(node, beck=None):
+    error_code = beck.get_node(
+        f'ns=4;s=MAIN.{node}.stat.nErrorCode').get_value()
+
+    if error_code != 0:
+        error_text = beck.get_node(
+            f'ns=4; s=MAIN.{node}.stat.sErrorText').get_value()
+
+        return error_code, error_text
+    else:
+        return 0, ''
 
 
 def wait_loop(message, test, wait_time):

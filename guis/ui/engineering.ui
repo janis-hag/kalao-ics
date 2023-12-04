@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>873</width>
-    <height>414</height>
+    <width>1298</width>
+    <height>771</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout" rowstretch="1,1" columnstretch="1,1">
    <item row="0" column="0">
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="plc_groupbox">
      <property name="title">
       <string>PLC</string>
      </property>
@@ -24,90 +24,90 @@
      </property>
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="label_4">
+       <widget class="QLabel" name="shutter_label">
         <property name="text">
          <string>Shutter State</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="comboBox"/>
+       <widget class="QComboBox" name="shutter_combobox"/>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="label_5">
+       <widget class="QLabel" name="flipmirror_label">
         <property name="text">
          <string>Flip Mirror State</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QComboBox" name="comboBox_2"/>
+       <widget class="QComboBox" name="flipmirror_combobox"/>
       </item>
       <item row="2" column="0">
-       <widget class="QLabel" name="label_3">
+       <widget class="QLabel" name="calibunit_label">
         <property name="text">
          <string>Calibration Unit</string>
         </property>
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+       <widget class="QDoubleSpinBox" name="calibunit_spinbox">
         <property name="suffix">
          <string> mm</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_2">
+      <item row="4" column="0">
+       <widget class="QLabel" name="laser_enabled_label">
         <property name="text">
          <string>Laser Enabled</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QCheckBox" name="checkBox_2">
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="laser_enabledcheckbox">
         <property name="text">
          <string/>
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label">
+      <item row="5" column="0">
+       <widget class="QLabel" name="laer_intensity_label">
         <property name="text">
          <string>Laser Intensity</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox">
+      <item row="5" column="1">
+       <widget class="QDoubleSpinBox" name="laser_intensity_spinbox">
         <property name="suffix">
          <string> mW</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="label_6">
+      <item row="3" column="0">
+       <widget class="QLabel" name="tungsten_label">
         <property name="text">
          <string>Tungsten Enabled</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
-       <widget class="QCheckBox" name="checkBox">
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="tungsten_enabled_checkbox">
         <property name="text">
          <string/>
         </property>
        </widget>
       </item>
       <item row="6" column="0">
-       <widget class="QLabel" name="label_7">
+       <widget class="QLabel" name="filterwheel_label">
         <property name="text">
          <string>Filterwheel</string>
         </property>
        </widget>
       </item>
       <item row="6" column="1">
-       <widget class="QComboBox" name="comboBox_3"/>
+       <widget class="QComboBox" name="filterwheel_combobox"/>
       </item>
       <item row="7" column="1">
        <widget class="QProgressBar" name="progressBar">

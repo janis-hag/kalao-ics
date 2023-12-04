@@ -99,7 +99,11 @@ def set_filter(filter):
             name_act = translate_to_filter_name(position_act)
 
             if position_act == position:
-                database.store('obs', {'filterwheel_filter_name': name})
+                database.store(
+                    'obs', {
+                        'filterwheel_filter_name': name,
+                        'filterwheel_filter_position': position
+                    })
                 return _return_filter(position, filter)
             else:
                 database.store(
@@ -107,7 +111,9 @@ def set_filter(filter):
                         'filterwheel_log':
                             f'[ERROR] Filter position expected {position} ({name}), but got {position_act} ({name_act})',
                         'filterwheel_filter_name':
-                            name_act
+                            name_act,
+                        'filterwheel_filter_position':
+                            position_act
                     })
                 return _return_filter(position_act, filter)
 
