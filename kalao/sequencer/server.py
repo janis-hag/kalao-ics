@@ -333,7 +333,7 @@ def execute_command(command, seq_args):
             })
 
         traceback.print_tb(e.__traceback__)
-        print(e)
+        print(f'{type(e)}: {e}')
     else:
         database.store(
             'obs', {

@@ -133,12 +133,11 @@ class MainBackend(SHMFPSBackend):
         if dm_number not in self.dmdisp:
             self.dmdisp[dm_number] = {}
 
-        self._update_stream(self.dmdisp[dm_number],
-                            f'dm{self.dm_number:02d}disp')
+        self._update_stream(self.dmdisp[dm_number], f'dm{dm_number:02d}disp')
 
         for i in range(0, 12):
             self._update_stream(self.dmdisp[dm_number],
-                                f'dm{self.dm_number:02d}disp{i:02d}')
+                                f'dm{dm_number:02d}disp{i:02d}')
 
         return self.dmdisp[dm_number]
 

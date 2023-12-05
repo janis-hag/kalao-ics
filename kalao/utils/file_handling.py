@@ -152,14 +152,15 @@ def update_header(image_path, sequencer_arguments=None):
     """
 
     # Reading the fits definitions
-    header_df = _header_from_yml(config.FITS.fits_header_file)
+    header_base = _header_from_yml(config.FITS.fits_header_file)
+    obs_type = ''
 
     if sequencer_arguments is not None:
-        type = sequencer_arguments.get('type')
+        obs_type = sequencer_arguments.get('type')
 
-        if type in config.FITS.base_header:
-            for k, v in config.FITS.base_header[type].items():
-                header_df.loc[f'HIERARCH ESO {k}'].value = v
+        if obs_type in config.FITS.base_header:
+            for k, v in config.FITS.base_header[obs_type].items():
+                header_base.loc[f'HIERARCH ESO {k}'].value = v
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -172,23 +173,24 @@ def update_header(image_path, sequencer_arguments=None):
             dt = datetime.fromisoformat(fits_header['DATE']).replace(
                 tzinfo=timezone.utc)
 
-        if type in ['K_SKYFLT', 'K_TRGOBS', 'K_FOCUS']:
+        if obs_type in config.FITS.on_sky_types:
             header_obs = _header_from_db('obs', dt)
-            header_telescope = _clean_header(_header_from_last_telescope_header())
+            header_telescope = _clean_header(
+                _header_from_last_telescope_header())
         else:
             header_obs = None
             header_telescope = None
 
         header_df = pd.concat([
             _header_from_fits(image_path),
-            header_df,
+            header_base,
             header_obs,
             _header_from_db('monitoring', dt),
             _header_from_db('telemetry', dt),
-            header_telescope
+            header_telescope,
         ]).query('~index.duplicated(keep="last")')
 
-        header_df = _dynamic_cards_update(header_df,
+        header_df = _dynamic_cards_update(header_df, obs_type,
                                           seq_args=sequencer_arguments)
         header_df = _sort_header(header_df)
         _header_to_fits_header(header_df, fits_header)
@@ -411,7 +413,7 @@ def _clean_header(header_df):
     return header_df.rename(index=rename_dict)
 
 
-def _dynamic_cards_update(header_df, seq_args=None):
+def _dynamic_cards_update(header_df, obs_type, seq_args=None):
     date_obs = header_df.loc['DATE-OBS'].value
     date_end = header_df.loc['DATE-END'].value
 
@@ -435,18 +437,6 @@ def _dynamic_cards_update(header_df, seq_args=None):
     else:
         shutter.value = 'ERROR'
     shutter.source += '+dynamic'
-
-    # Update RA
-    header_df.loc['RA'].value = ra.deg
-    header_df.loc[
-        'RA'].comment = f'[deg] {ra.to_string(unit=u.deg, sep=":", precision=1, pad=True)} RA (J2000) pointing'
-    header_df.loc['RA'].source += '+dynamic'
-
-    # Update DEC
-    header_df.loc['DEC'].value = dec.deg
-    header_df.loc[
-        'DEC'].comment = f'[deg] {dec.to_string(unit=u.deg, sep=":", precision=1, pad=True)} DEC (J2000) pointing'
-    header_df.loc['DEC'].source += '+dynamic'
 
     # Update MJD-OBS
     header_df.loc['MJD-OBS'].value = astro_time_obs.mjd
@@ -472,7 +462,20 @@ def _dynamic_cards_update(header_df, seq_args=None):
         'LST'].comment = f"[s] {astro_time_obs.sidereal_time('mean').to_string(u.hour, sep=':', precision=7, pad=True)} LST"
     header_df.loc['LST'].source += '+dynamic'
 
-    # TODO add radecsys value in EQUINOX comment
+    if obs_type in config.FITS.on_sky_types:
+        # Update RA
+        header_df.loc['RA'].value = ra.deg
+        header_df.loc[
+            'RA'].comment = f'[deg] {ra.to_string(unit=u.deg, sep=":", precision=1, pad=True)} RA (J2000) pointing'
+        header_df.loc['RA'].source += '+dynamic'
+
+        # Update DEC
+        header_df.loc['DEC'].value = dec.deg
+        header_df.loc[
+            'DEC'].comment = f'[deg] {dec.to_string(unit=u.deg, sep=":", precision=1, pad=True)} DEC (J2000) pointing'
+        header_df.loc['DEC'].source += '+dynamic'
+
+        # TODO add radecsys value in EQUINOX comment
 
     if seq_args is not None:
         header_df.loc['HIERARCH ESO OBS TYPE'].value = seq_args.get('type')

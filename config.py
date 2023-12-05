@@ -297,6 +297,8 @@ class FITS:
     max_comment_length = 40
     max_length_without_HIERARCH = 8
 
+    on_sky_types = ['K_SKYFLT', 'K_TRGOBS', 'K_FOCUS']
+
     base_header = {
         'K_DARK': {
             'DPR CATG': 'CALIB',

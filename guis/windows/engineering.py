@@ -56,6 +56,8 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
             return f'{name} ({start_str} – {end_str})'
 
     def data_updated(self, data):
+        print(data['plc'])
+
         shutter_state = self.backend.consume_plc(data, 'shutter_state')
         if shutter_state is not None:
             self.shutter_combobox.setCurrentIndex(
