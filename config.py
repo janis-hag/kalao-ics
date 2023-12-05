@@ -464,15 +464,14 @@ class T120:
     connection_timeout = 5
     altaz_timeout = 10
     focus_timeout = 20
-    host = "glslogin1.ls.eso.org"
-    symb_name = "inter"
-    rcmd = "ipcsrv"
-    port = 17001
+    ip = "10.10.132.102"
+    port = 10002
+    request_timeout = 120
     port_loop_timer = 17002
-    semkey = 4000
     focus_offset_limit = 15
     temperature_file = "/disks/synology/gls/data/services/CURRENT/temperature_telescope.rdb"
     temperature_file_timeout = 120
+    dummy_telescope = False
 
 
 class AO:
