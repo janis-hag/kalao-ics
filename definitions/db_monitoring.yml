@@ -144,6 +144,14 @@ flow_value:
   main_gui: 2
   group: Motors, Cooling
 
+hygrometry:
+  short: Enclosure RH
+  long: Enclosure relative humidity
+  unit: '%'
+  main_gui: 2
+  group: Cooling
+  fits_keyword: HIERARCH ESO INS ENC RH
+
 laser_state:
   short: Laser state
   long: Laser calibration lamp state

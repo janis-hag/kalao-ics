@@ -425,7 +425,7 @@ def generate_night_darks(science_folder=None):
                 print(dit, i)
                 image_path = camera.take_dark(dit=dit)
                 with fits.open(image_path, mode='update') as hdul:
-                    hdul[0].header.set('HIERARCH ESO OBS TYPE', 'K_DARK')
+                    hdul[0].header.set('HIERARCH ESO TPL ID', 'K_DARK')
                     hdul[0].header.set('HIERARCH ESO OBS TARGET NAME', 'Dark')
                     hdul.flush()
 

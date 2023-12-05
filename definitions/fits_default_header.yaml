@@ -23,6 +23,10 @@
   value: 0
   comment: Value used for NULL pixels
 
+- keyword: HIERARCH ESO TPL ID
+  value:
+  comment: Template ID
+
 - keyword: HIERARCH ESO DPR TECH
   value: IMAGE
   comment: Observation technique
