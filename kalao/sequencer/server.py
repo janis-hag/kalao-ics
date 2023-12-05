@@ -333,6 +333,7 @@ def execute_command(command, seq_args):
             })
 
         traceback.print_tb(e.__traceback__)
+        print(e)
     else:
         database.store(
             'obs', {

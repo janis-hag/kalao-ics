@@ -238,6 +238,8 @@ def _send_request(request_type, params={}):
     for key, value in list(params.items()):
         if value is None:
             del params[key]
+        elif key == 'filepath':
+            params[key] = str(value)
 
     if not check_server_status() == CameraServerStatus.UP:
         return ReturnCode.CAMERA_SERVER_DOWN, {}
@@ -263,7 +265,10 @@ def _send_request(request_type, params={}):
                 req = requests.post(url, json=params,
                                     timeout=config.FLI.request_timeout)
 
-            data = json.loads(req.text)
+            try:
+                data = json.loads(req.text)
+            except Exception:
+                data = req.text
 
             if req.status_code == 200:
                 return ReturnCode.CAMERA_OK, data

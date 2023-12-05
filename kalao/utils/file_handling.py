@@ -61,8 +61,8 @@ def create_night_folders():
     )
 
     # Check if tmp and science folders exist
-    if not tmp_night_folder.exists(parents=True):
-        tmp_night_folder.mkdir()
+    if not tmp_night_folder.exists():
+        tmp_night_folder.mkdir(parents=True)
     if not science_night_folder.exists():
         science_night_folder.mkdir(parents=True)
 
@@ -172,12 +172,20 @@ def update_header(image_path, sequencer_arguments=None):
             dt = datetime.fromisoformat(fits_header['DATE']).replace(
                 tzinfo=timezone.utc)
 
-        header_df = header_df.concat([
+        if type in ['K_SKYFLT', 'K_TRGOBS', 'K_FOCUS']:
+            header_obs = _header_from_db('obs', dt)
+            header_telescope = _clean_header(_header_from_last_telescope_header())
+        else:
+            header_obs = None
+            header_telescope = None
+
+        header_df = pd.concat([
+            _header_from_fits(image_path),
             header_df,
-            _header_from_db('obs', dt),
+            header_obs,
             _header_from_db('monitoring', dt),
             _header_from_db('telemetry', dt),
-            _clean_header(_header_from_last_telescope_header())
+            header_telescope
         ]).query('~index.duplicated(keep="last")')
 
         header_df = _dynamic_cards_update(header_df,
@@ -304,7 +312,7 @@ def _header_from_db(collection_name, dt):
             if comment is None or len(comment) > max_comment_length:
                 comment = v.get('short')
 
-            comment = kalao_string.ellipsis(comment)
+            comment = kalao_string.ellipsis(comment, max_comment_length)
 
             header_dict[fits_keyword] = {
                 'value': None,
@@ -314,10 +322,10 @@ def _header_from_db(collection_name, dt):
             query_list[k] = fits_keyword
 
     if dt is not None:
-        data = database.get(collection_name, query_list.keys(), dt)
+        data = database.get(collection_name, query_list.keys(), dt=dt)
 
         for key, keyword in query_list.items():
-            header_dict[keyword].value = data[key]['values'][0]['value']
+            header_dict[keyword]['value'] = data[key][0]['value']
 
     header_df = pd.DataFrame.from_dict(header_dict, orient='index')
     header_df.index.name = 'keyword'

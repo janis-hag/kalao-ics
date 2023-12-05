@@ -7,6 +7,7 @@
 import math
 import os
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pandas as pd
 
@@ -193,6 +194,8 @@ def store(collection_name, data):
             raise KeyError(f'Inserting unknown key "{key}" in database')
 
         if isinstance(data[key], StrEnum):
+            data[key] = str(data[key])
+        elif isinstance(data[key], Path):
             data[key] = str(data[key])
 
         # yapf: disable
