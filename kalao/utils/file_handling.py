@@ -377,7 +377,7 @@ def _header_from_last_telescope_header():
         database.store(
             'obs', {
                 'sequencer_log':
-                    f'[WARNING] {tcs_header_path_record["value"]} is {header_age / 60} minutes old. Discarding obsolete header'
+                    f'[WARNING] {tcs_header_path_record["value"]} is {header_age / 60} minutes old. Discarding obsolete header.'
             })
         return _header_empty()
 
@@ -478,7 +478,7 @@ def _dynamic_cards_update(header_df, obs_type, seq_args=None):
         # TODO add radecsys value in EQUINOX comment
 
     if seq_args is not None:
-        header_df.loc['HIERARCH ESO OBS TYPE'].value = seq_args.get('type')
+        header_df.loc['HIERARCH ESO TPL ID'].value = seq_args.get('type')
 
     return header_df
 

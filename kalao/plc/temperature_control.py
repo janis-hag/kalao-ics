@@ -23,6 +23,7 @@ pump_node = 'bRelayPump'
 fan_node = 'bRelayFan'
 heater_node = 'bWaterHeater'
 flowmeter_node = 'iFlowmeter'
+hygrometer_node = 'iHygrometer'
 
 print_name = {
     'bRelayPump': 'pump',
@@ -72,7 +73,8 @@ def get_cooling_status(beck=None):
         'pump_temp': pump_temperature(beck=beck),
         'heater_status': heater_status(beck=beck),
         'fan_status': fan_status(beck=beck),
-        'flow_value': get_flow_value(beck=beck)
+        'flow_value': get_flow_value(beck=beck),
+        'hygrometry': get_hygrometry(beck=beck)
     }
 
     return cooling_status
@@ -274,10 +276,27 @@ def get_flow_value(beck=None):
     return flow_value
 
 
+@core.beckhoff_autoconnect
+def get_hygrometry(beck=None):
+    """
+    Convenience function to query the value of the water flow from the flowmeter
+
+    TODO: add rounding of returned value
+
+    :param beck: handle to the beckhoff connection
+    :return: status of the fan
+    """
+
+    flow_value = beck.get_node("ns=4;s=MAIN." + hygrometer_node).get_value()
+
+    return flow_value
+
+
 def get_cooling_values(beck=None):
 
     cooling = {
         'cooling_flow_value': get_flow_value(beck=beck),
+        'hygrometry': get_hygrometry(beck=beck),
         'temp_water_in': get_temperatures(beck=beck)['temp_water_in']
     }
 

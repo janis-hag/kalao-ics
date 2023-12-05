@@ -321,7 +321,7 @@ class FITS:
         },
         'K_FOCUS': {
             'DPR CATG': 'CALIB',
-            'DPR TYPE': 'OBJECT',
+            'DPR TYPE': 'FOCUS,OBJECT',
             'PROG ID': '199',
         },
         'K_TECH': {

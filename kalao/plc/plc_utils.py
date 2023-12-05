@@ -61,5 +61,6 @@ def get_all_status(beck=None):
         'pump_temp': cooling_system['pump_temp'],
         'heater_status': cooling_system['heater_status'],
         'fan_status': cooling_system['fan_status'],
-        'flow_value': cooling_system['flow_value']
+        'flow_value': cooling_system['flow_value'],
+        'hygrometry': cooling_system['hygrometry']
     }
