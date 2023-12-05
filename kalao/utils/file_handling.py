@@ -424,9 +424,6 @@ def _dynamic_cards_update(header_df, obs_type, seq_args=None):
     astro_time_obs = Time(date_obs, scale='utc', location=location)
     astro_time_end = Time(date_end, scale='utc', location=location)
 
-    ra = Angle(header_df.loc['RA'].value, unit=u.deg)
-    dec = Angle(header_df.loc['DEC'].value, unit=u.deg)
-
     # Update HIERARCH ESO INS SHUT ST
     shutter = header_df.loc['HIERARCH ESO INS SHUT ST']
     shutter.comment = f'{shutter.comment} ({shutter.value.lower()})'
@@ -463,6 +460,9 @@ def _dynamic_cards_update(header_df, obs_type, seq_args=None):
     header_df.loc['LST'].source += '+dynamic'
 
     if obs_type in config.FITS.on_sky_types:
+        ra = Angle(header_df.loc['RA'].value, unit=u.deg)
+        dec = Angle(header_df.loc['DEC'].value, unit=u.deg)
+
         # Update RA
         header_df.loc['RA'].value = ra.deg
         header_df.loc[
