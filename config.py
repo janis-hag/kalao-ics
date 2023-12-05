@@ -29,6 +29,7 @@ from kalao.utils import kalao_tools
 from kalao.definitions.enums import StrEnum, TrackingStatus
 
 kalao_path = Path(__file__).absolute().parent
+epsilon = 1e-12
 
 
 class PLC:
@@ -205,15 +206,15 @@ class FilterWheel:
             'name': 'Clear',
             'center': np.nan,
             'fwhm': np.inf,
-            'start': -np.inf,
-            'end': np.inf,
+            'start': 400e-9,
+            'end': 1000e-9,
         },
         'nd': {
             'name': 'Neutral Density',
             'center': np.nan,
-            'fwhm': np.inf,
-            'start': -np.inf,
-            'end': np.inf,
+            'fwhm': np.nan,
+            'start': np.nan,
+            'end': np.nan,
         },
     }
 

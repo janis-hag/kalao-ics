@@ -101,7 +101,10 @@ def process_entry(entry, output_type):
                 '%y-%m-%d %H:%M:%S')
 
             if 'USER_UNIT' in entry:
-                origin = entry['_COMM']
+                if '_COMM' in entry:
+                    origin = entry['_COMM']
+                else:
+                    origin = entry['SYSLOG_IDENTIFIER']
 
                 if entry.get('EXIT_STATUS', 0) != 0 or entry.get(
                         'UNIT_RESULT', '') == 'exit-code':
@@ -117,7 +120,7 @@ def process_entry(entry, output_type):
                 else:
                     return None
 
-            if '[ERROR]' in message:
+            if '[ERROR]' in message or 'Failed' in message or 'Traceback' in message:
                 type = LogType.ERROR
             elif '[WARNING]' in message:
                 type = LogType.WARNING

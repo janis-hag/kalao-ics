@@ -7,11 +7,12 @@ from PySide6.QtGui import QImage, Qt
 
 from guis.kalao import colormaps
 
+import config
+
 
 class ArrayToImageMixin:
     colormap = colormaps.BlackBody()
     image = None
-    epsilon = 1e-12
 
     def prepare_array_for_qimage(self, img, img_min=None, img_max=None):
         if img_min is None:
@@ -40,7 +41,7 @@ class ArrayToImageMixin:
         else:
             mask = None
 
-        if delta > self.epsilon:
+        if delta > config.epsilon:
             rescale = (scale_max-scale_min) / delta
             offset = img_min*rescale - scale_min
 

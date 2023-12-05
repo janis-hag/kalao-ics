@@ -2,6 +2,8 @@ from PySide6.QtCore import Signal
 
 from kalao import logs
 from kalao.cacao import aocontrol, toolbox
+from kalao.plc import (calib_unit, filterwheel, flip_mirror, laser, plc_utils,
+                       shutter, tungsten)
 from kalao.utils import database
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
@@ -77,6 +79,8 @@ class MainBackend(SHMFPSBackend):
 
         self.reader = logs.get_reader(True)
 
+        self.streams['plc'] = {}
+
     @emit('streams_updated')
     @timeit
     def update_streams(self):
@@ -111,6 +115,8 @@ class MainBackend(SHMFPSBackend):
         self._update_params(self.streams, 'mfilt-2', 'loopgain')
         self._update_params(self.streams, 'mfilt-2', 'loopmult')
         self._update_params(self.streams, 'mfilt-2', 'looplimit')
+
+        self.streams['plc'].update(plc_utils.get_all_status())
 
         return self.streams
 
@@ -185,6 +191,29 @@ class MainBackend(SHMFPSBackend):
     def set_ttm_loop_limit(selfself, limit):
         aocontrol.set_ttmloop_limit(limit)
 
+    ##### Engineering
+
+    def set_shutter_state(self, state):
+        shutter._switch(state)
+
+    def set_flipmirror_position(self, position):
+        flip_mirror._switch(position)
+
+    def set_calibunit_position(self, position):
+        calib_unit.move(position)
+
+    def set_tungsten_state(self, state):
+        tungsten.send_command(state)
+
+    def set_laser_state(self, state):
+        laser._switch(state)
+
+    def set_laser_intensity(self, intensity):
+        laser.set_intensity(intensity)
+
+    def set_filterwheel_filter(self, filter):
+        filterwheel.set_filter(filter)
+
     ##### DM channels
 
     def reset_dm(self, dm_number):
@@ -196,20 +225,19 @@ class MainBackend(SHMFPSBackend):
     ##### Logs
 
     def init_logs(self):
-        logs = []
-
+        entries = []
         for entry in logs.seek(self.reader, LogsOutputType.QT,
                                config.GUI.initial_logs_entries):
             entry['text'] = '<span class="init">' + entry['text'] + '<span>'
 
-            logs.append(entry)
+            entries.append(entry)
 
-        return logs
+        return entries
 
     def get_logs(self):
-        logs = []
+        entries = []
 
         for entry in logs.get_last_entries(self.reader, LogsOutputType.QT):
-            logs.append(entry)
+            entries.append(entry)
 
-        return logs
+        return entries

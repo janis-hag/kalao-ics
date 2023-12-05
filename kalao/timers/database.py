@@ -14,7 +14,7 @@ import time
 from kalao import euler, ippower
 from kalao.cacao import telemetry
 from kalao.fli import camera
-from kalao.plc import adc, filterwheel, plc_utils
+from kalao.plc import plc_utils
 from kalao.rtc import rtc_status
 from kalao.utils import database, kalao_time
 

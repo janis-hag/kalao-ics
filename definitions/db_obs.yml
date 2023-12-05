@@ -313,8 +313,8 @@ tel_ambi_dewp:
   unit: °C
 
 tel_ambi_pressure:
-  short: Amtmospheric pressure
-  long: Amtmospheric pressure
+  short: Atmospheric pressure
+  long: Atmospheric pressure
   unit: hPa
 
 tel_ambi_relhum:

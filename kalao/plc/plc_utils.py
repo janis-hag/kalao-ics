@@ -1,5 +1,5 @@
-from kalao.plc import (adc, calib_unit, core, flip_mirror, laser, shutter,
-                       temperature_control, tungsten)
+from kalao.plc import (adc, calib_unit, core, filterwheel, flip_mirror, laser,
+                       shutter, temperature_control, tungsten)
 from kalao.utils import database
 
 from kalao.definitions.enums import LaserState, TungstenState
@@ -51,6 +51,8 @@ def get_all_status(beck=None):
         'tungsten_state': tungsten.get_state(beck=beck),
         'adc1_angle': adc.get_position(1, beck=beck),
         'adc2_angle': adc.get_position(2, beck=beck),
+        'filterwheel_filter_position': filterwheel.get_filter(type=int),
+        'filterwheel_filter_name': filterwheel.get_filter(type=str),
         'temp_bench_air': temps['temp_bench_air'],
         'temp_bench_board': temps['temp_bench_board'],
         'temp_water_in': temps['temp_water_in'],

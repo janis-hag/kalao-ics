@@ -57,3 +57,9 @@ class AbstractBackend(QObject):
         else:
             data[fps_name][param_name]['updated'] = False
             return param
+
+    def consume_plc(selfself, data, key, default=None):
+        try:
+            return data['plc'][key]
+        except KeyError:
+            return default

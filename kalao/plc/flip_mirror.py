@@ -48,6 +48,11 @@ def _switch(action_name, beck=None):
     :return: position of flip_mirror
     """
 
+    if action_name == FlipMirrorPosition.UP:
+        action_name = 'bUp_Flip'
+    elif action_name == FlipMirrorPosition.DOWN:
+        action_name = 'bDown_Flip'
+
     if action_name == 'bUp_Flip':
         database.store('obs', {'flip_mirror_log': 'Flipping mirror up'})
     elif action_name == 'bDown_Flip':

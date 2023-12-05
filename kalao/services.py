@@ -209,6 +209,8 @@ def init():
 
             if service['restart']:
                 unit_control(unit, ServiceAction.RESTART)
+            elif not is_active(unit):
+                unit_control(unit, ServiceAction.START)
         else:
             if is_enabled(unit):
                 unit_control(unit, ServiceAction.DISABLE)

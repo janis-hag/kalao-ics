@@ -107,6 +107,10 @@ class TTMWidget(KalAOWidget, MinMaxMixin):
             y_min = self.data_min
             y_max = self.data_max
 
+        if abs(y_max - y_min) < config.epsilon:
+            y_min -= 0.01
+            y_max += 0.01
+
         x_max = self.tip.at(self.tip.count() - 1).x()
 
         self.axisX.setRange(

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1831</width>
-    <height>1493</height>
+    <width>1042</width>
+    <height>731</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -117,7 +117,11 @@
       </widget>
      </item>
      <item row="7" column="0" colspan="2">
-      <widget class="QListWidget" name="obs_list"/>
+      <widget class="QListWidget" name="obs_list">
+       <property name="selectionMode">
+        <enum>QAbstractItemView::MultiSelection</enum>
+       </property>
+      </widget>
      </item>
      <item row="6" column="0" colspan="2">
       <widget class="QLabel" name="obs_label">

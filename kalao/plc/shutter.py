@@ -21,7 +21,6 @@ from kalao.definitions.enums import ShutterState
 
 
 @core.beckhoff_autoconnect
-@core.beckhoff_autoconnect
 def get_state(beck=None):
     """
     Query the single string status of the shutter.
@@ -100,6 +99,11 @@ def _switch(action_name, beck=None):
     :param action_name: bClose_Shutter or
     :return: status of shutter
     """
+
+    if action_name == ShutterState.OPEN:
+        action_name = 'bOpen_Shutter'
+    elif action_name == ShutterState.CLOSED:
+        action_name = 'bClose_Shutter'
 
     if action_name == 'bOpen_Shutter':
         database.store('obs', {'shutter_log': 'Opening shutter'})

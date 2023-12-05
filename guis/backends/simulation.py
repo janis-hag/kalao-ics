@@ -117,6 +117,28 @@ class MainBackend(FakeSHMFPSBackend):
         self._update_params(self.streams, 'mfilt-2', 'loopmult', 0.99)
         self._update_params(self.streams, 'mfilt-2', 'looplimit', 1)
 
+        self.streams['plc'] = {
+            'shutter_state': 'CLOSED',
+            'flip_mirror_position': 'DOWN',
+            'calib_unit_position': 23.56,
+            'laser_state': 'ON',
+            'laser_power': 4.5,
+            'tungsten_state': 'OFF',
+            'adc1_angle': 135,
+            'adc2_angle': 45,
+            'filterwheel_filter_position': 4,
+            'filterwheel_filter_name': 'z',
+            'temp_bench_air': 18.2,
+            'temp_bench_board': 18.1,
+            'temp_water_in': 13,
+            'temp_water_out': 15,
+            'pump_status': 'ON',
+            'pump_temp': 35,
+            'heater_status': 'OFF',
+            'fan_status': 'ON',
+            'flow_value': 2.5
+        }
+
         return self.streams
 
     @emit('tiptilt_updated')
@@ -200,13 +222,13 @@ class MainBackend(FakeSHMFPSBackend):
     def set_dm_loop_on(self, state):
         print(f'Set DM loop to {state} (virtually)')
 
-    def set_dm_loop_gain(selfself, gain):
+    def set_dm_loop_gain(self, gain):
         print(f'Set DM gain to {gain} (virtually)')
 
-    def set_dm_loop_mult(selfself, mult):
+    def set_dm_loop_mult(self, mult):
         print(f'Set DM mult to {mult} (virtually)')
 
-    def set_dm_loop_limit(selfself, limit):
+    def set_dm_loop_limit(self, limit):
         print(f'Set DM limit to {limit} (virtually)')
 
     # TTM Loop
@@ -214,14 +236,37 @@ class MainBackend(FakeSHMFPSBackend):
     def set_ttm_loop_on(self, state):
         print(f'Set TTM loop to {state} (virtually)')
 
-    def set_ttm_loop_gain(selfself, gain):
+    def set_ttm_loop_gain(self, gain):
         print(f'Set TTM gain to {gain} (virtually)')
 
-    def set_ttm_loop_mult(selfself, mult):
+    def set_ttm_loop_mult(self, mult):
         print(f'Set TTM mult to {mult} (virtually)')
 
-    def set_ttm_loop_limit(selfself, limit):
+    def set_ttm_loop_limit(self, limit):
         print(f'Set TTM limit to {limit} (virtually)')
+
+    ##### Engineering
+
+    def set_shutter_state(self, state):
+        print(f'Set Shutter state to {state} (virtually)')
+
+    def set_flipmirror_position(self, position):
+        print(f'Set Flip Mirror position to {position} (virtually)')
+
+    def set_calibunit_position(self, position):
+        print(f'Set Calibration Unit position to {position} (virtually)')
+
+    def set_tungsten_state(self, state):
+        print(f'Set Tungsten state to {state} (virtually)')
+
+    def set_laser_state(self, state):
+        print(f'Set Laser state to {state} (virtually)')
+
+    def set_laser_intensity(self, intensity):
+        print(f'Set Laser intensity to {intensity} (virtually)')
+
+    def set_filterwheel_filter(self, filter):
+        print(f'Set Filter Wheel filter to {filter} (virtually)')
 
     ##### DM channels
 

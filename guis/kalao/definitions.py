@@ -17,6 +17,17 @@ class Color():
     GREEN = QColor('#11d116')
     BLUE = QColor('#1d99f3')
     YELLOW = QColor('#fdbc4b')
+    PURPLE = QColor('#8e44ad')
+
+
+ColorPalette = [
+    Color.BLUE,
+    Color.RED,
+    Color.GREEN,
+    Color.PURPLE,
+    Color.YELLOW,
+    Color.ORANGE,
+]
 
 
 class PokeState(StrEnum):

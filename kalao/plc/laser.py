@@ -154,6 +154,11 @@ def _switch(action_name, beck=None):
     :return: status of laser
     """
 
+    if action_name == LaserState.ON:
+        action_name = 'bEnable'
+    elif action_name == LaserState.OFF:
+        action_name = 'bDisable'
+
     if action_name == 'bEnable':
         database.store('obs', {'laser_log': 'Enabling laser'})
         aocontrol.emgain_off()

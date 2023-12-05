@@ -5,9 +5,11 @@ import numpy as np
 from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis, QXYSeries
 from PySide6.QtCore import (QDateTime, QPointF, Qt, QTimer, QTimeZone, Signal,
                             Slot)
+from PySide6.QtGui import QPen
 
 from kalao.utils import database, kalao_time
 
+from guis.kalao.definitions import ColorPalette
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOListWidgetItem, KalAOWidget
 
@@ -148,6 +150,7 @@ class PlotsWidget(KalAOWidget):
         chart.removeAllSeries()
         self.series = {}
 
+        color_index = 0
         plot_min = np.inf
         plot_max = -np.inf
 
@@ -156,12 +159,16 @@ class PlotsWidget(KalAOWidget):
                 continue
 
             for key, values in collection.items():
+                pen = QPen(ColorPalette[color_index], 1.25, Qt.SolidLine,
+                           Qt.SquareCap, Qt.MiterJoin)
+
                 series = self.series[key] = QLineSeries()
                 series.setName(
                     self.get_display_name(
                         database.definitions[name]['metadata'][key]))
                 series.setMarkerSize(self.point_size)
                 series.setPointsVisible(True)
+                series.setPen(pen)
 
                 for t, v in values.items():
                     timestamp = QDateTime(t.date(), t.time(),
@@ -198,12 +205,18 @@ class PlotsWidget(KalAOWidget):
                                        self.point_hovered(
                                            point, state, name, key))
 
+                color_index = (color_index+1) % len(ColorPalette)
+
         time_delta = self.start_datetimeedit.dateTime().secsTo(
             self.end_datetimeedit.dateTime())
         if time_delta > 24 * 3600:
             self.axisX.setFormat("HH:mm dd.MM.yy")
         else:
             self.axisX.setFormat("HH:mm")
+
+        if abs(plot_max - plot_min) < config.epsilon:
+            plot_min -= 0.01
+            plot_max += 0.01
 
         self.axisX.setRange(self.start_datetimeedit.dateTime().toUTC(),
                             self.end_datetimeedit.dateTime().toUTC())

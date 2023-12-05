@@ -61,6 +61,11 @@ def send_command(nCommand_value, beck=None):
     :return:
     """
 
+    if nCommand_value == TungstenState.ON:
+        nCommand_value = TungstenCommand.ON
+    elif nCommand_value == TungstenState.OFF:
+        nCommand_value = TungstenCommand.OFF
+
     if nCommand_value == TungstenCommand.ON:
         database.store('obs', {'tungsten_log': f'Turning tungsten lamp on'})
     elif nCommand_value == TungstenCommand.OFF:
@@ -98,7 +103,6 @@ def init(beck=None):
     # Check if init, if not do init
     if not beck.get_node(
             "ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
-        # init
         send_command(TungstenCommand.INIT, beck=beck)
 
         sleep(15)

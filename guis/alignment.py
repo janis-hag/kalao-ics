@@ -11,6 +11,8 @@ from guis.windows.alignment import AlignmentWindow
 from guis.windows.slopes import SlopesWidget
 from guis.windows.wfs import WFSWidget
 
+import config
+
 
 def handler(signal_received, frame):
     app.quit()
