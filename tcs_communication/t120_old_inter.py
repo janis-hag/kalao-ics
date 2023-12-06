@@ -12,25 +12,18 @@
 # sort 10 ligne de "show i" sur glslogin2
 #
 
-import json
-import time
-
 import pandas as pd
 
 from kalao import euler
 from kalao.utils import database, kalao_time
 
-import requests
-import requests.exceptions
-
 from tcs_communication.pyipc import pymod_libipc as ipc
-
-from kalao.definitions.enums import ReturnCode, T120ServerStatus
 
 import config
 
 
-def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec):
+def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec,
+                      port=config.T120.port):
     """
     Send altitude azimuth offset to T120 telescope server.
 
@@ -41,26 +34,27 @@ def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec):
 
     host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
 
+    socketId = ipc.init_remote_client(host, config.T120.symb_name,
+                                      config.T120.rcmd, port,
+                                      config.T120.semkey)
+
     #print ("ipc.init_remote_client, returns:",socketId)
-    # if (socketId <= 0):
-    #     database.store('obs', {'t120_log': 'Error connecting to T120'})
-    #     return -1
+    if (socketId <= 0):
+        database.store('obs', {'t120_log': 'Error connecting to T120'})
+        return -1
 
     database.store('obs', {
         't120_log': f'Sending {delta_az_arcsec} and {delta_alt_arcsec} offsets'
     })
 
-    params = {'az_arcsec': delta_az_arcsec, 'alt_arcsec': delta_alt_arcsec}
-
-    rValue, resp = _send_request('tracking/offset', params)
-
-    # resp.json() has the format:
-    # {'b_alarmed': False, 's_currentStatus': 'Offset correctly sent'}
+    offset_cmd = '@offset ' + str(delta_az_arcsec) + ' ' + str(delta_alt_arcsec)
+    ipc.send_cmd(offset_cmd, config.T120.connection_timeout,
+                 config.T120.altaz_timeout)
 
     # Offsets are corrections to pointing error, not actual change of the center of the field
     # _update_db_ra_dec_offsets(delta_alt_arcsec, delta_az_arcsec)
 
-    return rValue, resp
+    return socketId
 
 
 def send_focus_offset(focus_offset):
@@ -74,6 +68,8 @@ def send_focus_offset(focus_offset):
 
     #if focus_offset > focus_offset_limit:
     #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limit {focus_offset_limit}')
+
+    host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
 
     #Verify offset value below limit differentiate between offsets and absolute values
     if type(focus_offset) is str:
@@ -96,19 +92,21 @@ def send_focus_offset(focus_offset):
         })
         return -1
 
+    socketId = ipc.init_remote_client(host, config.T120.symb_name,
+                                      config.T120.rcmd, config.T120.port,
+                                      config.T120.semkey)
+    #print ("ipc.init_remote_client, returns:",socketId)
+    if (socketId <= 0):
+        database.store('obs', {'t120_log': 'Error connecting to T120'})
+        return -1
+
     database.store('obs', {'t120_log': f'Sending focus {focus_offset}'})
 
-    new_position = get_focus_value() + focus_offset
+    offset_cmd = '@m2p ' + str(focus_offset)
+    ipc.send_cmd(offset_cmd, config.T120.connection_timeout,
+                 config.T120.focus_timeout)
 
-    #params = {"position": 32000}
-    params = {"position": new_position}
-
-    rValue, resp = _send_request('/m2/focus/', params)
-
-    # print(resp.json())
-    # {'b_alarmed': False, 'b_busy': True, 'b_enabled': False, 's_currentStatus': 'Wait for M2 Power supply stabilizated'}
-
-    return rValue, resp
+    return socketId
 
 
 def update_fo_delta(focus_offset):
@@ -138,21 +136,40 @@ def update_fo_delta(focus_offset):
 
 
 def get_focus_value():
-    '/m2/status'
 
-    rValue, resp = _send_request('/m2/status/')
+    host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
+
+    socketId = ipc.init_remote_client(host, config.T120.symb_name,
+                                      config.T120.rcmd, config.T120.port,
+                                      config.T120.semkey)
+
+    print("wait")
+    status = ipc.shm_wait(config.T120.connection_timeout)
+    print("ipc.shm_wait returns:", status)
+    if (status < 0):
+        ipc.shm_free()
+        return -1
+
+    print("ini_shm_kw")
+    ipc.ini_shm_kw()
+
+    print("put_shm_kw 1")
+    ipc.put_shm_kw("COMMAND", "@kal_getm2")
+
+    ipc.shm_ack()
+    ipc.shm_wack(config.T120.focus_timeout)
+
+    returnList = ipc.get_shm_kw("te.m2z")
+
+    ipc.shm_free()
 
     database.store('obs',
-                   {'t120_log': f'Received focus value {resp.json()["z"]}'})
+                   {'t120_log': f'Received focus value {returnList[1]}'})
 
-    position = resp.json()['z']
-    # Position format: 31997.12426757813
-
-    return rValue, position
+    return float(returnList[1])
 
 
 def request_autofocus():
-
     host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
 
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
@@ -185,7 +202,7 @@ def test_connection():
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
                                       config.T120.rcmd, config.T120.port,
                                       config.T120.semkey)
-
+    #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
         database.store('obs', {'t120_log': 'Error connecting to T120'})
         return -1
@@ -221,82 +238,45 @@ def get_tube_temp():
                        header=0).iloc[-1]
 
 
-def _send_request(request_path, params={}):
-    # Clean params
-
-    for key, value in list(params.items()):
-        if value is None:
-            del params[key]
-
-    if not check_server_status() == T120ServerStatus.UP:
-        return ReturnCode.T120_SERVER_DOWN, {}
-
-    else:
-        if config.T120.dummy_telescope:
-            if request_path == 'acquire':
-                time.sleep(2)
-
-            return ReturnCode.T120_OK, {}
-
-        else:
-
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": "ETCS_API_TOKEN_2023"
-            }
-
-            url = f'http://{config.T120.ip}:{config.T120.http_port}/{request_path}'
-            if params == {}:
-                req = requests.get(url, timeout=config.T120.request_timeout,
-                                   headers=headers)
-            else:
-                req = requests.post(url, json=params,
-                                    timeout=config.T120.request_timeout,
-                                    headers=headers)
-
-            try:
-                data = json.loads(req.text)
-            except Exception:
-                data = req.text
-
-            if req.status_code == 200:
-                return ReturnCode.T120_OK, data
-            else:
-                text = ''
-
-                if data.get('error_text') is not None:
-                    text += f' {data.get("error_text")}'
-
-                if data.get('error_status') is not None:
-                    text += f' (status = {data.get("error_status")})'
-
-                database.store(
-                    'obs', {
-                        f'fli_log':
-                            f'[ERROR] Camera server answered with an Error {req.status_code}.{text}'
-                    })
-
-                return ReturnCode.T120_ERROR, data
-
-
-def check_server_status():
-    """
-    Verify if the T120 server is up and running and check if the camera can be queried.
-
-    :return: status of the camera server (UP/DOWN/ERROR)
-    """
-
-    #server_status = services.camera(ServiceAction.STATUS)
-
-    #if server_status[0] == 'inactive':
-    #    return T120ServerStatus.DOWN
-
-    try:
-        r = requests.get(f'http://{config.T120.ip}:{config.T120.port}/ping')
-        r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
-    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-        return T120ServerStatus.DOWN
-    except requests.exceptions.HTTPError:
-        return T120ServerStatus.ERROR
-    else:
-        return T120ServerStatus.UP
+# def get_status():
+#     socketId = ipc.init_remote_client(host, symb_name, rcmd, port, semkey)
+#     # print ("ipc.init_remote_client, returns:",socketId)
+#     if (socketId <= 0):
+#         database.store('obs',{'t120_log': 'Error connecting to T120'})
+#         return -1
+#     else:
+#         #status_cmd = '@offset ' + str(delta_alt) + ' ' + str(delta_a)
+#         #ipc.send_cmd(offset_cmd, timeout, timeout)
+#
+#
+#         print ("wait");
+#         status = ipc.shm_wait(timeout)
+#         print ("ipc.shm_wait returns:", status)
+#         if (status<0):
+#           ipc.shm_free()
+#           sys.exit(-1)
+#
+#         print ("ini_shm_kw");
+#         ipc.ini_shm_kw()
+#
+#         print ("put_shm_kw COMMAND");
+#         ipc.put_shm_kw("COMMAND","@t120_get_positions")
+#
+#         print ("shmack");
+#         ipc.shm_ack()
+#         print ("shmwack");
+#         ipc.shm_wack()
+#         #
+#         # returns: ob.alpha ob.delta te.alpcons te.delcons scrmesuazi scrmesuele cupposmes
+#         #
+#         print ("get_shm_kw");
+#         returnList = ipc.get_shm_kw("scrmesuazi")
+#         azi = returnList[1]
+#         print ("get_shm_kw");
+#         returnList = ipc.get_shm_kw("scrmesuele")
+#         ele = returnList[1]
+#
+#         print("azi=",azi,"ele=",ele," <======================================")
+#
+#         print ("shmfree");
+#         ipc.shm_free()

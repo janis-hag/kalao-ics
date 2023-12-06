@@ -46,3 +46,12 @@ class TerminalColors:
     REVERSE = "\033[7m"
     CONCEAL = "\033[7m"
     CROSSED = "\033[9m"
+
+    UP = "\033[1A"
+    DOWN = "\033[1B"
+    FORWARD = "\033[1C"
+    BACKWARD = "\033[1D"
+    CLEAR = "\033[K"
+
+    SAVE = "\033[s"
+    RESTORE = "\033[u"

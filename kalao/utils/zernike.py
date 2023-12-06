@@ -5,6 +5,24 @@ from scipy.interpolate import RegularGridInterpolator
 
 from astropy.nddata import block_reduce, block_replicate
 
+coeff_names = {
+    (0, 0): 'Piston',
+    (1, -1): 'Tip',
+    (1, 1): 'Tilt',
+    (2, -2): 'Oblique astigmatism',
+    (2, 0): 'Defocus',
+    (2, 2): 'Vertical astigmatism',
+    (3, -3): 'Vertical trefoil',
+    (3, -1): 'Vertical coma',
+    (3, 1): 'Horizontal coma',
+    (3, 3): 'Oblique trefoil',
+    (4, -4): 'Oblique quadrafoil',
+    (4, -2): 'Oblique secondary astigmatism',
+    (4, 0): 'Primary spherical',
+    (4, 2): 'Vertical secondary astigmatism',
+    (4, 4): 'Vertical quadrafoil',
+}
+
 
 class Zernike:
     def Z(n, m, rho, phi, norm=None):
@@ -71,8 +89,7 @@ class Zernike:
         return n, l
 
 
-def generate_pattern(zernike_coeffs, shape,
-                     indices_inverse=Zernike.standard_inverse):
+def generate_pattern(coeffs, shape, indices_inverse=Zernike.standard_inverse):
     x = np.linspace(-1, 1, shape[0])
     y = np.linspace(-1, 1, shape[1])
 
@@ -82,7 +99,7 @@ def generate_pattern(zernike_coeffs, shape,
 
     pattern = np.zeros(shape)
 
-    for i, coeff in enumerate(zernike_coeffs):
+    for i, coeff in enumerate(coeffs):
         n, m = indices_inverse(i)
         pattern += coeff * Zernike.Z(n, m, R, Theta)
 
@@ -97,9 +114,9 @@ def _slopes_from_pattern(pattern):
     return np.hstack(slopes)
 
 
-def generate_slopes(zernike_coeffs, shape, upsampling=4,
+def generate_slopes(coeffs, shape, upsampling=4,
                     indices_inverse=Zernike.standard_inverse):
-    pattern = generate_pattern(zernike_coeffs,
+    pattern = generate_pattern(coeffs,
                                np.array(shape) * upsampling, indices_inverse)
 
     slopes = _slopes_from_pattern(pattern)
@@ -115,10 +132,10 @@ def fit_pattern(pattern, orders=None, mask=None):
     # Generate the basis
     pattern_basis = []
     for i in range(orders):
-        zernike_coeffs = np.zeros((orders, ))
-        zernike_coeffs[i] = 1
+        coeffs = np.zeros((orders, ))
+        coeffs[i] = 1
 
-        _pattern = generate_pattern(zernike_coeffs, pattern.shape)
+        _pattern = generate_pattern(coeffs, pattern.shape)
         _pattern_masked = np.ma.masked_array(_pattern, mask=mask)
 
         pattern_basis.append(_pattern_masked)
@@ -143,10 +160,10 @@ def fit_slopes(slopes, orders=None, mask=None):
     # Generate the basis
     slopes_basis = []
     for i in range(orders):
-        zernike_coeffs = np.zeros((orders, ))
-        zernike_coeffs[i] = 1
+        coeffs = np.zeros((orders, ))
+        coeffs[i] = 1
 
-        _slopes = generate_slopes(zernike_coeffs, shape)
+        _slopes = generate_slopes(coeffs, shape)
         _slopes_masked = np.ma.masked_array(_slopes, mask=mask)
 
         slopes_basis.append(_slopes_masked)
@@ -189,6 +206,19 @@ def slopes_from_pattern_interp(pattern, upsampling=4):
     slopes = block_reduce(slopes, upsampling)
 
     return slopes
+
+
+def get_coeff_name(i, indices_inverse=Zernike.standard_inverse):
+    n, m = indices_inverse(i)
+
+    return coeff_names.get((n, m), "Higher order"), (n, m)
+
+
+def print_coeffs(coeffs, indices_inverse=Zernike.standard_inverse):
+    for coeff, value in enumerate(coeffs):
+        name, (n, m) = get_coeff_name(coeff, indices_inverse)
+
+        print(f'({n: 2},{m: 2}) {value: f} {name}')
 
 
 if __name__ == "__main__":

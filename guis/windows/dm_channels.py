@@ -1,5 +1,3 @@
-import functools
-
 from PySide6.QtCore import QTimer, Slot
 
 from guis.kalao import colormaps
@@ -25,14 +23,22 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
         self.dm_number = dm_number
         self.backend = backend
 
+        loadUi('dm_channels.ui', self)
+        self.resize(400, 800)
+
         if dm_number == 2:
             self.associated_stream = config.Streams.TTM
             self.stream_info = config.StreamInfo.dm02disp
             self.data_unit = ' mrad'
             self.data_precision = 2
+            self.title_label.setText("Tip-Tilt Mirror Channels")
+            self.setWindowTitle("Tip-Tilt Mirror Channels - KalAO")
 
-        loadUi('dm_channels.ui', self)
-        self.resize(400, 800)
+            prefix = 'TTM_'
+            disp_name = config.Streams.TTM.value
+        else:
+            prefix = 'DM_'
+            disp_name = config.Streams.DM.value
 
         MinMaxMixin.init(self)
 
@@ -51,9 +57,21 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
             reset_button.clicked.connect(lambda checked=False, i=i: self.
                                          on_reset_button_clicked(checked, i))
 
+        for s in config.Streams:
+            if s.name.startswith(prefix):
+                name = s.name.removeprefix(prefix).replace('_', ' ').title()
+                value = s.value.removeprefix(disp_name)
+
+                if name == 'Ncpa':
+                    name = 'NCPA'
+
+                label = getattr(self, f'label_{value}_info')
+                label.setText(name)
+
         self.backend.dmdisp_updated.connect(self.data_updated)
 
         self.show()
+        self.setFixedSize(self.size())
 
     def data_updated(self, data):
         img = self.backend.consume_stream(data, f'dm{self.dm_number:02d}disp')
@@ -80,4 +98,8 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
 
     def closeEvent(self, event):
         self.timer.stop()
+        event.accept()
+
+    def showEvent(self, event):
+        self.timer.start()
         event.accept()

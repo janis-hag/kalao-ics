@@ -24,8 +24,8 @@ class AlignmentBackend(AbstractBackend):
 
         self.nuvu_stream = toolbox.open_stream_once(config.Streams.NUVU,
                                                     self.streams_and_fps_cache)
-        self.poke_stream = toolbox.open_stream_once("dm01disp09",
-                                                    self.streams_and_fps_cache)
+        self.poke_stream = toolbox.open_stream_once(
+            config.Streams.DM_REGISTRATION, self.streams_and_fps_cache)
         self.slopes_stream = toolbox.open_stream_once(
             config.Streams.SLOPES, self.streams_and_fps_cache)
 

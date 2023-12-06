@@ -10,7 +10,8 @@ from multiprocessing import Process, Queue
 from threading import Thread
 
 from kalao import services
-from kalao.plc import adc, filterwheel, flip_mirror, laser, shutter, tungsten
+from kalao.plc import (adc, calib_unit, filterwheel, flip_mirror, laser,
+                       shutter, tungsten)
 from kalao.sequencer import commands
 from kalao.utils import database
 
@@ -45,7 +46,7 @@ def handler(signal_received, frame):
 def init():
     init_list = [
         services.init,
-        #calib_unit.init,
+        calib_unit.init,
         flip_mirror.init,
         shutter.init,
         tungsten.init,
@@ -81,8 +82,9 @@ def init():
     # Terminate remaining ones
     for f, p in processes.items():
         if p.is_alive():
-            database.store('obs',
-                           {'sequencer_log': f'Terminating process for {f}'})
+            database.store('obs', {
+                'sequencer_log': f'[WARNING] Terminating process for {f}'
+            })
             processes_terminated[f] = p
 
             p.terminate()
@@ -93,8 +95,9 @@ def init():
     # Kill them if necessary
     for f, p in processes.items():
         if p.is_alive():
-            database.store('obs',
-                           {'sequencer_log': f'Killing process for {f}'})
+            database.store('obs', {
+                'sequencer_log': f'[WARNING] Killing process for {f}'
+            })
             processes_killed[f] = p
 
             p.kill()
@@ -111,10 +114,11 @@ def init():
 
     for f, ret in returns.items():
         if ret != ReturnCode.NOERROR:
-            database.store('obs', {
-                'sequencer_log':
-                    f'Initialisation failed for {f}, returned {ret}'
-            })
+            database.store(
+                'obs', {
+                    'sequencer_log':
+                        f'[ERROR] Initialisation failed for {f}, returned {ret}'
+                })
             processes_error[f] = p
 
     database.store(
@@ -333,7 +337,7 @@ def execute_command(command, seq_args):
             })
 
         traceback.print_tb(e.__traceback__)
-        print(f'{type(e)}: {e}')
+        print(f'{e.__class__.__name__}: {e}')
     else:
         database.store(
             'obs', {

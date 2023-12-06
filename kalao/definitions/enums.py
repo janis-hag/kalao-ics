@@ -74,6 +74,12 @@ class CameraServerStatus(StrEnum):
     ERROR = 'ERROR'
 
 
+class T120ServerStatus(StrEnum):
+    UP = 'UP'
+    DOWN = 'DOWN'
+    ERROR = 'ERROR'
+
+
 class FlipMirrorPosition(StrEnum):
     UP = 'UP'
     DOWN = 'DOWN'
@@ -114,6 +120,10 @@ class ReturnCode(IntFlag):
     CAMERA_OK = NOERROR
     CAMERA_SERVER_DOWN = auto()
     CAMERA_ERROR = auto()
+
+    T120_OK = NOERROR
+    T120_SERVER_DOWN = auto()
+    T120_ERROR = auto()
 
     DM_ON_FAILED = auto()
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1298</width>
-    <height>771</height>
+    <width>1064</width>
+    <height>836</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -141,30 +141,33 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
-       <widget class="QPushButton" name="dm_channels_button">
+       <widget class="QLabel" name="dm_label">
         <property name="text">
-         <string>Open DM channels window</string>
+         <string>Deformable Mirror</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="ttm_channels_button">
+       <widget class="QPushButton" name="dm_channels_button">
         <property name="text">
-         <string>Open TTM channels window</string>
+         <string>Channels window</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="dm_calibration_button">
         <property name="text">
-         <string>Open DM calibration window</string>
+         <string>Calibration window</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="ttm_calibration_button">
+       <widget class="QPushButton" name="dm_direct_control_button">
         <property name="text">
-         <string>Open TTM calibration window</string>
+         <string>Direct control</string>
         </property>
        </widget>
       </item>
@@ -180,6 +183,37 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="ttm_label">
+        <property name="text">
+         <string>Tip-Tilt Mirror</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ttm_channels_button">
+        <property name="text">
+         <string>Channels window</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ttm_calibration_button">
+        <property name="text">
+         <string>Calibration window</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ttm_direct_control_button">
+        <property name="text">
+         <string>Direct control</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

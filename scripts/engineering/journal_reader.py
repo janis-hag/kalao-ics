@@ -22,7 +22,9 @@ def run(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Display system journal.')
+    parser = argparse.ArgumentParser(
+        description=
+        'Display system journal with colors and a more practical format.')
     parser.add_argument('--no-filter', action="store_false", dest="filter",
                         help='Disable filtering')
     parser.add_argument('--raw', action="store_true", dest="type",
