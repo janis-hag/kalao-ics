@@ -360,7 +360,7 @@ class FITS:
 
 class Starfinder:
     centering_timeout = 30
-    focusing_step = 0.01
+    focusing_step = 10  # switched from mm to mum with new m2 drive 0.01
     focusing_pixels = 30
     focusing_dit = 20
     min_flux = 4096
@@ -480,7 +480,7 @@ class T120:
     rcmd = "ipcsrv"
     request_timeout = 120
     port_loop_timer = 17002
-    focus_offset_limit = 15
+    focus_offset_limit = 1500
     temperature_file = "/disks/synology/gls/data/services/CURRENT/temperature_telescope.rdb"
     temperature_file_timeout = 120
     dummy_telescope = False

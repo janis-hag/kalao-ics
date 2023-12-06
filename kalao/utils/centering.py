@@ -274,6 +274,7 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
     TODO normalise flux by integration time and adapt focusing_dit in case of saturation
     TODO handle abort of sequence
 
+    :param sequencer_arguments:
     :param focus_points: number of points to take for in the sequence
     :param focusing_dit: integration time for each image
     :return:

@@ -77,20 +77,20 @@ def send_focus_offset(focus_offset):
 
     #Verify offset value below limit differentiate between offsets and absolute values
     if type(focus_offset) is str:
-        if focus_offset[0] == '+' and float(focus_offset) > 2:
+        if focus_offset[0] == '+' and float(focus_offset) > 200:
             database.store('obs', {
                 't120_log':
                     f'Error set_focus value out of bounds: {focus_offset}'
             })
             return -1
-        elif focus_offset[0] == '-' and float(focus_offset) < -2:
+        elif focus_offset[0] == '-' and float(focus_offset) < -200:
             database.store('obs', {
                 't120_log':
                     f'Error set_focus value out of bounds: {focus_offset}'
             })
             return -1
 
-    if focus_offset > 30 or focus_offset < 20:
+    if focus_offset > 3500 or focus_offset < 2500:
         database.store('obs', {
             't120_log': f'Error set_focus value out of bounds: {focus_offset}'
         })
