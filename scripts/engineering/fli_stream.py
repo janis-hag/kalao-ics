@@ -19,6 +19,8 @@ from kalao.fli import FLI, camera
 
 from kalao.definitions.enums import CameraServerStatus
 
+import config
+
 fli_stream = toolbox.open_or_create_stream(config.Streams.FLI, (1024, 1024),
                                            np.uint16)
 
@@ -55,9 +57,9 @@ def run(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Opens stream with FLI camera images.')
+        description='Periodically put FLI camera images into fli_stream.')
     parser.add_argument('-d', action="store", dest="dit", type=float,
-                        default=0.001)
+                        default=0.001, help='Detector Integration Time')
 
     args = parser.parse_args()
 

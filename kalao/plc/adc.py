@@ -142,12 +142,10 @@ def set_angle(angle, beck=None):
     })
 
     # Motors are face to face, offset by same angle so they are counter-rotating
-    rotate(
-        1, position=config.ADC.max_disp_angle_1 + config.ADC.max_disp_offset +
-        angle/2, wait=False, beck=beck)
-    rotate(
-        2, position=config.ADC.max_disp_angle_2 - config.ADC.max_disp_offset +
-        angle/2, wait=False, beck=beck)
+    rotate(1, position=config.ADC.max_disp_angle_1 + angle/2, wait=False,
+           beck=beck)
+    rotate(2, position=config.ADC.max_disp_angle_2 + angle/2, wait=False,
+           beck=beck)
 
     sleep(2)
 
@@ -220,4 +218,9 @@ def init(adc_id, force_init=False, beck=None):
     """
     database.store('obs', {'adc_log': f'Initialising ADC {adc_id}'})
 
-    return core.motor_init(adc_node[adc_id], force_init, beck=beck)
+    init_ret = core.motor_init(adc_node[adc_id], force_init, beck=beck)
+
+    if f'adc_{adc_id}' in config.PLC.initial_pos:
+        rotate(adc_id, config.PLC.initial_pos[f'adc_{adc_id}'], beck=beck)
+
+    return init_ret

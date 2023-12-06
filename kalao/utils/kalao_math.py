@@ -10,6 +10,22 @@ def is_triangular(T):
     return T == n * (n+1) // 2
 
 
+def triangular_up_to(T):
+    list = []
+    n = 1
+
+    while True:
+        T_ = n * (n+1) // 2
+
+        if T_ > T:
+            break
+
+        n += 1
+        list.append(T_)
+
+    return list
+
+
 # yapf: disable
 def gaussian_2d_rotated(x, y, mu_x = 0, mu_y = 0, sigma_x = 1, sigma_y = 1, theta = 0, A = None, C = 0):
     if A is None:

@@ -32,18 +32,6 @@ kalao_path = Path(__file__).absolute().parent
 epsilon = 1e-12
 
 
-class PLC:
-    ip = "10.10.132.121"
-    port = 4840
-    disabled = []
-
-    # Calibration of the temperature sensors
-    temp_bench_air_offset = -4.5  # °C, 19 - 23.5
-    temp_bench_board_offset = -6.1  # °C, 19 - 25.1
-    temp_water_in_offset = -3.6  # °C, 19 - 22.7
-    temp_water_out_offset = -1.7  # °C, 19 - 20.3
-
-
 class IPPower:
     url = 'http://10.10.132.94/statusjsn.js'
 
@@ -60,11 +48,12 @@ class CalibUnit:
 
 
 class ADC:
-    # Angles on the ADC to have max vertical dispersion
-    max_disp_angle_1 = 314.556259  # °
-    max_disp_angle_2 = 45.4437409  # °
-
+    # Account for the clocking between the telescope and KalAO
     max_disp_offset = 0  # °
+
+    # Angles on the ADC to have max vertical dispersion
+    max_disp_angle_1 = 314.556259 + max_disp_offset  # °
+    max_disp_angle_2 = 45.4437409 - max_disp_offset  # °
 
     angle_threshold = 0.1  # °
     update_interval = 10  # s
@@ -239,6 +228,24 @@ class Tungsten:
     }
 
 
+class PLC:
+    ip = "10.10.132.121"
+    port = 4840
+    disabled = []
+
+    initial_pos = {
+        'calib_unit': Laser.position,
+        'adc_1': ADC.max_disp_angle_1 + 90,  # Zero dispersion
+        'adc_2': ADC.max_disp_angle_2 + 90,  # Zero dispersion
+    }
+
+    # Calibration of the temperature sensors
+    temp_bench_air_offset = -4.5  # °C, 19 - 23.5
+    temp_bench_board_offset = -6.1  # °C, 19 - 25.1
+    temp_water_in_offset = -3.6  # °C, 19 - 22.7
+    temp_water_out_offset = -1.7  # °C, 19 - 20.3
+
+
 class Calib:
     # yapf: disable
     default_flat_list = [
@@ -383,6 +390,8 @@ class GOP:
 
 
 class Systemd:
+    service_restart_wait = 15  # s
+
     services = {
         'nuvu': {
             'unit': "kalao_nuvu.service",
@@ -445,8 +454,6 @@ class Systemd:
             'restart': True
         },
     }
-
-    service_restart_wait = 15
 
 
 class Database:
@@ -590,6 +597,17 @@ class Streams(StrEnum):
     FLUX = 'shwfs_slopes_flux'
     DM = 'dm01disp'
     TTM = 'dm02disp'
+
+    DM_FLAT = 'dm01disp00'
+    DM_LOOP = 'dm01disp03'
+    DM_REGISTRATION = 'dm01disp08'
+    DM_NCPA = 'dm01disp09'
+    DM_TURBULENCES = 'dm01disp10'
+    DM_USER_CONTROLLED = 'dm01disp11'
+
+    TTM_LOOP = 'dm02disp03'
+    TTM_CENTERING = 'dm02disp04'
+    TTM_USER_CONTROLLED = 'dm02disp11'
 
 
 class StreamInfo:

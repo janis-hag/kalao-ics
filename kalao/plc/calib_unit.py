@@ -140,4 +140,9 @@ def init(force_init=True, beck=None):
 
     database.store('obs', {'calib_unit_log': 'Initialising calibration unit'})
 
-    return core.motor_init('Linear_Standa_8MT', force_init, beck=beck)
+    ret_init = core.motor_init('Linear_Standa_8MT', force_init, beck=beck)
+
+    if 'calib_unit' in config.PLC.initial_pos:
+        move(config.PLC.initial_pos['calib_unit'], beck=beck)
+
+    return ret_init

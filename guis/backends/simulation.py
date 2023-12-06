@@ -276,6 +276,14 @@ class MainBackend(FakeSHMFPSBackend):
     def reset_channel(self, dm_number, channel):
         print(f'Resetted channel {channel} of DM {dm_number} (virtually)')
 
+    ##### DM & TTM control
+
+    def set_dm_to(self, array):
+        print(f'Set DM to {array} (virtually)')
+
+    def set_ttm_to(self, array):
+        print(f'Set TTM to {array} (virtually)')
+
     ##### Logs
 
     def init_logs(self):

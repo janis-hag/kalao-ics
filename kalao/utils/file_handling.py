@@ -495,12 +495,12 @@ def _header_to_string(header_df, max_length=45, float_length=20):
         if length[col] > max_length:
             length[col] = max_length
 
-        formatters[col] = eval(
-            "lambda x: kalao_string.ellipsis(str(x).ljust(" +
-            str(length[col]) + ", ' '), " + str(max_length) + ")")
+            formatters[col] = lambda _, length=length[
+                col]: kalao_string.ellipsis(
+                    str(_).ljust(length, ' '), max_length)
 
-    float_format = eval("lambda x: f'{x:." + str(float_length - 1) +
-                        "g}'.ljust(" + str(length['value']) + ", ' ')")
+        float_format = lambda _: f'{_:.{float_length}f}'[0:float_length].ljust(
+            length['value'], ' ')
 
     pd.set_option("display.colheader_justify", "left")
     return header_df.fillna(

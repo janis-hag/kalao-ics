@@ -367,7 +367,7 @@ def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
 
 def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain,
                                       override_threshold=False,
-                                      output_stream="dm02disp",
+                                      input_stream=config.Streams.TTM,
                                       port=config.T120.port):
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
@@ -377,11 +377,11 @@ def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain,
     :return:
     """
 
-    ttm_stream = toolbox.open_stream_once(output_stream, shm_and_fps_cache)
+    ttm_stream = toolbox.open_stream_once(input_stream, shm_and_fps_cache)
 
     if ttm_stream is None:
         database.store('obs',
-                       {'ttm_log': f'[ERROR] {output_stream} is missing'})
+                       {'ttm_log': f'[ERROR] {input_stream} is missing'})
         return -1
 
     tip, tilt = ttm_stream.get_data(check=False)
@@ -410,14 +410,14 @@ def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain,
 
 
 def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
-                               output_stream='dm02disp04'):
+                               output_stream=config.Streams.TTM_CENTERING):
     """
     Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
 
     :param x_tip: number of pixels to tip
     :param y_tilt: number of pixels to tilt
     :param absolute: Flag to indicate that tip tilt values are in absolute radian. By default, set to False.
-    :param output_stream: name of the stream to use to set the offset. dm02disp04 by default.
+    :param output_stream: name of the stream to use to set the offset.
 
     :return:
     """
@@ -457,7 +457,7 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
 
 
 def tip_tilt_wfs_to_ttm(tt_threshold=config.AO.WFS_centering_slope_threshold,
-                        output_stream='dm02disp04'):
+                        output_stream=config.Streams.TTM_CENTERING):
     """
     Precise tip/tilt centering on the wavefront sensor.
 
@@ -725,7 +725,7 @@ def restart_wfs():
             return -1
 
 
-def reset_channel(dm_number, channel):
+def reset_channel(dm_number, channel, force_flat=False):
     log = 'ao_log'
     if dm_number == config.AO.DM_loop_number:
         log = 'dm_log'
@@ -736,8 +736,27 @@ def reset_channel(dm_number, channel):
         log: f'Resetting channel {channel:02d} of DM {dm_number:02d}'
     })
 
-    stream = toolbox.open_stream_once(f'dm{dm_number:02d}disp{channel:02d}',
-                                      shm_and_fps_cache)
+    stream = f'dm{dm_number:02d}disp{channel:02d}'
+
+    if stream == config.Streams.DM_LOOP:
+        dm_fps = toolbox.open_fps_once(f"mfilt-{dm_number}", shm_and_fps_cache)
+        if dm_fps is not None:
+            database.store('obs', {log: f'Zeroing loop {dm_number}'})
+
+            dm_fps.set_param('loopZERO', True)
+
+    elif stream == config.Streams.TTM_LOOP:
+        ttm_fps = toolbox.open_fps_once(f"mfilt-{dm_number}",
+                                        shm_and_fps_cache)
+        if ttm_fps is not None:
+            database.store('obs', {log: f'Zeroing loop {dm_number}'})
+
+            ttm_fps.set_param('loopZERO', True)
+
+    elif stream == config.Streams.DM_FLAT and not force_flat:
+        return 0
+
+    stream = toolbox.open_stream_once(stream, shm_and_fps_cache)
     toolbox.zero_stream(stream)
 
     return 0
@@ -754,12 +773,6 @@ def reset_dm(dm_number):
 
     for i in range(0, 12):
         reset_channel(dm_number, i)
-
-    dm_fps = toolbox.open_fps_once(f"mfilt-{dm_number}", shm_and_fps_cache)
-    if dm_fps is not None:
-        database.store('obs', {log: f'Zeroing loop {dm_number}'})
-
-        dm_fps.set_param('loopZERO', True)
 
     return 0
 

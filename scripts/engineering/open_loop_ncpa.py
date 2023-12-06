@@ -33,11 +33,13 @@ import config
 PEAK_VALUE = 0
 COEFF = 1
 
+from kalao.utils.terminal_colors import TerminalColors as TC
+
 
 def handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
-    ret = toolbox.zero_stream(r"dm01disp08")
+    ret = toolbox.zero_stream(config.Streams.DM_NCPA)
 
     if ret == 0:
         print('Resetted DM pattern')
@@ -83,8 +85,6 @@ def display_and_measure(dm_stream, zernike_coeffs, args, update_stream=False):
 
 
 def run(args):
-    toolbox.zero_stream(r"dm01disp08")
-
     # Search optimal dit
     while True:
         peak = take_and_measure(args)
@@ -112,29 +112,50 @@ def run(args):
     print(f'Setting DIT to {args.dit}')
 
     # Open DM stream
-    dm_stream = toolbox.open_stream_once("dm01disp08")
+    dm_stream = toolbox.open_stream_once(config.Streams.DM_NCPA)
     if dm_stream is None:
-        print(f'dm01disp08 stream missing')
+        print(f'{config.Streams.DM_NCPA} missing')
         exit()
 
     # Open slopes stream
-    slopes_stream = toolbox.open_stream_once("shwfs_slopes")
+    slopes_stream = toolbox.open_stream_once(config.Streams.SLOPES)
     if slopes_stream is None:
-        print(f'shwfs_slopes stream missing')
+        print(f'{config.Streams.SLOPES} missing')
         exit()
 
     zernike_coeffs = np.zeros(args.orders_to_correct)
+    start_coeff = 0
+    start_peak = peak
+    end_coeff = np.nan
+    end_peak = np.nan
+    highest_peak = peak
+
+    print('=========================================')
     print(
         f'Correcting {args.orders_to_correct} orders with {args.orders_to_skip} first orders skipped'
     )
+    print()
+    print(f'Current coefficients:')
 
     for i in range(args.iterations):
-        print('=========================================')
-        print(f'Iteration {i + 1}/{args.iterations}')
-
         for order in range(args.orders_to_skip, args.orders_to_correct):
+            zernike.print_coeffs(zernike_coeffs)
+            print(TC.CLEAR)
+
+            print(TC.CLEAR + f'Highest peak recorded: {highest_peak:.1f}')
+            print(TC.CLEAR)
+
             print(
-                f'Iteration {i + 1}/{args.iterations}   Optimising order {order}'
+                TC.CLEAR +
+                f'Result of previous optimization: Zernike amplitude {start_coeff:f} -> {end_coeff:f}     Peak {start_peak:.1f} -> {end_peak:.1f}'
+            )
+            print(TC.CLEAR)
+
+            coeff_name, (coeff_n, coeff_m) = zernike.get_coeff_name(order)
+
+            print(
+                TC.CLEAR +
+                f'Iteration {i + 1}/{args.iterations}   Optimising order ({coeff_n: 2},{coeff_m: 2}) {coeff_name}'
             )
 
             step = 0
@@ -144,14 +165,15 @@ def run(args):
             # Reset value to zero before starting search
             zernike_coeffs[order] = 0
 
-            peak_array[1][PEAK_VALUE] = display_and_measure(
+            start_peak = peak_array[1][PEAK_VALUE] = display_and_measure(
                 dm_stream, zernike_coeffs, args)
-            peak_array[1][COEFF] = zernike_coeffs[order]
+            start_coeff = peak_array[1][COEFF] = zernike_coeffs[order]
 
             print(
-                f'Step START     Increment       None     Zernike amplitude {peak_array[1][COEFF]: 11.8f}     Max flux: {peak_array[1][PEAK_VALUE]:.0f}'
+                TC.CLEAR +
+                f'Starting point                          Zernike amplitude {peak_array[1][COEFF]: 11.8f}     Peak: {peak_array[1][PEAK_VALUE]:.0f}'
             )
-            print(zernike_coeffs)
+            print(TC.CLEAR)
 
             while step < args.steps and zernike_coeff_incr > args.min_incr:
                 up = zernike_coeffs[order] + zernike_coeff_incr
@@ -180,27 +202,37 @@ def run(args):
                 peak_array[1][COEFF] = zernike_coeffs[order]
 
                 print(
-                    f'Step {step: 5d}     Increment {zernike_coeff_incr:.8f}     Zernike amplitude {peak_array[1][COEFF]: 11.8f}     Max flux: {peak_array[1][PEAK_VALUE]:.0f}'
+                    TC.UP + TC.CLEAR +
+                    f'Step {step: 5d}     Increment {zernike_coeff_incr:.8f}     Zernike amplitude {peak_array[1][COEFF]: 11.8f}     Peak: {peak_array[1][PEAK_VALUE]:.0f}'
                 )
 
                 step += 1
                 zernike_coeff_incr = zernike_coeff_incr / 2
 
-            peak_array[1][PEAK_VALUE] = display_and_measure(
+            end_peak = peak_array[1][PEAK_VALUE] = display_and_measure(
                 dm_stream, zernike_coeffs, args, update_stream=True)
-            peak_array[1][COEFF] = zernike_coeffs[order]
-            print(
-                f'Step RESUL     Increment       None     Zernike amplitude {peak_array[1][COEFF]: 11.8f}     Max flux: {peak_array[1][PEAK_VALUE]:.0f}'
-            )
-            print(zernike_coeffs)
+            end_coeff = peak_array[1][COEFF] = zernike_coeffs[order]
+
+            highest_peak = max(highest_peak, end_peak)
+
+            print(TC.UP * (8 + len(zernike_coeffs)), end=TC.CLEAR)
 
     time_name = kalao_time.get_isotime()
 
     peak = display_and_measure(dm_stream, zernike_coeffs, args,
                                update_stream=True)
 
-    print(f'Final peak value: {peak}')
-    print(f'Final coefficients: {zernike_coeffs}')
+    print(TC.UP + TC.CLEAR + f'Final coefficients:')
+    zernike.print_coeffs(zernike_coeffs)
+    print(TC.CLEAR)
+
+    print(TC.CLEAR + f'Highest peak recorded: {highest_peak:.1f}')
+    print(TC.CLEAR)
+
+    print(TC.CLEAR + f'Final peak value: {peak:.1f}')
+    print(TC.CLEAR)
+    print(TC.CLEAR)
+    print(TC.CLEAR)
 
     laser.set_intensity(config.WFS.laser_calib_intensity)
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
@@ -217,6 +249,8 @@ def run(args):
     slopes = []
 
     for i in range(args.slopes_avg):
+        time.sleep(0.01)
+        print(TC.UP + TC.CLEAR + f'Averaging slopes {i+1}/{args.slopes_avg}')
         slopes.append(slopes_stream.get_data(True))
 
     slopes = np.array(slopes)
@@ -225,7 +259,7 @@ def run(args):
     slopes = np.median(slopes, axis=0)
     fits.PrimaryHDU(slopes).writeto(folder / 'slopes_median.fits')
 
-    print(f'Done')
+    print(f'Results written')
 
 
 if __name__ == '__main__':
@@ -276,7 +310,7 @@ if __name__ == '__main__':
             'Warning, the number of orders to correct is not triangular. Correction will be asymmetric.'
         )
         print(
-            'Recommended values are 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120'
+            f'Recommended values are {", ".join(str(_) for _ in kalao_math.triangular_up_to(121))}'
         )
 
     if not kalao_math.is_triangular(args.orders_to_skip):
@@ -284,7 +318,7 @@ if __name__ == '__main__':
             'Warning, the number of orders to skip is not triangular. Correction will be asymmetric.'
         )
         print(
-            'Recommended values are 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120'
+            f'Recommended values are {", ".join(str(_) for _ in kalao_math.triangular_up_to(121))}'
         )
 
     if camera.check_server_status() != CameraServerStatus.UP:

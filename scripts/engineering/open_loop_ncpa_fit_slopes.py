@@ -5,7 +5,6 @@ import numpy as np
 
 from astropy.io import fits
 
-from kalao.cacao import toolbox
 from kalao.utils import kalao_math, kalao_tools, zernike
 
 import matplotlib.pyplot as plt
@@ -34,72 +33,41 @@ def run(args):
     mask_additional = kalao_tools.generate_slopes_mask_from_subaps(
         additional_masked_subaps, slopes.shape)
 
-    slopes_masked = np.ma.masked_array(slopes, mask=mask | mask_additional)
+    slopes_coeffs = zernike.fit_slopes(slopes, args.orders_to_fit,
+                                       mask | mask_additional)
 
-    # To remove tip and tilt (done at the end too)
-    # slopes_masked[0:11,0:11] -= slopes_masked[0:11,0:11].mean()
-    # slopes_masked[11:22, 0:11] -= slopes_masked[11:22, 0:11].mean()
+    resulting_slopes = zernike.generate_slopes(slopes_coeffs, (11, 11))
 
-    # Generate the slopes basis
-    slopes_basis = []
-    for i in range(args.orders_to_fit):
-        zernike_coeffs = np.zeros((args.orders_to_fit, ))
-        zernike_coeffs[i] = 1
-
-        slopes_basis.append(
-            zernike.generate_slopes(zernike_coeffs,
-                                    (slopes.shape[0], slopes.shape[1] // 2)))
-
-    slopes_basis_compressed = []
-    for i in range(args.orders_to_fit):
-        slopes_basis_compressed.append(
-            np.ma.masked_array(slopes_basis[i],
-                               mask=mask | mask_additional).compressed())
-    slopes_basis_compressed = np.array(slopes_basis_compressed)
-
-    # Drop piston term (as it's all 0s)
-    slopes_basis_compressed = np.array(slopes_basis_compressed[1:])
-
-    slopes_coeffs, residuals, rank, s = np.linalg.lstsq(
-        slopes_basis_compressed.T, slopes_masked.compressed())
-
-    # Put back piston term
-    slopes_coeffs = np.concatenate([[0], slopes_coeffs])
-
-    resulting_slopes = np.zeros(slopes.shape)
-    for i in range(len(slopes_coeffs)):
-        resulting_slopes += slopes_coeffs[i] * slopes_basis[i]
-
-    # Remove tip and tilt
+    # Remove piston, tip and tilt
+    slopes_coeffs[0] = 0
     slopes_coeffs[1] = 0
     slopes_coeffs[2] = 0
 
-    resulting_slopes_no_tt = np.zeros(slopes.shape)
-    for i in range(len(slopes_coeffs)):
-        resulting_slopes_no_tt += slopes_coeffs[i] * slopes_basis[i]
+    resulting_slopes_no_tt = zernike.generate_slopes(slopes_coeffs, (11, 11))
 
-    resulting_slopes_no_tt = np.ma.masked_array(resulting_slopes_no_tt,
-                                                mask=mask, fill_value=0)
-
-    print(f'Slopes coefficients : {slopes_coeffs}')
+    print(f'Slopes coefficients :')
+    zernike.print_coeffs(slopes_coeffs)
 
     # Save
     np.savetxt(args.ncpa_folder / 'slopes_fitted_coeffs.txt', slopes_coeffs)
-    fits.PrimaryHDU(resulting_slopes_no_tt.filled()).writeto(
+    fits.PrimaryHDU(resulting_slopes_no_tt).writeto(
         args.ncpa_folder / 'slopes_fitted.fits', overwrite=True)
+
+    print(f'Results written')
 
     # Display everything
 
-    extr = np.max(np.abs(slopes))
-    vmin = -extr
-    vmax = extr
+    extrmum = np.max(np.abs(slopes))
+    vmin = -extrmum
+    vmax = extrmum
 
     plt.figure()
     plt.imshow(slopes, vmin=vmin, vmax=vmax, cmap='RdBu_r')
     plt.title("Original slopes")
 
     plt.figure()
-    plt.imshow(slopes_masked, vmin=vmin, vmax=vmax, cmap='RdBu_r')
+    plt.imshow(np.ma.masked_array(slopes, mask=mask | mask_additional),
+               vmin=vmin, vmax=vmax, cmap='RdBu_r')
     plt.title("Original slopes masked")
 
     plt.figure()
@@ -122,7 +90,8 @@ def run(args):
     plt.title("Resulting slopes (as original)")
 
     plt.figure()
-    plt.imshow(resulting_slopes_no_tt, vmin=vmin, vmax=vmax, cmap='RdBu_r')
+    plt.imshow(np.ma.masked_array(resulting_slopes_no_tt, mask=mask),
+               vmin=vmin, vmax=vmax, cmap='RdBu_r')
     plt.title("Resulting slopes (tip and tilt removed)")
 
     plt.show()
@@ -148,7 +117,7 @@ if __name__ == '__main__':
             '[WARNING] The number of orders to fit is not triangular. Correction will be asymmetric'
         )
         print(
-            'Recommended values are 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120'
+            f'Recommended values are {", ".join(str(_) for _ in kalao_math.triangular_up_to(121))}'
         )
 
     run(args)
