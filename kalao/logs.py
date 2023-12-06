@@ -120,9 +120,9 @@ def process_entry(entry, output_type):
                 else:
                     return None
 
-            if '[ERROR]' in message or 'Failed' in message or 'Traceback' in message:
+            if 'ERROR' in message or 'Failed' in message or 'Traceback' in message:
                 type = LogType.ERROR
-            elif '[WARNING]' in message:
+            elif 'WARNING' in message:
                 type = LogType.WARNING
 
             if type == LogType.ERROR:

@@ -221,6 +221,20 @@ class MainBackend(SHMFPSBackend):
     def reset_channel(self, dm_number, channel):
         aocontrol.reset_channel(dm_number, channel)
 
+    ##### DM & TTM control
+
+    def set_dm_to(self, array):
+        stream = toolbox.open_stream_once(config.Streams.DM_USER_CONTROLLED,
+                                          self.streams_and_fps_cache)
+        if stream is not None:
+            stream.set_data(array, True)
+
+    def set_ttm_to(self, array):
+        stream = toolbox.open_stream_once(config.Streams.TTM_USER_CONTROLLED,
+                                          self.streams_and_fps_cache)
+        if stream is not None:
+            stream.set_data(array, True)
+
     ##### Logs
 
     def init_logs(self):

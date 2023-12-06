@@ -6,6 +6,8 @@ from guis.kalao.mixins import BackendActionMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 from guis.windows.dm_channels import DMChannelsWindow
+from guis.windows.dm_direct_control import DMDirectControl
+from guis.windows.ttm_direct_control import TTMDirectControl
 
 from kalao.definitions.enums import FlipMirrorPosition, ShutterState
 
@@ -13,6 +15,13 @@ import config
 
 
 class EngineeringWidget(KalAOWidget, BackendActionMixin):
+    dm_channels = None
+    ttm_channels = None
+    dm_calibration = None
+    ttm_calibration = None
+    dm_direct_control = None
+    ttm_direct_control = None
+
     def __init__(self, backend, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -56,8 +65,6 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
             return f'{name} ({start_str} – {end_str})'
 
     def data_updated(self, data):
-        print(data['plc'])
-
         shutter_state = self.backend.consume_plc(data, 'shutter_state')
         if shutter_state is not None:
             self.shutter_combobox.setCurrentIndex(
@@ -139,18 +146,52 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
 
     @Slot(bool)
     def on_dm_channels_button_clicked(self, checked):
-        self.dm_channels = DMChannelsWindow(self.backend, 1)
+        if self.dm_channels is not None:
+            self.dm_channels.show()
+            self.dm_channels.activateWindow()
+        else:
+            self.dm_channels = DMChannelsWindow(self.backend, 1)
 
     @Slot(bool)
     def on_ttm_channels_button_clicked(self, checked):
-        self.ttm_channels = DMChannelsWindow(self.backend, 2)
+        if self.ttm_channels is not None:
+            self.ttm_channels.show()
+            self.ttm_channels.activateWindow()
+        else:
+            self.ttm_channels = DMChannelsWindow(self.backend, 2)
 
     @Slot(bool)
     def on_dm_calibration_button_clicked(self, checked):
-        from guis.windows.calibration import CalibrationWindow
-        self.dm_calibration = CalibrationWindow('dm', 1, (11, 22), (12, 12))
+        if self.dm_calibration is not None:
+            self.dm_calibration.show()
+            self.dm_calibration.activateWindow()
+        else:
+            from guis.windows.calibration import CalibrationWindow
+            self.dm_calibration = CalibrationWindow('dm', 1, (11, 22),
+                                                    (12, 12))
 
     @Slot(bool)
     def on_ttm_calibration_button_clicked(self, checked):
-        from guis.windows.calibration import CalibrationWindow
-        self.ttm_calibration = CalibrationWindow('ttm', 2, (12, 12), (1, 2))
+        if self.ttm_calibration is not None:
+            self.ttm_calibration.show()
+            self.ttm_calibration.activateWindow()
+        else:
+            from guis.windows.calibration import CalibrationWindow
+            self.ttm_calibration = CalibrationWindow('ttm', 2, (12, 12),
+                                                     (1, 2))
+
+    @Slot(bool)
+    def on_dm_direct_control_button_clicked(self, checked):
+        if self.dm_direct_control is not None:
+            self.dm_direct_control.show()
+            self.dm_direct_control.activateWindow()
+        else:
+            self.dm_direct_control = DMDirectControl(self.backend)
+
+    @Slot(bool)
+    def on_ttm_direct_control_button_clicked(self, checked):
+        if self.ttm_direct_control is not None:
+            self.ttm_direct_control.show()
+            self.ttm_direct_control.activateWindow()
+        else:
+            self.ttm_direct_control = TTMDirectControl(self.backend)

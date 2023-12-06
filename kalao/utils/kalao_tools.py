@@ -3,8 +3,6 @@ import pandas as pd
 
 from astropy.nddata import block_reduce
 
-from kalao.utils import kalao_tools
-
 
 def get_roi_and_subapertures(data):
     roi = None
@@ -120,12 +118,12 @@ def get_wfs_flux_map(upsampling=4):
     pupil = np.logical_and(circle <= radius_out**2, circle >= radius_in**2)
     pupil = block_reduce(pupil, upsampling, np.mean)
 
-    _, subapertures = kalao_tools.get_roi_and_subapertures(pupil)
+    _, subapertures = get_roi_and_subapertures(pupil)
 
     flux = np.zeros((11, 11))
 
     for i, subap in enumerate(subapertures):
-        j, k = kalao_tools.get_subaperture_2d(i)
+        j, k = get_subaperture_2d(i)
 
         flux[j, k] = np.mean(subap)
 
@@ -151,7 +149,7 @@ def subap_at(x, y):
         i = (y-5) // 5
         j = (x-5) // 5
 
-        return kalao_tools.get_subaperture_1d(i, j)
+        return get_subaperture_1d(i, j)
 
 
 def generate_slopes_mask_from_subaps(masked_subaps, shape=(11, 22)):

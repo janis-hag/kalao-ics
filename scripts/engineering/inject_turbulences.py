@@ -13,6 +13,8 @@ import argparse
 import subprocess
 from subprocess import PIPE, STDOUT
 
+import config
+
 
 def run(args):
     input = f"""
@@ -41,7 +43,8 @@ if __name__ == '__main__':
     parser.add_argument('-r', action="store", dest="rate", required=True,
                         type=int, help='Framerate of the turbulences')
     parser.add_argument(
-        '-s', action="store", dest="stream", default='dm01disp04', type=str,
+        '-s', action="store", dest="stream",
+        default=config.Streams.DM_TURBULENCES, type=str,
         help='Stream in which the turbulences will be injected')
 
     args = parser.parse_args()
