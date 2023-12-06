@@ -195,8 +195,10 @@ def update_header(image_path, sequencer_arguments=None):
         header_df = _sort_header(header_df)
         _header_to_fits_header(header_df, fits_header)
 
-        wcs = starfinder.generate_wcs()
-        fits_header.update(wcs.to_header())
+        if obs_type in config.FITS.on_sky_types:
+            wcs = starfinder.generate_wcs()
+            fits_header.update(wcs.to_header())
+
         hdul.verify('silentfix+warn')
 
         # Write changes back to original.fits
@@ -262,6 +264,9 @@ def _header_from_fits(file):
     header_dict = {}
 
     for keyword in fits_header.keys():
+        if keyword == 'COMMENT':
+            continue
+
         header_dict[keyword] = {
             'value': fits_header[keyword],
             'comment': fits_header.comments[keyword],
