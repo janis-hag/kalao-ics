@@ -465,7 +465,12 @@ class T120:
     altaz_timeout = 10
     focus_timeout = 20
     ip = "10.10.132.102"
-    port = 10002
+    http_port = 10002
+    host = "glslogin1.ls.eso.org"
+    port = 17001
+    semkey = 4000
+    symb_name = "inter"
+    rcmd = "ipcsrv"
     request_timeout = 120
     port_loop_timer = 17002
     focus_offset_limit = 15
