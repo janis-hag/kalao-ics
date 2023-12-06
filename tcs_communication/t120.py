@@ -23,13 +23,14 @@ from kalao.utils import database, kalao_time
 import requests
 import requests.exceptions
 
+from tcs_communication.pyipc import pymod_libipc as ipc
+
 from kalao.definitions.enums import ReturnCode, T120ServerStatus
 
 import config
 
 
-def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec,
-                      port=config.T120.port):
+def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec):
     """
     Send altitude azimuth offset to T120 telescope server.
 
@@ -40,27 +41,26 @@ def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec,
 
     host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
 
-    socketId = ipc.init_remote_client(host, config.T120.symb_name,
-                                      config.T120.rcmd, port,
-                                      config.T120.semkey)
-
     #print ("ipc.init_remote_client, returns:",socketId)
-    if (socketId <= 0):
-        database.store('obs', {'t120_log': 'Error connecting to T120'})
-        return -1
+    # if (socketId <= 0):
+    #     database.store('obs', {'t120_log': 'Error connecting to T120'})
+    #     return -1
 
     database.store('obs', {
         't120_log': f'Sending {delta_az_arcsec} and {delta_alt_arcsec} offsets'
     })
 
-    offset_cmd = '@offset ' + str(delta_az_arcsec) + ' ' + str(delta_alt_arcsec)
-    ipc.send_cmd(offset_cmd, config.T120.connection_timeout,
-                 config.T120.altaz_timeout)
+    params = {'az_arcsec': delta_az_arcsec, 'alt_arcsec': delta_alt_arcsec}
+
+    rValue, resp = _send_request('tracking/offset', params)
+
+    # resp.json() has the format:
+    # {'b_alarmed': False, 's_currentStatus': 'Offset correctly sent'}
 
     # Offsets are corrections to pointing error, not actual change of the center of the field
     # _update_db_ra_dec_offsets(delta_alt_arcsec, delta_az_arcsec)
 
-    return socketId
+    return rValue, resp
 
 
 def send_focus_offset(focus_offset):
@@ -98,16 +98,17 @@ def send_focus_offset(focus_offset):
 
     database.store('obs', {'t120_log': f'Sending focus {focus_offset}'})
 
-    get_focus_value()
-
     new_position = get_focus_value() + focus_offset
 
-    set_focus_path = '/m2/focus/'
-    data = {"position": 32000}
+    #params = {"position": 32000}
+    params = {"position": new_position}
 
-    _send_request()
+    rValue, resp = _send_request('/m2/focus/', params)
 
-    return socketId
+    # print(resp.json())
+    # {'b_alarmed': False, 'b_busy': True, 'b_enabled': False, 's_currentStatus': 'Wait for M2 Power supply stabilizated'}
+
+    return rValue, resp
 
 
 def update_fo_delta(focus_offset):
@@ -137,41 +138,22 @@ def update_fo_delta(focus_offset):
 
 
 def get_focus_value():
+    '/m2/status'
 
-    host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
-
-    socketId = ipc.init_remote_client(host, config.T120.symb_name,
-                                      config.T120.rcmd, config.T120.port,
-                                      config.T120.semkey)
-
-    print("wait")
-    status = ipc.shm_wait(config.T120.connection_timeout)
-    print("ipc.shm_wait returns:", status)
-    if (status < 0):
-        ipc.shm_free()
-        return -1
-
-    print("ini_shm_kw")
-    ipc.ini_shm_kw()
-
-    print("put_shm_kw 1")
-    ipc.put_shm_kw("COMMAND", "@kal_getm2")
-
-    ipc.shm_ack()
-    ipc.shm_wack(config.T120.focus_timeout)
-
-    returnList = ipc.get_shm_kw("te.m2z")
-
-    ipc.shm_free()
+    rValue, resp = _send_request('/m2/status/')
 
     database.store('obs',
-                   {'t120_log': f'Received focus value {returnList[1]}'})
+                   {'t120_log': f'Received focus value {resp.json()["z"]}'})
 
-    return float(returnList[1])
+    position = resp.json()['z']
+    # Position format: 31997.12426757813
+
+    return rValue, position
 
 
 def request_autofocus():
-    #host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
+
+    host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
 
     socketId = ipc.init_remote_client(host, config.T120.symb_name,
                                       config.T120.rcmd, config.T120.port,
@@ -239,8 +221,9 @@ def get_tube_temp():
                        header=0).iloc[-1]
 
 
-def _send_request(request_type, params={}):
+def _send_request(request_path, params={}):
     # Clean params
+
     for key, value in list(params.items()):
         if value is None:
             del params[key]
@@ -250,19 +233,26 @@ def _send_request(request_type, params={}):
 
     else:
         if config.T120.dummy_telescope:
-            if request_type == 'acquire':
+            if request_path == 'acquire':
                 time.sleep(2)
 
             return ReturnCode.T120_OK, {}
 
         else:
 
-            url = f'http://{config.T120.ip}:{config.T120.port}/{request_type}'
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": "ETCS_API_TOKEN_2023"
+            }
+
+            url = f'http://{config.T120.ip}:{config.T120.http_port}/{request_path}'
             if params == {}:
-                req = requests.get(url, timeout=config.FLI.request_timeout)
+                req = requests.get(url, timeout=config.T120.request_timeout,
+                                   headers=headers)
             else:
                 req = requests.post(url, json=params,
-                                    timeout=config.FLI.request_timeout)
+                                    timeout=config.T120.request_timeout,
+                                    headers=headers)
 
             try:
                 data = json.loads(req.text)
@@ -270,7 +260,7 @@ def _send_request(request_type, params={}):
                 data = req.text
 
             if req.status_code == 200:
-                return ReturnCode.CAMERA_OK, data
+                return ReturnCode.T120_OK, data
             else:
                 text = ''
 
@@ -286,7 +276,7 @@ def _send_request(request_type, params={}):
                             f'[ERROR] Camera server answered with an Error {req.status_code}.{text}'
                     })
 
-                return ReturnCode.CAMERA_ERROR, data
+                return ReturnCode.T120_ERROR, data
 
 
 def check_server_status():
