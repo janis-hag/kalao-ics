@@ -7,6 +7,8 @@ from guis.kalao.mixins import BackendActionMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
+import config
+
 laws = {
     'Linear':
         lambda start, end: np.linspace(1, 0, end - start),
@@ -70,7 +72,7 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin):
         for s in laws.keys():
             self.law_combobox.addItem(s)
 
-        backend.streams_updated.connect(self.data_updated)
+        backend.data_updated.connect(self.data_updated)
 
     def data_updated(self, data):
         # DM Loop
@@ -117,7 +119,7 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin):
 
         # Modal gains
 
-        img = self.backend.consume_stream(data, 'aol1_mgainfact')
+        img = self.backend.consume_stream(data, config.Streams.MODALGAINS)
 
         if img is not None:
             self.display_modalgains(img)

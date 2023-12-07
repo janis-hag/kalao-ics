@@ -91,7 +91,17 @@ def is_active(unit, system=False):
         return False
 
 
-def check_all_status():
+def get_all_status():
+    status_dict = {}
+    for service in config.Systemd.services.values():
+        unit = service['unit']
+
+        status_dict[unit] = get_status(unit)
+
+    return status_dict
+
+
+def check_all_active():
     status_dict = {}
 
     for service in config.Systemd.services.values():
@@ -220,7 +230,7 @@ def init():
 
     time.sleep(config.Systemd.service_restart_wait)
 
-    all_statuses = check_all_status()
+    all_statuses = check_all_active()
 
     if not all(all_statuses.values()):
         database.store('obs', {

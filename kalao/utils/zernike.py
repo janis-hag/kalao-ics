@@ -36,12 +36,14 @@ class Zernike:
                 -m * phi)
 
     def N(n, m, norm=None):
-        if norm == 'orthonormal':
+        # Coeffs will be wavefront RMS
+        if norm == 'orthonormal' or norm == 'RMS':
             if m == 0:
                 return np.sqrt(n + 1)
             else:
                 return np.sqrt(2*n + 2)
 
+        # Coeffs will be wavefront Peak-to-Peak
         else:
             return 1
 
@@ -214,11 +216,11 @@ def get_coeff_name(i, indices_inverse=Zernike.standard_inverse):
     return coeff_names.get((n, m), "Higher order"), (n, m)
 
 
-def print_coeffs(coeffs, indices_inverse=Zernike.standard_inverse):
+def print_coeffs(coeffs, unit='', indices_inverse=Zernike.standard_inverse):
     for coeff, value in enumerate(coeffs):
         name, (n, m) = get_coeff_name(coeff, indices_inverse)
 
-        print(f'({n: 2},{m: 2}) {value: f} {name}')
+        print(f'({n: 2},{m: 2}) {value: f}{unit} {name}')
 
 
 if __name__ == "__main__":

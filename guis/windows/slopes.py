@@ -1,3 +1,5 @@
+import numpy as np
+
 from PySide6.QtGui import Qt
 
 from guis.kalao import colormaps
@@ -30,10 +32,14 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
 
-        self.slopes_view.hovered.connect(self.hover_event)
-        backend.streams_updated.connect(self.data_updated)
+        self.tip_label.updateText(tip=np.nan, unit=self.data_unit)
+        self.tilt_label.updateText(tilt=np.nan, unit=self.data_unit)
+        self.residual_label.updateText(residual=np.nan, unit=self.data_unit)
 
-    def data_updated(self, data):
+        self.slopes_view.hovered.connect(self.hover_event)
+        backend.streams_updated.connect(self.streams_updated)
+
+    def streams_updated(self, data):
         img = self.backend.consume_stream(data, config.Streams.SLOPES)
 
         if img is not None:

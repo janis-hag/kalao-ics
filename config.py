@@ -52,7 +52,7 @@ class ADC:
     max_disp_offset = 0  # °
 
     # Angles on the ADC to have max vertical dispersion
-    max_disp_angle_1 = 314.556259 + max_disp_offset  # °
+    max_disp_angle_1 = -45.4437409 + max_disp_offset  # °
     max_disp_angle_2 = 45.4437409 - max_disp_offset  # °
 
     angle_threshold = 0.1  # °
@@ -602,6 +602,7 @@ class Streams(StrEnum):
     FLUX = 'shwfs_slopes_flux'
     DM = 'dm01disp'
     TTM = 'dm02disp'
+    MODALGAINS = 'aol1_mgainfact'
 
     DM_FLAT = 'dm01disp00'
     DM_LOOP = 'dm01disp03'

@@ -2,6 +2,7 @@ import time
 
 from PySide6.QtCore import Slot
 from PySide6.QtGui import Qt
+from PySide6.QtWidgets import QCheckBox
 
 from guis.kalao.definitions import Color, Logo
 from guis.kalao.ui_loader import loadUi
@@ -17,6 +18,8 @@ from guis.windows.slopes import SlopesWidget
 from guis.windows.ttm import TTMWidget
 from guis.windows.wfs import WFSWidget
 
+import config
+
 
 class MainWindow(KalAOMainWindow):
     previous_update_time = 0
@@ -27,19 +30,19 @@ class MainWindow(KalAOMainWindow):
     TAB_ENGINEERING = 3
     TAB_LOGS = 4
 
-    def __init__(self, backends, backend, timer_images, parent=None):
+    def __init__(self, backends, backend, timer_streams, parent=None):
         super().__init__(parent)
 
         self.backends = backends
         self.backend = backend
-        self.timer_images = timer_images
+        self.timer_streams = timer_streams
 
         loadUi('main.ui', self)
 
         #self.showMaximized()
 
         self.move(100, 0)
-        self.resize(1200, 1050)
+        self.resize(1200, 900)
         self.show()
 
         self.logo_label.load(str(Logo.svg))
@@ -49,6 +52,12 @@ class MainWindow(KalAOMainWindow):
             "Streams refresh rate : {fps:.1f} FPS | Data gathering: {duration:.3f} s"
         )
         self.statusBar().addPermanentWidget(self.fps_label)
+
+        self.expert_checkbox = QCheckBox('Expert Mode')
+        self.expert_checkbox.setCheckState(Qt.Checked)
+        self.expert_checkbox.stateChanged.connect(
+            self.on_expert_checkbox_stateChanged)
+        self.statusBar().addPermanentWidget(self.expert_checkbox)
 
         self.wfs = WFSWidget(backend, parent=self)
         self.fli = FLIWidget(backend, parent=self)
@@ -91,13 +100,19 @@ class MainWindow(KalAOMainWindow):
         self.dm.hovered.connect(self.info_point)
         self.plots.hovered.connect(self.info_point)
 
+        self.autogain_indicator.setFixedSize(30, 30)
+        self.dm_loop_indicator.setFixedSize(30, 30)
+        self.ttm_loop_indicator.setFixedSize(30, 30)
+
         self.logs_initial_tab_color = self.tabwidget.tabBar().tabTextColor(
             self.TAB_LOGS)
         self.logs.logged.connect(self.on_logs_logged)
 
         self.tabwidget.setCurrentIndex(self.TAB_MAIN)
+        self.on_expert_checkbox_stateChanged(self.expert_checkbox.checkState())
 
-        backend.streams_updated.connect(self.data_updated)
+        backend.streams_updated.connect(self.streams_updated)
+        backend.data_updated.connect(self.data_updated)
 
         self.on_tabwidget_currentChanged(self.tabwidget.currentIndex())
 
@@ -123,10 +138,10 @@ class MainWindow(KalAOMainWindow):
     @Slot(int)
     def on_freeze_checkbox_stateChanged(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.timer_images.stop()
+            self.timer_streams.stop()
             self.fps_label.setText('')
         else:
-            self.timer_images.start()
+            self.timer_streams.start()
 
     def info_point(self, string):
         if string:
@@ -138,20 +153,42 @@ class MainWindow(KalAOMainWindow):
     def on_tabwidget_currentChanged(self, i):
         # Main tab
         if i == self.TAB_MAIN:
-            self.timer_images.start()
+            self.timer_streams.start()
 
         # Logs tab
         elif i == self.TAB_LOGS:
             self.logs.reset_scrollbars()
 
         if i != self.TAB_MAIN:
-            self.timer_images.stop()
+            self.timer_streams.stop()
             self.fps_label.setText('')
 
-    def data_updated(self, data):
+    def on_expert_checkbox_stateChanged(self, state):
+        if Qt.CheckState(state) == Qt.Checked:
+            self.engineering.setEnabled(True)
+            self.loop_controls.setEnabled(True)
+        else:
+            self.engineering.setEnabled(False)
+            self.loop_controls.setEnabled(False)
+
+    def streams_updated(self, data):
         now = time.monotonic()
 
         self.fps_label.updateText(fps=(1 / (now - self.previous_update_time)),
                                   duration=data['metadata']['duration'])
 
         self.previous_update_time = now
+
+    def data_updated(self, data):
+        autogain_on = self.backend.consume_param(data, config.FPS.NUVU,
+                                                 'autogain_on')
+        if autogain_on is not None:
+            self.autogain_indicator.setStatus(autogain_on == 1)
+
+        loopON = self.backend.consume_param(data, 'mfilt-1', 'loopON')
+        if loopON is not None:
+            self.dm_loop_indicator.setStatus(loopON == 1)
+
+        loopON = self.backend.consume_param(data, 'mfilt-2', 'loopON')
+        if loopON is not None:
+            self.ttm_loop_indicator.setStatus(loopON == 1)

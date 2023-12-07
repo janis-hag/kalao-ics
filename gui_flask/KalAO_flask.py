@@ -83,7 +83,7 @@ def create_app():
             k_toolbox.open_stream_once(config.Streams.SLOPES, shm_cache)
             k_toolbox.open_stream_once(config.Streams.DM, shm_cache)
             k_toolbox.open_stream_once(config.Streams.FLUX, shm_cache)
-            k_toolbox.open_stream_once('aol1_mgainfact', shm_cache)
+            k_toolbox.open_stream_once(config.Streams.MODALGAINS, shm_cache)
 
             app.config['shm_cache'] = shm_cache
 

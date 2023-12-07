@@ -26,7 +26,7 @@ def move_to_tungsten_position():
     :return: position of the calibration unit
     """
 
-    new_position = move(position=config.Tungsten.position)
+    new_position = move(config.Tungsten.position)
 
     if abs(new_position - config.Tungsten.position) < 0.1:
         return new_position
@@ -46,7 +46,7 @@ def move_to_laser_position():
     :return: position of the calibration unit
     """
 
-    new_position = move(position=config.Laser.position)
+    new_position = move(config.Laser.position)
 
     if abs(new_position - config.Laser.position) < 0.1:
         return new_position
@@ -86,7 +86,7 @@ def move_px(pixel, absolute=False):
     return new_position
 
 
-def move(position=23.36, velocity=0.1, wait=True, beck=None):
+def move(position, velocity=0.1, wait=True, beck=None):
     """
     Move the calibration unit to position
     """

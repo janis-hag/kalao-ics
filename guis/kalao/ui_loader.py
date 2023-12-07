@@ -4,7 +4,8 @@ from PySide6.QtCore import QMetaObject
 from PySide6.QtUiTools import QUiLoader
 
 from guis.kalao.widgets import (KalAOChart, KalAODateTimeEdit,
-                                KalAOGraphicsView, KalAOLabel, KalAOSvgWidget)
+                                KalAOGraphicsView, KalAOLabel,
+                                KalAOStatusIndicator, KalAOSvgWidget)
 
 uipath = Path(__file__).absolute().parent.parent / 'ui'
 
@@ -20,6 +21,7 @@ class UiLoader(QUiLoader):
         self.registerCustomWidget(KalAOChart)
         self.registerCustomWidget(KalAOSvgWidget)
         self.registerCustomWidget(KalAODateTimeEdit)
+        self.registerCustomWidget(KalAOStatusIndicator)
 
     def createWidget(self, class_name, parent=None, name=''):
         if parent is None and self.baseinstance:

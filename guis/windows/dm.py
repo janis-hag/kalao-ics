@@ -13,7 +13,7 @@ import config
 class DMWidget(KalAOWidget, MinMaxMixin, HoverMixin):
     associated_stream = config.Streams.DM
     stream_info = config.StreamInfo.dm01disp
-    data_unit = ' um'
+    data_unit = ' µm'
     data_precision = 3
 
     axis_unit = ' px'
@@ -36,10 +36,15 @@ class DMWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
 
-        self.dm_view.hovered.connect(self.hover_event)
-        backend.streams_updated.connect(self.data_updated)
+        self.stroke_raw_label.updateText(stroke_raw=np.nan,
+                                         unit=self.data_unit)
+        self.stroke_effective_label.updateText(stroke_effective=np.nan,
+                                               unit=self.data_unit)
 
-    def data_updated(self, data):
+        self.dm_view.hovered.connect(self.hover_event)
+        backend.streams_updated.connect(self.streams_updated)
+
+    def streams_updated(self, data):
         img = self.backend.consume_stream(data, config.Streams.DM)
 
         max_stroke = self.backend.consume_param(data, config.FPS.BMC,
@@ -67,10 +72,10 @@ class DMWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.data_unit = ' um'
+            self.data_unit = ' µm'
             self.data_scaling = 2
         else:
-            self.data_unit = ' um'
+            self.data_unit = ' µm'
             self.data_scaling = 1
 
         self.update_spinboxes_unit()

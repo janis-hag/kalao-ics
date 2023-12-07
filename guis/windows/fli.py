@@ -84,8 +84,15 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
         self.addTicks()
 
+        self.fli_view.setView(self.stream_info['shape'])
+
+        self.star_label.updateText(x=np.nan, y=np.nan, peak=np.nan,
+                                   fwhm=np.nan, precision=np.nan,
+                                   data_unit=self.data_unit,
+                                   axis_unit=self.axis_unit)
+
         self.fli_view.hovered.connect(self.hover_event)
-        backend.streams_updated.connect(self.data_updated)
+        backend.streams_updated.connect(self.streams_updated)
 
     def addTicks(self):
         self.fli_view.margins = (
@@ -205,7 +212,7 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
             self.tick_labels.append(text_item)
 
-    def data_updated(self, data):
+    def streams_updated(self, data):
         img = self.backend.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
@@ -220,7 +227,9 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
                                        y=y * self.axis_scaling,
                                        peak=peak * self.data_scaling,
                                        fwhm=fwhm * self.axis_scaling,
-                                       precision=self.axis_precision)
+                                       precision=self.axis_precision,
+                                       data_unit=self.data_unit,
+                                       axis_unit=self.axis_unit)
 
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:

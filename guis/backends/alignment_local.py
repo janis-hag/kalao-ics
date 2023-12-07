@@ -7,16 +7,17 @@ from kalao.utils import kalao_tools
 
 from PySide2.QtCore import Signal
 
-from guis.backends.abstract import AbstractBackend
+from guis.backends.abstract import emit, timeit
+from guis.backends.local import SHMFPSBackend
 from guis.kalao.definitions import PokeState
 
 import config
 
 
-class AlignmentBackend(AbstractBackend):
+class AlignmentBackend(SHMFPSBackend):
     alignment_window = None
 
-    streams_updated = Signal()
+    streams_updated = Signal(object)
     streams = {}
 
     def __init__(self):
@@ -32,11 +33,10 @@ class AlignmentBackend(AbstractBackend):
         self.slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS,
                                                 self.streams_and_fps_cache)
 
-    @AbstractBackend.timeit('streams', 'streams_updated')
-    def update_streams(self, data):
+    @emit('streams_updated')
+    @timeit
+    def update_streams(self):
         dm_array = np.zeros(self.poke_stream.shape, self.poke_stream.nptype)
-        data_nuvu = {}
-        data_slopes = {}
 
         # Do not poke actuators
         for act in self.alignment_window.actuators_to_poke:
@@ -44,12 +44,14 @@ class AlignmentBackend(AbstractBackend):
 
         self.poke_stream.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
-        data_nuvu[PokeState.FLAT] = self.nuvu_stream.get_data(check=True)
-        data_slopes[PokeState.FLAT] = self.slopes_stream.get_data(check=True)
+        self._update_params(self.streams, config.FPS.NUVU,
+                            key=f'{config.FPS.NUVU}_{PokeState.FLAT}')
+        self._update_params(self.streams, config.FPS.SHWFS,
+                            key=f'{config.FPS.SHWFS}_{PokeState.FLAT}')
 
-        tip = self.slopes_fps.get_param('slope_x')
-        tilt = self.slopes_fps.get_param('slope_y')
-        residual = self.slopes_fps.get_param('residual')
+        self._update_params(self.streams, config.FPS.SHWFS, 'slope_x')
+        self._update_params(self.streams, config.FPS.SHWFS, 'slope_y')
+        self._update_params(self.streams, config.FPS.SHWFS, 'residual')
 
         # Poke actuators down
         for act in self.alignment_window.actuators_to_poke:
@@ -58,8 +60,10 @@ class AlignmentBackend(AbstractBackend):
 
         self.poke_stream.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
-        data_nuvu[PokeState.DOWN] = self.nuvu_stream.get_data(check=True)
-        data_slopes[PokeState.DOWN] = self.slopes_stream.get_data(check=True)
+        self._update_params(self.streams, config.FPS.NUVU,
+                            key=f'{config.FPS.NUVU}_{PokeState.DOWN}')
+        self._update_params(self.streams, config.FPS.SHWFS,
+                            key=f'{config.FPS.SHWFS}_{PokeState.DOWN}')
 
         # Poke actuators up
         for act in self.alignment_window.actuators_to_poke:
@@ -68,38 +72,20 @@ class AlignmentBackend(AbstractBackend):
 
         self.poke_stream.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
-        data_nuvu[PokeState.UP] = self.nuvu_stream.get_data(check=True)
-        data_slopes[PokeState.UP] = self.slopes_stream.get_data(check=True)
+        self._update_params(self.streams, config.FPS.NUVU,
+                            key=f'{config.FPS.NUVU}_{PokeState.UP}')
+        self._update_params(self.streams, config.FPS.SHWFS,
+                            key=f'{config.FPS.SHWFS}_{PokeState.UP}')
 
-        data.update({
-            config.Streams.NUVU: {
-                'data': data_nuvu[self.alignment_window.display]
-            },
-            'alignment': {
-                'data': data_nuvu
-            }
-        })
+        self.streams[config.Streams.NUVU] = self.streams[
+            f'{config.FPS.NUVU}_{self.alignment_window.display}']
 
         if self.alignment_window.display == PokeState.FLAT:
-            data.update({
-                config.Streams.SLOPES: {
-                    'data': data_slopes[PokeState.FLAT],
-                    'slope_x': tip,
-                    'slope_y': tilt,
-                    'residual': residual
-                }
-            })
+            self.streams[config.Streams.SLOPES] = self.streams[
+                f'{config.Streams.SLOPES}_{PokeState.FLAT}']
         else:
-            data.update({
-                config.Streams.SLOPES: {
-                    'data':
-                        data_slopes[self.alignment_window.display] -
-                        data_slopes[PokeState.FLAT],
-                    'slope_x':
-                        tip,
-                    'slope_y':
-                        tilt,
-                    'residual':
-                        residual
-                }
-            })
+            self.streams[config.Streams.SLOPES] = self.streams[
+                self.alignment_window.display] - self.streams[
+                    f'{config.Streams.SLOPES}_{PokeState.FLAT}']
+
+        return self.streams

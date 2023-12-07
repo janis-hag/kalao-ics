@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>646</width>
-    <height>604</height>
+    <width>953</width>
+    <height>715</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -192,7 +192,7 @@
    <item>
     <widget class="KalAOLabel" name="star_label">
      <property name="text">
-      <string>X: {x:.{precision}f}, Y: {y:.{precision}f}, FWHM: {fwhm:.{precision}f}, Peak: {peak}</string>
+      <string>X: {x:.{precision}f}{axis_unit}, Y: {y:.{precision}f}{axis_unit}, FWHM: {fwhm:.{precision}f}{axis_unit}, Peak: {peak}{data_unit}</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

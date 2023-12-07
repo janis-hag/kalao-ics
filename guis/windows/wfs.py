@@ -61,10 +61,12 @@ class WFSWidget(KalAOWidget, MinMaxMixin, HoverMixin):
             roi.setZValue(1)
             self.rois[i] = roi
 
-        self.wfs_view.hovered.connect(self.hover_event)
-        backend.streams_updated.connect(self.data_updated)
+        self.wfs_view.setView(self.stream_info['shape'])
 
-    def data_updated(self, data):
+        self.wfs_view.hovered.connect(self.hover_event)
+        backend.streams_updated.connect(self.streams_updated)
+
+    def streams_updated(self, data):
         img = self.backend.consume_stream(data, config.Streams.NUVU)
 
         if img is not None:

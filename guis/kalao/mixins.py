@@ -172,14 +172,20 @@ class BackendActionMixin:
 
         self.threadpool = QThreadPool()
 
-    def action_send(self, widget, fun, *args):
-        if widget.hasFocus():
-            widget.clearFocus()
-            widget.setEnabled(False)
+    def action_send(self, widget_list, fun, *args):
+        if not isinstance(widget_list, list):
+            widget_list = [widget_list]
+
+        if widget_list[0].hasFocus():
+            widget_list[0].clearFocus()
+
+            for widget in widget_list:
+                widget.setEnabled(False)
 
             worker = BackendWorker(fun, *args)
-            worker.done.connect(lambda: self.action_clean(widget))
+            worker.done.connect(lambda: self.action_clean(widget_list))
             self.threadpool.start(worker)
 
-    def action_clean(self, widget):
-        widget.setEnabled(True)
+    def action_clean(self, widget_list):
+        for widget in widget_list:
+            widget.setEnabled(True)

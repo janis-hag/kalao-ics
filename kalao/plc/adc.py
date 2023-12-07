@@ -142,10 +142,8 @@ def set_angle(angle, beck=None):
     })
 
     # Motors are face to face, offset by same angle so they are counter-rotating
-    rotate(1, position=config.ADC.max_disp_angle_1 + angle/2, wait=False,
-           beck=beck)
-    rotate(2, position=config.ADC.max_disp_angle_2 + angle/2, wait=False,
-           beck=beck)
+    rotate(1, config.ADC.max_disp_angle_1 + angle/2, wait=False, beck=beck)
+    rotate(2, config.ADC.max_disp_angle_2 + angle/2, wait=False, beck=beck)
 
     sleep(2)
 
@@ -166,7 +164,7 @@ def get_angle():
         return angle
 
 
-def rotate(adc_id, position=0, velocity=1, wait=True, beck=None):
+def rotate(adc_id, position, velocity=1, wait=True, beck=None):
     database.store('obs',
                    {'adc_log': f'Moving ADC {adc_id} to position {position}°'})
 

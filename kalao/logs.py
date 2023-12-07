@@ -112,8 +112,8 @@ def process_entry(entry, output_type):
                     style_message = style['message_good']
             else:
                 if '_SYSTEMD_USER_UNIT' in entry:
-                    origin = entry['_SYSTEMD_USER_UNIT'].replace(
-                        'kalao_', '').replace('.service', '')
+                    origin = entry['_SYSTEMD_USER_UNIT'].removeprefix(
+                        'kalao_').removesuffix('.service')
                 elif '_COMM' in entry:
                     origin = entry['_COMM']
                 else:

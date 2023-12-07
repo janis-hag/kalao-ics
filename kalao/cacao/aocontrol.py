@@ -195,7 +195,7 @@ def set_ttmloop_limit(limit):
     return 0
 
 
-def set_modal_gain(mode, factor, stream_name='aol1_mgainfact'):
+def set_modal_gain(mode, factor, stream_name=config.Streams.MODALGAINS):
     """
     Function to change the gains of the AO control modes
 
@@ -311,7 +311,7 @@ def set_exptime(exptime=0, method='tmux'):
 
 def linear_low_pass_modal_gain_filter(cut_off=None, last_mode=None,
                                       keep_existing_flat=False,
-                                      stream_name='aol1_mgainfact'):
+                                      stream_name=config.Streams.MODALGAINS):
     """
     Applies a linear low-pass filter to the ao modal gains. The gain is flat until the cut_off mode where it starts
     decreasing down to zero for the last mode
@@ -401,7 +401,7 @@ def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain,
         database.store(
             'obs', {
                 'ttm_log':
-                    f'Offloading tip-tilt to telescope. Current: tip={tip}mrad, tilt={tilt}mrad. Offload: alt={alt_offload}asec, az={az_offload}asec'
+                    f'Offloading tip-tilt to telescope. On TTM: tip={tip}mrad, tilt={tilt}mrad. Offloaded: alt={alt_offload}asec, az={az_offload}asec'
             })
 
         t120.send_altaz_offset(alt_offload, az_offload, port=port)
@@ -448,7 +448,7 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
     database.store(
         'obs', {
             'ttm_log':
-                f'Changing tip-tilt based on FLI. Current: tip={x_tip}px, tilt={y_tilt}px. New: tip={new_tip}mrad, tilt={new_tilt}mrad'
+                f'Changing tip-tilt based on FLI. On FLI: tip={x_tip}px, tilt={y_tilt}px. TTM set to: tip={new_tip}mrad, tilt={new_tilt}mrad'
         })
 
     ttm_stream.set_data(np.array([new_tip, new_tilt]), True)
@@ -515,7 +515,7 @@ def tip_tilt_wfs_to_ttm(tt_threshold=config.AO.WFS_centering_slope_threshold,
         database.store(
             'obs', {
                 'ttm_log':
-                    f'Changing tip-tilt based on WFS. Current: tip={tip_residual}px, tilt={tilt_residual}px. New: tip={new_tip}mrad, tilt={new_tilt}mrad'
+                    f'Changing tip-tilt based on WFS. On WFS: tip={tip_residual}px, tilt={tilt_residual}px. TTM set to: tip={new_tip}mrad, tilt={new_tilt}mrad'
             })
 
         ttm_stream.set_data(np.array([new_tip, new_tilt]), True)

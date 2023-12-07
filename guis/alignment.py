@@ -69,4 +69,4 @@ if __name__ == "__main__":
     timer.timeout.connect(backend.update_streams)
     timer.start()
 
-    app.exec_()
+    app.exec()

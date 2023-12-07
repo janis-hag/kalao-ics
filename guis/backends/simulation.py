@@ -19,11 +19,14 @@ import config
 class FakeSHMFPSBackend(AbstractBackend):
     streams_and_fps_cache = {}
 
-    def _update_stream(self, data, stream_name, stream):
+    def _update_stream(self, data, stream_name, stream, key=None):
+        if key is None:
+            key = stream_name
+
         cnt0 = data.get(stream_name, {}).get('cnt0', 0)
 
         data.update({
-            stream_name: {
+            key: {
                 'updated': True,
                 'cnt0': cnt0 + 1,
                 'data': stream,
@@ -54,12 +57,13 @@ class FakeSHMFPSBackend(AbstractBackend):
 class MainBackend(FakeSHMFPSBackend):
     ttm_data = np.array([0, 0])
     last_fli_update = 0
+    first = True
 
     streams_updated = Signal(object)
     streams = {}
 
-    tiptilt_updated = Signal(object)
-    tiptilt = {}
+    data_updated = Signal(object)
+    data = {}
 
     dmdisp_updated = Signal(object)
     dmdisp = {}
@@ -103,52 +107,88 @@ class MainBackend(FakeSHMFPSBackend):
         else:
             self._update_stream(self.streams, config.Streams.FLI, None)
 
-        self._update_stream(self.streams, 'aol1_mgainfact', np.ones((90, )))
-
-        self._update_params(self.streams, config.FPS.NUVU, 'autogain_on', 0)
-
-        self._update_params(self.streams, 'mfilt-1', 'loopON', 1)
-        self._update_params(self.streams, 'mfilt-1', 'loopgain', 0.8)
-        self._update_params(self.streams, 'mfilt-1', 'loopmult', 0.99)
-        self._update_params(self.streams, 'mfilt-1', 'looplimit', 1)
-
-        self._update_params(self.streams, 'mfilt-2', 'loopON', 0)
-        self._update_params(self.streams, 'mfilt-2', 'loopgain', 0.8)
-        self._update_params(self.streams, 'mfilt-2', 'loopmult', 0.99)
-        self._update_params(self.streams, 'mfilt-2', 'looplimit', 1)
-
-        self.streams['plc'] = {
-            'shutter_state': 'CLOSED',
-            'flip_mirror_position': 'DOWN',
-            'calib_unit_position': 23.56,
-            'laser_state': 'ON',
-            'laser_power': 4.5,
-            'tungsten_state': 'OFF',
-            'adc1_angle': 135,
-            'adc2_angle': 45,
-            'filterwheel_filter_position': 4,
-            'filterwheel_filter_name': 'z',
-            'temp_bench_air': 18.2,
-            'temp_bench_board': 18.1,
-            'temp_water_in': 13,
-            'temp_water_out': 15,
-            'pump_status': 'ON',
-            'pump_temp': 35,
-            'heater_status': 'OFF',
-            'fan_status': 'ON',
-            'flow_value': 2.5
-        }
-
         return self.streams
 
-    @emit('tiptilt_updated')
+    @emit('data_updated')
     @timeit
-    def update_tiptilt(self):
+    def update_data(self):
         self.ttm_data = fake_data.tiptilt(seed=self.ttm_data)
 
-        self._update_stream(self.tiptilt, config.Streams.TTM, self.ttm_data)
+        self._update_stream(self.data, config.Streams.TTM, self.ttm_data)
 
-        return self.tiptilt
+        if self.first:
+            self._update_stream(self.data, config.Streams.MODALGAINS,
+                                np.ones((90, )))
+
+            self._update_params(self.data, config.FPS.NUVU, 'autogain_on', 1)
+
+            self._update_params(self.data, 'mfilt-1', 'loopON', 1)
+            self._update_params(self.data, 'mfilt-1', 'loopgain', 0.8)
+            self._update_params(self.data, 'mfilt-1', 'loopmult', 0.99)
+            self._update_params(self.data, 'mfilt-1', 'looplimit', 1)
+
+            self._update_params(self.data, 'mfilt-2', 'loopON', 0)
+            self._update_params(self.data, 'mfilt-2', 'loopgain', 0.8)
+            self._update_params(self.data, 'mfilt-2', 'loopmult', 0.99)
+            self._update_params(self.data, 'mfilt-2', 'looplimit', 1)
+
+            self.data['plc'] = {
+                'shutter_state': 'CLOSED',
+                'flip_mirror_position': 'DOWN',
+                'calib_unit_position': 23.56,
+                'laser_state': 'ON',
+                'laser_power': 4.5,
+                'tungsten_state': 'OFF',
+                'adc1_angle': 135,
+                'adc2_angle': 45,
+                'filterwheel_filter_position': 4,
+                'filterwheel_filter_name': 'z',
+                'temp_bench_air': 18.2,
+                'temp_bench_board': 18.1,
+                'temp_water_in': 13,
+                'temp_water_out': 15,
+                'pump_status': 'ON',
+                'pump_temp': 35,
+                'heater_status': 'OFF',
+                'fan_status': 'ON',
+                'flow_value': 2.5
+            }
+
+            self.data['services'] = {
+                'kalao_nuvu.service': ('active', 'exited',
+                                       datetime(2023, 12, 4, 20, 15, 42,
+                                                397363)),
+                'kalao_cacao.service': ('active', 'exited',
+                                        datetime(2023, 12, 7, 9, 15, 25,
+                                                 886597)),
+                'kalao_sequencer.service': ('active', 'running',
+                                            datetime(2023, 12, 7, 10, 52, 17,
+                                                     270106)),
+                'kalao_camera.service': ('active', 'running',
+                                         datetime(2023, 12, 7, 10, 52, 17,
+                                                  901720)),
+                'kalao_flask-gui.service': ('inactive', 'dead',
+                                            datetime(1970, 1, 1, 0, 0)),
+                'kalao_gop-server.service': ('active', 'running',
+                                             datetime(2023, 12, 7, 10, 52, 17,
+                                                      915063)),
+                'kalao_database-timer.service':
+                    ('active', 'running',
+                     datetime(2023, 12, 7, 10, 52, 17, 921112)),
+                'kalao_safety-timer.service':
+                    ('active', 'running',
+                     datetime(2023, 12, 7, 10, 52, 17, 931899)),
+                'kalao_loop-timer.service': ('active', 'running',
+                                             datetime(2023, 12, 7, 10, 52, 17,
+                                                      932389)),
+                'kalao_pump-timer.service': ('active', 'running',
+                                             datetime(2023, 12, 7, 10, 52, 17,
+                                                      943558))
+            }
+
+            self.first = False
+
+        return self.data
 
     @emit('dmdisp_updated')
     @timeit
@@ -267,6 +307,15 @@ class MainBackend(FakeSHMFPSBackend):
 
     def set_filterwheel_filter(self, filter):
         print(f'Set Filter Wheel filter to {filter} (virtually)')
+
+    def set_adc1_position(self, position):
+        print(f'Set ADC1 position to {position} (virtually)')
+
+    def set_adc2_position(self, position):
+        print(f'Set ADC2 position to {position} (virtually)')
+
+    def service_action(self, unit, action):
+        print(f'Sent {action} to {unit} (virtually)')
 
     ##### DM channels
 

@@ -61,6 +61,8 @@ class LogsWidget(KalAOWidget):
         for entry in self.backend.init_logs():
             self.add_log_entry(entry)
 
+        self.on_acknowledge_button_clicked(None)
+
         self.timer = QTimer()
         self.timer.setInterval(int(1000. / config.GUI.max_fps * 10))
         self.timer.timeout.connect(self.get_logs)

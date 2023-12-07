@@ -1,3 +1,5 @@
+import numpy as np
+
 from PySide6.QtGui import Qt
 
 from guis.kalao import colormaps
@@ -29,10 +31,14 @@ class FluxWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
         self.change_colormap(Qt.Unchecked)
 
-        self.flux_view.hovered.connect(self.hover_event)
-        backend.streams_updated.connect(self.data_updated)
+        self.flux_avg_label.updateText(flux_avg=np.nan, unit=self.data_unit)
+        self.flux_brightest_label.updateText(flux_brightest=np.nan,
+                                             unit=self.data_unit)
 
-    def data_updated(self, data):
+        self.flux_view.hovered.connect(self.hover_event)
+        backend.streams_updated.connect(self.streams_updated)
+
+    def streams_updated(self, data):
         img = self.backend.consume_stream(data, config.Streams.FLUX)
 
         if img is not None:

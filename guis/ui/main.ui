@@ -97,31 +97,70 @@
            <widget class="KalAOSvgWidget" name="logo_label" native="true">
             <property name="minimumSize">
              <size>
-              <width>100</width>
-              <height>40</height>
+              <width>200</width>
+              <height>70</height>
              </size>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="onsky_checkbox">
-            <property name="text">
-             <string>On sky units</string>
+           <widget class="QGroupBox" name="status_groupbox">
+            <property name="title">
+             <string>Status</string>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="colormap_checkbox">
-            <property name="text">
-             <string>Grayscale</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="freeze_checkbox">
-            <property name="text">
-             <string>Freeze</string>
-            </property>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="0" column="0">
+              <widget class="QLabel" name="autogain_label">
+               <property name="text">
+                <string>Autogain</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="dm_loop_label">
+               <property name="text">
+                <string>DM Loop</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="KalAOStatusIndicator" name="autogain_indicator">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="ttm_loop_label">
+               <property name="text">
+                <string>TTM Loop</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="KalAOStatusIndicator" name="dm_loop_indicator">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="KalAOStatusIndicator" name="ttm_loop_indicator">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
           <item>
@@ -136,6 +175,36 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="streams_groupbox">
+            <property name="title">
+             <string>Streams</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_7">
+             <item>
+              <widget class="QCheckBox" name="onsky_checkbox">
+               <property name="text">
+                <string>On sky units</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="colormap_checkbox">
+               <property name="text">
+                <string>Grayscale</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="freeze_checkbox">
+               <property name="text">
+                <string>Freeze</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
           </item>
          </layout>
         </item>
@@ -309,6 +378,11 @@
    <extends>QWidget</extends>
    <header>kalaosvgwidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>KalAOStatusIndicator</class>
+   <extends>QGraphicsView</extends>
+   <header>kalao</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -10,6 +10,8 @@ from guis.kalao.definitions import HORI, VERT, Color, PokeState
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOMainWindow
 
+import config
+
 
 class AlignmentSubwindow(QWidget):
     def __init__(self, parent=None):
@@ -27,7 +29,7 @@ class AlignmentWindow(KalAOMainWindow):
         loadUi('alignment.ui', self)
 
         for state in PokeState:
-            self.states_combobox.addItem(state)
+            self.states_combobox.addItem(state, state)
 
         self.poke_spinbox.valueChanged.connect(self.poke_amplitude_changed)
         self.states_combobox.currentIndexChanged.connect(
@@ -96,11 +98,9 @@ class AlignmentWindow(KalAOMainWindow):
                     for k in [VERT, HORI]:
                         view.lines[j][k].setZValue(1)
 
-        backend.streams_updated.connect(self.data_updated)
+        backend.streams_updated.connect(self.streams_updated)
 
-    def data_updated(self):
-        frames = self.backend.streams['alignment']['data']
-
+    def streams_updated(self, data):
         dxs = [0] * 4
         dys = [0] * 4
         rs = [0] * 4
@@ -112,9 +112,11 @@ class AlignmentWindow(KalAOMainWindow):
                 pos = {}
 
                 for state in PokeState:
+                    frame = self.backend.consume_stream(
+                        data, f'{config.FPS.NUVU}_{state}')
+
                     _, subapertures[
-                        state] = kalao_tools.get_roi_and_subapertures(
-                            frames[state])
+                        state] = kalao_tools.get_roi_and_subapertures(frame)
 
                     pos[state] = np.clip(
                         ndimage.center_of_mass(
@@ -149,7 +151,7 @@ class AlignmentWindow(KalAOMainWindow):
         self.average_label.updateText(rs=rs, phis=phis)
 
     def poke_state_changed(self, index):
-        self.display = PokeState(self.states_combobox.currentText())
+        self.display = self.states_combobox.currentData()
 
     def poke_amplitude_changed(self, d):
         self.poke_amplitude = d

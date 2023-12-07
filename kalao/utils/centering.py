@@ -9,8 +9,7 @@ from kalao import system
 from kalao.cacao import aocontrol
 from kalao.fli import camera
 from kalao.plc import calib_unit, filterwheel, flip_mirror, laser, shutter
-from kalao.utils import database, file_handling, kalao_time
-from kalao.utils.starfinder import find_star_custom_algo, find_star_fits
+from kalao.utils import database, file_handling, kalao_time, starfinder
 
 from tcs_communication import t120
 
@@ -76,7 +75,7 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
             system.print_and_log(f'ERROR no image received.')
             return -1
 
-        x, y, peak, fwhm = find_star_fits(image_path)
+        x, y, peak, fwhm = starfinder.find_star_fits(image_path)
 
         if x != -1 and y != -1:
 
@@ -87,7 +86,7 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
                 system.print_and_log(f'ERROR no image received.')
                 return -1
 
-            x, y, peak, fwhm = find_star_fits(image_path)
+            x, y, peak, fwhm = starfinder.find_star_fits(image_path)
 
             if x != -1 and y != -1:
                 # Fine centering with TTM
@@ -194,8 +193,9 @@ def center_on_laser():
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
-        x, y = find_star_custom_algo(image, spot_size=7, estim_error=0.05,
-                                     nb_step=5, laser_spot=True)
+        x, y = starfinder.find_star_custom_algo(image, spot_size=7,
+                                                estim_error=0.05, nb_step=5,
+                                                laser_spot=True)
 
         if x != -1 and y != -1:
             calib_unit.move_px(config.FLI.center_y - y)
@@ -206,8 +206,9 @@ def center_on_laser():
 
         # X can be changed by the ttm_tip_offset value
         # Y can be changed by the calib_unit position or ttm_tilt_offset value
-        x, y = find_star_custom_algo(image, spot_size=7, estim_error=0.05,
-                                     nb_step=5, laser_spot=True)
+        x, y = starfinder.find_star_custom_algo(image, spot_size=7,
+                                                estim_error=0.05, nb_step=5,
+                                                laser_spot=True)
 
         if x != -1 and y != -1:
             aocontrol.tip_tilt_offset_fli_to_ttm(x - config.FLI.center_x, 0)

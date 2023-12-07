@@ -1,9 +1,9 @@
 from PySide6.QtCore import Signal
 
-from kalao import logs
+from kalao import logs, services
 from kalao.cacao import aocontrol, toolbox
-from kalao.plc import (calib_unit, filterwheel, flip_mirror, laser, plc_utils,
-                       shutter, tungsten)
+from kalao.plc import (adc, calib_unit, filterwheel, flip_mirror, laser,
+                       plc_utils, shutter, tungsten)
 from kalao.utils import database
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
@@ -16,7 +16,10 @@ import config
 class SHMFPSBackend(AbstractBackend):
     streams_and_fps_cache = {}
 
-    def _update_stream(self, data, stream_name):
+    def _update_stream(self, data, stream_name, key=None):
+        if key is None:
+            key = stream_name
+
         stream = toolbox.open_stream_once(stream_name,
                                           self.streams_and_fps_cache)
 
@@ -25,16 +28,16 @@ class SHMFPSBackend(AbstractBackend):
 
         cnt0 = stream.IMAGE.md.cnt0
 
-        if data.get(stream_name, {}).get('cnt0') != cnt0:
+        if data.get(key, {}).get('cnt0') != cnt0:
             data.update({
-                stream_name: {
+                key: {
                     'updated': True,
                     'cnt0': cnt0,
                     'data': stream.get_data(check=False),
                 }
             })
         else:
-            data.update({stream_name: {'updated': False, 'data': None}})
+            data.update({key: {'updated': False, 'data': None}})
 
     def _update_params(self, data, fps_name, param_name):
         fps = toolbox.open_fps_once(fps_name, self.streams_and_fps_cache)
@@ -68,8 +71,8 @@ class MainBackend(SHMFPSBackend):
     streams_updated = Signal(object)
     streams = {}
 
-    tiptilt_updated = Signal(object)
-    tiptilt = {}
+    data_updated = Signal(object)
+    data = {}
 
     dmdisp_updated = Signal(object)
     dmdisp = {}
@@ -102,30 +105,30 @@ class MainBackend(SHMFPSBackend):
 
         self._update_stream(self.streams, config.Streams.FLI)
 
-        self._update_stream(self.streams, 'aol1_mgainfact')
-
-        self._update_params(self.streams, config.FPS.NUVU, 'autogain_on')
-
-        self._update_params(self.streams, 'mfilt-1', 'loopON')
-        self._update_params(self.streams, 'mfilt-1', 'loopgain')
-        self._update_params(self.streams, 'mfilt-1', 'loopmult')
-        self._update_params(self.streams, 'mfilt-1', 'looplimit')
-
-        self._update_params(self.streams, 'mfilt-2', 'loopON')
-        self._update_params(self.streams, 'mfilt-2', 'loopgain')
-        self._update_params(self.streams, 'mfilt-2', 'loopmult')
-        self._update_params(self.streams, 'mfilt-2', 'looplimit')
-
-        self.streams['plc'].update(plc_utils.get_all_status())
-
         return self.streams
 
-    @emit('tiptilt_updated')
+    @emit('data_updated')
     @timeit
-    def update_tiptilt(self):
-        self._update_stream(self.tiptilt, config.Streams.TTM)
+    def update_data(self):
+        self._update_stream(self.data, config.Streams.TTM)
+        self._update_stream(self.data, config.Streams.MODALGAINS)
 
-        return self.tiptilt
+        self._update_params(self.data, config.FPS.NUVU, 'autogain_on')
+
+        self._update_params(self.data, 'mfilt-1', 'loopON')
+        self._update_params(self.data, 'mfilt-1', 'loopgain')
+        self._update_params(self.data, 'mfilt-1', 'loopmult')
+        self._update_params(self.data, 'mfilt-1', 'looplimit')
+
+        self._update_params(self.data, 'mfilt-2', 'loopON')
+        self._update_params(self.data, 'mfilt-2', 'loopgain')
+        self._update_params(self.data, 'mfilt-2', 'loopmult')
+        self._update_params(self.data, 'mfilt-2', 'looplimit')
+
+        self.data['plc'].update(plc_utils.get_all_status())
+        self.data['services'].update(services.get_all_status())
+
+        return self.data
 
     @emit('dmdisp_updated')
     @timeit
@@ -212,6 +215,15 @@ class MainBackend(SHMFPSBackend):
 
     def set_filterwheel_filter(self, filter):
         filterwheel.set_filter(filter)
+
+    def set_adc1_position(self, position):
+        adc.rotate(1, position)
+
+    def set_adc2_position(self, position):
+        adc.rotate(2, position)
+
+    def service_action(self, unit, action):
+        services.unit_control(unit, action)
 
     ##### DM channels
 

@@ -1,15 +1,27 @@
+from string import Formatter
+
 import numpy as np
 
 from PySide6.QtCharts import QChart, QChartView
-from PySide6.QtCore import QEvent, QMargins, QPointF, QRectF, QSize, Signal
-from PySide6.QtGui import QIcon, QPainter, QPixmap, Qt
+from PySide6.QtCore import (QEvent, QMargins, QPointF, QRect, QRectF, QSize,
+                            Signal)
+from PySide6.QtGui import QBrush, QIcon, QPainter, QPen, QPixmap, Qt
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (QDateTimeEdit, QGraphicsScene,
                                QGraphicsSimpleTextItem, QGraphicsView, QLabel,
-                               QListWidgetItem, QMainWindow, QWidget)
+                               QListWidgetItem, QMainWindow, QSizePolicy,
+                               QWidget)
 
-from guis.kalao.definitions import Logo
+from guis.kalao.definitions import Color, Logo
 from guis.kalao.mixins import ArrayToImageMixin
+
+
+class KalAOFormatter(Formatter):
+    def format_field(self, value, format_spec):
+        if isinstance(value, float) and np.isnan(value):
+            return '--'
+        else:
+            return super().format_field(value, format_spec)
 
 
 class OffsetedTextItem(QGraphicsSimpleTextItem):
@@ -34,6 +46,7 @@ class OffsetedTextItem(QGraphicsSimpleTextItem):
 class KalAOLabel(QLabel, ArrayToImageMixin):
     pixmap_ = None
     text_format = None
+    formatter = KalAOFormatter()
 
     def __init__(self, arg0=None, *args, **kwargs):
         super().__init__(arg0, *args, **kwargs)
@@ -81,7 +94,7 @@ class KalAOLabel(QLabel, ArrayToImageMixin):
         if self.text_format is None:
             self.text_format = self.text()
 
-        self.setText(self.text_format.format(**kwargs))
+        self.setText(self.formatter.format(self.text_format, **kwargs))
 
 
 class KalAODateTimeEdit(QDateTimeEdit):
@@ -204,6 +217,7 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
     img = None
     pixmap = None
     pixmap_item = None
+    view = None
     margins = (0, 0, 0, 0)
     shape = (0, 0)
 
@@ -218,8 +232,8 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
         self.setStyleSheet("background: transparent")
 
     def viewSize(self):
-        return self.pixmap.rect().adjusted(-self.margins[0], -self.margins[1],
-                                           self.margins[2], self.margins[3])
+        return self.view.adjusted(-self.margins[0], -self.margins[1],
+                                  self.margins[2], self.margins[3])
 
     def heightForWidth(self, width):
         if self.pixmap is None:
@@ -237,7 +251,7 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
     def resizeEvent(self, e):
         super().resizeEvent(e)
 
-        if self.pixmap is not None:
+        if self.view is not None:
             self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
 
     def setImage(self, img, img_min=None, img_max=None):
@@ -256,6 +270,7 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
             self.scene.pixmap_updated()
 
         if self.shape != img.shape:
+            self.view = self.pixmap.rect()
             self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
             self.adjustSize()
             self.shape = img.shape
@@ -267,6 +282,10 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
             self.image.setColorTable(self.colormap.colormap)
             self.pixmap = QPixmap.fromImage(self.image)
             self.pixmap_item.setPixmap(self.pixmap)
+
+    def setView(self, shape):
+        self.view = QRect(0, 0, shape[1], shape[0])
+        self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
 
     def hover_event(self, x, y):
         if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
@@ -307,3 +326,52 @@ class KalAOChart(QChartView):
                 QPointF(self.chart.current_point.x(), y))
 
         super().mouseMoveEvent(event)
+
+
+class KalAOStatusIndicator(QGraphicsView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.scene = QGraphicsScene()
+        self.setScene(self.scene)
+
+        self.setRenderHints(QPainter.Antialiasing |
+                            QPainter.SmoothPixmapTransform)
+
+        self.setStyleSheet("background: transparent")
+
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.pen = QPen(Color.GREY, 8, Qt.SolidLine, Qt.SquareCap,
+                        Qt.MiterJoin)
+        self.brush = QBrush(Color.DARK_GREY, Qt.SolidPattern)
+
+        self.ellipse = self.scene.addEllipse(0, 0, 100, 100, self.pen,
+                                             self.brush)
+
+        self.fitInView(QRect(-10, -10, 110, 110), Qt.KeepAspectRatio)
+        self.adjustSize()
+
+    def setStatus(self, status):
+        color = Color.DARK_GREY
+
+        if status is True:
+            color = Color.GREEN
+        elif status is False:
+            color = Color.RED
+
+        self.brush.setColor(color)
+        self.ellipse.setBrush(self.brush)
+
+    def heightForWidth(self, width):
+        return width
+
+    def sizeHint(self):
+        w = self.width()
+        return QSize(w, self.heightForWidth(w))
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+
+        self.fitInView(QRect(0, 0, 120, 120), Qt.KeepAspectRatio)

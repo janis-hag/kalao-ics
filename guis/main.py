@@ -68,13 +68,13 @@ if __name__ == "__main__":
     backend = backends.MainBackend()
 
     # Timer
-    timer_images = QTimer()
-    timer_images.setInterval(int(1000. / config.GUI.max_fps))
-    timer_images.timeout.connect(backend.update_streams)
+    timer_streams = QTimer()
+    timer_streams.setInterval(int(1000. / config.GUI.max_fps))
+    timer_streams.timeout.connect(backend.update_streams)
 
-    timer_tiptilt = QTimer()
-    timer_tiptilt.setInterval(int(1000. / config.GUI.max_fps))
-    timer_tiptilt.timeout.connect(backend.update_tiptilt)
+    timer_data = QTimer()
+    timer_data.setInterval(int(1000. / config.GUI.max_fps))
+    timer_data.timeout.connect(backend.update_data)
 
     # Windows
 
@@ -107,23 +107,12 @@ if __name__ == "__main__":
             ttm.change_units(Qt.Checked)
 
     else:
-        unified = MainWindow(backends, backend, timer_images)
+        unified = MainWindow(backends, backend, timer_streams)
 
         if args.onsky:
             unified_view.onsky_checkbox.setChecked(True)
 
-    timer_images.start()
-    timer_tiptilt.start()
+    timer_streams.start()
+    timer_data.start()
 
     app.exec()
-
-    #TODO
-    #def closeEvent(self, event):
-    #    if self.associated_stream is not None:
-    #        stream = streams.get(self.associated_stream)
-    #        if stream is not None:
-    #            print(f'Closing {self.associated_stream}')
-    #            #stream.close()
-    #            del streams[self.associated_stream]
-    #
-    #    event.accept()

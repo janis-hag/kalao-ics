@@ -1,15 +1,17 @@
 import numpy as np
 
 from PySide6.QtCore import Qt, Slot
+from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton
 
 from guis.kalao.mixins import BackendActionMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KalAOStatusIndicator, KalAOWidget
 from guis.windows.dm_channels import DMChannelsWindow
 from guis.windows.dm_direct_control import DMDirectControl
 from guis.windows.ttm_direct_control import TTMDirectControl
 
-from kalao.definitions.enums import FlipMirrorPosition, ShutterState
+from kalao.definitions.enums import (FlipMirrorPosition, ServiceAction,
+                                     ShutterState)
 
 import config
 
@@ -42,7 +44,53 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
             self.filterwheel_combobox.addItem(self.filter_display_name(filter),
                                               filter)
 
-        backend.streams_updated.connect(self.data_updated)
+        self.services_widgets = {}
+        for i, service in enumerate(config.Systemd.services.values()):
+            label = QLabel(service['unit'].removeprefix('kalao_').removesuffix(
+                '.service').replace('-', ' ').title())
+            label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
+            lineedit = QLineEdit()
+            lineedit.setReadOnly(True)
+
+            indicator = KalAOStatusIndicator()
+
+            self.services_widgets[service['unit']] = {
+                'lineedit': lineedit,
+                'indicator': indicator
+            }
+
+            self.services_groupbox.layout().addWidget(label, i, 0)
+            self.services_groupbox.layout().addWidget(lineedit, i, 2)
+
+            indicator.setFixedSize(25, 25)
+            self.services_groupbox.layout().addWidget(indicator, i, 1)
+
+            for j, action in enumerate([
+                    ServiceAction.START, ServiceAction.STOP,
+                    ServiceAction.RESTART, ServiceAction.KILL,
+                    ServiceAction.RELOAD
+            ]):
+                button = QPushButton(action.value.title())
+                button.clicked.connect(lambda checked=False, unit=service[
+                    'unit'], action=action: self.on_service_action_clicked(
+                        checked, unit, action))
+                self.services_groupbox.layout().addWidget(button, i, 3 + j)
+
+                if action == ServiceAction.RELOAD and service[
+                        'unit'] != "kalao_cacao.service":
+                    button.setEnabled(False)
+
+        self.services_groupbox.layout().setColumnStretch(0, 0)
+        self.services_groupbox.layout().setColumnStretch(1, 0)
+        self.services_groupbox.layout().setColumnStretch(2, 1)
+        self.services_groupbox.layout().setColumnStretch(3, 1)
+        self.services_groupbox.layout().setColumnStretch(4, 1)
+        self.services_groupbox.layout().setColumnStretch(5, 1)
+        self.services_groupbox.layout().setColumnStretch(6, 1)
+        self.services_groupbox.layout().setColumnStretch(7, 1)
+
+        backend.data_updated.connect(self.data_updated)
 
     def filter_display_name(self, filter):
         name = config.FilterWheel.filter_infos[filter]['name']
@@ -105,6 +153,21 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
             self.filterwheel_combobox.setCurrentIndex(
                 self.filterwheel_combobox.findData(filterwheel_filter_name))
 
+        adc1_angle = self.backend.consume_plc(data, 'adc1_angle')
+        if adc1_angle is not None:
+            self.adc1_spinbox.setValue(adc1_angle)
+
+        adc2_angle = self.backend.consume_plc(data, 'adc2_angle')
+        if adc2_angle is not None:
+            self.adc2_spinbox.setValue(adc2_angle)
+
+        for i, service in enumerate(config.Systemd.services.values()):
+            status = self.backend.consume_service(data, service['unit'])
+            if status is not None:
+                widgets = self.services_widgets[service['unit']]
+                widgets['lineedit'].setText(f'{status[0]} | {status[1]}')
+                widgets['indicator'].setStatus(status[0] == 'active')
+
     @Slot(int)
     def on_shutter_combobox_currentIndexChanged(self, index):
         self.action_send(self.shutter_combobox, self.backend.set_shutter_state,
@@ -143,6 +206,14 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
         self.action_send(self.filterwheel_combobox,
                          self.backend.set_filterwheel_filter,
                          self.filterwheel_combobox.currentData())
+
+    @Slot(float)
+    def on_adc1_spinbox_valueChanged(self, d):
+        self.action_send(self.adc1_spinbox, self.backend.set_adc1_position, d)
+
+    @Slot(float)
+    def on_adc2_spinbox_valueChanged(self, d):
+        self.action_send(self.adc2_spinbox, self.backend.set_adc2_position, d)
 
     @Slot(bool)
     def on_dm_channels_button_clicked(self, checked):
@@ -195,3 +266,6 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
             self.ttm_direct_control.activateWindow()
         else:
             self.ttm_direct_control = TTMDirectControl(self.backend)
+
+    def on_service_action_clicked(self, checked, unit, action):
+        self.backend.service_action(unit, action)

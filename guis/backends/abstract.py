@@ -36,9 +36,6 @@ def timeit(fun):
 class AbstractBackend(QObject):
     def consume_stream(self, data, stream_name, default=None):
         try:
-            if not data[stream_name]['updated']:
-                return default
-
             param = data[stream_name]['data']
         except KeyError:
             return default
@@ -48,9 +45,6 @@ class AbstractBackend(QObject):
 
     def consume_param(self, data, fps_name, param_name, default=None):
         try:
-            if not data[fps_name][param_name]['updated']:
-                return default
-
             param = data[fps_name][param_name]['value']
         except KeyError:
             return default
@@ -58,8 +52,14 @@ class AbstractBackend(QObject):
             data[fps_name][param_name]['updated'] = False
             return param
 
-    def consume_plc(selfself, data, key, default=None):
+    def consume_plc(self, data, key, default=None):
         try:
             return data['plc'][key]
+        except KeyError:
+            return default
+
+    def consume_service(self, data, key, default=None):
+        try:
+            return data['services'][key]
         except KeyError:
             return default

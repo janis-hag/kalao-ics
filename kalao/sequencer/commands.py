@@ -122,9 +122,6 @@ def tungsten_FLAT(**seq_args):
     if flip_mirror.up() != FlipMirrorPosition.UP:
         raise FlipMirrorNotUp
 
-    if filterwheel.set_filter(filter_list[0]) != filter_list[0]:
-        raise FilterWheelNotInPosition
-
     # Check if an abort was requested
     _check_abort(q)
 

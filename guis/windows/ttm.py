@@ -67,7 +67,10 @@ class TTMWidget(KalAOWidget, MinMaxMixin):
 
         chart.legend().hide()
 
-        backend.tiptilt_updated.connect(self.data_updated)
+        self.tip_label.updateText(tip=np.nan, unit=self.data_unit)
+        self.tilt_label.updateText(tilt=np.nan, unit=self.data_unit)
+
+        backend.data_updated.connect(self.data_updated)
 
     def data_updated(self, data):
         img = self.backend.consume_stream(data, config.Streams.TTM)

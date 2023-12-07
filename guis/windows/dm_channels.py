@@ -11,7 +11,7 @@ import config
 class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
     associated_stream = config.Streams.DM
     stream_info = config.StreamInfo.dm01disp
-    data_unit = ' um'
+    data_unit = ' µm'
     data_precision = 3
 
     axis_unit = ' px'
@@ -68,12 +68,12 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
                 label = getattr(self, f'label_{value}_info')
                 label.setText(name)
 
-        self.backend.dmdisp_updated.connect(self.data_updated)
+        self.backend.dmdisp_updated.connect(self.dmdisp_updated)
 
         self.show()
         self.setFixedSize(self.size())
 
-    def data_updated(self, data):
+    def dmdisp_updated(self, data):
         img = self.backend.consume_stream(data, f'dm{self.dm_number:02d}disp')
 
         if img is not None:
