@@ -72,8 +72,7 @@ def seek(reader, output_type, entries_number=50, entries_since_minutes=None):
 
 
 def get_last_entries(reader, output_type):
-    if reader.process() != journal.APPEND:
-        return []
+    reader.process()
 
     entries = []
     for entry in reader:

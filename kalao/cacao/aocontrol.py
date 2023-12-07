@@ -451,7 +451,7 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
                 f'Changing tip-tilt based on FLI. Current: tip={x_tip}px, tilt={y_tilt}px. New: tip={new_tip}mrad, tilt={new_tilt}mrad'
         })
 
-    ttm_stream.set_data([new_tip, new_tilt], True)
+    ttm_stream.set_data(np.array([new_tip, new_tilt]), True)
 
     return 0
 
@@ -518,7 +518,7 @@ def tip_tilt_wfs_to_ttm(tt_threshold=config.AO.WFS_centering_slope_threshold,
                     f'Changing tip-tilt based on WFS. Current: tip={tip_residual}px, tilt={tilt_residual}px. New: tip={new_tip}mrad, tilt={new_tilt}mrad'
             })
 
-        ttm_stream.set_data([new_tip, new_tilt], True)
+        ttm_stream.set_data(np.array([new_tip, new_tilt]), True)
 
         time.sleep(1)
 
