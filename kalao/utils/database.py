@@ -139,9 +139,9 @@ def get_time_since_state(collection_name, key, condition='==', value=None,
     cursor = collection.aggregate([
         {'$match': {'key': key}},
         {'$project': {'_id': 0, 'key': 1, 'values': 1}},
-        {'$addFields': {'current': {'$last': '$values'}}},
-        {'$addFields': {'previous': {'$last': {'$filter': {'input': '$values', 'cond': cond, 'as': "previous"}}}}},
-        {'$addFields': {'since': {'$first': {'$filter': {'input': '$values', 'cond': {'$gt': ['$$since.timestamp', '$previous.timestamp']}, 'as': "since"}}}}},
+        {'$addFields': {'current': {'$arrayElemAt': ['$values', -1]}}},
+        {'$addFields': {'previous': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': cond, 'as': "previous"}}, -1]}}},
+        {'$addFields': {'since': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': {'$gt': ['$$since.timestamp', '$previous.timestamp']}, 'as': "since"}}, 1]}}},
         {'$project': {'values': 0}},
     ])
     # yapf: enable
