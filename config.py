@@ -587,6 +587,7 @@ class GUI:
     max_fps = 10
 
     http_port = 6666
+    http_dataformat = 'pickle'
 
 
 class FPS(StrEnum):

@@ -30,6 +30,11 @@ ColorPalette = [
 ]
 
 
+class Scale(StrEnum):
+    LINEAR = 'Linear'
+    LOG = 'Logarithmic'
+
+
 class PokeState(StrEnum):
     FLAT = "No poke"
     DOWN = "Poke down"

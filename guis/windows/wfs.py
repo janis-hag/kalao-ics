@@ -4,16 +4,17 @@ from kalao.utils import kalao_tools
 
 from guis.kalao import colormaps
 from guis.kalao.definitions import Color
-from guis.kalao.mixins import HoverMixin, MinMaxMixin
+from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
 import config
 
 
-class WFSWidget(KalAOWidget, MinMaxMixin, HoverMixin):
+class WFSWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.NUVU
     stream_info = config.StreamInfo.nuvu_stream
+
     data_unit = ' ADU'
     data_precision = 0
 
@@ -28,7 +29,7 @@ class WFSWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         loadUi('wfs.ui', self)
         self.resize(600, 400)
 
-        MinMaxMixin.init(self)
+        self.init_minmax(self.wfs_view)
 
         self.change_colormap(Qt.Unchecked)
 
@@ -63,11 +64,11 @@ class WFSWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
         self.wfs_view.setView(self.stream_info['shape'])
 
-        self.wfs_view.hovered.connect(self.hover_event)
+        self.wfs_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_updated.connect(self.streams_updated)
 
     def streams_updated(self, data):
-        img = self.backend.consume_stream(data, config.Streams.NUVU)
+        img = self.consume_stream(data, config.Streams.NUVU)
 
         if img is not None:
             img_min, img_max = self.compute_min_max(img)
@@ -76,13 +77,13 @@ class WFSWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.wfs_view.setColormap(colormaps.GrayscaleSaturation())
+            self.wfs_view.updateColormap(colormaps.GrayscaleSaturation())
         else:
-            self.wfs_view.setColormap(colormaps.BlackBody())
+            self.wfs_view.updateColormap(colormaps.BlackBody())
 
     subap_current = None
 
-    def hover_event(self, x, y, v):
+    def hover_xyv_to_str(self, x, y, v):
         #self.tooltip= QToolTip()
 
         pen = QPen(Color.GREEN, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)

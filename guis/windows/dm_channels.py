@@ -1,16 +1,19 @@
 from PySide6.QtCore import QTimer, Slot
 
 from guis.kalao import colormaps
-from guis.kalao.mixins import MinMaxMixin
+from guis.kalao.mixins import (BackendActionMixin, BackendDataMixin,
+                               MinMaxMixin, SceneHoverMixin)
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOMainWindow
 
 import config
 
 
-class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
+class DMChannelsWindow(KalAOMainWindow, BackendActionMixin, MinMaxMixin,
+                       SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.DM
     stream_info = config.StreamInfo.dm01disp
+
     data_unit = ' µm'
     data_precision = 3
 
@@ -40,22 +43,24 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
             prefix = 'DM_'
             disp_name = config.Streams.DM.value
 
-        MinMaxMixin.init(self)
+        self.dm_view.updateColormap(colormaps.CoolWarm())
+        self.dm_view.hovered.connect(self.hover_xyv_to_str)
 
-        self.timer = QTimer()
-        self.timer.setInterval(int(1000. / config.GUI.max_fps))
-        self.timer.timeout.connect(lambda: self.backend.update_dmdisp(
-            self.dm_number))
-        self.timer.start()
-
-        self.dm_view.setColormap(colormaps.CoolWarm())
+        view_list = [self.dm_view]
+        self.reset_buttons = {}
         for i in range(0, 12):
             view = getattr(self, f'view_{i:02d}')
-            view.setColormap(colormaps.CoolWarm())
+            view.hovered.connect(self.hover_xyv_to_str)
+            view.updateColormap(colormaps.CoolWarm())
 
             reset_button = getattr(self, f'reset_button_{i:02d}')
             reset_button.clicked.connect(lambda checked=False, i=i: self.
                                          on_reset_button_clicked(checked, i))
+
+            self.reset_buttons[i] = reset_button
+            view_list.append(view)
+
+        self.init_minmax(view_list, symetric=True)
 
         for s in config.Streams:
             if s.name.startswith(prefix):
@@ -68,33 +73,43 @@ class DMChannelsWindow(KalAOMainWindow, MinMaxMixin):
                 label = getattr(self, f'label_{value}_info')
                 label.setText(name)
 
+        self.hovered.connect(self.info_to_statusbar)
+
         self.backend.dmdisp_updated.connect(self.dmdisp_updated)
+
+        self.timer = QTimer()
+        self.timer.setInterval(int(1000. / config.GUI.max_fps))
+        self.timer.timeout.connect(lambda: self.backend.get_streams_dmdisp(
+            self.dm_number))
+        self.timer.start()
 
         self.show()
         self.setFixedSize(self.size())
 
     def dmdisp_updated(self, data):
-        img = self.backend.consume_stream(data, f'dm{self.dm_number:02d}disp')
+        img = self.consume_stream(data, f'dm{self.dm_number:02d}disp')
 
         if img is not None:
-            img_min, img_max = self.compute_min_max(img, symetric=True)
+            img_min, img_max = self.compute_min_max(img)
 
             self.dm_view.setImage(img, img_min, img_max)
 
         for i in range(0, 12):
-            img = self.backend.consume_stream(
-                data, f'dm{self.dm_number:02d}disp{i:02d}')
+            img = self.consume_stream(data,
+                                      f'dm{self.dm_number:02d}disp{i:02d}')
 
             if img is not None:
                 view = getattr(self, f'view_{i:02d}')
                 view.setImage(img, img_min, img_max)
 
     def on_reset_button_clicked(self, checked, i):
-        self.backend.reset_channel(self.dm_number, i)
+        self.action_send(self.reset_buttons[i], self.backend.reset_channel,
+                         self.dm_number, i)
 
     @Slot(bool)
     def on_reset_all_button_clicked(self, checked):
-        self.backend.reset_dm(self.dm_number)
+        self.action_send(self.reset_all_button, self.backend.reset_dm,
+                         self.dm_number)
 
     def closeEvent(self, event):
         self.timer.stop()

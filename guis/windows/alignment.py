@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QWidget
 from kalao.utils import kalao_tools
 
 from guis.kalao.definitions import HORI, VERT, Color, PokeState
+from guis.kalao.mixins import BackendDataMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOMainWindow
 
@@ -20,7 +21,7 @@ class AlignmentSubwindow(QWidget):
         loadUi('alignment_subwindow.ui', self)
 
 
-class AlignmentWindow(KalAOMainWindow):
+class AlignmentWindow(KalAOMainWindow, BackendDataMixin):
     def __init__(self, backend, wfs):
         super().__init__()
 
@@ -112,8 +113,8 @@ class AlignmentWindow(KalAOMainWindow):
                 pos = {}
 
                 for state in PokeState:
-                    frame = self.backend.consume_stream(
-                        data, f'{config.FPS.NUVU}_{state}')
+                    frame = self.consume_stream(data,
+                                                f'{config.FPS.NUVU}_{state}')
 
                     _, subapertures[
                         state] = kalao_tools.get_roi_and_subapertures(frame)

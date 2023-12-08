@@ -11,8 +11,6 @@ from guis.kalao.definitions import PokeState
 
 import config
 
-#TODO: replace with Streams enum?
-
 
 class AlignmentBackend(FakeSHMFPSBackend):
     alignment_window = None
@@ -22,7 +20,7 @@ class AlignmentBackend(FakeSHMFPSBackend):
 
     @emit('streams_updated')
     @timeit
-    def update_streams(self):
+    def get_streams_all(self):
         data_dm_down = np.zeros((12, 12))
         for act in self.alignment_window.actuators_to_poke:
             data_dm_down[kalao_tools.get_actuator_2d(

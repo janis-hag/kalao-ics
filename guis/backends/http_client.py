@@ -1,22 +1,24 @@
 import pickle
+import traceback
 from functools import partial
 
 from PySide6.QtCore import QByteArray, QEventLoop, QUrl, Signal
-from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest
+from PySide6.QtNetwork import (QNetworkAccessManager, QNetworkReply,
+                               QNetworkRequest)
 
-import lz4.frame
-
-from guis.backends.abstract import AbstractBackend
-from guis.kalao.json_coder import FakeSignal, KalAOJSONEncoder
+from guis.backends.abstract import AbstractBackend, name_to_url
+from guis.kalao.json_coder import (FakeSignal, KalAOJSONDecoder,
+                                   KalAOJSONEncoder)
 
 import config
 
 
 class MainBackend(AbstractBackend):
+    encoder = KalAOJSONEncoder()
+    decoder = KalAOJSONDecoder()
+
     def __init__(self):
         super().__init__()
-
-        self.manager = QNetworkAccessManager(self)
 
     def __getattr__(self, path):
         if '_updated' in path:
@@ -39,8 +41,10 @@ class MainBackend(AbstractBackend):
         self.__class__ = new_cls
 
     def forward(self, path, *args, **kwargs):
+        url = name_to_url(path)
+
         request = QNetworkRequest()
-        request.setUrl(QUrl(f"http://localhost:{config.GUI.http_port}/{path}"))
+        request.setUrl(QUrl(f"http://localhost:{config.GUI.http_port}{url}"))
         request.setHeader(QNetworkRequest.ContentTypeHeader,
                           "application/json")
 
@@ -49,17 +53,32 @@ class MainBackend(AbstractBackend):
             'kwargs': kwargs,
         }
 
-        reply = self.manager.post(request,
-                                  QByteArray(KalAOJSONEncoder().encode(data)))
+        manager = QNetworkAccessManager()
+
+        if path.startswith('get_'):
+            reply = manager.get(request)
+        elif path.startswith('set_'):
+            reply = manager.post(request,
+                                 QByteArray(self.encoder.encode(data)))
 
         loop = QEventLoop()
         reply.finished.connect(loop.quit)
         loop.exec()
 
-        #reply.error()
-        data = reply.readAll()
-        #data = lz4.frame.decompress(data.data())
-        ret = pickle.loads(data)  #.toStdString())
+        if reply.error() != QNetworkReply.NoError:
+            print(f'[ERROR] {reply.errorString()}.')
+            return None
+
+        try:
+            data = reply.readAll()
+            if config.GUI.http_dataformat == 'pickle':
+                ret = pickle.loads(data)
+            else:
+                ret = self.decoder.decode(data.data().decode("utf-8"))
+        except Exception:
+            print(f'[ERROR] An error occurred during data loading of {url}.')
+            traceback.print_exc()
+            return None
 
         if isinstance(ret, FakeSignal):
             return getattr(self, ret.name).emit(*ret.args)

@@ -58,6 +58,9 @@
       </item>
       <item row="2" column="1">
        <widget class="QDoubleSpinBox" name="calibunit_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string> mm</string>
         </property>
@@ -106,6 +109,9 @@
       </item>
       <item row="5" column="1">
        <widget class="QDoubleSpinBox" name="laser_intensity_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string> mW</string>
         </property>
@@ -273,14 +279,14 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_6">
       <item>
-       <widget class="QPushButton" name="pushButton_4">
+       <widget class="QPushButton" name="centering_star_button">
         <property name="text">
          <string>Relaunch centering on star</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_5">
+       <widget class="QPushButton" name="centering_laser_button">
         <property name="text">
          <string>Relaunch centering on laser</string>
         </property>
@@ -312,23 +318,77 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
       <item row="0" column="0">
-       <widget class="QLabel" name="label_8">
+       <widget class="QLabel" name="fli_exposure_time_label">
         <property name="text">
          <string>Exposure time</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+       <widget class="QDoubleSpinBox" name="fli_exposure_time_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string> s</string>
         </property>
+        <property name="decimals">
+         <number>3</number>
+        </property>
+        <property name="minimum">
+         <double>0.001000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>99999999.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="QPushButton" name="pushButton_3">
+      <item row="2" column="0" colspan="2">
+       <widget class="QPushButton" name="fli_new_image_button">
         <property name="text">
          <string>Take a new image</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QPushButton" name="fli_cancel_button">
+        <property name="text">
+         <string>Cancel exposure</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="fli_remaining_time_spinbox">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="buttonSymbols">
+         <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string> s</string>
+        </property>
+        <property name="decimals">
+         <number>3</number>
+        </property>
+        <property name="minimum">
+         <double>-1.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>99999999.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="fli_remaining_time_label">
+        <property name="text">
+         <string>Remaining time</string>
         </property>
        </widget>
       </item>

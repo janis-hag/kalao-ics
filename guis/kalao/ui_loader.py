@@ -3,9 +3,7 @@ from pathlib import Path
 from PySide6.QtCore import QMetaObject
 from PySide6.QtUiTools import QUiLoader
 
-from guis.kalao.widgets import (KalAOChart, KalAODateTimeEdit,
-                                KalAOGraphicsView, KalAOLabel,
-                                KalAOStatusIndicator, KalAOSvgWidget)
+from guis.kalao.widgets import *
 
 uipath = Path(__file__).absolute().parent.parent / 'ui'
 
@@ -18,10 +16,12 @@ class UiLoader(QUiLoader):
 
         self.registerCustomWidget(KalAOLabel)
         self.registerCustomWidget(KalAOGraphicsView)
-        self.registerCustomWidget(KalAOChart)
+        self.registerCustomWidget(KalAOChartView)
+        self.registerCustomWidget(KalAODraggableChartView)
         self.registerCustomWidget(KalAOSvgWidget)
         self.registerCustomWidget(KalAODateTimeEdit)
         self.registerCustomWidget(KalAOStatusIndicator)
+        self.registerCustomWidget(KalAOScaledDoubleSpinbox)
 
     def createWidget(self, class_name, parent=None, name=''):
         if parent is None and self.baseinstance:

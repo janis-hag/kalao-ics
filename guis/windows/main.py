@@ -5,6 +5,7 @@ from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QCheckBox
 
 from guis.kalao.definitions import Color, Logo
+from guis.kalao.mixins import BackendDataMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOLabel, KalAOMainWindow
 from guis.windows.dm import DMWidget
@@ -21,7 +22,7 @@ from guis.windows.wfs import WFSWidget
 import config
 
 
-class MainWindow(KalAOMainWindow):
+class MainWindow(KalAOMainWindow, BackendDataMixin):
     previous_update_time = 0
 
     TAB_MAIN = 0
@@ -30,7 +31,8 @@ class MainWindow(KalAOMainWindow):
     TAB_ENGINEERING = 3
     TAB_LOGS = 4
 
-    def __init__(self, backends, backend, timer_streams, parent=None):
+    def __init__(self, backends, backend, timer_streams, expert_mode=False,
+                 parent=None):
         super().__init__(parent)
 
         self.backends = backends
@@ -54,7 +56,7 @@ class MainWindow(KalAOMainWindow):
         self.statusBar().addPermanentWidget(self.fps_label)
 
         self.expert_checkbox = QCheckBox('Expert Mode')
-        self.expert_checkbox.setCheckState(Qt.Checked)
+        self.expert_checkbox.setChecked(expert_mode)
         self.expert_checkbox.stateChanged.connect(
             self.on_expert_checkbox_stateChanged)
         self.statusBar().addPermanentWidget(self.expert_checkbox)
@@ -93,16 +95,13 @@ class MainWindow(KalAOMainWindow):
             self.colormap_checkbox.stateChanged.connect(widget.change_colormap)
             widget.change_colormap(self.colormap_checkbox.checkState())
 
-        self.wfs.hovered.connect(self.info_point)
-        self.fli.hovered.connect(self.info_point)
-        self.slopes.hovered.connect(self.info_point)
-        self.flux.hovered.connect(self.info_point)
-        self.dm.hovered.connect(self.info_point)
-        self.plots.hovered.connect(self.info_point)
-
-        self.autogain_indicator.setFixedSize(30, 30)
-        self.dm_loop_indicator.setFixedSize(30, 30)
-        self.ttm_loop_indicator.setFixedSize(30, 30)
+        self.wfs.hovered.connect(self.info_to_statusbar)
+        self.fli.hovered.connect(self.info_to_statusbar)
+        self.slopes.hovered.connect(self.info_to_statusbar)
+        self.flux.hovered.connect(self.info_to_statusbar)
+        self.dm.hovered.connect(self.info_to_statusbar)
+        self.plots.hovered.connect(self.info_to_statusbar)
+        self.loop_controls.hovered.connect(self.info_to_statusbar)
 
         self.logs_initial_tab_color = self.tabwidget.tabBar().tabTextColor(
             self.TAB_LOGS)
@@ -143,12 +142,6 @@ class MainWindow(KalAOMainWindow):
         else:
             self.timer_streams.start()
 
-    def info_point(self, string):
-        if string:
-            self.statusbar.showMessage(string)
-        else:
-            self.statusbar.clearMessage()
-
     @Slot(int)
     def on_tabwidget_currentChanged(self, i):
         # Main tab
@@ -180,15 +173,18 @@ class MainWindow(KalAOMainWindow):
         self.previous_update_time = now
 
     def data_updated(self, data):
-        autogain_on = self.backend.consume_param(data, config.FPS.NUVU,
-                                                 'autogain_on')
+        autogain_on = self.consume_param(data, config.FPS.NUVU, 'autogain_on')
         if autogain_on is not None:
             self.autogain_indicator.setStatus(autogain_on == 1)
 
-        loopON = self.backend.consume_param(data, 'mfilt-1', 'loopON')
+        loopON = self.consume_param(data, 'mfilt-1', 'loopON')
         if loopON is not None:
             self.dm_loop_indicator.setStatus(loopON == 1)
 
-        loopON = self.backend.consume_param(data, 'mfilt-2', 'loopON')
+        loopON = self.consume_param(data, 'mfilt-2', 'loopON')
         if loopON is not None:
             self.ttm_loop_indicator.setStatus(loopON == 1)
+
+        remaining_time = self.consume_dict(data, 'fli', 'remaining_time')
+        if remaining_time is not None:
+            self.exposure_indicator.setStatus(remaining_time >= 0.001)

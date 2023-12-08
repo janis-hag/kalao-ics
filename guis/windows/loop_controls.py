@@ -1,9 +1,9 @@
 import numpy as np
 
 from PySide6.QtCharts import QLineSeries, QValueAxis
-from PySide6.QtCore import QPointF, Qt, Slot
+from PySide6.QtCore import QPointF, Qt, Signal, Slot
 
-from guis.kalao.mixins import BackendActionMixin
+from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
@@ -29,7 +29,9 @@ laws = {
 }
 
 
-class LoopControlsWidget(KalAOWidget, BackendActionMixin):
+class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
+    hovered = Signal(str)
+
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 
@@ -42,21 +44,21 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin):
         chart = self.modalgains_plot.chart
 
         # X Axis Settings
-        self.axisX = QValueAxis()
-        self.axisX.setLabelFormat("%.0f")
-        self.axisX.setTickAnchor(0)
-        self.axisX.setTickInterval(10)
-        self.axisX.setTickType(QValueAxis.TicksDynamic)
-        self.axisX.setRange(-1, 1)
-        chart.addAxis(self.axisX, Qt.AlignBottom)
+        axis_x = self.axis_x = QValueAxis()
+        axis_x.setLabelFormat("%.0f")
+        axis_x.setTickAnchor(0)
+        axis_x.setTickInterval(10)
+        axis_x.setTickType(QValueAxis.TicksDynamic)
+        axis_x.setRange(-1, 1)
+        chart.addAxis(axis_x, Qt.AlignBottom)
 
         # Y Axis Settings
-        self.axisY = QValueAxis()
-        self.axisY.setTickAnchor(0)
-        self.axisY.setTickInterval(0.25)
-        self.axisY.setTickType(QValueAxis.TicksDynamic)
-        self.axisY.setRange(-0.05, 1.05)
-        chart.addAxis(self.axisY, Qt.AlignLeft)
+        axis_y = self.axis_y = QValueAxis()
+        axis_y.setTickAnchor(0)
+        axis_y.setTickInterval(0.25)
+        axis_y.setTickType(QValueAxis.TicksDynamic)
+        axis_y.setRange(-0.05, 1.05)
+        chart.addAxis(axis_y, Qt.AlignLeft)
 
         # Serie
         series = self.modalgains_series = QLineSeries()
@@ -65,61 +67,68 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin):
         series.pressed.connect(self.on_modalgains_pressed)
         series.released.connect(self.on_modalgains_released)
 
+        series.hovered.connect(lambda point, state, series=self.
+                               modalgains_series: self.modalgains_plot.chart.
+                               pointHoveredEvent(point, state, series))
+
         chart.addSeries(series)
-        series.attachAxis(self.axisX)
-        series.attachAxis(self.axisY)
+        series.attachAxis(axis_x)
+        series.attachAxis(axis_y)
 
         for s in laws.keys():
             self.law_combobox.addItem(s)
+
+        self.modalgains_plot.chart.hovered.connect(self.hover_xy_to_str)
+        self.modalgains_plot.dragged.connect(self.hover_xy_to_str)
 
         backend.data_updated.connect(self.data_updated)
 
     def data_updated(self, data):
         # DM Loop
 
-        loopON = self.backend.consume_param(data, 'mfilt-1', 'loopON')
+        loopON = self.consume_param(data, 'mfilt-1', 'loopON')
         if loopON is not None:
             if loopON == 1:
                 self.dm_loop_on_checkbox.setCheckState(Qt.Checked)
             else:
                 self.dm_loop_on_checkbox.setCheckState(Qt.Unchecked)
 
-        loopgain = self.backend.consume_param(data, 'mfilt-1', 'loopgain')
+        loopgain = self.consume_param(data, 'mfilt-1', 'loopgain')
         if loopgain is not None:
             self.dm_loop_gain_spinbox.setValue(loopgain)
 
-        loopmult = self.backend.consume_param(data, 'mfilt-1', 'loopmult')
+        loopmult = self.consume_param(data, 'mfilt-1', 'loopmult')
         if loopmult is not None:
             self.dm_loop_mult_spinbox.setValue(loopmult)
 
-        looplimit = self.backend.consume_param(data, 'mfilt-1', 'looplimit')
+        looplimit = self.consume_param(data, 'mfilt-1', 'looplimit')
         if looplimit is not None:
             self.dm_loop_limit_spinbox.setValue(looplimit)
 
         # TTM Loop
 
-        loopON = self.backend.consume_param(data, 'mfilt-2', 'loopON')
+        loopON = self.consume_param(data, 'mfilt-2', 'loopON')
         if loopON is not None:
             if loopON == 1:
                 self.ttm_loop_on_checkbox.setCheckState(Qt.Checked)
             else:
                 self.ttm_loop_on_checkbox.setCheckState(Qt.Unchecked)
 
-        loopgain = self.backend.consume_param(data, 'mfilt-2', 'loopgain')
+        loopgain = self.consume_param(data, 'mfilt-2', 'loopgain')
         if loopgain is not None:
             self.ttm_loop_gain_spinbox.setValue(loopgain)
 
-        loopmult = self.backend.consume_param(data, 'mfilt-2', 'loopmult')
+        loopmult = self.consume_param(data, 'mfilt-2', 'loopmult')
         if loopmult is not None:
             self.ttm_loop_mult_spinbox.setValue(loopmult)
 
-        looplimit = self.backend.consume_param(data, 'mfilt-2', 'looplimit')
+        looplimit = self.consume_param(data, 'mfilt-2', 'looplimit')
         if looplimit is not None:
             self.ttm_loop_limit_spinbox.setValue(looplimit)
 
         # Modal gains
 
-        img = self.backend.consume_stream(data, config.Streams.MODALGAINS)
+        img = self.consume_stream(data, config.Streams.MODALGAINS)
 
         if img is not None:
             self.display_modalgains(img)
@@ -179,17 +188,26 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin):
     def on_modalgains_pressed(self, point):
         points = self.modalgains_series.points()
 
-        p = min(points, key=lambda x: abs((x - point).x()))
-        i = points.index(p)
+        p, i = self.modalgains_plot.chart.find_closest_point(point, points)
 
-        self.modalgains_plot.chart.current_series = self.modalgains_series
-        self.modalgains_plot.chart.current_point = p
-        self.modalgains_plot.chart.current_index = i
+        self.modalgains_plot.chart.current_dragged_series = self.modalgains_series
+        self.modalgains_plot.chart.current_dragged_point = p
+        self.modalgains_plot.chart.current_dragged_index = i
+
+        self.hovered.emit(f'X: {p.x():.0f}, Y: {p.y():.2f}')
 
     def on_modalgains_released(self, point):
-        self.modalgains_plot.chart.current_series = None
-        self.modalgains_plot.chart.current_point = None
-        self.modalgains_plot.chart.current_index = None
+        self.modalgains_plot.chart.current_dragged_series = None
+        self.modalgains_plot.chart.current_dragged_point = None
+        self.modalgains_plot.chart.current_dragged_index = None
+
+        self.hovered.emit('')
+
+    def hover_xy_to_str(self, x, y):
+        if not np.isnan(x) and not np.isnan(y):
+            self.hovered.emit(f'X: {x:.0f}, Y: {y:.2f}')
+        else:
+            self.hovered.emit(f'')
 
     @Slot(int)
     def on_cutoff_spinbox_valueChanged(self, i):
@@ -222,4 +240,4 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin):
         for i in range(modalgains.size):
             self.modalgains_series.append(QPointF(i, modalgains[i]))
 
-        self.axisX.setRange(-1, modalgains.size)
+        self.axis_x.setRange(-1, modalgains.size)

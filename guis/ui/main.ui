@@ -97,8 +97,8 @@
            <widget class="KalAOSvgWidget" name="logo_label" native="true">
             <property name="minimumSize">
              <size>
-              <width>200</width>
-              <height>70</height>
+              <width>250</width>
+              <height>100</height>
              </size>
             </property>
            </widget>
@@ -106,57 +106,131 @@
           <item>
            <widget class="QGroupBox" name="status_groupbox">
             <property name="title">
-             <string>Status</string>
+             <string>Adaptive Optics</string>
             </property>
             <layout class="QGridLayout" name="gridLayout">
-             <item row="0" column="0">
-              <widget class="QLabel" name="autogain_label">
-               <property name="text">
-                <string>Autogain</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="dm_loop_label">
-               <property name="text">
-                <string>DM Loop</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="KalAOStatusIndicator" name="autogain_indicator">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
+             <item row="2" column="1">
               <widget class="QLabel" name="ttm_loop_label">
                <property name="text">
                 <string>TTM Loop</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
-              <widget class="KalAOStatusIndicator" name="dm_loop_indicator">
+             <item row="0" column="0">
+              <widget class="KalAOStatusIndicator" name="autogain_indicator">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
               </widget>
              </item>
-             <item row="2" column="1">
+             <item row="2" column="0">
               <widget class="KalAOStatusIndicator" name="ttm_loop_indicator">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLabel" name="dm_loop_label">
+               <property name="text">
+                <string>DM Loop</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="KalAOStatusIndicator" name="dm_loop_indicator">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="autogain_label">
+               <property name="text">
+                <string>Autogain</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox">
+            <property name="title">
+             <string>Science Camera</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_9">
+             <item row="0" column="0">
+              <widget class="KalAOStatusIndicator" name="exposure_indicator">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="exposure_label">
+               <property name="text">
+                <string>Exposure</string>
                </property>
               </widget>
              </item>
@@ -185,21 +259,21 @@
              <item>
               <widget class="QCheckBox" name="onsky_checkbox">
                <property name="text">
-                <string>On sky units</string>
+                <string>Use On-Sky Units</string>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QCheckBox" name="colormap_checkbox">
                <property name="text">
-                <string>Grayscale</string>
+                <string>Grayscale Colormap (w/ saturation)</string>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QCheckBox" name="freeze_checkbox">
                <property name="text">
-                <string>Freeze</string>
+                <string>Freeze streams</string>
                </property>
               </widget>
              </item>
@@ -366,7 +440,7 @@
      <x>0</x>
      <y>0</y>
      <width>1053</width>
-     <height>23</height>
+     <height>30</height>
     </rect>
    </property>
   </widget>
@@ -376,7 +450,7 @@
   <customwidget>
    <class>KalAOSvgWidget</class>
    <extends>QWidget</extends>
-   <header>kalaosvgwidget.h</header>
+   <header>kalao</header>
    <container>1</container>
   </customwidget>
   <customwidget>

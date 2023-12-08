@@ -6,16 +6,38 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1319</width>
-    <height>1178</height>
+    <width>969</width>
+    <height>669</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Zoom - Science Camera - KalAO</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="2" column="0">
+     <widget class="KalAOGraphicsView" name="fli_view">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="sizeAdjustPolicy">
+       <enum>QAbstractScrollArea::AdjustToContents</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="KalAOGraphicsView" name="zoom_view"/>
+    </item>
+    <item row="0" column="0" colspan="2">
      <widget class="QLabel" name="title_label">
       <property name="font">
        <font>
@@ -31,7 +53,7 @@
       </property>
      </widget>
     </item>
-    <item>
+    <item row="1" column="0" colspan="2">
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <spacer name="horizontalSpacer">
@@ -54,7 +76,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="min_spinbox">
+       <widget class="KalAOScaledDoubleSpinbox" name="min_spinbox">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -66,6 +88,9 @@
         </property>
         <property name="maximum">
          <double>999999.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>100.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -93,7 +118,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="max_spinbox">
+       <widget class="KalAOScaledDoubleSpinbox" name="max_spinbox">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -105,6 +130,9 @@
         </property>
         <property name="maximum">
          <double>999999.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>100.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -172,26 +200,7 @@
       </item>
      </layout>
     </item>
-    <item>
-     <widget class="KalAOGraphicsView" name="fli_view">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
-      </property>
-      <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarAlwaysOff</enum>
-      </property>
-      <property name="horizontalScrollBarPolicy">
-       <enum>Qt::ScrollBarAlwaysOff</enum>
-      </property>
-      <property name="sizeAdjustPolicy">
-       <enum>QAbstractScrollArea::AdjustToContents</enum>
-      </property>
-     </widget>
-    </item>
-    <item>
+    <item row="3" column="0" colspan="2">
      <widget class="KalAOLabel" name="star_label">
       <property name="text">
        <string>X: {x:.{precision}f}, Y: {y:.{precision}f}, FWHM: {fwhm:.{precision}f}, Peak: {peak}</string>
@@ -201,33 +210,75 @@
       </property>
      </widget>
     </item>
-    <item>
+    <item row="4" column="0" colspan="2">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QComboBox" name="colormap_combobox"/>
       </item>
       <item>
+       <widget class="QComboBox" name="scale_combobox"/>
+      </item>
+      <item>
        <widget class="QSpinBox" name="x_spinbox">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="buttonSymbols">
+         <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string> px</string>
         </property>
         <property name="prefix">
          <string>X: </string>
         </property>
+        <property name="minimum">
+         <number>-1024</number>
+        </property>
+        <property name="maximum">
+         <number>1024</number>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QSpinBox" name="y_spinbox">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="buttonSymbols">
+         <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string> px</string>
         </property>
         <property name="prefix">
          <string>Y: </string>
         </property>
+        <property name="minimum">
+         <number>-1024</number>
+        </property>
+        <property name="maximum">
+         <number>1024</number>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QSpinBox" name="zoom_spinbox">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="buttonSymbols">
+         <enum>QAbstractSpinBox::NoButtons</enum>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string> x</string>
         </property>
@@ -248,6 +299,13 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="update_checkbox">
+        <property name="text">
+         <string>Auto-update</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
    </layout>
@@ -257,7 +315,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1319</width>
+     <width>969</width>
      <height>30</height>
     </rect>
    </property>
@@ -273,6 +331,11 @@
   <customwidget>
    <class>KalAOLabel</class>
    <extends>QLabel</extends>
+   <header>kalao</header>
+  </customwidget>
+  <customwidget>
+   <class>KalAOScaledDoubleSpinbox</class>
+   <extends>QDoubleSpinBox</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

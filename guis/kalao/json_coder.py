@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 
 
@@ -18,13 +19,20 @@ class FakeSignal():
 class KalAOJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
-            return {"_type": "datetime", "value": obj.isoformat()}
+            return {'_type': 'datetime', 'value': obj.isoformat()}
 
         if isinstance(obj, pd.DataFrame):
-            return {"_type": "DataFrame", "value": obj.to_json()}
+            return {'_type': 'DataFrame', 'value': obj.to_json()}
+
+        if isinstance(obj, np.ndarray):
+            return {
+                '_type': 'ndarray',
+                'value': obj.tolist(),
+                'shape': list(obj.shape)
+            }
 
         if isinstance(obj, FakeSignal):
-            return {"_type": "FakeSignal", "name": obj.name, "args": obj.args}
+            return {'_type': 'FakeSignal', 'name': obj.name, 'args': obj.args}
 
         return json.JSONEncoder.default(self, obj)
 
@@ -44,6 +52,9 @@ class KalAOJSONDecoder(json.JSONDecoder):
 
         if type == 'DataFrame':
             return pd.read_json(obj['value'])
+
+        if type == 'ndarray':
+            return np.array(obj['value']).reshape(obj['shape'])
 
         if type == 'FakeSignal':
             return FakeSignal(obj['name'], obj['args'])

@@ -61,12 +61,10 @@ if __name__ == "__main__":
 
     backend.alignment_window = alignment
 
-    backend.update_streams()
-
     # Timing - monitor fps and trigger refresh
     timer = QTimer()
     timer.setInterval(int(1000. / config.GUI.max_fps))
-    timer.timeout.connect(backend.update_streams)
+    timer.timeout.connect(backend.get_streams_all)
     timer.start()
 
     app.exec()

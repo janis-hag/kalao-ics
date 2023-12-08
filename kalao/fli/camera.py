@@ -203,6 +203,15 @@ def cancel():
     return ret
 
 
+def get_exposure_status():
+    ret, exposure_status = _send_request('exposureStatus')
+
+    if ret == ReturnCode.CAMERA_OK:
+        return exposure_status
+    else:
+        return {'remaining_time': -1, 'exposure_time': -1}
+
+
 def get_temperatures():
     """
     Gets CCD and heatsink temperatures from the camera.
@@ -213,12 +222,9 @@ def get_temperatures():
     ret, temperatures = _send_request('temperature')
 
     if ret == ReturnCode.CAMERA_OK:
-        temperatures['fli_temp_CCD'] = temperatures.pop('ccd')
-        temperatures['fli_temp_HS'] = temperatures.pop('heatsink')
         return temperatures
-
     else:
-        return {'fli_temp_CCD': np.inf, 'fli_temp_HS': np.inf}
+        return {'heatsink': np.inf, 'ccd': np.inf}
 
 
 def set_temperature(temperature):
@@ -280,6 +286,9 @@ def _send_request(request_type, params={}):
 
                 if data.get('error_status') is not None:
                     text += f' (status = {data.get("error_status")})'
+
+                if text == '':
+                    text = data
 
                 database.store(
                     'obs', {

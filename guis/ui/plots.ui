@@ -15,7 +15,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0">
    <item>
-    <widget class="KalAOChart" name="plots_view"/>
+    <widget class="KalAOChartView" name="plots_view"/>
    </item>
    <item>
     <layout class="QFormLayout" name="formLayout">
@@ -53,11 +53,10 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0" colspan="2">
+     <item row="4" column="0" colspan="2">
       <widget class="QLabel" name="telemetry_label">
        <property name="font">
         <font>
-         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -69,18 +68,17 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0" colspan="2">
+     <item row="5" column="0" colspan="2">
       <widget class="QListWidget" name="telemetry_list">
        <property name="selectionMode">
         <enum>QAbstractItemView::MultiSelection</enum>
        </property>
       </widget>
      </item>
-     <item row="4" column="0" colspan="2">
+     <item row="6" column="0" colspan="2">
       <widget class="QLabel" name="monitoring_label">
        <property name="font">
         <font>
-         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -92,42 +90,41 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="0" colspan="2">
+     <item row="7" column="0" colspan="2">
       <widget class="QListWidget" name="monitoring_list">
        <property name="selectionMode">
         <enum>QAbstractItemView::MultiSelection</enum>
        </property>
       </widget>
      </item>
-     <item row="8" column="0">
+     <item row="10" column="0">
       <widget class="QLabel" name="live_label">
        <property name="text">
         <string>Live view</string>
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
+     <item row="10" column="1">
       <widget class="QCheckBox" name="live_checkbox"/>
      </item>
-     <item row="9" column="0" colspan="2">
+     <item row="11" column="0" colspan="2">
       <widget class="QPushButton" name="plot_button">
        <property name="text">
         <string>Plot</string>
        </property>
       </widget>
      </item>
-     <item row="7" column="0" colspan="2">
+     <item row="9" column="0" colspan="2">
       <widget class="QListWidget" name="obs_list">
        <property name="selectionMode">
         <enum>QAbstractItemView::MultiSelection</enum>
        </property>
       </widget>
      </item>
-     <item row="6" column="0" colspan="2">
+     <item row="8" column="0" colspan="2">
       <widget class="QLabel" name="obs_label">
        <property name="font">
         <font>
-         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -139,13 +136,27 @@
        </property>
       </widget>
      </item>
+     <item row="2" column="0" colspan="2">
+      <widget class="QPushButton" name="last_hour_button">
+       <property name="text">
+        <string>Last hour</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0" colspan="2">
+      <widget class="QPushButton" name="tonight_button">
+       <property name="text">
+        <string>Tonight</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOChart</class>
+   <class>KalAOChartView</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>

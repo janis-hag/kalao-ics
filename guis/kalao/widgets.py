@@ -2,17 +2,16 @@ from string import Formatter
 
 import numpy as np
 
-from PySide6.QtCharts import QChart, QChartView
+from PySide6.QtCharts import QChart, QChartView, QDateTimeAxis, QXYSeries
 from PySide6.QtCore import (QEvent, QMargins, QPointF, QRect, QRectF, QSize,
                             Signal)
 from PySide6.QtGui import QBrush, QIcon, QPainter, QPen, QPixmap, Qt
 from PySide6.QtSvgWidgets import QSvgWidget
-from PySide6.QtWidgets import (QDateTimeEdit, QGraphicsScene,
+from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsScene,
                                QGraphicsSimpleTextItem, QGraphicsView, QLabel,
-                               QListWidgetItem, QMainWindow, QSizePolicy,
-                               QWidget)
+                               QListWidgetItem, QMainWindow, QWidget)
 
-from guis.kalao.definitions import Color, Logo
+from guis.kalao.definitions import Color, Logo, Scale
 from guis.kalao.mixins import ArrayToImageMixin
 
 
@@ -144,6 +143,37 @@ class KalAODateTimeEdit(QDateTimeEdit):
         self.setDateTime(dt)
 
 
+class KalAOScaledDoubleSpinbox(QDoubleSpinBox):
+    scale = 1
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def value(self):
+        return super().value() / self.scale
+
+    def setValue(self, d):
+        return super().setValue(d * self.scale)
+
+    def minimum(self):
+        return super().minimum() / self.scale
+
+    def setMinimum(self, d):
+        return super().setMinimum(d * self.scale)
+
+    def maximum(self):
+        return super().maximum() / self.scale
+
+    def setMaximum(self, d):
+        return super().setMaximum(d * self.scale)
+
+    def setScale(self, scale):
+        super().setMinimum(super().minimum() / self.scale * scale)
+        super().setMaximum(super().maximum() / self.scale * scale)
+        super().setValue(super().value() / self.scale * scale)
+        self.scale = scale
+
+
 class KalAOSvgWidget(QSvgWidget):
     pass
 
@@ -153,6 +183,12 @@ class KalAOMainWindow(QMainWindow):
         super().__init__(*args, **kwargs)
 
         self.setWindowIcon(QIcon(str(Logo.ico)))
+
+    def info_to_statusbar(self, string):
+        if string:
+            self.statusbar.showMessage(string)
+        else:
+            self.statusbar.clearMessage()
 
 
 class KalAOWidget(QWidget):
@@ -176,11 +212,13 @@ class KalAOListWidgetItem(QListWidgetItem):
         self.key = key
 
 
-class HoverScene(QGraphicsScene):
+class KalAOHoverableGraphicsScene(QGraphicsScene):
     x = -1
     y = -1
 
     hovered = Signal(int, int)
+    clicked = Signal(int, int)
+    scrolled = Signal(int, int, int)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -205,6 +243,25 @@ class HoverScene(QGraphicsScene):
         elif event.type() == QEvent.Type.GraphicsSceneHoverEnter:
             return True
 
+        elif event.type() == QEvent.Type.GraphicsSceneWheel:
+            x = int(event.scenePos().x())
+            y = int(event.scenePos().y())
+
+            if event.pixelDelta().y() > 0:
+                self.scrolled.emit(x, y, 1)
+            elif event.pixelDelta().y() < 0:
+                self.scrolled.emit(x, y, -1)
+
+            return True
+
+        elif event.type() == QEvent.Type.GraphicsSceneMousePress:
+            x = int(event.scenePos().x())
+            y = int(event.scenePos().y())
+
+            self.clicked.emit(x, y)
+
+            return True
+
         else:
             return super().event(event)
 
@@ -226,10 +283,13 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.scene = HoverScene()
+        self.scene = KalAOHoverableGraphicsScene()
         self.setScene(self.scene)
 
         self.setStyleSheet("background: transparent")
+
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def viewSize(self):
         return self.view.adjusted(-self.margins[0], -self.margins[1],
@@ -252,58 +312,142 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
         super().resizeEvent(e)
 
         if self.view is not None:
+            self.scene.setSceneRect(self.viewSize())
             self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
 
-    def setImage(self, img, img_min=None, img_max=None):
+    def setImage(self, img, img_min=None, img_max=None, scale=Scale.LINEAR,
+                 view=None):
         self.img = img
+        self.img_min = img_min
+        self.img_max = img_max
+        self.scale = scale
 
-        self.prepare_array_for_qimage(img, img_min, img_max)
+        self.prepare_array_for_qimage(img, img_min, img_max, scale)
 
         self.pixmap = QPixmap.fromImage(self.image)
 
         if self.pixmap_item is None:
             self.pixmap_item = self.scene.addPixmap(self.pixmap)
             self.pixmap_item.setAcceptHoverEvents(True)
-            self.scene.hovered.connect(self.hover_event)
+            self.scene.hovered.connect(self.hover_to_xyv)
         else:
             self.pixmap_item.setPixmap(self.pixmap)
             self.scene.pixmap_updated()
 
-        if self.shape != img.shape:
-            self.view = self.pixmap.rect()
+        if self.shape != img.shape and view is None:
+            view = self.pixmap.rect()
+
+        if view is not None:
+            self.view = view
+            self.scene.setSceneRect(self.viewSize())
             self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
-            self.adjustSize()
             self.shape = img.shape
 
-    def setColormap(self, colormap):
+    def updateColormap(self, colormap):
         self.colormap = colormap
 
         if self.image is not None:
-            self.image.setColorTable(self.colormap.colormap)
-            self.pixmap = QPixmap.fromImage(self.image)
-            self.pixmap_item.setPixmap(self.pixmap)
+            self.setImage(self.img, self.img_min, self.img_max, self.scale)
+
+    def updateScale(self, scale):
+        self.scale = scale
+
+        if self.image is not None:
+            self.setImage(self.img, self.img_min, self.img_max, self.scale)
+
+    def updateMinMax(self, img_min, img_max):
+        self.img_min = img_min
+        self.img_max = img_max
+
+        if self.image is not None:
+            self.setImage(self.img, self.img_min, self.img_max, self.scale)
 
     def setView(self, shape):
         self.view = QRect(0, 0, shape[1], shape[0])
+        self.scene.setSceneRect(self.viewSize())
         self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
 
-    def hover_event(self, x, y):
+    def hover_to_xyv(self, x, y):
         if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
             self.hovered.emit(x, y, self.img[y, x])
         else:
             self.hovered.emit(-1, -1, np.nan)
 
 
-class KalAOChart(QChartView):
-    drag_max = 1
-    drag_min = 0
+class KalAOChart(QChart):
+    hovered = Signal(float, float)
 
+    point_size = 3
+    current_hovered_index = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def pointHoveredEvent(self, point, state, series):
+        points = series.points()
+
+        closest_point, closest_index = self.find_closest_point(point, points)
+
+        if self.current_hovered_index is not None:
+            series.setPointConfiguration(self.current_hovered_index, {
+                QXYSeries.PointConfiguration.Size: self.point_size
+            })
+
+        if not self.point_visible(series, closest_index):
+            return
+
+        if state:
+            series.setPointConfiguration(closest_index, {
+                QXYSeries.PointConfiguration.Size: 2 * self.point_size
+            })
+
+            self.hovered.emit(closest_point.x(), closest_point.y())
+        else:
+            series.setPointConfiguration(closest_index, {
+                QXYSeries.PointConfiguration.Size: self.point_size
+            })
+
+            self.hovered.emit(np.nan, np.nan)
+
+        self.current_hovered_index = closest_index
+
+    def point_visible(self, series, index):
+        for k, v in series.pointConfiguration(index).items():
+            if k == QXYSeries.PointConfiguration.Visibility:
+                return v
+
+        return True
+
+    def find_closest_point(self, point, points):
+        closest_point = min(points,
+                            key=lambda p: self.points_distance(p, point))
+        closest_index = points.index(closest_point)
+
+        return closest_point, closest_index
+
+    def points_distance(self, point1, point2):
+        diff = point2 - point1
+
+        if isinstance(self.axisX(), QDateTimeAxis):
+            x_max = self.axisX().max().toMSecsSinceEpoch()
+            x_min = self.axisX().min().toMSecsSinceEpoch()
+        else:
+            x_max = self.axisX().max()
+            x_min = self.axisX().min()
+
+        x = diff.x() / (x_max-x_min)
+        y = diff.y() / (self.axisY().max() - self.axisY().min())
+
+        return x**2 + y**2
+
+
+class KalAOChartView(QChartView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setRenderHint(QPainter.Antialiasing)
 
-        self.chart = QChart()
+        self.chart = KalAOChart()
         self.chart.setMargins(QMargins(0, 0, 0, 0))
 
         self.chart.setBackgroundVisible(False)
@@ -311,24 +455,44 @@ class KalAOChart(QChartView):
 
         self.setChart(self.chart)
 
-        self.chart.current_series = None
-        self.chart.current_point = None
-        self.chart.current_index = None
+    def updateMinMax(self, y_min, y_max):
+        self.chart.axisY().setRange(y_min, y_max)
+
+
+class KalAODraggableChartView(KalAOChartView):
+    drag_max = 1
+    drag_min = 0
+
+    dragged = Signal(float, float)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.chart.current_dragged_series = None
+        self.chart.current_dragged_point = None
+        self.chart.current_dragged_index = None
 
     def mouseMoveEvent(self, event):
-        if self.chart.current_index is not None:
-            pos = self.chart.mapToValue(event.pos(), self.chart.current_series)
+        if self.chart.current_dragged_index is not None:
+            pos = self.chart.mapToValue(event.pos(),
+                                        self.chart.current_dragged_series)
 
+            x = self.chart.current_dragged_point.x()
             y = max(min(pos.y(), self.drag_max), self.drag_min)
 
-            self.chart.current_series.replace(
-                self.chart.current_index,
-                QPointF(self.chart.current_point.x(), y))
+            self.chart.current_dragged_series.replace(
+                self.chart.current_dragged_index, QPointF(x, y))
+
+            self.dragged.emit(x, y)
 
         super().mouseMoveEvent(event)
 
 
 class KalAOStatusIndicator(QGraphicsView):
+    diameter = 100
+    border = 8
+    view = QRectF(0, 0, diameter, diameter)
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -343,15 +507,22 @@ class KalAOStatusIndicator(QGraphicsView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.pen = QPen(Color.GREY, 8, Qt.SolidLine, Qt.SquareCap,
+        self.pen = QPen(Color.GREY, self.border, Qt.SolidLine, Qt.SquareCap,
                         Qt.MiterJoin)
         self.brush = QBrush(Color.DARK_GREY, Qt.SolidPattern)
 
-        self.ellipse = self.scene.addEllipse(0, 0, 100, 100, self.pen,
+        # pen = QPen(Color.ORANGE, 0, Qt.SolidLine, Qt.SquareCap,
+        #      Qt.MiterJoin)
+        #
+        # brush = QBrush(Color.ORANGE, Qt.SolidPattern)
+
+        # self.rect = self.scene.addRect(0, 0, self.diameter, self.diameter, pen, brush)
+
+        self.ellipse = self.scene.addEllipse(0, 0, self.diameter,
+                                             self.diameter, self.pen,
                                              self.brush)
 
-        self.fitInView(QRect(-10, -10, 110, 110), Qt.KeepAspectRatio)
-        self.adjustSize()
+        self.fitInView(self.view, Qt.KeepAspectRatio)
 
     def setStatus(self, status):
         color = Color.DARK_GREY
@@ -374,4 +545,4 @@ class KalAOStatusIndicator(QGraphicsView):
     def resizeEvent(self, e):
         super().resizeEvent(e)
 
-        self.fitInView(QRect(0, 0, 120, 120), Qt.KeepAspectRatio)
+        self.fitInView(self.view, Qt.KeepAspectRatio)

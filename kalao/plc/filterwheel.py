@@ -125,6 +125,14 @@ def set_filter(filter):
                 })
             time.sleep(config.FilterWheel.retry_wait)
 
+        except ValueError:
+            database.store(
+                'obs', {
+                    'filterwheel_log':
+                        f'[WARNING] ValueError on filter wheel. Retrying ({retry + 1}/{config.FilterWheel.retries}).'
+                })
+            time.sleep(config.FilterWheel.retry_wait)
+
     database.store('obs', {
         'filterwheel_log': '[ERROR] Filter wheel failed too many time.'
     })
@@ -149,6 +157,14 @@ def get_filter(type=str, from_db=False):
                     'obs', {
                         'filterwheel_log':
                             f'[WARNING] SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
+                    })
+                time.sleep(config.FilterWheel.retry_wait)
+
+            except ValueError:
+                database.store(
+                    'obs', {
+                        'filterwheel_log':
+                            f'[WARNING] ValueError on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
                     })
                 time.sleep(config.FilterWheel.retry_wait)
 

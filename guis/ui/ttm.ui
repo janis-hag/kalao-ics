@@ -25,7 +25,7 @@
     </widget>
    </item>
    <item row="2" column="0" colspan="2">
-    <widget class="KalAOChart" name="tiptilt_plot">
+    <widget class="KalAOChartView" name="tiptilt_plot">
      <property name="enabled">
       <bool>true</bool>
      </property>
@@ -93,7 +93,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="min_spinbox">
+      <widget class="KalAOScaledDoubleSpinbox" name="min_spinbox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -141,7 +141,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="max_spinbox">
+      <widget class="KalAOScaledDoubleSpinbox" name="max_spinbox">
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
@@ -232,7 +232,12 @@
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAOChart</class>
+   <class>KalAOScaledDoubleSpinbox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>kalao</header>
+  </customwidget>
+  <customwidget>
+   <class>KalAOChartView</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>

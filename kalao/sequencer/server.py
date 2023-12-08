@@ -336,8 +336,7 @@ def execute_command(command, seq_args):
                     SequencerStatus.ERROR
             })
 
-        traceback.print_tb(e.__traceback__)
-        print(f'{e.__class__.__name__}: {e}')
+        traceback.print_exc()
     else:
         database.store(
             'obs', {

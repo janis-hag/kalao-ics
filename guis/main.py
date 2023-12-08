@@ -8,8 +8,11 @@ from PySide6.QtGui import Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
+from kalao.interfaces import fake_data
+
 from guis.windows.dm import DMWidget
 from guis.windows.fli import FLIWidget
+from guis.windows.fli_zoom import FLIZoomWindow
 from guis.windows.flux import FluxWidget
 from guis.windows.logs import LogsWidget
 from guis.windows.main import MainWindow
@@ -30,6 +33,8 @@ if __name__ == "__main__":
                         help='Split windows')
     parser.add_argument('--onsky', action="store_true", dest="onsky",
                         help='On sky units')
+    parser.add_argument('--expert', action="store_true", dest="expert",
+                        help='Expert mode')
     parser.add_argument('--simulation', action="store_true", dest="simulation",
                         help='Simulation mode')
     parser.add_argument('--http', action="store_true", dest="http",
@@ -70,11 +75,11 @@ if __name__ == "__main__":
     # Timer
     timer_streams = QTimer()
     timer_streams.setInterval(int(1000. / config.GUI.max_fps))
-    timer_streams.timeout.connect(backend.update_streams)
+    timer_streams.timeout.connect(backend.get_streams_all)
 
     timer_data = QTimer()
     timer_data.setInterval(int(1000. / config.GUI.max_fps))
-    timer_data.timeout.connect(backend.update_data)
+    timer_data.timeout.connect(backend.get_all)
 
     # Windows
 
@@ -107,7 +112,8 @@ if __name__ == "__main__":
             ttm.change_units(Qt.Checked)
 
     else:
-        unified = MainWindow(backends, backend, timer_streams)
+        unified = MainWindow(backends, backend, timer_streams,
+                             expert_mode=args.expert)
 
         if args.onsky:
             unified_view.onsky_checkbox.setChecked(True)

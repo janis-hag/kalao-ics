@@ -53,7 +53,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="min_spinbox">
+      <widget class="KalAOScaledDoubleSpinbox" name="min_spinbox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -101,7 +101,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="max_spinbox">
+      <widget class="KalAOScaledDoubleSpinbox" name="max_spinbox">
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
@@ -233,6 +233,11 @@
   <customwidget>
    <class>KalAOLabel</class>
    <extends>QLabel</extends>
+   <header>kalao</header>
+  </customwidget>
+  <customwidget>
+   <class>KalAOScaledDoubleSpinbox</class>
+   <extends>QDoubleSpinBox</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

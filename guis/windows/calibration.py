@@ -6,14 +6,14 @@ from PySide6.QtCore import Slot
 
 from kalao.cacao import toolbox
 
-from guis.kalao.mixins import HoverMixin
+from guis.kalao.mixins import SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOGraphicsView, KalAOMainWindow
 
 import config
 
 
-class CalibrationWindow(KalAOMainWindow, HoverMixin):
+class CalibrationWindow(KalAOMainWindow, SceneHoverMixin):
     def __init__(self, conf, loop, wfs_shape, dm_shape, parent=None):
         super().__init__(parent)
 
@@ -32,7 +32,7 @@ class CalibrationWindow(KalAOMainWindow, HoverMixin):
             attr = getattr(self, key)
 
             if isinstance(attr, KalAOGraphicsView):
-                attr.hovered.connect(self.hover_event)
+                attr.hovered.connect(self.hover_xyv_to_str)
 
         self.on_reload_button_clicked()
         self.on_mode_spinbox_valueChanged(self.mode_spinbox.value())

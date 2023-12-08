@@ -33,33 +33,9 @@ def timeit(fun):
     return wrapper
 
 
+def name_to_url(name):
+    return '/' + name.replace('set_', '').replace('get_', '').replace('_', '/')
+
+
 class AbstractBackend(QObject):
-    def consume_stream(self, data, stream_name, default=None):
-        try:
-            param = data[stream_name]['data']
-        except KeyError:
-            return default
-        else:
-            data[stream_name]['updated'] = False
-            return param
-
-    def consume_param(self, data, fps_name, param_name, default=None):
-        try:
-            param = data[fps_name][param_name]['value']
-        except KeyError:
-            return default
-        else:
-            data[fps_name][param_name]['updated'] = False
-            return param
-
-    def consume_plc(self, data, key, default=None):
-        try:
-            return data['plc'][key]
-        except KeyError:
-            return default
-
-    def consume_service(self, data, key, default=None):
-        try:
-            return data['services'][key]
-        except KeyError:
-            return default
+    pass

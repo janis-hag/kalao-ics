@@ -2,9 +2,10 @@ from PySide6.QtCore import Signal
 
 from kalao import logs, services
 from kalao.cacao import aocontrol, toolbox
+from kalao.fli import camera
 from kalao.plc import (adc, calib_unit, filterwheel, flip_mirror, laser,
                        plc_utils, shutter, tungsten)
-from kalao.utils import database
+from kalao.utils import centering, database
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
@@ -26,18 +27,25 @@ class SHMFPSBackend(AbstractBackend):
         if stream is None:
             return
 
-        cnt0 = stream.IMAGE.md.cnt0
+        data[key] = {
+            'cnt0': stream.IMAGE.md.cnt0,
+            'data': stream.get_data(check=False),
+        }
 
-        if data.get(key, {}).get('cnt0') != cnt0:
-            data.update({
-                key: {
-                    'updated': True,
-                    'cnt0': cnt0,
-                    'data': stream.get_data(check=False),
-                }
-            })
-        else:
-            data.update({key: {'updated': False, 'data': None}})
+    def _update_stream_cnt(self, data, stream_name, key=None):
+        if key is None:
+            key = stream_name
+
+        stream = toolbox.open_stream_once(stream_name,
+                                          self.streams_and_fps_cache)
+
+        if stream is None:
+            return
+
+        if data.get(key) is None:
+            data[key] = {}
+
+        data[key]['cnt0'] = stream.IMAGE.md.cnt0,
 
     def _update_params(self, data, fps_name, param_name):
         fps = toolbox.open_fps_once(fps_name, self.streams_and_fps_cache)
@@ -45,31 +53,24 @@ class SHMFPSBackend(AbstractBackend):
         if fps is None:
             return
 
-        param = fps.get_param(param_name)
-
         if data.get(fps_name) is None:
             data[fps_name] = {}
 
-        if data.get(fps_name, {}).get(param_name, {}).get('cnt0') != param:
-            data[fps_name].update({
-                param_name: {
-                    'updated': True,
-                    'cnt0': param,
-                    'value': param
-                }
-            })
-        else:
-            data[fps_name].update({
-                param_name: {
-                    'updated': False,
-                    'value': None
-                }
-            })
+        data[fps_name][param_name] = fps.get_param(param_name)
+
+    def _update_dict(self, data, key, dict):
+        if data.get(key) is None:
+            data[key] = {}
+
+        data[key] = dict
 
 
 class MainBackend(SHMFPSBackend):
     streams_updated = Signal(object)
     streams = {}
+
+    fli_updated = Signal(object)
+    fli = {}
 
     data_updated = Signal(object)
     data = {}
@@ -82,11 +83,9 @@ class MainBackend(SHMFPSBackend):
 
         self.reader = logs.get_reader(True)
 
-        self.streams['plc'] = {}
-
     @emit('streams_updated')
     @timeit
-    def update_streams(self):
+    def get_streams_all(self):
         self._update_stream(self.streams, config.Streams.DM)
         self._update_params(self.streams, config.FPS.BMC, 'max_stroke')
 
@@ -103,13 +102,20 @@ class MainBackend(SHMFPSBackend):
         self._update_params(self.streams, config.FPS.SHWFS,
                             'flux_subaperture_brightest')
 
-        self._update_stream(self.streams, config.Streams.FLI)
+        self._update_stream_cnt(self.streams, config.Streams.FLI)
 
         return self.streams
 
+    @emit('fli_updated')
+    @timeit
+    def get_streams_fli(self):
+        self._update_stream(self.fli, config.Streams.FLI)
+
+        return self.fli
+
     @emit('data_updated')
     @timeit
-    def update_data(self):
+    def get_all(self):
         self._update_stream(self.data, config.Streams.TTM)
         self._update_stream(self.data, config.Streams.MODALGAINS)
 
@@ -125,14 +131,15 @@ class MainBackend(SHMFPSBackend):
         self._update_params(self.data, 'mfilt-2', 'loopmult')
         self._update_params(self.data, 'mfilt-2', 'looplimit')
 
-        self.data['plc'].update(plc_utils.get_all_status())
-        self.data['services'].update(services.get_all_status())
+        self._update_dict(self.data, 'plc', plc_utils.get_all_status())
+        self._update_dict(self.data, 'services', services.get_all_status())
+        self._update_dict(self.data, 'fli', camera.get_exposure_status())
 
         return self.data
 
     @emit('dmdisp_updated')
     @timeit
-    def update_dmdisp(self, dm_number):
+    def get_streams_dmdisp(self, dm_number):
         if dm_number not in self.dmdisp:
             self.dmdisp[dm_number] = {}
 
@@ -144,8 +151,8 @@ class MainBackend(SHMFPSBackend):
 
         return self.dmdisp[dm_number]
 
-    def get_plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
-                       obs_keys):
+    def plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
+                   obs_keys):
 
         data = {}
 
@@ -195,34 +202,46 @@ class MainBackend(SHMFPSBackend):
 
     ##### Engineering
 
-    def set_shutter_state(self, state):
+    def set_plc_shutter_state(self, state):
         shutter._switch(state)
 
-    def set_flipmirror_position(self, position):
+    def set_plc_flipmirror_position(self, position):
         flip_mirror._switch(position)
 
-    def set_calibunit_position(self, position):
+    def set_plc_calibunit_position(self, position):
         calib_unit.move(position)
 
-    def set_tungsten_state(self, state):
+    def set_plc_tungsten_state(self, state):
         tungsten.send_command(state)
 
-    def set_laser_state(self, state):
+    def set_plc_laser_state(self, state):
         laser._switch(state)
 
-    def set_laser_intensity(self, intensity):
+    def set_plc_laser_intensity(self, intensity):
         laser.set_intensity(intensity)
 
-    def set_filterwheel_filter(self, filter):
+    def set_plc_filterwheel_filter(self, filter):
         filterwheel.set_filter(filter)
 
-    def set_adc1_position(self, position):
+    def set_plc_adc_1_position(self, position):
         adc.rotate(1, position)
 
-    def set_adc2_position(self, position):
+    def set_plc_adc_2_position(self, position):
         adc.rotate(2, position)
 
-    def service_action(self, unit, action):
+    def set_fli_image(self, exposure_time):
+        camera.take_frame(exposure_time)
+
+    def get_fli_cancel(self):
+        camera.cancel()
+
+    def get_centering_star(self):
+        centering.center_on_target()
+
+    def get_centering_laser(self):
+        centering.center_on_laser()
+
+    def set_services_action(self, unit, action):
         services.unit_control(unit, action)
 
     ##### DM channels
@@ -249,7 +268,7 @@ class MainBackend(SHMFPSBackend):
 
     ##### Logs
 
-    def init_logs(self):
+    def get_logs_init(self):
         entries = []
         for entry in logs.seek(self.reader, LogsOutputType.QT,
                                config.GUI.initial_logs_entries):
@@ -259,7 +278,7 @@ class MainBackend(SHMFPSBackend):
 
         return entries
 
-    def get_logs(self):
+    def get_logs_new(self):
         entries = []
 
         for entry in logs.get_last_entries(self.reader, LogsOutputType.QT):

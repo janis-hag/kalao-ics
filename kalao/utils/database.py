@@ -7,6 +7,7 @@
 import math
 import os
 from datetime import datetime, timedelta, timezone
+from enum import Enum
 from pathlib import Path
 
 import pandas as pd
@@ -18,9 +19,6 @@ from bson.codec_options import CodecOptions
 from pymongo import DESCENDING, MongoClient, UpdateOne
 from pymongo.errors import BulkWriteError
 
-from kalao.definitions.enums import StrEnum
-
-#from enum import StrEnum
 import config
 
 definitions = {
@@ -193,8 +191,8 @@ def store(collection_name, data):
         if not key in definitions[collection_name]['metadata']:
             raise KeyError(f'Inserting unknown key "{key}" in database')
 
-        if isinstance(data[key], StrEnum):
-            data[key] = str(data[key])
+        if isinstance(data[key], Enum):
+            data[key] = data[key].value
         elif isinstance(data[key], Path):
             data[key] = str(data[key])
 

@@ -19,39 +19,46 @@ import config
 class FakeSHMFPSBackend(AbstractBackend):
     streams_and_fps_cache = {}
 
-    def _update_stream(self, data, stream_name, stream, key=None):
+    def _update_stream(self, data, stream_name, stream_data, key=None):
         if key is None:
             key = stream_name
 
-        cnt0 = data.get(stream_name, {}).get('cnt0', 0)
+        if data.get(key) is None:
+            data[key] = {}
 
-        data.update({
-            key: {
-                'updated': True,
-                'cnt0': cnt0 + 1,
-                'data': stream,
-            }
-        })
+        cnt0 = data[key].get('cnt0', -1)
+
+        data[key] = {
+            'cnt0': cnt0 + 1,
+            'data': stream_data,
+        }
+
+        if stream_name == 'fli_stream':
+            data[key]['cnt0'] = self.streams.get('fli_stream',
+                                                 {}).get('cnt0', -1)
+
+    def _update_stream_cnt(self, data, stream_name, key=None):
+        if key is None:
+            key = stream_name
+
+        if data.get(key) is None:
+            data[key] = {}
+
+        cnt0 = data[key].get('cnt0', -1)
+
+        data[key]['cnt0'] = cnt0 + 1
 
     def _update_params(self, data, fps_name, param_name, param):
         if data.get(fps_name) is None:
             data[fps_name] = {}
 
-        if data.get(fps_name, {}).get(param_name, {}).get('cnt0') != param:
-            data[fps_name].update({
-                param_name: {
-                    'updated': True,
-                    'cnt0': param,
-                    'value': param
-                }
-            })
-        else:
-            data[fps_name].update({
-                param_name: {
-                    'updated': False,
-                    'value': None
-                }
-            })
+        data[fps_name][param_name] = param
+
+    def _update_dict(self, data, key, dict):
+        if data.get(key) is None:
+            data[key] = {}
+
+        data[key] = dict
 
 
 class MainBackend(FakeSHMFPSBackend):
@@ -62,6 +69,9 @@ class MainBackend(FakeSHMFPSBackend):
     streams_updated = Signal(object)
     streams = {}
 
+    fli_updated = Signal(object)
+    fli = {}
+
     data_updated = Signal(object)
     data = {}
 
@@ -70,22 +80,24 @@ class MainBackend(FakeSHMFPSBackend):
 
     @emit('streams_updated')
     @timeit
-    def update_streams(self):
-        dm_data = fake_data.dm()
-        nuvu_data = fake_data.nuvu_frame(dmdisp=np.ma.getdata(dm_data))
+    def get_streams_all(self):
+        self.dm_data = fake_data.dm()
+        nuvu_data = fake_data.nuvu_frame(dmdisp=np.ma.getdata(self.dm_data),
+                                         tiptilt=self.ttm_data)
         slopes_data = fake_data.slopes(nuvu_data)
         flux_data = fake_data.flux(nuvu_data)
-        fli_data = fake_data.fli_frame(dmdisp=np.ma.getdata(dm_data))
 
         slopes_params = fake_data.slopes_params(slopes_data)
         flux_params = fake_data.flux_params(flux_data)
 
-        self._update_stream(self.streams, config.Streams.DM, dm_data)
+        self._update_stream(self.streams, config.Streams.DM,
+                            self.dm_data.filled())
         self._update_params(self.streams, config.FPS.BMC, 'max_stroke', 0.9)
 
         self._update_stream(self.streams, config.Streams.NUVU, nuvu_data)
 
-        self._update_stream(self.streams, config.Streams.SLOPES, slopes_data)
+        self._update_stream(self.streams, config.Streams.SLOPES,
+                            slopes_data.filled())
         self._update_params(self.streams, config.FPS.SHWFS, 'slope_x',
                             slopes_params['slope_x'])
         self._update_params(self.streams, config.FPS.SHWFS, 'slope_y',
@@ -93,7 +105,8 @@ class MainBackend(FakeSHMFPSBackend):
         self._update_params(self.streams, config.FPS.SHWFS, 'residual',
                             slopes_params['residual'])
 
-        self._update_stream(self.streams, config.Streams.FLUX, flux_data)
+        self._update_stream(self.streams, config.Streams.FLUX,
+                            flux_data.filled())
         self._update_params(self.streams, config.FPS.SHWFS,
                             'flux_subaperture_avg',
                             flux_params['flux_subaperture_avg'])
@@ -102,16 +115,24 @@ class MainBackend(FakeSHMFPSBackend):
                             flux_params['flux_subaperture_brightest'])
 
         if time.monotonic() - self.last_fli_update > 10:
-            self._update_stream(self.streams, config.Streams.FLI, fli_data)
+            self._update_stream_cnt(self.streams, config.Streams.FLI)
             self.last_fli_update = time.monotonic()
-        else:
-            self._update_stream(self.streams, config.Streams.FLI, None)
 
         return self.streams
 
+    @emit('fli_updated')
+    @timeit
+    def get_streams_fli(self):
+        fli_data = fake_data.fli_frame(dmdisp=np.ma.getdata(self.dm_data),
+                                       tiptilt=self.ttm_data)
+
+        self._update_stream(self.fli, config.Streams.FLI, fli_data)
+
+        return self.fli
+
     @emit('data_updated')
     @timeit
-    def update_data(self):
+    def get_all(self):
         self.ttm_data = fake_data.tiptilt(seed=self.ttm_data)
 
         self._update_stream(self.data, config.Streams.TTM, self.ttm_data)
@@ -132,59 +153,66 @@ class MainBackend(FakeSHMFPSBackend):
             self._update_params(self.data, 'mfilt-2', 'loopmult', 0.99)
             self._update_params(self.data, 'mfilt-2', 'looplimit', 1)
 
-            self.data['plc'] = {
-                'shutter_state': 'CLOSED',
-                'flip_mirror_position': 'DOWN',
-                'calib_unit_position': 23.56,
-                'laser_state': 'ON',
-                'laser_power': 4.5,
-                'tungsten_state': 'OFF',
-                'adc1_angle': 135,
-                'adc2_angle': 45,
-                'filterwheel_filter_position': 4,
-                'filterwheel_filter_name': 'z',
-                'temp_bench_air': 18.2,
-                'temp_bench_board': 18.1,
-                'temp_water_in': 13,
-                'temp_water_out': 15,
-                'pump_status': 'ON',
-                'pump_temp': 35,
-                'heater_status': 'OFF',
-                'fan_status': 'ON',
-                'flow_value': 2.5
-            }
+            self._update_dict(
+                self.data, 'plc', {
+                    'shutter_state': 'CLOSED',
+                    'flip_mirror_position': 'DOWN',
+                    'calib_unit_position': 23.56,
+                    'laser_state': 'ON',
+                    'laser_power': 4.5,
+                    'tungsten_state': 'OFF',
+                    'adc1_angle': 135,
+                    'adc2_angle': 45,
+                    'filterwheel_filter_position': 4,
+                    'filterwheel_filter_name': 'z',
+                    'temp_bench_air': 18.2,
+                    'temp_bench_board': 18.1,
+                    'temp_water_in': 13,
+                    'temp_water_out': 15,
+                    'pump_status': 'ON',
+                    'pump_temp': 35,
+                    'heater_status': 'OFF',
+                    'fan_status': 'ON',
+                    'flow_value': 2.5
+                })
 
-            self.data['services'] = {
-                'kalao_nuvu.service': ('active', 'exited',
-                                       datetime(2023, 12, 4, 20, 15, 42,
-                                                397363)),
-                'kalao_cacao.service': ('active', 'exited',
-                                        datetime(2023, 12, 7, 9, 15, 25,
-                                                 886597)),
-                'kalao_sequencer.service': ('active', 'running',
-                                            datetime(2023, 12, 7, 10, 52, 17,
-                                                     270106)),
-                'kalao_camera.service': ('active', 'running',
-                                         datetime(2023, 12, 7, 10, 52, 17,
-                                                  901720)),
-                'kalao_flask-gui.service': ('inactive', 'dead',
-                                            datetime(1970, 1, 1, 0, 0)),
-                'kalao_gop-server.service': ('active', 'running',
-                                             datetime(2023, 12, 7, 10, 52, 17,
-                                                      915063)),
-                'kalao_database-timer.service':
-                    ('active', 'running',
-                     datetime(2023, 12, 7, 10, 52, 17, 921112)),
-                'kalao_safety-timer.service':
-                    ('active', 'running',
-                     datetime(2023, 12, 7, 10, 52, 17, 931899)),
-                'kalao_loop-timer.service': ('active', 'running',
-                                             datetime(2023, 12, 7, 10, 52, 17,
-                                                      932389)),
-                'kalao_pump-timer.service': ('active', 'running',
-                                             datetime(2023, 12, 7, 10, 52, 17,
-                                                      943558))
-            }
+            self._update_dict(
+                self.data, 'services', {
+                    'kalao_nuvu.service':
+                        ('active', 'exited',
+                         datetime(2023, 12, 4, 20, 15, 42, 397363)),
+                    'kalao_cacao.service':
+                        ('active', 'exited',
+                         datetime(2023, 12, 7, 9, 15, 25, 886597)),
+                    'kalao_sequencer.service':
+                        ('active', 'running',
+                         datetime(2023, 12, 7, 10, 52, 17, 270106)),
+                    'kalao_camera.service':
+                        ('active', 'running',
+                         datetime(2023, 12, 7, 10, 52, 17, 901720)),
+                    'kalao_flask-gui.service':
+                        ('inactive', 'dead', datetime(1970, 1, 1, 0, 0)),
+                    'kalao_gop-server.service':
+                        ('active', 'running',
+                         datetime(2023, 12, 7, 10, 52, 17, 915063)),
+                    'kalao_database-timer.service':
+                        ('active', 'running',
+                         datetime(2023, 12, 7, 10, 52, 17, 921112)),
+                    'kalao_safety-timer.service':
+                        ('active', 'running',
+                         datetime(2023, 12, 7, 10, 52, 17, 931899)),
+                    'kalao_loop-timer.service':
+                        ('active', 'running',
+                         datetime(2023, 12, 7, 10, 52, 17, 932389)),
+                    'kalao_pump-timer.service':
+                        ('active', 'running',
+                         datetime(2023, 12, 7, 10, 52, 17, 943558))
+                })
+
+            self._update_dict(self.data, 'fli', {
+                'remaining_time': 0,
+                'exposure_time': 60
+            })
 
             self.first = False
 
@@ -192,7 +220,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     @emit('dmdisp_updated')
     @timeit
-    def update_dmdisp(self, dm_number):
+    def get_streams_dmdisp(self, dm_number):
         if dm_number not in self.dmdisp:
             self.dmdisp[dm_number] = {}
 
@@ -228,17 +256,25 @@ class MainBackend(FakeSHMFPSBackend):
 
         return self.dmdisp[dm_number]
 
-    def get_plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
-                       obs_keys):
-        timestamps = pd.date_range(dt_start, dt_end, 100)
-
+    def plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
+                   obs_keys):
         return {
             'monitoring':
-                self._generate_plots_data(monitoring_keys, timestamps),
+                self._generate_plots_data(
+                    monitoring_keys,
+                    pd.date_range(
+                        dt_start, dt_end,
+                        freq=f'{config.Database.monitoring_update_interval}S')
+                ),
             'telemetry':
-                self._generate_plots_data(telemetry_keys, timestamps),
+                self._generate_plots_data(
+                    telemetry_keys,
+                    pd.date_range(
+                        dt_start, dt_end,
+                        freq=f'{config.Database.telemetry_update_interval}S')),
             'obs':
-                self._generate_plots_data(obs_keys, timestamps),
+                self._generate_plots_data(
+                    obs_keys, pd.date_range(dt_start, dt_end, freq='300S')),
         }
 
     def _generate_plots_data(self, keys, timestamps):
@@ -287,34 +323,46 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### Engineering
 
-    def set_shutter_state(self, state):
+    def set_plc_shutter_state(self, state):
         print(f'Set Shutter state to {state} (virtually)')
 
-    def set_flipmirror_position(self, position):
+    def set_plc_flipmirror_position(self, position):
         print(f'Set Flip Mirror position to {position} (virtually)')
 
-    def set_calibunit_position(self, position):
+    def set_plc_calibunit_position(self, position):
         print(f'Set Calibration Unit position to {position} (virtually)')
 
-    def set_tungsten_state(self, state):
+    def set_plc_tungsten_state(self, state):
         print(f'Set Tungsten state to {state} (virtually)')
 
-    def set_laser_state(self, state):
+    def set_plc_laser_state(self, state):
         print(f'Set Laser state to {state} (virtually)')
 
-    def set_laser_intensity(self, intensity):
+    def set_plc_laser_intensity(self, intensity):
         print(f'Set Laser intensity to {intensity} (virtually)')
 
-    def set_filterwheel_filter(self, filter):
+    def set_plc_filterwheel_filter(self, filter):
         print(f'Set Filter Wheel filter to {filter} (virtually)')
 
-    def set_adc1_position(self, position):
+    def set_plc_adc_1_position(self, position):
         print(f'Set ADC1 position to {position} (virtually)')
 
-    def set_adc2_position(self, position):
+    def set_plc_adc_2_position(self, position):
         print(f'Set ADC2 position to {position} (virtually)')
 
-    def service_action(self, unit, action):
+    def set_fli_image(self, exposure_time):
+        print(f'Started FLI exposure of {exposure_time} (virtually)')
+
+    def get_fli_cancel(self):
+        print(f'Canceled FLI exposure (virtually)')
+
+    def get_centering_star(self):
+        print(f'Star centering launched (virtually)')
+
+    def get_centering_laser(self):
+        print(f'Laser centering launched (virtually)')
+
+    def set_services_action(self, unit, action):
         print(f'Sent {action} to {unit} (virtually)')
 
     ##### DM channels
@@ -335,27 +383,27 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### Logs
 
-    def init_logs(self):
+    def get_logs_init(self):
         logs = []
 
         for _ in range(config.GUI.initial_logs_entries):
-            entry = self.generate_log()
+            entry = self._generate_log()
             entry['text'] = '<span class="init">' + entry['text'] + '<span>'
 
             logs.append(entry)
 
         return logs
 
-    def get_logs(self):
+    def get_logs_new(self):
         logs = []
 
         for _ in range(10):
-            entry = self.generate_log()
+            entry = self._generate_log()
             logs.append(entry)
 
         return logs
 
-    def generate_log(self):
+    def _generate_log(self):
         timestamp = datetime.now().strftime("%y-%m-%d %H:%M:%S")
 
         style_timestamp = '<span class="grey">'

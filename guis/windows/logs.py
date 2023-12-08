@@ -57,20 +57,23 @@ class LogsWidget(KalAOWidget):
               }}
             }}
             """)
-
-        for entry in self.backend.init_logs():
-            self.add_log_entry(entry)
+        entries = self.backend.get_logs_init()
+        if entries is not None:
+            for entry in entries:
+                self.add_log_entry(entry)
 
         self.on_acknowledge_button_clicked(None)
 
         self.timer = QTimer()
         self.timer.setInterval(int(1000. / config.GUI.max_fps * 10))
-        self.timer.timeout.connect(self.get_logs)
+        self.timer.timeout.connect(self.get_logs_new)
         self.timer.start()
 
-    def get_logs(self):
-        for entry in self.backend.get_logs():
-            self.add_log_entry(entry)
+    def get_logs_new(self):
+        entries = self.backend.get_logs_new()
+        if entries is not None:
+            for entry in entries:
+                self.add_log_entry(entry)
 
     def add_log_entry(self, log):
         if log is None:

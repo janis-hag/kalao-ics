@@ -3,7 +3,7 @@ import numpy as np
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton
 
-from guis.kalao.mixins import BackendActionMixin
+from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOStatusIndicator, KalAOWidget
 from guis.windows.dm_channels import DMChannelsWindow
@@ -16,7 +16,7 @@ from kalao.definitions.enums import (FlipMirrorPosition, ServiceAction,
 import config
 
 
-class EngineeringWidget(KalAOWidget, BackendActionMixin):
+class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
     dm_channels = None
     ttm_channels = None
     dm_calibration = None
@@ -44,6 +44,7 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
             self.filterwheel_combobox.addItem(self.filter_display_name(filter),
                                               filter)
 
+        s = 5
         self.services_widgets = {}
         for i, service in enumerate(config.Systemd.services.values()):
             label = QLabel(service['unit'].removeprefix('kalao_').removesuffix(
@@ -60,11 +61,14 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
                 'indicator': indicator
             }
 
-            self.services_groupbox.layout().addWidget(label, i, 0)
-            self.services_groupbox.layout().addWidget(lineedit, i, 2)
+            self.services_groupbox.layout().addWidget(label, i, 0,
+                                                      Qt.AlignVCenter)
+            self.services_groupbox.layout().addWidget(lineedit, i, 2,
+                                                      Qt.AlignVCenter)
 
-            indicator.setFixedSize(25, 25)
-            self.services_groupbox.layout().addWidget(indicator, i, 1)
+            indicator.setFixedSize(20, 20)
+            self.services_groupbox.layout().addWidget(indicator, i, 1,
+                                                      Qt.AlignVCenter)
 
             for j, action in enumerate([
                     ServiceAction.START, ServiceAction.STOP,
@@ -72,9 +76,9 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
                     ServiceAction.RELOAD
             ]):
                 button = QPushButton(action.value.title())
-                button.clicked.connect(lambda checked=False, unit=service[
-                    'unit'], action=action: self.on_service_action_clicked(
-                        checked, unit, action))
+                button.clicked.connect(
+                    lambda checked=False, unit=service['unit'], action=action:
+                    self.on_set_services_action_clicked(checked, unit, action))
                 self.services_groupbox.layout().addWidget(button, i, 3 + j)
 
                 if action == ServiceAction.RELOAD and service[
@@ -113,56 +117,71 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
             return f'{name} ({start_str} – {end_str})'
 
     def data_updated(self, data):
-        shutter_state = self.backend.consume_plc(data, 'shutter_state')
+        shutter_state = self.consume_dict(data, 'plc', 'shutter_state')
         if shutter_state is not None:
             self.shutter_combobox.setCurrentIndex(
                 self.shutter_combobox.findData(shutter_state))
 
-        flip_mirror_position = self.backend.consume_plc(
-            data, 'flip_mirror_position')
+        flip_mirror_position = self.consume_dict(data, 'plc',
+                                                 'flip_mirror_position')
         if shutter_state is not None:
             self.flipmirror_combobox.setCurrentIndex(
                 self.flipmirror_combobox.findData(flip_mirror_position))
 
-        calib_unit_position = self.backend.consume_plc(data,
-                                                       'calib_unit_position')
+        calib_unit_position = self.consume_dict(data, 'plc',
+                                                'calib_unit_position')
         if calib_unit_position is not None:
             self.calibunit_spinbox.setValue(calib_unit_position)
 
-        tungsten_state = self.backend.consume_plc(data, 'tungsten_state')
+        tungsten_state = self.consume_dict(data, 'plc', 'tungsten_state')
         if tungsten_state is not None:
             if tungsten_state == 'ON':
                 self.tungsten_enabled_checkbox.setCheckState(Qt.Checked)
             else:
                 self.tungsten_enabled_checkbox.setCheckState(Qt.Unchecked)
 
-        laser_state = self.backend.consume_plc(data, 'laser_state')
+        laser_state = self.consume_dict(data, 'plc', 'laser_state')
         if laser_state is not None:
             if laser_state == 'ON':
                 self.laser_enabled_checkbox.setCheckState(Qt.Checked)
             else:
                 self.laser_enabled_checkbox.setCheckState(Qt.Unchecked)
 
-        laser_power = self.backend.consume_plc(data, 'laser_power')
+        laser_power = self.consume_dict(data, 'plc', 'laser_power')
         if laser_power is not None:
             self.laser_intensity_spinbox.setValue(laser_power)
 
-        filterwheel_filter_name = self.backend.consume_plc(
-            data, 'filterwheel_filter_name')
+        filterwheel_filter_name = self.consume_dict(data, 'plc',
+                                                    'filterwheel_filter_name')
         if filterwheel_filter_name is not None:
             self.filterwheel_combobox.setCurrentIndex(
                 self.filterwheel_combobox.findData(filterwheel_filter_name))
 
-        adc1_angle = self.backend.consume_plc(data, 'adc1_angle')
+        adc1_angle = self.consume_dict(data, 'plc', 'adc1_angle')
         if adc1_angle is not None:
             self.adc1_spinbox.setValue(adc1_angle)
 
-        adc2_angle = self.backend.consume_plc(data, 'adc2_angle')
+        adc2_angle = self.consume_dict(data, 'plc', 'adc2_angle')
         if adc2_angle is not None:
             self.adc2_spinbox.setValue(adc2_angle)
 
+        exposure_time = self.consume_dict(data, 'fli', 'exposure_time')
+        if exposure_time is not None:
+            self.fli_exposure_time_spinbox.setValue(exposure_time)
+
+        remaining_time = self.consume_dict(data, 'fli', 'remaining_time')
+        if remaining_time is not None:
+            self.fli_remaining_time_spinbox.setValue(remaining_time)
+
+            if remaining_time < 0.001:
+                self.fli_new_image_button.setEnabled(True)
+                self.fli_exposure_time_spinbox.setEnabled(True)
+            else:
+                self.fli_new_image_button.setEnabled(False)
+                self.fli_exposure_time_spinbox.setEnabled(False)
+
         for i, service in enumerate(config.Systemd.services.values()):
-            status = self.backend.consume_service(data, service['unit'])
+            status = self.consume_dict(data, 'services', service['unit'])
             if status is not None:
                 widgets = self.services_widgets[service['unit']]
                 widgets['lineedit'].setText(f'{status[0]} | {status[1]}')
@@ -170,50 +189,62 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
 
     @Slot(int)
     def on_shutter_combobox_currentIndexChanged(self, index):
-        self.action_send(self.shutter_combobox, self.backend.set_shutter_state,
+        self.action_send(self.shutter_combobox,
+                         self.backend.set_plc_shutter_state,
                          self.shutter_combobox.currentData())
 
     @Slot(int)
     def on_flipmirror_combobox_currentIndexChanged(self, index):
         self.action_send(self.flipmirror_combobox,
-                         self.backend.set_flipmirror_position,
+                         self.backend.set_plc_flipmirror_position,
                          self.flipmirror_combobox.currentData())
 
     @Slot(float)
     def on_calibunit_spinbox_valueChanged(self, d):
         self.action_send(self.calibunit_spinbox,
-                         self.backend.set_calibunit_position, d)
+                         self.backend.set_plc_calibunit_position, d)
 
     @Slot(int)
     def on_tungsten_enabled_checkbox_stateChanged(self, state):
         self.action_send(self.tungsten_enabled_checkbox,
-                         self.backend.set_tungsten_state,
+                         self.backend.set_plc_tungsten_state,
                          Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
     def on_laser_enabled_checkbox_stateChanged(self, state):
         self.action_send(self.laser_enabled_checkbox,
-                         self.backend.set_laser_state,
+                         self.backend.set_plc_laser_state,
                          Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
     def on_laser_intensity_spinbox_valueChanged(self, d):
         self.action_send(self.laser_intensity_spinbox,
-                         self.backend.set_laser_intensity, d)
+                         self.backend.set_plc_laser_intensity, d)
 
     @Slot(int)
     def on_filterwheel_combobox_currentIndexChanged(self, index):
         self.action_send(self.filterwheel_combobox,
-                         self.backend.set_filterwheel_filter,
+                         self.backend.set_plc_filterwheel_filter,
                          self.filterwheel_combobox.currentData())
 
     @Slot(float)
     def on_adc1_spinbox_valueChanged(self, d):
-        self.action_send(self.adc1_spinbox, self.backend.set_adc1_position, d)
+        self.action_send(self.adc1_spinbox,
+                         self.backend.set_plc_adc_1_position, d)
 
     @Slot(float)
     def on_adc2_spinbox_valueChanged(self, d):
-        self.action_send(self.adc2_spinbox, self.backend.set_adc2_position, d)
+        self.action_send(self.adc2_spinbox,
+                         self.backend.set_plc_adc_2_position, d)
+
+    @Slot(bool)
+    def on_fli_new_image_button_clicked(self, checked):
+        self.action_send(self.fli_new_image_button, self.backend.set_fli_image,
+                         self.fli_exposure_time_spinbox.value())
+
+    @Slot(bool)
+    def on_fli_cancel_button_clicked(self, checked):
+        self.action_send(self.fli_cancel_button, self.backend.get_fli_cancel)
 
     @Slot(bool)
     def on_dm_channels_button_clicked(self, checked):
@@ -267,5 +298,15 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin):
         else:
             self.ttm_direct_control = TTMDirectControl(self.backend)
 
-    def on_service_action_clicked(self, checked, unit, action):
-        self.backend.service_action(unit, action)
+    @Slot(bool)
+    def on_centering_star_button_clicked(self, checked):
+        self.action_send(self.centering_star_button,
+                         self.backend.get_centering_star)
+
+    @Slot(bool)
+    def on_centering_laser_button_clicked(self, checked):
+        self.action_send(self.centering_laser_button,
+                         self.backend.get_centering_laser)
+
+    def on_set_services_action_clicked(self, checked, unit, action):
+        self.backend.set_services_action(unit, action)

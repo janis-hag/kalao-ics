@@ -32,11 +32,6 @@ class PlotsWidget(KalAOWidget):
         loadUi('plots.ui', self)
         self.resize(600, 400)
 
-        start = kalao_time.get_start_of_night_dt(kalao_time.now())
-
-        self.start_datetimeedit.setDateTime(start)
-        self.end_datetimeedit.setDateTime(start + timedelta(hours=24))
-
         for k, v in sorted(
                 database.definitions['monitoring']['metadata'].items(),
                 key=lambda t: t[1]['short']):
@@ -64,20 +59,24 @@ class PlotsWidget(KalAOWidget):
         chart = self.plots_view.chart
 
         # X Axis Settings
-        self.axisX = QDateTimeAxis()
-        self.axisX.setTickCount(13)
-        self.axisX.setFormat("HH:mm dd.MM.yy")
-        self.axisX.setRange(self.start_datetimeedit.dateTime(),
-                            self.end_datetimeedit.dateTime())
-        chart.addAxis(self.axisX, Qt.AlignBottom)
+        self.axis_x = QDateTimeAxis()
+        self.axis_x.setTickCount(13)
+        self.axis_x.setFormat("HH:mm dd.MM.yy")
+        self.axis_x.setRange(self.start_datetimeedit.dateTime(),
+                             self.end_datetimeedit.dateTime())
+        chart.addAxis(self.axis_x, Qt.AlignBottom)
 
         # Y Axis Settings
-        self.axisY = QValueAxis()
-        self.axisY.setTickCount(5)
-        self.axisY.setRange(-1, 1)
-        chart.addAxis(self.axisY, Qt.AlignLeft)
+        self.axis_y = QValueAxis()
+        self.axis_y.setTickCount(5)
+        self.axis_y.setRange(-1, 1)
+        chart.addAxis(self.axis_y, Qt.AlignLeft)
 
         #chart.legend().hide()
+
+        self.plots_view.chart.hovered.connect(self.hover_xy_to_str)
+
+        self.on_tonight_button_clicked(None)
 
     def get_display_name(self, metadata):
         unit = metadata.get("unit")
@@ -92,9 +91,29 @@ class PlotsWidget(KalAOWidget):
     def on_start_datetimeedit_dateTimeChanged(self, datetime):
         self.end_datetimeedit.setMinimumDateTime(datetime)
 
+        self.axis_x.setRange(self.start_datetimeedit.dateTime(),
+                             self.end_datetimeedit.dateTime())
+
     @Slot(QDateTime)
     def on_end_datetimeedit_dateTimeChanged(self, datetime):
         self.start_datetimeedit.setMaximumDateTime(datetime)
+
+        self.axis_x.setRange(self.start_datetimeedit.dateTime(),
+                             self.end_datetimeedit.dateTime())
+
+    @Slot(bool)
+    def on_last_hour_button_clicked(self, checked):
+        now = QDateTime.currentDateTime()
+        prev = now.addSecs(-3600)
+
+        self.start_datetimeedit.setDateTime(prev)
+        self.end_datetimeedit.setDateTime(now)
+
+    @Slot(bool)
+    def on_tonight_button_clicked(self, checked):
+        start = kalao_time.get_start_of_night_dt(kalao_time.now())
+        self.start_datetimeedit.setDateTime(start)
+        self.end_datetimeedit.setDateTime(start + timedelta(hours=24))
 
     @Slot(int)
     def on_live_checkbox_stateChanged(self, state):
@@ -142,8 +161,8 @@ class PlotsWidget(KalAOWidget):
         dt_start = dt_start.replace(tzinfo=timezone.utc)
         dt_end = dt_end.replace(tzinfo=timezone.utc)
 
-        data = self.backend.get_plots_data(dt_start, dt_end, monitoring_keys,
-                                           telemetry_keys, obs_keys)
+        data = self.backend.plots_data(dt_start, dt_end, monitoring_keys,
+                                       telemetry_keys, obs_keys)
 
         chart = self.plots_view.chart
 
@@ -198,11 +217,11 @@ class PlotsWidget(KalAOWidget):
                     series.append(QPointF(timestamp, v))
 
                 chart.addSeries(series)
-                series.attachAxis(self.axisX)
-                series.attachAxis(self.axisY)
+                series.attachAxis(self.axis_x)
+                series.attachAxis(self.axis_y)
 
                 series.hovered.connect(lambda point, state, name=name, key=key:
-                                       self.point_hovered(
+                                       self.pointHoveredEvent(
                                            point, state, name, key))
 
                 color_index = (color_index+1) % len(ColorPalette)
@@ -210,69 +229,33 @@ class PlotsWidget(KalAOWidget):
         time_delta = self.start_datetimeedit.dateTime().secsTo(
             self.end_datetimeedit.dateTime())
         if time_delta > 24 * 3600:
-            self.axisX.setFormat("HH:mm dd.MM.yy")
+            self.axis_x.setFormat("HH:mm dd.MM.yy")
         else:
-            self.axisX.setFormat("HH:mm")
+            self.axis_x.setFormat("HH:mm")
 
         if abs(plot_max - plot_min) < config.epsilon:
             plot_min -= 0.01
             plot_max += 0.01
 
-        self.axisX.setRange(self.start_datetimeedit.dateTime().toUTC(),
-                            self.end_datetimeedit.dateTime().toUTC())
-        self.axisY.setRange(plot_min, plot_max)
+        self.axis_x.setRange(self.start_datetimeedit.dateTime().toUTC(),
+                             self.end_datetimeedit.dateTime().toUTC())
+        self.axis_y.setRange(plot_min, plot_max)
 
-    def point_hovered(self, point, state, name, key):
-        points = self.series[key].points()
+    def hover_xy_to_str(self, x, y):
+        if not np.isnan(x) and not np.isnan(y):
+            metadata = database.definitions[self.current_name]['metadata'][
+                self.current_key]
 
-        closest_point, closest_index = self.find_closest_point(point, points)
-
-        metadata = database.definitions[name]['metadata'][key]
-
-        if self.current_index != -1:
-            self.series[key].setPointConfiguration(self.current_index, {
-                QXYSeries.PointConfiguration.Size: self.point_size
-            })
-
-        visible = True
-        for k, v in self.series[key].pointConfiguration(closest_index).items():
-            if k == QXYSeries.PointConfiguration.Visibility:
-                visible = v
-
-        if not visible:
-            return
-
-        if state:
-            self.series[key].setPointConfiguration(closest_index, {
-                QXYSeries.PointConfiguration.Size: 2 * self.point_size
-            })
-
-            x = QDateTime.fromMSecsSinceEpoch(int(
-                closest_point.x())).toString("HH:mm:ss dd-MM-yy")
+            x = QDateTime.fromMSecsSinceEpoch(
+                int(x)).toString("HH:mm:ss dd-MM-yy")
 
             self.hovered.emit(
-                f'{metadata["short"]}: {closest_point.y():.5g} {metadata["unit"]} at {x}'
-            )
+                f'{metadata["short"]}: {y:.5g} {metadata["unit"]} at {x}')
         else:
-            self.series[key].setPointConfiguration(closest_index, {
-                QXYSeries.PointConfiguration.Size: self.point_size
-            })
+            self.hovered.emit(f'')
 
-            self.hovered.emit('')
+    def pointHoveredEvent(self, point, state, name, key):
+        self.current_name = name
+        self.current_key = key
 
-        self.current_index = closest_index
-
-    def find_closest_point(self, point, points):
-        closest_point = min(points,
-                            key=lambda p: self.points_distance(p, point))
-        closest_index = points.index(closest_point)
-
-        return closest_point, closest_index
-
-    def points_distance(self, point1, point2):
-        diff = point2 - point1
-        x = diff.x() / (self.axisX.max().toMSecsSinceEpoch() -
-                        self.axisX.min().toMSecsSinceEpoch())
-        y = diff.y() / (self.axisY.max() - self.axisY.min())
-
-        return x**2 + y**2
+        self.plots_view.chart.pointHoveredEvent(point, state, self.series[key])

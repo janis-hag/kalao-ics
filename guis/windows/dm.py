@@ -3,16 +3,17 @@ import numpy as np
 from PySide6.QtGui import Qt
 
 from guis.kalao import colormaps
-from guis.kalao.mixins import HoverMixin, MinMaxMixin
+from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
 import config
 
 
-class DMWidget(KalAOWidget, MinMaxMixin, HoverMixin):
+class DMWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.DM
     stream_info = config.StreamInfo.dm01disp
+
     data_unit = ' µm'
     data_precision = 3
 
@@ -31,7 +32,7 @@ class DMWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         loadUi('dm.ui', self)
         self.resize(600, 400)
 
-        MinMaxMixin.init(self)
+        self.init_minmax(self.dm_view, symetric=True)
 
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
@@ -41,20 +42,19 @@ class DMWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         self.stroke_effective_label.updateText(stroke_effective=np.nan,
                                                unit=self.data_unit)
 
-        self.dm_view.hovered.connect(self.hover_event)
+        self.dm_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_updated.connect(self.streams_updated)
 
     def streams_updated(self, data):
-        img = self.backend.consume_stream(data, config.Streams.DM)
+        img = self.consume_stream(data, config.Streams.DM)
 
-        max_stroke = self.backend.consume_param(data, config.FPS.BMC,
-                                                'max_stroke')
+        max_stroke = self.consume_param(data, config.FPS.BMC, 'max_stroke')
 
         if max_stroke is not None:
             self.max_stroke = max_stroke
 
         if img is not None:
-            img_min, img_max = self.compute_min_max(img, symetric=True)
+            img_min, img_max = self.compute_min_max(img)
 
             self.dm_view.setImage(img, img_min, img_max)
 
@@ -72,16 +72,12 @@ class DMWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.data_unit = ' µm'
-            self.data_scaling = 2
+            self.update_spinboxes_unit(' µm', 2)
         else:
-            self.data_unit = ' µm'
-            self.data_scaling = 1
-
-        self.update_spinboxes_unit()
+            self.update_spinboxes_unit(' µm', 1)
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.dm_view.setColormap(colormaps.GrayscaleSaturation())
+            self.dm_view.updateColormap(colormaps.GrayscaleSaturation())
         else:
-            self.dm_view.setColormap(colormaps.CoolWarm())
+            self.dm_view.updateColormap(colormaps.CoolWarm())

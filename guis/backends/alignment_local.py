@@ -35,7 +35,7 @@ class AlignmentBackend(SHMFPSBackend):
 
     @emit('streams_updated')
     @timeit
-    def update_streams(self):
+    def get_streams_all(self):
         dm_array = np.zeros(self.poke_stream.shape, self.poke_stream.nptype)
 
         # Do not poke actuators

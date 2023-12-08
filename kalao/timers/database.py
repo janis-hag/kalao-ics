@@ -60,6 +60,8 @@ def update_monitoring_db():
 
     if fli_server_status == CameraServerStatus.UP:
         fli_temperatures = camera.get_temperatures()
+        fli_temperatures['fli_temp_CCD'] = fli_temperatures.pop('ccd')
+        fli_temperatures['fli_temp_HS'] = fli_temperatures.pop('heatsink')
         values.update(fli_temperatures)
 
     if euler.telescope_tracking() == TrackingStatus.TRACKING:

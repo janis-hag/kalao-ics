@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QGraphicsItem
 
 from guis.kalao import colormaps
 from guis.kalao.definitions import Color
-from guis.kalao.mixins import HoverMixin, MinMaxMixin
+from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget, OffsetedTextItem
 from guis.windows.fli_zoom import FLIZoomWindow
@@ -39,11 +39,14 @@ def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
         return file_handling.get_last_image_path()
 
 
-class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
+class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.FLI
     stream_info = config.StreamInfo.fli_stream
+
     data_unit = ' ADU'
     data_precision = 0
+    data_center_x = config.FLI.center_x
+    data_center_y = config.FLI.center_y
 
     axis_unit = ' px'
     axis_precision = 0
@@ -56,10 +59,10 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
     tick_nb = 9
     tick_labels = []
 
-    data_center_x = config.FLI.center_x
-    data_center_y = config.FLI.center_y
     WFS_fov = 4 * config.WFS.plate_scale / config.FLI.plate_scale
     ticks_pos = [-400, -300, -200, -100, 0, 100, 200, 300, 400]
+
+    zoom_window = None
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
@@ -69,7 +72,7 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
         loadUi('fli.ui', self)
         self.resize(600, 400)
 
-        MinMaxMixin.init(self)
+        self.init_minmax(self.fli_view)
 
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
@@ -91,8 +94,9 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
                                    data_unit=self.data_unit,
                                    axis_unit=self.axis_unit)
 
-        self.fli_view.hovered.connect(self.hover_event)
+        self.fli_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_updated.connect(self.streams_updated)
+        backend.fli_updated.connect(self.fli_updated)
 
     def addTicks(self):
         self.fli_view.margins = (
@@ -213,14 +217,19 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
             self.tick_labels.append(text_item)
 
     def streams_updated(self, data):
-        img = self.backend.consume_stream(data, config.Streams.FLI)
+        cnt = self.consume_stream_cnt(data, config.Streams.FLI)
+        if cnt != None:
+            self.backend.get_streams_fli()
+
+    def fli_updated(self, data):
+        img = self.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
             img_min, img_max = self.compute_min_max(img)
 
             self.fli_view.setImage(img, img_min, img_max)
 
-            #x, y, peak, fwhm = starfinder.find_star(img)
+            #x, y, peak, fwhm = starfinder.find_star(img) #TODO
             x, y, peak, fwhm = np.nan, np.nan, np.nan, np.nan
 
             self.star_label.updateText(x=x * self.axis_scaling,
@@ -242,13 +251,12 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
             self.axis_precision = 0
 
         self.addTicksLabels()
-        self.update_spinboxes_unit()
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.fli_view.setColormap(colormaps.GrayscaleSaturation())
+            self.fli_view.updateColormap(colormaps.GrayscaleSaturation())
         else:
-            self.fli_view.setColormap(colormaps.BlackBody())
+            self.fli_view.updateColormap(colormaps.BlackBody())
 
     @Slot(bool)
     def on_ds9_button_clicked(self, checked):
@@ -256,4 +264,10 @@ class FLIWidget(KalAOWidget, MinMaxMixin, HoverMixin):
 
     @Slot(bool)
     def on_zoom_window_button_clicked(self, checked):
-        self.zoom_window = FLIZoomWindow(self.fli_view.img.copy())
+        if self.zoom_window is not None:
+            self.zoom_window.update_fli(self.fli_view.img.copy())
+            self.zoom_window.show()
+            self.zoom_window.activateWindow()
+        else:
+            self.zoom_window = FLIZoomWindow(self.backend,
+                                             self.fli_view.img.copy())
