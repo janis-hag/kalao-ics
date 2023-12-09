@@ -208,7 +208,6 @@ def init():
         database.store('obs', {
             'services_log': f'[ERROR] kalao_system-setup.service is down!'
         })
-        return -1
 
     for service in config.Systemd.services.values():
         unit = service['unit']

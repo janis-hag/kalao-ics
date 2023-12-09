@@ -45,7 +45,7 @@ def kalao_status():
         status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{texp:.0f}'
     else:
         #  TODO get alt/az and focus offset from cacao.telemetry and add to string
-        status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{sequencer_status}'
+        status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{sequencer_status_value}'
 
     return status_string
 

@@ -762,7 +762,7 @@ def reset_channel(dm_number, channel, force_flat=False):
     return 0
 
 
-def reset_dm(dm_number):
+def reset_dm(dm_number, force_flat=False):
     log = 'ao_log'
     if dm_number == config.AO.DM_loop_number:
         log = 'dm_log'
@@ -772,7 +772,7 @@ def reset_dm(dm_number):
     database.store('obs', {log: f'Resetting DM {dm_number:02d}'})
 
     for i in range(0, 12):
-        reset_channel(dm_number, i)
+        reset_channel(dm_number, i, force_flat=force_flat)
 
     return 0
 

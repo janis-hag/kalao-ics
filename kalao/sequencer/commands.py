@@ -62,7 +62,6 @@ def dark(**seq_args):
 
     # Take nbPic image
     for _ in range(nbPic):
-        #seq_command_received = database.get_latest_record_value('obs', 'sequencer_command_received')
         image_path = camera.take_image(dit=dit, filepath=filepath,
                                        sequencer_arguments=seq_args)
 

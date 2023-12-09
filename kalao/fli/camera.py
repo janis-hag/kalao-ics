@@ -281,14 +281,14 @@ def _send_request(request_type, params={}):
             else:
                 text = ''
 
-                if data.get('error_text') is not None:
-                    text += f' {data.get("error_text")}'
+                if isinstance(data, dict):
+                    if data.get('error_text') is not None:
+                        text += f' {data.get("error_text")}'
 
-                if data.get('error_status') is not None:
-                    text += f' (status = {data.get("error_status")})'
-
-                if text == '':
-                    text = data
+                    if data.get('error_status') is not None:
+                        text += f' (status = {data.get("error_status")})'
+                else:
+                    text = ' ' + data
 
                 database.store(
                     'obs', {
