@@ -134,13 +134,14 @@ def gop_server():
 
         elif command == 'ONTARGET':
             message = '/OK'
-            args = dict(zip_longest(*[iter(arguments)] * 2, fillvalue=''))
+            #args = dict(zip_longest(*[iter(arguments)] * 2, fillvalue=''))
 
             database.store(
-                'obs', {
-                    'tcs_header_path': args['header'],
-                    'telescope_ra': float(args['ra']),
-                    'telescope_dec': float(args['dec']),
+                'obs',
+                {
+                    'tcs_header_path': arguments,
+                    #'telescope_ra': float(args['ra']),
+                    #'telescope_dec': float(args['dec']),
                 })
 
             # Update tracking status separately to ensure ordering
