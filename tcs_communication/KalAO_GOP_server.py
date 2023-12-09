@@ -139,7 +139,7 @@ def gop_server():
             database.store(
                 'obs',
                 {
-                    'tcs_header_path': arguments,
+                    'tcs_header_path': arguments[0],
                     #'telescope_ra': float(args['ra']),
                     #'telescope_dec': float(args['dec']),
                 })
