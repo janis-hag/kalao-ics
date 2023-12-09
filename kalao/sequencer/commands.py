@@ -270,7 +270,7 @@ def target_observation(**seq_args):
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
     kao = seq_args.get('kao').upper()
-    centering = seq_args.get('centering')
+    auto_center = seq_args.get('auto_center')
     mag_v = seq_args.get('mv')
 
     if kalfilter is None:
@@ -278,7 +278,7 @@ def target_observation(**seq_args):
             '[WARNING] No filter specified for take_image, using clear')
         kalfilter = 'clear'
 
-    if centering == 'aut' or not database.get_last_value(
+    if auto_center == 'aut' or not database.get_last_value(
             'obs', 'tracking_status') == TrackingStatus.TRACKING:
 
         database.store('obs', {'tracking_status': TrackingStatus.POINTING})
@@ -307,7 +307,7 @@ def target_observation(**seq_args):
         raise ShutterNotOpen
 
     # Put filter on clear to center on target
-    if centering == 'aut' and filterwheel.set_filter('clear') != 'clear':
+    if auto_center == 'aut' and filterwheel.set_filter('clear') != 'clear':
         raise FilterWheelNotInPosition
 
     _wait_for_tracking()
@@ -320,7 +320,7 @@ def target_observation(**seq_args):
         if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
             raise LoopsNotOpen
 
-    if centering == 'aut' or kao == 'AO':
+    if auto_center == 'aut' or kao == 'AO':
         acq_dit = config.FLI.exp_time
         if 8 < float(mag_v) < 10:
             acq_dit = 10

@@ -289,7 +289,7 @@ class SEQ:
 
     EDP_translate = {
         "texp": "dit",
-        "centrage": "centering",
+        "centrage": "auto_center",
     }
 
 
