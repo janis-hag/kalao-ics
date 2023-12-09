@@ -9,6 +9,9 @@ from itertools import zip_longest
 from multiprocessing import Process, Queue
 from threading import Thread
 
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+
 from kalao import services
 from kalao.plc import (adc, calib_unit, filterwheel, flip_mirror, laser,
                        shutter, tungsten)
@@ -226,12 +229,15 @@ def serve():
                 th.join()
                 th = None
 
-            if 'ra' in args and 'dec' in args:
-                database.store(
-                    'obs', {
-                        'telescope_ra': float(args['ra']),
-                        'telescope_dec': float(args['dec']),
-                    })
+            if 'alphacat' in args and 'deltacat' in args:
+
+                c = SkyCoord(ra=args['alphacat'], dec=args['deltacat'],
+                             unit=(u.hourangle, u.deg), frame='icrs')
+
+                database.store('obs', {
+                    'telescope_ra': c.ra.deg,
+                    'telescope_dec': c.dec.deg
+                })
 
             database.store(
                 'obs', {
