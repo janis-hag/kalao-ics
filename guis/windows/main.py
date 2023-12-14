@@ -235,24 +235,24 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
             else:
                 self.nuvu_autogain_indicator.setStatus(Color.RED, autogain_on)
 
-        nuvu_emgain = self.consume_stream_keyword(data, config.Streams.NUVU,
+        nuvu_emgain = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
                                                   'EMGAIN')
         if nuvu_emgain is not None:
             self.nuvu_emgain_lineedit.updateText(emgain=nuvu_emgain)
 
         nuvu_exposuretime = self.consume_stream_keyword(
-            data, config.Streams.NUVU, 'EXPTIME')
+            data, config.Streams.NUVU_RAW, 'EXPTIME')
         if nuvu_exposuretime is not None:
             self.nuvu_exposuretime_lineedit.updateText(
                 exposuretime=nuvu_exposuretime)
 
         nuvu_mframerate = self.consume_stream_keyword(data,
-                                                      config.Streams.NUVU,
+                                                      config.Streams.NUVU_RAW,
                                                       'MFRATE')
         if nuvu_mframerate is not None:
             self.nuvu_framerate_lineedit.updateText(framerate=nuvu_mframerate)
 
-        nuvu_temp_ccd = self.consume_stream_keyword(data, config.Streams.NUVU,
+        nuvu_temp_ccd = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
                                                     'T_CCD')
         if nuvu_temp_ccd is not None:
             self.nuvu_ccd_temperature_lineedit.updateText(

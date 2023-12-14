@@ -608,6 +608,7 @@ class FPS(StrEnum):
 
 
 class Streams(StrEnum):
+    NUVU_RAW = 'nuvu_raw'
     NUVU = 'nuvu_stream'
     FLI = 'fli_stream'
     SLOPES = 'shwfs_slopes'

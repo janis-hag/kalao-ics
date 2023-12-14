@@ -89,9 +89,9 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
 
     def monitoringandtelemetry_updated(self, data):
         for lineedit in self.lineedits.values():
-            value_timestmap = self.consume_db(data, lineedit.collection,
+            value_timestamp = self.consume_db(data, lineedit.collection,
                                               lineedit.key)
-            if value_timestmap is not None:
-                value, timestamp = value_timestmap
+            if value_timestamp is not None:
+                value, timestamp = value_timestamp
                 lineedit.setText(f'{value}{lineedit.unit}')
                 lineedit.setToolTip(timestamp.strftime('%Y-%m-%d %H:%M:%S'))

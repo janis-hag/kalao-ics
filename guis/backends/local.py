@@ -122,7 +122,7 @@ class MainBackend(SHMFPSBackend):
         self._update_stream(self.data, config.Streams.TTM)
         self._update_stream(self.data, config.Streams.MODALGAINS)
 
-        self._update_stream_keywords(self.data, config.Streams.NUVU)
+        self._update_stream_keywords(self.data, config.Streams.NUVU_RAW)
 
         self._update_param(self.data, config.FPS.NUVU, 'autogain_on')
 
@@ -147,10 +147,10 @@ class MainBackend(SHMFPSBackend):
     @emit('monitoringandtelemetry_updated')
     @timeit
     def get_monitoringandtelemetry(self):
-        self._update_db(self.data, 'monitoring', database.get('monitoring'))
-        self._update_db(self.data, 'telemetry', database.get('telemetry'))
+        self._update_db(self.monitoringandtelemetry, 'monitoring', database.get('monitoring'))
+        self._update_db(self.monitoringandtelemetry, 'telemetry', database.get('telemetry'))
 
-        return self.data
+        return self.monitoringandtelemetry
 
     @emit('dmdisp_updated')
     @timeit

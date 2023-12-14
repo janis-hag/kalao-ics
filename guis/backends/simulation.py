@@ -178,7 +178,7 @@ class MainBackend(FakeSHMFPSBackend):
             self.first = False
 
         self._update_stream_keywords(
-            self.data, config.Streams.NUVU, {
+            self.data, config.Streams.NUVU_RAW, {
                 'T_CCD': -60,
                 'T_CNTRLR': 35,
                 'T_PSU': 35,
