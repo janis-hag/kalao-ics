@@ -90,8 +90,7 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None):
         cursor = collection.find(
             {},
             {'_id': 0, 'key': 1, 'values': {'$slice': -nb_of_point}},
-            sort=[('last_timestamp', DESCENDING)],
-            limit=1)
+            sort=[('last_timestamp', DESCENDING)])
 
     elif isinstance(keys, str):
         cursor = collection.find(
@@ -155,7 +154,7 @@ def get_time_since_state(collection_name, key, condition='==', value=None,
                 'since': document.get('since')
             }
 
-    return data
+    return data.get(key)
 
 
 def store(collection_name, data):
