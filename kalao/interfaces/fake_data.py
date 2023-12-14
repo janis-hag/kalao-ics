@@ -7,12 +7,13 @@
 import builtins
 import math
 import random
+import time
 from datetime import datetime, timedelta
 
 import numpy as np
 from scipy import ndimage
 
-from astropy.nddata import block_reduce
+from astropy.nddata import block_reduce, block_replicate
 
 from kalao.utils import image, kalao_math, kalao_time, kalao_tools, zernike
 
@@ -68,7 +69,7 @@ def fake_streams():
     }
 
     # Fake focus on the DM
-    dm01disp = dm()
+    dm01disp = dmdisp()
 
     streams["dm01disp"] = {
         "data": dm01disp.flatten(),
@@ -143,11 +144,11 @@ def tiptilt(nb_points = 1, seed=np.zeros((2,)), sigma = 0.01, leak=0.01):
         return tiptilt
 
 
-def nuvu_frame(bias = 2000, readoutnoise = 20, flux = 5000, tiptilt=np.zeros((2,)), dmdisp=np.zeros((12,12)), upsampling=4):
+def nuvu_frame(bias = 2000, readoutnoise = 20, flux = 5000, tiptilt=np.zeros((2,)), dmdisp=zernike.generate_pattern([0], (12,12)), upsampling=4):
     frame = np.zeros((64*upsampling, 64*upsampling), dtype=np.float32)
 
-    tip_ttm_px = tiptilt[0] * config.TTM.plate_scale / config.WFS.plate_scale
-    tilt_ttm_px = tiptilt[1] * config.TTM.plate_scale / config.WFS.plate_scale
+    ttm_tip_px = tiptilt[0] * config.TTM.plate_scale / config.WFS.plate_scale
+    ttm_tilt_px = tiptilt[1] * config.TTM.plate_scale / config.WFS.plate_scale
 
     slopes_px = zernike.slopes_from_pattern_interp(dmdisp) * config.DM.plate_scale / config.WFS.plate_scale
 
@@ -167,11 +168,11 @@ def nuvu_frame(bias = 2000, readoutnoise = 20, flux = 5000, tiptilt=np.zeros((2,
             if config.AO.flux_map[i,j] < 1e-2:
                 continue
 
-            tip_dm_px = slopes_px[j, i]
-            tilt_dm_px = slopes_px[j, i+11]
+            tilt_dm_px = slopes_px[j, i]
+            tip_dm_px = slopes_px[j, i+11]
 
-            psf_y = (5*j + 7 + tip_ttm_px + tip_dm_px) * upsampling
-            psf_x = (5*i + 7 + tilt_ttm_px + tilt_dm_px) * upsampling
+            psf_y = (5*j + 7 + ttm_tilt_px + tilt_dm_px) * upsampling
+            psf_x = (5*i + 7 + ttm_tip_px + tip_dm_px) * upsampling
 
             psf_y_f, psf_y_i = math.modf(psf_y)
             psf_x_f, psf_x_i = math.modf(psf_x)
@@ -234,57 +235,56 @@ def flux(nuvu_fr = None):
     return np.ma.masked_array(flux, mask=mask, fill_value=0)
 
 
-def dm(zernike_coeffs = None, orders = 15):
+def dmdisp(zernike_coeffs = None, orders = 15):
     if zernike_coeffs is None:
-        zernike_coeffs = np.zeros((orders,))
+        zernike_coeffs = rng.normal(0, 0.5, orders)
+        zernike_coeffs[0] = 0
 
-        for i in range(1,orders):
-            zernike_coeffs[i] = rng.normal(0, 0.05)
-
-    pattern = zernike.generate_pattern(zernike_coeffs, (12,12))
-
-    x = np.arange(-5.5, 6.5)
-    y = np.arange(-5.5, 6.5)
-
-    X, Y = np.meshgrid(x,y)
-
-    mask = X**2 + Y**2 > 6**2
-
-    return np.ma.masked_array(pattern, mask=mask, fill_value=0)
+    return zernike.generate_pattern(zernike_coeffs, (12,12))
 
 
-def fli_frame(bias = 1070, readoutnoise = 7, psf_x = config.FLI.center_x, psf_y = config.FLI.center_y, fwhm = 10, intensity = 2**15, tiptilt=np.zeros((2,)), dmdisp=np.zeros((12,12)), upsampling = 1):
-    frame = np.zeros((1024 * upsampling, 1024 * upsampling))
+def fli_frame(bias = 1070, readoutnoise = 7, psf_x = config.FLI.center_x, psf_y = config.FLI.center_y, intensity = 2**15, tiptilt=np.zeros((2,)), dmdisp=np.zeros((12,12)), upsampling = 1):
+    frame = np.zeros((1024, 1024))
 
-    sigma = fwhm / kalao_math.SIGMA_TO_FWHM
-
-    tip_px = tiptilt[0] * config.TTM.plate_scale / config.FLI.plate_scale
-    tilt_px = tiptilt[1] * config.TTM.plate_scale / config.FLI.plate_scale
+    ttm_tip_px = tiptilt[0] * config.TTM.plate_scale / config.FLI.plate_scale
+    ttm_tilt_px = tiptilt[1] * config.TTM.plate_scale / config.FLI.plate_scale
 
     slopes_px = zernike.slopes_from_pattern_interp(dmdisp) * config.DM.plate_scale / config.FLI.plate_scale
-    slopes_params_px = slopes_params(slopes_px)
 
-    sigma *= upsampling
+    dm_tilt_px = slopes_px[0:11, 0:11].mean()
+    dm_tip_px = slopes_px[0:11, 11:22].mean()
 
-    hwindow = math.ceil(3 * sigma)
-    x, y = np.mgrid[0:2 * hwindow, 0:2 * hwindow]
-
-    psf_y = (psf_y + tip_px + slopes_params_px['slope_x'])*upsampling
-    psf_x = (psf_x + tilt_px + slopes_params_px['slope_y'])*upsampling
+    psf_y = (psf_y + ttm_tilt_px + dm_tilt_px)
+    psf_x = (psf_x + ttm_tip_px + dm_tip_px)
 
     psf_y_f, psf_y_i = math.modf(psf_y)
     psf_x_f, psf_x_i = math.modf(psf_x)
 
     psf_y_i = int(psf_y_i)
-    psf_x_i = int (psf_x_i)
+    psf_x_i = int(psf_x_i)
 
-    mu_y = hwindow + psf_y_f - 0.5
-    mu_x = hwindow + psf_x_f - 0.5
+    dmdisp += zernike.generate_pattern([0, (-dm_tip_px+psf_x_f) * config.FLI.plate_scale / config.DM.plate_scale, (-dm_tilt_px+psf_y_f) * config.FLI.plate_scale / config.DM.plate_scale], (12, 12))
 
-    frame[psf_y_i-hwindow:psf_y_i+hwindow, psf_x_i-hwindow:psf_x_i+hwindow] += kalao_math.gaussian_2d_rotated(y, x, mu_y, mu_x, sigma, sigma, 0, intensity, 0)
+    upsampling = 3
+    hwindow = 2 ** 5
+
+    flux = kalao_tools.get_dm_flux_map(upsampled=upsampling)
+    flux /= np.sum(flux)
+
+    phase = 2 * np.pi * (dmdisp * 2) / 0.635
+    phase = block_replicate(phase, upsampling, conserve_sum=False)
+
+    field = np.sqrt(flux) * np.exp(1j * phase)
+
+    pad = (2*hwindow - flux.shape[0]) // 2
+    field_ = np.pad(field, ((pad, pad), (pad, pad)))
+
+    psf = intensity * np.abs(np.fft.fftshift(np.fft.fft2(field_, norm='ortho')))**2
+
+    frame[psf_y_i - hwindow:psf_y_i + hwindow, psf_x_i - hwindow:psf_x_i + hwindow] += psf
 
     # Reduce to final size with photon shot noise
-    frame = rng.poisson(block_reduce(frame, upsampling, func=np.mean)).astype(np.float64)
+    frame = rng.poisson(frame).astype(np.float64)
 
     # Add electronic noise
     frame += rng.normal(bias, readoutnoise, size=frame.shape)
@@ -294,8 +294,8 @@ def fli_frame(bias = 1070, readoutnoise = 7, psf_x = config.FLI.center_x, psf_y 
 
 
 def slopes_params(slopes):
-    tip = slopes[0:11, 0:11]
-    tilt = slopes[0:11, 11:22]
+    tilt = slopes[0:11, 0:11]
+    tip = slopes[0:11, 11:22]
 
     return {
         'slope_x': tip.mean(),
@@ -376,24 +376,32 @@ def fake_latest_obs_entry():
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    streams = fake_streams()
+    start = time.monotonic()
+    dm_data = dmdisp()
+    print(f'DM generation time: {time.monotonic() - start:3f}s')
+
+    start = time.monotonic()
+    nuvu_data = nuvu_frame(dmdisp=dm_data)
+    print(f'Nuvu generation time: {time.monotonic() - start:3f}s')
+
+    start = time.monotonic()
+    slopes_data = slopes(nuvu_data)
+    print(f'Slopes generation time: {time.monotonic() - start:3f}s')
+
+    start = time.monotonic()
+    flux_data = flux(nuvu_data)
+    print(f'Flux generation time: {time.monotonic() - start:3f}s')
+
+    start = time.monotonic()
+    fli_data = fli_frame(dmdisp=dm_data)
+    print(f'FLI generation time: {time.monotonic() - start:3f}s')
 
     fig, axs = plt.subplots(2, 3)
 
-    def _add_stream(i, j, name):
-        axs[i, j].imshow(
-                np.array(streams[name]["data"]).reshape(
-                        streams[name]["height"], streams[name]["width"]),
-                cmap='gray')
-
-    _add_stream(0, 0, "nuvu_stream")
-    _add_stream(0, 1, "shwfs_slopes_flux")
-    _add_stream(1, 0, "shwfs_slopes")
-    _add_stream(1, 1, "dm01disp")
-
-    fli = fli_frame()
-
-    axs[0, 2].imshow(fli, cmap='gray')
-    axs[1, 2].imshow(image.cut(fli, (256,256)), cmap='gray')
+    axs[0, 0].imshow(dm_data, cmap='gray')
+    axs[0, 1].imshow(nuvu_data, cmap='gray')
+    axs[0, 2].imshow(slopes_data, cmap='gray')
+    axs[1, 0].imshow(flux_data, cmap='gray')
+    axs[1, 1].imshow(fli_data, cmap='gray')
 
     plt.show()

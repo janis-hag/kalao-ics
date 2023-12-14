@@ -69,6 +69,7 @@ def status(power_port):
 
 def status_all():
     return {
+        'ippower_rtc_status': status(config.IPPower.Port.RTC),
         'ippower_bench_status': status(config.IPPower.Port.Bench),
         'ippower_dm_status': status(config.IPPower.Port.BMC_DM),
     }

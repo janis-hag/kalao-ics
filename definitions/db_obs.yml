@@ -97,8 +97,8 @@ ttm_log:
 
 # Nüvü camera
 nuvu_log:
-  short: Nuvu camera status
-  long: Nuvu camera status
+  short: Nüvü camera status
+  long: Nüvü camera status
   unit:
 
 # FLI
@@ -263,7 +263,6 @@ filterwheel_filter_position:
   short: Filter number
   long: Filterwheel filter position
   unit:
-  main_gui: 2
   group: FLI, Motors
   fits_keyword: HIERARCH ESO INS1 FILT NO
 
@@ -271,7 +270,6 @@ filterwheel_filter_name:
   short: Filter name
   long: Filterwheel filter name
   unit:
-  main_gui: 3
   group:
   fits_keyword: HIERARCH ESO INS1 FILT ID
 

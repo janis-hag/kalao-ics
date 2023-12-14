@@ -37,7 +37,7 @@ app.json_provider_class = KalAOProvider
 app.json = KalAOProvider(app)
 
 
-def catch_all(fun):
+def serve(fun):
     try:
         if request.method == 'GET':
             ret = fun(backend)
@@ -51,10 +51,10 @@ def catch_all(fun):
             response = make_response(content)
             response.headers['Content-Length'] = len(content)
             response.headers['Content-Type'] = 'application/octet-stream'
-
-            return response
         else:
-            return jsonify(ret)
+            response = jsonify(ret)
+
+        return response
     except Exception:
         traceback.print_exc()
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
             setattr(backend, key, FakeSignal(key))
 
         elif not key.startswith('_') and callable(item):
-            fun = partial(catch_all, item)
+            fun = partial(serve, item)
             fun.__name__ = key
 
             url = name_to_url(key)

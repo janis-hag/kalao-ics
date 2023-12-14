@@ -37,13 +37,105 @@ def cut(img, window, center=None, overflow='recenter'):
     return img[xs:xe, ys:ye]
 
 
-def percentile_clip(img, percentile_to_use):
-    percentile_to_use = (100-percentile_to_use) / 2
+### Scales
 
-    low = np.percentile(img, percentile_to_use)
-    high = np.percentile(img, 100 - percentile_to_use)
 
-    img = np.where(img < low, low, img)
-    img = np.where(img > high, high, img)
+class AbstractScale():
+    def __init__(self, min=0, max=255):
+        self.min = min
+        self.max = max
+        self.delta = self.max - self.min
 
-    return img, low, high
+
+class LinearScale(AbstractScale):
+    __name__ = 'Linear'
+
+    def __str__(self):
+        return self.__name__
+
+    def scale(self, img):
+        return img
+
+
+class LogScale(AbstractScale):
+    __name__ = 'Logarithmic'
+
+    def __str__(self):
+        return self.__name__
+
+    def scale(self, img):
+        return self.delta / np.log(self.delta + 1) * np.log(img - self.min +
+                                                            1) + self.min
+
+
+class SquareRootScale(AbstractScale):
+    __name__ = 'Square Root'
+
+    def __str__(self):
+        return self.__name__
+
+    def scale(self, img):
+        return np.sqrt(self.delta) * np.sqrt(img - self.min) + self.min
+
+
+class SquaredScale(AbstractScale):
+    __name__ = 'Squared'
+
+    def __str__(self):
+        return self.__name__
+
+    def scale(self, img):
+        return 1 / self.delta * (img - self.min)**2 + self.min
+
+
+### Cuts
+
+
+class AbstractCut():
+    def __init__(self):
+        pass
+
+    def img_cut(self, img):
+        low, high = self.cuts(self, img)
+
+        img = np.where(img < low, low, img)
+        img = np.where(img > high, high, img)
+
+        return img
+
+
+class MinMaxCut():
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        return 'Min – Max'
+
+    def cut(self, img):
+        return img.min(), img.max()
+
+
+class PercentileCut():
+    def __init__(self, percentile=0.1):
+        self.percentile = percentile
+
+    def __str__(self):
+        return f'Percentile, {self.percentile:g}% – {100-self.percentile:g}%'
+
+    def cut(self, img):
+        return np.percentile(img, self.percentile), np.percentile(
+            img, 100 - self.percentile)
+
+
+class SigmaCut():
+    def __init__(self, sigma=3):
+        self.sigma = sigma
+
+    def __str__(self):
+        return f'Sigma, {-self.sigma:g}σ – {self.sigma:g}σ'
+
+    def cut(self, img):
+        mean = img.mean()
+        std = img.std()
+
+        return mean - self.sigma * std, mean + self.sigma * std

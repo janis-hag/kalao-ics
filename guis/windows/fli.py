@@ -3,14 +3,13 @@ from subprocess import Popen
 import numpy as np
 
 from PySide6.QtCore import Slot
-from PySide6.QtGui import QFont, QPen, Qt
-from PySide6.QtWidgets import QGraphicsItem
+from PySide6.QtGui import QPen, Qt
 
 from guis.kalao import colormaps
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget, OffsetedTextItem
+from guis.kalao.widgets import KalAOWidget
 from guis.windows.fli_zoom import FLIZoomWindow
 
 import config
@@ -56,11 +55,8 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     tick_spacing = 10
     tick_tick_length = 10
     tick_text_spacing = 5
-    tick_nb = 9
-    tick_labels = []
 
     WFS_fov = 4 * config.WFS.plate_scale / config.FLI.plate_scale
-    ticks_pos = [-400, -300, -200, -100, 0, 100, 200, 300, 400]
 
     zoom_window = None
 
@@ -74,10 +70,12 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.init_minmax(self.fli_view)
 
+        self.fli_view.setView(self.stream_info['shape'])
+
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
 
-        pen = QPen(Color.BLUE, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen = QPen(Color.BLUE, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
         self.roi = self.fli_view.scene.addEllipse(
@@ -85,138 +83,16 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.WFS_fov / 2, self.WFS_fov, self.WFS_fov, pen)
         self.roi.setZValue(1)
 
-        self.addTicks()
-
-        self.fli_view.setView(self.stream_info['shape'])
-
         self.star_label.updateText(x=np.nan, y=np.nan, peak=np.nan,
                                    fwhm=np.nan, precision=np.nan,
                                    data_unit=self.data_unit,
                                    axis_unit=self.axis_unit)
 
         self.fli_view.hovered.connect(self.hover_xyv_to_str)
-        backend.streams_updated.connect(self.streams_updated)
+        backend.data_updated.connect(self.data_updated)
         backend.fli_updated.connect(self.fli_updated)
 
-    def addTicks(self):
-        self.fli_view.margins = (
-            self.tick_spacing + self.tick_tick_length +
-            self.tick_text_spacing + 4 * self.tick_fontsize + 100,
-            self.tick_spacing + self.tick_tick_length +
-            self.tick_text_spacing + 4 * self.tick_fontsize,
-            self.tick_spacing + self.tick_tick_length +
-            self.tick_text_spacing + 4 * self.tick_fontsize + 100,
-            self.tick_spacing + self.tick_tick_length +
-            self.tick_text_spacing + 4 * self.tick_fontsize)
-
-        width = self.stream_info['shape'][1]
-        height = self.stream_info['shape'][0]
-
-        pen = QPen(Color.BLACK, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
-        pen.setCosmetic(True)
-
-        self.addVerticalTicks(0, height, -(self.tick_spacing),
-                              -(self.tick_spacing + self.tick_tick_length),
-                              pen)
-        self.addVerticalTicks(
-            0, height, width + self.tick_spacing,
-            width + self.tick_spacing + self.tick_tick_length, pen)
-
-        self.addHorizontalTicks(0, width, -(self.tick_spacing),
-                                -(self.tick_spacing + self.tick_tick_length),
-                                pen)
-        self.addHorizontalTicks(
-            0, width, height + self.tick_spacing,
-            height + self.tick_spacing + self.tick_tick_length, pen)
-
-        self.addTicksLabels()
-
-    def addVerticalTicks(self, start, end, tick_start, tick_end, pen):
-        self.fli_view.scene.addLine(tick_start, start, tick_start, end, pen)
-
-        self.fli_view.scene.addLine(tick_start, start, tick_end, start, pen)
-        self.fli_view.scene.addLine(tick_start, end, tick_end, end, pen)
-
-        for y in self.ticks_pos:
-            self.fli_view.scene.addLine(tick_start, y + self.data_center_y,
-                                        tick_end, y + self.data_center_y, pen)
-
-    def addHorizontalTicks(self, start, end, tick_start, tick_end, pen):
-        self.fli_view.scene.addLine(start, tick_start, end, tick_start, pen)
-
-        self.fli_view.scene.addLine(start, tick_start, start, tick_end, pen)
-        self.fli_view.scene.addLine(end, tick_start, end, tick_end, pen)
-
-        for x in self.ticks_pos:
-            self.fli_view.scene.addLine(x + self.data_center_x, tick_start,
-                                        x + self.data_center_x, tick_end, pen)
-
-    def addTicksLabels(self):
-        for text_item in self.tick_labels:
-            self.fli_view.scene.removeItem(text_item)
-
-        self.tick_labels = []
-
-        width = self.stream_info['shape'][1]
-        height = self.stream_info['shape'][0]
-
-        font = QFont()
-        font.setPixelSize(self.tick_fontsize)
-
-        self.addVerticalTickLabels(
-            0, height, width + self.tick_spacing + self.tick_tick_length +
-            self.tick_text_spacing, font)
-        self.addHorizontalTickLabels(
-            0, width, height + self.tick_spacing + self.tick_tick_length +
-            self.tick_text_spacing, font)
-
-    def addVerticalTickLabels(self, start, end, text_start, font):
-        for y in self.ticks_pos:
-            pos = y * self.axis_scaling
-
-            text_item = OffsetedTextItem(f'{pos:.1f}'.rstrip('0').rstrip('.'))
-            text_item.setFont(font)
-            text_item.setPos(text_start, y + self.data_center_y)
-            text_item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-            self.fli_view.scene.addItem(text_item)
-
-            probe = OffsetedTextItem(
-                f'{-abs(pos):.1f}'.rstrip('0').rstrip('.'))
-            probe.setFont(font)
-            probe.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-
-            self.fli_view.scene.addItem(probe)
-            text_item.setOffset(
-                text_item.boundingRect().width() -
-                probe.boundingRect().width(),
-                text_item.boundingRect().height() / 2)
-            self.fli_view.scene.removeItem(probe)
-
-            self.tick_labels.append(text_item)
-
-    def addHorizontalTickLabels(self, start, end, text_start, font):
-        for x in self.ticks_pos:
-            pos = x * self.axis_scaling
-
-            text_item = OffsetedTextItem(f'{pos:.1f}'.rstrip('0').rstrip('.'))
-            text_item.setFont(font)
-            text_item.setPos(x + self.data_center_x, text_start)
-            text_item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-            self.fli_view.scene.addItem(text_item)
-
-            probe = OffsetedTextItem(f'{abs(pos):.1f}'.rstrip('0').rstrip('.'))
-            probe.setFont(font)
-            probe.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-
-            self.fli_view.scene.addItem(probe)
-            text_item.setOffset(
-                text_item.boundingRect().width() -
-                probe.boundingRect().width() / 2, 0)
-            self.fli_view.scene.removeItem(probe)
-
-            self.tick_labels.append(text_item)
-
-    def streams_updated(self, data):
+    def data_updated(self, data):
         cnt = self.consume_stream_cnt(data, config.Streams.FLI)
         if cnt != None:
             self.backend.get_streams_fli()
@@ -250,7 +126,22 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.axis_unit = ' px'
             self.axis_precision = 0
 
-        self.addTicksLabels()
+        ticks_x = []
+        ticks_y = []
+        for xy in [-400, -300, -200, -100, 0, 100, 200, 300, 400]:
+            tick_label = f'{xy*self.axis_scaling:.{self.axis_precision}f}'
+            tick_pos_x = xy + self.data_center_x
+            tick_pos_y = xy + self.data_center_y
+
+            ticks_x.append((tick_pos_x, tick_label))
+            ticks_y.append((tick_pos_y, tick_label))
+
+        self.fli_view.addTicks(self.tick_spacing, self.tick_tick_length,
+                               self.tick_text_spacing, self.tick_fontsize,
+                               ticks_x, ticks_y)
+        self.fli_view.addTicksLabels(self.tick_spacing, self.tick_tick_length,
+                                     self.tick_text_spacing,
+                                     self.tick_fontsize, ticks_x, ticks_y)
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:

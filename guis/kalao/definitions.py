@@ -1,6 +1,10 @@
+from enum import Enum
 from pathlib import Path
 
 from PySide6.QtGui import QColor
+
+from kalao.utils.image import (LinearScale, LogScale, MinMaxCut, PercentileCut,
+                               SigmaCut, SquaredScale, SquareRootScale)
 
 from kalao.definitions.enums import StrEnum
 
@@ -30,9 +34,28 @@ ColorPalette = [
 ]
 
 
-class Scale(StrEnum):
-    LINEAR = 'Linear'
-    LOG = 'Logarithmic'
+class Scale(Enum):
+    LINEAR = LinearScale
+    LOG = LogScale
+    SQUARE_ROOT = SquareRootScale
+    SQUARED = SquaredScale
+
+
+class Cuts(Enum):
+    MINMAX = MinMaxCut()
+
+    PERCENTILE_0_01 = PercentileCut(0.01)
+    PERCENTILE_0_1 = PercentileCut(0.1)
+    PERCENTILE_0_5 = PercentileCut(0.5)
+    PERCENTILE_1 = PercentileCut(1)
+    PERCENTILE_2_5 = PercentileCut(2.5)
+    PERCENTILE_5 = PercentileCut(5)
+    PERCENTILE_10 = PercentileCut(10)
+
+    SIGMA_1 = SigmaCut(1)
+    SIGMA_2 = SigmaCut(2)
+    SIGMA_3 = SigmaCut(3)
+    SIGMA_6 = SigmaCut(6)
 
 
 class PokeState(StrEnum):

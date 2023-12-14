@@ -52,7 +52,7 @@ class WFSWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             else:
                 color = Color.BLUE
 
-            pen = QPen(color, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+            pen = QPen(color, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
             pen.setCosmetic(True)
 
             roi = self.wfs_view.scene.addRect(
@@ -84,15 +84,13 @@ class WFSWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     subap_current = None
 
     def hover_xyv_to_str(self, x, y, v):
-        #self.tooltip= QToolTip()
-
-        pen = QPen(Color.GREEN, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen = QPen(Color.GREEN, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
         if x != -1 and y != -1:
             string = f'X: {(x-self.data_center_x)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, Y: {(y-self.data_center_y)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, V: {v:.{self.data_precision}f}{self.data_unit}'
 
-            subap = kalao_tools.subap_at(x, y)
+            subap = kalao_tools.subap_at_px(x, y)
             if subap is not None:
                 self.reset_subap_color()
 
@@ -101,15 +99,12 @@ class WFSWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 self.rois[subap].setPen(pen)
 
                 #i,j = kalao_tools.get_subaperture_2d(subap)
-                #self.tooltip.showText(QPoint(screenPos.x(), screenPos.y()), f'Subap: {subap} ({i},{j})\nX: 1\nY: 1\nValue: {img[y,x]}\nFlux\nSlope')
             else:
                 self.reset_subap_color()
-                #self.tooltip.hideText()
 
             self.hovered.emit(string)
         else:
             self.reset_subap_color()
-            #self.tooltip.hideText()
 
             self.hovered.emit('')
 

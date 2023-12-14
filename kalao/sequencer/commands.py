@@ -277,6 +277,9 @@ def target_observation(**seq_args):
             '[WARNING] No filter specified for take_image, using clear')
         kalfilter = 'clear'
 
+    if isinstance(kalfilter, str):
+        kalfilter = kalfilter.lower()
+
     if auto_center == 'aut' or not database.get_last_value(
             'obs', 'tracking_status') == TrackingStatus.TRACKING:
 
@@ -397,6 +400,9 @@ def focusing(**seq_args):
     if kalfilter is None:
         #system.print_and_log("[WARNING] No filter specified for take image, using clear")
         kalfilter = 'clear'
+
+    if isinstance(kalfilter, str):
+        kalfilter = kalfilter.lower()
 
     database.store('obs', {'tracking_status': TrackingStatus.POINTING})
 

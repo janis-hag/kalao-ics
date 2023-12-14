@@ -8,10 +8,11 @@ import pandas as pd
 from PySide6.QtCore import Signal
 
 from kalao.interfaces import fake_data
+from kalao.utils import zernike
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
-from kalao.definitions.enums import LogType
+from kalao.definitions.enums import IPPowerStatus, LogType
 
 import config
 
@@ -23,7 +24,7 @@ class FakeSHMFPSBackend(AbstractBackend):
         if key is None:
             key = stream_name
 
-        if data.get(key) is None:
+        if key not in data:
             data[key] = {}
 
         cnt0 = data[key].get('cnt0', -1)
@@ -34,56 +35,80 @@ class FakeSHMFPSBackend(AbstractBackend):
         }
 
         if stream_name == 'fli_stream':
-            data[key]['cnt0'] = self.streams.get('fli_stream',
-                                                 {}).get('cnt0', -1)
+            data[key]['cnt0'] = self.data.get('fli_stream', {}).get('cnt0', -1)
 
-    def _update_stream_cnt(self, data, stream_name, key=None):
-        if key is None:
-            key = stream_name
+    def _update_stream_keywords(self, data, stream_name, keywords):
+        if stream_name not in data:
+            data[stream_name] = {}
 
-        if data.get(key) is None:
-            data[key] = {}
+        data[stream_name]['keywords'] = keywords
 
-        cnt0 = data[key].get('cnt0', -1)
+    def _update_stream_cnt(self, data, stream_name):
+        if stream_name not in data:
+            data[stream_name] = {}
 
-        data[key]['cnt0'] = cnt0 + 1
+        cnt0 = data[stream_name].get('cnt0', -1)
 
-    def _update_params(self, data, fps_name, param_name, param):
-        if data.get(fps_name) is None:
+        data[stream_name]['cnt0'] = cnt0 + 1
+
+    def _update_param(self, data, fps_name, param_name, param):
+        if fps_name not in data:
             data[fps_name] = {}
 
         data[fps_name][param_name] = param
 
     def _update_dict(self, data, key, dict):
-        if data.get(key) is None:
+        if key not in data:
             data[key] = {}
 
-        data[key] = dict
+        data[key].update(dict)
+
+    def _update_db(self, data, collection, db_data):
+        if collection not in data:
+            data[collection] = {}
+
+        data[collection].update(db_data)
 
 
 class MainBackend(FakeSHMFPSBackend):
-    ttm_data = np.array([0, 0])
     last_fli_update = 0
     first = True
 
-    streams_updated = Signal(object)
-    streams = {}
+    def __init__(self):
+        super().__init__()
 
-    fli_updated = Signal(object)
-    fli = {}
+        self.base = {}
 
-    data_updated = Signal(object)
-    data = {}
+        for i in range(12):
+            self.base[f'dm01disp{i:02d}'] = zernike.generate_pattern([0],
+                                                                     (12, 12))
 
-    dmdisp_updated = Signal(object)
-    dmdisp = {}
+        for i in range(12):
+            self.base[f'dm02disp{i:02d}'] = np.zeros((2, ))
+
+        self.base['dm-loopON'] = 1
+        self.base['dm-loopgain'] = 0.9
+
+        self.base['ttm-loopON'] = 1
+        self.base['ttm-loopgain'] = 0
+
+    def _get_dm01disp(self):
+        dm01disp = zernike.generate_pattern([0], (12, 12))
+        for i in range(12):
+            dm01disp += self.base[f'dm01disp{i:02d}']
+        return dm01disp
+
+    def _get_dm02disp(self):
+        dm02disp = np.zeros((2, ))
+        for i in range(12):
+            dm02disp += self.base[f'dm02disp{i:02d}']
+        return dm02disp
 
     @emit('streams_updated')
     @timeit
     def get_streams_all(self):
-        self.dm_data = fake_data.dm()
-        nuvu_data = fake_data.nuvu_frame(dmdisp=np.ma.getdata(self.dm_data),
-                                         tiptilt=self.ttm_data)
+        nuvu_data = fake_data.nuvu_frame(dmdisp=self._get_dm01disp(),
+                                         tiptilt=self._get_dm02disp())
         slopes_data = fake_data.slopes(nuvu_data)
         flux_data = fake_data.flux(nuvu_data)
 
@@ -91,40 +116,34 @@ class MainBackend(FakeSHMFPSBackend):
         flux_params = fake_data.flux_params(flux_data)
 
         self._update_stream(self.streams, config.Streams.DM,
-                            self.dm_data.filled())
-        self._update_params(self.streams, config.FPS.BMC, 'max_stroke', 0.9)
+                            self._get_dm01disp())
+        self._update_param(self.streams, config.FPS.BMC, 'max_stroke', 0.9)
 
         self._update_stream(self.streams, config.Streams.NUVU, nuvu_data)
 
-        self._update_stream(self.streams, config.Streams.SLOPES,
-                            slopes_data.filled())
-        self._update_params(self.streams, config.FPS.SHWFS, 'slope_x',
-                            slopes_params['slope_x'])
-        self._update_params(self.streams, config.FPS.SHWFS, 'slope_y',
-                            slopes_params['slope_y'])
-        self._update_params(self.streams, config.FPS.SHWFS, 'residual',
-                            slopes_params['residual'])
+        self._update_stream(self.streams, config.Streams.SLOPES, slopes_data)
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x',
+                           slopes_params['slope_x'])
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y',
+                           slopes_params['slope_y'])
+        self._update_param(self.streams, config.FPS.SHWFS, 'residual',
+                           slopes_params['residual'])
 
-        self._update_stream(self.streams, config.Streams.FLUX,
-                            flux_data.filled())
-        self._update_params(self.streams, config.FPS.SHWFS,
-                            'flux_subaperture_avg',
-                            flux_params['flux_subaperture_avg'])
-        self._update_params(self.streams, config.FPS.SHWFS,
-                            'flux_subaperture_brightest',
-                            flux_params['flux_subaperture_brightest'])
-
-        if time.monotonic() - self.last_fli_update > 10:
-            self._update_stream_cnt(self.streams, config.Streams.FLI)
-            self.last_fli_update = time.monotonic()
+        self._update_stream(self.streams, config.Streams.FLUX, flux_data)
+        self._update_param(self.streams, config.FPS.SHWFS,
+                           'flux_subaperture_avg',
+                           flux_params['flux_subaperture_avg'])
+        self._update_param(self.streams, config.FPS.SHWFS,
+                           'flux_subaperture_brightest',
+                           flux_params['flux_subaperture_brightest'])
 
         return self.streams
 
     @emit('fli_updated')
     @timeit
     def get_streams_fli(self):
-        fli_data = fake_data.fli_frame(dmdisp=np.ma.getdata(self.dm_data),
-                                       tiptilt=self.ttm_data)
+        fli_data = fake_data.fli_frame(dmdisp=self._get_dm01disp(),
+                                       tiptilt=self._get_dm02disp())
 
         self._update_stream(self.fli, config.Streams.FLI, fli_data)
 
@@ -133,90 +152,137 @@ class MainBackend(FakeSHMFPSBackend):
     @emit('data_updated')
     @timeit
     def get_all(self):
-        self.ttm_data = fake_data.tiptilt(seed=self.ttm_data)
+        if time.monotonic() - self.last_fli_update > 0.01:
+            self._update_stream_cnt(self.data, config.Streams.FLI)
+            self.last_fli_update = time.monotonic()
 
-        self._update_stream(self.data, config.Streams.TTM, self.ttm_data)
+        if self.base['dm-loopON']:
+            self.base[config.Streams.DM_TURBULENCES] = fake_data.dmdisp()
+            self.base[config.Streams.
+                      DM_LOOP] = -self.base['dm-loopgain'] * self.base[
+                          config.Streams.DM_TURBULENCES]
+
+        if self.base['ttm-loopON']:
+            self.base[config.Streams.TTM_CENTERING] = fake_data.tiptilt(
+                seed=self.base[config.Streams.TTM_CENTERING])
+            self.base[config.Streams.
+                      TTM_LOOP] = -self.base['ttm-loopgain'] * self.base[
+                          config.Streams.TTM_CENTERING]
+
+        self._update_stream(self.data, config.Streams.TTM,
+                            self._get_dm02disp())
 
         if self.first:
             self._update_stream(self.data, config.Streams.MODALGAINS,
                                 np.ones((90, )))
-
-            self._update_params(self.data, config.FPS.NUVU, 'autogain_on', 1)
-
-            self._update_params(self.data, 'mfilt-1', 'loopON', 1)
-            self._update_params(self.data, 'mfilt-1', 'loopgain', 0.8)
-            self._update_params(self.data, 'mfilt-1', 'loopmult', 0.99)
-            self._update_params(self.data, 'mfilt-1', 'looplimit', 1)
-
-            self._update_params(self.data, 'mfilt-2', 'loopON', 0)
-            self._update_params(self.data, 'mfilt-2', 'loopgain', 0.8)
-            self._update_params(self.data, 'mfilt-2', 'loopmult', 0.99)
-            self._update_params(self.data, 'mfilt-2', 'looplimit', 1)
-
-            self._update_dict(
-                self.data, 'plc', {
-                    'shutter_state': 'CLOSED',
-                    'flip_mirror_position': 'DOWN',
-                    'calib_unit_position': 23.56,
-                    'laser_state': 'ON',
-                    'laser_power': 4.5,
-                    'tungsten_state': 'OFF',
-                    'adc1_angle': 135,
-                    'adc2_angle': 45,
-                    'filterwheel_filter_position': 4,
-                    'filterwheel_filter_name': 'z',
-                    'temp_bench_air': 18.2,
-                    'temp_bench_board': 18.1,
-                    'temp_water_in': 13,
-                    'temp_water_out': 15,
-                    'pump_status': 'ON',
-                    'pump_temp': 35,
-                    'heater_status': 'OFF',
-                    'fan_status': 'ON',
-                    'flow_value': 2.5
-                })
-
-            self._update_dict(
-                self.data, 'services', {
-                    'kalao_nuvu.service':
-                        ('active', 'exited',
-                         datetime(2023, 12, 4, 20, 15, 42, 397363)),
-                    'kalao_cacao.service':
-                        ('active', 'exited',
-                         datetime(2023, 12, 7, 9, 15, 25, 886597)),
-                    'kalao_sequencer.service':
-                        ('active', 'running',
-                         datetime(2023, 12, 7, 10, 52, 17, 270106)),
-                    'kalao_camera.service':
-                        ('active', 'running',
-                         datetime(2023, 12, 7, 10, 52, 17, 901720)),
-                    'kalao_flask-gui.service':
-                        ('inactive', 'dead', datetime(1970, 1, 1, 0, 0)),
-                    'kalao_gop-server.service':
-                        ('active', 'running',
-                         datetime(2023, 12, 7, 10, 52, 17, 915063)),
-                    'kalao_database-timer.service':
-                        ('active', 'running',
-                         datetime(2023, 12, 7, 10, 52, 17, 921112)),
-                    'kalao_safety-timer.service':
-                        ('active', 'running',
-                         datetime(2023, 12, 7, 10, 52, 17, 931899)),
-                    'kalao_loop-timer.service':
-                        ('active', 'running',
-                         datetime(2023, 12, 7, 10, 52, 17, 932389)),
-                    'kalao_pump-timer.service':
-                        ('active', 'running',
-                         datetime(2023, 12, 7, 10, 52, 17, 943558))
-                })
-
-            self._update_dict(self.data, 'fli', {
-                'remaining_time': 0,
-                'exposure_time': 60
-            })
-
             self.first = False
 
+        self._update_stream_keywords(
+            self.data, config.Streams.NUVU, {
+                'T_CCD': -60,
+                'T_CNTRLR': 35,
+                'T_PSU': 35,
+                'T_FPGA': 35,
+                'T_HSINK': 15.5,
+                'EMGAIN': 1000,
+                'DETGAIN': 1,
+                'EXPTIME': 0.5,
+                'MFRATE': 1800,
+            })
+
+        self._update_param(self.data, config.FPS.NUVU, 'autogain_on', 1)
+
+        self._update_param(self.data, 'mfilt-1', 'loopON',
+                           self.base['dm-loopON'])
+        self._update_param(self.data, 'mfilt-1', 'loopgain',
+                           self.base['dm-loopgain'])
+        self._update_param(self.data, 'mfilt-1', 'loopmult', 0.99)
+        self._update_param(self.data, 'mfilt-1', 'looplimit', 1)
+
+        self._update_param(self.data, 'mfilt-2', 'loopON',
+                           self.base['ttm-loopON'])
+        self._update_param(self.data, 'mfilt-2', 'loopgain',
+                           self.base['ttm-loopgain'])
+        self._update_param(self.data, 'mfilt-2', 'loopmult', 0.99)
+        self._update_param(self.data, 'mfilt-2', 'looplimit', 1)
+
+        self._update_dict(
+            self.data, 'plc', {
+                'shutter_state': 'CLOSED',
+                'flip_mirror_position': 'DOWN',
+                'calib_unit_position': 23.56,
+                'laser_state': 'ON',
+                'laser_power': 4.5,
+                'tungsten_state': 'OFF',
+                'adc1_angle': 135,
+                'adc2_angle': 45,
+                'filterwheel_filter_position': 4,
+                'filterwheel_filter_name': 'z',
+                'temp_bench_air': 18.2,
+                'temp_bench_board': 18.1,
+                'temp_water_in': 13,
+                'temp_water_out': 15,
+                'pump_status': 'ON',
+                'pump_temp': 35,
+                'heater_status': 'OFF',
+                'fan_status': 'ON',
+                'flow_value': 2.5
+            })
+
+        self._update_dict(
+            self.data, 'services', {
+                'kalao_nuvu.service':
+                    ('active', 'exited',
+                     datetime(2023, 12, 4, 20, 15, 42, 397363)),
+                'kalao_cacao.service':
+                    ('active', 'exited',
+                     datetime(2023, 12, 7, 9, 15, 25, 886597)),
+                'kalao_sequencer.service':
+                    ('active', 'running',
+                     datetime(2023, 12, 7, 10, 52, 17, 270106)),
+                'kalao_camera.service':
+                    ('active', 'running',
+                     datetime(2023, 12, 7, 10, 52, 17, 901720)),
+                'kalao_flask-gui.service':
+                    ('inactive', 'dead', datetime(1970, 1, 1, 0, 0)),
+                'kalao_gop-server.service':
+                    ('active', 'running',
+                     datetime(2023, 12, 7, 10, 52, 17, 915063)),
+                'kalao_database-timer.service':
+                    ('active', 'running',
+                     datetime(2023, 12, 7, 10, 52, 17, 921112)),
+                'kalao_safety-timer.service':
+                    ('active', 'running',
+                     datetime(2023, 12, 7, 10, 52, 17, 931899)),
+                'kalao_loop-timer.service':
+                    ('active', 'running',
+                     datetime(2023, 12, 7, 10, 52, 17, 932389)),
+                'kalao_pump-timer.service':
+                    ('active', 'running',
+                     datetime(2023, 12, 7, 10, 52, 17, 943558))
+            })
+
+        self._update_dict(
+            self.data, 'fli', {
+                'remaining_time': 0,
+                'exposure_time': 60.,
+                'heatsink': 15.5,
+                'ccd': -30
+            })
+
+        self._update_dict(
+            self.data, 'ippower', {
+                'ippower_rtc_status': IPPowerStatus.ON,
+                'ippower_bench_status': IPPowerStatus.OFF,
+                'ippower_dm_status': IPPowerStatus.ERROR,
+            })
+
         return self.data
+
+    @emit('monitoringandtelemetry_updated')
+    @timeit
+    def get_monitoringandtelemetry(self):
+        return {}
 
     @emit('dmdisp_updated')
     @timeit
@@ -224,35 +290,22 @@ class MainBackend(FakeSHMFPSBackend):
         if dm_number not in self.dmdisp:
             self.dmdisp[dm_number] = {}
 
-        dm = f'dm{dm_number:02d}disp'
-
         if dm_number == 1:
-            dm_data = fake_data.dm([0])
+            self._update_stream(self.dmdisp[dm_number], f'dm01disp',
+                                self._get_dm01disp())
 
             for i in range(0, 12):
-                channel = f'{dm}{i:02d}'
-
-                channel_data = fake_data.dm()
-                dm_data += channel_data
-
-                self._update_stream(self.dmdisp[dm_number], channel,
-                                    channel_data)
-
-            self._update_stream(self.dmdisp[dm_number], dm, dm_data)
+                self._update_stream(self.dmdisp[dm_number],
+                                    f'dm{dm_number:02d}disp{i:02d}',
+                                    self.base[f'dm01disp{i:02d}'])
         else:
-            dm_data = np.zeros((2, ))
+            self._update_stream(self.dmdisp[dm_number], f'dm02disp',
+                                self._get_dm02disp())
 
             for i in range(0, 12):
-                channel = f'{dm}{i:02d}'
-
-                channel_data = fake_data.tiptilt()
-                dm_data += channel_data
-
-                self._update_stream(self.dmdisp[dm_number], channel,
-                                    channel_data.reshape((1, 2)))
-
-            self._update_stream(self.dmdisp[dm_number], dm,
-                                dm_data.reshape((1, 2)))
+                self._update_stream(self.dmdisp[dm_number],
+                                    f'dm{dm_number:02d}disp{i:02d}',
+                                    self.base[f'dm02disp{i:02d}'])
 
         return self.dmdisp[dm_number]
 
@@ -296,9 +349,11 @@ class MainBackend(FakeSHMFPSBackend):
     # DM Loop
 
     def set_dm_loop_on(self, state):
+        self.base['dm-loopON'] = int(state)
         print(f'Set DM loop to {state} (virtually)')
 
     def set_dm_loop_gain(self, gain):
+        self.base['dm-loopgain'] = gain
         print(f'Set DM gain to {gain} (virtually)')
 
     def set_dm_loop_mult(self, mult):
@@ -310,9 +365,11 @@ class MainBackend(FakeSHMFPSBackend):
     # TTM Loop
 
     def set_ttm_loop_on(self, state):
+        self.base['ttm-loopON'] = int(state)
         print(f'Set TTM loop to {state} (virtually)')
 
     def set_ttm_loop_gain(self, gain):
+        self.base['ttm-loopgain'] = gain
         print(f'Set TTM gain to {gain} (virtually)')
 
     def set_ttm_loop_mult(self, mult):
@@ -356,6 +413,24 @@ class MainBackend(FakeSHMFPSBackend):
     def get_fli_cancel(self):
         print(f'Canceled FLI exposure (virtually)')
 
+    def get_ippower_rtc_on(self):
+        print(f'Powering on RTC (virtually)')
+
+    def get_ippower_rtc_off(self):
+        print(f'Powering off RTC (virtually)')
+
+    def get_ippower_bench_on(self):
+        print(f'Powering on Bench (virtually)')
+
+    def get_ippower_bench_off(self):
+        print(f'Powering off Bench (virtually)')
+
+    def get_ippower_dm_on(self):
+        print(f'Powering on DM (virtually)')
+
+    def get_ippower_dm_off(self):
+        print(f'Powering off DM (virtually)')
+
     def get_centering_star(self):
         print(f'Star centering launched (virtually)')
 
@@ -368,17 +443,35 @@ class MainBackend(FakeSHMFPSBackend):
     ##### DM channels
 
     def reset_dm(self, dm_number):
+        if dm_number == 1:
+            for i in range(12):
+                self.base[f'dm01disp{i:02d}'] = zernike.generate_pattern([0],
+                                                                         (12,
+                                                                          12))
+        else:
+            for i in range(12):
+                self.base[f'dm02disp{i:02d}'] = np.zeros((2, ))
+
         print(f'Resetted DM {dm_number} (virtually)')
 
     def reset_channel(self, dm_number, channel):
+        if dm_number == 1:
+            self.base[f'dm01disp{channel:02d}'] = zernike.generate_pattern([
+                0
+            ], (12, 12))
+        else:
+            self.base[f'dm02disp{channel:02d}'] = np.zeros((2, ))
+
         print(f'Resetted channel {channel} of DM {dm_number} (virtually)')
 
     ##### DM & TTM control
 
     def set_dm_to(self, array):
+        self.base[config.Streams.DM_USER_CONTROLLED] = array
         print(f'Set DM to {array} (virtually)')
 
     def set_ttm_to(self, array):
+        self.base[config.Streams.TTM_USER_CONTROLLED] = array
         print(f'Set TTM to {array} (virtually)')
 
     ##### Logs

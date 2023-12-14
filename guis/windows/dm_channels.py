@@ -78,7 +78,7 @@ class DMChannelsWindow(KalAOMainWindow, BackendActionMixin, MinMaxMixin,
         self.backend.dmdisp_updated.connect(self.dmdisp_updated)
 
         self.timer = QTimer()
-        self.timer.setInterval(int(1000. / config.GUI.max_fps))
+        self.timer.setInterval(int(1000. / config.GUI.refreshrate_streams))
         self.timer.timeout.connect(lambda: self.backend.get_streams_dmdisp(
             self.dm_number))
         self.timer.start()

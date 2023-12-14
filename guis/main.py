@@ -74,12 +74,18 @@ if __name__ == "__main__":
 
     # Timer
     timer_streams = QTimer()
-    timer_streams.setInterval(int(1000. / config.GUI.max_fps))
+    timer_streams.setInterval(int(1000 / config.GUI.refreshrate_streams))
     timer_streams.timeout.connect(backend.get_streams_all)
 
     timer_data = QTimer()
-    timer_data.setInterval(int(1000. / config.GUI.max_fps))
+    timer_data.setInterval(int(1000 / config.GUI.refreshrate_data))
     timer_data.timeout.connect(backend.get_all)
+
+    timer_monitoringandtelemetry = QTimer()
+    timer_monitoringandtelemetry.setInterval(
+        int(1000 / config.GUI.refresharte_dbs))
+    timer_monitoringandtelemetry.timeout.connect(
+        backend.get_monitoringandtelemetry)
 
     # Windows
 
@@ -113,12 +119,12 @@ if __name__ == "__main__":
 
     else:
         unified = MainWindow(backends, backend, timer_streams,
-                             expert_mode=args.expert)
-
-        if args.onsky:
-            unified_view.onsky_checkbox.setChecked(True)
+                             expert_mode=args.expert, on_sky_unit=args.onsky)
 
     timer_streams.start()
     timer_data.start()
+    timer_monitoringandtelemetry.start()
+
+    # w = FLIZoomWindow(backend, fake_data.fli_frame())
 
     app.exec()

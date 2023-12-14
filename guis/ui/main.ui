@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1053</width>
-    <height>771</height>
+    <width>1058</width>
+    <height>1001</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,15 +43,15 @@
         <string>Main</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_8" rowstretch="2,1,1" columnstretch="1,1,0">
-        <item row="2" column="1">
-         <widget class="QFrame" name="ttm_frame">
+        <item row="1" column="1">
+         <widget class="QFrame" name="flux_frame">
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
           </property>
-          <layout class="QGridLayout" name="gridLayout_6">
+          <layout class="QGridLayout" name="gridLayout_5">
            <property name="leftMargin">
             <number>0</number>
            </property>
@@ -91,11 +91,41 @@
           </layout>
          </widget>
         </item>
+        <item row="2" column="1">
+         <widget class="QFrame" name="ttm_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_6">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
         <item row="0" column="2" rowspan="3">
          <layout class="QVBoxLayout" name="verticalLayout">
-          <item>
+          <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
            <widget class="KalAOSvgWidget" name="logo_label" native="true">
             <property name="minimumSize">
+             <size>
+              <width>250</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="maximumSize">
              <size>
               <width>250</width>
               <height>100</height>
@@ -104,70 +134,73 @@
            </widget>
           </item>
           <item>
-           <widget class="QGroupBox" name="status_groupbox">
+           <widget class="QGroupBox" name="instrument_groupbox">
             <property name="title">
-             <string>Adaptive Optics</string>
+             <string>Instrument</string>
             </property>
-            <layout class="QGridLayout" name="gridLayout">
-             <item row="2" column="1">
-              <widget class="QLabel" name="ttm_loop_label">
-               <property name="text">
-                <string>TTM Loop</string>
-               </property>
-              </widget>
-             </item>
+            <layout class="QGridLayout" name="gridLayout_11">
              <item row="0" column="0">
-              <widget class="KalAOStatusIndicator" name="autogain_indicator">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
+              <widget class="QLabel" name="sequencer_label">
                <property name="minimumSize">
                 <size>
-                 <width>30</width>
-                 <height>30</height>
+                 <width>120</width>
+                 <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize">
-                <size>
-                 <width>30</width>
-                 <height>30</height>
-                </size>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="KalAOStatusIndicator" name="ttm_loop_indicator">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>30</width>
-                 <height>30</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>30</width>
-                 <height>30</height>
-                </size>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLabel" name="dm_loop_label">
                <property name="text">
-                <string>DM Loop</string>
+                <string>Sequencer</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
               </widget>
              </item>
              <item row="1" column="0">
+              <widget class="QLabel" name="tracking_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Tracking</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="sequencer_lineedit">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="tracking_lineedit">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="ao_groupbox">
+            <property name="title">
+             <string>Adaptive Optics</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="1" column="1">
               <widget class="KalAOStatusIndicator" name="dm_loop_indicator">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -189,24 +222,8 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="autogain_label">
-               <property name="text">
-                <string>Autogain</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox">
-            <property name="title">
-             <string>Science Camera</string>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_9">
-             <item row="0" column="0">
-              <widget class="KalAOStatusIndicator" name="exposure_indicator">
+             <item row="2" column="1">
+              <widget class="KalAOStatusIndicator" name="ttm_loop_indicator">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -227,10 +244,324 @@
                </property>
               </widget>
              </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="ttm_loop_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>TTM Loop</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="dm_loop_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>DM Loop</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="fli_groupbox">
+            <property name="title">
+             <string>Science Camera</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_9">
+             <item row="1" column="0">
+              <widget class="QLabel" name="fli_exposure_time_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Exposure time</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="KalAOLineEdit" name="fli_remaining_time_lineedit">
+               <property name="text">
+                <string>{remaining_time:.3f} s</string>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="fli_remaining_time_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Time remaining</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
              <item row="0" column="1">
-              <widget class="QLabel" name="exposure_label">
+              <widget class="KalAOStatusIndicator" name="fli_exposure_indicator">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="fli_exposure_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
                <property name="text">
                 <string>Exposure</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="KalAOLineEdit" name="fli_exposure_time_lineedit">
+               <property name="text">
+                <string>{exposure_time:.3f} s</string>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="fli_ccd_temperature_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>CCD Temperature</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="KalAOLineEdit" name="fli_ccd_temperature_lineedit">
+               <property name="text">
+                <string>{ccd_temperature:.1f} °C</string>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="nuvu_groupbox">
+            <property name="title">
+             <string>Wavefront Sensor</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_10">
+             <item row="2" column="1">
+              <widget class="KalAOLineEdit" name="nuvu_exposuretime_lineedit">
+               <property name="text">
+                <string>{exposuretime:.1f} ms</string>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="nuvu_exposuretime_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Exposure time</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="KalAOLineEdit" name="nuvu_emgain_lineedit">
+               <property name="text">
+                <string>{emgain:.0f}</string>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="nuvu_emgain_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>EM Gain</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="KalAOLineEdit" name="nuvu_ccd_temperature_lineedit">
+               <property name="text">
+                <string>{ccd_temperature:.1f} °C</string>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="nuvu_framerate_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Frame rate</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="KalAOLineEdit" name="nuvu_framerate_lineedit">
+               <property name="text">
+                <string>{framerate:.1f} Hz</string>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="nuvu_ccd_temperature_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>CCD Temperature</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="nuvu_autogain_label">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Autogain</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="KalAOStatusIndicator" name="nuvu_autogain_indicator">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
                </property>
               </widget>
              </item>
@@ -282,30 +613,6 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="1">
-         <widget class="QFrame" name="flux_frame">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_5">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-          </layout>
-         </widget>
-        </item>
         <item row="0" column="1">
          <widget class="QFrame" name="fli_frame">
           <property name="frameShape">
@@ -331,30 +638,6 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QFrame" name="dm_frame">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_3">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-          </layout>
-         </widget>
-        </item>
-        <item row="2" column="0">
          <widget class="QFrame" name="slopes_frame">
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
@@ -378,6 +661,30 @@
           </layout>
          </widget>
         </item>
+        <item row="2" column="0">
+         <widget class="QFrame" name="dm_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_3">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="loop_tab">
@@ -385,6 +692,12 @@
         <string>Loop Controls</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_4"/>
+      </widget>
+      <widget class="QWidget" name="monitoring_tab">
+       <attribute name="title">
+        <string>Monitoring</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_8"/>
       </widget>
       <widget class="QWidget" name="plots_tab">
        <attribute name="title">
@@ -439,7 +752,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1053</width>
+     <width>1058</width>
      <height>30</height>
     </rect>
    </property>
@@ -448,14 +761,19 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>KalAOStatusIndicator</class>
+   <extends>QGraphicsView</extends>
+   <header>kalao</header>
+  </customwidget>
+  <customwidget>
    <class>KalAOSvgWidget</class>
    <extends>QWidget</extends>
    <header>kalao</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>KalAOStatusIndicator</class>
-   <extends>QGraphicsView</extends>
+   <class>KalAOLineEdit</class>
+   <extends>QLineEdit</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

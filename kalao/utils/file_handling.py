@@ -303,7 +303,7 @@ def _header_from_db(collection_name, dt):
         fits_keyword = v.get('fits_keyword')
         if fits_keyword is not None:
             # Unit
-            unit = v.get("unit")
+            unit = v.get('unit')
             if unit is None or unit == '':
                 unit = ''
             else:

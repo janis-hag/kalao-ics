@@ -41,7 +41,6 @@
      <widget class="QLabel" name="title_label">
       <property name="font">
        <font>
-        <weight>75</weight>
         <bold>true</bold>
        </font>
       </property>
@@ -203,7 +202,7 @@
     <item row="3" column="0" colspan="2">
      <widget class="KalAOLabel" name="star_label">
       <property name="text">
-       <string>X: {x:.{precision}f}, Y: {y:.{precision}f}, FWHM: {fwhm:.{precision}f}, Peak: {peak}</string>
+       <string>X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, FWHM: {fwhm:.{axis_precision}f}{axis_unit}, Peak: {peak:.{data_precision}f}{data_unit}</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -217,6 +216,9 @@
       </item>
       <item>
        <widget class="QComboBox" name="scale_combobox"/>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cuts_combobox"/>
       </item>
       <item>
        <widget class="QSpinBox" name="x_spinbox">
@@ -300,9 +302,12 @@
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="update_checkbox">
+       <widget class="QCheckBox" name="follow_checkbox">
         <property name="text">
-         <string>Auto-update</string>
+         <string>Follow PSF</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -316,7 +321,7 @@
      <x>0</x>
      <y>0</y>
      <width>969</width>
-     <height>30</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>

@@ -17,6 +17,7 @@ import numpy as np
 from opcua import Client, ua
 
 import config
+from kalao.definitions.enums import PLCStatus
 
 
 def connect(addr=config.PLC.ip, port=config.PLC.port):
@@ -169,6 +170,8 @@ def motor_get_status(node, beck=None):
             beck.get_node(f'ns=4; s=MAIN.{node}.stat.lrVelActual').get_value(),
         'lrVelTarget':
             beck.get_node(f'ns=4; s=MAIN.{node}.stat.lrVelTarget').get_value(),
+        'lrVelocity':
+            beck.get_node(f'ns=4; s=MAIN.{node}.stat.lrVelocity').get_value(),
         'lrPosActual':
             beck.get_node(f'ns=4; s=MAIN.{node}.stat.lrPosActual').get_value(),
         'lrPosition':
@@ -197,6 +200,29 @@ def motor_is_moving(node, beck=None):
 def motor_is_initialising(node, beck=None):
     return beck.get_node(f'ns=4; s=MAIN.{node}.stat.sStatus').get_value(
     ).startswith('INITIALISING')
+
+
+@beckhoff_autoconnect
+def motor_get_status(node, beck=None):
+    enabled = beck.get_node(f"ns=4; s=MAIN.{node}.stat.bEnabled").get_value()
+    initialised = beck.get_node(
+        f"ns=4; s=MAIN.{node}.stat.bInitialised").get_value()
+    status = beck.get_node(f'ns=4; s=MAIN.{node}.stat.sStatus').get_value()
+
+    if not enabled:
+        return PLCStatus.DISABLED
+    elif 'INITIALISING' in status:
+        return PLCStatus.INITIALISING
+    elif not initialised in status:
+        return PLCStatus.UNINITIALISED
+    elif 'ERROR' in status:
+        return PLCStatus.ERROR
+    elif 'MOVING' in status:
+        return PLCStatus.MOVING
+    elif 'STANDING' in status:
+        return PLCStatus.STANDING
+    else:
+        return PLCStatus.UNKNOWN
 
 
 @beckhoff_autoconnect

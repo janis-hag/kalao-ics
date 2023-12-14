@@ -36,18 +36,25 @@ class IPPower:
     url = 'http://10.10.132.94/statusjsn.js'
 
     class Port:
-        PC = 5
+        RTC = 5
         Bench = 6
         BMC_DM = 7
 
 
 class CalibUnit:
+    velocity = 0.1  # mm/s
+
+    position_min = 0  # mm
+    position_max = 99  # mm
+
     # Should be 13e-3 * 11.9849 / 44.1023 = 0.00353 mm / px
     px_to_mm = 0.00355
     initial_offset = 22.23
 
 
 class ADC:
+    velocity = 1  # °/s
+
     # Account for the clocking between the telescope and KalAO
     max_disp_offset = 0  # °
 
@@ -544,8 +551,8 @@ class Cooling:
 
 
 class Timers:
-    temperature_update_interval = 5  # s
-    bench_update_interval = 30  # s
+    temperature_check_interval = 5  # s
+    bench_check_interval = 30  # s
 
     inactivity_timeout = 2700  # s
 
@@ -584,7 +591,11 @@ class GUI:
 
     plots_exclude_list = ['observer_name', 'observer_email']
 
-    max_fps = 10
+    refreshrate_streams = 10  # /s
+    refreshrate_data = 1  # /s
+    refreshrate_logs = 1  # /s
+    refresharte_dbs = min(Database.monitoring_update_interval,
+                          Database.telemetry_update_interval)
 
     http_port = 6666
     http_dataformat = 'pickle'

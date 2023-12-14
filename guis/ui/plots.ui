@@ -13,11 +13,11 @@
   <property name="windowTitle">
    <string>Plots - KalAO</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0">
-   <item>
+  <layout class="QGridLayout" name="gridLayout" columnstretch="1,0">
+   <item row="0" column="0">
     <widget class="KalAOChartView" name="plots_view"/>
    </item>
-   <item>
+   <item row="0" column="1" rowspan="2">
     <layout class="QFormLayout" name="formLayout">
      <item row="0" column="0">
       <widget class="QLabel" name="start_label">
@@ -57,6 +57,7 @@
       <widget class="QLabel" name="telemetry_label">
        <property name="font">
         <font>
+         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -70,6 +71,9 @@
      </item>
      <item row="5" column="0" colspan="2">
       <widget class="QListWidget" name="telemetry_list">
+       <property name="toolTipDuration">
+        <number>2147483647</number>
+       </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::MultiSelection</enum>
        </property>
@@ -79,6 +83,7 @@
       <widget class="QLabel" name="monitoring_label">
        <property name="font">
         <font>
+         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -92,6 +97,9 @@
      </item>
      <item row="7" column="0" colspan="2">
       <widget class="QListWidget" name="monitoring_list">
+       <property name="toolTipDuration">
+        <number>2147483647</number>
+       </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::MultiSelection</enum>
        </property>
@@ -116,6 +124,9 @@
      </item>
      <item row="9" column="0" colspan="2">
       <widget class="QListWidget" name="obs_list">
+       <property name="toolTipDuration">
+        <number>2147483647</number>
+       </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::MultiSelection</enum>
        </property>
@@ -125,6 +136,7 @@
       <widget class="QLabel" name="obs_label">
        <property name="font">
         <font>
+         <weight>75</weight>
          <bold>true</bold>
         </font>
        </property>
@@ -151,6 +163,9 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="group_layout"/>
    </item>
   </layout>
  </widget>

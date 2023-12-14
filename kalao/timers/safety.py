@@ -264,10 +264,10 @@ def _check_cooling_status():
 
 
 if __name__ == "__main__":
-    schedule.every(config.Timers.temperature_update_interval).seconds.do(
+    schedule.every(config.Timers.temperature_check_interval).seconds.do(
         _check_cooling_status)
     schedule.every(
-        config.Timers.bench_update_interval).seconds.do(_check_bench_status)
+        config.Timers.bench_check_interval).seconds.do(_check_bench_status)
 
     while True:
         n = schedule.idle_seconds()

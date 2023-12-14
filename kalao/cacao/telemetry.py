@@ -112,50 +112,35 @@ def streams(shm_cache={}):
     return stream_list
 
 
-def telemetry_save(shm_and_fps_cache):
-    """
-    Saves all the adaptive optics telemetry on the mongo database.
-
-    :param shm_and_fps_cache: A list containing pointers to all the already opened streams.
-    :return: status code
-    """
-
+def gather(shm_and_fps_cache):
     telemetry_data = {}
 
     # Nuvu stream
-    nuvu_stream = toolbox.open_stream_once('nuvu_raw', shm_and_fps_cache)
+    nuvu_raw_stream = toolbox.open_stream_once('nuvu_raw', shm_and_fps_cache)
 
-    if nuvu_stream is not None:  # and session:
-        stream_keywords = nuvu_stream.get_keywords()
+    if nuvu_raw_stream is not None:  # and session:
+        stream_keywords = nuvu_raw_stream.get_keywords()
 
-        # Check if it's running
-        # if fps_nuvu.run_runs():
-        telemetry_data["nuvu_temp_ccd"] = stream_keywords['T_CCD']
-        telemetry_data["nuvu_temp_controller"] = stream_keywords['T_CNTRLR']
-        telemetry_data["nuvu_temp_power_supply"] = stream_keywords['T_PSU']
-        telemetry_data["nuvu_temp_fpga"] = stream_keywords['T_FPGA']
-        telemetry_data["nuvu_temp_heatsink"] = stream_keywords['T_HSINK']
-        telemetry_data["nuvu_emgain"] = stream_keywords['EMGAIN']
-        telemetry_data["nuvu_detgain"] = stream_keywords['DETGAIN']
-        telemetry_data["nuvu_exposuretime"] = stream_keywords['EXPTIME']
-        telemetry_data["nuvu_mframerate"] = stream_keywords['MFRATE']
-
-    else:
-        # Return empty streams
-        pass
+        telemetry_data['nuvu_temp_ccd'] = stream_keywords['T_CCD']
+        telemetry_data['nuvu_temp_controller'] = stream_keywords['T_CNTRLR']
+        telemetry_data['nuvu_temp_power_supply'] = stream_keywords['T_PSU']
+        telemetry_data['nuvu_temp_fpga'] = stream_keywords['T_FPGA']
+        telemetry_data['nuvu_temp_heatsink'] = stream_keywords['T_HSINK']
+        telemetry_data['nuvu_emgain'] = stream_keywords['EMGAIN']
+        telemetry_data['nuvu_detgain'] = stream_keywords['DETGAIN']
+        telemetry_data['nuvu_exposuretime'] = stream_keywords['EXPTIME']
+        telemetry_data['nuvu_mframerate'] = stream_keywords['MFRATE']
 
     # SHWFS process
     shwfs_fps = toolbox.open_fps_once(config.FPS.SHWFS, shm_and_fps_cache)
 
     if shwfs_fps is not None and shwfs_fps.run_runs():
-        telemetry_data["slopes_flux_subaperture_avg"] = shwfs_fps.get_param(
+        telemetry_data['slopes_flux_subaperture_avg'] = shwfs_fps.get_param(
             'flux_subaperture_avg')
         telemetry_data[
-            "slopes_flux_subaperture_brightest"] = shwfs_fps.get_param(
+            'slopes_flux_subaperture_brightest'] = shwfs_fps.get_param(
                 'flux_subaperture_brightest')
-        telemetry_data["slopes_residual_pix"] = shwfs_fps.get_param('residual')
-        telemetry_data["slopes_residual_arcsec"] = shwfs_fps.get_param(
-            'residual') * config.WFS.plate_scale
+        telemetry_data['slopes_residual'] = shwfs_fps.get_param('residual')
 
     # Tip/tilt stream
     tt_stream = toolbox.open_stream_once(config.Streams.TTM, shm_and_fps_cache)
@@ -164,36 +149,49 @@ def telemetry_save(shm_and_fps_cache):
         # Check turned off to prevent timeout. Data may be obsolete
         tt_data = tt_stream.get_data(check=False)
 
-        telemetry_data["pi_tip"] = float(tt_data[0])
-        telemetry_data["pi_tilt"] = float(tt_data[1])
+        telemetry_data['pi_tip'] = float(tt_data[0])
+        telemetry_data['pi_tilt'] = float(tt_data[1])
 
     # DM loop process
     dm_loop_fps = toolbox.open_fps_once('mfilt-1', shm_and_fps_cache)
 
     if dm_loop_fps is not None and dm_loop_fps.run_runs():
-        telemetry_data["loop_gain"] = dm_loop_fps.get_param('loopgain')
-        telemetry_data["loop_mult"] = dm_loop_fps.get_param('loopmult')
-        telemetry_data["loop_on"] = dm_loop_fps.get_param('loopON')
+        telemetry_data['dm_loop_gain'] = dm_loop_fps.get_param('loopgain')
+        telemetry_data['dm_loop_mult'] = dm_loop_fps.get_param('loopmult')
+        telemetry_data['dm_loop_on'] = dm_loop_fps.get_param('loopON')
 
-        if telemetry_data["loop_on"] is True:
-            telemetry_data["loop_on"] = 'ON'
-        elif telemetry_data["loop_on"] is False:
-            telemetry_data["loop_on"] = 'OFF'
+        if telemetry_data['dm_loop_on'] is True:
+            telemetry_data['dm_loop_on'] = 'ON'
+        elif telemetry_data['dm_loop_on'] is False:
+            telemetry_data['dm_loop_on'] = 'OFF'
 
     # TTM loop process
     ttm_loop_fps = toolbox.open_fps_once('mfilt-2', shm_and_fps_cache)
 
     if ttm_loop_fps is not None and ttm_loop_fps.run_runs():
-        telemetry_data["tt_loop_gain"] = ttm_loop_fps.get_param('loopgain')
-        telemetry_data["tt_loop_mult"] = ttm_loop_fps.get_param('loopmult')
-        telemetry_data["tt_loop_on"] = ttm_loop_fps.get_param('loopON')
+        telemetry_data['ttm_loop_gain'] = ttm_loop_fps.get_param('loopgain')
+        telemetry_data['ttm_loop_mult'] = ttm_loop_fps.get_param('loopmult')
+        telemetry_data['ttm_loop_on'] = ttm_loop_fps.get_param('loopON')
 
-        if telemetry_data["tt_loop_on"] is True:
-            telemetry_data["tt_loop_on"] = 'ON'
-        elif telemetry_data["tt_loop_on"] is False:
-            telemetry_data["tt_loop_on"] = 'OFF'
+        if telemetry_data['ttm_loop_on'] is True:
+            telemetry_data['ttm_loop_on'] = 'ON'
+        elif telemetry_data['ttm_loop_on'] is False:
+            telemetry_data['ttm_loop_on'] = 'OFF'
 
-    # Store everything
-    database.store('telemetry', telemetry_data)
+    return telemetry_data
+
+
+def save(shm_and_fps_cache):
+    """
+    Saves all the adaptive optics telemetry on the mongo database.
+
+    :param shm_and_fps_cache: A list containing pointers to all the already opened streams.
+    :return: status code
+    """
+
+    telemetry_data = gather(shm_and_fps_cache)
+
+    if telemetry_data != {}:
+        database.store('telemetry', telemetry_data)
 
     return 0

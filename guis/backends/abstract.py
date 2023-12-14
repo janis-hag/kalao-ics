@@ -1,7 +1,7 @@
 import time
 from functools import wraps
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, Signal
 
 
 def emit(signal):
@@ -34,8 +34,22 @@ def timeit(fun):
 
 
 def name_to_url(name):
-    return '/' + name.replace('set_', '').replace('get_', '').replace('_', '/')
+    return '/' + name.removeprefix('set_', '').removeprefix(
+        'get_', '').replace('_', '/')
 
 
 class AbstractBackend(QObject):
-    pass
+    streams_updated = Signal(object)
+    streams = {}
+
+    fli_updated = Signal(object)
+    fli = {}
+
+    data_updated = Signal(object)
+    data = {}
+
+    monitoringandtelemetry_updated = Signal(object)
+    monitoringandtelemetry = {}
+
+    dmdisp_updated = Signal(object)
+    dmdisp = {}

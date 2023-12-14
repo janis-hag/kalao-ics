@@ -4,14 +4,12 @@ pi_tip:
   short: Tip
   long: Tip on Tip-Tilt platform
   unit: mrad
-  main_gui: 0 # main_gui: 2
   group: Tip-Tilt
 
 pi_tilt:
   short: Tilt
   long: Tilt on Tip-Tilt platform
   unit: mrad
-  main_gui: 0 # main_gui: 2
   group: Tip-Tilt
 
 # Nüvü camera (temperatures)
@@ -19,67 +17,58 @@ nuvu_temp_ccd:
   short: EMCCD Temp.
   long: Temperature of the EMCCD
   unit: °C
-  main_gui: 3 # main_gui: 2
-  group: Nuvu
+  group: Nüvü
 
 nuvu_temp_controller:
   short: CNTRLR Temp.
   long: Temperature of the Nüvü controller
   unit: °C
-  main_gui: 2 # main_gui: 2
-  group: Nuvu
+  group: Nüvü
 
 nuvu_temp_power_supply:
   short: PSU Temp.
   long: Temperature of the Nüvü power supply
   unit: °C
-  main_gui: 2 # main_gui: 2
-  group: Nuvu
+  group: Nüvü
 
 nuvu_temp_fpga:
   short: FPGA Temp.
   long: Temperature of the Nüvü FPGA
   unit: °C
-  main_gui: 2 # main_gui: 2
-  group: Nuvu
+  group: Nüvü
 
 nuvu_temp_heatsink:
   short: HS Temp.
   long: Temperature of the Nüvü heatsink
   unit: °C
-  main_gui: 2 # main_gui: 2
-  group: Nuvu
+  group: Nüvü
 
 # Nüvü camera (exposure)
 nuvu_emgain:
   short: EM Gain
   long: EM gain of the EMCCD
   unit:
-  main_gui: 3
-  group: Nuvu
+  group: Nüvü
   fits_keyword: HIERARCH ESO AOS WFS EMGAIN
 
 nuvu_detgain:
   short: Detector gain
   long: Analogic detector gain
   unit:
-  main_gui: 3
-  group: Nuvu
+  group: Nüvü
 
 nuvu_exposuretime:
   short: Exp. time
   long: Exposure time of the EMCCD
   unit: ms
-  main_gui: 3
-  group: Nuvu
+  group: Nüvü
   fits_keyword: HIERARCH ESO AOS WFS DIT
 
 nuvu_mframerate:
   short: Framerate
   long: Measured frame rate
   unit: Hz
-  main_gui: 3
-  group: Nuvu
+  group: Nüvü
   fits_keyword: HIERARCH ESO AOS WFS FRATE
 
 # Shack-Hartmann WFS
@@ -87,76 +76,59 @@ slopes_flux_subaperture_avg:
   short: Avg. flux
   long: Average flux active subapertures
   unit: ADU
-  main_gui: 3
-  group: SHWFS slopes
+  group: Shack-Hartmann WFS
 
 slopes_flux_subaperture_brightest:
   short: Max. flux
   long: Maximum flux active subapertures
   unit: ADU
-  main_gui: 3
-  group: SHWFS slopes
+  group: Shack-Hartmann WFS
 
-slopes_residual_pix:
+slopes_residual:
   short: WFS RMS error
-  long: WFS RMS residuals in pixels
-  unit: pix
-  main_gui: 0 # main_gui: 2
-  group: SHWFS slopes
+  long: WFS RMS residuals
+  unit: px
+  group: Shack-Hartmann WFS
 
-slopes_residual_arcsec:
-  short: WFS RMS error
-  long: WFS RMS residuals in arcsec
-  unit: arcsec
-  main_gui: 2 # main_gui: 2
-  group: SHWFS slopes
-
-# AO loop status
-loop_gain:
-  short: AO loop gain
-  long: AO loop gain
+# AO loops status
+dm_loop_on:
+  short: DM Loop ON/OFF
+  long: DM Loop ON/OFF
   unit: ''
-  main_gui: 2 # main_gui: 2
-  group: AO loop
-  fits_keyword: HIERARCH ESO AOS LOOP GAIN
-
-loop_mult:
-  short: AO loop mult coeff
-  long: AO loop mult coeff
-  unit: ''
-  main_gui: 2 # main_gui: 2
-  group: AO loop
-  fits_keyword: HIERARCH ESO AOS LOOP MULT
-
-loop_on:
-  short: AO loop ON/OFF
-  long: AO loop ON/OFF
-  unit: ''
-  main_gui: 2 # main_gui: 2
-  group: AO loop
+  group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP ST
 
-# AO loop status
-tt_loop_gain:
-  short: TT loop gain
-  long: Tip/Tilt loop gain
+dm_loop_gain:
+  short: DM Loop gain
+  long: DM Loop gain
   unit: ''
-  main_gui: 2 # main_gui: 2
-  group: AO loop
+  group: Adaptive Optics Loops
+  fits_keyword: HIERARCH ESO AOS LOOP GAIN
+
+dm_loop_mult:
+  short: DM Loop mult. coeff.
+  long: DM Loop multiplication coefficient
+  unit: ''
+  group: Adaptive Optics Loops
+  fits_keyword: HIERARCH ESO AOS LOOP MULT
+
+ttm_loop_on:
+  short: TTM Loop ON/OFF
+  long: TTM Loop ON/OFF
+  unit: ''
+  group: Adaptive Optics Loops
+  fits_keyword: HIERARCH ESO AOS TT LOOP ST
+
+ttm_loop_gain:
+  short: TTM Loop gain
+  long: TTM Loop gain
+  unit: ''
+  group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP GAIN
 
-tt_loop_mult:
-  short: TT loop mult coeff
-  long: Tip/tilt loop multiplication coefficient
+ttm_loop_mult:
+  short: TTM Loop mult. coeff.
+  long: TTM Loop multiplication coefficient
   unit: ''
-  main_gui: 2 # main_gui: 2
-  group: AO loop
+  group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP MULT
-
-tt_loop_on:
-  short: TT loop ON/OFF
-  long: Tip/Til loop ON/OFF
-  unit: ''
-  main_gui: 2 # main_gui: 2
-  group: AO loop
-  fits_keyword: HIERARCH ESO AOS TT LOOP ST

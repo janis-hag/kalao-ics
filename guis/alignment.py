@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     # Timing - monitor fps and trigger refresh
     timer = QTimer()
-    timer.setInterval(int(1000. / config.GUI.max_fps))
+    timer.setInterval(int(1000. / config.GUI.refreshrate_streams))
     timer.timeout.connect(backend.get_streams_all)
     timer.start()
 

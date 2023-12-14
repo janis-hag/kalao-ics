@@ -6,6 +6,7 @@ from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis, QXYSeries
 from PySide6.QtCore import (QDateTime, QPointF, Qt, QTimer, QTimeZone, Signal,
                             Slot)
 from PySide6.QtGui import QPen
+from PySide6.QtWidgets import QPushButton
 
 from kalao.utils import database, kalao_time
 
@@ -32,19 +33,36 @@ class PlotsWidget(KalAOWidget):
         loadUi('plots.ui', self)
         self.resize(600, 400)
 
+        self.groups = {}
+        self.items = {}
+
         for k, v in sorted(
                 database.definitions['monitoring']['metadata'].items(),
                 key=lambda t: t[1]['short']):
             item = KalAOListWidgetItem(k, self.get_display_name(v))
             item.setToolTip(v['long'])
+
+            group = v.get('group', 'Generic')
+            if group not in self.groups:
+                self.groups[group] = []
+            self.groups[group].append(('monitoring', k))
+
             self.monitoring_list.addItem(item)
+            self.items[f'monitoring/{k}'] = item
 
         for k, v in sorted(
                 database.definitions['telemetry']['metadata'].items(),
                 key=lambda t: t[1]['short']):
             item = KalAOListWidgetItem(k, self.get_display_name(v))
             item.setToolTip(v['long'])
+
+            group = v.get('group', 'Generic')
+            if group not in self.groups:
+                self.groups[group] = []
+            self.groups[group].append(('telemetry', k))
+
             self.telemetry_list.addItem(item)
+            self.items[f'telemetry/{k}'] = item
 
         for k, v in sorted(database.definitions['obs']['metadata'].items(),
                            key=lambda t: t[1]['short']):
@@ -54,6 +72,8 @@ class PlotsWidget(KalAOWidget):
             item = KalAOListWidgetItem(k, self.get_display_name(v))
             item.setToolTip(v['long'])
             self.obs_list.addItem(item)
+
+            self.items[f'obs/{k}'] = item
 
         # Create Chart and set General Chart setting
         chart = self.plots_view.chart
@@ -74,6 +94,14 @@ class PlotsWidget(KalAOWidget):
 
         #chart.legend().hide()
 
+        ### Group buttons
+
+        for group in sorted(self.groups.keys()):
+            button = QPushButton(group)
+            button.clicked.connect(lambda checked=False, group=group: self.
+                                   on_group_button_clicked(checked, group))
+            self.group_layout.addWidget(button)
+
         self.plots_view.chart.hovered.connect(self.hover_xy_to_str)
 
         self.on_tonight_button_clicked(None)
@@ -86,6 +114,26 @@ class PlotsWidget(KalAOWidget):
             unit = f' [{unit}]'
 
         return f'{metadata["short"]}{unit}'
+
+    def on_group_button_clicked(self, checked, group):
+        self.monitoring_list.clearSelection()
+        self.telemetry_list.clearSelection()
+        self.obs_list.clearSelection()
+
+        self.monitoring_list.scrollToTop()
+        self.telemetry_list.scrollToTop()
+        self.obs_list.scrollToTop()
+
+        for collection, key in self.groups[group]:
+            item = self.items[f'{collection}/{key}']
+            item.setSelected(True)
+
+            if collection == 'monitoring':
+                self.monitoring_list.scrollToItem(item)
+            elif collection == 'telemetry':
+                self.telemetry_list.scrollToItem(item)
+            elif collection == 'obs':
+                self.obs_list.scrollToItem(item)
 
     @Slot(QDateTime)
     def on_start_datetimeedit_dateTimeChanged(self, datetime):
@@ -118,9 +166,7 @@ class PlotsWidget(KalAOWidget):
     @Slot(int)
     def on_live_checkbox_stateChanged(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.live_timer.setInterval(
-                int(1000 * min(config.Database.monitoring_update_interval,
-                               config.Database.telemetry_update_interval)))
+            self.live_timer.setInterval(int(1000 * config.GUI.refresharte_dbs))
             self.live_timer.timeout.connect(self.on_live_timer_timeout)
 
             self.on_live_timer_timeout()

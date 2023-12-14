@@ -1,6 +1,6 @@
 from PySide6.QtCore import Signal
 
-from kalao import logs, services
+from kalao import ippower, logs, services
 from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from kalao.plc import (adc, calib_unit, filterwheel, flip_mirror, laser,
@@ -9,7 +9,7 @@ from kalao.utils import centering, database
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
-from kalao.definitions.enums import LogsOutputType
+from kalao.definitions.enums import IPPowerStatus, LogsOutputType
 
 import config
 
@@ -32,52 +32,55 @@ class SHMFPSBackend(AbstractBackend):
             'data': stream.get_data(check=False),
         }
 
-    def _update_stream_cnt(self, data, stream_name, key=None):
-        if key is None:
-            key = stream_name
-
+    def _update_stream_keywords(self, data, stream_name):
         stream = toolbox.open_stream_once(stream_name,
                                           self.streams_and_fps_cache)
 
         if stream is None:
             return
 
-        if data.get(key) is None:
-            data[key] = {}
+        if stream_name not in data:
+            data[stream_name] = {}
 
-        data[key]['cnt0'] = stream.IMAGE.md.cnt0,
+        data[stream_name]['keywords'] = stream.get_keywords()
 
-    def _update_params(self, data, fps_name, param_name):
+    def _update_stream_cnt(self, data, stream_name):
+        stream = toolbox.open_stream_once(stream_name,
+                                          self.streams_and_fps_cache)
+
+        if stream is None:
+            return
+
+        if data.get(stream_name) is None:
+            data[stream_name] = {}
+
+        data[stream_name]['cnt0'] = stream.IMAGE.md.cnt0,
+
+    def _update_param(self, data, fps_name, param_name):
         fps = toolbox.open_fps_once(fps_name, self.streams_and_fps_cache)
 
         if fps is None:
             return
 
-        if data.get(fps_name) is None:
+        if fps_name not in data:
             data[fps_name] = {}
 
         data[fps_name][param_name] = fps.get_param(param_name)
 
     def _update_dict(self, data, key, dict):
-        if data.get(key) is None:
+        if key not in data:
             data[key] = {}
 
-        data[key] = dict
+        data[key].update(dict)
+
+    def _update_db(self, data, collection, db_data):
+        if collection not in data:
+            data[collection] = {}
+
+        data[collection].update(db_data)
 
 
 class MainBackend(SHMFPSBackend):
-    streams_updated = Signal(object)
-    streams = {}
-
-    fli_updated = Signal(object)
-    fli = {}
-
-    data_updated = Signal(object)
-    data = {}
-
-    dmdisp_updated = Signal(object)
-    dmdisp = {}
-
     def __init__(self):
         super().__init__()
 
@@ -87,22 +90,20 @@ class MainBackend(SHMFPSBackend):
     @timeit
     def get_streams_all(self):
         self._update_stream(self.streams, config.Streams.DM)
-        self._update_params(self.streams, config.FPS.BMC, 'max_stroke')
+        self._update_param(self.streams, config.FPS.BMC, 'max_stroke')
 
         self._update_stream(self.streams, config.Streams.NUVU)
 
         self._update_stream(self.streams, config.Streams.SLOPES)
-        self._update_params(self.streams, config.FPS.SHWFS, 'slope_x')
-        self._update_params(self.streams, config.FPS.SHWFS, 'slope_y')
-        self._update_params(self.streams, config.FPS.SHWFS, 'residual')
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x')
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y')
+        self._update_param(self.streams, config.FPS.SHWFS, 'residual')
 
         self._update_stream(self.streams, config.Streams.FLUX)
-        self._update_params(self.streams, config.FPS.SHWFS,
-                            'flux_subaperture_avg')
-        self._update_params(self.streams, config.FPS.SHWFS,
-                            'flux_subaperture_brightest')
-
-        self._update_stream_cnt(self.streams, config.Streams.FLI)
+        self._update_param(self.streams, config.FPS.SHWFS,
+                           'flux_subaperture_avg')
+        self._update_param(self.streams, config.FPS.SHWFS,
+                           'flux_subaperture_brightest')
 
         return self.streams
 
@@ -116,24 +117,38 @@ class MainBackend(SHMFPSBackend):
     @emit('data_updated')
     @timeit
     def get_all(self):
+        self._update_stream_cnt(self.data, config.Streams.FLI)
+
         self._update_stream(self.data, config.Streams.TTM)
         self._update_stream(self.data, config.Streams.MODALGAINS)
 
-        self._update_params(self.data, config.FPS.NUVU, 'autogain_on')
+        self._update_stream_keywords(self.data, config.Streams.NUVU)
 
-        self._update_params(self.data, 'mfilt-1', 'loopON')
-        self._update_params(self.data, 'mfilt-1', 'loopgain')
-        self._update_params(self.data, 'mfilt-1', 'loopmult')
-        self._update_params(self.data, 'mfilt-1', 'looplimit')
+        self._update_param(self.data, config.FPS.NUVU, 'autogain_on')
 
-        self._update_params(self.data, 'mfilt-2', 'loopON')
-        self._update_params(self.data, 'mfilt-2', 'loopgain')
-        self._update_params(self.data, 'mfilt-2', 'loopmult')
-        self._update_params(self.data, 'mfilt-2', 'looplimit')
+        self._update_param(self.data, 'mfilt-1', 'loopON')
+        self._update_param(self.data, 'mfilt-1', 'loopgain')
+        self._update_param(self.data, 'mfilt-1', 'loopmult')
+        self._update_param(self.data, 'mfilt-1', 'looplimit')
+
+        self._update_param(self.data, 'mfilt-2', 'loopON')
+        self._update_param(self.data, 'mfilt-2', 'loopgain')
+        self._update_param(self.data, 'mfilt-2', 'loopmult')
+        self._update_param(self.data, 'mfilt-2', 'looplimit')
 
         self._update_dict(self.data, 'plc', plc_utils.get_all_status())
         self._update_dict(self.data, 'services', services.get_all_status())
         self._update_dict(self.data, 'fli', camera.get_exposure_status())
+        self._update_dict(self.data, 'fli', camera.get_temperatures())
+        self._update_dict(self.data, 'ippower', ippower.status_all())
+
+        return self.data
+
+    @emit('monitoringandtelemetry_updated')
+    @timeit
+    def get_monitoringandtelemetry(self):
+        self._update_db(self.data, 'monitoring', database.get('monitoring'))
+        self._update_db(self.data, 'telemetry', database.get('telemetry'))
 
         return self.data
 
@@ -234,6 +249,24 @@ class MainBackend(SHMFPSBackend):
 
     def get_fli_cancel(self):
         camera.cancel()
+
+    def get_ippower_rtc_on(self):
+        ippower.switch(config.IPPower.Port.RTC, IPPowerStatus.ON)
+
+    def get_ippower_rtc_off(self):
+        ippower.switch(config.IPPower.Port.RTC, IPPowerStatus.OFF)
+
+    def get_ippower_bench_on(self):
+        ippower.switch(config.IPPower.Port.Bench, IPPowerStatus.ON)
+
+    def get_ippower_bench_off(self):
+        ippower.switch(config.IPPower.Port.Bench, IPPowerStatus.OFF)
+
+    def get_ippower_dm_on(self):
+        ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
+
+    def get_ippower_dm_off(self):
+        ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
 
     def get_centering_star(self):
         centering.center_on_target()

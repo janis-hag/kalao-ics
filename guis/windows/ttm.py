@@ -104,11 +104,11 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
                 y_min = min(y_min, p.y())
                 y_max = max(y_max, p.y())
 
-            self.min_spinbox.setValue(y_min)
-            self.max_spinbox.setValue(y_max)
+            self.min_spinbox.setValue(y_min / self.data_scaling)
+            self.max_spinbox.setValue(y_max / self.data_scaling)
         else:
-            y_min = self.min_spinbox.value()
-            y_max = self.max_spinbox.value()
+            y_min = self.min_spinbox.value() * self.data_scaling
+            y_max = self.max_spinbox.value() * self.data_scaling
 
         if abs(y_max - y_min) < config.epsilon:
             y_min -= 0.01
@@ -123,7 +123,6 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
 
     def change_units(self, state):
         prev_scaling = self.data_scaling
-
         if Qt.CheckState(state) == Qt.Checked:
             self.update_spinboxes_unit(' asec', config.TTM.plate_scale)
         else:

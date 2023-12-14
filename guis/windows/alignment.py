@@ -113,8 +113,8 @@ class AlignmentWindow(KalAOMainWindow, BackendDataMixin):
                 pos = {}
 
                 for state in PokeState:
-                    frame = self.consume_stream(data,
-                                                f'{config.FPS.NUVU}_{state}')
+                    frame = self.consume_stream(
+                        data, f'{config.Streams.NUVU}_{state}', force=True)
 
                     _, subapertures[
                         state] = kalao_tools.get_roi_and_subapertures(frame)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QSignalBlocker, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QDoubleSpinBox, QLabel
 
@@ -17,8 +17,6 @@ class DMSpinBox(QDoubleSpinBox):
 
         self.colormap = colormap
 
-        self.valueChanged.connect(self.change_color)
-
         self.setKeyboardTracking(False)
         self.setMinimum(-1.75)
         self.setMaximum(1.75)
@@ -34,11 +32,16 @@ class DMSpinBox(QDoubleSpinBox):
 
     def change_color(self, d):
         d = 255 * (d - self.minimum()) / (self.maximum() - self.minimum())
+        d = np.clip(d, 0, 255)
 
         color = self.colormap.colormap[round(d)]
         color = QColor(color).name()
 
         self.setStyleSheet(f"background-color: {color};")
+
+    def setValue(self, val):
+        self.change_color(val)
+        super().setValue(val)
 
 
 class DMDirectControl(KalAOMainWindow):
@@ -85,24 +88,37 @@ class DMDirectControl(KalAOMainWindow):
         self.setFixedSize(self.size())
 
     def on_actuator_spinbox_valueChanged(self, d, i):
-        if self.actuators_spinboxes[i].hasFocus():
-            dm = np.zeros((12, 12))
+        self.actuators_spinboxes[i].change_color(d)
 
-            for k, s in self.actuators_spinboxes.items():
-                i, j = kalao_tools.get_actuator_2d(k)
+        dm = np.zeros((12, 12))
 
-                dm[j, i] = s.value()
+        for k, s in self.actuators_spinboxes.items():
+            x, y = kalao_tools.get_actuator_2d(k)
 
-            self.backend.set_dm_to(dm)
+            dm[x, y] = s.value()
+
+        self.backend.set_dm_to(dm)
 
     @Slot(bool)
     def on_reset_button_clicked(self, checked):
-        self.all_slider.setValue(0)
+        with QSignalBlocker(self.all_slider):
+            self.all_slider.setValue(0)
+
+        for s in self.actuators_spinboxes.values():
+            with QSignalBlocker(s):
+                s.setValue(0)
+
+        self.reset_all_sides_boxes()
+
+        self.backend.set_dm_to(np.zeros((12, 12)))
 
     @Slot(int)
     def on_all_slider_valueChanged(self, value):
+        self.reset_all_sides_boxes()
+
         for s in self.actuators_spinboxes.values():
-            s.setValue(value / 100)
+            with QSignalBlocker(s):
+                s.setValue(value / 100)
 
         dm = np.ones((12, 12)) * value / 100
 
@@ -131,6 +147,26 @@ class DMDirectControl(KalAOMainWindow):
     def on_grating_angle_spinbox_valueChanged(self, d):
         self.compute_all()
 
+    def reset_all_sides_boxes(self):
+        for s in self.zernike_spinboxes.values():
+            with QSignalBlocker(s):
+                s.setValue(0)
+
+        with QSignalBlocker(self.checkboard_amplitude_spinbox):
+            self.checkboard_amplitude_spinbox.setValue(0)
+
+        with QSignalBlocker(self.on_checkboard_period_spinbox):
+            self.checkboard_period_spinbox.setValue(2)
+
+        with QSignalBlocker(self.grating_amplitude_spinbox):
+            self.grating_amplitude_spinbox.setValue(0)
+
+        with QSignalBlocker(self.on_grating_period_spinbox):
+            self.grating_period_spinbox.setValue(2)
+
+        with QSignalBlocker(self.on_grating_angle_spinbox):
+            self.grating_angle_spinbox.setValue(0)
+
     def compute_all(self):
         pattern = np.zeros((12, 12))
 
@@ -140,7 +176,9 @@ class DMDirectControl(KalAOMainWindow):
 
         for i in range(140):
             x, y = kalao_tools.get_actuator_2d(i)
-            self.actuators_spinboxes[i].setValue(pattern[x, y])
+
+            with QSignalBlocker(self.actuators_spinboxes[i]):
+                self.actuators_spinboxes[i].setValue(pattern[x, y])
 
         self.backend.set_dm_to(pattern)
 

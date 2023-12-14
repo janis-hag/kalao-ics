@@ -5,11 +5,14 @@ import numpy as np
 from PySide6.QtCharts import QChart, QChartView, QDateTimeAxis, QXYSeries
 from PySide6.QtCore import (QEvent, QMargins, QPointF, QRect, QRectF, QSize,
                             Signal)
-from PySide6.QtGui import QBrush, QIcon, QPainter, QPen, QPixmap, Qt
+from PySide6.QtGui import QBrush, QFont, QIcon, QPainter, QPen, QPixmap, Qt
 from PySide6.QtSvgWidgets import QSvgWidget
-from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsScene,
-                               QGraphicsSimpleTextItem, QGraphicsView, QLabel,
+from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
+                               QGraphicsScene, QGraphicsSimpleTextItem,
+                               QGraphicsView, QLabel, QLineEdit,
                                QListWidgetItem, QMainWindow, QWidget)
+
+from kalao.utils.image import LinearScale
 
 from guis.kalao.definitions import Color, Logo, Scale
 from guis.kalao.mixins import ArrayToImageMixin
@@ -82,6 +85,29 @@ class KalAOLabel(QLabel, ArrayToImageMixin):
         self.prepare_array_for_qimage(img)
 
         self.setPixmap(QPixmap.fromImage(self.image))
+
+    def setText(self, str):
+        if self.text_format is None:
+            self.text_format = str
+
+        super().setText(str)
+
+    def updateText(self, **kwargs):
+        if self.text_format is None:
+            self.text_format = self.text()
+
+        self.setText(self.formatter.format(self.text_format, **kwargs))
+
+
+class KalAOLineEdit(QLineEdit):
+    text_format = None
+    formatter = KalAOFormatter()
+
+    def __init__(self, arg0=None, *args, **kwargs):
+        super().__init__(arg0, *args, **kwargs)
+
+        if isinstance(arg0, str):
+            self.text_format = arg0
 
     def setText(self, str):
         if self.text_format is None:
@@ -213,28 +239,38 @@ class KalAOListWidgetItem(QListWidgetItem):
 
 
 class KalAOHoverableGraphicsScene(QGraphicsScene):
-    x = -1
-    y = -1
+    x = np.nan
+    y = np.nan
 
-    hovered = Signal(int, int)
-    clicked = Signal(int, int)
-    scrolled = Signal(int, int, int)
+    hovered = Signal(float, float)
+    clicked = Signal(float, float)
+    scrolled = Signal(float, float, int)
+    dragged = Signal(float, float, float, float)
+
+    dragging = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def event(self, event):
         if event.type() == QEvent.Type.GraphicsSceneMouseMove:
-            self.x = int(event.scenePos().x())
-            self.y = int(event.scenePos().y())
+            self.x = event.scenePos().x()
+            self.y = event.scenePos().y()
 
             self.hovered.emit(self.x, self.y)
+
+            if self.dragging:
+                if (self.x - self.prev_x)**2 + (self.y - self.prev_y)**2 >= 1:
+                    self.dragged.emit(self.x, self.y, self.x - self.prev_x,
+                                      self.y - self.prev_y)
+                    self.prev_x = self.x
+                    self.prev_y = self.y
 
             return True
 
         elif event.type() == QEvent.Type.GraphicsSceneLeave:
-            self.x = -1
-            self.y = -1
+            self.x = np.nan
+            self.y = np.nan
 
             self.hovered.emit(self.x, self.y)
 
@@ -244,8 +280,8 @@ class KalAOHoverableGraphicsScene(QGraphicsScene):
             return True
 
         elif event.type() == QEvent.Type.GraphicsSceneWheel:
-            x = int(event.scenePos().x())
-            y = int(event.scenePos().y())
+            x = event.scenePos().x()
+            y = event.scenePos().y()
 
             if event.pixelDelta().y() > 0:
                 self.scrolled.emit(x, y, 1)
@@ -255,10 +291,20 @@ class KalAOHoverableGraphicsScene(QGraphicsScene):
             return True
 
         elif event.type() == QEvent.Type.GraphicsSceneMousePress:
-            x = int(event.scenePos().x())
-            y = int(event.scenePos().y())
+            x = event.scenePos().x()
+            y = event.scenePos().y()
+
+            self.dragging = True
+
+            self.prev_x = x
+            self.prev_y = y
 
             self.clicked.emit(x, y)
+
+            return True
+
+        elif event.type() == QEvent.Type.GraphicsSceneMouseRelease:
+            self.dragging = False
 
             return True
 
@@ -266,7 +312,7 @@ class KalAOHoverableGraphicsScene(QGraphicsScene):
             return super().event(event)
 
     def pixmap_updated(self):
-        if self.x != -1 and self.y != -1:
+        if not (np.isnan(self.x) or np.isnan(self.y)):
             self.hovered.emit(self.x, self.y)
 
 
@@ -278,6 +324,9 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
     margins = (0, 0, 0, 0)
     shape = (0, 0)
 
+    tick_lines = []
+    tick_labels = []
+
     hovered = Signal(int, int, float)
 
     def __init__(self, *args, **kwargs):
@@ -285,6 +334,9 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
 
         self.scene = KalAOHoverableGraphicsScene()
         self.setScene(self.scene)
+
+        self.setRenderHints(QPainter.Antialiasing |
+                            QPainter.SmoothPixmapTransform)
 
         self.setStyleSheet("background: transparent")
 
@@ -315,8 +367,11 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
             self.scene.setSceneRect(self.viewSize())
             self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
 
-    def setImage(self, img, img_min=None, img_max=None, scale=Scale.LINEAR,
+    def setImage(self, img, img_min=None, img_max=None, scale=LinearScale,
                  view=None):
+        if len(img.shape) < 2:
+            img = img[np.newaxis, :]
+
         self.img = img
         self.img_min = img_min
         self.img_max = img_max
@@ -368,10 +423,135 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
         self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
 
     def hover_to_xyv(self, x, y):
+        if not (np.isnan(x) or np.isnan(y)):
+            x = int(x)
+            y = int(y)
+        else:
+            self.hovered.emit(-1, -1, np.nan)
+
         if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
             self.hovered.emit(x, y, self.img[y, x])
         else:
             self.hovered.emit(-1, -1, np.nan)
+
+    def addTicks(self, spacing, length, text_spacing, fontsize, ticks_x,
+                 ticks_y):
+        self.margins = (spacing + length + text_spacing + 4*fontsize + 50,
+                        spacing + length + text_spacing + 4*fontsize,
+                        spacing + length + text_spacing + 4*fontsize + 50,
+                        spacing + length + text_spacing + 4*fontsize)
+
+        for line_item in self.tick_lines:
+            self.scene.removeItem(line_item)
+
+        self.tick_lines = []
+
+        width = self.view.width()
+        height = self.view.height()
+
+        pen = QPen(Color.GREY, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen.setCosmetic(True)
+
+        self.addVerticalTicks(0, height, -(spacing), -(spacing + length), pen,
+                              ticks_y)
+        self.addVerticalTicks(0, height, width + spacing,
+                              width + spacing + length, pen, ticks_y)
+
+        self.addHorizontalTicks(0, width, -(spacing), -(spacing + length), pen,
+                                ticks_x)
+        self.addHorizontalTicks(0, width, height + spacing,
+                                height + spacing + length, pen, ticks_x)
+
+    def addVerticalTicks(self, start, end, tick_start, tick_end, pen, ticks_y):
+        self.tick_lines.append(
+            self.scene.addLine(tick_start, start, tick_start, end, pen))
+
+        self.tick_lines.append(
+            self.scene.addLine(tick_start, start, tick_end, start, pen))
+        self.tick_lines.append(
+            self.scene.addLine(tick_start, end, tick_end, end, pen))
+
+        for y, label in ticks_y:
+            self.tick_lines.append(
+                self.scene.addLine(tick_start, y, tick_end, y, pen))
+
+    def addHorizontalTicks(self, start, end, tick_start, tick_end, pen,
+                           ticks_x):
+        self.tick_lines.append(
+            self.scene.addLine(start, tick_start, end, tick_start, pen))
+
+        self.tick_lines.append(
+            self.scene.addLine(start, tick_start, start, tick_end, pen))
+        self.tick_lines.append(
+            self.scene.addLine(end, tick_start, end, tick_end, pen))
+
+        for x, label in ticks_x:
+            self.tick_lines.append(
+                self.scene.addLine(x, tick_start, x, tick_end, pen))
+
+    def addTicksLabels(self, spacing, length, text_spacing, fontsize, ticks_x,
+                       ticks_y):
+        for text_item in self.tick_labels:
+            self.scene.removeItem(text_item)
+
+        self.tick_labels = []
+
+        width = self.view.width()
+        height = self.view.height()
+
+        font = QFont()
+        font.setPixelSize(fontsize)
+
+        self.addVerticalTickLabels(width + spacing + length + text_spacing,
+                                   font, ticks_y)
+        self.addHorizontalTickLabels(height + spacing + length + text_spacing,
+                                     font, ticks_x)
+
+    def addVerticalTickLabels(self, text_start, font, ticks_y):
+        for y, label in ticks_y:
+            text_item = OffsetedTextItem(label)
+            text_item.setFont(font)
+            text_item.setPos(text_start, y)
+            text_item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+            self.scene.addItem(text_item)
+
+            if not label.startswith('-'):
+                label = '-' + label
+
+            probe = OffsetedTextItem(label)
+            probe.setFont(font)
+            probe.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+
+            self.scene.addItem(probe)
+            text_item.setOffset(
+                text_item.boundingRect().width() -
+                probe.boundingRect().width(),
+                text_item.boundingRect().height() / 2)
+            self.scene.removeItem(probe)
+
+            self.tick_labels.append(text_item)
+
+    def addHorizontalTickLabels(self, text_start, font, ticks_x):
+        for x, label in ticks_x:
+            text_item = OffsetedTextItem(label)
+            text_item.setFont(font)
+            text_item.setPos(x, text_start)
+            text_item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+            self.scene.addItem(text_item)
+
+            label = label.removeprefix('-')
+
+            probe = OffsetedTextItem(label)
+            probe.setFont(font)
+            probe.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+
+            self.scene.addItem(probe)
+            text_item.setOffset(
+                text_item.boundingRect().width() -
+                probe.boundingRect().width() / 2, 0)
+            self.scene.removeItem(probe)
+
+            self.tick_labels.append(text_item)
 
 
 class KalAOChart(QChart):
@@ -496,6 +676,8 @@ class KalAOStatusIndicator(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.setToolTipDuration(2147483647)
+
         self.scene = QGraphicsScene()
         self.setScene(self.scene)
 
@@ -511,29 +693,16 @@ class KalAOStatusIndicator(QGraphicsView):
                         Qt.MiterJoin)
         self.brush = QBrush(Color.DARK_GREY, Qt.SolidPattern)
 
-        # pen = QPen(Color.ORANGE, 0, Qt.SolidLine, Qt.SquareCap,
-        #      Qt.MiterJoin)
-        #
-        # brush = QBrush(Color.ORANGE, Qt.SolidPattern)
-
-        # self.rect = self.scene.addRect(0, 0, self.diameter, self.diameter, pen, brush)
-
         self.ellipse = self.scene.addEllipse(0, 0, self.diameter,
                                              self.diameter, self.pen,
                                              self.brush)
 
         self.fitInView(self.view, Qt.KeepAspectRatio)
 
-    def setStatus(self, status):
-        color = Color.DARK_GREY
-
-        if status is True:
-            color = Color.GREEN
-        elif status is False:
-            color = Color.RED
-
+    def setStatus(self, color=Color.DARK_GREY, tooltip=''):
         self.brush.setColor(color)
         self.ellipse.setBrush(self.brush)
+        self.setToolTip(str(tooltip))
 
     def heightForWidth(self, width):
         return width

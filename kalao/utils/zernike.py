@@ -91,11 +91,39 @@ class Zernike:
         return n, l
 
 
-def generate_pattern(coeffs, shape, indices_inverse=Zernike.standard_inverse):
-    x = np.linspace(-1, 1, shape[0])
-    y = np.linspace(-1, 1, shape[1])
+def generate_pattern_mask(shape):
+    rx = 1 - 1 / shape[0]
+    ry = 1 - 1 / shape[1]
 
-    X, Y = np.meshgrid(x, y)
+    x = np.linspace(-rx, rx, shape[0])
+    y = np.linspace(-ry, ry, shape[1])
+
+    X, Y = np.meshgrid(x, y, indexing='ij')
+
+    R = np.sqrt(X**2 + Y**2)
+
+    return R > 1
+
+
+def _slopes_mask_from_pattern_mask(mask):
+    mask = mask[0:-1, 0:-1] | mask[1:, 0:-1] | mask[0:-1, 1:] | mask[1:, 1:]
+    return np.hstack([mask, mask])
+
+
+def generate_slopes_mask(shape):
+    mask = generate_pattern_mask((shape[0] + 1, shape[1] // 2 + 1))
+    return _slopes_mask_from_pattern_mask(mask)
+
+
+def generate_pattern(coeffs, shape, indices_inverse=Zernike.standard_inverse):
+    rx = 1 - 1 / shape[0]
+    ry = 1 - 1 / shape[1]
+
+    x = np.linspace(-rx, rx, shape[0])
+    y = np.linspace(-ry, ry, shape[1])
+
+    X, Y = np.meshgrid(x, y, indexing='ij')
+
     R = np.sqrt(X**2 + Y**2)
     Theta = np.arctan2(Y, X)
 
@@ -105,26 +133,33 @@ def generate_pattern(coeffs, shape, indices_inverse=Zernike.standard_inverse):
         n, m = indices_inverse(i)
         pattern += coeff * Zernike.Z(n, m, R, Theta)
 
-    return pattern
+    return np.ma.masked_array(pattern, mask=generate_pattern_mask(shape),
+                              fill_value=np.nan)
 
 
 def _slopes_from_pattern(pattern):
+    dx = 2 / pattern.shape[0]
+    dy = 2 / pattern.shape[1]
+
     # Differentiate
-    slopes = np.gradient(pattern, 2 / (pattern.shape[0] - 1),
-                         2 / (pattern.shape[1] - 1))
+    slopes = np.gradient(pattern, dx, dy)
 
     return np.hstack(slopes)
 
 
-def generate_slopes(coeffs, shape, upsampling=4,
+def generate_slopes(coeffs, shape, upsampling=2,
                     indices_inverse=Zernike.standard_inverse):
-    pattern = generate_pattern(coeffs,
-                               np.array(shape) * upsampling, indices_inverse)
+    pattern = generate_pattern(coeffs, (shape[0] * upsampling,
+                                        shape[1] // 2 * upsampling),
+                               indices_inverse)
 
-    slopes = _slopes_from_pattern(pattern)
+    slopes = _slopes_from_pattern(pattern.data)
 
     # Downsample
-    return block_reduce(slopes, upsampling, np.mean)
+    slopes = block_reduce(slopes, upsampling, np.mean)
+
+    return np.ma.masked_array(slopes, mask=generate_slopes_mask(shape),
+                              fill_value=np.nan)
 
 
 def fit_pattern(pattern, orders=None, mask=None):
@@ -157,15 +192,13 @@ def fit_slopes(slopes, orders=None, mask=None):
     if orders is None:
         orders = slopes.size + 1
 
-    shape = (slopes.shape[0], slopes.shape[1] // 2)
-
     # Generate the basis
     slopes_basis = []
     for i in range(orders):
         coeffs = np.zeros((orders, ))
         coeffs[i] = 1
 
-        _slopes = generate_slopes(coeffs, shape)
+        _slopes = generate_slopes(coeffs, slopes.shape)
         _slopes_masked = np.ma.masked_array(_slopes, mask=mask)
 
         slopes_basis.append(_slopes_masked)
@@ -183,31 +216,36 @@ def fit_slopes(slopes, orders=None, mask=None):
 
 def slopes_from_pattern_fit(pattern, orders=None):
     fit_coeffs = fit_pattern(pattern, orders=orders)
-    shape = np.array(pattern.shape) - 1
-
-    return generate_slopes(fit_coeffs, shape)
+    return generate_slopes(fit_coeffs,
+                           (pattern.shape[0] - 1, 2 * pattern.shape[1] - 2))
 
 
 def slopes_from_pattern_interp(pattern, upsampling=4):
-    pattern = block_replicate(pattern, upsampling)
+    pattern_ = block_replicate(pattern.data, upsampling)
 
-    x = np.arange(pattern.shape[0])
-    y = np.arange(pattern.shape[1])
+    x = np.arange(pattern_.shape[0])
+    y = np.arange(pattern_.shape[1])
 
-    interp = RegularGridInterpolator((x, y), pattern)
+    interp = RegularGridInterpolator((x, y), pattern_)
 
     x = (x[upsampling:] + x[:-upsampling]) / 2
     y = (y[upsampling:] + y[:-upsampling]) / 2
 
     X, Y = np.meshgrid(x, y, indexing='ij')
 
-    pattern = interp((X, Y))
+    pattern_ = interp((X, Y))
 
-    slopes = _slopes_from_pattern(pattern)
-
+    slopes = _slopes_from_pattern(pattern_)
     slopes = block_reduce(slopes, upsampling)
 
-    return slopes
+    slopes[0:slopes.shape[0],
+           0:slopes.shape[1] // 2] *= 1 + 1 / slopes.shape[0]
+    slopes[0:slopes.shape[0], slopes.shape[1] //
+           2:slopes.shape[1]] *= 1 + 1 / (slopes.shape[1] // 2)
+
+    return np.ma.masked_array(
+        slopes, mask=_slopes_mask_from_pattern_mask(pattern.mask),
+        fill_value=pattern.fill_value)
 
 
 def get_coeff_name(i, indices_inverse=Zernike.standard_inverse):
@@ -228,26 +266,14 @@ if __name__ == "__main__":
 
     coeffs = [1, 0.5, 4, 0.2, -0.4, -2]
 
-    fig, axs = plt.subplots(2, 2)
+    fig, axs = plt.subplots(1, 3)
 
     pattern = generate_pattern(coeffs, (12, 12))
-    slopes = generate_slopes(coeffs, (11, 11))
+    slopes = generate_slopes(coeffs, (11, 22))
+    slopes_from_pattern = slopes_from_pattern_interp(pattern)
 
-    #fit_coeffs = fit_pattern(pattern)
-    #fit_pattern = generate_pattern(fit_coeffs, (12, 12))
-    #fit_slopes = generate_slopes(fit_coeffs, (11, 11))
-
-    #mask = kalao_tools.generate_slopes_mask_from_subaps(config.AO.masked_subaps)
-    #coeffs = fit_slopes(slopes, 25, mask)
-
-    fit_slopes = slopes_from_pattern_interp(pattern)
-
-    axs[0, 0].imshow(pattern, cmap='gray')
-    #axs[1, 0].imshow(fit_pattern, cmap='gray')
-    axs[0, 1].imshow(slopes, cmap='gray')
-    axs[1, 1].imshow(fit_slopes, cmap='gray')
-
-    print(slopes.min(), slopes.max())
-    print(fit_slopes.min(), fit_slopes.max())
+    axs[0].imshow(pattern, cmap='gray')
+    axs[1].imshow(slopes, cmap='gray')
+    axs[2].imshow(slopes_from_pattern, cmap='gray')
 
     plt.show()

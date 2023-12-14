@@ -44,14 +44,14 @@ class AlignmentBackend(SHMFPSBackend):
 
         self.poke_stream.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
-        self._update_params(self.streams, config.FPS.NUVU,
-                            key=f'{config.FPS.NUVU}_{PokeState.FLAT}')
-        self._update_params(self.streams, config.FPS.SHWFS,
-                            key=f'{config.FPS.SHWFS}_{PokeState.FLAT}')
+        self._update_stream(self.streams, config.Streams.NUVU,
+                            key=f'{config.Streams.NUVU}_{PokeState.FLAT}')
+        self._update_stream(self.streams, config.Streams.SHWFS,
+                            key=f'{config.Streams.SHWFS}_{PokeState.FLAT}')
 
-        self._update_params(self.streams, config.FPS.SHWFS, 'slope_x')
-        self._update_params(self.streams, config.FPS.SHWFS, 'slope_y')
-        self._update_params(self.streams, config.FPS.SHWFS, 'residual')
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x')
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y')
+        self._update_param(self.streams, config.FPS.SHWFS, 'residual')
 
         # Poke actuators down
         for act in self.alignment_window.actuators_to_poke:
@@ -60,10 +60,10 @@ class AlignmentBackend(SHMFPSBackend):
 
         self.poke_stream.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
-        self._update_params(self.streams, config.FPS.NUVU,
-                            key=f'{config.FPS.NUVU}_{PokeState.DOWN}')
-        self._update_params(self.streams, config.FPS.SHWFS,
-                            key=f'{config.FPS.SHWFS}_{PokeState.DOWN}')
+        self._update_stream(self.streams, config.Streams.NUVU,
+                            key=f'{config.Streams.NUVU}_{PokeState.DOWN}')
+        self._update_stream(self.streams, config.Streams.SHWFS,
+                            key=f'{config.Streams.SHWFS}_{PokeState.DOWN}')
 
         # Poke actuators up
         for act in self.alignment_window.actuators_to_poke:
@@ -72,13 +72,13 @@ class AlignmentBackend(SHMFPSBackend):
 
         self.poke_stream.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
-        self._update_params(self.streams, config.FPS.NUVU,
-                            key=f'{config.FPS.NUVU}_{PokeState.UP}')
-        self._update_params(self.streams, config.FPS.SHWFS,
-                            key=f'{config.FPS.SHWFS}_{PokeState.UP}')
+        self._update_stream(self.streams, config.Streams.NUVU,
+                            key=f'{config.Streams.NUVU}_{PokeState.UP}')
+        self._update_stream(self.streams, config.Streams.SHWFS,
+                            key=f'{config.Streams.SHWFS}_{PokeState.UP}')
 
         self.streams[config.Streams.NUVU] = self.streams[
-            f'{config.FPS.NUVU}_{self.alignment_window.display}']
+            f'{config.Streams.NUVU}_{self.alignment_window.display}']
 
         if self.alignment_window.display == PokeState.FLAT:
             self.streams[config.Streams.SLOPES] = self.streams[

@@ -86,14 +86,32 @@ def move_px(pixel, absolute=False):
     return new_position
 
 
-def move(position, velocity=0.1, wait=True, beck=None):
+def move(position, velocity=config.CalibUnit.velocity, wait=True, beck=None):
     """
     Move the calibration unit to position
     """
 
-    database.store('obs', {
-        'calib_unit_log': f'Moving calibration unit to position {position}mm'
-    })
+    if position < config.CalibUnit.position_min:
+        database.store(
+            'obs', {
+                'calib_unit_log':
+                    f'[WARNING] Position {position}mm lower than minimal position {config.CalibUnit.position_min}mm, clipping.'
+            })
+        position = config.CalibUnit.position_min
+
+    elif position > config.CalibUnit.position_max:
+        database.store(
+            'obs', {
+                'calib_unit_log':
+                    f'[WARNING] Position {position}mm higher than maximal position {config.CalibUnit.position_max}mm, clipping.'
+            })
+        position = config.CalibUnit.position_max
+
+    database.store(
+        'obs', {
+            'calib_unit_log':
+                f'Moving calibration unit to position {position}mm at {velocity}mm/s'
+        })
 
     new_position = core.motor_move('Linear_Standa_8MT', position, velocity,
                                    wait, beck=beck)
@@ -146,3 +164,7 @@ def init(force_init=True, beck=None):
         move(config.PLC.initial_pos['calib_unit'], beck=beck)
 
     return ret_init
+
+
+def get_plc_status(beck=None):
+    return core.motor_get_status(beck=beck)

@@ -1,8 +1,10 @@
 import time
 
+import numpy as np
+
 from PySide6.QtCore import Slot
 from PySide6.QtGui import Qt
-from PySide6.QtWidgets import QCheckBox
+from PySide6.QtWidgets import QApplication, QCheckBox
 
 from guis.kalao.definitions import Color, Logo
 from guis.kalao.mixins import BackendDataMixin
@@ -14,6 +16,7 @@ from guis.windows.fli import FLIWidget
 from guis.windows.flux import FluxWidget
 from guis.windows.logs import LogsWidget
 from guis.windows.loop_controls import LoopControlsWidget
+from guis.windows.monitoring import MonitoringWidget
 from guis.windows.plots import PlotsWidget
 from guis.windows.slopes import SlopesWidget
 from guis.windows.ttm import TTMWidget
@@ -27,12 +30,13 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
 
     TAB_MAIN = 0
     TAB_LOOP = 1
-    TAB_PLOTS = 2
-    TAB_ENGINEERING = 3
-    TAB_LOGS = 4
+    TAB_MONITORING = 3
+    TAB_PLOTS = 3
+    TAB_ENGINEERING = 4
+    TAB_LOGS = 5
 
     def __init__(self, backends, backend, timer_streams, expert_mode=False,
-                 parent=None):
+                 on_sky_unit=False, parent=None):
         super().__init__(parent)
 
         self.backends = backends
@@ -44,7 +48,7 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         #self.showMaximized()
 
         self.move(100, 0)
-        self.resize(1200, 900)
+        self.resize(1300, 900)
         self.show()
 
         self.logo_label.load(str(Logo.svg))
@@ -61,6 +65,14 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
             self.on_expert_checkbox_stateChanged)
         self.statusBar().addPermanentWidget(self.expert_checkbox)
 
+        self.fli_remaining_time_lineedit.updateText(remaining_time=np.nan)
+        self.fli_exposure_time_lineedit.updateText(exposure_time=np.nan)
+        self.fli_ccd_temperature_lineedit.updateText(ccd_temperature=np.nan)
+        self.nuvu_emgain_lineedit.updateText(emgain=np.nan)
+        self.nuvu_exposuretime_lineedit.updateText(exposuretime=np.nan)
+        self.nuvu_framerate_lineedit.updateText(framerate=np.nan)
+        self.nuvu_ccd_temperature_lineedit.updateText(ccd_temperature=np.nan)
+
         self.wfs = WFSWidget(backend, parent=self)
         self.fli = FLIWidget(backend, parent=self)
         self.slopes = SlopesWidget(backend, parent=self)
@@ -68,6 +80,7 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         self.dm = DMWidget(backend, parent=self)
         self.ttm = TTMWidget(backend, parent=self)
         self.loop_controls = LoopControlsWidget(backend, parent=self)
+        self.monitoring = MonitoringWidget(backend, parent=self)
         self.engineering = EngineeringWidget(backend, parent=self)
         self.plots = PlotsWidget(backend, parent=self)
         self.logs = LogsWidget(backend, parent=self)
@@ -80,11 +93,9 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         self.ttm_frame.layout().addWidget(self.ttm)
 
         self.loop_tab.layout().addWidget(self.loop_controls)
-
+        self.monitoring_tab.layout().addWidget(self.monitoring)
         self.engineering_tab.layout().addWidget(self.engineering)
-
         self.plots_tab.layout().addWidget(self.plots)
-
         self.logs_tab.layout().addWidget(self.logs)
 
         for widget in [self.fli, self.slopes, self.dm, self.ttm]:
@@ -114,6 +125,8 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         backend.data_updated.connect(self.data_updated)
 
         self.on_tabwidget_currentChanged(self.tabwidget.currentIndex())
+
+        self.onsky_checkbox.setChecked(on_sky_unit)
 
     def on_logs_logged(self, errors, warnings):
         list = []
@@ -173,18 +186,80 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         self.previous_update_time = now
 
     def data_updated(self, data):
-        autogain_on = self.consume_param(data, config.FPS.NUVU, 'autogain_on')
-        if autogain_on is not None:
-            self.autogain_indicator.setStatus(autogain_on == 1)
+        ### AO
 
         loopON = self.consume_param(data, 'mfilt-1', 'loopON')
         if loopON is not None:
-            self.dm_loop_indicator.setStatus(loopON == 1)
+            if loopON == 1:
+                self.dm_loop_indicator.setStatus(Color.GREEN, loopON)
+            else:
+                self.dm_loop_indicator.setStatus(Color.RED, loopON)
 
         loopON = self.consume_param(data, 'mfilt-2', 'loopON')
         if loopON is not None:
-            self.ttm_loop_indicator.setStatus(loopON == 1)
+            if loopON == 1:
+                self.ttm_loop_indicator.setStatus(Color.GREEN, loopON)
+            else:
+                self.ttm_loop_indicator.setStatus(Color.RED, loopON)
+
+        ### FLI
+
+        exposure_time = self.consume_dict(data, 'fli', 'exposure_time')
+        if exposure_time is not None:
+            self.fli_exposure_time_lineedit.updateText(
+                exposure_time=exposure_time)
 
         remaining_time = self.consume_dict(data, 'fli', 'remaining_time')
         if remaining_time is not None:
-            self.exposure_indicator.setStatus(remaining_time >= 0.001)
+            if remaining_time >= 0.001:
+                self.fli_exposure_indicator.setStatus(Color.GREEN,
+                                                      remaining_time)
+            else:
+                self.fli_exposure_indicator.setStatus(
+                    Color.RED, remaining_time)  #TODO: remaining_time if -1 ?
+
+            self.fli_remaining_time_lineedit.updateText(
+                remaining_time=remaining_time)
+
+        ccd = self.consume_dict(data, 'fli', 'ccd')
+        if ccd is not None:
+            self.fli_ccd_temperature_lineedit.updateText(ccd_temperature=ccd)
+
+        ### Nuvu
+
+        autogain_on = self.consume_param(data, config.FPS.NUVU, 'autogain_on')
+        if autogain_on is not None:
+            if autogain_on == 1:
+                self.nuvu_autogain_indicator.setStatus(Color.GREEN,
+                                                       autogain_on)
+            else:
+                self.nuvu_autogain_indicator.setStatus(Color.RED, autogain_on)
+
+        nuvu_emgain = self.consume_stream_keyword(data, config.Streams.NUVU,
+                                                  'EMGAIN')
+        if nuvu_emgain is not None:
+            self.nuvu_emgain_lineedit.updateText(emgain=nuvu_emgain)
+
+        nuvu_exposuretime = self.consume_stream_keyword(
+            data, config.Streams.NUVU, 'EXPTIME')
+        if nuvu_exposuretime is not None:
+            self.nuvu_exposuretime_lineedit.updateText(
+                exposuretime=nuvu_exposuretime)
+
+        nuvu_mframerate = self.consume_stream_keyword(data,
+                                                      config.Streams.NUVU,
+                                                      'MFRATE')
+        if nuvu_mframerate is not None:
+            self.nuvu_framerate_lineedit.updateText(framerate=nuvu_mframerate)
+
+        nuvu_temp_ccd = self.consume_stream_keyword(data, config.Streams.NUVU,
+                                                    'T_CCD')
+        if nuvu_temp_ccd is not None:
+            self.nuvu_ccd_temperature_lineedit.updateText(
+                ccd_temperature=nuvu_temp_ccd)
+
+    def closeEvent(self, event):
+        app = QApplication.instance()
+        app.quit()
+
+        event.accept()

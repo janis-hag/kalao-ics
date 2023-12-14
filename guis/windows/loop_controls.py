@@ -86,45 +86,25 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
     def data_updated(self, data):
         # DM Loop
 
-        loopON = self.consume_param(data, 'mfilt-1', 'loopON')
-        if loopON is not None:
-            if loopON == 1:
-                self.dm_loop_on_checkbox.setCheckState(Qt.Checked)
-            else:
-                self.dm_loop_on_checkbox.setCheckState(Qt.Unchecked)
-
-        loopgain = self.consume_param(data, 'mfilt-1', 'loopgain')
-        if loopgain is not None:
-            self.dm_loop_gain_spinbox.setValue(loopgain)
-
-        loopmult = self.consume_param(data, 'mfilt-1', 'loopmult')
-        if loopmult is not None:
-            self.dm_loop_mult_spinbox.setValue(loopmult)
-
-        looplimit = self.consume_param(data, 'mfilt-1', 'looplimit')
-        if looplimit is not None:
-            self.dm_loop_limit_spinbox.setValue(looplimit)
+        self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'loopON'),
+                            self.dm_loop_on_checkbox, true_value=1)
+        self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'loopgain'),
+                            self.dm_loop_gain_spinbox)
+        self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'loopmult'),
+                            self.dm_loop_mult_spinbox)
+        self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'looplimit'),
+                            self.dm_loop_limit_spinbox)
 
         # TTM Loop
 
-        loopON = self.consume_param(data, 'mfilt-2', 'loopON')
-        if loopON is not None:
-            if loopON == 1:
-                self.ttm_loop_on_checkbox.setCheckState(Qt.Checked)
-            else:
-                self.ttm_loop_on_checkbox.setCheckState(Qt.Unchecked)
-
-        loopgain = self.consume_param(data, 'mfilt-2', 'loopgain')
-        if loopgain is not None:
-            self.ttm_loop_gain_spinbox.setValue(loopgain)
-
-        loopmult = self.consume_param(data, 'mfilt-2', 'loopmult')
-        if loopmult is not None:
-            self.ttm_loop_mult_spinbox.setValue(loopmult)
-
-        looplimit = self.consume_param(data, 'mfilt-2', 'looplimit')
-        if looplimit is not None:
-            self.ttm_loop_limit_spinbox.setValue(looplimit)
+        self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'loopON'),
+                            self.ttm_loop_on_checkbox, true_value=1)
+        self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'loopgain'),
+                            self.ttm_loop_gain_spinbox)
+        self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'loopmult'),
+                            self.ttm_loop_mult_spinbox)
+        self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'looplimit'),
+                            self.ttm_loop_limit_spinbox)
 
         # Modal gains
 

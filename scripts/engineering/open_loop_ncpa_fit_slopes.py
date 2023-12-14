@@ -36,14 +36,14 @@ def run(args):
     slopes_coeffs = zernike.fit_slopes(slopes, args.orders_to_fit,
                                        mask | mask_additional)
 
-    resulting_slopes = zernike.generate_slopes(slopes_coeffs, (11, 11))
+    resulting_slopes = zernike.generate_slopes(slopes_coeffs, (11, 22))
 
     # Remove piston, tip and tilt
     slopes_coeffs[0] = 0
     slopes_coeffs[1] = 0
     slopes_coeffs[2] = 0
 
-    resulting_slopes_no_tt = zernike.generate_slopes(slopes_coeffs, (11, 11))
+    resulting_slopes_no_tt = zernike.generate_slopes(slopes_coeffs, (11, 22))
 
     print(f'Slopes coefficients :')
     zernike.print_coeffs(slopes_coeffs)

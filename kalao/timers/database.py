@@ -27,6 +27,47 @@ import config
 shm_and_fps_cache = {}
 
 
+def _gather_for_monitoring():
+    monitoring_data = {}
+
+    # get monitoring from plc and store
+    plc_values = plc_utils.get_all_status()
+
+    # Do not log status of disabled devices.
+    for device_name in config.PLC.disabled:
+        plc_values.pop(device_name)
+    monitoring_data.update(plc_values)
+
+    # get RTC data and update
+    rtc_temperatures = rtc_status.read_all_sensors()
+    monitoring_data.update(rtc_temperatures)
+
+    # IPPower
+    ippower_status = ippower.status_all()
+    monitoring_data.update(ippower_status)
+
+    # FLI science camera status
+    fli_server_status = camera.check_server_status()
+    monitoring_data.update({'fli_server_status': fli_server_status})
+
+    if fli_server_status == CameraServerStatus.UP:
+        fli_temperatures = camera.get_temperatures()
+        fli_temperatures['fli_temp_CCD'] = fli_temperatures.pop('ccd')
+        fli_temperatures['fli_temp_HS'] = fli_temperatures.pop('heatsink')
+        monitoring_data.update(fli_temperatures)
+
+    if euler.telescope_tracking() == TrackingStatus.TRACKING:
+        # Telescope
+        telescope = euler.telescope_coord_altaz()
+        telescope_status = {
+            'tel_alt': telescope.alt.deg,
+            'tel_az': telescope.az.deg
+        }
+        monitoring_data.update(telescope_status)
+
+    return monitoring_data
+
+
 def update_monitoring_db():
     last_update = database.get_collection_last_update('monitoring')
     if (kalao_time.now() - last_update
@@ -36,52 +77,17 @@ def update_monitoring_db():
     #database.store('obs',
     #               {'database_timer_log': 'Updating monitoring database'})
 
-    values = {}
+    monitoring_data = _gather_for_monitoring()
 
-    # get monitoring from plc and store
-    plc_values = plc_utils.get_all_status()
-
-    # Do not log status of disabled devices.
-    for device_name in config.PLC.disabled:
-        plc_values.pop(device_name)
-    values.update(plc_values)
-
-    # get RTC data and update
-    rtc_temperatures = rtc_status.read_all_sensors()
-    values.update(rtc_temperatures)
-
-    # IPPower
-    ippower_status = ippower.status_all()
-    values.update(ippower_status)
-
-    # FLI science camera status
-    fli_server_status = camera.check_server_status()
-    values.update({'fli_server_status': fli_server_status})
-
-    if fli_server_status == CameraServerStatus.UP:
-        fli_temperatures = camera.get_temperatures()
-        fli_temperatures['fli_temp_CCD'] = fli_temperatures.pop('ccd')
-        fli_temperatures['fli_temp_HS'] = fli_temperatures.pop('heatsink')
-        values.update(fli_temperatures)
-
-    if euler.telescope_tracking() == TrackingStatus.TRACKING:
-        # Telescope
-        telescope = euler.telescope_coord_altaz()
-        telescope_status = {
-            'tel_alt': telescope.alt.deg,
-            'tel_az': telescope.az.deg
-        }
-        values.update(telescope_status)
-
-    if not values == {}:
-        database.store('monitoring', values)
+    if monitoring_data != {}:
+        database.store('monitoring', monitoring_data)
 
 
 def update_telemetry_db():
     #database.store('obs',
     #               {'database_timer_log': 'Updating telemetry database'})
 
-    telemetry.telemetry_save(shm_and_fps_cache)
+    telemetry.save(shm_and_fps_cache)
 
 
 if __name__ == "__main__":

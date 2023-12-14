@@ -9,6 +9,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
+from pprint import pprint
 
 import pandas as pd
 
@@ -209,10 +210,12 @@ def store(collection_name, data):
         # yapf: enable
 
     try:
+        # Use Unordered Bulk Write, to maximise number of keys written in case of failure
+        # (only keys with a failure will be skipped)
         collection.bulk_write(update_list, ordered=False)
     except BulkWriteError as bwe:
         print('[ERROR] Write to database failed')
-        print(bwe.details)
+        pprint(bwe.details)
         return -1
 
     return 0

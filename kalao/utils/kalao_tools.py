@@ -3,6 +3,8 @@ import pandas as pd
 
 from astropy.nddata import block_reduce
 
+# The convention is x = row, y = column
+
 
 def get_roi_and_subapertures(data):
     roi = None
@@ -107,6 +109,20 @@ def get_subapertures_from_file(file):
     return all_subaps, active_subaps, masked_subaps
 
 
+def get_dm_flux_map(upsampled=1, upsampling=4):
+    size = 12 * upsampled * upsampling
+
+    radius_out = 5 * upsampled * upsampling  # Pupil radius in px on DM
+    radius_in = radius_out * 336.4 / 1200
+
+    xx, yy = np.mgrid[:size, :size]
+    circle = (xx - size/2 + 0.5)**2 + (yy - size/2 + 0.5)**2
+    pupil = np.logical_and(circle <= radius_out**2, circle >= radius_in**2)
+    flux = block_reduce(pupil, upsampling, np.mean)
+
+    return flux
+
+
 def get_wfs_flux_map(upsampling=4):
     size = 64 * upsampling
 
@@ -142,22 +158,19 @@ def wfs_illumination_fraction(slopes_flux, threshold, subaps_list):
     return illuminated_subaps / len(subaps_list)
 
 
-def subap_at(x, y):
+def subap_at_px(x, y):
     if (x+1) % 5 == 0 or (y+1) % 5 == 0:
         return None
     else:
-        i = (y-5) // 5
-        j = (x-5) // 5
-
-        return get_subaperture_1d(i, j)
+        return get_subaperture_1d((y-5) // 5, (x-5) // 5)
 
 
 def generate_slopes_mask_from_subaps(masked_subaps, shape=(11, 22)):
     mask = np.zeros(shape, dtype=bool)
 
     for i in masked_subaps:
-        for j in subaperture_to_slopes_2d(i):
-            mask[j] = True
+        for x, y in subaperture_to_slopes_2d(i):
+            mask[x, y] = True
 
     return mask
 
@@ -166,7 +179,8 @@ def generate_flux_mask_from_subaps(masked_subaps, shape=(11, 11)):
     mask = np.zeros(shape, dtype=bool)
 
     for i in masked_subaps:
-        mask[get_subaperture_2d(i)] = True
+        x, y = get_subaperture_2d(i)
+        mask[x, y] = True
 
     return mask
 
@@ -174,6 +188,26 @@ def generate_flux_mask_from_subaps(masked_subaps, shape=(11, 11)):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
+    print('Subapertures idempotence')
+    for i in range(121):
+        x, y = get_subaperture_2d(i)
+        i_ = get_subaperture_1d(x, y)
+        print(i, (x, y), i_)
+
+    print()
+
+    print('Actuators idempotence')
+    for i in range(140):
+        x, y = get_actuator_2d(i)
+        i_ = get_actuator_1d(x, y)
+        print(i, (x, y), i_)
+
+    plt.figure()
     plt.imshow(get_wfs_flux_map())
+    plt.title("WFS flux map")
     plt.colorbar()
-    plt.show()
+
+    plt.figure()
+    plt.imshow(get_dm_flux_map())
+    plt.title("DM flux map")
+    plt.colorbar()

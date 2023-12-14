@@ -164,9 +164,12 @@ def get_angle():
         return angle
 
 
-def rotate(adc_id, position, velocity=1, wait=True, beck=None):
-    database.store('obs',
-                   {'adc_log': f'Moving ADC {adc_id} to position {position}°'})
+def rotate(adc_id, position, velocity=config.ADC.velocity, wait=True,
+           beck=None):
+    database.store('obs', {
+        'adc_log':
+            f'Moving ADC {adc_id} to position {position}° at {velocity}°/s'
+    })
 
     new_position = core.motor_move('Linear_Standa_8MT', position, velocity,
                                    wait, beck=beck)
@@ -222,3 +225,7 @@ def init(adc_id, force_init=False, beck=None):
         rotate(adc_id, config.PLC.initial_pos[f'adc_{adc_id}'], beck=beck)
 
     return init_ret
+
+
+def get_plc_status(beck=None):
+    return core.motor_get_status(beck=beck)

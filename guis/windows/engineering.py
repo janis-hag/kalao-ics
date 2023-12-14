@@ -1,8 +1,9 @@
 import numpy as np
 
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import QSignalBlocker, Qt, Slot
 from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton
 
+from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOStatusIndicator, KalAOWidget
@@ -10,8 +11,8 @@ from guis.windows.dm_channels import DMChannelsWindow
 from guis.windows.dm_direct_control import DMDirectControl
 from guis.windows.ttm_direct_control import TTMDirectControl
 
-from kalao.definitions.enums import (FlipMirrorPosition, ServiceAction,
-                                     ShutterState)
+from kalao.definitions.enums import (FlipMirrorPosition, IPPowerStatus,
+                                     ServiceAction, ShutterState)
 
 import config
 
@@ -32,17 +33,20 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         loadUi('engineering.ui', self)
         self.resize(600, 400)
 
-        for state in ShutterState:
-            if state != ShutterState.ERROR:
-                self.shutter_combobox.addItem(state, state)
+        with QSignalBlocker(self.shutter_combobox):
+            for state in ShutterState:
+                if state != ShutterState.ERROR:
+                    self.shutter_combobox.addItem(state, state)
 
-        for position in FlipMirrorPosition:
-            if position != FlipMirrorPosition.ERROR:
-                self.flipmirror_combobox.addItem(position, position)
+        with QSignalBlocker(self.flipmirror_combobox):
+            for position in FlipMirrorPosition:
+                if position != FlipMirrorPosition.ERROR:
+                    self.flipmirror_combobox.addItem(position, position)
 
-        for filter in config.FilterWheel.position_list:
-            self.filterwheel_combobox.addItem(self.filter_display_name(filter),
-                                              filter)
+        with QSignalBlocker(self.filterwheel_combobox):
+            for filter in config.FilterWheel.position_list:
+                self.filterwheel_combobox.addItem(
+                    self.filter_display_name(filter), filter)
 
         s = 5
         self.services_widgets = {}
@@ -117,61 +121,70 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             return f'{name} ({start_str} – {end_str})'
 
     def data_updated(self, data):
-        shutter_state = self.consume_dict(data, 'plc', 'shutter_state')
-        if shutter_state is not None:
-            self.shutter_combobox.setCurrentIndex(
-                self.shutter_combobox.findData(shutter_state))
+        self.data_to_widget(self.consume_dict(data, 'plc', 'shutter_state'),
+                            self.shutter_combobox)
+        self.data_to_widget(
+            self.consume_dict(data, 'plc', 'flip_mirror_position'),
+            self.flipmirror_combobox)
+        self.data_to_widget(
+            self.consume_dict(data, 'plc', 'calib_unit_position'),
+            self.calibunit_spinbox)
+        self.data_to_widget(self.consume_dict(data, 'plc', 'tungsten_state'),
+                            self.tungsten_enabled_checkbox, true_value='ON')
+        self.data_to_widget(self.consume_dict(data, 'plc', 'laser_state'),
+                            self.tungsten_enabled_checkbox, true_value='ON')
+        self.data_to_widget(self.consume_dict(data, 'plc', 'laser_power'),
+                            self.laser_intensity_spinbox)
+        self.data_to_widget(
+            self.consume_dict(data, 'plc', 'filterwheel_filter_name'),
+            self.filterwheel_combobox)
+        self.data_to_widget(self.consume_dict(data, 'plc', 'adc1_angle'),
+                            self.adc1_spinbox)
+        self.data_to_widget(self.consume_dict(data, 'plc', 'adc2_angle'),
+                            self.adc2_spinbox)
 
-        flip_mirror_position = self.consume_dict(data, 'plc',
-                                                 'flip_mirror_position')
-        if shutter_state is not None:
-            self.flipmirror_combobox.setCurrentIndex(
-                self.flipmirror_combobox.findData(flip_mirror_position))
-
-        calib_unit_position = self.consume_dict(data, 'plc',
-                                                'calib_unit_position')
-        if calib_unit_position is not None:
-            self.calibunit_spinbox.setValue(calib_unit_position)
-
-        tungsten_state = self.consume_dict(data, 'plc', 'tungsten_state')
-        if tungsten_state is not None:
-            if tungsten_state == 'ON':
-                self.tungsten_enabled_checkbox.setCheckState(Qt.Checked)
+        ippower_rtc_status = self.consume_dict(data, 'ippower',
+                                               'ippower_rtc_status')
+        if ippower_rtc_status is not None:
+            if ippower_rtc_status == IPPowerStatus.ON:
+                self.ippower_rtc_indicator.setStatus(Color.GREEN,
+                                                     ippower_rtc_status.name)
             else:
-                self.tungsten_enabled_checkbox.setCheckState(Qt.Unchecked)
+                self.ippower_rtc_indicator.setStatus(Color.RED,
+                                                     ippower_rtc_status.name)
+                #TODO: if error?
 
-        laser_state = self.consume_dict(data, 'plc', 'laser_state')
-        if laser_state is not None:
-            if laser_state == 'ON':
-                self.laser_enabled_checkbox.setCheckState(Qt.Checked)
+        ippower_bench_status = self.consume_dict(data, 'ippower',
+                                                 'ippower_bench_status')
+        if ippower_bench_status is not None:
+            if ippower_bench_status == IPPowerStatus.ON:
+                self.ippower_bench_indicator.setStatus(
+                    Color.GREEN, ippower_bench_status.name)
             else:
-                self.laser_enabled_checkbox.setCheckState(Qt.Unchecked)
+                self.ippower_bench_indicator.setStatus(
+                    Color.RED, ippower_bench_status.name)
+                # TODO: if error?
 
-        laser_power = self.consume_dict(data, 'plc', 'laser_power')
-        if laser_power is not None:
-            self.laser_intensity_spinbox.setValue(laser_power)
-
-        filterwheel_filter_name = self.consume_dict(data, 'plc',
-                                                    'filterwheel_filter_name')
-        if filterwheel_filter_name is not None:
-            self.filterwheel_combobox.setCurrentIndex(
-                self.filterwheel_combobox.findData(filterwheel_filter_name))
-
-        adc1_angle = self.consume_dict(data, 'plc', 'adc1_angle')
-        if adc1_angle is not None:
-            self.adc1_spinbox.setValue(adc1_angle)
-
-        adc2_angle = self.consume_dict(data, 'plc', 'adc2_angle')
-        if adc2_angle is not None:
-            self.adc2_spinbox.setValue(adc2_angle)
+        ippower_dm_status = self.consume_dict(data, 'ippower',
+                                              'ippower_dm_status')
+        if ippower_dm_status is not None:
+            if ippower_dm_status == IPPowerStatus.ON:
+                self.ippower_dm_indicator.setStatus(Color.GREEN,
+                                                    ippower_dm_status.name)
+            else:
+                self.ippower_dm_indicator.setStatus(Color.RED,
+                                                    ippower_dm_status.name)
+                # TODO: if error?
 
         exposure_time = self.consume_dict(data, 'fli', 'exposure_time')
         if exposure_time is not None:
-            self.fli_exposure_time_spinbox.setValue(exposure_time)
+            with QSignalBlocker(self.fli_exposure_time_spinbox):
+                self.fli_exposure_time_spinbox.setValue(exposure_time)
 
         remaining_time = self.consume_dict(data, 'fli', 'remaining_time')
         if remaining_time is not None:
-            self.fli_remaining_time_spinbox.setValue(remaining_time)
+            with QSignalBlocker(self.fli_remaining_time_spinbox):
+                self.fli_remaining_time_spinbox.setValue(remaining_time)
 
             if remaining_time < 0.001:
                 self.fli_new_image_button.setEnabled(True)
@@ -185,7 +198,10 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             if status is not None:
                 widgets = self.services_widgets[service['unit']]
                 widgets['lineedit'].setText(f'{status[0]} | {status[1]}')
-                widgets['indicator'].setStatus(status[0] == 'active')
+                if status[0] == 'active':
+                    widgets['indicator'].setStatus(Color.GREEN, status[0])
+                else:
+                    widgets['indicator'].setStatus(Color.RED, status[0])
 
     @Slot(int)
     def on_shutter_combobox_currentIndexChanged(self, index):
@@ -245,6 +261,36 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
     @Slot(bool)
     def on_fli_cancel_button_clicked(self, checked):
         self.action_send(self.fli_cancel_button, self.backend.get_fli_cancel)
+
+    @Slot(bool)
+    def on_ippower_rtc_on_button_clicked(self, checked):
+        self.action_send(self.ippower_rtc_on_button,
+                         self.backend.get_ippower_rtc_on)
+
+    @Slot(bool)
+    def on_ippower_rtc_off_button_clicked(self, checked):
+        self.action_send(self.ippower_rtc_off_button,
+                         self.backend.get_ippower_rtc_off)
+
+    @Slot(bool)
+    def on_ippower_bench_on_button_clicked(self, checked):
+        self.action_send(self.ippower_bench_on_button,
+                         self.backend.get_ippower_bench_on)
+
+    @Slot(bool)
+    def on_ippower_bench_off_button_clicked(self, checked):
+        self.action_send(self.ippower_bench_off_button,
+                         self.backend.get_ippower_bench_off)
+
+    @Slot(bool)
+    def on_ippower_dm_on_button_clicked(self, checked):
+        self.action_send(self.ippower_dm_on_button,
+                         self.backend.get_ippower_dm_on)
+
+    @Slot(bool)
+    def on_ippower_dm_off_button_clicked(self, checked):
+        self.action_send(self.ippower_dm_off_button,
+                         self.backend.get_ippower_dm_off)
 
     @Slot(bool)
     def on_dm_channels_button_clicked(self, checked):
@@ -309,4 +355,4 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
                          self.backend.get_centering_laser)
 
     def on_set_services_action_clicked(self, checked, unit, action):
-        self.backend.set_services_action(unit, action)
+        self.action_send([], self.backend.set_services_action, unit, action)

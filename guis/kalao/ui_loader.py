@@ -15,6 +15,7 @@ class UiLoader(QUiLoader):
         self.customWidgets = customWidgets
 
         self.registerCustomWidget(KalAOLabel)
+        self.registerCustomWidget(KalAOLineEdit)
         self.registerCustomWidget(KalAOGraphicsView)
         self.registerCustomWidget(KalAOChartView)
         self.registerCustomWidget(KalAODraggableChartView)

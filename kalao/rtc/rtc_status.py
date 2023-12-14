@@ -29,6 +29,6 @@ def read_all_sensors():
     finally:
         sensors.cleanup()
 
-    # rtc_sensors.update(gpu_control.status())
+    rtc_sensors.update(gpu_control.status())
 
     return rtc_sensors

@@ -1,12 +1,14 @@
+import time
+
 import numpy as np
 
-from PySide6.QtCore import QRectF, Slot
+from PySide6.QtCore import QRectF, QSignalBlocker, Slot
 from PySide6.QtGui import QPen, Qt
 
 from kalao.utils import image
 
 from guis.kalao import colormaps
-from guis.kalao.definitions import Color, Scale
+from guis.kalao.definitions import Color, Cuts, Scale
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOMainWindow
@@ -28,11 +30,17 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
     axis_precision = 0
     axis_scaling = 1
 
-    zoom_center_x = 512
-    zoom_center_y = 512
-    zoom_level = 1
+    zoom_center_x = config.FLI.center_x
+    zoom_center_y = config.FLI.center_y
+    zoom_level = 4
 
     last_img = None
+
+    tick_fontsize = 10
+    tick_spacing = 10
+    tick_tick_length = 10
+    tick_text_spacing = 5
+    ticks_pos = [-400, -300, -200, -100, 0, 100, 200, 300, 400]
 
     def __init__(self, backend, img, parent=None):
         super().__init__(parent)
@@ -41,44 +49,70 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         self.img = img
 
         loadUi('fli_zoom.ui', self)
-        self.resize(600, 400)
+        self.resize(800, 600)
 
         self.init_minmax([self.fli_view, self.zoom_view])
 
-        for colormap in colormaps.get_all_colormaps():
-            self.colormap_combobox.addItem(colormap.__name__, colormap)
+        self.fli_view.setView(self.stream_info['shape'])
 
-        colormap = self.colormap_combobox.currentData()()
-        self.fli_view.updateColormap(colormap)
-        self.zoom_view.updateColormap(colormap)
-
-        for scale in Scale:
-            self.scale_combobox.addItem(scale.value, scale)
-
-        pen = QPen(Color.YELLOW, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen = QPen(Color.YELLOW, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
         self.roi = self.fli_view.scene.addRect(0, 0, 1024, 1024, pen)
         self.roi.setZValue(1)
 
-        self.update_fli(img)
+        for colormap in colormaps.get_all_colormaps():
+            self.colormap_combobox.addItem(colormap.__name__, colormap)
+
+        for scale in Scale:
+            self.scale_combobox.addItem(str(scale.value()), scale.value)
+
+        for cuts in Cuts:
+            self.cuts_combobox.addItem(str(cuts.value), cuts.value)
+
+        ticks_x = []
+        ticks_y = []
+        for xy in [-400, -300, -200, -100, 0, 100, 200, 300, 400]:
+            tick_label = f'{xy*self.axis_scaling:.{self.axis_precision}f}'
+            tick_pos_x = xy + self.data_center_x
+            tick_pos_y = xy + self.data_center_y
+
+            ticks_x.append((tick_pos_x, tick_label))
+            ticks_y.append((tick_pos_y, tick_label))
+
+        self.fli_view.addTicks(self.tick_spacing, self.tick_tick_length,
+                               self.tick_text_spacing, self.tick_fontsize,
+                               ticks_x, ticks_y)
+        self.fli_view.addTicksLabels(self.tick_spacing, self.tick_tick_length,
+                                     self.tick_text_spacing,
+                                     self.tick_fontsize, ticks_x, ticks_y)
 
         self.fli_view.hovered.connect(self.hover_xyv_to_str)
         self.zoom_view.hovered.connect(self.hover_xyv_to_str_zoom)
 
         self.fli_view.scene.clicked.connect(self.fli_clicked)
+        self.fli_view.scene.dragged.connect(self.fli_dragged)
         self.fli_view.scene.scrolled.connect(self.fli_scrolled)
 
         self.zoom_view.scene.clicked.connect(self.zoom_clicked)
         self.zoom_view.scene.scrolled.connect(self.zoom_scrolled)
 
-        self.star_label.updateText(x=np.nan, y=np.nan, peak=np.nan,
-                                   fwhm=np.nan, precision=np.nan,
-                                   data_unit=self.data_unit,
-                                   axis_unit=self.axis_unit)
+        self.star_label.updateText(
+            x=np.nan,
+            y=np.nan,
+            peak=np.nan,
+            fwhm=np.nan,
+            data_unit=self.data_unit,
+            data_precision=np.nan,
+            axis_unit=self.axis_unit,
+            axis_precision=np.nan,
+        )
 
         self.hovered.connect(self.info_to_statusbar)
         backend.fli_updated.connect(self.fli_updated)
+
+        if img is not None:
+            self.update_fli(img)
 
         self.show()
 
@@ -86,10 +120,7 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         img = self.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
-            if self.update_checkbox.checkState() == Qt.Checked:
-                self.update_fli(img)
-            else:
-                self.last_img = img
+            self.update_fli(img)
 
     @Slot(int)
     def on_colormap_combobox_currentIndexChanged(self, index):
@@ -104,10 +135,9 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         self.zoom_view.updateScale(scale)
 
     @Slot(int)
-    def on_update_checkbox_stateChanged(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
-            if self.last_img is not None:
-                self.update_fli(self.last_img)
+    def on_cuts_combobox_currentIndexChanged(self, index):
+        self.autoscale_checkbox.setChecked(True)
+        self.update_fli(self.img)
 
     def hover_xyv_to_str_zoom(self, x, y, v):
         if x != -1 and y != -1:
@@ -120,30 +150,44 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
             self.hovered.emit('')
 
     def fli_clicked(self, x, y):
-        self.zoom_center_x = x
-        self.zoom_center_y = y
+        self.follow_checkbox.setChecked(False)
+
+        self.zoom_center_x = round(x)
+        self.zoom_center_y = round(y)
+
+        self.update_zoom()
+
+    def fli_dragged(self, x, y, dx, dy):
+        self.zoom_center_x = round(x)
+        self.zoom_center_y = round(y)
 
         self.update_zoom()
 
     def fli_scrolled(self, x, y, z):
-        self.zoom_center_x = x
-        self.zoom_center_y = y
+        if not self.follow_checkbox.isChecked():
+            self.zoom_center_x = round(x)
+            self.zoom_center_y = round(y)
 
         if z > 0:
             self.zoom_level *= 2
+
+            if self.zoom_level > 128:
+                self.zoom_level = 128
         else:
             self.zoom_level //= 2
 
-            if self.zoom_level < 1:
-                self.zoom_level = 1
+            if self.zoom_level < 2:
+                self.zoom_level = 2
 
         self.update_zoom()
 
     def zoom_clicked(self, x, y):
+        self.follow_checkbox.setChecked(False)
+
         x, y = self.xy_to_zoom_xy(x, y)
 
-        self.zoom_center_x = x
-        self.zoom_center_y = y
+        self.zoom_center_x = round(x)
+        self.zoom_center_y = round(y)
 
         self.update_zoom()
 
@@ -158,16 +202,22 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         if z > 0:
             self.zoom_level *= 2
 
-            self.zoom_center_x = int(x - fx*hw/2)
-            self.zoom_center_y = int(y - fy*hw/2)
+            if self.zoom_level > 128:
+                self.zoom_level = 128
+
+            elif not self.follow_checkbox.isChecked():
+                self.zoom_center_x = round(x - fx*hw/2)
+                self.zoom_center_y = round(y - fy*hw/2)
+
         else:
             self.zoom_level //= 2
 
-            self.zoom_center_x = int(x - fx*hw*2)
-            self.zoom_center_y = int(y - fy*hw*2)
+            if self.zoom_level < 2:
+                self.zoom_level = 2
 
-            if self.zoom_level < 1:
-                self.zoom_level = 1
+            elif not self.follow_checkbox.isChecked():
+                self.zoom_center_x = round(x - fx*hw*2)
+                self.zoom_center_y = round(y - fy*hw*2)
 
         self.update_zoom()
 
@@ -176,23 +226,25 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
 
     def update_fli(self, img):
         self.img = img
-        self.last_img = None
 
-        img_min, img_max = self.compute_min_max(self.img)
+        img_min, img_max = self.compute_min_max(
+            self.img, self.cuts_combobox.currentData())
 
         self.fli_view.setImage(self.img, img_min, img_max,
                                self.scale_combobox.currentData())
 
-        # x, y, peak, fwhm = starfinder.find_star(img) #TODO
-        x, y, peak, fwhm = np.nan, np.nan, np.nan, np.nan
+        x, y, peak, fwhm = self.find_star_fast(self.img)
 
-        self.star_label.updateText(x=x * self.axis_scaling,
-                                   y=y * self.axis_scaling,
-                                   peak=peak * self.data_scaling,
-                                   fwhm=fwhm * self.axis_scaling,
-                                   precision=self.axis_precision,
-                                   data_unit=self.data_unit,
-                                   axis_unit=self.axis_unit)
+        self.star_label.updateText(
+            x=(x - self.data_center_x) * self.axis_scaling,
+            y=(y - self.data_center_y) * self.axis_scaling,
+            peak=peak * self.data_scaling, fwhm=fwhm * self.axis_scaling,
+            data_unit=self.data_unit, data_precision=self.data_precision,
+            axis_unit=self.axis_unit, axis_precision=self.axis_precision + 1)
+
+        if self.follow_checkbox.isChecked():
+            self.zoom_center_x = x
+            self.zoom_center_y = y
 
         self.update_zoom()
 
@@ -201,9 +253,15 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         y = self.zoom_center_y
         hw = 1024 // self.zoom_level // 2
 
-        self.x_spinbox.setValue(x - self.data_center_x)
-        self.y_spinbox.setValue(y - self.data_center_y)
-        self.zoom_spinbox.setValue(self.zoom_level)
+        with QSignalBlocker(self.x_spinbox):
+            self.x_spinbox.setValue(x - self.data_center_x)
+
+        with QSignalBlocker(self.y_spinbox):
+            self.y_spinbox.setValue(y - self.data_center_y)
+
+        with QSignalBlocker(self.zoom_spinbox):
+            self.zoom_spinbox.setValue(self.zoom_level)
+
         self.roi.setRect(x - hw, y - hw, 2 * hw, 2 * hw)
 
         zoom = image.cut(self.img, 2 * hw, [y, x], overflow='cut')
@@ -218,7 +276,37 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         else:
             self.view_shift_y = 0
 
+        self.zoom_view.margins = np.array(
+            self.fli_view.margins) / self.zoom_level
+
         self.zoom_view.setImage(
             zoom, self.min_spinbox.value(), self.max_spinbox.value(),
             self.scale_combobox.currentData(),
             view=QRectF(self.view_shift_x, self.view_shift_y, 2 * hw, 2 * hw))
+
+    def find_star_fast(self, img):
+        start = time.monotonic()
+        psf_bb = 25
+
+        y, x = np.unravel_index(np.argmax(img, axis=None), img.shape)
+        peak = img[y, x]
+
+        background = np.median(img)
+
+        box = img[y - psf_bb:y + psf_bb, x - psf_bb:x + psf_bb] - background
+
+        circle = (2 * box > box.max()).sum()
+        if circle == 0:
+            fwhm = np.nan
+        else:
+            fwhm = 2 * np.sqrt(circle / np.pi)
+
+        return x, y, peak, fwhm
+
+    def closeEvent(self, event):
+        self.backend.fli_updated.disconnect(self.fli_updated)
+        event.accept()
+
+    def showEvent(self, event):
+        self.backend.fli_updated.connect(self.fli_updated)
+        event.accept()
