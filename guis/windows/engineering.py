@@ -57,6 +57,7 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
 
             lineedit = QLineEdit()
             lineedit.setReadOnly(True)
+            lineedit.setToolTipDuration(2147483647)
 
             indicator = KalAOStatusIndicator()
 
@@ -149,10 +150,12 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             if ippower_rtc_status == IPPowerStatus.ON:
                 self.ippower_rtc_indicator.setStatus(Color.GREEN,
                                                      ippower_rtc_status.name)
+            elif ippower_rtc_status == IPPowerStatus.OFF:
+                self.ippower_rtc_indicator.setStatus(Color.BLACK,
+                                                     ippower_rtc_status.name)
             else:
                 self.ippower_rtc_indicator.setStatus(Color.RED,
                                                      ippower_rtc_status.name)
-                #TODO: if error?
 
         ippower_bench_status = self.consume_dict(data, 'ippower',
                                                  'ippower_bench_status')
@@ -160,10 +163,12 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             if ippower_bench_status == IPPowerStatus.ON:
                 self.ippower_bench_indicator.setStatus(
                     Color.GREEN, ippower_bench_status.name)
+            elif ippower_bench_status == IPPowerStatus.OFF:
+                self.ippower_bench_indicator.setStatus(
+                    Color.BLACK, ippower_bench_status.name)
             else:
                 self.ippower_bench_indicator.setStatus(
                     Color.RED, ippower_bench_status.name)
-                # TODO: if error?
 
         ippower_dm_status = self.consume_dict(data, 'ippower',
                                               'ippower_dm_status')
@@ -171,10 +176,12 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             if ippower_dm_status == IPPowerStatus.ON:
                 self.ippower_dm_indicator.setStatus(Color.GREEN,
                                                     ippower_dm_status.name)
+            elif ippower_dm_status == IPPowerStatus.OFF:
+                self.ippower_dm_indicator.setStatus(Color.BLACK,
+                                                    ippower_dm_status.name)
             else:
                 self.ippower_dm_indicator.setStatus(Color.RED,
                                                     ippower_dm_status.name)
-                # TODO: if error?
 
         exposure_time = self.consume_dict(data, 'fli', 'exposure_time')
         if exposure_time is not None:
@@ -198,9 +205,16 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             if status is not None:
                 widgets = self.services_widgets[service['unit']]
                 widgets['lineedit'].setText(f'{status[0]} | {status[1]}')
-                if status[0] == 'active':
+                widgets['lineedit'].setToolTip(
+                    status[2].strftime("%Y-%m-%d %H:%M:%S"))
+
+                if status[0] in ['active']:
                     widgets['indicator'].setStatus(Color.GREEN, status[0])
-                else:
+                elif status[0] in ['inactive']:
+                    widgets['indicator'].setStatus(Color.BLACK, status[0])
+                elif status[0] in ['activating', 'deactivating', 'reloading']:
+                    widgets['indicator'].setStatus(Color.ORANGE, status[0])
+                else:  # failed
                     widgets['indicator'].setStatus(Color.RED, status[0])
 
     @Slot(int)
@@ -315,8 +329,8 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             self.dm_calibration.activateWindow()
         else:
             from guis.windows.calibration import CalibrationWindow
-            self.dm_calibration = CalibrationWindow('dm', 1, (11, 22),
-                                                    (12, 12))
+            self.dm_calibration = CalibrationWindow(self.backend, 'dm', 1,
+                                                    (11, 22), (12, 12))
 
     @Slot(bool)
     def on_ttm_calibration_button_clicked(self, checked):
@@ -325,8 +339,8 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             self.ttm_calibration.activateWindow()
         else:
             from guis.windows.calibration import CalibrationWindow
-            self.ttm_calibration = CalibrationWindow('ttm', 2, (12, 12),
-                                                     (1, 2))
+            self.ttm_calibration = CalibrationWindow(self.backend, 'ttm', 2,
+                                                     (12, 12), (1, 2))
 
     @Slot(bool)
     def on_dm_direct_control_button_clicked(self, checked):

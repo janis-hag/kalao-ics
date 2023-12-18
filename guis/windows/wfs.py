@@ -77,7 +77,7 @@ class WFSWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.wfs_view.updateColormap(colormaps.GrayscaleSaturation())
+            self.wfs_view.updateColormap(colormaps.GrayscaleSaturationTransparent())
         else:
             self.wfs_view.updateColormap(colormaps.BlackBody())
 
@@ -88,7 +88,13 @@ class WFSWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         pen.setCosmetic(True)
 
         if x != -1 and y != -1:
-            string = f'X: {(x-self.data_center_x)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, Y: {(y-self.data_center_y)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, V: {v:.{self.data_precision}f}{self.data_unit}'
+            string = self.formatter.format(
+                'X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, V: {v:.{data_precision}f}{data_unit}',
+                x=(x - self.data_center_x) * self.axis_scaling,
+                y=(y - self.data_center_y) * self.axis_scaling,
+                v=v * self.data_scaling, axis_precision=self.axis_precision,
+                axis_unit=self.axis_unit, data_precision=self.data_precision,
+                data_unit=self.data_unit)
 
             subap = kalao_tools.subap_at_px(x, y)
             if subap is not None:

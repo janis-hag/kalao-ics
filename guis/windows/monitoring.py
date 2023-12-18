@@ -7,15 +7,19 @@ from PySide6.QtWidgets import (QGridLayout, QGroupBox, QHBoxLayout, QLabel,
 from kalao.utils import database
 
 from guis.kalao.mixins import BackendDataMixin
+from guis.kalao.string_formatter import KalAOFormatter
 from guis.kalao.widgets import KalAOWidget
 
 
 class MonitoringWidget(KalAOWidget, BackendDataMixin):
+    formatter = KalAOFormatter()
+
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 
         self.backend = backend
 
+        self.setWindowTitle('Monitoring - KalAO')
         self.resize(600, 400)
 
         self.setLayout(QHBoxLayout())
@@ -89,9 +93,15 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
 
     def monitoringandtelemetry_updated(self, data):
         for lineedit in self.lineedits.values():
-            value_timestamp = self.consume_db(data, lineedit.collection,
-                                              lineedit.key)
-            if value_timestamp is not None:
-                value, timestamp = value_timestamp
-                lineedit.setText(f'{value}{lineedit.unit}')
+            value, timestamp = self.consume_db(data, lineedit.collection,
+                                               lineedit.key)
+            if value is not None:
+                if isinstance(value, float):
+                    text = self.formatter.format('{value:.3g}{lineedit.unit}',
+                                                 value=value,
+                                                 lineedit=lineedit)
+                else:
+                    text = f'{value}{lineedit.unit}'
+
+                lineedit.setText(text)
                 lineedit.setToolTip(timestamp.strftime('%Y-%m-%d %H:%M:%S'))

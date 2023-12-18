@@ -127,14 +127,14 @@ heater_status:
   group: Cooling
 
 fan_status:
-  short: Cooling fan status
-  long: Status of the water cooling system radiator fan
+  short: Exchanger fan status
+  long: Status of the heat exchanger fan
   unit:
   group: Cooling
 
 flow_value:
-  short: Cooling flow rate
-  long: Flow value of the water cooling
+  short: Coolant flow rate
+  long: Flow value of the coolant
   unit: l/min
   group: Cooling
 

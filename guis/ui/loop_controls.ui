@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1195</width>
-    <height>907</height>
+    <width>810</width>
+    <height>630</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Loop Controls - KalAO</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="1,1">
    <item row="0" column="1">

@@ -1,7 +1,7 @@
 import numpy as np
 
 from PySide6.QtCharts import QLineSeries, QValueAxis
-from PySide6.QtCore import QPointF, Qt, Signal, Slot
+from PySide6.QtCore import QPointF, QSignalBlocker, Qt, Signal, Slot
 
 from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
@@ -75,8 +75,9 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         series.attachAxis(axis_x)
         series.attachAxis(axis_y)
 
-        for s in laws.keys():
-            self.law_combobox.addItem(s)
+        with QSignalBlocker(self.law_combobox):
+            for s in laws.keys():
+                self.law_combobox.addItem(s)
 
         self.modalgains_plot.chart.hovered.connect(self.hover_xy_to_str)
         self.modalgains_plot.dragged.connect(self.hover_xy_to_str)
@@ -87,7 +88,7 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         # DM Loop
 
         self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'loopON'),
-                            self.dm_loop_on_checkbox, true_value=1)
+                            self.dm_loop_on_checkbox, true_value=True)
         self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'loopgain'),
                             self.dm_loop_gain_spinbox)
         self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'loopmult'),
@@ -98,7 +99,7 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         # TTM Loop
 
         self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'loopON'),
-                            self.ttm_loop_on_checkbox, true_value=1)
+                            self.ttm_loop_on_checkbox, true_value=True)
         self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'loopgain'),
                             self.ttm_loop_gain_spinbox)
         self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'loopmult'),
@@ -113,10 +114,13 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         if img is not None:
             self.display_modalgains(img)
 
-            self.cutoff_spinbox.setMaximum(img.size - 1)
-            self.cutoff_spinbox.setValue(img.size - 1)
-            self.last_spinbox.setMaximum(img.size - 1)
-            self.last_spinbox.setValue(img.size - 1)
+            with QSignalBlocker(self.cutoff_spinbox):
+                self.cutoff_spinbox.setMaximum(img.size - 1)
+                self.cutoff_spinbox.setValue(img.size - 1)
+
+            with QSignalBlocker(self.last_spinbox):
+                self.last_spinbox.setMaximum(img.size - 1)
+                self.last_spinbox.setValue(img.size - 1)
 
     # DM Loop
 

@@ -652,13 +652,6 @@ def _abort_camera():
     if ret != 0:
         raise FLICancelFailed
 
-    time.sleep(1)
-
-    # two cancel are done to avoid concurrency problems
-    ret = camera.cancel()
-    if ret != 0:
-        raise FLICancelFailed
-
     return ReturnCode.SEQ_OK
 
 

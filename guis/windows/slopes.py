@@ -8,6 +8,7 @@ from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
 import config
+from kalao.utils import kalao_tools
 
 
 class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
@@ -25,6 +26,7 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
         super().__init__(parent)
 
         self.backend = backend
+        self.mask = kalao_tools.generate_slopes_mask_from_subaps(config.AO.masked_subaps)
 
         loadUi('slopes.ui', self)
         self.resize(600, 400)
@@ -45,6 +47,8 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
         img = self.consume_stream(data, config.Streams.SLOPES)
 
         if img is not None:
+            img = np.ma.masked_array(img, mask=self.mask, fill_value=0)
+
             img_min, img_max = self.compute_min_max(img)
 
             self.slopes_view.setImage(img, img_min, img_max)
@@ -72,6 +76,6 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.slopes_view.updateColormap(colormaps.GrayscaleSaturation())
+            self.slopes_view.updateColormap(colormaps.GrayscaleSaturationTransparent())
         else:
-            self.slopes_view.updateColormap(colormaps.CoolWarm())
+            self.slopes_view.updateColormap(colormaps.CoolWarmTransparent())

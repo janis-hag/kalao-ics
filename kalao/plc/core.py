@@ -245,3 +245,43 @@ def wait_loop(message, test, wait_time):
         print(".", end='', flush=True)
         time.sleep(wait_time)
     print(" DONE", flush=True)
+
+
+def print_node_tree(node, short=True):
+    def print_children(node, prefix):
+        children = node.get_children()
+        for i, c in enumerate(
+                sorted(
+                    children, key=lambda c: str(c.get_node_class() != ua.
+                                                NodeClass.Variable) + str(c))):
+            if i == len(children) - 1:
+                prefix_current = prefix + ' └── '
+                prefix_next = prefix + '    '
+            else:
+                prefix_current = prefix + ' ├── '
+                prefix_next = prefix + ' │  '
+
+            if c.get_node_class() == ua.NodeClass.Variable:
+                value = ' = ' + str(c.get_value())
+            else:
+                value = ''
+
+            if short:
+                node_name = str(c).split('.')[-1]
+            else:
+                node_name = str(c)
+
+            print(prefix_current + node_name + value)
+            print_children(c, prefix_next)
+
+    print(' ' + str(node))
+    print_children(node, '')
+
+
+if __name__ == "__main__":
+    beck = Client(f'opc.tcp://{config.PLC.ip}:{config.PLC.port}')
+    beck.connect()
+
+    print_node_tree(beck.get_node("ns=4; s=MAIN"))
+
+    beck.disconnect()

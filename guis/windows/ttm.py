@@ -3,7 +3,7 @@ from datetime import datetime
 import numpy as np
 
 from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis
-from PySide6.QtCore import QDateTime, QPointF
+from PySide6.QtCore import QDateTime, QPointF, QSignalBlocker
 from PySide6.QtGui import QPen, Qt
 
 from guis.kalao.definitions import Color
@@ -104,8 +104,16 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
                 y_min = min(y_min, p.y())
                 y_max = max(y_max, p.y())
 
-            self.min_spinbox.setValue(y_min / self.data_scaling)
-            self.max_spinbox.setValue(y_max / self.data_scaling)
+            self.autoscale_min = y_min
+            self.autoscale_max = y_max
+
+            with QSignalBlocker(self.min_spinbox):
+                self.min_spinbox.setMaximum(y_max / self.data_scaling)
+                self.min_spinbox.setValue(y_min / self.data_scaling)
+
+            with QSignalBlocker(self.max_spinbox):
+                self.max_spinbox.setMinimum(y_min / self.data_scaling)
+                self.max_spinbox.setValue(y_max / self.data_scaling)
         else:
             y_min = self.min_spinbox.value() * self.data_scaling
             y_max = self.max_spinbox.value() * self.data_scaling
@@ -113,6 +121,9 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
         if abs(y_max - y_min) < config.epsilon:
             y_min -= 0.01
             y_max += 0.01
+
+        if self.tip_series.count() == 0:
+            return
 
         x_max = self.tip_series.at(self.tip_series.count() - 1).x()
 
@@ -142,3 +153,5 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
 
         self.tip_series.replace(new_tip)
         self.tilt_series.replace(new_tilt)
+
+        self.update_axis()

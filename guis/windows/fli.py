@@ -145,7 +145,7 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.fli_view.updateColormap(colormaps.GrayscaleSaturation())
+            self.fli_view.updateColormap(colormaps.GrayscaleSaturationTransparent())
         else:
             self.fli_view.updateColormap(colormaps.BlackBody())
 
@@ -156,9 +156,15 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     @Slot(bool)
     def on_zoom_window_button_clicked(self, checked):
         if self.zoom_window is not None:
-            self.zoom_window.update_fli(self.fli_view.img.copy())
             self.zoom_window.show()
             self.zoom_window.activateWindow()
+
+            if self.fli_view.img is not None:
+                self.zoom_window.update_fli_view(self.fli_view.img.copy())
         else:
-            self.zoom_window = FLIZoomWindow(self.backend,
-                                             self.fli_view.img.copy())
+            if self.fli_view.img is not None:
+                img = self.fli_view.img.copy()
+            else:
+                img = None
+
+            self.zoom_window = FLIZoomWindow(self.backend, img)

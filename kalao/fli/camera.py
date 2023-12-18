@@ -16,7 +16,6 @@ import numpy as np
 
 from astropy.io import fits
 
-from kalao import services
 from kalao.cacao import toolbox
 from kalao.timers import database as database_timer
 from kalao.utils import database, file_handling
@@ -25,7 +24,7 @@ import requests
 import requests.exceptions
 
 from kalao.definitions.enums import (CameraServerStatus, ReturnCode,
-                                     SequencerStatus, ServiceAction)
+                                     SequencerStatus)
 
 import config
 
@@ -52,8 +51,6 @@ def take_frame(dit, filepath=None, nbflushes=None, update_stream=True):
                         f'fli_log':
                             f'[ERROR] {config.Streams.FLI} not updated, shapes are inconsistent.'
                     })
-
-        # TODO return req, img for coherence with other take_image or opposite
 
         return img
     else:
@@ -247,56 +244,52 @@ def _send_request(request_type, params={}):
         elif key == 'filepath':
             params[key] = str(value)
 
-    if not check_server_status() == CameraServerStatus.UP:
-        return ReturnCode.CAMERA_SERVER_DOWN, {}
+    if config.FLI.dummy_camera:
+        if request_type == 'acquire':
+            time.sleep(params['exptime'])
+
+            # fits.PrimaryHDU(fake_data.fake_fli_image()).writeto(params['filepath'])
+            shutil.copy(config.FLI.dummy_image_path, params['filepath'])
+
+        return ReturnCode.CAMERA_OK, {}
 
     else:
-        if config.FLI.dummy_camera:
-            if request_type == 'acquire':
-                time.sleep(params['exptime'])
+        if request_type == 'acquire':
+            increment_image_counter()
 
-                # fits.PrimaryHDU(fake_data.fake_fli_image()).writeto(params['filepath'])
-                shutil.copy(config.FLI.dummy_image_path, params['filepath'])
-
-            return ReturnCode.CAMERA_OK, {}
-
+        url = f'http://{config.FLI.ip}:{config.FLI.port}/{request_type}'
+        if params == {}:
+            req = requests.get(url, timeout=config.FLI.request_timeout)
         else:
-            if request_type == 'acquire':
-                increment_image_counter()
+            req = requests.post(url, json=params,
+                                timeout=config.FLI.request_timeout)
 
-            url = f'http://{config.FLI.ip}:{config.FLI.port}/{request_type}'
-            if params == {}:
-                req = requests.get(url, timeout=config.FLI.request_timeout)
+        try:
+            data = json.loads(req.text)
+        except Exception:
+            data = req.text
+
+        if req.status_code == 200:
+            return ReturnCode.CAMERA_OK, data
+        else:
+            text = ''
+
+            if isinstance(data, dict):
+                if data.get('error_text') is not None:
+                    text += f' {data.get("error_text")}'
+
+                if data.get('error_status') is not None:
+                    text += f' (status = {data.get("error_status")})'
             else:
-                req = requests.post(url, json=params,
-                                    timeout=config.FLI.request_timeout)
+                text = ' ' + data
 
-            try:
-                data = json.loads(req.text)
-            except Exception:
-                data = req.text
+            database.store(
+                'obs', {
+                    f'fli_log':
+                        f'[ERROR] Camera server answered with an Error {req.status_code}.{text}'
+                })
 
-            if req.status_code == 200:
-                return ReturnCode.CAMERA_OK, data
-            else:
-                text = ''
-
-                if isinstance(data, dict):
-                    if data.get('error_text') is not None:
-                        text += f' {data.get("error_text")}'
-
-                    if data.get('error_status') is not None:
-                        text += f' (status = {data.get("error_status")})'
-                else:
-                    text = ' ' + data
-
-                database.store(
-                    'obs', {
-                        f'fli_log':
-                            f'[ERROR] Camera server answered with an Error {req.status_code}.{text}'
-                    })
-
-                return ReturnCode.CAMERA_ERROR, data
+            return ReturnCode.CAMERA_ERROR, data
 
 
 def check_server_status():
@@ -305,18 +298,12 @@ def check_server_status():
 
     :return: status of the camera server (UP/DOWN/ERROR)
     """
-
-    server_status = services.camera(ServiceAction.STATUS)
-
-    if server_status[0] == 'inactive':
-        return CameraServerStatus.DOWN
-
     try:
         r = requests.get(f'http://{config.FLI.ip}:{config.FLI.port}/ping')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return CameraServerStatus.DOWN
-    except requests.exceptions.HTTPError:
+    except Exception:
         return CameraServerStatus.ERROR
     else:
         return CameraServerStatus.UP

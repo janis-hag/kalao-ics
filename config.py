@@ -171,28 +171,28 @@ class FilterWheel:
 
     filter_infos = {
         'g': {
-            'name': 'SDSS-g',
+            'name': 'SDSS g',
             'center': 465.47e-9,
             'fwhm': 131.71e-9,
             'start': 399.62e-9,
             'end': 531.33e-9,
         },
         'r': {
-            'name': 'SDSS-r',
+            'name': 'SDSS r',
             'center': 610.83e-9,
             'fwhm': 122.85e-9,
             'start': 549.41e-9,
             'end': 672.26e-9,
         },
         'i': {
-            'name': 'SDSS-i',
+            'name': 'SDSS i',
             'center': 758.10e-9,
             'fwhm': 123.69e-9,
             'start': 696.26e-9,
             'end': 819.95e-9,
         },
         'z': {
-            'name': 'SDSS-z',
+            'name': 'SDSS z',
             'center': np.nan,
             'fwhm': np.inf,
             'start': 822.80e-9,
@@ -467,7 +467,7 @@ class Database:
     ip = 'localhost'
     port = 27017
 
-    max_days = 7  # days
+    max_days = 3650  # days
 
     telemetry_update_interval = 10  # s
     monitoring_update_interval = 60  # s

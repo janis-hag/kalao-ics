@@ -94,41 +94,41 @@ slopes_residual:
 dm_loop_on:
   short: DM Loop ON/OFF
   long: DM Loop ON/OFF
-  unit: ''
+  unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP ST
 
 dm_loop_gain:
   short: DM Loop gain
   long: DM Loop gain
-  unit: ''
+  unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP GAIN
 
 dm_loop_mult:
   short: DM Loop mult. coeff.
   long: DM Loop multiplication coefficient
-  unit: ''
+  unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP MULT
 
 ttm_loop_on:
   short: TTM Loop ON/OFF
   long: TTM Loop ON/OFF
-  unit: ''
+  unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP ST
 
 ttm_loop_gain:
   short: TTM Loop gain
   long: TTM Loop gain
-  unit: ''
+  unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP GAIN
 
 ttm_loop_mult:
   short: TTM Loop mult. coeff.
   long: TTM Loop multiplication coefficient
-  unit: ''
+  unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP MULT

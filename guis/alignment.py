@@ -20,8 +20,6 @@ def handler(signal_received, frame):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='KalAO - Alignment Tools.')
-    parser.add_argument('--onsky', action="store_true", dest="onsky",
-                        help='On sky units')
     parser.add_argument('--simulation', action="store_true", dest="simulation",
                         help='Simulation mode')
 

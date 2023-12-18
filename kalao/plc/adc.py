@@ -171,8 +171,8 @@ def rotate(adc_id, position, velocity=config.ADC.velocity, wait=True,
             f'Moving ADC {adc_id} to position {position}° at {velocity}°/s'
     })
 
-    new_position = core.motor_move('Linear_Standa_8MT', position, velocity,
-                                   wait, beck=beck)
+    new_position = core.motor_move(adc_node[adc_id], position, velocity, wait,
+                                   beck=beck)
 
     if wait:
         database.store('obs', {

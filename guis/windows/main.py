@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 
 import numpy as np
 
@@ -30,10 +31,12 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
 
     TAB_MAIN = 0
     TAB_LOOP = 1
-    TAB_MONITORING = 3
+    TAB_MONITORING = 2
     TAB_PLOTS = 3
     TAB_ENGINEERING = 4
     TAB_LOGS = 5
+
+    fps = 0
 
     def __init__(self, backends, backend, timer_streams, expert_mode=False,
                  on_sky_unit=False, parent=None):
@@ -55,9 +58,12 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         self.logo_label.renderer().setAspectRatioMode(Qt.KeepAspectRatio)
 
         self.fps_label = KalAOLabel(
-            "Streams refresh rate : {fps:.1f} FPS | Data gathering: {duration:.3f} s"
+            "Streams refresh rate : {fps:04.1f} FPS |"
         )
         self.statusBar().addPermanentWidget(self.fps_label)
+
+        self.last_update_label = KalAOLabel()
+        self.statusBar().addPermanentWidget(self.last_update_label)
 
         self.expert_checkbox = QCheckBox('Expert Mode')
         self.expert_checkbox.setChecked(expert_mode)
@@ -180,25 +186,45 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
     def streams_updated(self, data):
         now = time.monotonic()
 
-        self.fps_label.updateText(fps=(1 / (now - self.previous_update_time)),
-                                  duration=data['metadata']['duration'])
+        self.fps = 0.9 * self.fps + 0.1 / (now - self.previous_update_time)
+
+        self.fps_label.updateText(fps=self.fps)
 
         self.previous_update_time = now
 
     def data_updated(self, data):
+        self.last_update_label.setText(
+            "Last update: " + datetime.now().strftime("%y-%m-%d %H:%M:%S"))
+
+        ### Instrument
+
+        sequencer_status_v, sequencer_status_t = self.consume_db(
+            data, 'obs', 'sequencer_status')
+        if sequencer_status_v is not None:
+            self.sequencer_lineedit.setText(sequencer_status_v)
+
+        tracking_status_v, tracking_status_t = self.consume_db(
+            data, 'obs', 'tracking_status')
+        if tracking_status_v is not None:
+            self.tracking_lineedit.setText(tracking_status_v)
+
         ### AO
 
         loopON = self.consume_param(data, 'mfilt-1', 'loopON')
         if loopON is not None:
-            if loopON == 1:
+            if loopON is True:
                 self.dm_loop_indicator.setStatus(Color.GREEN, loopON)
+            elif loopON is False:
+                self.dm_loop_indicator.setStatus(Color.BLACK, loopON)
             else:
                 self.dm_loop_indicator.setStatus(Color.RED, loopON)
 
         loopON = self.consume_param(data, 'mfilt-2', 'loopON')
         if loopON is not None:
-            if loopON == 1:
+            if loopON is True:
                 self.ttm_loop_indicator.setStatus(Color.GREEN, loopON)
+            elif loopON is False:
+                self.ttm_loop_indicator.setStatus(Color.BLACK, loopON)
             else:
                 self.ttm_loop_indicator.setStatus(Color.RED, loopON)
 
@@ -211,12 +237,15 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
 
         remaining_time = self.consume_dict(data, 'fli', 'remaining_time')
         if remaining_time is not None:
-            if remaining_time >= 0.001:
+            if remaining_time > 0:
                 self.fli_exposure_indicator.setStatus(Color.GREEN,
                                                       remaining_time)
+            elif remaining_time == 0:
+                self.fli_exposure_indicator.setStatus(Color.BLACK,
+                                                      remaining_time)
             else:
-                self.fli_exposure_indicator.setStatus(
-                    Color.RED, remaining_time)  #TODO: remaining_time if -1 ?
+                self.fli_exposure_indicator.setStatus(Color.RED,
+                                                      remaining_time)
 
             self.fli_remaining_time_lineedit.updateText(
                 remaining_time=remaining_time)
@@ -229,13 +258,17 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
 
         autogain_on = self.consume_param(data, config.FPS.NUVU, 'autogain_on')
         if autogain_on is not None:
-            if autogain_on == 1:
+            if autogain_on is True:
                 self.nuvu_autogain_indicator.setStatus(Color.GREEN,
+                                                       autogain_on)
+            elif autogain_on is False:
+                self.nuvu_autogain_indicator.setStatus(Color.BLACK,
                                                        autogain_on)
             else:
                 self.nuvu_autogain_indicator.setStatus(Color.RED, autogain_on)
 
-        nuvu_emgain = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
+        nuvu_emgain = self.consume_stream_keyword(data,
+                                                  config.Streams.NUVU_RAW,
                                                   'EMGAIN')
         if nuvu_emgain is not None:
             self.nuvu_emgain_lineedit.updateText(emgain=nuvu_emgain)
@@ -252,7 +285,8 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         if nuvu_mframerate is not None:
             self.nuvu_framerate_lineedit.updateText(framerate=nuvu_mframerate)
 
-        nuvu_temp_ccd = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
+        nuvu_temp_ccd = self.consume_stream_keyword(data,
+                                                    config.Streams.NUVU_RAW,
                                                     'T_CCD')
         if nuvu_temp_ccd is not None:
             self.nuvu_ccd_temperature_lineedit.updateText(

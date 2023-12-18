@@ -61,7 +61,7 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         self.roi = self.fli_view.scene.addRect(0, 0, 1024, 1024, pen)
         self.roi.setZValue(1)
 
-        for colormap in colormaps.get_all_colormaps():
+        for colormap in colormaps.get_all_colormaps(exclude_transparent=True):
             self.colormap_combobox.addItem(colormap.__name__, colormap)
 
         for scale in Scale:
@@ -69,23 +69,6 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
 
         for cuts in Cuts:
             self.cuts_combobox.addItem(str(cuts.value), cuts.value)
-
-        ticks_x = []
-        ticks_y = []
-        for xy in [-400, -300, -200, -100, 0, 100, 200, 300, 400]:
-            tick_label = f'{xy*self.axis_scaling:.{self.axis_precision}f}'
-            tick_pos_x = xy + self.data_center_x
-            tick_pos_y = xy + self.data_center_y
-
-            ticks_x.append((tick_pos_x, tick_label))
-            ticks_y.append((tick_pos_y, tick_label))
-
-        self.fli_view.addTicks(self.tick_spacing, self.tick_tick_length,
-                               self.tick_text_spacing, self.tick_fontsize,
-                               ticks_x, ticks_y)
-        self.fli_view.addTicksLabels(self.tick_spacing, self.tick_tick_length,
-                                     self.tick_text_spacing,
-                                     self.tick_fontsize, ticks_x, ticks_y)
 
         self.fli_view.hovered.connect(self.hover_xyv_to_str)
         self.zoom_view.hovered.connect(self.hover_xyv_to_str_zoom)
@@ -96,6 +79,8 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
 
         self.zoom_view.scene.clicked.connect(self.zoom_clicked)
         self.zoom_view.scene.scrolled.connect(self.zoom_scrolled)
+
+        self.on_onsky_checkbox_stateChanged(self.onsky_checkbox.checkState())
 
         self.star_label.updateText(
             x=np.nan,
@@ -112,7 +97,7 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         backend.fli_updated.connect(self.fli_updated)
 
         if img is not None:
-            self.update_fli(img)
+            self.update_fli_view(img)
 
         self.show()
 
@@ -120,7 +105,7 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         img = self.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
-            self.update_fli(img)
+            self.update_fli_view(img)
 
     @Slot(int)
     def on_colormap_combobox_currentIndexChanged(self, index):
@@ -137,7 +122,15 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
     @Slot(int)
     def on_cuts_combobox_currentIndexChanged(self, index):
         self.autoscale_checkbox.setChecked(True)
-        self.update_fli(self.img)
+        self.update_fli_view(self.img)
+
+    @Slot(int)
+    def on_follow_checkbox_stateChanged(self, state):
+        if Qt.CheckState(state) == Qt.Checked:
+            self.zoom_center_x = self.star_x
+            self.zoom_center_y = self.star_y
+
+            self.update_zoom_view()
 
     def hover_xyv_to_str_zoom(self, x, y, v):
         if x != -1 and y != -1:
@@ -152,18 +145,27 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
     def fli_clicked(self, x, y):
         self.follow_checkbox.setChecked(False)
 
+        if not 0 <= x < 1024 or not 0 <= y < 1024:
+            return
+
         self.zoom_center_x = round(x)
         self.zoom_center_y = round(y)
 
-        self.update_zoom()
+        self.update_zoom_view()
 
     def fli_dragged(self, x, y, dx, dy):
+        if not 0 <= x < 1024 or not 0 <= y < 1024:
+            return
+
         self.zoom_center_x = round(x)
         self.zoom_center_y = round(y)
 
-        self.update_zoom()
+        self.update_zoom_view()
 
     def fli_scrolled(self, x, y, z):
+        if not 0 <= x < 1024 or not 0 <= y < 1024:
+            return
+
         if not self.follow_checkbox.isChecked():
             self.zoom_center_x = round(x)
             self.zoom_center_y = round(y)
@@ -179,17 +181,20 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
             if self.zoom_level < 2:
                 self.zoom_level = 2
 
-        self.update_zoom()
+        self.update_zoom_view()
 
     def zoom_clicked(self, x, y):
         self.follow_checkbox.setChecked(False)
 
         x, y = self.xy_to_zoom_xy(x, y)
 
+        if not 0 <= x < 1024 or not 0 <= y < 1024:
+            return
+
         self.zoom_center_x = round(x)
         self.zoom_center_y = round(y)
 
-        self.update_zoom()
+        self.update_zoom_view()
 
     def zoom_scrolled(self, x, y, z):
         hw = 1024 // self.zoom_level // 2
@@ -198,6 +203,9 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         fy = (y - self.view_shift_y) / hw - 1
 
         x, y = self.xy_to_zoom_xy(x, y)
+
+        if not 0 <= x < 1024 or not 0 <= y < 1024:
+            return
 
         if z > 0:
             self.zoom_level *= 2
@@ -219,12 +227,12 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
                 self.zoom_center_x = round(x - fx*hw*2)
                 self.zoom_center_y = round(y - fy*hw*2)
 
-        self.update_zoom()
+        self.update_zoom_view()
 
     def xy_to_zoom_xy(self, x, y):
         return self.zoom_center_x - 1024 // self.zoom_level // 2 + x - self.view_shift_x, self.zoom_center_y - 1024 // self.zoom_level // 2 + y - self.view_shift_y
 
-    def update_fli(self, img):
+    def update_fli_view(self, img):
         self.img = img
 
         img_min, img_max = self.compute_min_max(
@@ -233,22 +241,22 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         self.fli_view.setImage(self.img, img_min, img_max,
                                self.scale_combobox.currentData())
 
-        x, y, peak, fwhm = self.find_star_fast(self.img)
+        self.star_x, self.star_y, self.star_peak, self.star_fwhm = self.find_star_fast(self.img)
 
         self.star_label.updateText(
-            x=(x - self.data_center_x) * self.axis_scaling,
-            y=(y - self.data_center_y) * self.axis_scaling,
-            peak=peak * self.data_scaling, fwhm=fwhm * self.axis_scaling,
+            x=(self.star_x - self.data_center_x) * self.axis_scaling,
+            y=(self.star_y - self.data_center_y) * self.axis_scaling,
+            peak=self.star_peak * self.data_scaling, fwhm=self.star_fwhm * self.axis_scaling,
             data_unit=self.data_unit, data_precision=self.data_precision,
             axis_unit=self.axis_unit, axis_precision=self.axis_precision + 1)
 
         if self.follow_checkbox.isChecked():
-            self.zoom_center_x = x
-            self.zoom_center_y = y
+            self.zoom_center_x = self.star_x
+            self.zoom_center_y = self.star_y
 
-        self.update_zoom()
+        self.update_zoom_view()
 
-    def update_zoom(self):
+    def update_zoom_view(self):
         x = self.zoom_center_x
         y = self.zoom_center_y
         hw = 1024 // self.zoom_level // 2
@@ -302,6 +310,34 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
             fwhm = 2 * np.sqrt(circle / np.pi)
 
         return x, y, peak, fwhm
+
+    @Slot(int)
+    def on_onsky_checkbox_stateChanged(self, state):
+        if Qt.CheckState(state) == Qt.Checked:
+            self.axis_scaling = config.FLI.plate_scale
+            self.axis_unit = ' asec'
+            self.axis_precision = 1
+        else:
+            self.axis_scaling = 1
+            self.axis_unit = ' px'
+            self.axis_precision = 0
+
+        ticks_x = []
+        ticks_y = []
+        for xy in [-400, -300, -200, -100, 0, 100, 200, 300, 400]:
+            tick_label = f'{xy*self.axis_scaling:.{self.axis_precision}f}'
+            tick_pos_x = xy + self.data_center_x
+            tick_pos_y = xy + self.data_center_y
+
+            ticks_x.append((tick_pos_x, tick_label))
+            ticks_y.append((tick_pos_y, tick_label))
+
+        self.fli_view.addTicks(self.tick_spacing, self.tick_tick_length,
+                               self.tick_text_spacing, self.tick_fontsize,
+                               ticks_x, ticks_y)
+        self.fli_view.addTicksLabels(self.tick_spacing, self.tick_tick_length,
+                                     self.tick_text_spacing,
+                                     self.tick_fontsize, ticks_x, ticks_y)
 
     def closeEvent(self, event):
         self.backend.fli_updated.disconnect(self.fli_updated)

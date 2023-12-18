@@ -8,6 +8,7 @@ from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
 import config
+from kalao.utils import kalao_tools
 
 
 class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
@@ -24,6 +25,7 @@ class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         super().__init__(parent)
 
         self.backend = backend
+        self.mask = kalao_tools.generate_flux_mask_from_subaps(config.AO.masked_subaps)
 
         loadUi('flux.ui', self)
         self.resize(600, 400)
@@ -43,6 +45,8 @@ class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         img = self.consume_stream(data, config.Streams.FLUX)
 
         if img is not None:
+            img = np.ma.masked_array(img, mask=self.mask, fill_value=0)
+
             img_min, img_max = self.compute_min_max(img)
 
             self.flux_view.setImage(img, img_min, img_max)
@@ -62,6 +66,6 @@ class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.flux_view.updateColormap(colormaps.GrayscaleSaturation())
+            self.flux_view.updateColormap(colormaps.GrayscaleSaturationTransparent())
         else:
-            self.flux_view.updateColormap(colormaps.BlackBody())
+            self.flux_view.updateColormap(colormaps.BlackBodyTransparent())

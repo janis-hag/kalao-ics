@@ -8,13 +8,15 @@ from PySide6.QtGui import Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
-from kalao.interfaces import fake_data
+from guis.windows.plots import PlotsWidget
 
 from guis.windows.dm import DMWidget
 from guis.windows.fli import FLIWidget
-from guis.windows.fli_zoom import FLIZoomWindow
 from guis.windows.flux import FluxWidget
 from guis.windows.logs import LogsWidget
+from guis.windows.loop_controls import LoopControlsWidget
+from guis.windows.engineering import EngineeringWidget
+from guis.windows.monitoring import MonitoringWidget
 from guis.windows.main import MainWindow
 from guis.windows.slopes import SlopesWidget
 from guis.windows.ttm import TTMWidget
@@ -107,6 +109,18 @@ if __name__ == "__main__":
 
         ttm = TTMWidget(backend)
         ttm.show()
+
+        loop_controls = LoopControlsWidget(backend)
+        loop_controls.show()
+
+        monitoring = MonitoringWidget(backend)
+        monitoring.show()
+
+        engineering = EngineeringWidget(backend)
+        engineering.show()
+
+        plots = PlotsWidget(backend)
+        plots.show()
 
         logs_window = LogsWidget(backend)
         logs_window.show()

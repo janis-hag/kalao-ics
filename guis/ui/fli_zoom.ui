@@ -41,6 +41,7 @@
      <widget class="QLabel" name="title_label">
       <property name="font">
        <font>
+        <weight>75</weight>
         <bold>true</bold>
        </font>
       </property>
@@ -311,6 +312,13 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="onsky_checkbox">
+        <property name="text">
+         <string>On-Sky Units</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
    </layout>
@@ -321,7 +329,7 @@
      <x>0</x>
      <y>0</y>
      <width>969</width>
-     <height>23</height>
+     <height>30</height>
     </rect>
    </property>
   </widget>

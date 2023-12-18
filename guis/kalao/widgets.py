@@ -1,5 +1,3 @@
-from string import Formatter
-
 import numpy as np
 
 from PySide6.QtCharts import QChart, QChartView, QDateTimeAxis, QXYSeries
@@ -14,16 +12,9 @@ from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
 
 from kalao.utils.image import LinearScale
 
-from guis.kalao.definitions import Color, Logo, Scale
+from guis.kalao.definitions import Color, Logo
 from guis.kalao.mixins import ArrayToImageMixin
-
-
-class KalAOFormatter(Formatter):
-    def format_field(self, value, format_spec):
-        if isinstance(value, float) and np.isnan(value):
-            return '--'
-        else:
-            return super().format_field(value, format_spec)
+from guis.kalao.string_formatter import KalAOFormatter
 
 
 class OffsetedTextItem(QGraphicsSimpleTextItem):
@@ -226,7 +217,7 @@ class KalAOWidget(QWidget):
 
         self.setWindowIcon(QIcon(str(Logo.ico)))
         self.resize(600, 400)
-        self.move(100 + 50 * KalAOWidget.opened, 100 + 30 * KalAOWidget.opened)
+        self.move(50 + 50 * KalAOWidget.opened, 50 + 30 * KalAOWidget.opened)
 
         KalAOWidget.opened += 1
 

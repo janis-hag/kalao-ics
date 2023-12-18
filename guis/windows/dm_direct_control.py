@@ -155,16 +155,16 @@ class DMDirectControl(KalAOMainWindow):
         with QSignalBlocker(self.checkboard_amplitude_spinbox):
             self.checkboard_amplitude_spinbox.setValue(0)
 
-        with QSignalBlocker(self.on_checkboard_period_spinbox):
+        with QSignalBlocker(self.checkboard_period_spinbox):
             self.checkboard_period_spinbox.setValue(2)
 
         with QSignalBlocker(self.grating_amplitude_spinbox):
             self.grating_amplitude_spinbox.setValue(0)
 
-        with QSignalBlocker(self.on_grating_period_spinbox):
+        with QSignalBlocker(self.grating_period_spinbox):
             self.grating_period_spinbox.setValue(2)
 
-        with QSignalBlocker(self.on_grating_angle_spinbox):
+        with QSignalBlocker(self.grating_angle_spinbox):
             self.grating_angle_spinbox.setValue(0)
 
     def compute_all(self):

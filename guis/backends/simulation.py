@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QTimer
 
 from kalao.interfaces import fake_data
 from kalao.utils import zernike
@@ -29,10 +29,10 @@ class FakeSHMFPSBackend(AbstractBackend):
 
         cnt0 = data[key].get('cnt0', -1)
 
-        data[key] = {
+        data[key].update({
             'cnt0': cnt0 + 1,
             'data': stream_data,
-        }
+        })
 
         if stream_name == 'fli_stream':
             data[key]['cnt0'] = self.data.get('fli_stream', {}).get('cnt0', -1)
@@ -86,11 +86,16 @@ class MainBackend(FakeSHMFPSBackend):
         for i in range(12):
             self.base[f'dm02disp{i:02d}'] = np.zeros((2, ))
 
-        self.base['dm-loopON'] = 1
+        self.base['dm-loopON'] = True
         self.base['dm-loopgain'] = 0.9
 
-        self.base['ttm-loopON'] = 1
+        self.base['ttm-loopON'] = True
         self.base['ttm-loopgain'] = 0
+
+        self.internal_timer = QTimer()
+        self.internal_timer.setInterval(100)
+        self.internal_timer.timeout.connect(self._internal_update)
+        self.internal_timer.start()
 
     def _get_dm01disp(self):
         dm01disp = zernike.generate_pattern([0], (12, 12))
@@ -103,6 +108,24 @@ class MainBackend(FakeSHMFPSBackend):
         for i in range(12):
             dm02disp += self.base[f'dm02disp{i:02d}']
         return dm02disp
+
+    def _internal_update(self):
+        if time.monotonic() - self.last_fli_update > 0.01:
+            self._update_stream_cnt(self.data, config.Streams.FLI)
+            self.last_fli_update = time.monotonic()
+
+        if self.base['dm-loopON']:
+            self.base[config.Streams.DM_TURBULENCES] = fake_data.dmdisp()
+            self.base[config.Streams.
+                      DM_LOOP] = -self.base['dm-loopgain'] * self.base[
+                          config.Streams.DM_TURBULENCES]
+
+        if self.base['ttm-loopON']:
+            self.base[config.Streams.TTM_CENTERING] = fake_data.tiptilt(
+                seed=self.base[config.Streams.TTM_CENTERING])
+            self.base[config.Streams.
+                      TTM_LOOP] = -self.base['ttm-loopgain'] * self.base[
+                          config.Streams.TTM_CENTERING]
 
     @emit('streams_updated')
     @timeit
@@ -152,29 +175,15 @@ class MainBackend(FakeSHMFPSBackend):
     @emit('data_updated')
     @timeit
     def get_all(self):
-        if time.monotonic() - self.last_fli_update > 0.01:
-            self._update_stream_cnt(self.data, config.Streams.FLI)
-            self.last_fli_update = time.monotonic()
-
-        if self.base['dm-loopON']:
-            self.base[config.Streams.DM_TURBULENCES] = fake_data.dmdisp()
-            self.base[config.Streams.
-                      DM_LOOP] = -self.base['dm-loopgain'] * self.base[
-                          config.Streams.DM_TURBULENCES]
-
-        if self.base['ttm-loopON']:
-            self.base[config.Streams.TTM_CENTERING] = fake_data.tiptilt(
-                seed=self.base[config.Streams.TTM_CENTERING])
-            self.base[config.Streams.
-                      TTM_LOOP] = -self.base['ttm-loopgain'] * self.base[
-                          config.Streams.TTM_CENTERING]
-
         self._update_stream(self.data, config.Streams.TTM,
                             self._get_dm02disp())
 
         if self.first:
+            modalgains = np.ones((90, ))
+            modalgains[1:90] = np.linspace(1, 0, 89)
+
             self._update_stream(self.data, config.Streams.MODALGAINS,
-                                np.ones((90, )))
+                                modalgains)
             self.first = False
 
         self._update_stream_keywords(
@@ -190,7 +199,7 @@ class MainBackend(FakeSHMFPSBackend):
                 'MFRATE': 1800,
             })
 
-        self._update_param(self.data, config.FPS.NUVU, 'autogain_on', 1)
+        self._update_param(self.data, config.FPS.NUVU, 'autogain_on', True)
 
         self._update_param(self.data, 'mfilt-1', 'loopON',
                            self.base['dm-loopON'])
@@ -232,34 +241,25 @@ class MainBackend(FakeSHMFPSBackend):
         self._update_dict(
             self.data, 'services', {
                 'kalao_nuvu.service':
-                    ('active', 'exited',
-                     datetime(2023, 12, 4, 20, 15, 42, 397363)),
+                    ('active', 'exited', datetime(2023, 12, 4, 20, 15, 42)),
                 'kalao_cacao.service':
-                    ('active', 'exited',
-                     datetime(2023, 12, 7, 9, 15, 25, 886597)),
+                    ('active', 'exited', datetime(2023, 12, 7, 9, 15, 25)),
                 'kalao_sequencer.service':
-                    ('active', 'running',
-                     datetime(2023, 12, 7, 10, 52, 17, 270106)),
-                'kalao_camera.service':
-                    ('active', 'running',
-                     datetime(2023, 12, 7, 10, 52, 17, 901720)),
+                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
+                'kalao_camera.service': ('activating', 'auto-restart',
+                                         datetime(2023, 12, 7, 10, 52, 17)),
                 'kalao_flask-gui.service':
                     ('inactive', 'dead', datetime(1970, 1, 1, 0, 0)),
                 'kalao_gop-server.service':
-                    ('active', 'running',
-                     datetime(2023, 12, 7, 10, 52, 17, 915063)),
+                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
                 'kalao_database-timer.service':
-                    ('active', 'running',
-                     datetime(2023, 12, 7, 10, 52, 17, 921112)),
+                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
                 'kalao_safety-timer.service':
-                    ('active', 'running',
-                     datetime(2023, 12, 7, 10, 52, 17, 931899)),
+                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
                 'kalao_loop-timer.service':
-                    ('active', 'running',
-                     datetime(2023, 12, 7, 10, 52, 17, 932389)),
+                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
                 'kalao_pump-timer.service':
-                    ('active', 'running',
-                     datetime(2023, 12, 7, 10, 52, 17, 943558))
+                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17))
             })
 
         self._update_dict(
@@ -275,6 +275,18 @@ class MainBackend(FakeSHMFPSBackend):
                 'ippower_rtc_status': IPPowerStatus.ON,
                 'ippower_bench_status': IPPowerStatus.OFF,
                 'ippower_dm_status': IPPowerStatus.ERROR,
+            })
+
+        self._update_db(
+            self.data, 'obs', {
+                'sequencer_status': [{
+                    'value': 'BUSY',
+                    'timestamp': datetime(2023, 12, 7, 10, 52, 17)
+                }],
+                'tracking_status': [{
+                    'value': 'TRACKING',
+                    'timestamp': datetime(2023, 12, 7, 10, 52, 17)
+                }]
             })
 
         return self.data
@@ -344,12 +356,116 @@ class MainBackend(FakeSHMFPSBackend):
 
         return df
 
+    def get_calibration_data(self, conf, loop):
+        if loop == 1:
+            return {
+                'wfsref': {
+                    'data': np.zeros((11, 22))
+                },
+                'wfsrefc': {
+                    'data': np.zeros((11, 22))
+                },
+                'wfsmask': {
+                    'data': np.zeros((11, 22))
+                },
+                'wfsmap': {
+                    'data': np.zeros((11, 22))
+                },
+                'CMmodesWFS': {
+                    'data': np.zeros((5, 11, 22))
+                },
+                'dmmask': {
+                    'data': np.zeros((12, 12))
+                },
+                'dmmap': {
+                    'data': np.zeros((12, 12))
+                },
+                'CMmodesDM': {
+                    'data': np.zeros((5, 12, 12))
+                },
+                f'aol{loop}_wfsref': {
+                    'data': np.zeros((11, 22))
+                },
+                f'aol{loop}_wfsrefc': {
+                    'data': np.zeros((11, 22))
+                },
+                f'aol{loop}_wfsmask': {
+                    'data': np.zeros((11, 22))
+                },
+                f'aol{loop}_wfsmap': {
+                    'data': np.zeros((11, 22))
+                },
+                f'aol{loop}_modesWFS': {
+                    'data': np.zeros((11, 22, 5))
+                },
+                f'aol{loop}_dmmask': {
+                    'data': np.zeros((12, 12))
+                },
+                f'aol{loop}_dmmap': {
+                    'data': np.zeros((12, 12))
+                },
+                f'aol{loop}_DMmodes': {
+                    'data': np.zeros((12, 12, 5))
+                },
+            }
+        else:
+            return {
+                'wfsref': {
+                    'data': np.zeros((12, 12))
+                },
+                'wfsrefc': {
+                    'data': np.zeros((12, 12))
+                },
+                'wfsmask': {
+                    'data': np.zeros((12, 12))
+                },
+                'wfsmap': {
+                    'data': np.zeros((12, 12))
+                },
+                'CMmodesWFS': {
+                    'data': np.zeros((5, 12, 12))
+                },
+                'dmmask': {
+                    'data': np.zeros((1, 2))
+                },
+                'dmmap': {
+                    'data': np.zeros((1, 2))
+                },
+                'CMmodesDM': {
+                    'data': np.zeros((5, 1, 2))
+                },
+                f'aol{loop}_wfsref': {
+                    'data': np.zeros((12, 12))
+                },
+                f'aol{loop}_wfsrefc': {
+                    'data': np.zeros((12, 12))
+                },
+                f'aol{loop}_wfsmask': {
+                    'data': np.zeros((12, 12))
+                },
+                f'aol{loop}_wfsmap': {
+                    'data': np.zeros((12, 12))
+                },
+                f'aol{loop}_modesWFS': {
+                    'data': np.zeros((12, 12, 5))
+                },
+                f'aol{loop}_dmmask': {
+                    'data': np.zeros((1, 2))
+                },
+                f'aol{loop}_dmmap': {
+                    'data': np.zeros((1, 2))
+                },
+                f'aol{loop}_DMmodes': {
+                    'data': np.zeros((1, 2, 5))
+                },
+            }
+
     ##### Loop controls
 
     # DM Loop
 
     def set_dm_loop_on(self, state):
-        self.base['dm-loopON'] = int(state)
+        self.base['dm-loopON'] = state
         print(f'Set DM loop to {state} (virtually)')
 
     def set_dm_loop_gain(self, gain):
@@ -365,7 +481,7 @@ class MainBackend(FakeSHMFPSBackend):
     # TTM Loop
 
     def set_ttm_loop_on(self, state):
-        self.base['ttm-loopON'] = int(state)
+        self.base['ttm-loopON'] = state
         print(f'Set TTM loop to {state} (virtually)')
 
     def set_ttm_loop_gain(self, gain):

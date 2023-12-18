@@ -34,8 +34,10 @@ class DMChannelsWindow(KalAOMainWindow, BackendActionMixin, MinMaxMixin,
             self.stream_info = config.StreamInfo.dm02disp
             self.data_unit = ' mrad'
             self.data_precision = 2
-            self.title_label.setText("Tip-Tilt Mirror Channels")
-            self.setWindowTitle("Tip-Tilt Mirror Channels - KalAO")
+            self.title_label.setText(self.title_label.text().replace(
+                "Deformable Mirror", "Tip-Tilt Mirror"))
+            self.setWindowTitle(self.windowTitle().replace(
+                "Deformable Mirror", "Tip-Tilt Mirror"))
 
             prefix = 'TTM_'
             disp_name = config.Streams.TTM.value

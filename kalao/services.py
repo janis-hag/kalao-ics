@@ -49,15 +49,8 @@ def get_status(unit, system=False):
         service, dbus_interface='org.freedesktop.DBus.Properties')
 
     state = str(interface.Get('org.freedesktop.systemd1.Unit', 'ActiveState'))
-
-    if state == 'active':
-        timestamp = interface.Get('org.freedesktop.systemd1.Unit',
-                                  'ActiveEnterTimestamp')
-    else:
-        timestamp = interface.Get('org.freedesktop.systemd1.Unit',
-                                  'ActiveExitTimestamp')
-
     substate = str(interface.Get('org.freedesktop.systemd1.Unit', 'SubState'))
+    timestamp = interface.Get('org.freedesktop.systemd1.Unit', 'StateChangeTimestamp')
 
     # Convert Unix microseconds timestamp into datetime object
     timestamp = datetime.utcfromtimestamp(int(timestamp) * 10**(-6))

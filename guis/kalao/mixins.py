@@ -3,11 +3,12 @@ import numpy as np
 from PySide6.QtCore import (QObject, QRunnable, QSignalBlocker, QThreadPool,
                             Signal, Slot)
 from PySide6.QtGui import QImage, Qt
-from PySide6.QtWidgets import QAbstractSpinBox, QCheckBox, QComboBox
+from PySide6.QtWidgets import QCheckBox, QComboBox
 
 from kalao.utils.image import LinearScale
 
 from guis.kalao import colormaps
+from guis.kalao.string_formatter import KalAOFormatter
 
 import config
 
@@ -29,11 +30,8 @@ class ArrayToImageMixin:
 
         delta = img_max - img_min
 
-        scale_max = 255
-        scale_min = 0
-
-        if self.colormap.has_transparency:
-            scale_max -= 1
+        scale_min = self.colormap.min
+        scale_max = self.colormap.max
 
         if self.colormap.color_saturation_high is not None:
             scale_max -= 0.4999
@@ -60,7 +58,7 @@ class ArrayToImageMixin:
 
         if mask is not None:
             if self.colormap.has_transparency:
-                img_scaled[mask] = 255
+                img_scaled[mask] = self.colormap.transparency_value
             else:
                 img_scaled[mask] = self.colormap.no_data_value
 
@@ -91,6 +89,11 @@ class MinMaxMixin:
         self.views = []
 
     def init_minmax(self, view_list=[], symetric=False):
+        self.min_spinbox.setMaximum(self.max_spinbox.value())
+        self.max_spinbox.setMinimum(self.min_spinbox.value())
+        self.min_spinbox.setReadOnly(self.autoscale_checkbox.isChecked())
+        self.max_spinbox.setReadOnly(self.autoscale_checkbox.isChecked())
+
         if not isinstance(view_list, list):
             view_list = [view_list]
 
@@ -98,28 +101,23 @@ class MinMaxMixin:
 
         self.data_symetric = symetric
 
-        self.on_autoscale_checkbox_stateChanged(
-            self.autoscale_checkbox.checkState())
-        self.on_min_spinbox_valueChanged(self.min_spinbox.value())
-        self.on_max_spinbox_valueChanged(self.max_spinbox.value())
+        self.update_spinboxes_unit(self.data_unit, self.data_scaling)
 
     @Slot(float)
     def on_min_spinbox_valueChanged(self, d):
         self.max_spinbox.setMinimum(d)
 
-        if not self.autoscale_checkbox.isChecked():
-            for view in self.views:
-                view.updateMinMax(self.min_spinbox.value(),
-                                  self.max_spinbox.value())
+        for view in self.views:
+            view.updateMinMax(self.min_spinbox.value(),
+                              self.max_spinbox.value())
 
     @Slot(float)
     def on_max_spinbox_valueChanged(self, d):
         self.min_spinbox.setMaximum(d)
 
-        if not self.autoscale_checkbox.isChecked():
-            for view in self.views:
-                view.updateMinMax(self.min_spinbox.value(),
-                                  self.max_spinbox.value())
+        for view in self.views:
+            view.updateMinMax(self.min_spinbox.value(),
+                              self.max_spinbox.value())
 
     @Slot(int)
     def on_autoscale_checkbox_stateChanged(self, state):
@@ -128,8 +126,13 @@ class MinMaxMixin:
 
         if self.autoscale_checkbox.isChecked() and not (np.isinf(
                 self.autoscale_min) or np.isinf(self.autoscale_max)):
-            self.min_spinbox.setValue(self.autoscale_min)
-            self.max_spinbox.setValue(self.autoscale_max)
+            with QSignalBlocker(self.min_spinbox):
+                self.min_spinbox.setMaximum(self.autoscale_max)
+                self.min_spinbox.setValue(self.autoscale_min)
+
+            with QSignalBlocker(self.max_spinbox):
+                self.max_spinbox.setMinimum(self.autoscale_min)
+                self.max_spinbox.setValue(self.autoscale_max)
 
             for view in self.views:
                 view.updateMinMax(self.autoscale_min, self.autoscale_max)
@@ -145,18 +148,26 @@ class MinMaxMixin:
     def on_fullscale_button_clicked(self, checked):
         self.autoscale_checkbox.setChecked(False)
 
-        self.min_spinbox.setValue(self.stream_info['min'])
-        self.max_spinbox.setValue(self.stream_info['max'])
+        with QSignalBlocker(self.min_spinbox):
+            self.min_spinbox.setMaximum(self.stream_info['max'])
+            self.min_spinbox.setValue(self.stream_info['min'])
+
+        with QSignalBlocker(self.max_spinbox):
+            self.max_spinbox.setMinimum(self.stream_info['min'])
+            self.max_spinbox.setValue(self.stream_info['max'])
+
+        for view in self.views:
+            view.updateMinMax(self.stream_info['min'], self.stream_info['max'])
 
     def update_spinboxes_unit(self, unit, scaling):
         self.min_spinbox.setScale(scaling)
         self.max_spinbox.setScale(scaling)
 
-        self.data_scaling = scaling
-        self.data_unit = unit
-
         self.min_spinbox.setSuffix(unit)
         self.max_spinbox.setSuffix(unit)
+
+        self.data_scaling = scaling
+        self.data_unit = unit
 
     def compute_min_max(self, img, cuts=None):
         if cuts is None:
@@ -174,11 +185,13 @@ class MinMaxMixin:
         self.autoscale_max = img_max
 
         if self.autoscale_checkbox.isChecked():
-            self.min_spinbox.setMaximum(self.autoscale_min)
-            self.max_spinbox.setMinimum(self.autoscale_max)
+            with QSignalBlocker(self.min_spinbox):
+                self.min_spinbox.setMaximum(img_max)
+                self.min_spinbox.setValue(img_min)
 
-            self.min_spinbox.setValue(self.autoscale_min)
-            self.max_spinbox.setValue(self.autoscale_max)
+            with QSignalBlocker(self.max_spinbox):
+                self.max_spinbox.setMinimum(img_min)
+                self.max_spinbox.setValue(img_max)
         else:
             img_min = self.min_spinbox.value()
             img_max = self.max_spinbox.value()
@@ -188,13 +201,20 @@ class MinMaxMixin:
 
 class SceneHoverMixin:
     hovered = Signal(str)
+    formatter = KalAOFormatter()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def hover_xyv_to_str(self, x, y, v):
         if x != -1 and y != -1:
-            string = f'X: {(x-self.data_center_x)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, Y: {(y-self.data_center_y)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, V: {v*self.data_scaling:.{self.data_precision}f}{self.data_unit}'
+            string = self.formatter.format(
+                'X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, V: {v:.{data_precision}f}{data_unit}',
+                x=(x - self.data_center_x) * self.axis_scaling,
+                y=(y - self.data_center_y) * self.axis_scaling,
+                v=v * self.data_scaling, axis_precision=self.axis_precision,
+                axis_unit=self.axis_unit, data_precision=self.data_precision,
+                data_unit=self.data_unit)
 
             self.hovered.emit(string)
         else:
@@ -332,7 +352,8 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_db(self, data, collection, key, default=None, force=False):
+    def consume_db(self, data, collection, key, default=(None, None),
+                   force=False):
         try:
             if collection not in self.data_cache:
                 self.data_cache[collection] = {}

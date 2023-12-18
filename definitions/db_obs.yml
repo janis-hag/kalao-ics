@@ -118,13 +118,13 @@ fli_temporary_image_path:
   unit:
 
 fli_image_count:
-  short: image number
+  short: Image counter
   long: Counter giving the image number
   unit:
   fits_keyword: HIERARCH ESO DET FRAM COUNT
 
 fli_texp:
-  short: exposure time
+  short: Exposure time
   long: Requested exposure time
   unit:
 

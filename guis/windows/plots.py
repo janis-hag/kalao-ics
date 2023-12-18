@@ -38,7 +38,7 @@ class PlotsWidget(KalAOWidget):
 
         for k, v in sorted(
                 database.definitions['monitoring']['metadata'].items(),
-                key=lambda t: t[1]['short']):
+                key=lambda t: t[1]['short'].lower()):
             item = KalAOListWidgetItem(k, self.get_display_name(v))
             item.setToolTip(v['long'])
 
@@ -52,7 +52,7 @@ class PlotsWidget(KalAOWidget):
 
         for k, v in sorted(
                 database.definitions['telemetry']['metadata'].items(),
-                key=lambda t: t[1]['short']):
+                key=lambda t: t[1]['short'].lower()):
             item = KalAOListWidgetItem(k, self.get_display_name(v))
             item.setToolTip(v['long'])
 
@@ -65,7 +65,7 @@ class PlotsWidget(KalAOWidget):
             self.items[f'telemetry/{k}'] = item
 
         for k, v in sorted(database.definitions['obs']['metadata'].items(),
-                           key=lambda t: t[1]['short']):
+                           key=lambda t: t[1]['short'].lower()):
             if k in config.GUI.plots_exclude_list or '_log' in k:
                 continue
 
@@ -81,14 +81,14 @@ class PlotsWidget(KalAOWidget):
         # X Axis Settings
         self.axis_x = QDateTimeAxis()
         self.axis_x.setTickCount(13)
-        self.axis_x.setFormat("HH:mm dd.MM.yy")
+        self.axis_x.setFormat("HH:mm")
         self.axis_x.setRange(self.start_datetimeedit.dateTime(),
                              self.end_datetimeedit.dateTime())
         chart.addAxis(self.axis_x, Qt.AlignBottom)
 
         # Y Axis Settings
         self.axis_y = QValueAxis()
-        self.axis_y.setTickCount(5)
+        self.axis_y.setTickCount(20)
         self.axis_y.setRange(-1, 1)
         chart.addAxis(self.axis_y, Qt.AlignLeft)
 
@@ -96,7 +96,7 @@ class PlotsWidget(KalAOWidget):
 
         ### Group buttons
 
-        for group in sorted(self.groups.keys()):
+        for group in sorted(self.groups.keys(), key=lambda key: key.lower()):
             button = QPushButton(group)
             button.clicked.connect(lambda checked=False, group=group: self.
                                    on_group_button_clicked(checked, group))
@@ -116,13 +116,7 @@ class PlotsWidget(KalAOWidget):
         return f'{metadata["short"]}{unit}'
 
     def on_group_button_clicked(self, checked, group):
-        self.monitoring_list.clearSelection()
-        self.telemetry_list.clearSelection()
-        self.obs_list.clearSelection()
-
-        self.monitoring_list.scrollToTop()
-        self.telemetry_list.scrollToTop()
-        self.obs_list.scrollToTop()
+        self.on_reset_button_clicked(checked)
 
         for collection, key in self.groups[group]:
             item = self.items[f'{collection}/{key}']
@@ -134,6 +128,16 @@ class PlotsWidget(KalAOWidget):
                 self.telemetry_list.scrollToItem(item)
             elif collection == 'obs':
                 self.obs_list.scrollToItem(item)
+
+    @Slot(bool)
+    def on_reset_button_clicked(self, checked):
+        self.monitoring_list.clearSelection()
+        self.telemetry_list.clearSelection()
+        self.obs_list.clearSelection()
+
+        self.monitoring_list.scrollToTop()
+        self.telemetry_list.scrollToTop()
+        self.obs_list.scrollToTop()
 
     @Slot(QDateTime)
     def on_start_datetimeedit_dateTimeChanged(self, datetime):
@@ -159,9 +163,13 @@ class PlotsWidget(KalAOWidget):
 
     @Slot(bool)
     def on_tonight_button_clicked(self, checked):
-        start = kalao_time.get_start_of_night_dt(kalao_time.now())
+        start_of_night = kalao_time.get_start_of_night_dt(kalao_time.now())
+
+        start = QDateTime.fromSecsSinceEpoch(int(start_of_night.timestamp()))
+        end = start.addSecs(86400)
+
         self.start_datetimeedit.setDateTime(start)
-        self.end_datetimeedit.setDateTime(start + timedelta(hours=24))
+        self.end_datetimeedit.setDateTime(end)
 
     @Slot(int)
     def on_live_checkbox_stateChanged(self, state):
@@ -279,13 +287,19 @@ class PlotsWidget(KalAOWidget):
         else:
             self.axis_x.setFormat("HH:mm")
 
-        if abs(plot_max - plot_min) < config.epsilon:
+        delta = plot_max - plot_min
+        if abs(delta) < config.epsilon:
             plot_min -= 0.01
             plot_max += 0.01
+        # else: # Not needed with applyNiceNumbers
+        #     plot_min -= 0.05*delta
+        #     plot_max += 0.05*delta
 
         self.axis_x.setRange(self.start_datetimeedit.dateTime().toUTC(),
                              self.end_datetimeedit.dateTime().toUTC())
         self.axis_y.setRange(plot_min, plot_max)
+        self.axis_y.setTickCount(20)
+        self.axis_y.applyNiceNumbers()
 
     def hover_xy_to_str(self, x, y):
         if not np.isnan(x) and not np.isnan(y):

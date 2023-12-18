@@ -1,4 +1,7 @@
-from PySide6.QtCore import Signal
+from datetime import datetime
+from pathlib import Path
+
+from astropy.io import fits
 
 from kalao import ippower, logs, services
 from kalao.cacao import aocontrol, toolbox
@@ -27,10 +30,13 @@ class SHMFPSBackend(AbstractBackend):
         if stream is None:
             return
 
-        data[key] = {
+        if key not in data:
+            data[key] = {}
+
+        data[key].update({
             'cnt0': stream.IMAGE.md.cnt0,
             'data': stream.get_data(check=False),
-        }
+        })
 
     def _update_stream_keywords(self, data, stream_name):
         stream = toolbox.open_stream_once(stream_name,
@@ -56,16 +62,17 @@ class SHMFPSBackend(AbstractBackend):
 
         data[stream_name]['cnt0'] = stream.IMAGE.md.cnt0,
 
-    def _update_param(self, data, fps_name, param_name):
-        fps = toolbox.open_fps_once(fps_name, self.streams_and_fps_cache)
-
-        if fps is None:
-            return
-
+    def _update_param(self, data, fps_name, param_name, fps_missing=None):
         if fps_name not in data:
             data[fps_name] = {}
 
-        data[fps_name][param_name] = fps.get_param(param_name)
+        fps = toolbox.open_fps_once(fps_name, self.streams_and_fps_cache)
+
+        if fps is None:
+            if fps_missing is not None:
+                data[fps_name][param_name] = fps_missing
+        else:
+            data[fps_name][param_name] = fps.get_param(param_name)
 
     def _update_dict(self, data, key, dict):
         if key not in data:
@@ -78,6 +85,15 @@ class SHMFPSBackend(AbstractBackend):
             data[collection] = {}
 
         data[collection].update(db_data)
+
+    def _update_fits(self, data, fits_file):
+        fits_file = Path(fits_file)
+        key = fits_file.stem
+
+        data[key] = {
+            'mtime': datetime.fromtimestamp(fits_file.stat().st_mtime),
+            'data': fits.getdata(fits_file),
+        }
 
 
 class MainBackend(SHMFPSBackend):
@@ -142,13 +158,19 @@ class MainBackend(SHMFPSBackend):
         self._update_dict(self.data, 'fli', camera.get_temperatures())
         self._update_dict(self.data, 'ippower', ippower.status_all())
 
+        self._update_db(
+            self.data, 'obs',
+            database.get('obs', ['sequencer_status', 'tracking_status']))
+
         return self.data
 
     @emit('monitoringandtelemetry_updated')
     @timeit
     def get_monitoringandtelemetry(self):
-        self._update_db(self.monitoringandtelemetry, 'monitoring', database.get('monitoring'))
-        self._update_db(self.monitoringandtelemetry, 'telemetry', database.get('telemetry'))
+        self._update_db(self.monitoringandtelemetry, 'monitoring',
+                        database.get('monitoring'))
+        self._update_db(self.monitoringandtelemetry, 'telemetry',
+                        database.get('telemetry'))
 
         return self.monitoringandtelemetry
 
@@ -182,6 +204,45 @@ class MainBackend(SHMFPSBackend):
         if len(obs_keys) > 0:
             data['obs'] = database.read_mongo_to_pandas_by_timestamp(
                 'obs', dt_start, dt_end, obs_keys)
+
+        return data
+
+    def get_calibration_data(self, conf, loop):
+        data = {}
+
+        self._update_fits(
+            data,
+            config.AO.cacao_workdir / f'setupfiles/{conf}/conf/wfsref.fits')
+        self._update_fits(
+            data,
+            config.AO.cacao_workdir / f'setupfiles/{conf}/conf/wfsrefc.fits')
+        self._update_fits(
+            data,
+            config.AO.cacao_workdir / f'setupfiles/{conf}/conf/wfsmask.fits')
+        self._update_fits(
+            data,
+            config.AO.cacao_workdir / f'setupfiles/{conf}/conf/wfsmap.fits')
+        self._update_fits(
+            data, config.AO.cacao_workdir /
+            f'setupfiles/{conf}/conf/CMmodesWFS.fits')
+        self._update_fits(
+            data,
+            config.AO.cacao_workdir / f'setupfiles/{conf}/conf/dmmask.fits')
+        self._update_fits(
+            data,
+            config.AO.cacao_workdir / f'setupfiles/{conf}/conf/dmmap.fits')
+        self._update_fits(
+            data,
+            config.AO.cacao_workdir / f'setupfiles/{conf}/conf/CMmodesDM.fits')
+
+        self._update_stream(data, f'aol{loop}_wfsref')
+        self._update_stream(data, f'aol{loop}_wfsrefc')
+        self._update_stream(data, f'aol{loop}_wfsmask')
+        self._update_stream(data, f'aol{loop}_wfsmap')
+        self._update_stream(data, f'aol{loop}_modesWFS')
+        self._update_stream(data, f'aol{loop}_dmmask')
+        self._update_stream(data, f'aol{loop}_dmmap')
+        self._update_stream(data, f'aol{loop}_DMmodes')
 
         return data
 

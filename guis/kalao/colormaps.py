@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from PySide6.QtGui import QColor, QImage, QPixmap
-from PySide6.QtWidgets import QApplication, QLabel, QStyle
+from PySide6.QtGui import QColor, QImage, QPixmap, Qt
+from PySide6.QtWidgets import QApplication, QLabel, QSizePolicy, QStyle
 
 colormap_path = Path(__file__).absolute().parent.parent / 'colormaps'
 
@@ -21,6 +21,10 @@ class Colormap:
     has_transparency = False
 
     no_data_value = 0
+    transparency_value = 255
+
+    min = 0
+    max = 255
 
 
 class ColormapExtrapolated(Colormap):
@@ -29,13 +33,14 @@ class ColormapExtrapolated(Colormap):
     def __init__(self, start=0, end=255, color_max=255):
         length = len(self.colors)
 
+        if self.has_transparency:
+            end -= 1
+            self.max = end
+
         if self.color_saturation_low is not None:
             start += 1
 
         if self.color_saturation_high is not None:
-            end -= 1
-
-        if self.has_transparency:
             end -= 1
 
         limits = []
@@ -93,10 +98,11 @@ class Grayscale(ColormapExtrapolated):
     colors = [(0, 0, 0), (1, 1, 1)]
 
 
-class GrayscaleSaturation(ColormapExtrapolated):
+class GrayscaleSaturationTransparent(ColormapExtrapolated):
     colors = [(0, 0, 0), (1, 1, 1)]
     color_saturation_low = (0, 0, 1)
     color_saturation_high = (1, 0, 0)
+    has_transparency = True
 
 
 class CoolWarm(ColormapCSV):
@@ -124,12 +130,51 @@ class Viridis(ColormapCSV):
     file = colormap_path / 'viridis-table-byte-0256.csv'
 
 
+class CoolWarmTransparent(ColormapCSV):
+    file = colormap_path / 'smooth-cool-warm-table-byte-0256.csv'
+    no_data_value = 128
+
+    has_transparency = True
+
+    min = 1
+    max = 254
+
+    def __init__(self):
+        super().__init__()
+
+        self.colormap[-1] = (QColor(0, 0, 0, 0).rgba())
+
+
+class BlackBodyTransparent(ColormapCSV):
+    file = colormap_path / 'black-body-table-byte-0256.csv'
+
+    has_transparency = True
+
+    min = 0
+    max = 254
+
+    def __init__(self):
+        super().__init__()
+
+        self.colormap[-1] = (QColor(0, 0, 0, 0).rgba())
+
+
+class ColormapLabel(QLabel):
+    def scaledPixmap(self):
+        return self.pixmap().scaled(self.size(), Qt.IgnoreAspectRatio,
+                                    Qt.FastTransformation)
+
+    def resizeEvent(self, e):
+        super().setPixmap(self.scaledPixmap())
+
+
 def show_colormap(colormap):
     if not hasattr(show_colormap, "pos_y"):
         show_colormap.pos_y = 100
         show_colormap.labels = []
 
-    label = QLabel()
+    label = ColormapLabel()
+    label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     array = np.arange(0, 256).reshape(1, 256)
     img_uint8 = np.require(array, np.uint8, 'C')
@@ -137,12 +182,13 @@ def show_colormap(colormap):
                    img_uint8.shape[1], QImage.Format_Indexed8)
     image.setColorTable(colormap.colormap)
 
-    pixmap = QPixmap.fromImage(image).scaled(1024, 50)
+    pixmap = QPixmap.fromImage(image)
     label.setPixmap(pixmap)
 
     show_colormap.labels.append(label)
 
     label.setWindowTitle(colormap.__class__.__name__)
+    label.resize(1024, 50)
 
     label.show()
 
@@ -154,14 +200,17 @@ def show_colormap(colormap):
     ).pixelMetric(QStyle.PM_TitleBarHeight)
 
 
-def get_all_colormaps():
+def get_all_colormaps(exclude_transparent=False):
     colormaps = []
 
     for name, obj in inspect.getmembers(sys.modules[__name__],
                                         inspect.isclass):
-        if issubclass(obj, Colormap) and name not in [
-                'Colormap', 'ColormapCSV', 'ColormapExtrapolated'
-        ]:
+        if issubclass(obj, Colormap):
+            if name in ['Colormap', 'ColormapCSV', 'ColormapExtrapolated']:
+                continue
+            elif exclude_transparent and obj.has_transparency:
+                continue
+
             colormaps.append(obj)
 
     return colormaps
