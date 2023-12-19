@@ -433,15 +433,17 @@ def _dynamic_cards_update(header_df, obs_type, seq_args=None):
     astro_time_end = Time(date_end, scale='utc', location=location)
 
     # Update HIERARCH ESO INS SHUT ST
-    shutter = header_df.loc['HIERARCH ESO INS SHUT ST']
-    shutter.comment = f'{shutter.comment} ({shutter.value.lower()})'
-    if shutter.value == ShutterState.OPEN:
-        shutter.value = True
-    elif shutter.value == ShutterState.CLOSED:
-        shutter.value = False
+    header_df.loc[
+        'HIERARCH ESO INS SHUT ST',
+        'comment'] = f'{header_df.loc["HIERARCH ESO INS SHUT ST", "comment"]} ({header_df.loc["HIERARCH ESO INS SHUT ST", "value"].lower()})'
+    if header_df.loc['HIERARCH ESO INS SHUT ST', 'value'] == ShutterState.OPEN:
+        header_df.loc['HIERARCH ESO INS SHUT ST', 'value'] = True
+    elif header_df.loc['HIERARCH ESO INS SHUT ST',
+                       'value'] == ShutterState.CLOSED:
+        header_df.loc['HIERARCH ESO INS SHUT ST', 'value'] = False
     else:
-        shutter.value = 'ERROR'
-    shutter.source += '+dynamic'
+        header_df.loc['HIERARCH ESO INS SHUT ST', 'value'] = 'ERROR'
+    header_df.loc['HIERARCH ESO INS SHUT ST', 'source'] += '+dynamic'
 
     # Update MJD-OBS
     header_df.loc['MJD-OBS', 'value'] = astro_time_obs.mjd
