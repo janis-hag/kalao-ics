@@ -51,7 +51,7 @@ def plcLaserDisable():
 @plc_bp.route('/laser/intensity', methods=['POST'])
 def plcLaserIntensity():
     options = request.get_json()
-    return str(k_laser.set_intensity(float(options["intensity"])))
+    return str(k_laser.set_power(float(options["intensity"])))
 
 
 @plc_bp.route('/shutter/open', methods=['GET'])

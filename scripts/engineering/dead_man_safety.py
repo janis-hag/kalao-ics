@@ -9,7 +9,7 @@ start_time = kalao_time.now()
 while True:
     ellapsed_time = (kalao_time.now() - start_time).total_seconds()
 
-    if ellapsed_time > 24 * 60 * 60:
+    if ellapsed_time > 86400:
         database.store(
             'obs', {
                 'safety_timer_log':

@@ -71,8 +71,10 @@ def send_command(nCommand_value, beck=None):
     elif nCommand_value == TungstenCommand.OFF:
         database.store('obs', {'tungsten_log': f'Turning tungsten lamp off'})
 
-    tungsten_nCommand = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.nCommand")
-    tungsten_bExecute = beck.get_node("ns=4; s=MAIN.Tungsten.ctrl.bExecute")
+    tungsten_nCommand = beck.get_node(
+        f'{config.PLC.Node.TUNGSTEN}.ctrl.nCommand')
+    tungsten_bExecute = beck.get_node(
+        f'{config.PLC.Node.TUNGSTEN}.ctrl.bExecute')
 
     tungsten_nCommand.set_attribute(
         ua.AttributeIds.Value,
@@ -102,19 +104,19 @@ def init(beck=None):
 
     # Check if init, if not do init
     if not beck.get_node(
-            "ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
+            f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():
         send_command(TungstenCommand.INIT, beck=beck)
 
         sleep(15)
-        while (beck.get_node("ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
-               == 'INITIALISING'):
+        while (beck.get_node(f'{config.PLC.Node.TUNGSTEN}.stat.sStatus').
+               get_value() == 'INITIALISING'):
             sleep(15)
 
         if not beck.get_node(
-                "ns=4; s=MAIN.Tungsten.stat.bInitialised").get_value():
+                f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():
             tungsten_status = '[ERROR] ' + str(
                 beck.get_node(
-                    "ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value())
+                    f'{config.PLC.Node.TUNGSTEN}.stat.nErrorCode').get_value())
         else:
             tungsten_status = 0
     else:
@@ -131,11 +133,11 @@ def get_state(beck=None):
 
     # Check error status
     error_code = beck.get_node(
-        "ns=4; s=MAIN.Tungsten.stat.nErrorCode").get_value()
+        f'{config.PLC.Node.TUNGSTEN}.stat.nErrorCode').get_value()
 
     if error_code != 0:
         error_text = beck.get_node(
-            "ns=4; s=MAIN.Tungsten.stat.sErrorText").get_value()
+            f'{config.PLC.Node.TUNGSTEN}.stat.sErrorText').get_value()
 
         database.store('obs', {
             'tungsten_log': f'[ERROR] {error_text} ({error_code})'
@@ -145,7 +147,7 @@ def get_state(beck=None):
 
     else:
         state_plc = beck.get_node(
-            "ns=4; s=MAIN.Tungsten.stat.sStatus").get_value()
+            f'{config.PLC.Node.TUNGSTEN}.stat.sStatus').get_value()
 
         if state_plc == 'OFF':
             state = TungstenState.OFF

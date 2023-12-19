@@ -83,6 +83,7 @@ class T120ServerStatus(StrEnum):
 class FlipMirrorPosition(StrEnum):
     UP = 'UP'
     DOWN = 'DOWN'
+    UNKNOWN = 'UNKNOWN'
     ERROR = 'ERROR'
 
 
@@ -104,6 +105,12 @@ class TungstenState(StrEnum):
 
 
 class LaserState(StrEnum):
+    ON = 'ON'
+    OFF = 'OFF'
+    ERROR = 'ERROR'
+
+
+class RelayState(StrEnum):
     ON = 'ON'
     OFF = 'OFF'
     ERROR = 'ERROR'

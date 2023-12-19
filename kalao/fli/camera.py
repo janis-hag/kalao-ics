@@ -32,6 +32,16 @@ fli_stream = toolbox.open_or_create_stream(config.Streams.FLI, (1024, 1024),
                                            np.uint16)
 
 
+def take_empty(filepath=None):
+    if filepath is None:
+        filepath = '/tmp/fli_empty.fits'
+
+    params = {'filepath': filepath}
+    ret, _ = _send_request('acquire', params)
+
+    return ret
+
+
 def take_frame(dit, filepath=None, nbflushes=None, update_stream=True):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
@@ -258,11 +268,15 @@ def _send_request(request_type, params={}):
             increment_image_counter()
 
         url = f'http://{config.FLI.ip}:{config.FLI.port}/{request_type}'
-        if params == {}:
-            req = requests.get(url, timeout=config.FLI.request_timeout)
-        else:
-            req = requests.post(url, json=params,
-                                timeout=config.FLI.request_timeout)
+
+        try:
+            if params == {}:
+                req = requests.get(url, timeout=config.FLI.request_timeout)
+            else:
+                req = requests.post(url, json=params,
+                                    timeout=config.FLI.request_timeout)
+        except requests.exceptions.ConnectionError:
+            return ReturnCode.CAMERA_SERVER_DOWN, None
 
         try:
             data = json.loads(req.text)

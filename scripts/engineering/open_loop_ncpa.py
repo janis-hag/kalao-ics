@@ -234,7 +234,7 @@ def run(args):
     print(TC.CLEAR)
     print(TC.CLEAR)
 
-    laser.set_intensity(config.WFS.laser_calib_intensity)
+    laser.set_power(config.WFS.laser_calib_power)
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
 
     time.sleep(10)
@@ -291,9 +291,9 @@ if __name__ == '__main__':
     parser.add_argument('--min_incr', action="store", dest="min_incr",
                         default=0.0001, type=float,
                         help='Minimum increment for convergence')
-    parser.add_argument('-', action="store", dest="laser_int",
-                        default=config.FLI.laser_calib_intensity, type=float,
-                        help='Laser intensity')
+    parser.add_argument('-', action="store", dest="laser_power",
+                        default=config.FLI.laser_calib_power, type=float,
+                        help='Laser power')
     parser.add_argument('--img_avg', action="store", dest="img_avg", default=5,
                         type=int, help='Averaging over images')
     parser.add_argument('--window', action="store", dest="peak_window",
@@ -327,7 +327,7 @@ if __name__ == '__main__':
         )
         exit(-1)
 
-    laser.set_intensity(args.laser_int)
+    laser.set_power(args.laser_power)
 
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)

@@ -12,7 +12,9 @@ from kalao.utils import zernike
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
-from kalao.definitions.enums import IPPowerStatus, LogType
+from kalao.definitions.enums import (FlipMirrorPosition, IPPowerStatus,
+                                     LaserState, LogType, PLCStatus,
+                                     RelayState, ShutterState, TungstenState)
 
 import config
 
@@ -77,20 +79,39 @@ class MainBackend(FakeSHMFPSBackend):
     def __init__(self):
         super().__init__()
 
-        self.base = {}
+        self.internal_state = {}
 
         for i in range(12):
-            self.base[f'dm01disp{i:02d}'] = zernike.generate_pattern([0],
-                                                                     (12, 12))
+            self.internal_state[f'dm01disp{i:02d}'] = zernike.generate_pattern(
+                [0], (12, 12))
 
         for i in range(12):
-            self.base[f'dm02disp{i:02d}'] = np.zeros((2, ))
+            self.internal_state[f'dm02disp{i:02d}'] = np.zeros((2, ))
 
-        self.base['dm-loopON'] = True
-        self.base['dm-loopgain'] = 0.9
-
-        self.base['ttm-loopON'] = True
-        self.base['ttm-loopgain'] = 0
+        self.internal_state.update({
+            'dm-loopON': True,
+            'dm-loopgain': 0.9,
+            'ttm-loopON': True,
+            'ttm-loopgain': 0,
+            'shutter_state': ShutterState.OPEN,
+            'flip_mirror_position': FlipMirrorPosition.DOWN,
+            'calib_unit_position': 24,
+            'calib_unit_state': PLCStatus.STANDING,
+            'laser_state': LaserState.OFF,
+            'laser_power': 0,
+            'tungsten_state': TungstenState.OFF,
+            'adc1_angle': 45,
+            'adc1_state': PLCStatus.STANDING,
+            'adc2_angle': -45,
+            'adc2_state': PLCStatus.STANDING,
+            'filterwheel_filter_position': 4,
+            'filterwheel_filter_name': 'z',
+            'remaining_time': 0,
+            'exposure_time': 60,
+            'ippower_rtc_status': IPPowerStatus.ON,
+            'ippower_bench_status': IPPowerStatus.ON,
+            'ippower_dm_status': IPPowerStatus.OFF,
+        })
 
         self.internal_timer = QTimer()
         self.internal_timer.setInterval(100)
@@ -100,13 +121,13 @@ class MainBackend(FakeSHMFPSBackend):
     def _get_dm01disp(self):
         dm01disp = zernike.generate_pattern([0], (12, 12))
         for i in range(12):
-            dm01disp += self.base[f'dm01disp{i:02d}']
+            dm01disp += self.internal_state[f'dm01disp{i:02d}']
         return dm01disp
 
     def _get_dm02disp(self):
         dm02disp = np.zeros((2, ))
         for i in range(12):
-            dm02disp += self.base[f'dm02disp{i:02d}']
+            dm02disp += self.internal_state[f'dm02disp{i:02d}']
         return dm02disp
 
     def _internal_update(self):
@@ -114,24 +135,42 @@ class MainBackend(FakeSHMFPSBackend):
             self._update_stream_cnt(self.data, config.Streams.FLI)
             self.last_fli_update = time.monotonic()
 
-        if self.base['dm-loopON']:
-            self.base[config.Streams.DM_TURBULENCES] = fake_data.dmdisp()
-            self.base[config.Streams.
-                      DM_LOOP] = -self.base['dm-loopgain'] * self.base[
-                          config.Streams.DM_TURBULENCES]
+        if self.internal_state['dm-loopON']:
+            self.internal_state[
+                config.Streams.DM_TURBULENCES] = fake_data.dmdisp()
+            self.internal_state[config.Streams.DM_LOOP] = -self.internal_state[
+                'dm-loopgain'] * self.internal_state[
+                    config.Streams.DM_TURBULENCES]
 
-        if self.base['ttm-loopON']:
-            self.base[config.Streams.TTM_CENTERING] = fake_data.tiptilt(
-                seed=self.base[config.Streams.TTM_CENTERING])
-            self.base[config.Streams.
-                      TTM_LOOP] = -self.base['ttm-loopgain'] * self.base[
-                          config.Streams.TTM_CENTERING]
+        if self.internal_state['ttm-loopON']:
+            self.internal_state[
+                config.Streams.TTM_CENTERING] = fake_data.tiptilt(
+                    seed=self.internal_state[config.Streams.TTM_CENTERING])
+            self.internal_state[
+                config.Streams.TTM_LOOP] = -self.internal_state[
+                    'ttm-loopgain'] * self.internal_state[
+                        config.Streams.TTM_CENTERING]
 
     @emit('streams_updated')
     @timeit
     def get_streams_all(self):
-        nuvu_data = fake_data.nuvu_frame(dmdisp=self._get_dm01disp(),
-                                         tiptilt=self._get_dm02disp())
+        if self.internal_state['flip_mirror_position'] == FlipMirrorPosition.UP:
+            illumination = 'laser'
+            if self.internal_state['laser_state'] == LaserState.OFF:
+                flux = 0
+            else:
+                flux = self.internal_state['laser_power'] / 8 * 2**16
+        else:
+            illumination = 'telescope'
+            if self.internal_state['shutter_state'] == ShutterState.OPEN:
+                flux = 5000
+            else:
+                flux = 0
+
+        nuvu_data = fake_data.nuvu_frame(flux=flux,
+                                         dmdisp=self._get_dm01disp(),
+                                         tiptilt=self._get_dm02disp(),
+                                         illumination=illumination)
         slopes_data = fake_data.slopes(nuvu_data)
         flux_data = fake_data.flux(nuvu_data)
 
@@ -165,8 +204,22 @@ class MainBackend(FakeSHMFPSBackend):
     @emit('fli_updated')
     @timeit
     def get_streams_fli(self):
+        if self.internal_state['flip_mirror_position'] == FlipMirrorPosition.UP:
+            illumination = 'laser'
+            if self.internal_state['laser_state'] == LaserState.OFF:
+                flux = 0
+            else:
+                flux = self.internal_state['laser_power'] / 8 * 2**16
+        else:
+            illumination = 'telescope'
+            if self.internal_state['shutter_state'] == ShutterState.OPEN:
+                flux = 5000
+            else:
+                flux = 0
+
         fli_data = fake_data.fli_frame(dmdisp=self._get_dm01disp(),
-                                       tiptilt=self._get_dm02disp())
+                                       tiptilt=self._get_dm02disp(),
+                                       illumination=illumination)
 
         self._update_stream(self.fli, config.Streams.FLI, fli_data)
 
@@ -202,40 +255,65 @@ class MainBackend(FakeSHMFPSBackend):
         self._update_param(self.data, config.FPS.NUVU, 'autogain_on', True)
 
         self._update_param(self.data, 'mfilt-1', 'loopON',
-                           self.base['dm-loopON'])
+                           self.internal_state['dm-loopON'])
         self._update_param(self.data, 'mfilt-1', 'loopgain',
-                           self.base['dm-loopgain'])
+                           self.internal_state['dm-loopgain'])
         self._update_param(self.data, 'mfilt-1', 'loopmult', 0.99)
         self._update_param(self.data, 'mfilt-1', 'looplimit', 1)
 
         self._update_param(self.data, 'mfilt-2', 'loopON',
-                           self.base['ttm-loopON'])
+                           self.internal_state['ttm-loopON'])
         self._update_param(self.data, 'mfilt-2', 'loopgain',
-                           self.base['ttm-loopgain'])
+                           self.internal_state['ttm-loopgain'])
         self._update_param(self.data, 'mfilt-2', 'loopmult', 0.99)
         self._update_param(self.data, 'mfilt-2', 'looplimit', 1)
 
         self._update_dict(
             self.data, 'plc', {
-                'shutter_state': 'CLOSED',
-                'flip_mirror_position': 'DOWN',
-                'calib_unit_position': 23.56,
-                'laser_state': 'ON',
-                'laser_power': 4.5,
-                'tungsten_state': 'OFF',
-                'adc1_angle': 135,
-                'adc2_angle': 45,
-                'filterwheel_filter_position': 4,
-                'filterwheel_filter_name': 'z',
-                'temp_bench_air': 18.2,
-                'temp_bench_board': 18.1,
-                'temp_water_in': 13,
-                'temp_water_out': 15,
-                'pump_status': 'ON',
-                'pump_temp': 35,
-                'heater_status': 'OFF',
-                'fan_status': 'ON',
-                'flow_value': 2.5
+                'shutter_state':
+                    self.internal_state['shutter_state'],
+                'flip_mirror_position':
+                    self.internal_state['flip_mirror_position'],
+                'calib_unit_position':
+                    self.internal_state['calib_unit_position'],
+                'calib_unit_state':
+                    self.internal_state['calib_unit_state'],
+                'laser_state':
+                    self.internal_state['laser_state'],
+                'laser_power':
+                    self.internal_state['laser_power'],
+                'tungsten_state':
+                    self.internal_state['tungsten_state'],
+                'adc1_angle':
+                    self.internal_state['adc1_angle'],
+                'adc1_state':
+                    self.internal_state['adc1_state'],
+                'adc2_angle':
+                    self.internal_state['adc2_angle'],
+                'adc2_state':
+                    self.internal_state['adc2_state'],
+                'filterwheel_filter_position':
+                    self.internal_state['filterwheel_filter_position'],
+                'filterwheel_filter_name':
+                    self.internal_state['filterwheel_filter_name'],
+                'temp_bench_air':
+                    18.2,
+                'temp_bench_board':
+                    18.1,
+                'temp_water_in':
+                    13,
+                'temp_water_out':
+                    15,
+                'pump_status':
+                    RelayState.ON,
+                'pump_temp':
+                    35,
+                'heater_status':
+                    RelayState.OFF,
+                'fan_status':
+                    RelayState.ON,
+                'flow_value':
+                    2.5
             })
 
         self._update_dict(
@@ -264,17 +342,20 @@ class MainBackend(FakeSHMFPSBackend):
 
         self._update_dict(
             self.data, 'fli', {
-                'remaining_time': 0,
-                'exposure_time': 60.,
+                'remaining_time': self.internal_state['remaining_time'],
+                'exposure_time': self.internal_state['exposure_time'],
                 'heatsink': 15.5,
                 'ccd': -30
             })
 
         self._update_dict(
             self.data, 'ippower', {
-                'ippower_rtc_status': IPPowerStatus.ON,
-                'ippower_bench_status': IPPowerStatus.OFF,
-                'ippower_dm_status': IPPowerStatus.ERROR,
+                'ippower_rtc_status':
+                    self.internal_state['ippower_rtc_status'],
+                'ippower_bench_status':
+                    self.internal_state['ippower_bench_status'],
+                'ippower_dm_status':
+                    self.internal_state['ippower_dm_status'],
             })
 
         self._update_db(
@@ -309,7 +390,7 @@ class MainBackend(FakeSHMFPSBackend):
             for i in range(0, 12):
                 self._update_stream(self.dmdisp[dm_number],
                                     f'dm{dm_number:02d}disp{i:02d}',
-                                    self.base[f'dm01disp{i:02d}'])
+                                    self.internal_state[f'dm01disp{i:02d}'])
         else:
             self._update_stream(self.dmdisp[dm_number], f'dm02disp',
                                 self._get_dm02disp())
@@ -317,7 +398,7 @@ class MainBackend(FakeSHMFPSBackend):
             for i in range(0, 12):
                 self._update_stream(self.dmdisp[dm_number],
                                     f'dm{dm_number:02d}disp{i:02d}',
-                                    self.base[f'dm02disp{i:02d}'])
+                                    self.internal_state[f'dm02disp{i:02d}'])
 
         return self.dmdisp[dm_number]
 
@@ -465,11 +546,11 @@ class MainBackend(FakeSHMFPSBackend):
     # DM Loop
 
     def set_dm_loop_on(self, state):
-        self.base['dm-loopON'] = state
+        self.internal_state['dm-loopON'] = state
         print(f'Set DM loop to {state} (virtually)')
 
     def set_dm_loop_gain(self, gain):
-        self.base['dm-loopgain'] = gain
+        self.internal_state['dm-loopgain'] = gain
         print(f'Set DM gain to {gain} (virtually)')
 
     def set_dm_loop_mult(self, mult):
@@ -481,11 +562,11 @@ class MainBackend(FakeSHMFPSBackend):
     # TTM Loop
 
     def set_ttm_loop_on(self, state):
-        self.base['ttm-loopON'] = state
+        self.internal_state['ttm-loopON'] = state
         print(f'Set TTM loop to {state} (virtually)')
 
     def set_ttm_loop_gain(self, gain):
-        self.base['ttm-loopgain'] = gain
+        self.internal_state['ttm-loopgain'] = gain
         print(f'Set TTM gain to {gain} (virtually)')
 
     def set_ttm_loop_mult(self, mult):
@@ -497,54 +578,140 @@ class MainBackend(FakeSHMFPSBackend):
     ##### Engineering
 
     def set_plc_shutter_state(self, state):
+        self.internal_state['shutter_state'] = ShutterState(state)
         print(f'Set Shutter state to {state} (virtually)')
 
     def set_plc_flipmirror_position(self, position):
+        self.internal_state['flip_mirror_position'] = FlipMirrorPosition(
+            position)
         print(f'Set Flip Mirror position to {position} (virtually)')
 
     def set_plc_calibunit_position(self, position):
+        self.internal_state['calib_unit_state'] = PLCStatus.MOVING
+
+        if position - self.internal_state['calib_unit_position'] > 0:
+            while self.internal_state['calib_unit_position'] < position:
+                time.sleep(1)
+                self.internal_state[
+                    'calib_unit_position'] += config.CalibUnit.velocity
+
+            self.internal_state['calib_unit_state'] = PLCStatus.STANDING
+            self.internal_state['calib_unit_position'] = position
+        else:
+            while self.internal_state['calib_unit_position'] > position:
+                time.sleep(1)
+                self.internal_state[
+                    'calib_unit_position'] -= config.CalibUnit.velocity
+
+            self.internal_state['calib_unit_state'] = PLCStatus.STANDING
+            self.internal_state['calib_unit_position'] = position
+
         print(f'Set Calibration Unit position to {position} (virtually)')
 
     def set_plc_tungsten_state(self, state):
+        if state:
+            self.internal_state['tungsten_state'] = TungstenState.ON
+        else:
+            self.internal_state['tungsten_state'] = TungstenState.OFF
         print(f'Set Tungsten state to {state} (virtually)')
 
     def set_plc_laser_state(self, state):
+        if state:
+            self.internal_state['laser_state'] = LaserState.ON
+        else:
+            self.internal_state['laser_state'] = LaserState.OFF
         print(f'Set Laser state to {state} (virtually)')
 
-    def set_plc_laser_intensity(self, intensity):
-        print(f'Set Laser intensity to {intensity} (virtually)')
+    def set_plc_laser_power(self, power):
+        self.internal_state['laser_power'] = power
+        print(f'Set Laser power to {power} (virtually)')
 
     def set_plc_filterwheel_filter(self, filter):
+        self.internal_state['filterwheel_filter_position'] = 0  #TODO
+        self.internal_state['filterwheel_filter_name'] = filter
         print(f'Set Filter Wheel filter to {filter} (virtually)')
 
-    def set_plc_adc_1_position(self, position):
+    def set_plc_adc_1_angle(self, position):
+        self.internal_state['adc1_state'] = PLCStatus.MOVING
+
+        if position - self.internal_state['adc1_angle'] > 0:
+            while self.internal_state['adc1_angle'] < position:
+                time.sleep(1)
+                self.internal_state['adc1_angle'] += config.ADC.velocity
+
+            self.internal_state['adc1_state'] = PLCStatus.STANDING
+            self.internal_state['adc1_angle'] = position
+        else:
+            while self.internal_state['adc1_angle'] > position:
+                time.sleep(1)
+                self.internal_state['adc1_angle'] -= config.ADC.velocity
+
+            self.internal_state['adc1_state'] = PLCStatus.STANDING
+            self.internal_state['adc1_angle'] = position
+
         print(f'Set ADC1 position to {position} (virtually)')
 
-    def set_plc_adc_2_position(self, position):
+    def set_plc_adc_2_angle(self, position):
+        self.internal_state['adc2_state'] = PLCStatus.MOVING
+
+        if position - self.internal_state['adc2_angle'] > 0:
+            while self.internal_state['adc2_angle'] < position:
+                time.sleep(1)
+                self.internal_state['adc2_angle'] += config.ADC.velocity
+
+            self.internal_state['adc2_state'] = PLCStatus.STANDING
+            self.internal_state['adc2_angle'] = position
+        else:
+            while self.internal_state['adc2_angle'] > position:
+                time.sleep(1)
+                self.internal_state['adc2_angle'] -= config.ADC.velocity
+
+            self.internal_state['adc2_state'] = PLCStatus.STANDING
+            self.internal_state['adc2_angle'] = position
+
         print(f'Set ADC2 position to {position} (virtually)')
 
     def set_fli_image(self, exposure_time):
         print(f'Started FLI exposure of {exposure_time} (virtually)')
 
+        self.internal_state['remaining_time'] = exposure_time
+        self.internal_state['remaining_time'] = exposure_time
+
+        while self.internal_state['remaining_time'] > 0:
+            time.sleep(1)
+            if self.internal_state['remaining_time'] > 0:
+                self.internal_state['remaining_time'] -= 1
+
+        if self.internal_state['remaining_time'] < 0:
+            self.internal_state['remaining_time'] = 0
+
     def get_fli_cancel(self):
+        self.internal_state['remaining_time'] = 0
+
         print(f'Canceled FLI exposure (virtually)')
 
     def get_ippower_rtc_on(self):
+        self.internal_state['ippower_rtc_status'] = IPPowerStatus.ON
         print(f'Powering on RTC (virtually)')
 
     def get_ippower_rtc_off(self):
+        self.internal_state['ippower_rtc_status'] = IPPowerStatus.OFF
         print(f'Powering off RTC (virtually)')
 
     def get_ippower_bench_on(self):
+        self.internal_state['ippower_bench_status'] = IPPowerStatus.ON
         print(f'Powering on Bench (virtually)')
 
     def get_ippower_bench_off(self):
+        self.internal_state['ippower_bench_status'] = IPPowerStatus.OFF
         print(f'Powering off Bench (virtually)')
 
     def get_ippower_dm_on(self):
+        self.internal_state['ippower_dm_status'] = IPPowerStatus.ON
         print(f'Powering on DM (virtually)')
 
     def get_ippower_dm_off(self):
+        self.internal_state['ippower_dm_status'] = IPPowerStatus.OFF
         print(f'Powering off DM (virtually)')
 
     def get_centering_star(self):
@@ -561,33 +728,33 @@ class MainBackend(FakeSHMFPSBackend):
     def reset_dm(self, dm_number):
         if dm_number == 1:
             for i in range(12):
-                self.base[f'dm01disp{i:02d}'] = zernike.generate_pattern([0],
-                                                                         (12,
-                                                                          12))
+                self.internal_state[
+                    f'dm01disp{i:02d}'] = zernike.generate_pattern([0],
+                                                                   (12, 12))
         else:
             for i in range(12):
-                self.base[f'dm02disp{i:02d}'] = np.zeros((2, ))
+                self.internal_state[f'dm02disp{i:02d}'] = np.zeros((2, ))
 
         print(f'Resetted DM {dm_number} (virtually)')
 
     def reset_channel(self, dm_number, channel):
         if dm_number == 1:
-            self.base[f'dm01disp{channel:02d}'] = zernike.generate_pattern([
-                0
-            ], (12, 12))
+            self.internal_state[
+                f'dm01disp{channel:02d}'] = zernike.generate_pattern([0],
+                                                                     (12, 12))
         else:
-            self.base[f'dm02disp{channel:02d}'] = np.zeros((2, ))
+            self.internal_state[f'dm02disp{channel:02d}'] = np.zeros((2, ))
 
         print(f'Resetted channel {channel} of DM {dm_number} (virtually)')
 
     ##### DM & TTM control
 
     def set_dm_to(self, array):
-        self.base[config.Streams.DM_USER_CONTROLLED] = array
+        self.internal_state[config.Streams.DM_USER_CONTROLLED] = array
         print(f'Set DM to {array} (virtually)')
 
     def set_ttm_to(self, array):
-        self.base[config.Streams.TTM_USER_CONTROLLED] = array
+        self.internal_state[config.Streams.TTM_USER_CONTROLLED] = array
         print(f'Set TTM to {array} (virtually)')
 
     ##### Logs

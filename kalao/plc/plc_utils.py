@@ -4,6 +4,8 @@ from kalao.utils import database
 
 from kalao.definitions.enums import LaserState, TungstenState
 
+import config
+
 
 def lamps_off():
     """
@@ -46,11 +48,14 @@ def get_all_status(beck=None):
         'shutter_state': shutter.get_state(beck=beck),
         'flip_mirror_position': flip_mirror.get_position(beck=beck),
         'calib_unit_position': calib_unit.get_position(beck=beck),
+        'calib_unit_state': calib_unit.get_state(beck=beck),
         'laser_state': laser.get_state(beck=beck),
         'laser_power': laser.get_power(beck=beck),
         'tungsten_state': tungsten.get_state(beck=beck),
-        'adc1_angle': adc.get_position(1, beck=beck),
-        'adc2_angle': adc.get_position(2, beck=beck),
+        'adc1_angle': adc.get_position(config.PLC.Node.ADC1, beck=beck),
+        'adc1_state': adc.get_state(config.PLC.Node.ADC1, beck=beck),
+        'adc2_angle': adc.get_position(config.PLC.Node.ADC2, beck=beck),
+        'adc2_state': adc.get_state(config.PLC.Node.ADC1, beck=beck),
         'filterwheel_filter_position': filterwheel.get_filter(type=int),
         'filterwheel_filter_name': filterwheel.get_filter(type=str),
         'temp_bench_air': temps['temp_bench_air'],

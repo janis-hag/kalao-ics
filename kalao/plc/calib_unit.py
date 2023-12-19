@@ -16,8 +16,6 @@ from kalao.utils import database
 
 import config
 
-# TODO store errors in obs
-
 
 def move_to_tungsten_position():
     """
@@ -113,8 +111,8 @@ def move(position, velocity=config.CalibUnit.velocity, wait=True, beck=None):
                 f'Moving calibration unit to position {position}mm at {velocity}mm/s'
         })
 
-    new_position = core.motor_move('Linear_Standa_8MT', position, velocity,
-                                   wait, beck=beck)
+    new_position = core.motor_move(config.PLC.Node.CALIB_UNIT, position,
+                                   velocity, wait, beck=beck)
 
     if wait:
         database.store(
@@ -135,10 +133,11 @@ def wait_move(beck=None):
 
 
 def get_position(beck=None):
-    position = core.motor_get_position('Linear_Standa_8MT', beck=beck)
+    position = core.motor_get_position(config.PLC.Node.CALIB_UNIT, beck=beck)
 
     if np.isnan(position):
-        error_code, error_text = core.get_error('Linear_Standa_8MT', beck=beck)
+        error_code, error_text = core.get_error(config.PLC.Node.CALIB_UNIT,
+                                                beck=beck)
         database.store('obs', {
             'calib_unit_log': f'[ERROR] {error_text} ({error_code})'
         })
@@ -147,7 +146,7 @@ def get_position(beck=None):
 
 
 def is_moving(beck=None):
-    return core.motor_is_moving('Linear_Standa_8MT', beck=beck)
+    return core.motor_is_moving(config.PLC.Node.CALIB_UNIT, beck=beck)
 
 
 @core.beckhoff_autoconnect
@@ -158,13 +157,14 @@ def init(force_init=True, beck=None):
 
     database.store('obs', {'calib_unit_log': 'Initialising calibration unit'})
 
-    ret_init = core.motor_init('Linear_Standa_8MT', force_init, beck=beck)
+    ret_init = core.motor_init(config.PLC.Node.CALIB_UNIT, force_init,
+                               beck=beck)
 
-    if 'calib_unit' in config.PLC.initial_pos:
-        move(config.PLC.initial_pos['calib_unit'], beck=beck)
+    if config.PLC.Node.CALIB_UNIT in config.PLC.initial_pos:
+        move(config.PLC.initial_pos[config.PLC.Node.CALIB_UNIT], beck=beck)
 
     return ret_init
 
 
-def get_plc_status(beck=None):
-    return core.motor_get_status(beck=beck)
+def get_state(beck=None):
+    return core.motor_get_status(config.PLC.Node.CALIB_UNIT, beck=beck)

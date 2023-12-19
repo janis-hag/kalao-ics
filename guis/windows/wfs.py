@@ -77,7 +77,8 @@ class WFSWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.wfs_view.updateColormap(colormaps.GrayscaleSaturationTransparent())
+            self.wfs_view.updateColormap(
+                colormaps.GrayscaleSaturationTransparent())
         else:
             self.wfs_view.updateColormap(colormaps.BlackBody())
 

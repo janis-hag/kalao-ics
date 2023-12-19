@@ -144,8 +144,13 @@ def tiptilt(nb_points = 1, seed=np.zeros((2,)), sigma = 0.01, leak=0.01):
         return tiptilt
 
 
-def nuvu_frame(bias = 2000, readoutnoise = 20, flux = 5000, tiptilt=np.zeros((2,)), dmdisp=zernike.generate_pattern([0], (12,12)), upsampling=4):
+def nuvu_frame(bias = 2000, readoutnoise = 20, flux = 5000, tiptilt=np.zeros((2,)), dmdisp=zernike.generate_pattern([0], (12,12)), illumination='telescope', upsampling=4):
     frame = np.zeros((64*upsampling, 64*upsampling), dtype=np.float32)
+
+    if illumination == 'telescope':
+        flux_map = kalao_tools.get_wfs_flux_map()
+    else:
+        flux_map = kalao_tools.get_wfs_flux_map(radius_in_factor=0)
 
     ttm_tip_px = tiptilt[0] * config.TTM.plate_scale / config.WFS.plate_scale
     ttm_tilt_px = tiptilt[1] * config.TTM.plate_scale / config.WFS.plate_scale
@@ -165,11 +170,11 @@ def nuvu_frame(bias = 2000, readoutnoise = 20, flux = 5000, tiptilt=np.zeros((2,
     # yapf: disable
     for i in range(11):
         for j in range(11):
-            if config.AO.flux_map[i,j] < 1e-2:
+            if flux_map[i,j] < 1e-2:
                 continue
 
-            tilt_dm_px = slopes_px[j, i]
-            tip_dm_px = slopes_px[j, i+11]
+            tilt_dm_px = slopes_px.data[j, i]
+            tip_dm_px = slopes_px.data[j, i+11]
 
             psf_y = (5*j + 7 + ttm_tilt_px + tilt_dm_px) * upsampling
             psf_x = (5*i + 7 + ttm_tip_px + tip_dm_px) * upsampling
@@ -183,7 +188,7 @@ def nuvu_frame(bias = 2000, readoutnoise = 20, flux = 5000, tiptilt=np.zeros((2,
             mu_y = hwindow + psf_y_f - 0.5
             mu_x = hwindow + psf_x_f - 0.5
 
-            A = intensity * config.AO.flux_map[i,j]
+            A = intensity * flux_map[i,j]
 
             frame[psf_y_i-hwindow:psf_y_i+hwindow, psf_x_i-hwindow:psf_x_i+hwindow] += kalao_math.gaussian_2d_rotated(y, x, mu_y, mu_x, sigma, sigma, 0, A, 0)
 
@@ -214,7 +219,7 @@ def slopes(nuvu_fr = None):
 
     mask = kalao_tools.generate_slopes_mask_from_subaps(config.AO.masked_subaps)
 
-    return np.ma.masked_array(slopes, mask=mask, fill_value=0)
+    return np.ma.masked_array(slopes, mask=mask, fill_value=0).filled()
 
 
 def flux(nuvu_fr = None):
@@ -232,7 +237,7 @@ def flux(nuvu_fr = None):
 
     mask = kalao_tools.generate_flux_mask_from_subaps(config.AO.masked_subaps)
 
-    return np.ma.masked_array(flux, mask=mask, fill_value=0)
+    return np.ma.masked_array(flux, mask=mask, fill_value=0).filled()
 
 
 def dmdisp(zernike_coeffs = None, orders = 15):
@@ -243,7 +248,7 @@ def dmdisp(zernike_coeffs = None, orders = 15):
     return zernike.generate_pattern(zernike_coeffs, (12,12))
 
 
-def fli_frame(bias = 1070, readoutnoise = 7, psf_x = config.FLI.center_x, psf_y = config.FLI.center_y, intensity = 2**15, tiptilt=np.zeros((2,)), dmdisp=np.zeros((12,12)), upsampling = 1):
+def fli_frame(bias = 1070, readoutnoise = 7, psf_x = config.FLI.center_x, psf_y = config.FLI.center_y, intensity = 2**15, tiptilt=np.zeros((2,)), dmdisp=np.zeros((12,12)), illumination = 'telescope'):
     frame = np.zeros((1024, 1024))
 
     ttm_tip_px = tiptilt[0] * config.TTM.plate_scale / config.FLI.plate_scale
@@ -268,7 +273,11 @@ def fli_frame(bias = 1070, readoutnoise = 7, psf_x = config.FLI.center_x, psf_y 
     upsampling = 3
     hwindow = 2 ** 5
 
-    flux = kalao_tools.get_dm_flux_map(upsampled=upsampling)
+    if illumination == 'telescope':
+        flux = kalao_tools.get_dm_flux_map(upsampled=upsampling)
+    else:
+        flux = kalao_tools.get_dm_flux_map(upsampled=upsampling, radius_in_factor=0)
+
     flux /= np.sum(flux)
 
     phase = 2 * np.pi * (dmdisp * 2) / 0.635

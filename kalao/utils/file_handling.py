@@ -182,7 +182,7 @@ def update_header(image_path, sequencer_arguments=None):
             header_telescope = None
 
         header_df = pd.concat([
-            _header_from_fits(image_path),
+            _header_from_fits(image_path, fits_header),
             header_base,
             header_obs,
             _header_from_db('monitoring', dt),
@@ -253,14 +253,17 @@ def _header_empty():
     return header_df
 
 
-def _header_from_fits(file):
+def _header_from_fits(file, fits_header=None):
     '''
     Reads a fits header and reformats it into a dataframe
 
     :param header:
     :return: header dataframe
     '''
-    fits_header = fits.getheader(file)
+
+    if fits_header is None:
+        fits_header = fits.getheader(file)
+
     header_dict = {}
 
     for keyword in fits_header.keys():

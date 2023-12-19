@@ -145,7 +145,8 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.fli_view.updateColormap(colormaps.GrayscaleSaturationTransparent())
+            self.fli_view.updateColormap(
+                colormaps.GrayscaleSaturationTransparent())
         else:
             self.fli_view.updateColormap(colormaps.BlackBody())
 

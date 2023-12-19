@@ -26,9 +26,9 @@ from numpy.polynomial import Polynomial
 
 from kalao.utils import kalao_tools
 
-from kalao.definitions.enums import StrEnum, TrackingStatus
+from kalao.definitions.enums import TrackingStatus
 
-kalao_path = Path(__file__).absolute().parent
+kalao_ics_path = Path(__file__).absolute().parent
 epsilon = 1e-12
 
 
@@ -134,7 +134,7 @@ class FLI:
     dummy_camera = False
     dummy_image_path = "/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits"
 
-    laser_calib_intensity = 0.35  # mW
+    laser_calib_power = 0.35  # mW
     laser_calib_dit = 0.01  # s
     laser_calib_filter = 'nd'
 
@@ -147,7 +147,7 @@ class WFS:
     # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
     plate_scale = 1.16  # arcsec / px
 
-    laser_calib_intensity = 8  # mW
+    laser_calib_power = 8  # mW
     laser_calib_exptime = 1.5  # ms
 
 
@@ -216,7 +216,7 @@ class FilterWheel:
 
 
 class Laser:
-    max_intensity = 8  # mW
+    max_power = 8  # mW
     switch_wait = 5  # s
     position = 24.12  # mm
 
@@ -240,17 +240,38 @@ class PLC:
     port = 4840
     disabled = []
 
-    initial_pos = {
-        'calib_unit': Laser.position,
-        'adc_1': ADC.max_disp_angle_1 + 90,  # Zero dispersion
-        'adc_2': ADC.max_disp_angle_2 + 90,  # Zero dispersion
-    }
-
     # Calibration of the temperature sensors
     temp_bench_air_offset = -4.5  # °C, 19 - 23.5
     temp_bench_board_offset = -6.1  # °C, 19 - 25.1
     temp_water_in_offset = -3.6  # °C, 19 - 22.7
     temp_water_out_offset = -1.7  # °C, 19 - 20.3
+
+    class Node:
+        ADC1 = 'ns=4;s=MAIN.ADC1_Newport_PR50PP.motor'
+        ADC2 = 'ns=4;s=MAIN.ADC2_Newport_PR50PP.motor'
+        CALIB_UNIT = 'ns=4;s=MAIN.Linear_Standa_8MT'
+        FLIP_MIRROR = 'ns=4;s=MAIN.Flip'
+        SHUTTER = 'ns=4;s=MAIN.Shutter'
+        TUNGSTEN = 'ns=4;s=MAIN.Tungsten'
+        LASER = 'ns=4;s=MAIN.Laser'
+
+        PUMP = 'ns=4;s=MAIN.bRelayPump'
+        FAN = 'ns=4;s=MAIN.bRelayFan'
+        HEATER = 'ns=4;s=MAIN.bWaterHeater'
+        FLOWMETER = 'ns=4;s=MAIN.iFlowmeter'
+        HYGROMETER = 'ns=4;s=MAIN.iHygrometer'
+
+        TEMP_BENCH_AIR = 'ns=4;s=MAIN.Temp_Bench_Air'
+        TEMP_BENCH_BOARD = 'ns=4;s=MAIN.Temp_Bench_Board'
+        TEMP_WATER_IN = 'ns=4;s=MAIN.Temp_Water_In'
+        TEMP_WATER_OUT = 'ns=4;s=MAIN.Temp_Water_Out'
+        TEMP_PUMP = 'ns=4;s=MAIN.Temp_Pump'
+
+    initial_pos = {
+        Node.CALIB_UNIT: Laser.position,
+        Node.ADC1: ADC.max_disp_angle_1 + 90,  # Zero dispersion
+        Node.ADC2: ADC.max_disp_angle_2 + 90,  # Zero dispersion
+    }
 
 
 class Calib:
@@ -266,6 +287,8 @@ class Calib:
     # yapf: enable
 
     flat_min_flux = 10000  # ADU
+
+    dark_number = 5
 
 
 class SEQ:
@@ -305,7 +328,7 @@ class FITS:
     temporary_data_storage = Path("/home/kalao/data/tmp/")
     file_mask = 0o440
 
-    fits_header_file = kalao_path / "definitions/fits_default_header.yaml"
+    fits_header_file = kalao_ics_path / "definitions/fits_default_header.yaml"
     tcs_header_validity = 3600
 
     max_comment_length = 40
@@ -601,13 +624,13 @@ class GUI:
     http_dataformat = 'pickle'
 
 
-class FPS(StrEnum):
+class FPS:
     NUVU = 'nuvu_acquire-1'
     SHWFS = 'shwfs_process-1'
     BMC = 'bmc_display-1'
 
 
-class Streams(StrEnum):
+class Streams:
     NUVU_RAW = 'nuvu_raw'
     NUVU = 'nuvu_stream'
     FLI = 'fli_stream'

@@ -11,8 +11,10 @@ from guis.windows.dm_channels import DMChannelsWindow
 from guis.windows.dm_direct_control import DMDirectControl
 from guis.windows.ttm_direct_control import TTMDirectControl
 
-from kalao.definitions.enums import (FlipMirrorPosition, IPPowerStatus,
-                                     ServiceAction, ShutterState)
+from kalao.definitions.enums import (FilterwheelStatus, FlipMirrorPosition,
+                                     IPPowerStatus, LaserState, PLCStatus,
+                                     ServiceAction, ShutterState,
+                                     TungstenState)
 
 import config
 
@@ -34,14 +36,12 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         self.resize(600, 400)
 
         with QSignalBlocker(self.shutter_combobox):
-            for state in ShutterState:
-                if state != ShutterState.ERROR:
-                    self.shutter_combobox.addItem(state, state)
+            for state in [ShutterState.CLOSED, ShutterState.OPEN]:
+                self.shutter_combobox.addItem(state, state)
 
         with QSignalBlocker(self.flipmirror_combobox):
-            for position in FlipMirrorPosition:
-                if position != FlipMirrorPosition.ERROR:
-                    self.flipmirror_combobox.addItem(position, position)
+            for position in [FlipMirrorPosition.DOWN, FlipMirrorPosition.UP]:
+                self.flipmirror_combobox.addItem(position, position)
 
         with QSignalBlocker(self.filterwheel_combobox):
             for filter in config.FilterWheel.position_list:
@@ -122,27 +122,169 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             return f'{name} ({start_str} – {end_str})'
 
     def data_updated(self, data):
-        self.data_to_widget(self.consume_dict(data, 'plc', 'shutter_state'),
-                            self.shutter_combobox)
-        self.data_to_widget(
-            self.consume_dict(data, 'plc', 'flip_mirror_position'),
-            self.flipmirror_combobox)
-        self.data_to_widget(
-            self.consume_dict(data, 'plc', 'calib_unit_position'),
-            self.calibunit_spinbox)
-        self.data_to_widget(self.consume_dict(data, 'plc', 'tungsten_state'),
-                            self.tungsten_enabled_checkbox, true_value='ON')
-        self.data_to_widget(self.consume_dict(data, 'plc', 'laser_state'),
-                            self.tungsten_enabled_checkbox, true_value='ON')
-        self.data_to_widget(self.consume_dict(data, 'plc', 'laser_power'),
-                            self.laser_intensity_spinbox)
-        self.data_to_widget(
-            self.consume_dict(data, 'plc', 'filterwheel_filter_name'),
-            self.filterwheel_combobox)
-        self.data_to_widget(self.consume_dict(data, 'plc', 'adc1_angle'),
-                            self.adc1_spinbox)
-        self.data_to_widget(self.consume_dict(data, 'plc', 'adc2_angle'),
-                            self.adc2_spinbox)
+        shutter_state = self.consume_dict(data, 'plc', 'shutter_state')
+        if shutter_state is not None:
+            with QSignalBlocker(self.shutter_combobox):
+                self.shutter_combobox.setCurrentIndex(
+                    self.shutter_combobox.findData(shutter_state))
+
+            if shutter_state == ShutterState.OPEN:
+                self.shutter_indicator.setStatus(Color.GREEN,
+                                                 shutter_state.name)
+            elif shutter_state == ShutterState.CLOSED:
+                self.shutter_indicator.setStatus(Color.BLACK,
+                                                 shutter_state.name)
+            else:  # ERROR
+                self.shutter_indicator.setStatus(Color.RED, shutter_state.name)
+
+        flip_mirror_position = self.consume_dict(data, 'plc',
+                                                 'flip_mirror_position')
+        if flip_mirror_position is not None:
+            with QSignalBlocker(self.flipmirror_combobox):
+                self.flipmirror_combobox.setCurrentIndex(
+                    self.flipmirror_combobox.findData(flip_mirror_position))
+
+            if flip_mirror_position == FlipMirrorPosition.DOWN:
+                self.flipmirror_indicator.setStatus(Color.BLACK,
+                                                    flip_mirror_position.name)
+            elif flip_mirror_position == FlipMirrorPosition.UP:
+                self.flipmirror_indicator.setStatus(Color.YELLOW,
+                                                    flip_mirror_position.name)
+            elif flip_mirror_position == FlipMirrorPosition.UNKNOWN:
+                self.flipmirror_indicator.setStatus(Color.BLUE,
+                                                    flip_mirror_position.name)
+            else:  # ERROR
+                self.flipmirror_indicator.setStatus(Color.RED,
+                                                    flip_mirror_position.name)
+
+        calib_unit_position = self.consume_dict(data, 'plc',
+                                                'calib_unit_position')
+        if calib_unit_position is not None:
+            with QSignalBlocker(self.calibunit_spinbox):
+                self.calibunit_spinbox.setValue(calib_unit_position)
+
+        calib_unit_state = self.consume_dict(data, 'plc', 'calib_unit_state')
+        if calib_unit_state is not None:
+            if calib_unit_state == PLCStatus.STANDING:
+                self.calibunit_indicator.setStatus(Color.GREEN,
+                                                   calib_unit_state.name)
+            elif calib_unit_state == PLCStatus.MOVING:
+                self.calibunit_indicator.setStatus(Color.BLUE,
+                                                   calib_unit_state.name)
+            elif calib_unit_state == PLCStatus.INITIALISING:
+                self.calibunit_indicator.setStatus(Color.ORANGE,
+                                                   calib_unit_state.name)
+            else:  # DISABLED, UNINITIALISED, ERROR, UNKNOWN
+                self.calibunit_indicator.setStatus(Color.RED,
+                                                   calib_unit_state.name)
+
+            if calib_unit_state in [PLCStatus.MOVING, PLCStatus.INITIALISING]:
+                self.calibunit_spinbox.setEnabled(False)
+            else:
+                self.calibunit_spinbox.setEnabled(True)
+
+        tungsten_state = self.consume_dict(data, 'plc', 'tungsten_state')
+        if tungsten_state is not None:
+            with QSignalBlocker(self.tungsten_state_checkbox):
+                self.tungsten_state_checkbox.setChecked(
+                    tungsten_state == TungstenState.ON)
+
+            if tungsten_state == TungstenState.ON:
+                self.tungsten_state_indicator.setStatus(
+                    Color.YELLOW, tungsten_state.name)
+            elif tungsten_state == TungstenState.OFF:
+                self.tungsten_state_indicator.setStatus(
+                    Color.BLACK, tungsten_state.name)
+            else:  # ERROR
+                self.tungsten_state_indicator.setStatus(
+                    Color.RED, tungsten_state.name)
+
+        laser_state = self.consume_dict(data, 'plc', 'laser_state')
+        if laser_state is not None:
+            with QSignalBlocker(self.laser_state_checkbox):
+                self.laser_state_checkbox.setChecked(
+                    laser_state == LaserState.ON)
+
+        laser_power = self.consume_dict(data, 'plc', 'laser_power')
+        if laser_power is not None:
+            with QSignalBlocker(self.laser_power_spinbox):
+                self.laser_power_spinbox.setValue(laser_power)
+
+        if laser_power is not None or laser_state is not None:
+            laser_state = self.consume_dict(data, 'plc', 'laser_state',
+                                            force=True)
+            laser_power = self.consume_dict(data, 'plc', 'laser_power',
+                                            force=True)
+
+            if laser_state == LaserState.ON and laser_power > 0:
+                self.laser_state_indicator.setStatus(Color.YELLOW,
+                                                     laser_state.name)
+                self.laser_power_indicator.setStatus(Color.YELLOW, laser_power)
+            elif laser_state == LaserState.OFF or laser_power == 0:
+                self.laser_state_indicator.setStatus(Color.BLACK,
+                                                     laser_state.name)
+                self.laser_power_indicator.setStatus(Color.BLACK, laser_power)
+            else:  # ERROR or < 0
+                self.laser_state_indicator.setStatus(Color.RED,
+                                                     laser_state.name)
+                self.laser_power_indicator.setStatus(Color.RED, laser_power)
+
+        filterwheel_filter_name = self.consume_dict(data, 'plc',
+                                                    'filterwheel_filter_name')
+        if filterwheel_filter_name is not None:
+            with QSignalBlocker(self.filterwheel_combobox):
+                self.filterwheel_combobox.setCurrentIndex(
+                    self.filterwheel_combobox.findData(
+                        filterwheel_filter_name))
+
+            if filterwheel_filter_name != FilterwheelStatus.ERROR_NAME:
+                self.filterwheel_indicator.setStatus(Color.GREEN,
+                                                     filterwheel_filter_name)
+            else:  # ERROR
+                self.filterwheel_indicator.setStatus(Color.RED,
+                                                     filterwheel_filter_name)
+
+        adc1_angle = self.consume_dict(data, 'plc', 'adc1_angle')
+        if adc1_angle is not None:
+            with QSignalBlocker(self.adc1_spinbox):
+                self.adc1_spinbox.setValue(adc1_angle)
+
+        adc1_state = self.consume_dict(data, 'plc', 'adc1_state')
+        if adc1_state is not None:
+            if adc1_state == PLCStatus.STANDING:
+                self.adc1_indicator.setStatus(Color.GREEN, adc1_state.name)
+            elif adc1_state == PLCStatus.MOVING:
+                self.adc1_indicator.setStatus(Color.BLUE, adc1_state.name)
+            elif adc1_state == PLCStatus.INITIALISING:
+                self.adc1_indicator.setStatus(Color.ORANGE, adc1_state.name)
+            else:  # DISABLED, UNINITIALISED, ERROR, UNKNOWN
+                self.adc1_indicator.setStatus(Color.RED, adc1_state.name)
+
+            if adc1_state in [PLCStatus.MOVING, PLCStatus.INITIALISING]:
+                self.adc1_spinbox.setEnabled(False)
+            else:
+                self.adc1_spinbox.setEnabled(True)
+
+        adc2_angle = self.consume_dict(data, 'plc', 'adc2_angle')
+        if adc2_angle is not None:
+            with QSignalBlocker(self.adc2_spinbox):
+                self.adc2_spinbox.setValue(adc2_angle)
+
+        adc2_state = self.consume_dict(data, 'plc', 'adc2_state')
+        if adc2_state is not None:
+            if adc2_state == PLCStatus.STANDING:
+                self.adc2_indicator.setStatus(Color.GREEN, adc2_state.name)
+            elif adc2_state == PLCStatus.MOVING:
+                self.adc2_indicator.setStatus(Color.BLUE, adc2_state.name)
+            elif adc2_state == PLCStatus.INITIALISING:
+                self.adc2_indicator.setStatus(Color.ORANGE, adc2_state.name)
+            else:  # DISABLED, UNINITIALISED, ERROR, UNKNOWN
+                self.adc2_indicator.setStatus(Color.RED, adc2_state.name)
+
+            if adc2_state in [PLCStatus.MOVING, PLCStatus.INITIALISING]:
+                self.adc2_spinbox.setEnabled(False)
+            else:
+                self.adc2_spinbox.setEnabled(True)
 
         ippower_rtc_status = self.consume_dict(data, 'ippower',
                                                'ippower_rtc_status')
@@ -235,21 +377,21 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
                          self.backend.set_plc_calibunit_position, d)
 
     @Slot(int)
-    def on_tungsten_enabled_checkbox_stateChanged(self, state):
-        self.action_send(self.tungsten_enabled_checkbox,
+    def on_tungsten_state_checkbox_stateChanged(self, state):
+        self.action_send(self.tungsten_state_checkbox,
                          self.backend.set_plc_tungsten_state,
                          Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
-    def on_laser_enabled_checkbox_stateChanged(self, state):
-        self.action_send(self.laser_enabled_checkbox,
+    def on_laser_state_checkbox_stateChanged(self, state):
+        self.action_send(self.laser_state_checkbox,
                          self.backend.set_plc_laser_state,
                          Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
-    def on_laser_intensity_spinbox_valueChanged(self, d):
-        self.action_send(self.laser_intensity_spinbox,
-                         self.backend.set_plc_laser_intensity, d)
+    def on_laser_power_spinbox_valueChanged(self, d):
+        self.action_send(self.laser_power_spinbox,
+                         self.backend.set_plc_laser_power, d)
 
     @Slot(int)
     def on_filterwheel_combobox_currentIndexChanged(self, index):
@@ -259,13 +401,13 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(float)
     def on_adc1_spinbox_valueChanged(self, d):
-        self.action_send(self.adc1_spinbox,
-                         self.backend.set_plc_adc_1_position, d)
+        self.action_send(self.adc1_spinbox, self.backend.set_plc_adc_1_angle,
+                         d)
 
     @Slot(float)
     def on_adc2_spinbox_valueChanged(self, d):
-        self.action_send(self.adc2_spinbox,
-                         self.backend.set_plc_adc_2_position, d)
+        self.action_send(self.adc2_spinbox, self.backend.set_plc_adc_2_angle,
+                         d)
 
     @Slot(bool)
     def on_fli_new_image_button_clicked(self, checked):

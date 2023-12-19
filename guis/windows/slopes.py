@@ -2,13 +2,14 @@ import numpy as np
 
 from PySide6.QtGui import Qt
 
+from kalao.utils import kalao_tools
+
 from guis.kalao import colormaps
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
 import config
-from kalao.utils import kalao_tools
 
 
 class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
@@ -26,7 +27,8 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
         super().__init__(parent)
 
         self.backend = backend
-        self.mask = kalao_tools.generate_slopes_mask_from_subaps(config.AO.masked_subaps)
+        self.mask = kalao_tools.generate_slopes_mask_from_subaps(
+            config.AO.masked_subaps)
 
         loadUi('slopes.ui', self)
         self.resize(600, 400)
@@ -76,6 +78,7 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.slopes_view.updateColormap(colormaps.GrayscaleSaturationTransparent())
+            self.slopes_view.updateColormap(
+                colormaps.GrayscaleSaturationTransparent())
         else:
             self.slopes_view.updateColormap(colormaps.CoolWarmTransparent())

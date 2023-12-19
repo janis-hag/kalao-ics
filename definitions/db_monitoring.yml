@@ -80,6 +80,12 @@ calib_unit_position:
   group: Motors
   fits_keyword: HIERARCH ESO INS CALIB POS
 
+calib_unit_state:
+  short: Calib Unit state
+  long: Calibration Unit state
+  unit:
+  group: Motors
+
 temp_bench_air:
   short: Bench air temp.
   long: Temperature inside the KalAO enclosure
@@ -173,12 +179,24 @@ adc1_angle:
   group: Motors
   fits_keyword: HIERARCH ESO INS ADC1 ANGLE
 
+adc1_state:
+  short: ADC1 state
+  long: State of first ADC prism
+  unit:
+  group: Motors
+
 adc2_angle:
   short: ADC2 raw angle
   long: Raw angle of second ADC prism
   unit: °
   group: Motors
   fits_keyword: HIERARCH ESO INS ADC2 ANGLE
+
+adc2_state:
+  short: ADC2 state
+  long: State of second ADC prism
+  unit:
+  group: Motors
 
 filterwheel_filter_position:
   short: Filter number

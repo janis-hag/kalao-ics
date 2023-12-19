@@ -180,7 +180,7 @@ def center_on_laser():
     if flip_mirror.up() != FlipMirrorPosition.UP:
         raise FlipMirrorNotUp
 
-    laser.set_intensity(config.FLI.laser_calib_intensity)
+    laser.set_power(config.FLI.laser_calib_power)
 
     # Reset tip tilt stream to 0
     aocontrol.reset_dm(config.AO.TTM_loop_number)
@@ -216,7 +216,7 @@ def center_on_laser():
     # Precise centering with WFS
     aocontrol.emgain_off()
 
-    laser.set_intensity(config.WFS.laser_calib_intensity)
+    laser.set_power(config.WFS.laser_calib_power)
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
 
     aocontrol.tip_tilt_wfs_to_ttm()
@@ -423,8 +423,8 @@ def generate_night_darks(science_folder=None):
         return 0
     else:
         for dit in exp_times:
-            for i in range(10):
-                print(dit, i)
+            for i in range(config.Calib.dark_number):
+                print(dit, i)  #TODO: print sequencer?
                 image_path = camera.take_dark(dit=dit)
                 with fits.open(image_path, mode='update') as hdul:
                     hdul[0].header.set('HIERARCH ESO TPL ID', 'K_DARK')

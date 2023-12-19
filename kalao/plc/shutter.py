@@ -19,6 +19,8 @@ from opcua import ua
 
 from kalao.definitions.enums import ShutterState
 
+import config
+
 
 @core.beckhoff_autoconnect
 def get_state(beck=None):
@@ -30,11 +32,11 @@ def get_state(beck=None):
 
     # Check error status
     error_code = beck.get_node(
-        "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
+        f'{config.PLC.Node.SHUTTER}.Shutter.stat.nErrorCode').get_value()
 
     if error_code != 0:
         error_text = beck.get_node(
-            "ns=4; s=MAIN.Shutter.Shutter.stat.sErrorText").get_value()
+            f'{config.PLC.Node.SHUTTER}.Shutter.stat.sErrorText').get_value()
 
         database.store('obs',
                        {'shutter_log': f'[ERROR] {error_text} ({error_code})'})
@@ -42,8 +44,8 @@ def get_state(beck=None):
         state = ShutterState.ERROR
 
     else:
-        if beck.get_node(
-                "ns=4; s=MAIN.Shutter.bStatus_Closed_Shutter").get_value():
+        if beck.get_node(f'{config.PLC.Node.SHUTTER}.bStatus_Closed_Shutter'
+                         ).get_value():
             state = ShutterState.CLOSED
         else:
             state = ShutterState.OPEN
@@ -61,7 +63,7 @@ def init(beck=None):
     database.store('obs', {'shutter_log': 'Initialising shutter'})
 
     init_status = beck.get_node(
-        "ns=4; s=MAIN.Shutter.Shutter.stat.nErrorCode").get_value()
+        f'{config.PLC.Node.SHUTTER}.Shutter.stat.nErrorCode').get_value()
 
     # Do the shutter gym
     close(beck=beck)
@@ -110,7 +112,7 @@ def _switch(action_name, beck=None):
     elif action_name == 'bClose_Shutter':
         database.store('obs', {'shutter_log': 'Closing shutter'})
 
-    shutter_switch = beck.get_node("ns=4; s=MAIN.Shutter." + action_name)
+    shutter_switch = beck.get_node(f'{config.PLC.Node.SHUTTER}.{action_name}')
     shutter_switch.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(

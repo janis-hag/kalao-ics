@@ -2,13 +2,14 @@ import numpy as np
 
 from PySide6.QtGui import Qt
 
+from kalao.utils import kalao_tools
+
 from guis.kalao import colormaps
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
 import config
-from kalao.utils import kalao_tools
 
 
 class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
@@ -25,7 +26,8 @@ class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         super().__init__(parent)
 
         self.backend = backend
-        self.mask = kalao_tools.generate_flux_mask_from_subaps(config.AO.masked_subaps)
+        self.mask = kalao_tools.generate_flux_mask_from_subaps(
+            config.AO.masked_subaps)
 
         loadUi('flux.ui', self)
         self.resize(600, 400)
@@ -66,6 +68,7 @@ class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.flux_view.updateColormap(colormaps.GrayscaleSaturationTransparent())
+            self.flux_view.updateColormap(
+                colormaps.GrayscaleSaturationTransparent())
         else:
             self.flux_view.updateColormap(colormaps.BlackBodyTransparent())

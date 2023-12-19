@@ -8,7 +8,10 @@ from kalao.utils import database
 
 from guis.kalao.mixins import BackendDataMixin
 from guis.kalao.string_formatter import KalAOFormatter
+from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
+
+import config
 
 
 class MonitoringWidget(KalAOWidget, BackendDataMixin):
@@ -19,16 +22,19 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
 
         self.backend = backend
 
-        self.setWindowTitle('Monitoring - KalAO')
+        loadUi('monitoring.ui', self)
         self.resize(600, 400)
 
-        self.setLayout(QHBoxLayout())
+        self.monitoring_label.updateText(
+            monitoring_interval=config.Database.monitoring_update_interval)
+        self.telemetry_label.updateText(
+            telemetry_interval=config.Database.telemetry_update_interval)
 
-        self.layout().addLayout(QVBoxLayout())
-        self.layout().addLayout(QVBoxLayout())
-        self.layout().addLayout(QVBoxLayout())
-        self.layout().addLayout(QVBoxLayout())
-        self.layout().addLayout(QVBoxLayout())
+        self.data_layout.addLayout(QVBoxLayout())
+        self.data_layout.addLayout(QVBoxLayout())
+        self.data_layout.addLayout(QVBoxLayout())
+        self.data_layout.addLayout(QVBoxLayout())
+        self.data_layout.addLayout(QVBoxLayout())
 
         self.groupboxes = {}
         self.lineedits = {}
@@ -40,7 +46,7 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
         for key, info in database.definitions['telemetry']['metadata'].items():
             self.add_item('telemetry', key, info)
 
-        column_length = np.zeros(self.layout().count())
+        column_length = np.zeros(self.data_layout.count())
         for groupbox in sorted(self.groupboxes.values(),
                                key=lambda g: g.layout().count(), reverse=True):
             i = np.argmin(column_length)
@@ -49,7 +55,7 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
                 QSpacerItem(20, 40, QSizePolicy.Minimum,
                             QSizePolicy.Expanding))
 
-            self.layout().itemAt(i).addWidget(groupbox)
+            self.data_layout.itemAt(i).addWidget(groupbox)
             column_length[i] += groupbox.layout().count()
 
         for lineedit in self.lineedits.values():

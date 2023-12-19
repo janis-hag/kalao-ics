@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>934</width>
+    <height>569</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Monitoring - KalAO</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout" rowstretch="1,0">
+   <item row="0" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="data_layout"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="KalAOLabel" name="monitoring_label">
+     <property name="font">
+      <font>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Monitoring update interval: {monitoring_interval} s</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="KalAOLabel" name="telemetry_label">
+     <property name="font">
+      <font>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Telemetry update interval: {telemetry_interval} s</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>KalAOLabel</class>
+   <extends>QLabel</extends>
+   <header>kalao</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

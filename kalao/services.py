@@ -50,7 +50,8 @@ def get_status(unit, system=False):
 
     state = str(interface.Get('org.freedesktop.systemd1.Unit', 'ActiveState'))
     substate = str(interface.Get('org.freedesktop.systemd1.Unit', 'SubState'))
-    timestamp = interface.Get('org.freedesktop.systemd1.Unit', 'StateChangeTimestamp')
+    timestamp = interface.Get('org.freedesktop.systemd1.Unit',
+                              'StateChangeTimestamp')
 
     # Convert Unix microseconds timestamp into datetime object
     timestamp = datetime.utcfromtimestamp(int(timestamp) * 10**(-6))

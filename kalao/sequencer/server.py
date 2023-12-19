@@ -54,8 +54,8 @@ def init():
         shutter.init,
         tungsten.init,
         laser.init,
-        lambda: adc.init(1),
-        lambda: adc.init(2),
+        lambda: adc.init(config.PLC.Node.ADC1),
+        lambda: adc.init(config.PLC.Node.ADC2),
     ]
 
     def get_name(f):

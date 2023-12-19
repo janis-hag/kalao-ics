@@ -57,9 +57,7 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         self.logo_label.load(str(Logo.svg))
         self.logo_label.renderer().setAspectRatioMode(Qt.KeepAspectRatio)
 
-        self.fps_label = KalAOLabel(
-            "Streams refresh rate : {fps:04.1f} FPS |"
-        )
+        self.fps_label = KalAOLabel("Streams refresh rate : {fps:04.1f} FPS |")
         self.statusBar().addPermanentWidget(self.fps_label)
 
         self.last_update_label = KalAOLabel()

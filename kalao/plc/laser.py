@@ -25,7 +25,7 @@ import config
 
 @core.beckhoff_autoconnect
 def get_state(beck=None):
-    if beck.get_node("ns=4; s=MAIN.Laser.Status").get_value():
+    if beck.get_node(f'{config.PLC.Node.LASER}.Status').get_value():
         state = LaserState.ON
     else:
         state = LaserState.OFF
@@ -35,7 +35,7 @@ def get_state(beck=None):
 
 @core.beckhoff_autoconnect
 def get_power(beck=None):
-    return beck.get_node('ns=4;s=MAIN.Laser.Current').get_value()
+    return beck.get_node(f'{config.PLC.Node.LASER}.Current').get_value()
 
 
 def disable(beck=None):
@@ -99,40 +99,34 @@ def get_switch_time():
 
 
 @core.beckhoff_autoconnect
-def set_intensity(intensity=0.4, beck=None):
+def set_power(power, beck=None):
     """
     Set light intensity of the laser source
 
-    :param intensity: light intensity to use in ?mW?
+    :param power: light intensity to use in ?mW?
 
     :return: value of the new intensity
     """
-    database.store('obs',
-                   {'laser_log': f'Setting laser intensity to {intensity}'})
+    database.store('obs', {'laser_log': f'Setting laser intensity to {power}'})
 
-    aocontrol.emgain_off()
+    if power != 0:
+        aocontrol.emgain_off()
 
     # Limit intensity to protect the WFS
-    if intensity > config.Laser.max_intensity:
-        intensity = config.Laser.max_intensity
-    if not beck.get_node("ns=4;s=MAIN.Laser.bEnable").get_value():
-        laser_enable = beck.get_node("ns=4;s=MAIN.Laser.bEnable")
-        laser_enable.set_attribute(
-            ua.AttributeIds.Value,
-            ua.DataValue(
-                ua.Variant(True,
-                           laser_enable.get_data_type_as_variant_type())))
+    if power > config.Laser.max_power:
+        power = config.Laser.max_power
 
     # Give new intensity value
-    laser_setIntensity = beck.get_node("ns=4;s=MAIN.Laser.setIntensity")
+    laser_setIntensity = beck.get_node(f'{config.PLC.Node.LASER}.setIntensity')
     laser_setIntensity.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
-            ua.Variant(float(intensity),
+            ua.Variant(float(power),
                        laser_setIntensity.get_data_type_as_variant_type())))
 
     # Apply new intensity value
-    laser_bSetIntensity = beck.get_node("ns=4;s=MAIN.Laser.bSetIntensity")
+    laser_bSetIntensity = beck.get_node(
+        f'{config.PLC.Node.LASER}.bSetIntensity')
     laser_bSetIntensity.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
@@ -140,7 +134,7 @@ def set_intensity(intensity=0.4, beck=None):
                        laser_bSetIntensity.get_data_type_as_variant_type())))
 
     sleep(config.Laser.switch_wait)
-    current = beck.get_node("ns=4;s=MAIN.Laser.Current").get_value()
+    current = beck.get_node(f'{config.PLC.Node.LASER}.Current').get_value()
 
     return current
 
@@ -164,13 +158,12 @@ def _switch(action_name, beck=None):
         aocontrol.emgain_off()
     elif action_name == 'bDisable':
         database.store('obs', {'laser_log': 'Disabling laser'})
-        set_intensity(0, beck=beck)
     elif action_name == 'bLock':
         database.store('obs', {'laser_log': 'Locking laser'})
     elif action_name == 'bUnlock':
         database.store('obs', {'laser_log': 'Unlocking laser'})
 
-    laser_switch = beck.get_node("ns=4; s=MAIN.Laser." + action_name)
+    laser_switch = beck.get_node(f'{config.PLC.Node.LASER}.{action_name}')
     laser_switch.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(

@@ -40,10 +40,10 @@ class DMChannelsWindow(KalAOMainWindow, BackendActionMixin, MinMaxMixin,
                 "Deformable Mirror", "Tip-Tilt Mirror"))
 
             prefix = 'TTM_'
-            disp_name = config.Streams.TTM.value
+            disp_name = config.Streams.TTM
         else:
             prefix = 'DM_'
-            disp_name = config.Streams.DM.value
+            disp_name = config.Streams.DM
 
         self.dm_view.updateColormap(colormaps.CoolWarm())
         self.dm_view.hovered.connect(self.hover_xyv_to_str)
@@ -64,10 +64,10 @@ class DMChannelsWindow(KalAOMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.init_minmax(view_list, symetric=True)
 
-        for s in config.Streams:
-            if s.name.startswith(prefix):
-                name = s.name.removeprefix(prefix).replace('_', ' ').title()
-                value = s.value.removeprefix(disp_name)
+        for key, value in config.Streams.__dict__.items():
+            if key.startswith(prefix):
+                name = key.removeprefix(prefix).replace('_', ' ').title()
+                value = value.removeprefix(disp_name)
 
                 if name == 'Ncpa':
                     name = 'NCPA'

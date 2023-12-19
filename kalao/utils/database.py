@@ -24,13 +24,13 @@ import config
 
 definitions = {
     'obs': {
-        'path': config.kalao_path / "definitions/db_obs.yml"
+        'path': config.kalao_ics_path / "definitions/db_obs.yml"
     },
     'monitoring': {
-        'path': config.kalao_path / "definitions/db_monitoring.yml"
+        'path': config.kalao_ics_path / "definitions/db_monitoring.yml"
     },
     'telemetry': {
-        'path': config.kalao_path / "definitions/db_telemetry.yml"
+        'path': config.kalao_ics_path / "definitions/db_telemetry.yml"
     },
 }
 

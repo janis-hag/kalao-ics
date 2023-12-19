@@ -288,22 +288,30 @@ class MainBackend(SHMFPSBackend):
         calib_unit.move(position)
 
     def set_plc_tungsten_state(self, state):
-        tungsten.send_command(state)
+        if state:
+            tungsten.on()
+        else:
+            tungsten.off()
 
     def set_plc_laser_state(self, state):
+        if state:
+            laser.enable()
+        else:
+            laser.disable()
+
         laser._switch(state)
 
-    def set_plc_laser_intensity(self, intensity):
-        laser.set_intensity(intensity)
+    def set_plc_laser_power(self, power):
+        laser.set_power(power)
 
     def set_plc_filterwheel_filter(self, filter):
         filterwheel.set_filter(filter)
 
-    def set_plc_adc_1_position(self, position):
-        adc.rotate(1, position)
+    def set_plc_adc_1_angle(self, position):
+        adc.rotate(config.PLC.Node.ADC1, position)
 
-    def set_plc_adc_2_position(self, position):
-        adc.rotate(2, position)
+    def set_plc_adc_2_angle(self, position):
+        adc.rotate(config.PLC.Node.ADC2, position)
 
     def set_fli_image(self, exposure_time):
         camera.take_frame(exposure_time)

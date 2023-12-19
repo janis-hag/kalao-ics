@@ -12,8 +12,7 @@ import config
 
 def run(args):
     if args.fits is None:
-        ret, data = camera._send_request(
-            'empty', params={'filepath': '/tmp/fli_empty.fits'})
+        ret = camera.take_empty('/tmp/fli_empty.fits')
 
         if ret == ReturnCode.CAMERA_OK:
             fli_header = file_handling._header_from_fits('/tmp/fli_empty.fits')

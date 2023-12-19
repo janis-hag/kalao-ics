@@ -9,7 +9,6 @@ adc.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-import numbers
 from enum import IntEnum
 from time import sleep
 
@@ -20,13 +19,9 @@ from kalao import euler
 from kalao.plc import core, filterwheel
 from kalao.utils import database
 
-from opcua import ua
-
 from kalao.definitions.enums import TrackingStatus
 
 import config
-
-adc_node = {1: 'ADC1_Newport_PR50PP.motor', 2: 'ADC2_Newport_PR50PP.motor'}
 
 # Conventions:
 # Temperature in K
@@ -142,8 +137,10 @@ def set_angle(angle, beck=None):
     })
 
     # Motors are face to face, offset by same angle so they are counter-rotating
-    rotate(1, config.ADC.max_disp_angle_1 + angle/2, wait=False, beck=beck)
-    rotate(2, config.ADC.max_disp_angle_2 + angle/2, wait=False, beck=beck)
+    rotate(config.PLC.Node.ADC1, config.ADC.max_disp_angle_1 + angle/2,
+           wait=False, beck=beck)
+    rotate(config.PLC.Node.ADC2, config.ADC.max_disp_angle_2 + angle/2,
+           wait=False, beck=beck)
 
     sleep(2)
 
@@ -164,68 +161,66 @@ def get_angle():
         return angle
 
 
-def rotate(adc_id, position, velocity=config.ADC.velocity, wait=True,
-           beck=None):
+def rotate(node, position, velocity=config.ADC.velocity, wait=True, beck=None):
     database.store('obs', {
         'adc_log':
-            f'Moving ADC {adc_id} to position {position}° at {velocity}°/s'
+            f'Moving ADC {node} to position {position}° at {velocity}°/s'
     })
 
-    new_position = core.motor_move(adc_node[adc_id], position, velocity, wait,
-                                   beck=beck)
+    new_position = core.motor_move(node, position, velocity, wait, beck=beck)
 
     if wait:
         database.store('obs', {
-            'adc_log': f'Moved ADC {adc_id} to position {new_position}°'
+            'adc_log': f'Moved ADC {node} to position {new_position}°'
         })
 
     return new_position
 
 
 @core.beckhoff_autoconnect
-def wait_rotate(adc_id, beck=None):
-    core.wait_loop(f'Waiting for ADC {adc_id} rotation',
-                   lambda: is_moving(adc_id, beck=beck), 5)
+def wait_rotate(node, beck=None):
+    core.wait_loop(f'Waiting for ADC {node} rotation',
+                   lambda: is_moving(node, beck=beck), 5)
 
     return 0
 
 
 def wait_rotate_both(beck=None):
-    wait_rotate(1, beck=beck)
-    wait_rotate(2, beck=beck)
+    wait_rotate(config.PLC.Node.ADC1, beck=beck)
+    wait_rotate(config.PLC.Node.ADC2, beck=beck)
 
     return 0
 
 
-def get_position(adc_id, beck=None):
-    position = core.motor_get_position(adc_node[adc_id], beck=beck)
+def get_position(node, beck=None):
+    position = core.motor_get_position(node, beck=beck)
 
     if np.isnan(position):
-        error_code, error_text = core.get_error(adc_node[adc_id], beck=beck)
+        error_code, error_text = core.get_error(node, beck=beck)
         database.store('obs',
                        {'adc_log': f'[ERROR] {error_text} ({error_code})'})
 
     return position
 
 
-def is_moving(adc_id, beck=None):
-    return core.motor_is_moving(adc_node[adc_id], beck=beck)
+def is_moving(node, beck=None):
+    return core.motor_is_moving(node, beck=beck)
 
 
 @core.beckhoff_autoconnect
-def init(adc_id, force_init=False, beck=None):
+def init(node, force_init=False, beck=None):
     """
     Initialise the ADC motor.
     """
-    database.store('obs', {'adc_log': f'Initialising ADC {adc_id}'})
+    database.store('obs', {'adc_log': f'Initialising ADC {node}'})
 
-    init_ret = core.motor_init(adc_node[adc_id], force_init, beck=beck)
+    init_ret = core.motor_init(node, force_init, beck=beck)
 
-    if f'adc_{adc_id}' in config.PLC.initial_pos:
-        rotate(adc_id, config.PLC.initial_pos[f'adc_{adc_id}'], beck=beck)
+    if node in config.PLC.initial_pos:
+        rotate(node, config.PLC.initial_pos[node], beck=beck)
 
     return init_ret
 
 
-def get_plc_status(beck=None):
-    return core.motor_get_status(beck=beck)
+def get_state(node, beck=None):
+    return core.motor_get_status(node, beck=beck)

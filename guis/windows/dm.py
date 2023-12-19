@@ -78,6 +78,7 @@ class DMWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.dm_view.updateColormap(colormaps.GrayscaleSaturationTransparent())
+            self.dm_view.updateColormap(
+                colormaps.GrayscaleSaturationTransparent())
         else:
             self.dm_view.updateColormap(colormaps.CoolWarm())

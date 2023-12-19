@@ -109,11 +109,12 @@ def get_subapertures_from_file(file):
     return all_subaps, active_subaps, masked_subaps
 
 
-def get_dm_flux_map(upsampled=1, upsampling=4):
+def get_dm_flux_map(upsampled=1, upsampling=4, radius_out_factor=1,
+                    radius_in_factor=1):
     size = 12 * upsampled * upsampling
 
-    radius_out = 5 * upsampled * upsampling  # Pupil radius in px on DM
-    radius_in = radius_out * 336.4 / 1200
+    radius_out = size * 5 / 12 * radius_out_factor  # Pupil radius in px on DM
+    radius_in = radius_out * 336.4 / 1200 * radius_in_factor
 
     xx, yy = np.mgrid[:size, :size]
     circle = (xx - size/2 + 0.5)**2 + (yy - size/2 + 0.5)**2
@@ -123,11 +124,11 @@ def get_dm_flux_map(upsampled=1, upsampling=4):
     return flux
 
 
-def get_wfs_flux_map(upsampling=4):
+def get_wfs_flux_map(upsampling=4, radius_out_factor=1, radius_in_factor=1):
     size = 64 * upsampling
 
-    radius_out = 25 * upsampling  # Pupil radius in px on WFS
-    radius_in = radius_out * 336.4 / 1200
+    radius_out = size * 25 / 64 * radius_out_factor  # Pupil radius in px on WFS
+    radius_in = radius_out * 336.4 / 1200 * radius_in_factor
 
     xx, yy = np.mgrid[:size, :size]
     circle = (xx - size/2 + 0.5)**2 + (yy - size/2 + 0.5)**2

@@ -241,14 +241,16 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         self.fli_view.setImage(self.img, img_min, img_max,
                                self.scale_combobox.currentData())
 
-        self.star_x, self.star_y, self.star_peak, self.star_fwhm = self.find_star_fast(self.img)
+        self.star_x, self.star_y, self.star_peak, self.star_fwhm = self.find_star_fast(
+            self.img)
 
         self.star_label.updateText(
             x=(self.star_x - self.data_center_x) * self.axis_scaling,
             y=(self.star_y - self.data_center_y) * self.axis_scaling,
-            peak=self.star_peak * self.data_scaling, fwhm=self.star_fwhm * self.axis_scaling,
-            data_unit=self.data_unit, data_precision=self.data_precision,
-            axis_unit=self.axis_unit, axis_precision=self.axis_precision + 1)
+            peak=self.star_peak * self.data_scaling,
+            fwhm=self.star_fwhm * self.axis_scaling, data_unit=self.data_unit,
+            data_precision=self.data_precision, axis_unit=self.axis_unit,
+            axis_precision=self.axis_precision + 1)
 
         if self.follow_checkbox.isChecked():
             self.zoom_center_x = self.star_x

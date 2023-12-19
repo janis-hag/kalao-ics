@@ -282,7 +282,7 @@ class PlotsWidget(KalAOWidget):
 
         time_delta = self.start_datetimeedit.dateTime().secsTo(
             self.end_datetimeedit.dateTime())
-        if time_delta > 24 * 3600:
+        if time_delta > 86400:
             self.axis_x.setFormat("HH:mm dd.MM.yy")
         else:
             self.axis_x.setFormat("HH:mm")

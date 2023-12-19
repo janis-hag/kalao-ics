@@ -1,4 +1,4 @@
-# Install ImageStreamIO, CacaoProcessTools and pyMilk from sources ("pip install -e ." in ImageStreamIO, milk and pyMilk sources dirs)
+# Install ImageStreamIO, CacaoProcessTools and pyMilk from sources ("pip install ." in ImageStreamIO, milk and pyMilk sources dirs)
 
 # Basics
 numpy

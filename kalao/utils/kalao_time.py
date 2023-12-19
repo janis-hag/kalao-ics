@@ -30,7 +30,7 @@ def get_start_of_night_dt(dt=None):
 
     check_time_format(dt)
 
-    timezone_chile = pytz.timezone("America/Santiago")
+    timezone_chile = pytz.timezone('America/Santiago')
     dt_chile = dt.astimezone(timezone_chile)
 
     if dt_chile.hour < 12:

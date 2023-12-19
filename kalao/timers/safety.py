@@ -15,13 +15,15 @@ import numpy as np
 from kalao import euler, ippower
 from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
-from kalao.plc import laser, shutter, temperature_control
+from kalao.plc import (adc, calib_unit, flip_mirror, laser, shutter,
+                       temperature_control)
 from kalao.utils import database, kalao_time
 
 import schedule
 
 from kalao.definitions.enums import (CameraServerStatus, IPPowerStatus,
-                                     LaserState, LoopStatus, ShutterState)
+                                     LaserState, LoopStatus, RelayState,
+                                     ShutterState)
 
 import config
 
@@ -216,13 +218,13 @@ def _check_cooling_status():
                     f'[ERROR] water_in temperature {cooling_status["temp_water_in"]} below minimum {config.Cooling.min_water_temp}'
             })
 
-        if temperature_control.heater_status() != 'ON':
+        if temperature_control.heater_status() != RelayState.ON:
             temperature_control.heater_on()
 
         ret = -1
 
     elif cooling_status['temp_water_in'] > config.Cooling.heater_off_temp:
-        if temperature_control.heater_status() != 'OFF':
+        if temperature_control.heater_status() != RelayState.OFF:
             temperature_control.heater_off()
 
     # Check camera temperatures
@@ -263,11 +265,30 @@ def _check_cooling_status():
     return ret
 
 
+def _check_plc():
+    database.store('obs', {'safety_timer_log': 'Doing PLC housekeeping'})
+
+    calib_unit.init(force_init=True)
+    adc.init(config.PLC.Node.ADC1, force_init=True)
+    adc.init(config.PLC.Node.ADC1, force_init=True)
+
+    if shutter.get_switch_time() > 86400:
+        shutter.close()
+        shutter.open()
+        shutter.close()
+
+    if flip_mirror.get_switch_time() > 86400:
+        flip_mirror.down()
+        flip_mirror.up()
+        flip_mirror.down()
+
+
 if __name__ == "__main__":
     schedule.every(config.Timers.temperature_check_interval).seconds.do(
         _check_cooling_status)
     schedule.every(
         config.Timers.bench_check_interval).seconds.do(_check_bench_status)
+    schedule.every().day.at('15:00', 'America/Santiago').do(_check_plc)
 
     while True:
         n = schedule.idle_seconds()

@@ -8,16 +8,15 @@ from PySide6.QtGui import Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
-from guis.windows.plots import PlotsWidget
-
 from guis.windows.dm import DMWidget
+from guis.windows.engineering import EngineeringWidget
 from guis.windows.fli import FLIWidget
 from guis.windows.flux import FluxWidget
 from guis.windows.logs import LogsWidget
 from guis.windows.loop_controls import LoopControlsWidget
-from guis.windows.engineering import EngineeringWidget
-from guis.windows.monitoring import MonitoringWidget
 from guis.windows.main import MainWindow
+from guis.windows.monitoring import MonitoringWidget
+from guis.windows.plots import PlotsWidget
 from guis.windows.slopes import SlopesWidget
 from guis.windows.ttm import TTMWidget
 from guis.windows.wfs import WFSWidget

@@ -36,7 +36,7 @@
          </widget>
         </item>
         <item row="4" column="0">
-         <widget class="QLabel" name="laser_enabled_label">
+         <widget class="QLabel" name="laser_state_label">
           <property name="text">
            <string>Laser Enabled</string>
           </property>
@@ -46,7 +46,7 @@
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="KalAOStatusIndicator" name="laser_enabled_indicator">
+         <widget class="KalAOStatusIndicator" name="laser_state_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -112,14 +112,14 @@
          </widget>
         </item>
         <item row="4" column="2">
-         <widget class="QCheckBox" name="laser_enabled_checkbox">
+         <widget class="QCheckBox" name="laser_state_checkbox">
           <property name="text">
            <string/>
           </property>
          </widget>
         </item>
         <item row="5" column="0">
-         <widget class="QLabel" name="laser_intensity_label">
+         <widget class="QLabel" name="laser_power_label">
           <property name="text">
            <string>Laser Intensity</string>
           </property>
@@ -132,7 +132,7 @@
          <widget class="QComboBox" name="flipmirror_combobox"/>
         </item>
         <item row="5" column="1">
-         <widget class="KalAOStatusIndicator" name="laser_intensity_indicator">
+         <widget class="KalAOStatusIndicator" name="laser_power_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -196,7 +196,7 @@
          </widget>
         </item>
         <item row="5" column="2">
-         <widget class="QDoubleSpinBox" name="laser_intensity_spinbox">
+         <widget class="QDoubleSpinBox" name="laser_power_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -234,7 +234,7 @@
          <widget class="QComboBox" name="shutter_combobox"/>
         </item>
         <item row="3" column="0">
-         <widget class="QLabel" name="tungsten_enabled_label">
+         <widget class="QLabel" name="tungsten_state_label">
           <property name="text">
            <string>Tungsten Enabled</string>
           </property>
@@ -244,7 +244,7 @@
          </widget>
         </item>
         <item row="3" column="2">
-         <widget class="QCheckBox" name="tungsten_enabled_checkbox">
+         <widget class="QCheckBox" name="tungsten_state_checkbox">
           <property name="text">
            <string/>
           </property>
@@ -350,7 +350,7 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="KalAOStatusIndicator" name="tungsten_enabled_indicator">
+         <widget class="KalAOStatusIndicator" name="tungsten_state_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>

@@ -17,19 +17,9 @@ from kalao.utils import database, kalao_time
 
 from opcua import ua
 
+from kalao.definitions.enums import RelayState
+
 import config
-
-pump_node = 'bRelayPump'
-fan_node = 'bRelayFan'
-heater_node = 'bWaterHeater'
-flowmeter_node = 'iFlowmeter'
-hygrometer_node = 'iHygrometer'
-
-print_name = {
-    'bRelayPump': 'pump',
-    'bRelayFan': 'fan',
-    'bWaterHeater': 'heater',
-}
 
 
 @core.beckhoff_autoconnect
@@ -44,16 +34,16 @@ def get_temperatures(beck=None):
     temp_values = {
         'temp_bench_air':
             config.PLC.temp_bench_air_offset +
-            beck.get_node('ns=4;s=MAIN.Temp_Bench_Air').get_value() / 10,
+            beck.get_node(config.PLC.Node.TEMP_BENCH_AIR).get_value() / 10,
         'temp_bench_board':
             config.PLC.temp_bench_board_offset +
-            beck.get_node('ns=4;s=MAIN.Temp_Bench_Board').get_value() / 10,
+            beck.get_node(config.PLC.Node.TEMP_BENCH_BOARD).get_value() / 10,
         'temp_water_in':
             config.PLC.temp_water_in_offset +
-            beck.get_node('ns=4;s=MAIN.Temp_Water_In').get_value() / 10,
+            beck.get_node(config.PLC.Node.TEMP_WATER_IN).get_value() / 10,
         'temp_water_out':
             config.PLC.temp_water_out_offset +
-            beck.get_node('ns=4;s=MAIN.Temp_Water_Out').get_value() / 10
+            beck.get_node(config.PLC.Node.TEMP_WATER_OUT).get_value() / 10
     }
 
     return temp_values
@@ -73,7 +63,7 @@ def get_cooling_status(beck=None):
         'pump_temp': pump_temperature(beck=beck),
         'heater_status': heater_status(beck=beck),
         'fan_status': fan_status(beck=beck),
-        'flow_value': get_flow_value(beck=beck),
+        'flow_value': get_flow(beck=beck),
         'hygrometry': get_hygrometry(beck=beck)
     }
 
@@ -81,41 +71,37 @@ def get_cooling_status(beck=None):
 
 
 @core.beckhoff_autoconnect
-def plc_status(relay_name, beck=None):
+def get_state(node, beck=None):
     """
     Open or Close the shutter depending on action_name
 
-    :param relay_name: bClose_Shutter or
+    :param node: bClose_Shutter or
     :return: position of flip_mirror
     """
 
-    if beck.get_node("ns=4;s=MAIN." + relay_name).get_value():
-        relay_status = 'ON'
+    if beck.get_node(node).get_value():
+        relay_status = RelayState.ON
     else:
-        relay_status = 'OFF'
+        relay_status = RelayState.OFF
 
     return relay_status
 
 
 @core.beckhoff_autoconnect
-def switch(relay_name, on, beck=None):
+def switch(node, on, beck=None):
     """
      Open or Close the shutter depending on action_name
 
-    :param relay_name: bClose_Shutter or
+    :param node: bClose_Shutter or
     :return: position of flip_mirror
     """
 
     if on:
-        database.store('obs', {
-            'temperature_log': f'Switching on {print_name[relay_name]}'
-        })
+        database.store('obs', {'temperature_log': f'Switching on {node}'})
     else:
-        database.store('obs', {
-            'temperature_log': f'Switching off {print_name[relay_name]}'
-        })
+        database.store('obs', {'temperature_log': f'Switching off {node}'})
 
-    relay_switch = beck.get_node("ns=4; s=MAIN." + relay_name)
+    relay_switch = beck.get_node(node)
     relay_switch.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
@@ -123,7 +109,7 @@ def switch(relay_name, on, beck=None):
 
     sleep(1)
 
-    relay_status = plc_status(relay_name, beck=beck)
+    relay_status = get_state(node, beck=beck)
 
     return relay_status
 
@@ -136,7 +122,7 @@ def pump_on(beck=None):
     :return: status of the pump
     """
 
-    return switch(pump_node, True, beck=beck)
+    return switch(config.PLC.Node.PUMP, True, beck=beck)
 
 
 def pump_off(beck=None):
@@ -147,7 +133,7 @@ def pump_off(beck=None):
     :return: status of the pump
     """
 
-    return switch(pump_node, False, beck=beck)
+    return switch(config.PLC.Node.PUMP, False, beck=beck)
 
 
 def pump_status(beck=None):
@@ -158,7 +144,7 @@ def pump_status(beck=None):
     :return: status of the pump
     """
 
-    return plc_status(pump_node, beck=beck)
+    return get_state(config.PLC.Node.PUMP, beck=beck)
 
 
 @core.beckhoff_autoconnect
@@ -170,7 +156,7 @@ def pump_temperature(beck=None):
     :return: temperature of the pump in degrees
     """
 
-    pump_temp = beck.get_node("ns=4; s=MAIN.Temp_Pump").get_value() / 100
+    pump_temp = beck.get_node(config.PLC.Node.TEMP_PUMP).get_value() / 100
 
     return pump_temp
 
@@ -183,7 +169,7 @@ def heater_on(beck=None):
     :return: status of the heater
     """
 
-    return switch(heater_node, True, beck=beck)
+    return switch(config.PLC.Node.HEATER, True, beck=beck)
 
 
 def heater_off(beck=None):
@@ -194,7 +180,7 @@ def heater_off(beck=None):
     :return: status of the heater
     """
 
-    return switch(heater_node, False, beck=beck)
+    return switch(config.PLC.Node.HEATER, False, beck=beck)
 
 
 def heater_status(beck=None):
@@ -205,7 +191,7 @@ def heater_status(beck=None):
     :return: status of the heater
     """
 
-    return plc_status(heater_node, beck=beck)
+    return get_state(config.PLC.Node.HEATER, beck=beck)
 
 
 def fan_on(beck=None):
@@ -216,7 +202,7 @@ def fan_on(beck=None):
     :return: status of the fan
     """
 
-    return switch(fan_node, True, beck=beck)
+    return switch(config.PLC.Node.FAN, True, beck=beck)
 
 
 def fan_off(beck=None):
@@ -227,7 +213,7 @@ def fan_off(beck=None):
     :return: status of the fan
     """
 
-    return switch(fan_node, False, beck=beck)
+    return switch(config.PLC.Node.FAN, False, beck=beck)
 
 
 def fan_status(beck=None):
@@ -238,7 +224,7 @@ def fan_status(beck=None):
     :return: status of the fan
     """
 
-    return plc_status(fan_node, beck=beck)
+    return get_state(config.PLC.Node.FAN, beck=beck)
 
 
 def get_flow_threshold_time(flow_threshold, beck=None):
@@ -261,7 +247,7 @@ def get_flow_threshold_time(flow_threshold, beck=None):
 
 
 @core.beckhoff_autoconnect
-def get_flow_value(beck=None):
+def get_flow(beck=None):
     """
     Convenience function to query the value of the water flow from the flowmeter
 
@@ -271,7 +257,7 @@ def get_flow_value(beck=None):
     :return: status of the fan
     """
 
-    flow_value = beck.get_node("ns=4;s=MAIN." + flowmeter_node).get_value()
+    flow_value = beck.get_node(config.PLC.Node.FLOWMETER).get_value()
 
     return flow_value
 
@@ -287,7 +273,7 @@ def get_hygrometry(beck=None):
     :return: status of the fan
     """
 
-    flow_value = beck.get_node("ns=4;s=MAIN." + hygrometer_node).get_value()
+    flow_value = beck.get_node(config.PLC.Node.HYGROMETER).get_value()
 
     return flow_value
 
@@ -295,18 +281,14 @@ def get_hygrometry(beck=None):
 def get_cooling_values(beck=None):
 
     cooling = {
-        'cooling_flow_value': get_flow_value(beck=beck),
+        'cooling_flow_value': get_flow(beck=beck),
         'hygrometry': get_hygrometry(beck=beck),
         'temp_water_in': get_temperatures(beck=beck)['temp_water_in']
     }
 
     camera_temperature = camera.get_temperatures()
 
-    if isinstance(camera_temperature, dict):
-        cooling['fli_temp_HS'] = camera_temperature['heatsink']
-        cooling['fli_temp_CCD'] = camera_temperature['ccd']
-    else:
-        cooling['fli_temp_HS'] = -999
-        cooling['fli_temp_CCD'] = -999
+    cooling['fli_temp_HS'] = camera_temperature['heatsink']
+    cooling['fli_temp_CCD'] = camera_temperature['ccd']
 
     return cooling
