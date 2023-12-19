@@ -131,7 +131,7 @@ def update_db_from_telheader():
 
         # Fill the actual values into the dictionary
         for db_key, keyword in config.FITS.db_from_telheader.items():
-            data[db_key] = telescope_header_df.loc[keyword].value
+            data[db_key] = telescope_header_df.loc[keyword, 'value']
 
         # Store values in db
         database.store('obs', data)
@@ -160,7 +160,7 @@ def update_header(image_path, sequencer_arguments=None):
 
         if obs_type in config.FITS.base_header:
             for k, v in config.FITS.base_header[obs_type].items():
-                header_base.loc[f'HIERARCH ESO {k}'].value = v
+                header_base.loc[f'HIERARCH ESO {k}', 'value'] = v
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -422,8 +422,8 @@ def _clean_header(header_df):
 
 
 def _dynamic_cards_update(header_df, obs_type, seq_args=None):
-    date_obs = header_df.loc['DATE-OBS'].value
-    date_end = header_df.loc['DATE-END'].value
+    date_obs = header_df.loc['DATE-OBS', 'value']
+    date_end = header_df.loc['DATE-END', 'value']
 
     dt_obs = datetime.fromisoformat(date_obs)
 
@@ -444,49 +444,54 @@ def _dynamic_cards_update(header_df, obs_type, seq_args=None):
     shutter.source += '+dynamic'
 
     # Update MJD-OBS
-    header_df.loc['MJD-OBS'].value = astro_time_obs.mjd
-    header_df.loc['MJD-OBS'].comment = date_obs
-    header_df.loc['MJD-OBS'].source += '+dynamic'
+    header_df.loc['MJD-OBS', 'value'] = astro_time_obs.mjd
+    header_df.loc['MJD-OBS', 'comment'] = date_obs
+    header_df.loc['MJD-OBS', 'source'] += '+dynamic'
 
     # Update MJD-END
-    header_df.loc['MJD-END'].value = astro_time_end.mjd
-    header_df.loc['MJD-END'].comment = date_end
-    header_df.loc['MJD-END'].source += '+dynamic'
+    header_df.loc['MJD-END', 'value'] = astro_time_end.mjd
+    header_df.loc['MJD-END', 'comment'] = date_end
+    header_df.loc['MJD-END', 'source'] += '+dynamic'
 
     # Update UTC
     header_df.loc[
-        'UTC'].value = dt_obs.hour * 3600 + dt_obs.minute * 60 + dt_obs.second + dt_obs.microsecond * 10**-6
+        'UTC',
+        'value'] = dt_obs.hour * 3600 + dt_obs.minute * 60 + dt_obs.second + dt_obs.microsecond * 10**-6
     header_df.loc[
-        'UTC'].comment = f'[s] {dt_obs.time().isoformat(timespec="milliseconds")} UTC'
-    header_df.loc['UTC'].source += '+dynamic'
+        'UTC',
+        'comment'] = f'[s] {dt_obs.time().isoformat(timespec="milliseconds")} UTC'
+    header_df.loc['UTC', 'source'] += '+dynamic'
 
     # Update LST
-    header_df.loc['LST'].value = astro_time_obs.sidereal_time(
-        'mean').hour * 3600
+    header_df.loc['LST',
+                  'value'] = astro_time_obs.sidereal_time('mean').hour * 3600
     header_df.loc[
-        'LST'].comment = f"[s] {astro_time_obs.sidereal_time('mean').to_string(u.hour, sep=':', precision=7, pad=True)} LST"
-    header_df.loc['LST'].source += '+dynamic'
+        'LST',
+        'comment'] = f"[s] {astro_time_obs.sidereal_time('mean').to_string(u.hour, sep=':', precision=7, pad=True)} LST"
+    header_df.loc['LST', 'source'] += '+dynamic'
 
     if obs_type in config.FITS.on_sky_types:
-        ra = Angle(header_df.loc['RA'].value, unit=u.deg)
-        dec = Angle(header_df.loc['DEC'].value, unit=u.deg)
+        ra = Angle(header_df.loc['RA', 'value'], unit=u.deg)
+        dec = Angle(header_df.loc['DEC', 'value'], unit=u.deg)
 
         # Update RA
-        header_df.loc['RA'].value = ra.deg
+        header_df.loc['RA', 'value'] = ra.deg
         header_df.loc[
-            'RA'].comment = f'[deg] {ra.to_string(unit=u.deg, sep=":", precision=1, pad=True)} RA (J2000) pointing'
-        header_df.loc['RA'].source += '+dynamic'
+            'RA',
+            'comment'] = f'[deg] {ra.to_string(unit=u.deg, sep=":", precision=1, pad=True)} RA (J2000) pointing'
+        header_df.loc['RA', 'source'] += '+dynamic'
 
         # Update DEC
-        header_df.loc['DEC'].value = dec.deg
+        header_df.loc['DEC', 'value'] = dec.deg
         header_df.loc[
-            'DEC'].comment = f'[deg] {dec.to_string(unit=u.deg, sep=":", precision=1, pad=True)} DEC (J2000) pointing'
-        header_df.loc['DEC'].source += '+dynamic'
+            'DEC',
+            'comment'] = f'[deg] {dec.to_string(unit=u.deg, sep=":", precision=1, pad=True)} DEC (J2000) pointing'
+        header_df.loc['DEC', 'source'] += '+dynamic'
 
         # TODO add radecsys value in EQUINOX comment
 
     if seq_args is not None:
-        header_df.loc['HIERARCH ESO TPL ID'].value = seq_args.get('type')
+        header_df.loc['HIERARCH ESO TPL ID', 'value'] = seq_args.get('type')
 
     return header_df
 
@@ -503,9 +508,8 @@ def _header_to_string(header_df, max_length=45, float_length=20):
         if length[col] > max_length:
             length[col] = max_length
 
-            formatters[col] = lambda _, length=length[
-                col]: kalao_string.ellipsis(
-                    str(_).ljust(length, ' '), max_length)
+        formatters[col] = lambda _, length=length[col]: kalao_string.ellipsis(
+            str(_).ljust(length, ' '), max_length)
 
         float_format = lambda _: f'{_:.{float_length}f}'[0:float_length].ljust(
             length['value'], ' ')

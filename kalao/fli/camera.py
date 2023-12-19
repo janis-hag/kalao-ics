@@ -37,7 +37,7 @@ def take_empty(filepath=None):
         filepath = '/tmp/fli_empty.fits'
 
     params = {'filepath': filepath}
-    ret, _ = _send_request('acquire', params)
+    ret, _ = _send_request('empty', params)
 
     return ret
 

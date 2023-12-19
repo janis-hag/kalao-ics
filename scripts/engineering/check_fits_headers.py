@@ -31,9 +31,9 @@ def run(args):
         #file_handling._clean_header(file_handling._header_from_last_telescope_header()
     ]).query('~index.duplicated(keep="last")')
 
-    df.loc['RA'].value = 0
-    df.loc['DEC'].value = 0
-    df.loc['HIERARCH ESO INS SHUT ST'].value = 'OPEN'
+    df.loc['RA', 'value'] = 0
+    df.loc['DEC', 'value'] = 0
+    df.loc['HIERARCH ESO INS SHUT ST', 'value'] = 'OPEN'
 
     df = file_handling._dynamic_cards_update(df, 'K_TRGOBS')
     df = file_handling._sort_header(df)
