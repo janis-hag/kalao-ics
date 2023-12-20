@@ -32,7 +32,7 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
 
     zoom_center_x = config.FLI.center_x
     zoom_center_y = config.FLI.center_y
-    zoom_level = 4
+    zoom_level = 8
 
     last_img = None
 
@@ -44,6 +44,8 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
 
     def __init__(self, backend, img, parent=None):
         super().__init__(parent)
+
+        self.parang = 0
 
         self.backend = backend
         self.img = img
@@ -240,6 +242,9 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
 
         self.fli_view.setImage(self.img, img_min, img_max,
                                self.scale_combobox.currentData())
+
+        self.parang = (self.parang + 5) % 360
+        self.fli_view.addParang(self.parang)
 
         self.star_x, self.star_y, self.star_peak, self.star_fwhm = self.find_star_fast(
             self.img)

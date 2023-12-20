@@ -12,9 +12,7 @@ class StrEnum(str, Enum):
 
 class LogsOutputType(StrEnum):
     RAW = 'RAW'
-    TEXT = 'TEXT'
-    HTML = 'HTML'
-    QT = 'QT'
+    JSON = 'JSON'
 
 
 class LogType(StrEnum):

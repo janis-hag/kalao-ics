@@ -47,14 +47,13 @@ def handler(signal_received, frame):
     exit(0)
 
 
-def take_and_measure(args, update_stream=False):
+def take_and_measure(args):
     peak_hw = (args.peak_window - 1) // 2
 
     max = 0
     x, y = np.mgrid[0:args.peak_window, 0:args.peak_window]
 
-    img_cube = camera.take_cube(args.dit, args.img_avg,
-                                update_stream=update_stream)
+    img_cube = camera.take_cube(args.dit, args.img_avg)
 
     for i in range(args.img_avg):
         img = img_cube[i]
@@ -76,12 +75,12 @@ def take_and_measure(args, update_stream=False):
     return max / args.img_avg
 
 
-def display_and_measure(dm_stream, zernike_coeffs, args, update_stream=False):
+def display_and_measure(dm_stream, zernike_coeffs, args):
     pattern = zernike.generate_pattern(zernike_coeffs, dm_stream.shape)
     dm_stream.set_data(pattern, True)
     time.sleep(0.1)
 
-    return take_and_measure(args, update_stream)
+    return take_and_measure(args)
 
 
 def run(args):
@@ -210,7 +209,7 @@ def run(args):
                 zernike_coeff_incr = zernike_coeff_incr / 2
 
             end_peak = peak_array[1][PEAK_VALUE] = display_and_measure(
-                dm_stream, zernike_coeffs, args, update_stream=True)
+                dm_stream, zernike_coeffs, args)
             end_coeff = peak_array[1][COEFF] = zernike_coeffs[order]
 
             highest_peak = max(highest_peak, end_peak)
@@ -219,8 +218,7 @@ def run(args):
 
     time_name = kalao_time.get_isotime()
 
-    peak = display_and_measure(dm_stream, zernike_coeffs, args,
-                               update_stream=True)
+    peak = display_and_measure(dm_stream, zernike_coeffs, args)
 
     print(TC.UP + TC.CLEAR + f'Final coefficients:')
     zernike.print_coeffs(zernike_coeffs)
@@ -235,6 +233,7 @@ def run(args):
     print(TC.CLEAR)
 
     laser.set_power(config.WFS.laser_calib_power)
+    laser.enable()
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
 
     time.sleep(10)
@@ -328,6 +327,7 @@ if __name__ == '__main__':
         exit(-1)
 
     laser.set_power(args.laser_power)
+    laser.enable()
 
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)

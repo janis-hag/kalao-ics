@@ -586,8 +586,8 @@ class Timers:
 class GUI:
     ttm_plot_length = 300  # s
 
-    logs_lines = 10000  # s
-    initial_logs_entries = 100
+    logs_lines = 10000  # -
+    initial_logs_entries = 1000  # -
 
     plots_mapping = {
         # -1

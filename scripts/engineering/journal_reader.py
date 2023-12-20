@@ -2,8 +2,9 @@ import argparse
 import select
 
 from kalao import logs
+from kalao.utils.terminal_colors import TerminalColors as TC
 
-from kalao.definitions.enums import LogsOutputType
+from kalao.definitions.enums import LogsOutputType, LogType
 
 
 def run(args):
@@ -14,11 +15,34 @@ def run(args):
 
     for entry in logs.seek(reader, args.type, args.entries_number,
                            args.entries_since):
-        print(entry)
+        if args.type == LogsOutputType.RAW:
+            print(entry)
+        else:
+            format_entry(entry)
 
     while poll.poll():
         for entry in logs.get_last_entries(reader, args.type):
-            print(entry)
+            if args.type == LogsOutputType.RAW:
+                print(entry)
+            else:
+                format_entry(entry)
+
+
+def format_entry(entry):
+    style_timestamp = TC.WHITE
+    style_origin = ''
+    style_message = ''
+    style_end = TC.RESET
+
+    if entry['type'] == LogType.ERROR:
+        style_origin = TC.BOLD + TC.BRIGHT_RED + TC.BLINK
+        style_message = TC.BOLD + TC.BRIGHT_RED
+    elif entry['type'] == LogType.WARNING:
+        style_message = TC.BOLD + TC.BRIGHT_YELLOW,
+
+    print(
+        f'{style_timestamp}{entry["timestamp"]}{style_end} {style_origin}{entry["origin"]:>15s}{style_end}: {style_message}{entry["message"]}{style_end}'
+    )
 
 
 if __name__ == '__main__':
@@ -41,6 +65,6 @@ if __name__ == '__main__':
     if args.type:
         args.type = LogsOutputType.RAW
     else:
-        args.type = LogsOutputType.TEXT
+        args.type = LogsOutputType.JSON
 
     run(args)

@@ -372,10 +372,7 @@ class MainBackend(SHMFPSBackend):
 
     def get_logs_init(self):
         entries = []
-        for entry in logs.seek(self.reader, LogsOutputType.QT,
-                               config.GUI.initial_logs_entries):
-            entry['text'] = '<span class="init">' + entry['text'] + '<span>'
-
+        for entry in logs.seek(self.reader, config.GUI.initial_logs_entries):
             entries.append(entry)
 
         return entries
@@ -383,7 +380,7 @@ class MainBackend(SHMFPSBackend):
     def get_logs_new(self):
         entries = []
 
-        for entry in logs.get_last_entries(self.reader, LogsOutputType.QT):
+        for entry in logs.get_last_entries(self.reader):
             entries.append(entry)
 
         return entries

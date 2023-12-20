@@ -181,6 +181,7 @@ def center_on_laser():
         raise FlipMirrorNotUp
 
     laser.set_power(config.FLI.laser_calib_power)
+    laser.enable()
 
     # Reset tip tilt stream to 0
     aocontrol.reset_dm(config.AO.TTM_loop_number)
@@ -217,6 +218,7 @@ def center_on_laser():
     aocontrol.emgain_off()
 
     laser.set_power(config.WFS.laser_calib_power)
+    laser.enable()
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
 
     aocontrol.tip_tilt_wfs_to_ttm()

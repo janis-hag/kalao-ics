@@ -10,6 +10,7 @@ beck.py is part of the KalAO Instrument Control Software
 """
 
 import time
+import traceback
 from functools import wraps
 
 import numpy as np
@@ -39,7 +40,11 @@ def beckhoff_autoconnect(fun):
         else:
             disconnect_on_exit = False
 
-        ret = fun(*args, beck=beck, **kwargs)
+        try:
+            ret = fun(*args, beck=beck, **kwargs)
+        except Exception:
+            traceback.print_exc()
+            ret = None
 
         if disconnect_on_exit:
             beck.disconnect()
@@ -181,7 +186,7 @@ def motor_get_status(node, beck=None):
         return PLCStatus.DISABLED
     elif 'INITIALISING' in status:
         return PLCStatus.INITIALISING
-    elif not initialised in status:
+    elif not initialised:
         return PLCStatus.UNINITIALISED
     elif 'ERROR' in status:
         return PLCStatus.ERROR
@@ -206,11 +211,11 @@ def get_error(node, beck=None):
 
 
 def wait_loop(message, test, wait_time):
-    print(f"{message} ", end='', flush=True)
+    #print(f"{message} ", end='', flush=True)
     while test():
-        print(".", end='', flush=True)
+        #print(".", end='', flush=True)
         time.sleep(wait_time)
-    print(" DONE", flush=True)
+    #print(" DONE", flush=True)
 
 
 @beckhoff_autoconnect

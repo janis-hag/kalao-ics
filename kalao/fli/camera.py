@@ -17,14 +17,15 @@ import numpy as np
 from astropy.io import fits
 
 from kalao.cacao import toolbox
+from kalao.plc import flip_mirror
 from kalao.timers import database as database_timer
 from kalao.utils import database, file_handling
 
 import requests
 import requests.exceptions
 
-from kalao.definitions.enums import (CameraServerStatus, ReturnCode,
-                                     SequencerStatus)
+from kalao.definitions.enums import (CameraServerStatus, FlipMirrorPosition,
+                                     ReturnCode, SequencerStatus)
 
 import config
 
@@ -42,7 +43,7 @@ def take_empty(filepath=None):
     return ret
 
 
-def take_frame(dit, filepath=None, nbflushes=None, update_stream=True):
+def take_frame(dit, filepath=None, nbflushes=None):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
 
@@ -52,23 +53,14 @@ def take_frame(dit, filepath=None, nbflushes=None, update_stream=True):
     if ret == ReturnCode.CAMERA_OK:
         img = fits.getdata(filepath)
 
-        if update_stream:
-            if fli_stream.shape == img.shape:
-                fli_stream.set_data(img, True)
-            else:
-                database.store(
-                    'obs', {
-                        f'fli_log':
-                            f'[ERROR] {config.Streams.FLI} not updated, shapes are inconsistent.'
-                    })
+        _update_fli_stream(img, filepath)
 
         return img
     else:
         return None
 
 
-def take_cube(dit, nbframes, filepath=None, nbflushes=None,
-              update_stream=True):
+def take_cube(dit, nbframes, filepath=None, nbflushes=None):
     if filepath is None:
         filepath = '/tmp/fli_cube.fits'
 
@@ -83,19 +75,26 @@ def take_cube(dit, nbframes, filepath=None, nbflushes=None,
     if ret == ReturnCode.CAMERA_OK:
         img_cube = fits.getdata(filepath)
 
-        if update_stream:
-            if fli_stream.shape == img_cube.shape[-1]:
-                fli_stream.set_data(img_cube.shape[-1], True)
-            else:
-                database.store(
-                    'obs', {
-                        f'fli_log':
-                            f'[ERROR] {config.Streams.FLI} not updated, shapes are inconsistent.'
-                    })
+        _update_fli_stream(img_cube[-1], filepath)
 
         return img_cube
     else:
         return None
+
+
+def _update_fli_stream(img, filepath):
+    if fli_stream.shape == img.shape:
+        fli_stream.set_data(img, True)
+        fli_stream.set_keywords({
+            'laser': flip_mirror.get_position() == FlipMirrorPosition.UP,
+            'filepath': str(filepath),
+        })
+    else:
+        database.store(
+            'obs', {
+                f'fli_log':
+                    f'[ERROR] {config.Streams.FLI} not updated, shapes are inconsistent.'
+            })
 
 
 def take_image(

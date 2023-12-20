@@ -88,6 +88,8 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                                    data_unit=self.data_unit,
                                    axis_unit=self.axis_unit)
 
+        self.parang = 0
+
         self.fli_view.hovered.connect(self.hover_xyv_to_str)
         backend.data_updated.connect(self.data_updated)
         backend.fli_updated.connect(self.fli_updated)
@@ -101,6 +103,9 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         img = self.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
+            self.parang = (self.parang + 5) % 360
+            self.fli_view.addParang(self.parang)
+
             img_min, img_max = self.compute_min_max(img)
 
             self.fli_view.setImage(img, img_min, img_max)

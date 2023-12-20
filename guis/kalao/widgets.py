@@ -1,9 +1,10 @@
 import numpy as np
 
 from PySide6.QtCharts import QChart, QChartView, QDateTimeAxis, QXYSeries
-from PySide6.QtCore import (QEvent, QMargins, QPointF, QRect, QRectF, QSize,
-                            Signal)
-from PySide6.QtGui import QBrush, QFont, QIcon, QPainter, QPen, QPixmap, Qt
+from PySide6.QtCore import (QEvent, QLineF, QMargins, QPointF, QRect, QRectF,
+                            QSize, Signal)
+from PySide6.QtGui import (QBrush, QFont, QIcon, QPainter, QPainterPath, QPen,
+                           QPixmap, QPolygonF, Qt)
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
                                QGraphicsScene, QGraphicsSimpleTextItem,
@@ -53,7 +54,7 @@ class KalAOLabel(QLabel, ArrayToImageMixin):
 
     def heightForWidth(self, width):
         if self.pixmap_ is None:
-            super().heightForWidth()
+            super().heightForWidth(width)
         else:
             return self.pixmap_.height() * width / self.pixmap_.width()
 
@@ -334,13 +335,15 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
+        self.parang_group = self.scene.createItemGroup([])
+
     def viewSize(self):
         return self.view.adjusted(-self.margins[0], -self.margins[1],
                                   self.margins[2], self.margins[3])
 
     def heightForWidth(self, width):
         if self.pixmap is None:
-            super().heightForWidth()
+            super().heightForWidth(width)
         else:
             return self.pixmap.height() * width / self.pixmap.width()
 
@@ -543,6 +546,103 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
             self.scene.removeItem(probe)
 
             self.tick_labels.append(text_item)
+
+    def addParang(self, parang):
+        for item in self.parang_group.childItems():
+            self.scene.removeItem(item)
+
+        pen = QPen(Color.GREY, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen.setCosmetic(True)
+
+        brush = QBrush(Color.GREY, Qt.SolidPattern)
+
+        font = QFont()
+        font.setPixelSize(10)
+        font.setBold(True)
+
+        length = 75
+        angle = parang * np.pi / 180
+        arrow_size = 30
+
+        center_point = QPointF(0, 0)
+
+        north_point = center_point + QPointF(-np.sin(angle) * length,
+                                             -np.cos(angle) * length)
+        north_line = QLineF(center_point, north_point)
+
+        east_point = center_point + QPointF(
+            np.cos(angle) * length, -np.sin(angle) * length)
+        east_line = QLineF(center_point, east_point)
+
+        north_arrow_p0 = north_point + QPointF(
+            north_line.unitVector().dx(),
+            north_line.unitVector().dy()) * arrow_size / 2
+        north_arrow_p1 = north_arrow_p0 + QPointF(
+            np.cos(-angle + np.pi / 3) * arrow_size,
+            np.sin(-angle + np.pi / 3) * arrow_size)
+        north_arrow_p2 = north_arrow_p0 + QPointF(
+            np.cos(-angle + np.pi - np.pi / 3) * arrow_size,
+            np.sin(-angle + np.pi - np.pi / 3) * arrow_size)
+
+        east_arrow_p0 = east_point + QPointF(
+            east_line.unitVector().dx(),
+            east_line.unitVector().dy()) * arrow_size / 2
+        east_arrow_p1 = east_arrow_p0 + QPointF(
+            -np.sin(-angle + np.pi / 3) * arrow_size,
+            np.cos(-angle + np.pi / 3) * arrow_size)
+        east_arrow_p2 = east_arrow_p0 + QPointF(
+            -np.sin(-angle + np.pi - np.pi / 3) * arrow_size,
+            np.cos(-angle + np.pi - np.pi / 3) * arrow_size)
+
+        north_east_path = QPainterPath(north_point)
+        north_east_path.lineTo(center_point)
+        north_east_path.lineTo(east_point)
+
+        north_east = self.scene.addPath(north_east_path, pen)
+
+        pen = QPen(Color.GREY, 0.01, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen.setCosmetic(True)
+
+        north_arrow = self.scene.addPolygon(
+            QPolygonF([north_arrow_p0, north_arrow_p1, north_arrow_p2]), pen,
+            brush)
+        east_arrow = self.scene.addPolygon(
+            QPolygonF([east_arrow_p0, east_arrow_p1, east_arrow_p2]), pen,
+            brush)
+
+        north_textitem = OffsetedTextItem('N')
+        north_textitem.setFont(font)
+        north_textitem.setPos(north_point +
+                              QPointF(north_line.unitVector().dx(),
+                                      north_line.unitVector().dy()) * 1.5 *
+                              arrow_size)
+        north_textitem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        north_textitem.setBrush(brush)
+        self.scene.addItem(north_textitem)
+        north_textitem.setOffset(north_textitem.boundingRect().width() / 2,
+                                 north_textitem.boundingRect().height() / 2)
+
+        east_textitem = OffsetedTextItem('E')
+        east_textitem.setFont(font)
+        east_textitem.setPos(east_point +
+                             QPointF(east_line.unitVector().dx(),
+                                     east_line.unitVector().dy()) * 1.5 *
+                             arrow_size)
+        east_textitem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        east_textitem.setBrush(brush)
+        self.scene.addItem(east_textitem)
+        east_textitem.setOffset(east_textitem.boundingRect().width() / 2,
+                                east_textitem.boundingRect().height() / 2)
+
+        self.parang_group.addToGroup(north_east)
+        self.parang_group.addToGroup(north_arrow)
+        self.parang_group.addToGroup(east_arrow)
+        self.parang_group.addToGroup(north_textitem)
+        self.parang_group.addToGroup(east_textitem)
+        self.parang_group.setZValue(1)
+
+        self.parang_group.setPos(-self.parang_group.boundingRect().x() + 50,
+                                 -self.parang_group.boundingRect().y() + 50)
 
 
 class KalAOChart(QChart):

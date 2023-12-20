@@ -763,10 +763,7 @@ class MainBackend(FakeSHMFPSBackend):
         logs = []
 
         for _ in range(config.GUI.initial_logs_entries):
-            entry = self._generate_log()
-            entry['text'] = '<span class="init">' + entry['text'] + '<span>'
-
-            logs.append(entry)
+            logs.append(self._generate_log())
 
         return logs
 
@@ -774,20 +771,17 @@ class MainBackend(FakeSHMFPSBackend):
         logs = []
 
         for _ in range(10):
-            entry = self._generate_log()
-            logs.append(entry)
+            logs.append(self._generate_log())
 
         return logs
 
     def _generate_log(self):
         timestamp = datetime.now().strftime("%y-%m-%d %H:%M:%S")
 
-        style_timestamp = '<span class="grey">'
-        style_message = '<span>'
-        style_origin = '<span>'
-        style_end = '</span>'
+        origin = random.sample(sorted(config.Systemd.services), 1)[0]
+        origin = config.Systemd.services[origin]['unit'].removeprefix(
+            'kalao_').removesuffix('.service')
 
-        origin = random.sample(lorem_words, 1)[0]
         message = ' '.join(random.sample(lorem_words, 8))
         message = message[0].upper() + message[1:] + '.'
 
@@ -795,19 +789,18 @@ class MainBackend(FakeSHMFPSBackend):
 
         if type <= 0.001:
             type = LogType.ERROR
-            style_origin = '<span class="bold red">'
-            style_message = '<span class="bold red">'
             message = '[ERROR] ' + message
         elif type <= 0.011:
             type = LogType.WARNING
-            style_message = '<span class="bold yellow">'
             message = '[WARNING] ' + message
+        else:
+            type = LogType.INFO
 
         return {
-            'type':
-                type,
-            'text':
-                f'{style_timestamp}{timestamp}{style_end} {style_origin}{origin:>15s}{style_end}: {style_message}{message}{style_end}'
+            'type': type,
+            'timestamp': timestamp,
+            'origin': origin,
+            'message': message
         }
 
 

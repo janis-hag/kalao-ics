@@ -261,6 +261,9 @@ def _header_from_fits(file, fits_header=None):
     :return: header dataframe
     '''
 
+    if not isinstance(file, Path):
+        file = Path(file)
+
     if fits_header is None:
         fits_header = fits.getheader(file)
 
@@ -270,10 +273,13 @@ def _header_from_fits(file, fits_header=None):
         if keyword == 'COMMENT':
             continue
 
+        if len(keyword) > config.FITS.max_length_without_HIERARCH:
+            keyword = f'HIERARCH {keyword}'
+
         header_dict[keyword] = {
             'value': fits_header[keyword],
             'comment': fits_header.comments[keyword],
-            'source': f'fits:{file}'
+            'source': f'fits:{file.name}'
         }
 
     header_df = pd.DataFrame.from_dict(header_dict, orient='index')
@@ -289,11 +295,14 @@ def _header_from_yml(file):
     :return: pandas dataframe with the fits definitions
     '''
 
+    if not isinstance(file, Path):
+        file = Path(file)
+
     with open(file, 'r') as f:
         header_df = pd.json_normalize(yaml.safe_load(f))
 
     header_df.set_index('keyword', inplace=True)
-    header_df['source'] = f'yml:{file}'
+    header_df['source'] = f'yml:{file.name}'
 
     return header_df
 
@@ -350,7 +359,10 @@ def _sort_header(header_df):
     header_head_df = header_df[HIERARCH_lines]
     header_tail_df = header_df[~HIERARCH_lines]
 
-    header_df = pd.concat([header_head_df, header_tail_df.sort_index()])
+    header_df = pd.concat([
+        header_head_df.sort_index(),
+        header_tail_df.sort_index()
+    ])
 
     return header_df
 

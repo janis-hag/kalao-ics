@@ -37,3 +37,6 @@ pymongo
 
 # For GUIs
 PySide6
+
+# To avoid some errors (about cryptography being missing)
+cryptography

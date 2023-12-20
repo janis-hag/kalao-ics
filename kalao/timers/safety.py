@@ -270,7 +270,7 @@ def _check_plc():
 
     calib_unit.init(force_init=True)
     adc.init(config.PLC.Node.ADC1, force_init=True)
-    adc.init(config.PLC.Node.ADC1, force_init=True)
+    adc.init(config.PLC.Node.ADC2, force_init=True)
 
     if shutter.get_switch_time() > 86400:
         shutter.close()

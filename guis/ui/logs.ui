@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>855</width>
-    <height>658</height>
+    <width>1021</width>
+    <height>668</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTextEdit" name="logs_textedit">
+    <widget class="QPlainTextEdit" name="logs_textedit">
      <property name="palette">
       <palette>
        <active>
@@ -112,18 +112,14 @@
        <family>Noto Sans Mono</family>
       </font>
      </property>
-     <property name="lineWrapMode">
-      <enum>QTextEdit::NoWrap</enum>
+     <property name="verticalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOn</enum>
      </property>
-     <property name="readOnly">
-      <bool>true</bool>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOn</enum>
      </property>
-     <property name="html">
-      <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Noto Sans Mono'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <property name="cursorWidth">
+      <number>0</number>
      </property>
     </widget>
    </item>
@@ -172,7 +168,7 @@ p, li { white-space: pre-wrap; }
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>60</width>
+         <width>30</width>
          <height>20</height>
         </size>
        </property>
@@ -208,7 +204,7 @@ p, li { white-space: pre-wrap; }
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>60</width>
+         <width>30</width>
          <height>20</height>
         </size>
        </property>
@@ -220,6 +216,55 @@ p, li { white-space: pre-wrap; }
         <string>Acknowledge warnings and errors</string>
        </property>
       </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="filter_type_label">
+       <property name="text">
+        <string>Filter type:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="filter_type_combobox"/>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_6">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Maximum</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>30</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="filter_origin_label">
+       <property name="text">
+        <string>Filter service:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="filter_origin_combobox"/>
      </item>
      <item>
       <spacer name="horizontalSpacer_4">
