@@ -50,7 +50,7 @@ def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec):
         't120_log': f'Sending {delta_az_arcsec} and {delta_alt_arcsec} offsets'
     })
 
-    params = {'az_arcsec': delta_az_arcsec, 'alt_arcsec': delta_alt_arcsec}
+    params = {'az_arcsec': delta_az_arcsec, 'el_arcsec': delta_alt_arcsec}
 
     rValue, resp = _send_request('tracking/offset', params)
 
