@@ -147,7 +147,7 @@ def get_focus_value():
     position = resp['z']
     # Position format: 31997.12426757813
 
-    return rValue, position
+    return position
 
 
 def request_autofocus():
