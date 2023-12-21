@@ -142,10 +142,9 @@ def get_focus_value():
 
     rValue, resp = _send_request('/m2/status')
 
-    database.store('obs',
-                   {'t120_log': f'Received focus value {resp.json()["z"]}'})
+    database.store('obs', {'t120_log': f'Received focus value {resp["z"]}'})
 
-    position = resp.json()['z']
+    position = resp['z']
     # Position format: 31997.12426757813
 
     return rValue, position
