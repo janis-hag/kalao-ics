@@ -90,15 +90,16 @@ def send_focus_offset(focus_offset):
             })
             return -1
 
+        new_position = get_focus_value() + focus_offset
+
     if focus_offset > 40000 or focus_offset < 30000:
         database.store('obs', {
             't120_log': f'Error set_focus value out of bounds: {focus_offset}'
         })
         return -1
+        new_position = focus_offset
 
     database.store('obs', {'t120_log': f'Sending focus {focus_offset}'})
-
-    new_position = get_focus_value() + focus_offset
 
     #params = {"position": 32000}
     params = {"position": new_position}
