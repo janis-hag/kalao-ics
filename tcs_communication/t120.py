@@ -140,7 +140,7 @@ def update_fo_delta(focus_offset):
 def get_focus_value():
     '/m2/status'
 
-    rValue, resp = _send_request('/m2/status/')
+    rValue, resp = _send_request('/m2/status')
 
     database.store('obs',
                    {'t120_log': f'Received focus value {resp.json()["z"]}'})
