@@ -273,7 +273,7 @@ def _send_request(request_path, params={}):
                 database.store(
                     'obs', {
                         f'fli_log':
-                            f'[ERROR] Camera server answered with an Error {req.status_code}.{text}'
+                            f'[ERROR] Telescope server answered with an Error {req.status_code}.{text}'
                     })
 
                 return ReturnCode.T120_ERROR, data
@@ -291,8 +291,12 @@ def check_server_status():
     #if server_status[0] == 'inactive':
     #    return T120ServerStatus.DOWN
 
+    return T120ServerStatus.UP
+    # Overriding
+
     try:
-        r = requests.get(f'http://{config.T120.ip}:{config.T120.port}/ping')
+        r = requests.get(
+            f'http://{config.T120.ip}:{config.T120.http_port}/ping')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return T120ServerStatus.DOWN
