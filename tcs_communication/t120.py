@@ -103,7 +103,7 @@ def send_focus_offset(focus_offset):
     #params = {"position": 32000}
     params = {"position": new_position}
 
-    rValue, resp = _send_request('/m2/focus/', params)
+    rValue, resp = _send_request('/m2/focus', params)
 
     # print(resp.json())
     # {'b_alarmed': False, 'b_busy': True, 'b_enabled': False, 's_currentStatus': 'Wait for M2 Power supply stabilizated'}
