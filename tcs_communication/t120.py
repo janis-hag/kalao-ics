@@ -90,7 +90,7 @@ def send_focus_offset(focus_offset):
             })
             return -1
 
-    if focus_offset > 4000 or focus_offset < 3500:
+    if focus_offset > 40000 or focus_offset < 35000:
         database.store('obs', {
             't120_log': f'Error set_focus value out of bounds: {focus_offset}'
         })
