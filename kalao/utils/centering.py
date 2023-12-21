@@ -348,7 +348,8 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
         t120.send_focus_offset(new_focus)
 
         # TODO: Remove sleep if send_focus is blocking
-        time.sleep(15)
+        # TODO check what the new focus settling time is
+        time.sleep(5)
 
         file_path = camera.take_image(dit=focusing_dit,
                                       sequencer_arguments=sequencer_arguments)
