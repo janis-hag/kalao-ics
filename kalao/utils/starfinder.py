@@ -83,7 +83,7 @@ def find_star_fits(image_path):
 
     database.store(
         'obs', {
-            'psf_file': image_path.split('/')[-1],
+            'psf_file': image_path.name,
             'psf_x': x_star,
             'psf_y': y_star,
             'psf_peak': peak,
