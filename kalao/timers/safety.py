@@ -187,13 +187,12 @@ def _check_cooling_status():
         ret = -1
 
     elif water_temp > min_water_temp + config.Cooling.heater_hysteresis_temp:
-        database.store(
-            'obs', {
-                'safety_timer_log':
-                    f'Water temperature high enough ({water_temp} {unit}), stopping heater'
-            })
-
         if temperature_control.heater_status() != RelayState.OFF:
+            database.store(
+                'obs', {
+                    'safety_timer_log':
+                        f'Water temperature high enough ({water_temp} {unit}), stopping heater'
+                })
             temperature_control.heater_off()
 
     return ret
