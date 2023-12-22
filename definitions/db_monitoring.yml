@@ -18,6 +18,7 @@ fli_temp_CCD:
   unit: °C
   group: FLI
   fits_keyword: HIERARCH ESO DET CCD TEMP
+  error_range: [ -30.1, -29.9 ]
 
 fli_temp_HS:
   short: FLI HS Temp.
@@ -25,6 +26,8 @@ fli_temp_HS:
   unit: °C
   group: FLI
   fits_keyword: HIERARCH ESO DET HS TEMP
+  warn_range: [ .nan, 30 ]
+  error_range: [ .nan, 35 ]
 
 # IPPower
 ippower_rtc_status:
@@ -106,6 +109,7 @@ temp_water_in:
   unit: °C
   group: Cooling
   fits_keyword: HIERARCH ESO INS TEMP WATER IN
+  error_range: [ 5, 28 ]
 
 temp_water_out:
   short: Water out temp.
@@ -113,6 +117,7 @@ temp_water_out:
   unit: °C
   group: Cooling
   fits_keyword: HIERARCH ESO INS TEMP WATER OUT
+  error_range: [ 5, 28 ]
 
 pump_status:
   short: Pump status
@@ -143,6 +148,8 @@ flow_value:
   long: Flow rate of the coolant
   unit: l/min
   group: Cooling
+  warn_range: [ 1.2, .nan ]
+  error_range: [ 0.5, .nan ]
 
 hygrometry:
   short: Enclosure RH

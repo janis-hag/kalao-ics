@@ -166,101 +166,35 @@ def _check_cooling_status():
     :return: 0
     """
 
-    #TODO: no action done currently
-
     cooling_status = temperature_control.get_cooling_values()
     ret = 0
 
-    # Check water flow
-    if cooling_status['cooling_flow_value'] < config.Cooling.minimal_flow:
-        # Get time since flow is too low
-        low_flow_time = temperature_control.get_flow_threshold_time(
-            config.Cooling.minimal_flow)
+    min_water_temp = database.definitions['monitoring']['metadata'][
+        'temp_water_in']['error_range'][0]
+    unit = database.definitions['monitoring']['metadata']['temp_water_in'][
+        'unit']
+    water_temp = cooling_status['temp_water_in']
 
-        if low_flow_time > config.Cooling.flow_grace_time:
-            # Verify how low the cooling is already below minimal value.
-            database.store(
-                'obs', {
-                    'safety_timer_log':
-                        f'[ERROR] Cooling flow value {cooling_status["cooling_flow_value"]} below minimum {config.Cooling.minimal_flow} for {low_flow_time} seconds.'
-                })
-            ret = -1
-
-        else:
-            database.store(
-                'obs', {
-                    'safety_timer_log':
-                        f'[WARNING] Cooling flow value {cooling_status["cooling_flow_value"]} below minimum'
-                })
-            ret = -1
-
-    elif cooling_status['cooling_flow_value'] < config.Cooling.flow_warn:
-        database.store(
-            'obs', {
-                'safety_timer_log':
-                    f'[WARNING] Low cooling flow value {cooling_status["cooling_flow_value"]}'
-            })
-        ret = -1
-
-    # Check water temperature
-    if cooling_status['temp_water_in'] > config.Cooling.max_water_temp:
-        database.store(
-            'obs', {
-                'safety_timer_log':
-                    f'[ERROR] water_in temperature {cooling_status["temp_water_in"]} above maxiumum {config.Cooling.max_water_temp}'
-            })
-        ret = -1
-
-    elif cooling_status['temp_water_in'] < config.Cooling.min_water_temp:
-        database.store(
-            'obs', {
-                'safety_timer_log':
-                    f'[ERROR] water_in temperature {cooling_status["temp_water_in"]} below minimum {config.Cooling.min_water_temp}'
-            })
-
+    if water_temp < min_water_temp:
         if temperature_control.heater_status() != RelayState.ON:
+            database.store(
+                'obs', {
+                    'safety_timer_log':
+                        f'Water temperature too low ({water_temp} {unit}), starting heater'
+                })
             temperature_control.heater_on()
 
         ret = -1
 
-    elif cooling_status['temp_water_in'] > config.Cooling.heater_off_temp:
+    elif water_temp > min_water_temp + config.Cooling.heater_hysteresis_temp:
+        database.store(
+            'obs', {
+                'safety_timer_log':
+                    f'Water temperature high enough ({water_temp} {unit}), stopping heater'
+            })
+
         if temperature_control.heater_status() != RelayState.OFF:
             temperature_control.heater_off()
-
-    # Check camera temperatures
-    if camera.check_server_status() == CameraServerStatus.UP:
-        # Verify if camera is running
-        if cooling_status['fli_temp_HS'] > config.Cooling.max_HS_temp:
-            database.store(
-                'obs', {
-                    'safety_timer_log':
-                        f'[ERROR] fli_temp_HS temperature {cooling_status["fli_temp_HS"]} above maximum {config.Cooling.max_HS_temp}'
-                })
-            ret = -1
-
-        elif cooling_status['fli_temp_HS'] > config.Cooling.HS_temp_warn:
-            database.store(
-                'obs', {
-                    'safety_timer_log':
-                        f'[WARNING] fli_temp_HS temperature {cooling_status["fli_temp_HS"]} above warning threshold {config.Cooling.HS_temp_warn}'
-                })
-            ret = -1
-
-        if cooling_status['fli_temp_CCD'] > config.Cooling.max_CCD_temp:
-            database.store(
-                'obs', {
-                    'safety_timer_log':
-                        f'[ERROR] fli_temp_CCD temperature {cooling_status["fli_temp_CCD"]} above maximum {config.Cooling.max_CCD_temp}'
-                })
-            ret = -1
-
-        elif cooling_status['fli_temp_CCD'] > config.Cooling.CCD_temp_warn:
-            database.store(
-                'obs', {
-                    'safety_timer_log':
-                        f'[WARNING] fli_temp_CCD temperature {cooling_status["fli_temp_CCD"]} above warning threshold {config.Cooling.CCD_temp_warn}'
-                })
-            ret = -1
 
     return ret
 

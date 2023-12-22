@@ -11,6 +11,8 @@ database.py is part of the KalAO Instrument Control Software
 
 import time
 
+import numpy as np
+
 from kalao import euler, ippower
 from kalao.cacao import telemetry
 from kalao.fli import camera
@@ -79,6 +81,10 @@ def update_monitoring_db():
 
     monitoring_data = _gather_for_monitoring()
 
+    for key, value in monitoring_data.items():
+        check_range(key, value,
+                    database.definitions['monitoring']['metadata'][key])
+
     if monitoring_data != {}:
         database.store('monitoring', monitoring_data)
 
@@ -87,7 +93,58 @@ def update_telemetry_db():
     #database.store('obs',
     #               {'database_timer_log': 'Updating telemetry database'})
 
-    telemetry.save(shm_and_fps_cache)
+    telemetry_data = telemetry.gather(shm_and_fps_cache)
+
+    for key, value in telemetry_data.items():
+        check_range(key, value,
+                    database.definitions['telemetry']['metadata'][key])
+
+    if telemetry_data != {}:
+        database.store('telemetry', telemetry_data)
+
+
+def check_range(key, value, metadata):
+    if not isinstance(value, float) and not isinstance(value, int):
+        return
+
+    error_range = metadata.get('error_range', [np.nan, np.nan])
+    warn_range = metadata.get('warn_range', [np.nan, np.nan])
+
+    error_min = error_range[0]
+    error_max = error_range[1]
+    warn_min = warn_range[0]
+    warn_max = warn_range[1]
+
+    unit = metadata.get('unit')
+    if unit is None or unit == '':
+        unit = ''
+    else:
+        unit = f' {unit}'
+
+    if value > error_max:
+        database.store(
+            'obs', {
+                'database_timer_log':
+                    f'[ERROR] {key} value ({value}{unit}) above error threshold of {error_max}{unit})'
+            })
+    elif value < error_min:
+        database.store(
+            'obs', {
+                'database_timer_log':
+                    f'[ERROR] {key} value ({value}{unit}) under error threshold of {error_min}{unit})'
+            })
+    elif value > warn_max:
+        database.store(
+            'obs', {
+                'database_timer_log':
+                    f'[WARNING] {key} value ({value}{unit}) above warning threshold of {warn_max}{unit})'
+            })
+    elif value < warn_min:
+        database.store(
+            'obs', {
+                'database_timer_log':
+                    f'[WARNING] {key} value ({value}{unit}) under warning threshold of {warn_min}{unit})'
+            })
 
 
 if __name__ == "__main__":

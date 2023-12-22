@@ -41,12 +41,13 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
         self.groupboxes = {}
         self.lineedits = {}
 
-        for key, info in database.definitions['monitoring']['metadata'].items(
-        ):
-            self.add_item('monitoring', key, info)
+        for key, metadata in database.definitions['monitoring'][
+                'metadata'].items():
+            self.add_item('monitoring', key, metadata)
 
-        for key, info in database.definitions['telemetry']['metadata'].items():
-            self.add_item('telemetry', key, info)
+        for key, metadata in database.definitions['telemetry'][
+                'metadata'].items():
+            self.add_item('telemetry', key, metadata)
 
         column_length = np.zeros(self.data_layout.count())
         for groupbox in sorted(self.groupboxes.values(),
@@ -63,8 +64,8 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
         self.backend.monitoringandtelemetry_updated.connect(
             self.monitoringandtelemetry_updated)
 
-    def add_item(self, collection, key, info):
-        group = info.get('group', 'Generic')
+    def add_item(self, collection, key, metadata):
+        group = metadata.get('group', 'Generic')
 
         groupbox = self.groupboxes.get(group)
         if groupbox is None:
@@ -73,25 +74,26 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
 
             self.groupboxes[group] = groupbox
 
-        label = QLabel(info.get('short'))
+        label = QLabel(metadata.get('short'))
         label.setToolTipDuration(2147483647)
-        label.setToolTip(info.get('long'))
+        label.setToolTip(metadata.get('long'))
 
         lineedit = QLineEdit()
         lineedit.setToolTipDuration(2147483647)
         lineedit.setReadOnly(True)
 
-        unit = info.get('unit')
+        unit = metadata.get('unit')
         if unit is None or unit == '':
             lineedit.unit = ''
         else:
-            lineedit.unit = ' ' + unit
+            lineedit.unit = f' {unit}'
 
         lineedit.setText(f'--{lineedit.unit}')
 
         lineedit.collection = collection
         lineedit.key = key
         lineedit.timestamp = datetime.fromtimestamp(0, tz=timezone.utc)
+        lineedit.metadata = metadata
 
         row = groupbox.layout().rowCount()
         groupbox.layout().addWidget(label, row, 0)
@@ -121,6 +123,23 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
             if (datetime.now(timezone.utc) -
                     lineedit.timestamp).total_seconds() > max_age:
                 lineedit.setStyleSheet(f'color: {Color.GREY.name()};')
+            elif isinstance(value, float) or isinstance(value, int):
+                error_range = lineedit.metadata.get('error_range',
+                                                    [np.nan, np.nan])
+                warn_range = lineedit.metadata.get('warn_range',
+                                                   [np.nan, np.nan])
+
+                error_min = error_range[0]
+                error_max = error_range[1]
+                warn_min = warn_range[0]
+                warn_max = warn_range[1]
+
+                if value > error_max or value < error_min:
+                    lineedit.setStyleSheet(f'color: {Color.RED.name()};')
+                elif value > warn_max or value < warn_min:
+                    lineedit.setStyleSheet(f'color: {Color.ORANGE.name()};')
+                else:
+                    lineedit.setStyleSheet(f'')
             else:
                 lineedit.setStyleSheet(f'')
 

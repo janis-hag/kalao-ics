@@ -556,18 +556,7 @@ class AO:
 
 
 class Cooling:
-    minimal_flow = 0.5  # l/min
-    flow_warn = 1.2  # l/min
-    flow_grace_time = 120  # s
-
-    max_water_temp = 28  # °C
-    min_water_temp = 5  # °C
-    heater_off_temp = min_water_temp + 2  # °C
-
-    HS_temp_warn = 30  # °C
-    max_HS_temp = 35  # °C
-    CCD_temp_warn = -29.8  # °C
-    max_CCD_temp = -25  # °C
+    heater_hysteresis_temp = 2  # °C
 
     pump_restart_temp = 35  # °C
     max_pump_temperature = 60  # °C

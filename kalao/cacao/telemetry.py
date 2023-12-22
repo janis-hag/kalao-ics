@@ -179,19 +179,3 @@ def gather(shm_and_fps_cache):
             telemetry_data['ttm_loop_on'] = 'OFF'
 
     return telemetry_data
-
-
-def save(shm_and_fps_cache):
-    """
-    Saves all the adaptive optics telemetry on the mongo database.
-
-    :param shm_and_fps_cache: A list containing pointers to all the already opened streams.
-    :return: status code
-    """
-
-    telemetry_data = gather(shm_and_fps_cache)
-
-    if telemetry_data != {}:
-        database.store('telemetry', telemetry_data)
-
-    return 0

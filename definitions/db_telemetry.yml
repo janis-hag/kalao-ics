@@ -18,6 +18,7 @@ nuvu_temp_ccd:
   long: Temperature of the EMCCD
   unit: °C
   group: Nüvü
+  error_range: [ -60.1, -59.9 ]
 
 nuvu_temp_controller:
   short: CNTRLR Temp.

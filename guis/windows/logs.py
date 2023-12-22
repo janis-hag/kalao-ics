@@ -74,7 +74,7 @@ class LogsWidget(KalAOWidget):
 
         levels = QTreeWidgetItem(['Levels'])
         # levels.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsAutoTristate)
-        self.levels_items['toplevel'] = levels
+        # self.levels_items['toplevel'] = levels
 
         for level in LogLevel:
             child = QTreeWidgetItem([level.value])
@@ -92,7 +92,7 @@ class LogsWidget(KalAOWidget):
 
         services = QTreeWidgetItem(['Services'])
         # services.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsAutoTristate)
-        self.services_items['toplevel'] = services
+        # self.services_items['toplevel'] = services
 
         child = QTreeWidgetItem(['systemd'])
         child.setCheckState(0, Qt.Checked)
@@ -119,7 +119,7 @@ class LogsWidget(KalAOWidget):
 
         logs = QTreeWidgetItem(['Logs'])
         # logs.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsAutoTristate)
-        self.logs_items['toplevel'] = logs
+        # self.logs_items['toplevel'] = logs
 
         child = QTreeWidgetItem(['<none>'])
         child.setCheckState(0, Qt.Checked)
@@ -208,18 +208,20 @@ class LogsWidget(KalAOWidget):
             if self.levels_items[entry['level']].checkState(0) != Qt.Checked:
                 return False
         except KeyError:
-            if self.levels_items['toplevel'].checkState(0) != Qt.Checked:
-                return False
+            pass
+            # if self.levels_items['toplevel'].checkState(0) != Qt.Checked:
+            #     return False
 
         try:
             if self.services_items[entry['origin']].checkState(
                     0) != Qt.Checked:
                 return False
         except KeyError:
-            if self.services_items['toplevel'].checkState(0) != Qt.Checked:
-                return False
+            pass
+            # if self.services_items['toplevel'].checkState(0) != Qt.Checked:
+            #     return False
 
-        message_splitted = entry['origin'].split('|')
+        message_splitted = entry['message'].split('|')
 
         if len(message_splitted) == 1:
             if self.logs_items['<none>'].checkState(0) != Qt.Checked:
@@ -230,8 +232,9 @@ class LogsWidget(KalAOWidget):
                         0) != Qt.Checked:
                     return False
             except KeyError:
-                if self.logs_items['toplevel'].checkState(0) != Qt.Checked:
-                    return False
+                pass
+                # if self.logs_items['toplevel'].checkState(0) != Qt.Checked:
+                #     return False
 
         return True
 
