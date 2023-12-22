@@ -41,16 +41,14 @@ def get_state(beck=None):
         database.store('obs',
                        {'shutter_log': f'[ERROR] {error_text} ({error_code})'})
 
-        state = ShutterState.ERROR
+        return ShutterState.ERROR
 
     else:
         if beck.get_node(f'{config.PLC.Node.SHUTTER}.bStatus_Closed_Shutter'
                          ).get_value():
-            state = ShutterState.CLOSED
+            return ShutterState.CLOSED
         else:
-            state = ShutterState.OPEN
-
-    return state
+            return ShutterState.OPEN
 
 
 @core.beckhoff_autoconnect
@@ -69,6 +67,8 @@ def init(beck=None):
     close(beck=beck)
     open(beck=beck)
     close(beck=beck)
+
+    database.store('obs', {'shutter_log': 'Shutter initialised'})
 
     return init_status
 
@@ -132,10 +132,8 @@ def get_switch_time():
     :return:  switch_time a datetime object
     """
 
-    # Update db to make sure the latest data point is valid
-    database_timer.update_monitoring_db()
-
-    data = database.get_time_since_state('monitoring', 'shutter_state')
+    data = database.get_time_since_state('monitoring', 'shutter_state', '==',
+                                         get_state().value)
 
     if data.get('since') is None:
         return data['current']['value'], 0

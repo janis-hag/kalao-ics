@@ -9,8 +9,10 @@ camera.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 import json
+import math
 import shutil
 import time
+from pathlib import Path
 
 import numpy as np
 
@@ -83,12 +85,19 @@ def take_cube(dit, nbframes, filepath=None, nbflushes=None):
 
 
 def _update_fli_stream(img, filepath):
+    filepath = Path(filepath)
+
     if fli_stream.shape == img.shape:
         fli_stream.set_data(img, True)
-        fli_stream.set_keywords({
+
+        keywords = {
             'laser': flip_mirror.get_position() == FlipMirrorPosition.UP,
-            'filepath': str(filepath),
-        })
+        }
+
+        for i in range(math.ceil(len(filepath.name) / 16)):
+            keywords[f'filepath_{i}'] = str(filepath.name)[i * 16:(i+1) * 16]
+
+        fli_stream.set_keywords(keywords)
     else:
         database.store(
             'obs', {
@@ -294,7 +303,7 @@ def _send_request(request_type, params={}):
                 if data.get('error_status') is not None:
                     text += f' (status = {data.get("error_status")})'
             else:
-                text = ' ' + data
+                text = f' {data}'
 
             database.store(
                 'obs', {

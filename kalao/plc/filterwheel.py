@@ -201,6 +201,9 @@ def init():
             fw.initialize()
             time.sleep(config.FilterWheel.initialization_wait)
 
+            database.store('obs',
+                           {'filterwheel_log': f'Filter wheel initialised'})
+
             return 0
 
         except thorlabs.serial.SerialException:
@@ -214,4 +217,9 @@ def init():
     database.store('obs', {
         'filterwheel_log': '[ERROR] Filter wheel failed too many time.'
     })
+
+    database.store('obs', {
+        'filterwheel_log': f'[ERROR] Filter wheel initialisation failed'
+    })
+
     return -1

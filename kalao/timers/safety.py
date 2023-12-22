@@ -272,12 +272,14 @@ def _check_plc():
     adc.init(config.PLC.Node.ADC1, force_init=True)
     adc.init(config.PLC.Node.ADC2, force_init=True)
 
-    if shutter.get_switch_time() > 86400:
+    state, switch_time = shutter.get_switch_time()
+    if switch_time > 86400:
         shutter.close()
         shutter.open()
         shutter.close()
 
-    if flip_mirror.get_switch_time() > 86400:
+    state, switch_time = flip_mirror.get_switch_time()
+    if switch_time > 86400:
         flip_mirror.down()
         flip_mirror.up()
         flip_mirror.down()

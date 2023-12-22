@@ -225,29 +225,25 @@ def get_tube_temp():
 
 def _send_request(request_path, params={}):
     # Clean params
-
     for key, value in list(params.items()):
         if value is None:
             del params[key]
 
-    if not check_server_status() == T120ServerStatus.UP:
-        return ReturnCode.T120_SERVER_DOWN, {}
+    if config.T120.dummy_telescope:
+        if request_path == 'acquire':
+            time.sleep(2)
+
+        return ReturnCode.T120_OK, {}
 
     else:
-        if config.T120.dummy_telescope:
-            if request_path == 'acquire':
-                time.sleep(2)
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "ETCS_API_TOKEN_2023"
+        }
 
-            return ReturnCode.T120_OK, {}
+        url = f'http://{config.T120.ip}:{config.T120.http_port}/{request_path}'
 
-        else:
-
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": "ETCS_API_TOKEN_2023"
-            }
-
-            url = f'http://{config.T120.ip}:{config.T120.http_port}/{request_path}'
+        try:
             if params == {}:
                 req = requests.get(url, timeout=config.T120.request_timeout,
                                    headers=headers)
@@ -255,34 +251,26 @@ def _send_request(request_path, params={}):
                 req = requests.post(url, json=params,
                                     timeout=config.T120.request_timeout,
                                     headers=headers)
+        except requests.exceptions.ConnectionError:
+            return ReturnCode.T120_SERVER_DOWN, None
 
-            try:
-                data = json.loads(req.text)
-            except Exception:
-                data = req.text
+        try:
+            data = json.loads(req.text)
+        except Exception:
+            data = req.text
 
-            if req.status_code == 200:
-                return ReturnCode.T120_OK, data
-            else:
-                text = ''
+        if req.status_code == 200:
+            return ReturnCode.T120_OK, data
+        else:
+            text = f' {data}'
 
-                if isinstance(data, dict):
-                    if data.get('error_text') is not None:
-                        text += f' {data.get("error_text")}'
+            database.store(
+                'obs', {
+                    f't120_log':
+                        f'[ERROR] Telescope server answered with an Error {req.status_code}.{text}'
+                })
 
-                    if data.get('error_status') is not None:
-                        text += f' (status = {data.get("error_status")})'
-
-                else:
-                    text = ' ' + data
-
-                database.store(
-                    'obs', {
-                        f'fli_log':
-                            f'[ERROR] Telescope server answered with an Error {req.status_code}.{text}'
-                    })
-
-                return ReturnCode.T120_ERROR, data
+            return ReturnCode.T120_ERROR, data
 
 
 def check_server_status():
@@ -292,17 +280,8 @@ def check_server_status():
     :return: status of the camera server (UP/DOWN/ERROR)
     """
 
-    #server_status = services.camera(ServiceAction.STATUS)
-
-    #if server_status[0] == 'inactive':
-    #    return T120ServerStatus.DOWN
-
-    return T120ServerStatus.UP
-    # Overriding
-
     try:
-        r = requests.get(
-            f'http://{config.T120.ip}:{config.T120.http_port}/ping')
+        r = requests.get(f'http://{config.T120.ip}:{config.T120.port}/')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return T120ServerStatus.DOWN

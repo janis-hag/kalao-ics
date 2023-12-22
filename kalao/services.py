@@ -11,7 +11,7 @@ system.py is part of the KalAO Instrument Control Software
 
 import signal
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from kalao.utils import database
 
@@ -54,7 +54,8 @@ def get_status(unit, system=False):
                               'StateChangeTimestamp')
 
     # Convert Unix microseconds timestamp into datetime object
-    timestamp = datetime.utcfromtimestamp(int(timestamp) * 10**(-6))
+    timestamp = datetime.fromtimestamp(
+        int(timestamp) * 10**(-6), tz=timezone.utc)
 
     bus.close()
 

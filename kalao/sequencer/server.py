@@ -54,6 +54,7 @@ def init():
         shutter.init,
         tungsten.init,
         laser.init,
+        filterwheel.init,
         lambda: adc.init(config.PLC.Node.ADC1),
         lambda: adc.init(config.PLC.Node.ADC2),
     ]
@@ -122,12 +123,12 @@ def init():
                     'sequencer_log':
                         f'[ERROR] Initialisation failed for {f}, returned {ret}'
                 })
-            processes_error[f] = p
+            processes_error[f] = ret
 
     database.store(
         'obs', {
             'sequencer_log':
-                f'Initialisation finished in {time_stop - time_start}s. {len(processes)} launched, {len(processes_terminated)} terminated, {len(processes_error)} returned with error'
+                f'Initialisation finished in {time_stop - time_start:.1f}s. {len(processes)} launched, {len(processes_terminated)} terminated, {len(processes_killed)} killed, {len(processes_error)} returned with error'
         })
 
     return 0

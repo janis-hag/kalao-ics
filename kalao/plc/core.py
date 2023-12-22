@@ -42,9 +42,10 @@ def beckhoff_autoconnect(fun):
 
         try:
             ret = fun(*args, beck=beck, **kwargs)
-        except Exception:
-            traceback.print_exc()
-            ret = None
+        except Exception as e:
+            if disconnect_on_exit:
+                beck.disconnect()
+            raise e
 
         if disconnect_on_exit:
             beck.disconnect()

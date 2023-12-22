@@ -694,6 +694,11 @@ def restart_wfs():
 
     subprocess.run(["/home/kalao/kalao-camstack/scripts/cam-nuvustart"])
 
+    database.store(
+        'obs', {
+            'ao_log':
+                f'Waiting {config.AO.wait_camstack_start}s for nuvu_raw to start'
+        })
     time.sleep(config.AO.wait_camstack_start)
 
     if nuvu_acquire_fps is not None and nuvu_acquire_was_running:

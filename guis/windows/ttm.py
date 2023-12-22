@@ -92,21 +92,21 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
             self.update_axis()
 
     def update_axis(self):
+        y_min = np.inf
+        y_max = -np.inf
+
+        for p in self.tip_series.points():
+            y_min = min(y_min, p.y())
+            y_max = max(y_max, p.y())
+
+        for p in self.tilt_series.points():
+            y_min = min(y_min, p.y())
+            y_max = max(y_max, p.y())
+
+        self.autoscale_min = y_min
+        self.autoscale_max = y_max
+
         if self.autoscale_checkbox.isChecked():
-            y_min = np.inf
-            y_max = -np.inf
-
-            for p in self.tip_series.points():
-                y_min = min(y_min, p.y())
-                y_max = max(y_max, p.y())
-
-            for p in self.tilt_series.points():
-                y_min = min(y_min, p.y())
-                y_max = max(y_max, p.y())
-
-            self.autoscale_min = y_min
-            self.autoscale_max = y_max
-
             with QSignalBlocker(self.min_spinbox):
                 self.min_spinbox.setMaximum(y_max / self.data_scaling)
                 self.min_spinbox.setValue(y_min / self.data_scaling)

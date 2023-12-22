@@ -140,7 +140,7 @@ fan_status:
 
 flow_value:
   short: Coolant flow rate
-  long: Flow value of the coolant
+  long: Flow rate of the coolant
   unit: l/min
   group: Cooling
 

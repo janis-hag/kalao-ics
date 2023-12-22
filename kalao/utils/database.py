@@ -11,6 +11,7 @@ from enum import Enum
 from pathlib import Path
 from pprint import pprint
 
+import numpy as np
 import pandas as pd
 
 from kalao.utils import kalao_time
@@ -34,7 +35,14 @@ definitions = {
     },
 }
 
-condition_mapping = {'==': '$ne', '>=': '$lt', '<=': '$gt'}
+condition_mapping = {
+    '==': '$ne',
+    '!=': '$eq',
+    '>=': '$lt',
+    '>': '$lte',
+    '<=': '$gt',
+    '<': '$gte'
+}
 
 codec_options = CodecOptions(tz_aware=True, tzinfo=timezone.utc)
 
@@ -59,71 +67,118 @@ def _get_db(dt=None):
     return client[kalao_time.get_start_of_night(dt=dt)]
 
 
-def get_collection_last_update(collection_name, dt=None):
-    db = _get_db(dt)
+def get_collection_last_update(collection_name):
+    dt = kalao_time.now()
+    day = 0
 
-    collection = db.get_collection(collection_name,
-                                   codec_options=codec_options)
+    while day <= config.Database.max_days:
+        db = _get_db(dt - timedelta(days=day))
+        collection = db.get_collection(collection_name,
+                                       codec_options=codec_options)
 
-    # yapf: disable
-    cursor = collection.find(
-        {},
-        {'_id': 0, 'last_timestamp': 1},
-        sort=[('last_timestamp', DESCENDING)],
-        limit=1)
-    # yapf: enable
-
-    try:
-        return cursor[0]['last_timestamp']
-    except (IndexError, KeyError):
-        return datetime.fromtimestamp(0).replace(tzinfo=timezone.utc)
-
-
-def get(collection_name, keys=None, nb_of_point=1, dt=None):
-    db = _get_db(dt)
-
-    collection = db.get_collection(collection_name,
-                                   codec_options=codec_options)
-
-    # yapf: disable
-    if keys is None:
+        # yapf: disable
         cursor = collection.find(
             {},
-            {'_id': 0, 'key': 1, 'values': {'$slice': -nb_of_point}},
-            sort=[('last_timestamp', DESCENDING)])
-
-    elif isinstance(keys, str):
-        cursor = collection.find(
-            {'key': keys},
-            {'_id': 0, 'key': 1, 'values': {'$slice': -nb_of_point}},
+            {'_id': 0, 'last_timestamp': 1},
+            sort=[('last_timestamp', DESCENDING)],
             limit=1)
+        # yapf: enable
 
-    else:
-        match_list = []
-        for key in list(keys):
-            match_list.append({'key': key})
+        try:
+            return cursor[0]['last_timestamp']
+        except (IndexError, KeyError):
+            pass
 
-        cursor = collection.aggregate([
-            {'$match': {'$or': match_list}},
-            {'$project': {'_id': 0, 'key': 1, 'values': {'$slice': ['$values', -nb_of_point]}}},
-        ])
-    # yapf: enable
+        day += 1
 
+    return datetime.fromtimestamp(0, tz=timezone.utc)
+
+
+def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
+    day = 0
     data = {}
 
-    if cursor is not None:
-        for document in cursor:
-            data[document['key']] = document['values']
+    if dt is None:
+        dt = kalao_time.now()
+
+    if days is not None:
+        max_days = days
+    else:
+        max_days = config.Database.max_days
+
+    while day <= max_days:
+        db = _get_db(dt - timedelta(days=day))
+        collection = db.get_collection(collection_name,
+                                       codec_options=codec_options)
+
+        # yapf: disable
+        if keys is None:
+            if np.isinf(nb_of_point):
+                values_to_keep = 1 # Keep all
+            else:
+                values_to_keep = {'$slice': -nb_of_point}
+
+            cursor = collection.find(
+                {},
+                {'_id': 0, 'key': 1, 'values': values_to_keep},
+                sort=[('last_timestamp', DESCENDING)])
+
+        elif isinstance(keys, str):
+            if np.isinf(nb_of_point):
+                values_to_keep = 1 # Keep all
+            else:
+                values_to_keep = {'$slice': -nb_of_point}
+
+            cursor = collection.find(
+                {'key': keys},
+                {'_id': 0, 'key': 1, 'values': values_to_keep},
+                limit=1)
+
+        else:
+            if np.isinf(nb_of_point):
+                values_to_keep = 1 # Keep all
+            else:
+                values_to_keep = {'$slice': ['$values', -nb_of_point]}
+
+            match_list = []
+            for key in list(keys):
+                match_list.append({'key': key})
+
+            cursor = collection.aggregate([
+                {'$match': {'$or': match_list}},
+                {'$project': {'_id': 0, 'key': 1, 'values': values_to_keep}},
+            ])
+        # yapf: enable
+
+        if cursor is not None:
+            for document in cursor:
+                key = document['key']
+
+                if key not in data:
+                    data[key] = []
+
+                document['values'].reverse()
+                data[key] += document['values']
+
+                if isinstance(keys, list) and len(data[key]) >= nb_of_point:
+                    keys.remove(key)
+
+        if keys is None and data != {}:
+            return data
+        elif isinstance(keys, str) and len(data.get(keys, [])) >= nb_of_point:
+            return data
+        elif isinstance(keys, list) and len(keys) == 0:
+            return data
+
+        day += 1
 
     return data
 
 
-def get_time_since_state(collection_name, key, condition='==', value=None,
-                         dt=None):
-    db = _get_db(dt)
-
-    collection = db.get_collection(collection_name,
-                                   codec_options=codec_options)
+def get_time_since_state(collection_name, key, condition='==', value=None):
+    dt = kalao_time.now()
+    day = 0
+    data = {}
 
     if value is None:
         value = '$current.value'
@@ -133,28 +188,37 @@ def get_time_since_state(collection_name, key, condition='==', value=None,
     else:
         return {}
 
-    # yapf: disable
-    cursor = collection.aggregate([
-        {'$match': {'key': key}},
-        {'$project': {'_id': 0, 'key': 1, 'values': 1}},
-        {'$addFields': {'current': {'$arrayElemAt': ['$values', -1]}}},
-        {'$addFields': {'previous': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': cond, 'as': "previous"}}, -1]}}},
-        {'$addFields': {'since': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': {'$gt': ['$$since.timestamp', '$previous.timestamp']}, 'as': "since"}}, 1]}}},
-        {'$project': {'values': 0}},
-    ])
-    # yapf: enable
+    while data.get('previous') is None and day <= config.Database.max_days:
+        current = data.get('current', {'$arrayElemAt': ['$values', -1]})
 
-    data = {}
+        db = _get_db(dt - timedelta(days=day))
+        collection = db.get_collection(collection_name,
+                                       codec_options=codec_options)
 
-    if cursor is not None:
-        for document in cursor:
-            data[document['key']] = {
+        # yapf: disable
+        cursor = collection.aggregate([
+            {'$match': {'key': key}},
+            {'$project': {'_id': 0, 'key': 1, 'values': 1}},
+            {'$addFields': {'current': current}},
+            {'$addFields': {'previous': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': cond, 'as': "previous"}}, -1]}}},
+            {'$addFields': {'since': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': {'$gt': ['$$since.timestamp', '$previous.timestamp']}, 'as': "since"}}, 1]}}},
+            {'$project': {'values': 0}},
+        ])
+        # yapf: enable
+
+        try:
+            document = cursor.next()
+            data = {
                 'current': document.get('current'),
                 'previous': document.get('previous'),
                 'since': document.get('since')
             }
+        except StopIteration:
+            pass
 
-    return data.get(key)
+        day += 1
+
+    return data
 
 
 def store(collection_name, data):
@@ -165,7 +229,7 @@ def store(collection_name, data):
 
     # If it's a message for a log, also print it
     for key, value in data.items():
-        if '_log' in key:
+        if key.endswith('_log'):
             log_name = key.replace('_log', '').replace('_', ' ').upper()
 
             print(f'{log_name} | {value}', flush=True)
@@ -225,7 +289,7 @@ def get_all_last(collection_name):
                definitions[collection_name]['metadata'].keys())
 
 
-def get_last(collection_name, key=None, max_days=config.Database.max_days):
+def get_last(collection_name, key=None):
     """
     Searches for the last record in the database for a certain collection
 
@@ -234,18 +298,9 @@ def get_last(collection_name, key=None, max_days=config.Database.max_days):
     :return: last record
     """
 
-    dt = kalao_time.now()
+    data = get(collection_name, key)
 
-    data = {}
-    day_number = 0
-
-    while data == {} and day_number <= max_days:
-        data = get(collection_name, key, 1, dt=dt - timedelta(days=day_number))
-        day_number += 1
-
-    if data == {}:
-        return {}
-    else:
+    try:
         if key is None:
             key = list(data.keys())[0]
 
@@ -253,6 +308,8 @@ def get_last(collection_name, key=None, max_days=config.Database.max_days):
         data['key'] = key
 
         return data
+    except (IndexError, KeyError):
+        return {}
 
 
 def get_last_value(collection_name, key=None):
@@ -298,27 +355,18 @@ def read_mongo_to_pandas(collection_name, keys=None, dt=None, days=1,
     if keys is None:
         keys = definitions[collection_name]['metadata'].keys()
 
-    appended_df = []
-
     if dt is None:
         dt = kalao_time.now()
 
-    for day_number in range(days):
-        data = get(collection_name, keys, nb_of_point=99999999,
-                   dt=dt - timedelta(days=day_number))
+    data_db = get(collection_name, keys, nb_of_point=np.inf, dt=dt, days=days)
 
-        for key in data.keys():
-            data[key] = {d['timestamp']: d['value'] for d in data[key]}
+    data_df = {}
+    for key in data_db.keys():
+        data_df[key] = {d['timestamp']: d['value'] for d in data_db[key]}
 
-        # Construct the DataFrame
-        appended_df.append(pd.DataFrame(data, columns=keys))
-
-    # Check if the database is empty for the given days
-    if all([df.empty for df in appended_df]):
-        df = pd.DataFrame(columns=keys)
-        df.index.name = 'timestamp'
-    else:
-        df = pd.concat(appended_df).sort_index()
+    # Construct the DataFrame
+    df = pd.DataFrame(data_df, columns=keys)
+    df.index.name = 'timestamp'
 
     # Downsample using temporal binning
     if sampling is not None and len(df) > sampling:

@@ -100,8 +100,6 @@ def init(beck=None):
     """
     database.store('obs', {'tungsten_log': f'Initialising tungsten lamp'})
 
-    tungsten_status = 'ERROR'
-
     # Check if init, if not do init
     if not beck.get_node(
             f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():
@@ -114,15 +112,13 @@ def init(beck=None):
 
         if not beck.get_node(
                 f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():
-            tungsten_status = '[ERROR] ' + str(
-                beck.get_node(
-                    f'{config.PLC.Node.TUNGSTEN}.stat.nErrorCode').get_value())
-        else:
-            tungsten_status = 0
-    else:
-        tungsten_status = 0
+            database.store('obs', {
+                'tungsten_log': f'[ERROR] Tungsten lamp initialisation failed'
+            })
+            return -1
 
-    return tungsten_status
+    database.store('obs', {'tungsten_log': f'Tungsten lamp initialised'})
+    return 0
 
 
 @core.beckhoff_autoconnect
@@ -143,24 +139,22 @@ def get_state(beck=None):
             'tungsten_log': f'[ERROR] {error_text} ({error_code})'
         })
 
-        state = TungstenState.ERROR
+        return TungstenState.ERROR
 
     else:
         state_plc = beck.get_node(
             f'{config.PLC.Node.TUNGSTEN}.stat.sStatus').get_value()
 
         if state_plc == 'OFF':
-            state = TungstenState.OFF
+            return TungstenState.OFF
         elif state_plc == 'ON':
-            state = TungstenState.ON
+            return TungstenState.ON
         else:
             database.store('obs', {
                 'tungsten_log': f'[ERROR] Unknown state {state_plc}'
             })
 
-            state = TungstenState.ERROR
-
-    return state
+            return TungstenState.ERROR
 
 
 def get_switch_time():
@@ -170,10 +164,8 @@ def get_switch_time():
     :return:  switch_time a datetime object
     """
 
-    # Update db to make sure the latest data point is valid
-    database_timer.update_monitoring_db()
-
-    data = database.get_time_since_state('monitoring', 'tungsten_state')
+    data = database.get_time_since_state('monitoring', 'tungsten_state', '==',
+                                         get_state().value)
 
     if data.get('since') is None:
         return data['current']['value'], 0

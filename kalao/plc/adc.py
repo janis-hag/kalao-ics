@@ -214,12 +214,19 @@ def init(node, force_init=False, beck=None):
     """
     database.store('obs', {'adc_log': f'Initialising ADC {node}'})
 
-    init_ret = core.motor_init(node, force_init, beck=beck)
+    ret_init = core.motor_init(node, force_init, beck=beck)
 
-    if node in config.PLC.initial_pos:
-        rotate(node, config.PLC.initial_pos[node], beck=beck)
+    if ret_init != 0:
+        database.store('obs', {
+            'adc_log': f'[ERROR] ADC {node} initialisation failed'
+        })
+    else:
+        database.store('obs', {'adc_log': f'ADC {node} initialised'})
 
-    return init_ret
+        if node in config.PLC.initial_pos:
+            rotate(node, config.PLC.initial_pos[node], beck=beck)
+
+    return ret_init
 
 
 def get_state(node, beck=None):

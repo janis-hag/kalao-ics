@@ -192,7 +192,7 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
 
     def data_updated(self, data):
         self.last_update_label.setText(
-            "Last update: " + datetime.now().strftime("%y-%m-%d %H:%M:%S"))
+            "Last update: " + datetime.now().strftime("%H:%M:%S %d-%m-%y"))
 
         ### Instrument
 

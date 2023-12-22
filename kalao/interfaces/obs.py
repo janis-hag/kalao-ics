@@ -10,7 +10,7 @@ datasets specific for the KalAO flask graphic user interface (GUI).
 
 """
 
-import datetime
+from datetime import datetime, timezone
 
 from kalao.plc import tungsten
 from kalao.utils import database, kalao_time
@@ -116,7 +116,7 @@ def _last_exposure_start():
     timestamp = database.get_last_time('obs', 'fli_image_count')
 
     if timestamp is None:
-        return datetime.fromtimestamp(0)
+        return datetime.fromtimestamp(0, tz=timezone.utc)
     else:
         return timestamp
 
@@ -131,7 +131,7 @@ def _last_exposure_end():
     timestamp = database.get_last_time('obs', 'fli_temporary_image_path')
 
     if timestamp is None:
-        return datetime.fromtimestamp(0)
+        return datetime.fromtimestamp(0, tz=timezone.utc)
     else:
         return timestamp
 

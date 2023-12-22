@@ -15,7 +15,7 @@ class LogsOutputType(StrEnum):
     JSON = 'JSON'
 
 
-class LogType(StrEnum):
+class LogLevel(StrEnum):
     INFO = 'INFO'
     WARNING = 'WARNING'
     ERROR = 'ERROR'

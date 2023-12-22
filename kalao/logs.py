@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from systemd import journal
 
-from kalao.definitions.enums import LogsOutputType, LogType
+from kalao.definitions.enums import LogLevel, LogsOutputType
 
 import config
 
@@ -21,7 +21,8 @@ def get_reader(filter=True):
     return reader
 
 
-def seek(reader, output_type, entries_number=50, entries_since_minutes=None):
+def seek(reader, output_type=LogsOutputType.JSON, entries_number=50,
+         entries_since_minutes=None):
     if entries_since_minutes is not None:
         reader.seek_realtime(datetime.now() -
                              timedelta(minutes=entries_since_minutes))
@@ -52,7 +53,7 @@ def process_entry(entry, output_type=LogsOutputType.JSON):
     else:
         message = entry['MESSAGE']
         if message != '':
-            type = LogType.INFO
+            level = LogLevel.INFO
 
             timestamp = entry['__REALTIME_TIMESTAMP'].strftime(
                 '%y-%m-%d %H:%M:%S')
@@ -65,7 +66,7 @@ def process_entry(entry, output_type=LogsOutputType.JSON):
 
                 if entry.get('EXIT_STATUS', 0) != 0 or entry.get(
                         'UNIT_RESULT', '') == 'exit-code':
-                    type = LogType.ERROR
+                    level = LogLevel.ERROR
             else:
                 if '_SYSTEMD_USER_UNIT' in entry:
                     origin = entry['_SYSTEMD_USER_UNIT'].removeprefix(
@@ -76,12 +77,12 @@ def process_entry(entry, output_type=LogsOutputType.JSON):
                     return None
 
             if 'ERROR' in message or 'Failed' in message or 'Traceback' in message:
-                type = LogType.ERROR
+                level = LogLevel.ERROR
             elif 'WARNING' in message:
-                type = LogType.WARNING
+                level = LogLevel.WARNING
 
             return {
-                'type': type,
+                'level': level,
                 'timestamp': timestamp,
                 'origin': origin,
                 'message': message,

@@ -1,11 +1,13 @@
+from datetime import datetime, timezone
+
 import numpy as np
 
-from PySide6.QtWidgets import (QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-                               QLineEdit, QSizePolicy, QSpacerItem,
-                               QVBoxLayout)
+from PySide6.QtWidgets import (QGridLayout, QGroupBox, QLabel, QLineEdit,
+                               QSizePolicy, QSpacerItem, QVBoxLayout)
 
 from kalao.utils import database
 
+from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin
 from guis.kalao.string_formatter import KalAOFormatter
 from guis.kalao.ui_loader import loadUi
@@ -25,9 +27,9 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
         loadUi('monitoring.ui', self)
         self.resize(600, 400)
 
-        self.monitoring_label.updateText(
+        self.monitoring_interval_label.updateText(
             monitoring_interval=config.Database.monitoring_update_interval)
-        self.telemetry_label.updateText(
+        self.telemetry_interval_label.updateText(
             telemetry_interval=config.Database.telemetry_update_interval)
 
         self.data_layout.addLayout(QVBoxLayout())
@@ -58,9 +60,6 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
             self.data_layout.itemAt(i).addWidget(groupbox)
             column_length[i] += groupbox.layout().count()
 
-        for lineedit in self.lineedits.values():
-            lineedit.setText(f'--{lineedit.unit}')
-
         self.backend.monitoringandtelemetry_updated.connect(
             self.monitoringandtelemetry_updated)
 
@@ -88,8 +87,11 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
         else:
             lineedit.unit = ' ' + unit
 
+        lineedit.setText(f'--{lineedit.unit}')
+
         lineedit.collection = collection
         lineedit.key = key
+        lineedit.timestamp = datetime.fromtimestamp(0, tz=timezone.utc)
 
         row = groupbox.layout().rowCount()
         groupbox.layout().addWidget(label, row, 0)
@@ -110,4 +112,26 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
                     text = f'{value}{lineedit.unit}'
 
                 lineedit.setText(text)
-                lineedit.setToolTip(timestamp.strftime('%Y-%m-%d %H:%M:%S'))
+                lineedit.setToolTip(
+                    timestamp.astimezone().strftime('%H:%M:%S %d-%m-%Y'))
+                lineedit.timestamp = timestamp
+
+            max_age = 2 * config.Database.monitoring_update_interval
+
+            if (datetime.now(timezone.utc) -
+                    lineedit.timestamp).total_seconds() > max_age:
+                lineedit.setStyleSheet(f'color: {Color.GREY.name()};')
+            else:
+                lineedit.setStyleSheet(f'')
+
+        monitoring = self.consume_dict(data, 'db-timestamps', 'monitoring')
+        if monitoring is not None:
+            self.monitoring_update_label.updateText(
+                monitoring_update=monitoring.astimezone().strftime(
+                    '%H:%M:%S %d-%m-%Y'))
+
+        telemetry = self.consume_dict(data, 'db-timestamps', 'telemetry')
+        if telemetry is not None:
+            self.telemetry_update_label.updateText(
+                telemetry_update=telemetry.astimezone().strftime(
+                    '%H:%M:%S %d-%m-%Y'))

@@ -33,7 +33,7 @@ def lamps_off():
 
 
 @core.beckhoff_autoconnect
-def get_all_status(beck=None):
+def get_all_status(beck=None, filter_from_db=False):
     """
     Query status of all PLC connected devices
     :return: device status dictionary
@@ -45,27 +45,50 @@ def get_all_status(beck=None):
     cooling_system = temperature_control.get_cooling_status(beck=beck)
 
     return {
-        'shutter_state': shutter.get_state(beck=beck),
-        'flip_mirror_position': flip_mirror.get_position(beck=beck),
-        'calib_unit_position': calib_unit.get_position(beck=beck),
-        'calib_unit_state': calib_unit.get_state(beck=beck),
-        'laser_state': laser.get_state(beck=beck),
-        'laser_power': laser.get_power(beck=beck),
-        'tungsten_state': tungsten.get_state(beck=beck),
-        'adc1_angle': adc.get_position(config.PLC.Node.ADC1, beck=beck),
-        'adc1_state': adc.get_state(config.PLC.Node.ADC1, beck=beck),
-        'adc2_angle': adc.get_position(config.PLC.Node.ADC2, beck=beck),
-        'adc2_state': adc.get_state(config.PLC.Node.ADC1, beck=beck),
-        'filterwheel_filter_position': filterwheel.get_filter(type=int),
-        'filterwheel_filter_name': filterwheel.get_filter(type=str),
-        'temp_bench_air': temps['temp_bench_air'],
-        'temp_bench_board': temps['temp_bench_board'],
-        'temp_water_in': temps['temp_water_in'],
-        'temp_water_out': temps['temp_water_out'],
-        'pump_status': cooling_system['pump_status'],
-        'pump_temp': cooling_system['pump_temp'],
-        'heater_status': cooling_system['heater_status'],
-        'fan_status': cooling_system['fan_status'],
-        'flow_value': cooling_system['flow_value'],
-        'hygrometry': cooling_system['hygrometry']
+        'shutter_state':
+            shutter.get_state(beck=beck),
+        'flip_mirror_position':
+            flip_mirror.get_position(beck=beck),
+        'calib_unit_position':
+            calib_unit.get_position(beck=beck),
+        'calib_unit_state':
+            calib_unit.get_state(beck=beck),
+        'laser_state':
+            laser.get_state(beck=beck),
+        'laser_power':
+            laser.get_power(beck=beck),
+        'tungsten_state':
+            tungsten.get_state(beck=beck),
+        'adc1_angle':
+            adc.get_position(config.PLC.Node.ADC1, beck=beck),
+        'adc1_state':
+            adc.get_state(config.PLC.Node.ADC1, beck=beck),
+        'adc2_angle':
+            adc.get_position(config.PLC.Node.ADC2, beck=beck),
+        'adc2_state':
+            adc.get_state(config.PLC.Node.ADC2, beck=beck),
+        'filterwheel_filter_position':
+            filterwheel.get_filter(type=int, from_db=filter_from_db),
+        'filterwheel_filter_name':
+            filterwheel.get_filter(type=str, from_db=filter_from_db),
+        'temp_bench_air':
+            temps['temp_bench_air'],
+        'temp_bench_board':
+            temps['temp_bench_board'],
+        'temp_water_in':
+            temps['temp_water_in'],
+        'temp_water_out':
+            temps['temp_water_out'],
+        'pump_status':
+            cooling_system['pump_status'],
+        'pump_temp':
+            cooling_system['pump_temp'],
+        'heater_status':
+            cooling_system['heater_status'],
+        'fan_status':
+            cooling_system['fan_status'],
+        'flow_value':
+            cooling_system['flow_value'],
+        'hygrometry':
+            cooling_system['hygrometry']
     }

@@ -26,11 +26,9 @@ import config
 @core.beckhoff_autoconnect
 def get_state(beck=None):
     if beck.get_node(f'{config.PLC.Node.LASER}.Status').get_value():
-        state = LaserState.ON
+        return LaserState.ON
     else:
-        state = LaserState.OFF
-
-    return state
+        return LaserState.OFF
 
 
 @core.beckhoff_autoconnect
@@ -86,10 +84,8 @@ def get_switch_time():
     :return:  switch_time a datetime object
     """
 
-    # Update db to make sure the latest data point is valid
-    database_timer.update_monitoring_db()
-
-    data = database.get_time_since_state('monitoring', 'laser_state')
+    data = database.get_time_since_state('monitoring', 'laser_state', '==',
+                                         get_state().value)
 
     if data.get('since') is None:
         return data['current']['value'], 0
@@ -176,5 +172,6 @@ def _switch(action_name, beck=None):
 
 def init():
     database.store('obs', {'laser_log': 'Initialising laser'})
+    database.store('obs', {'laser_log': 'Laser initialised'})
 
     return 0

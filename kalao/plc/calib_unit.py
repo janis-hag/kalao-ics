@@ -160,8 +160,16 @@ def init(force_init=True, beck=None):
     ret_init = core.motor_init(config.PLC.Node.CALIB_UNIT, force_init,
                                beck=beck)
 
-    if config.PLC.Node.CALIB_UNIT in config.PLC.initial_pos:
-        move(config.PLC.initial_pos[config.PLC.Node.CALIB_UNIT], beck=beck)
+    if ret_init != 0:
+        database.store('obs', {
+            'calib_unit_log': f'[ERROR] Calibration unit initialisation failed'
+        })
+    else:
+        database.store('obs',
+                       {'calib_unit_log': f'Calibration unit initialised'})
+
+        if config.PLC.Node.CALIB_UNIT in config.PLC.initial_pos:
+            move(config.PLC.initial_pos[config.PLC.Node.CALIB_UNIT], beck=beck)
 
     return ret_init
 

@@ -348,7 +348,7 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
                 widgets = self.services_widgets[service['unit']]
                 widgets['lineedit'].setText(f'{status[0]} | {status[1]}')
                 widgets['lineedit'].setToolTip(
-                    status[2].strftime("%Y-%m-%d %H:%M:%S"))
+                    status[2].astimezone().strftime('%H:%M:%S %d-%m-%Y'))
 
                 if status[0] in ['active']:
                     widgets['indicator'].setStatus(Color.GREEN, status[0])

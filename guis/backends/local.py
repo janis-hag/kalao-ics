@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from astropy.io import fits
@@ -12,7 +12,7 @@ from kalao.utils import centering, database
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
-from kalao.definitions.enums import IPPowerStatus, LogsOutputType
+from kalao.definitions.enums import IPPowerStatus
 
 import config
 
@@ -91,8 +91,11 @@ class SHMFPSBackend(AbstractBackend):
         key = fits_file.stem
 
         data[key] = {
-            'mtime': datetime.fromtimestamp(fits_file.stat().st_mtime),
-            'data': fits.getdata(fits_file),
+            'mtime':
+                datetime.fromtimestamp(fits_file.stat().st_mtime,
+                                       tz=timezone.utc),
+            'data':
+                fits.getdata(fits_file),
         }
 
 
@@ -152,7 +155,8 @@ class MainBackend(SHMFPSBackend):
         self._update_param(self.data, 'mfilt-2', 'loopmult')
         self._update_param(self.data, 'mfilt-2', 'looplimit')
 
-        self._update_dict(self.data, 'plc', plc_utils.get_all_status())
+        self._update_dict(self.data, 'plc',
+                          plc_utils.get_all_status(filter_from_db=True))
         self._update_dict(self.data, 'services', services.get_all_status())
         self._update_dict(self.data, 'fli', camera.get_exposure_status())
         self._update_dict(self.data, 'fli', camera.get_temperatures())
@@ -168,9 +172,17 @@ class MainBackend(SHMFPSBackend):
     @timeit
     def get_monitoringandtelemetry(self):
         self._update_db(self.monitoringandtelemetry, 'monitoring',
-                        database.get('monitoring'))
+                        database.get_all_last('monitoring'))
         self._update_db(self.monitoringandtelemetry, 'telemetry',
-                        database.get('telemetry'))
+                        database.get_all_last('telemetry'))
+
+        self._update_dict(
+            self.monitoringandtelemetry, 'db-timestamps', {
+                'monitoring':
+                    database.get_collection_last_update('monitoring'),
+                'telemetry':
+                    database.get_collection_last_update('telemetry'),
+            })
 
         return self.monitoringandtelemetry
 
@@ -372,7 +384,8 @@ class MainBackend(SHMFPSBackend):
 
     def get_logs_init(self):
         entries = []
-        for entry in logs.seek(self.reader, config.GUI.initial_logs_entries):
+        for entry in logs.seek(self.reader,
+                               entries_number=config.GUI.initial_logs_entries):
             entries.append(entry)
 
         return entries

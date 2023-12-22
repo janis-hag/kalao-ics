@@ -1,11 +1,14 @@
 from PySide6.QtCore import QTimer, Signal, Slot
 from PySide6.QtGui import QFontDatabase, Qt, QTextBlockUserData, QTextCursor
+from PySide6.QtWidgets import QTreeWidgetItem
+
+from kalao.utils import database
 
 from guis.kalao.definitions import Color
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
 
-from kalao.definitions.enums import LogType
+from kalao.definitions.enums import LogLevel
 
 import config
 
@@ -14,12 +17,7 @@ class LogsData(QTextBlockUserData):
     def __init__(self, data):
         super().__init__()
 
-        data = data.copy()
-
-        if 'text' in data:
-            del data['text']
-
-        self.data = data
+        self.data = data.copy()
 
 
 class LogsWidget(KalAOWidget):
@@ -70,16 +68,78 @@ class LogsWidget(KalAOWidget):
             }}
             """)
 
-        self.filter_type_combobox.addItem("All", "All")
-        for type in LogType:
-            self.filter_type_combobox.addItem(type.name, type.value)
+        #####
 
-        self.filter_origin_combobox.addItem("All", "All")
-        self.filter_origin_combobox.addItem("systemd", "systemd")
-        for service in config.Systemd.services.values():
+        self.levels_items = {}
+
+        levels = QTreeWidgetItem(['Levels'])
+        # levels.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsAutoTristate)
+        self.levels_items['toplevel'] = levels
+
+        for level in LogLevel:
+            child = QTreeWidgetItem([level.value])
+            child.setCheckState(0, Qt.Checked)
+            child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            levels.addChild(child)
+            self.levels_items[level.value] = child
+
+        self.filters_tree.addTopLevelItem(levels)
+        levels.setExpanded(True)
+
+        #####
+
+        self.services_items = {}
+
+        services = QTreeWidgetItem(['Services'])
+        # services.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsAutoTristate)
+        self.services_items['toplevel'] = services
+
+        child = QTreeWidgetItem(['systemd'])
+        child.setCheckState(0, Qt.Checked)
+        child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        services.addChild(child)
+        self.services_items['systemd'] = child
+
+        for service in sorted(config.Systemd.services.values(),
+                              key=lambda x: x['unit']):
             unit = service['unit'].removeprefix('kalao_').removesuffix(
                 '.service')
-            self.filter_origin_combobox.addItem(unit, unit)
+            child = QTreeWidgetItem([unit])
+            child.setCheckState(0, Qt.Checked)
+            child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            services.addChild(child)
+            self.services_items[unit] = child
+
+        self.filters_tree.addTopLevelItem(services)
+        services.setExpanded(True)
+
+        #####
+
+        self.logs_items = {}
+
+        logs = QTreeWidgetItem(['Logs'])
+        # logs.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsAutoTristate)
+        self.logs_items['toplevel'] = logs
+
+        child = QTreeWidgetItem(['<none>'])
+        child.setCheckState(0, Qt.Checked)
+        child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        logs.addChild(child)
+        self.logs_items['<none>'] = child
+
+        for key in sorted(database.definitions['obs']['metadata'].keys()):
+            if key.endswith('_log'):
+                key = key.removesuffix('_log').replace('_', ' ').upper()
+                child = QTreeWidgetItem([key])
+                child.setCheckState(0, Qt.Checked)
+                child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+                logs.addChild(child)
+                self.logs_items[key] = child
+
+        self.filters_tree.addTopLevelItem(logs)
+        logs.setExpanded(True)
+
+        #####
 
         entries = self.backend.get_logs_init()
         if entries is not None:
@@ -108,7 +168,7 @@ class LogsWidget(KalAOWidget):
         style_message = '<span>'
         style_end = '</span>'
 
-        if entry['type'] == LogType.ERROR:
+        if entry['level'] == LogLevel.ERROR:
             self.errors_spinbox.setValue(self.errors_spinbox.value() + 1)
 
             self.logged.emit(self.errors_spinbox.value(),
@@ -116,7 +176,7 @@ class LogsWidget(KalAOWidget):
 
             style_origin = '<span class="bold red">'
             style_message = '<span class="bold red">'
-        elif entry['type'] == LogType.WARNING:
+        elif entry['level'] == LogLevel.WARNING:
             self.warnings_spinbox.setValue(self.warnings_spinbox.value() + 1)
 
             self.logged.emit(self.errors_spinbox.value(),
@@ -131,7 +191,7 @@ class LogsWidget(KalAOWidget):
         block = self.logs_textedit.document().lastBlock()
         block.setUserData(LogsData(entry))
 
-        block.setVisible(self.log_visible(entry))
+        block.setVisible(self.entry_visible(entry))
 
         while self.logs_textedit.document().blockCount() > self.lines:
             cursor = QTextCursor(self.logs_textedit.document().firstBlock())
@@ -139,22 +199,39 @@ class LogsWidget(KalAOWidget):
             cursor.removeSelectedText()
             cursor.deleteChar()
 
-    @Slot(int)
-    def on_filter_origin_combobox_currentIndexChanged(self, index):
+    @Slot(QTreeWidgetItem, int)
+    def on_filters_tree_itemChanged(self, item, column):
         self.filter_logs()
 
-    @Slot(int)
-    def on_filter_type_combobox_currentIndexChanged(self, index):
-        self.filter_logs()
+    def entry_visible(self, entry):
+        try:
+            if self.levels_items[entry['level']].checkState(0) != Qt.Checked:
+                return False
+        except KeyError:
+            if self.levels_items['toplevel'].checkState(0) != Qt.Checked:
+                return False
 
-    def log_visible(self, log):
-        if self.filter_type_combobox.currentData() not in [log['type'], "All"]:
-            return False
+        try:
+            if self.services_items[entry['origin']].checkState(
+                    0) != Qt.Checked:
+                return False
+        except KeyError:
+            if self.services_items['toplevel'].checkState(0) != Qt.Checked:
+                return False
 
-        if self.filter_origin_combobox.currentData() not in [
-                log['origin'], "All"
-        ]:
-            return False
+        message_splitted = entry['origin'].split('|')
+
+        if len(message_splitted) == 1:
+            if self.logs_items['<none>'].checkState(0) != Qt.Checked:
+                return False
+        else:
+            try:
+                if self.logs_items[message_splitted[0].strip()].checkState(
+                        0) != Qt.Checked:
+                    return False
+            except KeyError:
+                if self.logs_items['toplevel'].checkState(0) != Qt.Checked:
+                    return False
 
         return True
 
@@ -165,7 +242,7 @@ class LogsWidget(KalAOWidget):
             if userdata is None:
                 break
 
-            block.setVisible(self.log_visible(userdata.data))
+            block.setVisible(self.entry_visible(userdata.data))
 
             block = block.next()
 

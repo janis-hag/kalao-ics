@@ -1,4 +1,4 @@
-from datetime import timedelta, timezone
+from datetime import timezone
 
 import numpy as np
 
@@ -222,6 +222,7 @@ class PlotsWidget(KalAOWidget):
 
         chart.removeAllSeries()
         self.series = {}
+        self.value_before_conversion = {}
 
         color_index = 0
         plot_min = np.inf
@@ -231,7 +232,11 @@ class PlotsWidget(KalAOWidget):
             if collection.empty:
                 continue
 
+            self.value_before_conversion[name] = {}
+
             for key, values in collection.items():
+                self.value_before_conversion[name][key] = {}
+
                 pen = QPen(ColorPalette[color_index], 1.25, Qt.SolidLine,
                            Qt.SquareCap, Qt.MiterJoin)
 
@@ -248,6 +253,7 @@ class PlotsWidget(KalAOWidget):
                                           QTimeZone.utc()).toMSecsSinceEpoch()
 
                     if v in config.GUI.plots_mapping:
+                        self.value_before_conversion[name][key][timestamp] = v
                         v = config.GUI.plots_mapping[v]
 
                     if v is None:
@@ -291,9 +297,9 @@ class PlotsWidget(KalAOWidget):
         if abs(delta) < config.epsilon:
             plot_min -= 0.01
             plot_max += 0.01
-        # else: # Not needed with applyNiceNumbers
-        #     plot_min -= 0.05*delta
-        #     plot_max += 0.05*delta
+        else:
+            plot_min -= 0.05 * delta
+            plot_max += 0.05 * delta
 
         self.axis_x.setRange(self.start_datetimeedit.dateTime().toUTC(),
                              self.end_datetimeedit.dateTime().toUTC())
@@ -306,11 +312,22 @@ class PlotsWidget(KalAOWidget):
             metadata = database.definitions[self.current_name]['metadata'][
                 self.current_key]
 
+            try:
+                y_true = f' ({self.value_before_conversion[self.current_name][self.current_key][x]})'
+            except KeyError:
+                y_true = ''
+
             x = QDateTime.fromMSecsSinceEpoch(
                 int(x)).toString("HH:mm:ss dd-MM-yy")
 
+            unit = metadata.get('unit')
+            if unit is None or unit == '':
+                unit = ''
+            else:
+                unit = f' {unit}'
+
             self.hovered.emit(
-                f'{metadata["short"]}: {y:.5g} {metadata["unit"]} at {x}')
+                f'{metadata["short"]}: {y:.5g}{unit}{y_true} at {x}')
         else:
             self.hovered.emit(f'')
 

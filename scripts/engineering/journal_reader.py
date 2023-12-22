@@ -4,7 +4,7 @@ import select
 from kalao import logs
 from kalao.utils.terminal_colors import TerminalColors as TC
 
-from kalao.definitions.enums import LogsOutputType, LogType
+from kalao.definitions.enums import LogLevel, LogsOutputType
 
 
 def run(args):
@@ -34,10 +34,10 @@ def format_entry(entry):
     style_message = ''
     style_end = TC.RESET
 
-    if entry['type'] == LogType.ERROR:
+    if entry['level'] == LogLevel.ERROR:
         style_origin = TC.BOLD + TC.BRIGHT_RED + TC.BLINK
         style_message = TC.BOLD + TC.BRIGHT_RED
-    elif entry['type'] == LogType.WARNING:
+    elif entry['level'] == LogLevel.WARNING:
         style_message = TC.BOLD + TC.BRIGHT_YELLOW,
 
     print(

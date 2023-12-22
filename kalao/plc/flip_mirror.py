@@ -97,19 +97,17 @@ def get_position(beck=None):
             'flip_mirror_log': f'[ERROR] {error_text} ({error_code})'
         })
 
-        position = FlipMirrorPosition.ERROR
+        return FlipMirrorPosition.ERROR
 
     else:
         if beck.get_node(
                 f'{config.PLC.Node.FLIP_MIRROR}.bStatus_Up_Flip').get_value():
-            position = FlipMirrorPosition.UP
+            return FlipMirrorPosition.UP
         elif beck.get_node(f'{config.PLC.Node.FLIP_MIRROR}.bStatus_Down_Flip'
                            ).get_value():
-            position = FlipMirrorPosition.DOWN
+            return FlipMirrorPosition.DOWN
         else:
-            position = FlipMirrorPosition.UNKNOWN
-
-    return position
+            return FlipMirrorPosition.UNKNOWN
 
 
 @core.beckhoff_autoconnect
@@ -121,6 +119,8 @@ def init(beck=None):
     up(beck=beck)
     down(beck=beck)
 
+    database.store('obs', {'flip_mirror_log': 'Flip mirror initialised'})
+
     return 0
 
 
@@ -131,10 +131,9 @@ def get_switch_time():
     :return:  switch_time a datetime object
     """
 
-    # Update db to make sure the latest data point is valid
-    database_timer.update_monitoring_db()
-
-    data = database.get_time_since_state('monitoring', 'flip_mirror_position')
+    data = database.get_time_since_state('monitoring', 'flip_mirror_position',
+                                         '==',
+                                         get_position().value)
 
     if data.get('since') is None:
         return data['current']['value'], 0

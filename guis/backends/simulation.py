@@ -1,6 +1,6 @@
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,7 @@ from kalao.utils import zernike
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
 from kalao.definitions.enums import (FlipMirrorPosition, IPPowerStatus,
-                                     LaserState, LogType, PLCStatus,
+                                     LaserState, LogLevel, PLCStatus,
                                      RelayState, ShutterState, TungstenState)
 
 import config
@@ -375,7 +375,15 @@ class MainBackend(FakeSHMFPSBackend):
     @emit('monitoringandtelemetry_updated')
     @timeit
     def get_monitoringandtelemetry(self):
-        return {}
+        self.monitoringandtelemetry = {}
+
+        self._update_dict(
+            self.monitoringandtelemetry, 'db-timestamps', {
+                'monitoring': datetime.now(timezone.utc),
+                'telemetry': datetime.now(timezone.utc),
+            })
+
+        return self.monitoringandtelemetry
 
     @emit('dmdisp_updated')
     @timeit
@@ -785,19 +793,19 @@ class MainBackend(FakeSHMFPSBackend):
         message = ' '.join(random.sample(lorem_words, 8))
         message = message[0].upper() + message[1:] + '.'
 
-        type = random.random()
+        level = random.random()
 
-        if type <= 0.001:
-            type = LogType.ERROR
+        if level <= 0.001:
+            level = LogLevel.ERROR
             message = '[ERROR] ' + message
-        elif type <= 0.011:
-            type = LogType.WARNING
+        elif level <= 0.011:
+            level = LogLevel.WARNING
             message = '[WARNING] ' + message
         else:
-            type = LogType.INFO
+            level = LogLevel.INFO
 
         return {
-            'type': type,
+            'level': level,
             'timestamp': timestamp,
             'origin': origin,
             'message': message
