@@ -6,7 +6,7 @@
 
 import math
 import os
-from collections import KeysView
+from collections.abc import KeysView
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
