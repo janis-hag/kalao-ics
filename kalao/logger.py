@@ -3,21 +3,20 @@ from kalao import database
 from kalao.definitions.enums import LogLevel
 
 
-def info(log, message):
-    log(log, LogLevel.INFO, message)
+def info(name, message):
+    log(name, LogLevel.INFO, message)
 
 
-def warn(log, message):
-    log(log, LogLevel.WARNING, message)
+def warn(name, message):
+    log(name, LogLevel.WARNING, message)
 
 
-def error(log, message):
-    log(log, LogLevel.ERROR, message)
+def error(name, message):
+    log(name, LogLevel.ERROR, message)
 
 
-def log(log, level, message):
-    log_name = log.replace('_', ' ').upper()
+def log(name, level, message):
+    print(f'{name.replace("_", " ").upper():>14s} | [{level.value}] {message}',
+          flush=True)
 
-    print(f'{log_name:>14s} | [{level.value}] {message}', flush=True)
-
-    database.store_log(log, level, message)
+    database.store_log(name, level, message)

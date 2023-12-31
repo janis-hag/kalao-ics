@@ -281,18 +281,18 @@ def store(collection_name, data):
     return 0
 
 
-def store_log(log, level, message):
+def store_log(name, level, message):
     timestamp = kalao_time.now()
 
     db = _get_db(timestamp)
     collection = _get_collection(db, 'logs')
 
-    if log not in definitions['logs']['metadata']:
-        raise KeyError(f'Inserting unknown log "{log}" in database')
+    if name not in definitions['logs']['metadata']:
+        raise KeyError(f'Inserting unknown log "{name}" in database')
 
     # yapf: disable
     collection.update_one(
-        {'key': log},
+        {'key': name},
         {
             '$push': {'messages': {'message': message, 'level': level.value, 'timestamp': timestamp}},
             '$inc': {'count': 1},
