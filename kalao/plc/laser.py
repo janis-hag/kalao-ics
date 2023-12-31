@@ -18,7 +18,7 @@ from kalao.utils import kalao_time
 
 from opcua import ua
 
-from kalao.definitions.enums import LaserState
+from kalao.definitions.enums import LaserState, ReturnCode
 
 import config
 

@@ -6,6 +6,7 @@
 
 import math
 import os
+from collections import KeysView
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
@@ -116,6 +117,9 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
     else:
         max_days = config.Database.max_days
 
+    if isinstance(keys, KeysView):
+        keys = list(keys)
+
     while day <= max_days:
         db = _get_db(dt - timedelta(days=day))
         collection = _get_collection(db, collection_name)
@@ -143,7 +147,7 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
                 {'_id': 0, 'key': 1, 'values': values_to_keep},
                 limit=1)
 
-        else:
+        elif isinstance(keys, list):
             if np.isinf(nb_of_point):
                 values_to_keep = 1 # Keep all
             else:
@@ -157,6 +161,9 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
                 {'$match': {'$or': match_list}},
                 {'$project': {'_id': 0, 'key': 1, 'values': values_to_keep}},
             ])
+
+        else:
+            raise TypeError(f'Unsupported type {type(keys)} for keys')
         # yapf: enable
 
         if cursor is not None:
@@ -170,11 +177,16 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
                 data[key] += document['values']
 
                 if isinstance(keys, list) and len(data[key]) >= nb_of_point:
+                    if len(data[key]) > nb_of_point:
+                        data[key] = data[key][:nb_of_point]
+
                     keys.remove(key)
 
         if keys is None and data != {}:
             return data
         elif isinstance(keys, str) and len(data.get(keys, [])) >= nb_of_point:
+            if len(data[keys]) > nb_of_point:
+                data[keys] = data[keys][:nb_of_point]
             return data
         elif isinstance(keys, list) and len(keys) == 0:
             return data
