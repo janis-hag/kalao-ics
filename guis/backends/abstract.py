@@ -34,8 +34,8 @@ def timeit(fun):
 
 
 def name_to_url(name):
-    return '/' + name.removeprefix('set_', '').removeprefix(
-        'get_', '').replace('_', '/')
+    return '/' + name.removeprefix('set_').removeprefix('get_').replace(
+        '_', '/')
 
 
 class AbstractBackend(QObject):

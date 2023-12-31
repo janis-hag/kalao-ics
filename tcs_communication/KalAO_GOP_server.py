@@ -12,11 +12,9 @@ This server is the communication interface between the Euler telescope software 
 """
 
 import socket
-from itertools import zip_longest
 from time import sleep
 
-from kalao.interfaces import obs
-from kalao.utils import database
+from kalao import database, logger
 
 from tcs_communication.pygop import tcs_srv_gop
 
@@ -39,9 +37,7 @@ def gop_server():
 
     gop.processesRegistration(config.GOP.ip)
 
-    database.store('obs', {
-        'gop_log': 'Initialize new gop connection. Wait for client ...'
-    })
+    logger.info('gop', 'Initialize new gop connection. Wait for client ...')
     gc = gop.initializeInetGopConnection(config.GOP.ip, config.GOP.port,
                                          config.GOP.verbosity)
     #
@@ -49,7 +45,7 @@ def gop_server():
     # Rem; all command reply an acknowledgement
     #
     while True:
-        database.store('obs', {'gop_log': 'Wait for command'})
+        logger.info('gop', 'Wait for command')
         #
         # read and concat until "#" char, then parse the input string
         #
@@ -61,11 +57,9 @@ def gop_server():
 
             if controlRead == -1:
                 gc = gop.closeConnection()
-                database.store(
-                    'obs', {
-                        'gop_log':
-                            'Initialize new gop connection. Wait for client ...'
-                    })
+                logger.info(
+                    'gop',
+                    'Initialize new gop connection. Wait for client ...')
                 # gc = gop.initializeGopConnection(socketName, verbosity)
                 gc = gop.initializeInetGopConnection(config.GOP.ip,
                                                      config.GOP.port,
@@ -79,7 +73,7 @@ def gop_server():
         if controlRead == -1:
             continue  # go to beginning
 
-        database.store('obs', {'gop_log': f'After gop.read() := {commandRaw}'})
+        logger.info('gop', f'After gop.read() := {commandRaw}')
 
         separator = commandRaw[0]
         commandList = commandRaw[1:].split(separator)
@@ -87,9 +81,7 @@ def gop_server():
         command = commandList[0]
         arguments = commandList[1:]
 
-        database.store('obs', {
-            'gop_log': f'command=> {command} < arg={" ".join(arguments)}'
-        })
+        logger.info('gop', f'command=> {command} < arg={" ".join(arguments)}')
 
         socket_connection_error = False
 
@@ -110,15 +102,13 @@ def gop_server():
 
             try:
                 socketSeq.connect((hostSeq, portSeq))
-                database.store('obs', {'gop_log': 'Connected to sequencer'})
+                logger.info('gop', 'Connected to sequencer')
 
                 socketSeq.sendall(commandRaw.encode('utf8'))
-                database.store('obs', {'gop_log': 'Command sent'})
+                logger.info('gop', 'Command sent')
 
             except ConnectionRefusedError:
-                database.store('obs', {
-                    'gop_log': '[ERROR] Connection to sequencer refused'
-                })
+                logger.error('gop', 'Connection to sequencer refused')
                 socket_connection_error = True
             finally:
                 socketSeq.close()
@@ -129,7 +119,7 @@ def gop_server():
 
         if command == 'TEST':
             message = '/OK'
-            database.store('obs', {'gop_log': f'Send acknowledge: {message}'})
+            logger.info('gop', f'Sending acknowledge: {message}')
             gop.write(message)
 
         elif command == 'ONTARGET':
@@ -147,9 +137,7 @@ def gop_server():
             # Update tracking status separately to ensure ordering
             database.store('obs', {'tracking_status': TrackingStatus.TRACKING})
 
-            database.store('obs', {
-                'gop_log': f'Received fits header path: {arguments[0]}'
-            })
+            logger.info('gop', f'Received fits header path: {arguments[0]}')
 
             gop.write(message)
 
@@ -163,31 +151,27 @@ def gop_server():
         #     # Disable manual centering flag
         #     message = "/OK"
         #     database.store('obs',{'tracking_status': TrackingStatus.IDLE})
-        #     database.store('obs',{'gop_log': f'Send acknowledge and quit: {message}'})
+        #     logger.info('gop', f'Sending acknowledge and quit: {message}')
         #     gop.write(message)
 
         elif command == 'quit' or command == 'exit':
             message = '/OK'
-            database.store('obs', {
-                'gop_log': f'Send acknowledge and quit: {message}'
-            })
+            logger.info('gop', f'Sending acknowledge and quit: {message}')
             gop.write(message)
             break
 
         elif command == 'STATUS':
             message = obs.kalao_status()
-            database.store('obs', {'gop_log': f'Send status: {message}'})
+            logger.info('gop', f'Sending status: {message}')
             gop.write(message)
 
         else:
             message = "/OK"
-            database.store('obs', {'gop_log': f'Send acknowledge: {message}'})
+            logger.info('gop', f'Sending acknowledge: {message}')
             gop.write(message)
 
     # in case of break, we disconnect all servers
-    database.store('obs', {
-        'gop_log': f'{config.GOP.ip} close gop connection and exit'
-    })
+    logger.info('gop', f'{config.GOP.ip} close gop connection and exit')
 
     gop.closeConnection()
     #sys.exit(0)

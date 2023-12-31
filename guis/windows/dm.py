@@ -15,12 +15,14 @@ class DMWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     stream_info = config.StreamInfo.dm01disp
 
     data_unit = ' µm'
-    data_precision = 3
+    data_precision = 2
 
     axis_unit = ' px'
     axis_precision = 0
 
     max_stroke = 1
+    stroke_raw = np.nan
+    stroke_effective = np.nan
 
     #TODO: modify stream_info with stroke_max?
 
@@ -36,11 +38,6 @@ class DMWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
-
-        self.stroke_raw_label.updateText(stroke_raw=np.nan,
-                                         unit=self.data_unit)
-        self.stroke_effective_label.updateText(stroke_effective=np.nan,
-                                               unit=self.data_unit)
 
         self.dm_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_updated.connect(self.streams_updated)
@@ -60,21 +57,28 @@ class DMWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             stroke_max = np.max(img)
             stroke_min = np.min(img)
-            stroke_raw = stroke_max - stroke_min
-            stroke_effective = min(stroke_max, 1.75 * self.max_stroke) - max(
-                stroke_min, -1.75 * self.max_stroke)
+            self.stroke_raw = stroke_max - stroke_min
+            self.stroke_effective = min(
+                stroke_max, 1.75 * self.max_stroke) - max(
+                    stroke_min, -1.75 * self.max_stroke)
 
-            self.stroke_raw_label.updateText(
-                stroke_raw=stroke_raw * self.data_scaling, unit=self.data_unit)
-            self.stroke_effective_label.updateText(
-                stroke_effective=stroke_effective * self.data_scaling,
-                unit=self.data_unit)
+            self.update_labels()
+
+    def update_labels(self):
+        self.stroke_raw_label.updateText(
+            stroke_raw=self.stroke_raw * self.data_scaling,
+            unit=self.data_unit)
+        self.stroke_effective_label.updateText(
+            stroke_effective=self.stroke_effective * self.data_scaling,
+            unit=self.data_unit)
 
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.update_spinboxes_unit(' µm', 2)
+            self.update_spinboxes_unit(' µm', 2, 2)
         else:
-            self.update_spinboxes_unit(' µm', 1)
+            self.update_spinboxes_unit(' µm', 1, 2)
+
+        self.update_labels()
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:

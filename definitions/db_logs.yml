@@ -1,0 +1,115 @@
+---
+ao_log:
+  short: AO log
+  long: Adaptive Optics log
+  unit:
+
+dm_log:
+  short: DM log
+  long: Deformable Mirror log
+  unit:
+
+ttm_log:
+  short: TTM log
+  long: Tip-Tilt Mirror log
+  unit:
+
+nuvu_log:
+  short: Nüvü log
+  long: Nüvü camera log
+  unit:
+
+fli_log:
+  short: FLI log
+  long: FLI camera log
+  unit:
+
+services_log:
+  short: Services log
+  long: Services log
+  unit:
+
+ippower_log:
+  short: IPPower log
+  long: IPPower log
+  unit:
+
+adc_log:
+  short: ADC log
+  long: ADC log
+  unit:
+
+shutter_log:
+  short: Shutter log
+  long: Shutter log
+  unit:
+
+flipmirror_log:
+  short: Flip mirror log
+  long: Flip mirror log
+  unit:
+
+calibunit_log:
+  short: Calibration Unit log
+  long: Calibration Unit log
+  unit:
+
+filterwheel_log:
+  short: Filterwheel log
+  long: Filterwheel log
+  unit:
+
+temperature_log:
+  short: Temperature log
+  long: Temperature log
+  unit:
+
+laser_log:
+  short: Laser log
+  long: Laser log
+  unit:
+
+tungsten_log:
+  short: Tungsten log
+  long: Tungsten lamp log
+  unit:
+
+sequencer_log:
+  short: Sequencer log
+  long: Sequencer log
+  unit:
+
+centering_log:
+  short: Centering log
+  long: Centering log
+  unit:
+
+gop_log:
+  short: GOP log
+  long: GOP server log
+  unit:
+
+safety_timer_log:
+  short: Safety timer log
+  long: Safety timer log
+  unit:
+
+database_timer_log:
+  short: Database timer log
+  long: Database timer log
+  unit:
+
+loop_timer_log:
+  short: Loop timer log
+  long: Loop timer log
+  unit:
+
+pump_timer_log:
+  short: Pump timer log
+  long: Pump timer log
+  unit:
+
+t120_log:
+  short: T120 log
+  long: T120 client log
+  unit:

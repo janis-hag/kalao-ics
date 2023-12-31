@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : flip_mirror
+# @Filename : flipmirror
 # @Date : 2021-01-02-15-08
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-flip_mirror.py is part of the KalAO Instrument Control Software
+flipmirror.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
 from time import sleep
 
+from kalao import database, logger
 from kalao.plc import core
-from kalao.timers import database as database_timer
-from kalao.utils import database, kalao_time
+from kalao.utils import kalao_time
 
 from opcua import ua
 
-from kalao.definitions.enums import FlipMirrorPosition
+from kalao.definitions.enums import FlipMirrorPosition, ReturnCode
 
 import config
 
@@ -26,7 +26,7 @@ def down(beck=None):
     """
     Move the flip mirror down
 
-    :return: status of the flip_mirror
+    :return: status of the flipmirror
     """
 
     return _switch('bDown_Flip', beck=beck)
@@ -36,7 +36,7 @@ def up(beck=None):
     """
     Move the flip mirror up
 
-    :return: status of the flip_mirror
+    :return: status of the flipmirror
     """
 
     return _switch('bUp_Flip', beck=beck)
@@ -48,7 +48,7 @@ def _switch(action_name, beck=None):
      Open or Close the shutter depending on action_name
 
     :param action_name: bClose_Shutter or
-    :return: position of flip_mirror
+    :return: position of flipmirror
     """
 
     if action_name == FlipMirrorPosition.UP:
@@ -57,9 +57,9 @@ def _switch(action_name, beck=None):
         action_name = 'bDown_Flip'
 
     if action_name == 'bUp_Flip':
-        database.store('obs', {'flip_mirror_log': 'Flipping mirror up'})
+        logger.info('flipmirror', 'Flipping mirror up')
     elif action_name == 'bDown_Flip':
-        database.store('obs', {'flip_mirror_log': 'Flipping mirror down'})
+        logger.info('flipmirror', 'Flipping mirror down')
 
     shutter_switch = beck.get_node(
         f'{config.PLC.Node.FLIP_MIRROR}.{action_name}')
@@ -93,9 +93,7 @@ def get_position(beck=None):
             f'{config.PLC.Node.FLIP_MIRROR}.FlipMirror.stat.sErrorText'
         ).get_value()
 
-        database.store('obs', {
-            'flip_mirror_log': f'[ERROR] {error_text} ({error_code})'
-        })
+        logger.error('flipmirror', f'{error_text} ({error_code})')
 
         return FlipMirrorPosition.ERROR
 
@@ -112,16 +110,16 @@ def get_position(beck=None):
 
 @core.beckhoff_autoconnect
 def init(beck=None):
-    database.store('obs', {'flip_mirror_log': 'Initialising flip mirror'})
+    logger.info('flipmirror', 'Initialising flip mirror')
 
     # Do the flip mirror gym
     down(beck=beck)
     up(beck=beck)
     down(beck=beck)
 
-    database.store('obs', {'flip_mirror_log': 'Flip mirror initialised'})
+    logger.info('flipmirror', 'Flip mirror initialised')
 
-    return 0
+    return ReturnCode.PLC_INIT_SUCCESS
 
 
 def get_switch_time():
@@ -131,7 +129,7 @@ def get_switch_time():
     :return:  switch_time a datetime object
     """
 
-    data = database.get_time_since_state('monitoring', 'flip_mirror_position',
+    data = database.get_time_since_state('monitoring', 'flipmirror_position',
                                          '==',
                                          get_position().value)
 

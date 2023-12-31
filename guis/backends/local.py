@@ -3,12 +3,12 @@ from pathlib import Path
 
 from astropy.io import fits
 
-from kalao import ippower, logs, services
+from kalao import database, ippower, logs, services
 from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
-from kalao.plc import (adc, calib_unit, filterwheel, flip_mirror, laser,
+from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
                        plc_utils, shutter, tungsten)
-from kalao.utils import centering, database
+from kalao.sequencer import centering
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
@@ -130,6 +130,7 @@ class MainBackend(SHMFPSBackend):
     @timeit
     def get_streams_fli(self):
         self._update_stream(self.fli, config.Streams.FLI)
+        self._update_stream_keywords(self.fli, config.Streams.FLI)
 
         return self.fli
 
@@ -144,16 +145,22 @@ class MainBackend(SHMFPSBackend):
         self._update_stream_keywords(self.data, config.Streams.NUVU_RAW)
 
         self._update_param(self.data, config.FPS.NUVU, 'autogain_on')
+        self._update_param(self.data, config.FPS.NUVU, 'autogain_setting')
 
-        self._update_param(self.data, 'mfilt-1', 'loopON')
-        self._update_param(self.data, 'mfilt-1', 'loopgain')
-        self._update_param(self.data, 'mfilt-1', 'loopmult')
-        self._update_param(self.data, 'mfilt-1', 'looplimit')
+        self._update_param(self.data, config.FPS.BMC, 'max_stroke')
+        self._update_param(self.data, config.FPS.BMC, 'stroke_mode')
 
-        self._update_param(self.data, 'mfilt-2', 'loopON')
-        self._update_param(self.data, 'mfilt-2', 'loopgain')
-        self._update_param(self.data, 'mfilt-2', 'loopmult')
-        self._update_param(self.data, 'mfilt-2', 'looplimit')
+        self._update_param(self.data, config.FPS.SHWFS, 'algorithm')
+
+        self._update_param(self.data, config.FPS.DMLOOP, 'loopON')
+        self._update_param(self.data, config.FPS.DMLOOP, 'loopgain')
+        self._update_param(self.data, config.FPS.DMLOOP, 'loopmult')
+        self._update_param(self.data, config.FPS.DMLOOP, 'looplimit')
+
+        self._update_param(self.data, config.FPS.TTMLOOP, 'loopON')
+        self._update_param(self.data, config.FPS.TTMLOOP, 'loopgain')
+        self._update_param(self.data, config.FPS.TTMLOOP, 'loopmult')
+        self._update_param(self.data, config.FPS.TTMLOOP, 'looplimit')
 
         self._update_dict(self.data, 'plc',
                           plc_utils.get_all_status(filter_from_db=True))
@@ -262,31 +269,56 @@ class MainBackend(SHMFPSBackend):
 
     # DM Loop
 
-    def set_dm_loop_on(self, state):
+    def set_dmloop_on(self, state):
         aocontrol.switch_loop(config.AO.DM_loop_number, state)
 
-    def set_dm_loop_gain(selfself, gain):
+    def set_dmloop_gain(selfself, gain):
         aocontrol.set_dmloop_gain(gain)
 
-    def set_dm_loop_mult(selfself, mult):
+    def set_dmloop_mult(selfself, mult):
         aocontrol.set_dmloop_mult(mult)
 
-    def set_dm_loop_limit(selfself, limit):
+    def set_dmloop_limit(selfself, limit):
         aocontrol.set_dmloop_limit(limit)
 
     # TTM Loop
 
-    def set_ttm_loop_on(self, state):
+    def set_ttmloop_on(self, state):
         aocontrol.switch_loop(config.AO.TTM_loop_number, state)
 
-    def set_ttm_loop_gain(selfself, gain):
+    def set_ttmloop_gain(selfself, gain):
         aocontrol.set_ttmloop_gain(gain)
 
-    def set_ttm_loop_mult(selfself, mult):
+    def set_ttmloop_mult(selfself, mult):
         aocontrol.set_ttmloop_mult(mult)
 
-    def set_ttm_loop_limit(selfself, limit):
+    def set_ttmloop_limit(selfself, limit):
         aocontrol.set_ttmloop_limit(limit)
+
+    # Wavefront Sensor
+
+    def set_nuvu_emgain(self, emgain):
+        aocontrol.set_emgain(emgain)
+
+    def set_nuvu_exposuretime(self, exposuretime):
+        aocontrol.set_exptime(exposuretime)
+
+    def set_nuvu_autogain_on(self, state):
+        aocontrol.switch_autogain(state)
+
+    def set_nuvu_autogain_setting(self, setting):
+        aocontrol.set_autogain_setting(setting)
+
+    def set_modalgains(self, modalgains):
+        aocontrol.set_modalgains(modalgains)
+
+    # Deformable Mirror
+
+    def set_bmc_maxstroke(self, stroke):
+        aocontrol.set_bmc_max_stroke(stroke)
+
+    def set_bmc_strokemode(self, mode):
+        aocontrol.set_bmc_stroke_mode(mode)
 
     ##### Engineering
 
@@ -294,10 +326,10 @@ class MainBackend(SHMFPSBackend):
         shutter._switch(state)
 
     def set_plc_flipmirror_position(self, position):
-        flip_mirror._switch(position)
+        flipmirror._switch(position)
 
     def set_plc_calibunit_position(self, position):
-        calib_unit.move(position)
+        calibunit.move(position)
 
     def set_plc_tungsten_state(self, state):
         if state:
@@ -311,8 +343,6 @@ class MainBackend(SHMFPSBackend):
         else:
             laser.disable()
 
-        laser._switch(state)
-
     def set_plc_laser_power(self, power):
         laser.set_power(power)
 
@@ -324,6 +354,27 @@ class MainBackend(SHMFPSBackend):
 
     def set_plc_adc_2_angle(self, position):
         adc.rotate(config.PLC.Node.ADC2, position)
+
+    def get_plc_calibunit_init(self):
+        calibunit.init(force_init=True)
+
+    def get_plc_calibunit_laser(self):
+        calibunit.move_to_laser_position()
+
+    def get_plc_calibunit_tungsten(self):
+        calibunit.move_to_tungsten_position()
+
+    def get_plc_adc1_init(self):
+        adc.init(config.PLC.Node.ADC1, force_init=True)
+
+    def get_plc_adc2_init(self):
+        adc.init(config.PLC.Node.ADC2, force_init=True)
+
+    def get_plc_adc_zerodisp(self):
+        adc.set_zero_disp()
+
+    def get_plc_adc_maxdisp(self):
+        adc.set_max_disp()
 
     def set_fli_image(self, exposure_time):
         camera.take_frame(exposure_time)

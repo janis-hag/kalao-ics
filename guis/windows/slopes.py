@@ -18,17 +18,21 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
     stream_info = config.StreamInfo.shwfs_slopes
 
     data_unit = ' px'
-    data_precision = 3
+    data_precision = 2
 
     axis_unit = ' px'
     axis_precision = 0
+
+    slope_x = np.nan
+    slope_y = np.nan
+    residual = np.nan
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 
         self.backend = backend
         self.mask = kalao_tools.generate_slopes_mask_from_subaps(
-            config.AO.masked_subaps)
+            config.WFS.masked_subaps)
 
         loadUi('slopes.ui', self)
         self.resize(600, 400)
@@ -37,10 +41,6 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
 
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
-
-        self.tip_label.updateText(tip=np.nan, unit=self.data_unit)
-        self.tilt_label.updateText(tilt=np.nan, unit=self.data_unit)
-        self.residual_label.updateText(residual=np.nan, unit=self.data_unit)
 
         self.slopes_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_updated.connect(self.streams_updated)
@@ -57,24 +57,34 @@ class SlopesWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin,
 
         slope_x = self.consume_param(data, config.FPS.SHWFS, 'slope_x')
         if slope_x is not None:
-            self.tip_label.updateText(tip=slope_x * self.data_scaling,
-                                      unit=self.data_unit)
+            self.slope_x = slope_x
 
         slope_y = self.consume_param(data, config.FPS.SHWFS, 'slope_y')
         if slope_y is not None:
-            self.tilt_label.updateText(tilt=slope_y * self.data_scaling,
-                                       unit=self.data_unit)
+            self.slope_y = slope_y
 
         residual = self.consume_param(data, config.FPS.SHWFS, 'residual')
         if residual is not None:
-            self.residual_label.updateText(
-                residual=residual * self.data_scaling, unit=self.data_unit)
+            self.residual = residual
+
+        if slope_x is not None or slope_y is not None or residual is not None:
+            self.update_labels()
+
+    def update_labels(self):
+        self.tip_label.updateText(tip=self.slope_x * self.data_scaling,
+                                  unit=self.data_unit)
+        self.tilt_label.updateText(tilt=self.slope_y * self.data_scaling,
+                                   unit=self.data_unit)
+        self.residual_label.updateText(
+            residual=self.residual * self.data_scaling, unit=self.data_unit)
 
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.update_spinboxes_unit(' asec', config.WFS.plate_scale)
+            self.update_spinboxes_unit(' asec', config.WFS.plate_scale, 2)
         else:
-            self.update_spinboxes_unit(' px', 1)
+            self.update_spinboxes_unit(' px', 1, 2)
+
+        self.update_labels()
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:

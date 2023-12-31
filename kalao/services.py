@@ -13,7 +13,7 @@ import signal
 import time
 from datetime import datetime, timezone
 
-from kalao.utils import database
+from kalao import logger
 
 import dbus
 
@@ -108,8 +108,7 @@ def check_all_active():
         status_dict[unit] = is_active(unit)
 
         if not status_dict[unit]:
-            database.store('obs',
-                           {'services_log': f'[WARNING] {unit} is down!'})
+            logger.warn('services', f'{unit} is down!')
 
     return status_dict
 
@@ -125,9 +124,7 @@ def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
     """
 
     if action != ServiceAction.STATUS:
-        database.store('obs', {
-            'services_log': f'Sending {action} command to {unit}.'
-        })
+        logger.info('services', f'Sending {action} command to {unit}.')
 
     bus, systemd, manager = connect_dbus(system)
 
@@ -151,8 +148,7 @@ def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
     elif action == ServiceAction.DISABLE:
         changes = manager.DisableUnitFiles([unit], runtime_only)
     else:
-        database.store('obs',
-                       {'services_log': f'[ERROR] Unknown action: {action}'})
+        logger.error('services', f'Unknown action: {action}')
         return -1
 
     bus.close()
@@ -162,10 +158,6 @@ def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
 
 def camera(action):
     return unit_control(config.Systemd.services['camera']['unit'], action)
-
-
-def flask(action):
-    return unit_control(config.Systemd.services['flask-gui']['unit'], action)
 
 
 def gop(action):
@@ -200,9 +192,7 @@ def init():
     system_setup_active = is_active('kalao_system-setup.service', system=True)
 
     if not system_setup_active:
-        database.store('obs', {
-            'services_log': f'[ERROR] kalao_system-setup.service is down!'
-        })
+        logger.error('services', 'kalao_system-setup.service is down!')
 
     for service in config.Systemd.services.values():
         unit = service['unit']
@@ -227,9 +217,7 @@ def init():
     all_statuses = check_all_active()
 
     if not all(all_statuses.values()):
-        database.store('obs', {
-            'services_log': f'[ERROR] One or more services are not running!'
-        })
+        logger.error('services', 'One or more services are not running!')
         return -1
 
     return 0

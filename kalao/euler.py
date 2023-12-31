@@ -2,7 +2,7 @@ from astropy import units as u
 from astropy.coordinates import AltAz, EarthLocation, SkyCoord, get_sun
 from astropy.time import Time
 
-from kalao.utils import database
+from kalao import database
 
 import config
 

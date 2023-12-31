@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 
 from PySide6.QtCore import QRectF, QSignalBlocker, Slot
@@ -14,6 +12,23 @@ from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOMainWindow
 
 import config
+
+
+def find_star_fast(img, psf_bb=25):
+    y, x = np.unravel_index(np.argmax(img, axis=None), img.shape)
+    background = np.median(img)
+
+    peak = img[y, x] - background
+
+    box = img[y - psf_bb:y + psf_bb, x - psf_bb:x + psf_bb] - background
+
+    circle = (2 * box > box.max()).sum()
+    if circle == 0:
+        fwhm = np.nan
+    else:
+        fwhm = 2 * np.sqrt(circle / np.pi)
+
+    return x, y, peak, fwhm
 
 
 class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
@@ -33,6 +48,8 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
     zoom_center_x = config.FLI.center_x
     zoom_center_y = config.FLI.center_y
     zoom_level = 8
+    zoom_min = 2
+    zoom_max = 128
 
     last_img = None
 
@@ -42,16 +59,19 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
     tick_text_spacing = 5
     ticks_pos = [-400, -300, -200, -100, 0, 100, 200, 300, 400]
 
-    def __init__(self, backend, img, parent=None):
-        super().__init__(parent)
+    star_x = np.nan
+    star_y = np.nan
+    star_peak = np.nan
+    star_fwhm = np.nan
 
-        self.parang = 0
+    def __init__(self, backend, img, on_sky_unit=False, parent=None):
+        super().__init__(parent)
 
         self.backend = backend
         self.img = img
 
         loadUi('fli_zoom.ui', self)
-        self.resize(800, 600)
+        self.resize(900, 600)
 
         self.init_minmax([self.fli_view, self.zoom_view])
 
@@ -82,18 +102,8 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         self.zoom_view.scene.clicked.connect(self.zoom_clicked)
         self.zoom_view.scene.scrolled.connect(self.zoom_scrolled)
 
+        self.onsky_checkbox.setChecked(on_sky_unit)
         self.on_onsky_checkbox_stateChanged(self.onsky_checkbox.checkState())
-
-        self.star_label.updateText(
-            x=np.nan,
-            y=np.nan,
-            peak=np.nan,
-            fwhm=np.nan,
-            data_unit=self.data_unit,
-            data_precision=np.nan,
-            axis_unit=self.axis_unit,
-            axis_precision=np.nan,
-        )
 
         self.hovered.connect(self.info_to_statusbar)
         backend.fli_updated.connect(self.fli_updated)
@@ -175,13 +185,13 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         if z > 0:
             self.zoom_level *= 2
 
-            if self.zoom_level > 128:
-                self.zoom_level = 128
+            if self.zoom_level > self.zoom_max:
+                self.zoom_level = self.zoom_max
         else:
             self.zoom_level //= 2
 
-            if self.zoom_level < 2:
-                self.zoom_level = 2
+            if self.zoom_level < self.zoom_min:
+                self.zoom_level = self.zoom_min
 
         self.update_zoom_view()
 
@@ -212,8 +222,8 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         if z > 0:
             self.zoom_level *= 2
 
-            if self.zoom_level > 128:
-                self.zoom_level = 128
+            if self.zoom_level > self.zoom_max:
+                self.zoom_level = self.zoom_max
 
             elif not self.follow_checkbox.isChecked():
                 self.zoom_center_x = round(x - fx*hw/2)
@@ -222,8 +232,8 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         else:
             self.zoom_level //= 2
 
-            if self.zoom_level < 2:
-                self.zoom_level = 2
+            if self.zoom_level < self.zoom_min:
+                self.zoom_level = self.zoom_min
 
             elif not self.follow_checkbox.isChecked():
                 self.zoom_center_x = round(x - fx*hw*2)
@@ -235,6 +245,9 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         return self.zoom_center_x - 1024 // self.zoom_level // 2 + x - self.view_shift_x, self.zoom_center_y - 1024 // self.zoom_level // 2 + y - self.view_shift_y
 
     def update_fli_view(self, img):
+        if img is None:
+            return
+
         self.img = img
 
         img_min, img_max = self.compute_min_max(
@@ -243,19 +256,12 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
         self.fli_view.setImage(self.img, img_min, img_max,
                                self.scale_combobox.currentData())
 
-        self.parang = (self.parang + 5) % 360
-        self.fli_view.addParang(self.parang)
+        #self.fli_view.addNEIndicator(parang from keywords)
 
-        self.star_x, self.star_y, self.star_peak, self.star_fwhm = self.find_star_fast(
+        self.star_x, self.star_y, self.star_peak, self.star_fwhm = find_star_fast(
             self.img)
 
-        self.star_label.updateText(
-            x=(self.star_x - self.data_center_x) * self.axis_scaling,
-            y=(self.star_y - self.data_center_y) * self.axis_scaling,
-            peak=self.star_peak * self.data_scaling,
-            fwhm=self.star_fwhm * self.axis_scaling, data_unit=self.data_unit,
-            data_precision=self.data_precision, axis_unit=self.axis_unit,
-            axis_precision=self.axis_precision + 1)
+        self.update_labels()
 
         if self.follow_checkbox.isChecked():
             self.zoom_center_x = self.star_x
@@ -299,24 +305,17 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
             self.scale_combobox.currentData(),
             view=QRectF(self.view_shift_x, self.view_shift_y, 2 * hw, 2 * hw))
 
-    def find_star_fast(self, img):
-        start = time.monotonic()
-        psf_bb = 25
-
-        y, x = np.unravel_index(np.argmax(img, axis=None), img.shape)
-        peak = img[y, x]
-
-        background = np.median(img)
-
-        box = img[y - psf_bb:y + psf_bb, x - psf_bb:x + psf_bb] - background
-
-        circle = (2 * box > box.max()).sum()
-        if circle == 0:
-            fwhm = np.nan
-        else:
-            fwhm = 2 * np.sqrt(circle / np.pi)
-
-        return x, y, peak, fwhm
+    def update_labels(self):
+        self.star_label.updateText(
+            x=(self.star_x - self.data_center_x) * self.axis_scaling,
+            y=(self.star_y - self.data_center_y) * self.axis_scaling,
+            peak=self.star_peak * self.data_scaling,
+            fwhm=self.star_fwhm * self.axis_scaling,
+            data_unit=self.data_unit,
+            data_precision=self.data_precision,
+            axis_unit=self.axis_unit,
+            axis_precision=self.axis_precision + 1,
+        )
 
     @Slot(int)
     def on_onsky_checkbox_stateChanged(self, state):
@@ -328,6 +327,13 @@ class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
             self.axis_scaling = 1
             self.axis_unit = ' px'
             self.axis_precision = 0
+
+        self.update_labels()
+
+        self.x_spinbox.setScale(self.axis_scaling, self.axis_precision)
+        self.y_spinbox.setScale(self.axis_scaling, self.axis_precision)
+        self.x_spinbox.setSuffix(self.axis_unit)
+        self.y_spinbox.setSuffix(self.axis_unit)
 
         ticks_x = []
         ticks_y = []

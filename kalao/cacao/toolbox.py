@@ -63,7 +63,7 @@ def open_or_create_stream(stream_name, shape, dtype):
     return shm
 
 
-def open_stream_once(stream_name, streams_list):
+def open_stream_once(stream_name, streams_list={}):
     opened_stream = streams_list.get(stream_name)
 
     if opened_stream is None:

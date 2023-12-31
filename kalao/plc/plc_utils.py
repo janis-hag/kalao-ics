@@ -1,6 +1,6 @@
-from kalao.plc import (adc, calib_unit, core, filterwheel, flip_mirror, laser,
+from kalao import logger
+from kalao.plc import (adc, calibunit, core, filterwheel, flipmirror, laser,
                        shutter, temperature_control, tungsten)
-from kalao.utils import database
 
 from kalao.definitions.enums import LaserState, TungstenState
 
@@ -21,13 +21,10 @@ def lamps_off():
         return 0
 
     if tungsten_status != TungstenState.OFF:
-        database.store('obs', {
-            'tungsten_log': f'[WARNING] Tungsten lamp did not turn off'
-        })
+        logger.warn('tungsten', 'Tungsten lamp did not turn off')
 
     if laser_status != LaserState.OFF:
-        database.store('obs',
-                       {'laser_log': f'[WARNING] Laser lamp did not turn off'})
+        logger.warn('laser', 'Laser lamp did not turn off')
 
     return -1
 
@@ -47,12 +44,12 @@ def get_all_status(beck=None, filter_from_db=False):
     return {
         'shutter_state':
             shutter.get_state(beck=beck),
-        'flip_mirror_position':
-            flip_mirror.get_position(beck=beck),
-        'calib_unit_position':
-            calib_unit.get_position(beck=beck),
-        'calib_unit_state':
-            calib_unit.get_state(beck=beck),
+        'flipmirror_position':
+            flipmirror.get_position(beck=beck),
+        'calibunit_position':
+            calibunit.get_position(beck=beck),
+        'calibunit_state':
+            calibunit.get_state(beck=beck),
         'laser_state':
             laser.get_state(beck=beck),
         'laser_power':
@@ -79,6 +76,8 @@ def get_all_status(beck=None, filter_from_db=False):
             temps['temp_water_in'],
         'temp_water_out':
             temps['temp_water_out'],
+        'hygro_bench_air':
+            temps['hygro_bench_air'],
         'pump_status':
             cooling_system['pump_status'],
         'pump_temp':
@@ -87,8 +86,6 @@ def get_all_status(beck=None, filter_from_db=False):
             cooling_system['heater_status'],
         'fan_status':
             cooling_system['fan_status'],
-        'flow_value':
-            cooling_system['flow_value'],
-        'hygrometry':
-            cooling_system['hygrometry']
+        'coolant_flow_rate':
+            cooling_system['coolant_flow_rate'],
     }

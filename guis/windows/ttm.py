@@ -19,8 +19,12 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
     stream_info = config.StreamInfo.dm02disp
 
     data_unit = ' mrad'
+    data_precision = 2
 
     plot_length = config.GUI.ttm_plot_length * 1000
+
+    tip = np.nan
+    tilt = np.nan
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
@@ -67,8 +71,7 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
 
         chart.legend().hide()
 
-        self.tip_label.updateText(tip=np.nan, unit=self.data_unit)
-        self.tilt_label.updateText(tilt=np.nan, unit=self.data_unit)
+        self.update_labels()
 
         backend.data_updated.connect(self.data_updated)
 
@@ -77,19 +80,25 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
 
         if img is not None:
             timestamp = QDateTime(datetime.now()).toMSecsSinceEpoch()
-            tip, tilt = img * self.data_scaling
+            self.tip, self.tilt = img
 
-            self.tip_series.append(QPointF(timestamp, tip))
-            self.tilt_series.append(QPointF(timestamp, tilt))
+            self.tip_series.append(
+                QPointF(timestamp, self.tip * self.data_scaling))
+            self.tilt_series.append(
+                QPointF(timestamp, self.tilt * self.data_scaling))
 
             while self.tip_series.at(0).x() < timestamp - self.plot_length:
                 self.tip_series.remove(0)
                 self.tilt_series.remove(0)
 
-            self.tip_label.updateText(tip=tip, unit=self.data_unit)
-            self.tilt_label.updateText(tilt=tilt, unit=self.data_unit)
-
+            self.update_labels()
             self.update_axis()
+
+    def update_labels(self):
+        self.tip_label.updateText(tip=self.tip * self.data_scaling,
+                                  unit=self.data_unit)
+        self.tilt_label.updateText(tilt=self.tilt * self.data_scaling,
+                                   unit=self.data_unit)
 
     def update_axis(self):
         y_min = np.inf
@@ -135,9 +144,11 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
     def change_units(self, state):
         prev_scaling = self.data_scaling
         if Qt.CheckState(state) == Qt.Checked:
-            self.update_spinboxes_unit(' asec', config.TTM.plate_scale)
+            self.update_spinboxes_unit(' asec', config.TTM.plate_scale, 2)
         else:
-            self.update_spinboxes_unit(' mrad', 1)
+            self.update_spinboxes_unit(' mrad', 1, 2)
+
+        self.update_labels()
 
         new_tip = []
         for p in self.tip_series.points():

@@ -10,8 +10,8 @@ Timer to verify KalAO pump health (KalAO-ICS).
 
 import time
 
+from kalao import logger
 from kalao.plc import core, temperature_control
-from kalao.utils import database
 
 import schedule
 
@@ -26,15 +26,11 @@ def _check_pump_temp(beck=None):
     pump_status = temperature_control.pump_status(beck=beck)
 
     if pump_temp > config.Cooling.max_pump_temperature and pump_status == RelayState.ON:
-        database.store('obs', {
-            'pump_timer_log': '[WARNING] Pump overheat, shutting off'
-        })
+        logger.warn('pump_timer', 'Pump overheat, shutting off')
         temperature_control.pump_off(beck=beck)
 
     elif pump_temp < config.Cooling.pump_restart_temp and pump_status == RelayState.OFF:
-        database.store('obs', {
-            'pump_timer_log': '[WARNING] Pump cooled down, powering up'
-        })
+        logger.warn('pump_timer', 'Pump cooled down, powering up')
         temperature_control.pump_on(beck=beck)
 
 

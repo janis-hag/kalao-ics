@@ -13,12 +13,12 @@ import time
 
 import numpy as np
 
-from kalao import euler, ippower
+from kalao import database, euler, ippower, logger
 from kalao.cacao import telemetry
 from kalao.fli import camera
 from kalao.plc import plc_utils
-from kalao.rtc import rtc_status
-from kalao.utils import database, kalao_time
+from kalao.rtc import gpu, sensors
+from kalao.utils import kalao_string, kalao_time
 
 import schedule
 
@@ -40,9 +40,12 @@ def _gather_for_monitoring():
         plc_values.pop(device_name)
     monitoring_data.update(plc_values)
 
-    # get RTC data and update
-    rtc_temperatures = rtc_status.read_all_sensors()
-    monitoring_data.update(rtc_temperatures)
+    # Get RTC data
+    rtc_sensors = sensors.status()
+    monitoring_data.update(rtc_sensors)
+
+    rtc_gpu = gpu.status()
+    monitoring_data.update(rtc_gpu)
 
     # IPPower
     ippower_status = ippower.status_all()
@@ -54,16 +57,17 @@ def _gather_for_monitoring():
 
     if fli_server_status == CameraServerStatus.UP:
         fli_temperatures = camera.get_temperatures()
-        fli_temperatures['fli_temp_CCD'] = fli_temperatures.pop('ccd')
-        fli_temperatures['fli_temp_HS'] = fli_temperatures.pop('heatsink')
+        fli_temperatures['fli_temp_ccd'] = fli_temperatures.pop('ccd')
+        fli_temperatures['fli_temp_heatsink'] = fli_temperatures.pop(
+            'heatsink')
         monitoring_data.update(fli_temperatures)
 
     if euler.telescope_tracking() == TrackingStatus.TRACKING:
         # Telescope
         telescope = euler.telescope_coord_altaz()
         telescope_status = {
-            'tel_alt': telescope.alt.deg,
-            'tel_az': telescope.az.deg
+            'telescope_altitude': telescope.alt.deg,
+            'telescope_azimut': telescope.az.deg
         }
         monitoring_data.update(telescope_status)
 
@@ -76,8 +80,7 @@ def update_monitoring_db():
         ).total_seconds() < config.Database.monitoring_min_update_interval:
         return
 
-    #database.store('obs',
-    #               {'database_timer_log': 'Updating monitoring database'})
+    # logger.info('database_timer', 'Updating monitoring database')
 
     monitoring_data = _gather_for_monitoring()
 
@@ -90,8 +93,7 @@ def update_monitoring_db():
 
 
 def update_telemetry_db():
-    #database.store('obs',
-    #               {'database_timer_log': 'Updating telemetry database'})
+    # logger.info('database_timer', 'Updating telemetry database')
 
     telemetry_data = telemetry.gather(shm_and_fps_cache)
 
@@ -115,36 +117,28 @@ def check_range(key, value, metadata):
     warn_min = warn_range[0]
     warn_max = warn_range[1]
 
-    unit = metadata.get('unit')
-    if unit is None or unit == '':
-        unit = ''
-    else:
-        unit = f' {unit}'
+    unit = kalao_string.get_unit_string(metadata)
 
     if value > error_max:
-        database.store(
-            'obs', {
-                'database_timer_log':
-                    f'[ERROR] {key} value ({value}{unit}) above error threshold of {error_max}{unit})'
-            })
+        logger.error(
+            'database_timer',
+            f'{key} = {value}{unit} above error threshold of {error_max}{unit}'
+        )
     elif value < error_min:
-        database.store(
-            'obs', {
-                'database_timer_log':
-                    f'[ERROR] {key} value ({value}{unit}) under error threshold of {error_min}{unit})'
-            })
+        logger.error(
+            'database_timer',
+            f'{key} = {value}{unit} under error threshold of {error_min}{unit}'
+        )
     elif value > warn_max:
-        database.store(
-            'obs', {
-                'database_timer_log':
-                    f'[WARNING] {key} value ({value}{unit}) above warning threshold of {warn_max}{unit})'
-            })
+        logger.warn(
+            'database_timer',
+            f'{key} = {value}{unit} above warning threshold of {warn_max}{unit}'
+        )
     elif value < warn_min:
-        database.store(
-            'obs', {
-                'database_timer_log':
-                    f'[WARNING] {key} value ({value}{unit}) under warning threshold of {warn_min}{unit})'
-            })
+        logger.warn(
+            'database_timer',
+            f'{key} = {value}{unit} under warning threshold of {warn_min}{unit}'
+        )
 
 
 if __name__ == "__main__":

@@ -14,8 +14,7 @@
 
 import pandas as pd
 
-from kalao import euler
-from kalao.utils import database, kalao_time
+from kalao import database, euler
 
 from tcs_communication.pyipc import pymod_libipc as ipc
 

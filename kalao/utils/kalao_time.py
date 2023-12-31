@@ -17,7 +17,7 @@ def datetime_is_naive(d):
     return d.tzinfo is None or d.tzinfo.utcoffset(d) is None
 
 
-def get_start_of_night_dt(dt=None):
+def get_start_of_night(dt=None):
     """
     Get the night date for the time given by dt. By definition a night date is valid from noon to noon the next day in Chilean local time.
 
@@ -40,7 +40,7 @@ def get_start_of_night_dt(dt=None):
         return dt_chile.replace(hour=12, minute=0, second=0, microsecond=0)
 
 
-def get_start_of_night(dt=None):
+def get_night_str(dt=None):
     """
     Get the night date for the time given by dt. By definition a night date is valid from noon to noon the next day in Chilean local time.
 
@@ -48,30 +48,7 @@ def get_start_of_night(dt=None):
     :return: String object containing the night-date in YYYY-MM-DDD format.
     """
 
-    return get_start_of_night_dt(dt).strftime("%Y-%m-%d")
-
-
-def get_mjd(dt):
-    #From: https://stackoverflow.com/questions/31142181/calculating-julian-date-in-python
-    #From: http://aa.usno.navy.mil/faq/docs/JD_Formula.php
-
-    # Replace by astropy Time functionality
-
-    check_time_format(dt)
-
-    # Perform the calculation
-    dt_utc = dt.astimezone(timezone.utc)
-
-    julian_datetime = 367 * dt_utc.year - int((7 * (dt_utc.year + int((dt_utc.month + 9) / 12.0))) / 4.0) \
-                                        + int((275 * dt_utc.month) / 9.0) \
-                                        + dt_utc.day \
-                                        + 1721013.5 \
-                                        + (dt_utc.hour + dt_utc.minute / 60.0 + dt_utc.second / math.pow(60, 2)) / 24.0 \
-                                        - 0.5 * math.copysign(1, 100 * dt_utc.year + dt_utc.month - 190002.5) \
-                                        + 0.5 \
-                                        - 2400000.5
-
-    return julian_datetime
+    return get_start_of_night(dt).strftime("%Y-%m-%d")
 
 
 def check_time_format(dt):
@@ -104,10 +81,10 @@ def get_isotime(now_time=None):
     """
 
     if now_time is None:
-        return now().replace(tzinfo=None).isoformat(timespec='milliseconds')
+        return now().astimezone().isoformat(timespec='milliseconds')
     else:
         check_time_format(now_time)
-        return now_time.replace(tzinfo=None).isoformat(timespec='milliseconds')
+        return now_time.astimezone().isoformat(timespec='milliseconds')
 
 
 def now():
@@ -117,4 +94,4 @@ def now():
     :return: datetime object
     """
 
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(timezone.utc)

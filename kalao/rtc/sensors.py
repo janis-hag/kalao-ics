@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : rtc_status.py
+# @Filename : sensors.py
 # @Date : 2021-02-24-10-32
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-rtc_status.py is part of the KalAO Instrument Control Software
+sensors.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
-
-from kalao.rtc import gpu_control
 
 import sensors
 
 
-def read_all_sensors():
+def status():
     rtc_sensors = {}
 
     sensors.init()
@@ -28,7 +26,5 @@ def read_all_sensors():
                                                 '_')] = feature.get_value()
     finally:
         sensors.cleanup()
-
-    rtc_sensors.update(gpu_control.status())
 
     return rtc_sensors

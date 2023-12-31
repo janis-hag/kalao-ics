@@ -1,9 +1,0 @@
-#!/bin/bash
-
-source /home/kalao/.kalao_env
-source /home/kalao/kalao-venv/bin/activate
-
-cd /home/kalao/kalao-ics/gui_flask
-
-#gunicorn -w 4 -b 0.0.0.0:8080 "KalAO_flask:create_app()"
-nice -20 python KalAO_flask.py

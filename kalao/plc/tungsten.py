@@ -12,13 +12,13 @@ tungsten.py is part of the KalAO Instrument Control Software
 
 from time import sleep
 
+from kalao import database, logger
 from kalao.plc import core
-from kalao.timers import database as database_timer
-from kalao.utils import database, kalao_time
+from kalao.utils import kalao_time
 
 from opcua import ua
 
-from kalao.definitions.enums import IntEnum, TungstenState
+from kalao.definitions.enums import IntEnum, ReturnCode, TungstenState
 
 import config
 
@@ -67,9 +67,9 @@ def send_command(nCommand_value, beck=None):
         nCommand_value = TungstenCommand.OFF
 
     if nCommand_value == TungstenCommand.ON:
-        database.store('obs', {'tungsten_log': f'Turning tungsten lamp on'})
+        logger.info('tungsten', 'Turning tungsten lamp on')
     elif nCommand_value == TungstenCommand.OFF:
-        database.store('obs', {'tungsten_log': f'Turning tungsten lamp off'})
+        logger.info('tungsten', 'Turning tungsten lamp off')
 
     tungsten_nCommand = beck.get_node(
         f'{config.PLC.Node.TUNGSTEN}.ctrl.nCommand')
@@ -98,7 +98,7 @@ def init(beck=None):
     :param beck: the handle for the plc connection
     :return: returns 0 on success and error code on failure
     """
-    database.store('obs', {'tungsten_log': f'Initialising tungsten lamp'})
+    logger.info('tungsten', 'Initialising tungsten lamp')
 
     # Check if init, if not do init
     if not beck.get_node(
@@ -112,13 +112,11 @@ def init(beck=None):
 
         if not beck.get_node(
                 f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():
-            database.store('obs', {
-                'tungsten_log': f'[ERROR] Tungsten lamp initialisation failed'
-            })
-            return -1
+            logger.error('tungsten', 'Tungsten lamp initialisation failed')
+            return ReturnCode.PLC_INIT_FAILED
 
-    database.store('obs', {'tungsten_log': f'Tungsten lamp initialised'})
-    return 0
+    logger.info('tungsten', 'Tungsten lamp initialised')
+    return ReturnCode.PLC_INIT_SUCCESS
 
 
 @core.beckhoff_autoconnect
@@ -135,9 +133,7 @@ def get_state(beck=None):
         error_text = beck.get_node(
             f'{config.PLC.Node.TUNGSTEN}.stat.sErrorText').get_value()
 
-        database.store('obs', {
-            'tungsten_log': f'[ERROR] {error_text} ({error_code})'
-        })
+        logger.error('tungsten', f'{error_text} ({error_code})')
 
         return TungstenState.ERROR
 
@@ -150,9 +146,7 @@ def get_state(beck=None):
         elif state_plc == 'ON':
             return TungstenState.ON
         else:
-            database.store('obs', {
-                'tungsten_log': f'[ERROR] Unknown state {state_plc}'
-            })
+            logger.error('tungsten', f'Unknown state {state_plc}')
 
             return TungstenState.ERROR
 

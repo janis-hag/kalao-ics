@@ -6,13 +6,7 @@ fli_server_status:
   unit:
   group: FLI
 
-fli_exposuretime:
-  short: FLI Exp. time
-  long: Exposure time of the FLI
-  unit: ms
-  group: FLI
-
-fli_temp_CCD:
+fli_temp_ccd:
   short: FLI CCD Temp.
   long: Temperature of the FLI CCD
   unit: °C
@@ -20,7 +14,7 @@ fli_temp_CCD:
   fits_keyword: HIERARCH ESO DET CCD TEMP
   error_range: [ -30.1, -29.9 ]
 
-fli_temp_HS:
+fli_temp_heatsink:
   short: FLI HS Temp.
   long: Temperature of the FLI heatsink
   unit: °C
@@ -49,13 +43,13 @@ ippower_dm_status:
   group: IPPower
 
 # Telescope
-tel_alt:
+telescope_altitude:
   short: Tel. Altitude
   long: Telescope altitude
   unit: °
   group: Telescope
 
-tel_az:
+telescope_azimut:
   short: Tel. Azimut
   long: Telescope azimut
   unit: °
@@ -69,25 +63,32 @@ shutter_state:
   group: Motors
   fits_keyword: HIERARCH ESO INS SHUT ST
 
-flip_mirror_position:
+flipmirror_position:
   short: Flip mirror position
   long: Flip mirror position
   unit:
   group: Motors
   fits_keyword: HIERARCH ESO INS FLIP MIR
 
-calib_unit_position:
+calibunit_position:
   short: Calib Unit position
   long: Calibration Unit position
   unit: mm
   group: Motors
   fits_keyword: HIERARCH ESO INS CALIB POS
 
-calib_unit_state:
+calibunit_state:
   short: Calib Unit state
   long: Calibration Unit state
   unit:
   group: Motors
+
+hygro_bench_air:
+  short: Bench air hygro.
+  long: Hygrometry inside the KalAO enclosure
+  unit: '%'
+  group: Environment
+  fits_keyword: HIERARCH ESO INS ENC RH
 
 temp_bench_air:
   short: Bench air temp.
@@ -109,6 +110,7 @@ temp_water_in:
   unit: °C
   group: Cooling
   fits_keyword: HIERARCH ESO INS TEMP WATER IN
+  warn_range: [ 6, .nan ]
   error_range: [ 5, 28 ]
 
 temp_water_out:
@@ -117,6 +119,7 @@ temp_water_out:
   unit: °C
   group: Cooling
   fits_keyword: HIERARCH ESO INS TEMP WATER OUT
+  warn_range: [ 6, .nan ]
   error_range: [ 5, 28 ]
 
 pump_status:
@@ -143,20 +146,13 @@ fan_status:
   unit:
   group: Cooling
 
-flow_value:
+coolant_flow_rate:
   short: Coolant flow rate
   long: Flow rate of the coolant
   unit: l/min
   group: Cooling
   warn_range: [ 1.2, .nan ]
   error_range: [ 0.5, .nan ]
-
-hygrometry:
-  short: Enclosure RH
-  long: Enclosure relative humidity
-  unit: '%'
-  group: Environment
-  fits_keyword: HIERARCH ESO INS ENC RH
 
 laser_state:
   short: Laser state
@@ -296,7 +292,7 @@ coretemp_isa-Core_7:
   unit: °C
   group: RTC
 
-#GPU
+# GPU
 gpu_current_temp:
   short: GPU temperature
   long: Current temperature of the GPU

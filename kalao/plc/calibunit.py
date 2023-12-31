@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : calib_unit
+# @Filename : calibunit
 # @Date : 2021-01-02-14-36
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-calib_unit.py is part of the KalAO Instrument Control Software
+calibunit.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
 import numpy as np
 
+from kalao import logger
 from kalao.plc import core
-from kalao.utils import database
+
+from kalao.definitions.enums import ReturnCode
 
 import config
 
@@ -29,11 +31,10 @@ def move_to_tungsten_position():
     if abs(new_position - config.Tungsten.position) < 0.1:
         return new_position
     else:
-        database.store(
-            'obs', {
-                'calib_unit_log':
-                    f'[ERROR] Calibration unit position requested {config.Tungsten.position} but moved to {new_position}'
-            })
+        logger.error(
+            'calibunit',
+            f'Calibration unit position requested {config.Tungsten.position} but moved to {new_position}'
+        )
         return np.nan
 
 
@@ -49,11 +50,10 @@ def move_to_laser_position():
     if abs(new_position - config.Laser.position) < 0.1:
         return new_position
     else:
-        database.store(
-            'obs', {
-                'calib_unit_log':
-                    f'[ERROR] Calibration unit position requested {config.Laser.position} but moved to {new_position}'
-            })
+        logger.error(
+            'calibunit',
+            f'Calibration unit position requested {config.Laser.position} but moved to {new_position}'
+        )
         return np.nan
 
 
@@ -66,10 +66,7 @@ def move_px(pixel, absolute=False):
     """
 
     if absolute and pixel < 0:
-        database.store('obs', {
-            'calib_unit_log':
-                '[ERROR] Calib unit position should not be negative'
-        })
+        logger.error('calibunit', 'Calib unit position should not be negative')
         return np.nan
 
     current_position = get_position()
@@ -90,36 +87,30 @@ def move(position, velocity=config.CalibUnit.velocity, wait=True, beck=None):
     """
 
     if position < config.CalibUnit.position_min:
-        database.store(
-            'obs', {
-                'calib_unit_log':
-                    f'[WARNING] Position {position}mm lower than minimal position {config.CalibUnit.position_min}mm, clipping.'
-            })
+        logger.warn(
+            'calibunit',
+            f'Position {position} mm lower than minimal position {config.CalibUnit.position_min} mm, clipping.'
+        )
         position = config.CalibUnit.position_min
 
     elif position > config.CalibUnit.position_max:
-        database.store(
-            'obs', {
-                'calib_unit_log':
-                    f'[WARNING] Position {position}mm higher than maximal position {config.CalibUnit.position_max}mm, clipping.'
-            })
+        logger.warn(
+            'calibunit',
+            f'Position {position} mm higher than maximal position {config.CalibUnit.position_max} mm, clipping.'
+        )
         position = config.CalibUnit.position_max
 
-    database.store(
-        'obs', {
-            'calib_unit_log':
-                f'Moving calibration unit to position {position}mm at {velocity}mm/s'
-        })
+    logger.info(
+        'calibunit',
+        f'Moving calibration unit to position {position} mm at {velocity} mm/s'
+    )
 
     new_position = core.motor_move(config.PLC.Node.CALIB_UNIT, position,
                                    velocity, wait, beck=beck)
 
     if wait:
-        database.store(
-            'obs', {
-                'calib_unit_log':
-                    f'Moved calibration unit to position {new_position}mm'
-            })
+        logger.info('calibunit',
+                    f'Moved calibration unit to position {new_position} mm')
 
     return new_position
 
@@ -138,9 +129,7 @@ def get_position(beck=None):
     if np.isnan(position):
         error_code, error_text = core.get_error(config.PLC.Node.CALIB_UNIT,
                                                 beck=beck)
-        database.store('obs', {
-            'calib_unit_log': f'[ERROR] {error_text} ({error_code})'
-        })
+        logger.error('calibunit', f'{error_text} ({error_code})')
 
     return position
 
@@ -155,18 +144,15 @@ def init(force_init=True, beck=None):
     Initialise the calibration unit.
     '''
 
-    database.store('obs', {'calib_unit_log': 'Initialising calibration unit'})
+    logger.info('calibunit', 'Initialising calibration unit')
 
     ret_init = core.motor_init(config.PLC.Node.CALIB_UNIT, force_init,
                                beck=beck)
 
-    if ret_init != 0:
-        database.store('obs', {
-            'calib_unit_log': f'[ERROR] Calibration unit initialisation failed'
-        })
+    if ret_init != ReturnCode.PLC_INIT_SUCCESS:
+        logger.error('calibunit', f'Calibration unit initialisation failed')
     else:
-        database.store('obs',
-                       {'calib_unit_log': f'Calibration unit initialised'})
+        logger.info('calibunit', 'Calibration unit initialised')
 
         if config.PLC.Node.CALIB_UNIT in config.PLC.initial_pos:
             move(config.PLC.initial_pos[config.PLC.Node.CALIB_UNIT], beck=beck)

@@ -24,8 +24,8 @@ from astropy.coordinates import Angle
 from astropy.io import fits
 from astropy.time import Time
 
-from kalao import euler
-from kalao.utils import database, kalao_string, kalao_time, starfinder
+from kalao import database, euler, logger
+from kalao.utils import kalao_string, kalao_time, starfinder
 
 import yaml
 
@@ -55,9 +55,9 @@ def create_night_folders():
     # check if folder exists
     # remove temporary folder of previous night if empty
 
-    tmp_night_folder = config.FITS.temporary_data_storage / kalao_time.get_start_of_night(
+    tmp_night_folder = config.FITS.temporary_data_storage / kalao_time.get_night_str(
     )
-    science_night_folder = config.FITS.science_data_storage / kalao_time.get_start_of_night(
+    science_night_folder = config.FITS.science_data_storage / kalao_time.get_night_str(
     )
 
     # Check if tmp and science folders exist
@@ -85,7 +85,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
     :param sequencer_arguments: argument list received by the sequencer
     :return:
     '''
-    science_night_folder = config.FITS.science_data_storage / kalao_time.get_start_of_night(
+    science_night_folder = config.FITS.science_data_storage / kalao_time.get_night_str(
     )
 
     # Remove tmp_ from filename
@@ -99,21 +99,14 @@ def save_tmp_image(image_path, sequencer_arguments=None):
         # target_path_name.chmod(file_mask)
 
         # TODO possibly add the right UID and GID
-        database.store(
-            'obs', {
-                'sequencer_log': f'Saving {image_path} to {target_path_name}',
-                'fli_last_image_path': target_path_name
-            })
+        database.store('obs', {'fli_last_image_path': target_path_name})
+        logger.info('sequencer', f'Saving {image_path} to {target_path_name}')
 
         return target_path_name
     else:
-        database.store(
-            'obs', {
-                'sequencer_log':
-                    f'[ERROR] Unable to save {image_path} to {target_path_name}',
-                'sequencer_status':
-                    SequencerStatus.ERROR
-            })
+        database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+        logger.error('sequencer',
+                     f'Unable to save {image_path} to {target_path_name}')
 
         return -1
 
@@ -340,6 +333,7 @@ def _header_from_db(collection_name, dt):
             }
             query_list[k] = fits_keyword
 
+    # Note: dt=None is mainly for debugging purposes
     if dt is not None:
         data = database.get(collection_name, query_list.keys(), dt=dt)
 
@@ -394,21 +388,17 @@ def _header_from_last_telescope_header():
         tcs_header_path = Path(tcs_header_path_record['value'])
 
     if header_age > config.FITS.tcs_header_validity:
-        database.store(
-            'obs', {
-                'sequencer_log':
-                    f'[WARNING] {tcs_header_path_record["value"]} is {header_age / 60} minutes old. Discarding obsolete header.'
-            })
+        logger.warn(
+            'sequencer',
+            f'{tcs_header_path_record["value"]} is {header_age / 60} minutes old. Discarding obsolete header.'
+        )
         return _header_empty()
 
     elif tcs_header_path.is_file():
         return _header_from_fits(tcs_header_path)
 
     else:
-        database.store('obs', {
-            'sequencer_log':
-                f'[ERROR] Header file not found: {tcs_header_path}'
-        })
+        logger.error('sequencer', f'Header file not found: {tcs_header_path}')
         return _header_empty()
 
 
@@ -501,8 +491,6 @@ def _dynamic_cards_update(header_df, obs_type, seq_args=None):
             'DEC',
             'comment'] = f'[deg] {dec.to_string(unit=u.deg, sep=":", precision=1, pad=True)} DEC (J2000) pointing'
         header_df.loc['DEC', 'source'] += '+dynamic'
-
-        # TODO add radecsys value in EQUINOX comment
 
     if seq_args is not None:
         header_df.loc['HIERARCH ESO TPL ID', 'value'] = seq_args.get('type')

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>953</width>
+    <width>956</width>
     <height>715</height>
    </rect>
   </property>
@@ -18,7 +18,6 @@
     <widget class="QLabel" name="title_label">
      <property name="font">
       <font>
-       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -199,7 +198,7 @@
    <item>
     <widget class="KalAOLabel" name="star_label">
      <property name="text">
-      <string>X: {x:.{precision}f}{axis_unit}, Y: {y:.{precision}f}{axis_unit}, FWHM: {fwhm:.{precision}f}{axis_unit}, Peak: {peak}{data_unit}</string>
+      <string>X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, FWHM: {fwhm:.{axis_precision}f}{axis_unit}, Peak: {peak:.{data_precision}f}{data_unit}</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

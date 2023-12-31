@@ -2,10 +2,13 @@ from datetime import datetime, timezone
 
 import numpy as np
 
+from PySide6.QtCore import QEvent, QObject, Signal
+from PySide6.QtGui import Qt
 from PySide6.QtWidgets import (QGridLayout, QGroupBox, QLabel, QLineEdit,
                                QSizePolicy, QSpacerItem, QVBoxLayout)
 
-from kalao.utils import database
+from kalao import database
+from kalao.utils import kalao_string
 
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin
@@ -17,6 +20,8 @@ import config
 
 
 class MonitoringWidget(KalAOWidget, BackendDataMixin):
+    hovered = Signal(str)
+
     formatter = KalAOFormatter()
 
     def __init__(self, backend, parent=None):
@@ -75,25 +80,23 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
             self.groupboxes[group] = groupbox
 
         label = QLabel(metadata.get('short'))
-        label.setToolTipDuration(2147483647)
-        label.setToolTip(metadata.get('long'))
+        label.setCursor(Qt.WhatsThisCursor)
+        label.hover_text = metadata.get('long')
+        label.installEventFilter(self)
 
         lineedit = QLineEdit()
-        lineedit.setToolTipDuration(2147483647)
         lineedit.setReadOnly(True)
-
-        unit = metadata.get('unit')
-        if unit is None or unit == '':
-            lineedit.unit = ''
-        else:
-            lineedit.unit = f' {unit}'
-
-        lineedit.setText(f'--{lineedit.unit}')
-
+        lineedit.setCursor(Qt.WhatsThisCursor)
         lineedit.collection = collection
         lineedit.key = key
-        lineedit.timestamp = datetime.fromtimestamp(0, tz=timezone.utc)
+        lineedit.timestamp = None
         lineedit.metadata = metadata
+        lineedit.unit = kalao_string.get_unit_string(metadata)
+        lineedit.hover_text = 'No data'
+        lineedit.installEventFilter(self)
+
+        lineedit.setText(f'--{lineedit.unit}')
+        lineedit.setStyleSheet(f'color: {Color.GREY.name()};')
 
         row = groupbox.layout().rowCount()
         groupbox.layout().addWidget(label, row, 0)
@@ -114,15 +117,19 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
                     text = f'{value}{lineedit.unit}'
 
                 lineedit.setText(text)
-                lineedit.setToolTip(
-                    timestamp.astimezone().strftime('%H:%M:%S %d-%m-%Y'))
                 lineedit.timestamp = timestamp
 
+            if lineedit.timestamp is None:
+                continue
+
             max_age = 2 * config.Database.monitoring_update_interval
+
+            since_text = f'Since: {lineedit.timestamp.astimezone().strftime("%H:%M:%S %d-%m-%Y")}'
 
             if (datetime.now(timezone.utc) -
                     lineedit.timestamp).total_seconds() > max_age:
                 lineedit.setStyleSheet(f'color: {Color.GREY.name()};')
+                lineedit.hover_text = f'{since_text} (outdated)'
             elif isinstance(value, float) or isinstance(value, int):
                 error_range = lineedit.metadata.get('error_range',
                                                     [np.nan, np.nan])
@@ -136,12 +143,23 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
 
                 if value > error_max or value < error_min:
                     lineedit.setStyleSheet(f'color: {Color.RED.name()};')
+                    lineedit.hover_text = self.formatter.format(
+                        '{since_text} | Outside of error range [{error_min}{unit}; {error_max}{unit}]',
+                        since_text=since_text, error_min=error_min,
+                        error_max=error_max, unit=lineedit.unit)
+
                 elif value > warn_max or value < warn_min:
                     lineedit.setStyleSheet(f'color: {Color.ORANGE.name()};')
+                    lineedit.hover_text = self.formatter.format(
+                        '{since_text} | Outside of warning range [{warn_min}{unit}; {warn_max}{unit}]',
+                        since_text=since_text, warn_min=warn_min,
+                        warn_max=warn_max, unit=lineedit.unit)
                 else:
                     lineedit.setStyleSheet(f'')
+                    lineedit.hover_text = since_text
             else:
                 lineedit.setStyleSheet(f'')
+                lineedit.hover_text = since_text
 
         monitoring = self.consume_dict(data, 'db-timestamps', 'monitoring')
         if monitoring is not None:
@@ -154,3 +172,11 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
             self.telemetry_update_label.updateText(
                 telemetry_update=telemetry.astimezone().strftime(
                     '%H:%M:%S %d-%m-%Y'))
+
+    def eventFilter(self, source, event):
+        if hasattr(source, 'hover_text'):
+            if event.type() == QEvent.Enter:
+                self.hovered.emit(source.hover_text)
+            elif event.type() == QEvent.Leave:
+                self.hovered.emit('')
+        return QObject.eventFilter(self, source, event)

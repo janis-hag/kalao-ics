@@ -3,26 +3,18 @@
 """
 @author: Nathanaël Restori
 """
-
-import sys
+import argparse
+from pathlib import Path
 
 import numpy as np
 
 from astropy.io import fits
 
-if len(sys.argv) != 3:
-    print(
-        "This script take two args : flat_from_BMC (input) and fits (output)")
-    exit()
+import config
 
 
-def run():
-    """
-    Generate a flat DM map for the Boston MC deformable mirror based on flat provided by BMC.
-
-    :return: exit status
-    """
-    data = np.genfromtxt(sys.argv[1])
+def run(args):
+    data = np.genfromtxt(args.input_file)
 
     flat = np.zeros((12, 12), dtype=np.float32)
 
@@ -35,10 +27,22 @@ def run():
     for i in range(130, 140):
         flat[(i+3) // 12, (i+3) % 12] = (data[i] - 0.5) * 3.5
 
-    fits.PrimaryHDU(flat).writeto(sys.argv[2], overwrite=True)
+    fits.PrimaryHDU(flat).writeto(args.output_file, overwrite=True)
 
     return 0
 
 
 if __name__ == "__main__":
-    run()
+    default_output = config.AO.cacao_workdir / 'setupfiles/hw/KalAO-hwloop-rundir/dm_flat.fits'
+
+    parser = argparse.ArgumentParser(
+        description=
+        'Convert a flat map from BMC to a fits file compatible with CACAO.')
+    parser.add_argument('--input', action="store", dest="input_file",
+                        required=True, type=Path, help='Input file (from BMC)')
+    parser.add_argument('--output', action="store", dest="output_file",
+                        default=default_output, type=Path, help='Output file')
+
+    args = parser.parse_args()
+
+    run(args)

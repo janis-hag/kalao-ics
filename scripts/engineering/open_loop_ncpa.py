@@ -232,8 +232,7 @@ def run(args):
     print(TC.CLEAR)
     print(TC.CLEAR)
 
-    laser.set_power(config.WFS.laser_calib_power)
-    laser.enable()
+    laser.set_power(config.WFS.laser_calib_power, enable=True)
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
 
     time.sleep(10)
@@ -326,8 +325,7 @@ if __name__ == '__main__':
         )
         exit(-1)
 
-    laser.set_power(args.laser_power)
-    laser.enable()
+    laser.set_power(args.laser_power, enable=True)
 
     # Tell Python to run the handler() function when SIGINT is recieved
     signal(SIGINT, handler)

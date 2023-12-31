@@ -15,11 +15,10 @@ from time import sleep
 import numpy as np
 from scipy.optimize import minimize_scalar
 
-from kalao import euler
+from kalao import database, euler, logger
 from kalao.plc import core, filterwheel
-from kalao.utils import database
 
-from kalao.definitions.enums import TrackingStatus
+from kalao.definitions.enums import ReturnCode, TrackingStatus
 
 import config
 
@@ -91,10 +90,7 @@ def get_optimal_adc_angle(zenith_angle, wavelength, T, P, H):
 
 def configure(beck=None, override_threshold=False):
     if euler.telescope_tracking() == TrackingStatus.IDLE:
-        database.store('obs', {
-            'adc_log':
-                '[WARNING] Configuring ADC while telescope is not tracking'
-        })
+        logger.warn('adc', 'Configuring ADC while telescope is not tracking')
 
     filter_name = filterwheel.get_filter(type=str, from_db=True)
     T = euler.outside_temperature()
@@ -132,9 +128,7 @@ def set_zero_disp(beck=None):
 
 
 def set_angle(angle, beck=None):
-    database.store('obs', {
-        'adc_log': f'Setting angle between ADC prisms to {angle}°'
-    })
+    logger.info('adc', f'Setting angle between ADC prisms to {angle}°')
 
     # Motors are face to face, offset by same angle so they are counter-rotating
     rotate(config.PLC.Node.ADC1, config.ADC.max_disp_angle_1 + angle/2,
@@ -162,17 +156,13 @@ def get_angle():
 
 
 def rotate(node, position, velocity=config.ADC.velocity, wait=True, beck=None):
-    database.store('obs', {
-        'adc_log':
-            f'Moving ADC {node} to position {position}° at {velocity}°/s'
-    })
+    logger.info('adc',
+                f'Moving ADC {node} to position {position}° at {velocity}°/s')
 
     new_position = core.motor_move(node, position, velocity, wait, beck=beck)
 
     if wait:
-        database.store('obs', {
-            'adc_log': f'Moved ADC {node} to position {new_position}°'
-        })
+        logger.info('adc', f'Moved ADC {node} to position {new_position}°')
 
     return new_position
 
@@ -197,8 +187,7 @@ def get_position(node, beck=None):
 
     if np.isnan(position):
         error_code, error_text = core.get_error(node, beck=beck)
-        database.store('obs',
-                       {'adc_log': f'[ERROR] {error_text} ({error_code})'})
+        logger.error('adc', f'{error_text} ({error_code})')
 
     return position
 
@@ -212,16 +201,14 @@ def init(node, force_init=False, beck=None):
     """
     Initialise the ADC motor.
     """
-    database.store('obs', {'adc_log': f'Initialising ADC {node}'})
+    logger.info('adc', f'Initialising ADC {node}')
 
     ret_init = core.motor_init(node, force_init, beck=beck)
 
-    if ret_init != 0:
-        database.store('obs', {
-            'adc_log': f'[ERROR] ADC {node} initialisation failed'
-        })
+    if ret_init != ReturnCode.PLC_INIT_SUCCESS:
+        logger.error('adc', f'ADC {node} initialisation failed')
     else:
-        database.store('obs', {'adc_log': f'ADC {node} initialised'})
+        logger.info('adc', f'ADC {node} initialised')
 
         if node in config.PLC.initial_pos:
             rotate(node, config.PLC.initial_pos[node], beck=beck)

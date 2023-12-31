@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : calib_unit
+# @Filename : calibunit
 # @Date : 2021-01-02-14-36
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
@@ -24,9 +24,9 @@ from astropy.stats import sigma_clipped_stats
 from astropy.time import Time
 from photutils.detection import DAOStarFinder
 
-from kalao import euler, system
+from kalao import database, euler
 from kalao.fli import camera
-from kalao.utils import database, file_handling
+from kalao.utils import file_handling
 
 import config
 
@@ -129,7 +129,7 @@ def find_star_custom_algo(image, spot_size=7, estim_error=0.05, nb_step=5,
     if not laser_spot and 3 * lumino < image.max():
         # Dirty hack in the black box...
         # Image quality insufficient for centering
-        system.print_and_log(
+        print(
             f'Image quality insufficient for centering {lumino} < {image.max()}'
         )
         return -1, -1
@@ -313,18 +313,25 @@ def generate_wcs():
     ])
 
     # RA, DEC at reference
-    #w.wcs.crval = [c.ra.to_value(), c.dec.to_value()]
     coord = euler.telescope_coord()
-
     w.wcs.crval = [coord.ra.degree, coord.dec.degree]
 
     # Gnomonic (TAN) projection
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
 
+    # Pixel coordinates transformation matrix
+    # parang = parallactic_angle() * np.pi/180
+    # w.wcs.pc = np.array([[np.cos(parang), -np.sin(parang)],
+    #                      [np.sin(parang), np.cos(parang)]])
+    # TODO: check if mirroring needed
+
+    # w.wcs.radesys = '???'
+    # w.wcs.equinox = 2000.0
+
     return w
 
 
-def calc_parang(dt=None, coord=None):
+def parallactic_angle(dt=None, coord=None):
     location = euler.observing_location()
 
     if isinstance(dt, datetime):

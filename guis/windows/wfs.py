@@ -44,10 +44,10 @@ class WFSWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         # Add grid to window
         self.rois = {}
-        for i in config.AO.all_subaps:
+        for i in config.WFS.all_subaps:
             j, k = kalao_tools.get_subaperture_2d(i)
 
-            if i in config.AO.masked_subaps:
+            if i in config.WFS.masked_subaps:
                 color = Color.DARK_GREY
             else:
                 color = Color.BLUE

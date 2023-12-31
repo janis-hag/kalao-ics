@@ -18,7 +18,7 @@ from kalao.utils import kalao_time
 
 import yaml
 from bson.codec_options import CodecOptions
-from pymongo import DESCENDING, MongoClient, UpdateOne
+from pymongo import DESCENDING, TEXT, MongoClient, UpdateOne
 from pymongo.errors import BulkWriteError
 
 import config
@@ -32,6 +32,9 @@ definitions = {
     },
     'telemetry': {
         'path': config.kalao_ics_path / "definitions/db_telemetry.yml"
+    },
+    'logs': {
+        'path': config.kalao_ics_path / "definitions/db_logs.yml"
     },
 }
 
@@ -64,7 +67,15 @@ def _get_db(dt=None):
     if dt is None:
         dt = kalao_time.now()
 
-    return client[kalao_time.get_start_of_night(dt=dt)]
+    return client[kalao_time.get_night_str(dt=dt)]
+
+
+def _get_collection(db, collection_name):
+    collection = db.get_collection(collection_name,
+                                   codec_options=codec_options)
+    collection.create_index([('key', TEXT)], background=True)
+
+    return collection
 
 
 def get_collection_last_update(collection_name):
@@ -73,8 +84,7 @@ def get_collection_last_update(collection_name):
 
     while day <= config.Database.max_days:
         db = _get_db(dt - timedelta(days=day))
-        collection = db.get_collection(collection_name,
-                                       codec_options=codec_options)
+        collection = _get_collection(db, collection_name)
 
         # yapf: disable
         cursor = collection.find(
@@ -108,8 +118,7 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
 
     while day <= max_days:
         db = _get_db(dt - timedelta(days=day))
-        collection = db.get_collection(collection_name,
-                                       codec_options=codec_options)
+        collection = _get_collection(db, collection_name)
 
         # yapf: disable
         if keys is None:
@@ -192,8 +201,7 @@ def get_time_since_state(collection_name, key, condition='==', value=None):
         current = data.get('current', {'$arrayElemAt': ['$values', -1]})
 
         db = _get_db(dt - timedelta(days=day))
-        collection = db.get_collection(collection_name,
-                                       codec_options=codec_options)
+        collection = _get_collection(db, collection_name)
 
         # yapf: disable
         cursor = collection.aggregate([
@@ -225,34 +233,23 @@ def store(collection_name, data):
     if len(data) == 0:
         return 0
 
-    now_utc = kalao_time.now()
+    timestamp = kalao_time.now()
 
-    # If it's a message for a log, also print it
-    for key, value in data.items():
-        if key.endswith('_log'):
-            log_name = key.replace('_log', '').replace('_', ' ').upper()
-
-            print(f'{log_name} | {value}', flush=True)
-
-    db = _get_db(now_utc)
-
-    timestamp = now_utc
-    #timestamp = kalao_time.get_isotime(now_utc)
-    #timestamp = now_utc.strftime('%Y-%m-%dT%H:%M:%SZ') # ISO 8601: YYYY-MM-DDThh:mm:ssZ
-    #timestamp = kalao_time.get_mjd(now_utc)
+    db = _get_db(timestamp)
 
     if not collection_name in definitions:
         raise KeyError(
             f'Inserting into unknown collection "{collection_name}" in database'
         )
+    elif collection_name == 'logs':
+        raise KeyError(f'Use store_log to store logs')
 
-    collection = db.get_collection(collection_name,
-                                   codec_options=codec_options)
+    collection = _get_collection(db, collection_name)
 
     update_list = []
 
     for key in data.keys():
-        if not key in definitions[collection_name]['metadata']:
+        if key not in definitions[collection_name]['metadata']:
             raise KeyError(f'Inserting unknown key "{key}" in database')
 
         if isinstance(data[key], Enum):
@@ -284,6 +281,30 @@ def store(collection_name, data):
     return 0
 
 
+def store_log(log, level, message):
+    timestamp = kalao_time.now()
+
+    db = _get_db(timestamp)
+    collection = _get_collection(db, 'logs')
+
+    if log not in definitions['logs']['metadata']:
+        raise KeyError(f'Inserting unknown log "{log}" in database')
+
+    # yapf: disable
+    collection.update_one(
+        {'key': log},
+        {
+            '$push': {'messages': {'message': message, 'level': level.value, 'timestamp': timestamp}},
+            '$inc': {'count': 1},
+            '$set': {'last_timestamp': timestamp},
+        },
+        upsert = True
+    )
+    # yapf: enable
+
+    return 0
+
+
 def get_all_last(collection_name):
     return get(collection_name,
                definitions[collection_name]['metadata'].keys())
@@ -293,7 +314,7 @@ def get_last(collection_name, key=None):
     """
     Searches for the last record in the database for a certain collection
 
-    :param collection_name: the collection to search in 'obs', 'monitoring_log', 'telemetry_log'
+    :param collection_name: the collection to search in
     :param key: optional key to search for the last record of a specific key
     :return: last record
     """

@@ -1,8 +1,10 @@
+import math
+
 import numpy as np
 
 from PySide6.QtCharts import QChart, QChartView, QDateTimeAxis, QXYSeries
 from PySide6.QtCore import (QEvent, QLineF, QMargins, QPointF, QRect, QRectF,
-                            QSize, Signal)
+                            QSignalBlocker, QSize, Signal)
 from PySide6.QtGui import (QBrush, QFont, QIcon, QPainter, QPainterPath, QPen,
                            QPixmap, QPolygonF, Qt)
 from PySide6.QtSvgWidgets import QSvgWidget
@@ -42,11 +44,11 @@ class KalAOLabel(QLabel, ArrayToImageMixin):
     text_format = None
     formatter = KalAOFormatter()
 
-    def __init__(self, arg0=None, *args, **kwargs):
-        super().__init__(arg0, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        if isinstance(arg0, str):
-            self.text_format = arg0
+        if len(args) > 0 and isinstance(args[0], str):
+            self.text_format = args[0]
 
     def setPixmap(self, p):
         self.pixmap_ = p
@@ -185,10 +187,12 @@ class KalAOScaledDoubleSpinbox(QDoubleSpinBox):
     def setMaximum(self, d):
         return super().setMaximum(d * self.scale)
 
-    def setScale(self, scale):
-        super().setMinimum(super().minimum() / self.scale * scale)
-        super().setMaximum(super().maximum() / self.scale * scale)
-        super().setValue(super().value() / self.scale * scale)
+    def setScale(self, scale, precision):
+        with QSignalBlocker(self):
+            super().setMinimum(super().minimum() / self.scale * scale)
+            super().setMaximum(super().maximum() / self.scale * scale)
+            super().setValue(super().value() / self.scale * scale)
+            super().setDecimals(precision)
         self.scale = scale
 
 
@@ -204,9 +208,55 @@ class KalAOMainWindow(QMainWindow):
 
     def info_to_statusbar(self, string):
         if string:
-            self.statusbar.showMessage(string)
+            self.statusBar().showMessage(string)
         else:
-            self.statusbar.clearMessage()
+            self.statusBar().clearMessage()
+
+
+class KalAODetachedTab(KalAOMainWindow):
+    def __init__(self, widget, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        parent = kwargs['parent']
+
+        self.parent = parent
+
+        self.setWindowTitle(widget.windowTitle())
+        self.setCentralWidget(widget)
+        self.show()
+        self.resize(parent.size())
+
+        if hasattr(widget, 'hovered'):
+            self.statusBar().show()
+            widget.hovered.disconnect(self.parent.info_to_statusbar)
+            widget.hovered.connect(self.info_to_statusbar)
+
+        widget.show()
+
+    def closeEvent(self, event):
+        widget = self.centralWidget()
+
+        i = self.parent.widgets.index(widget)
+
+        while i > 0:
+            i -= 1
+            j = self.parent.tabwidget.indexOf(self.parent.widgets[i])
+            if j != -1:
+                self.parent.tabwidget.insertTab(
+                    j + 1, widget,
+                    widget.windowTitle().removesuffix(" - KalAO"))
+                self.parent.tabwidget.setCurrentIndex(j + 1)
+                break
+        else:
+            self.parent.tabwidget.addTab(
+                widget,
+                widget.windowTitle().removesuffix(" - KalAO"))
+
+        if hasattr(widget, 'hovered'):
+            widget.hovered.disconnect(self.info_to_statusbar)
+            widget.hovered.connect(self.parent.info_to_statusbar)
+
+        event.accept()
 
 
 class KalAOWidget(QWidget):
@@ -418,14 +468,17 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
 
     def hover_to_xyv(self, x, y):
         if not (np.isnan(x) or np.isnan(y)):
-            x = int(x)
-            y = int(y)
-        else:
-            self.hovered.emit(-1, -1, np.nan)
+            x = math.floor(x)
+            y = math.floor(y)
 
-        if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
-            self.hovered.emit(x, y, self.img[y, x])
+            if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
+                self.setCursor(Qt.CrossCursor)
+                self.hovered.emit(x, y, self.img[y, x])
+            else:
+                self.setCursor(Qt.ArrowCursor)
+                self.hovered.emit(-1, -1, np.nan)
         else:
+            self.setCursor(Qt.ArrowCursor)
             self.hovered.emit(-1, -1, np.nan)
 
     def addTicks(self, spacing, length, text_spacing, fontsize, ticks_x,
@@ -547,7 +600,7 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
 
             self.tick_labels.append(text_item)
 
-    def addParang(self, parang):
+    def addNEIndicator(self, parallactic_angle):
         for item in self.parang_group.childItems():
             self.scene.removeItem(item)
 
@@ -561,7 +614,7 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
         font.setBold(True)
 
         length = 75
-        angle = parang * np.pi / 180
+        angle = parallactic_angle * np.pi / 180
         arrow_size = 30
 
         center_point = QPointF(0, 0)
@@ -721,7 +774,7 @@ class KalAOChartView(QChartView):
         self.chart = KalAOChart()
         self.chart.setMargins(QMargins(0, 0, 0, 0))
 
-        self.chart.setBackgroundVisible(False)
+        self.chart.setBackgroundVisible(True)
         self.setStyleSheet("background: transparent")
 
         self.setChart(self.chart)
@@ -763,11 +816,10 @@ class KalAOStatusIndicator(QGraphicsView):
     diameter = 100
     border = 8
     view = QRectF(0, 0, diameter, diameter)
+    hover_text = ''
 
     def __init__(self, parent=None):
         super().__init__(parent)
-
-        self.setToolTipDuration(2147483647)
 
         self.scene = QGraphicsScene()
         self.setScene(self.scene)
@@ -793,7 +845,7 @@ class KalAOStatusIndicator(QGraphicsView):
     def setStatus(self, color=Color.DARK_GREY, tooltip=''):
         self.brush.setColor(color)
         self.ellipse.setBrush(self.brush)
-        self.setToolTip(str(tooltip))
+        self.hover_text = f'Status: {tooltip}'
 
     def heightForWidth(self, width):
         return width

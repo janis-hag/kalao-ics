@@ -125,21 +125,22 @@ class PLCStatus(StrEnum):
 
 
 class ReturnCode(IntFlag):
-    NOERROR = 0
+    OK = 0
     GENERIC_ERROR = -1
+    TIMEOUT = -2
 
-    SEQ_OK = NOERROR
+    SEQ_OK = OK
 
-    CENTERING_OK = NOERROR
+    CENTERING_OK = OK
+    CENTERING_TIMEOUT = auto()
 
-    CAMERA_OK = NOERROR
+    CAMERA_OK = OK
     CAMERA_SERVER_DOWN = auto()
     CAMERA_ERROR = auto()
 
-    T120_OK = NOERROR
+    T120_OK = OK
     T120_SERVER_DOWN = auto()
     T120_ERROR = auto()
 
-    DM_ON_FAILED = auto()
-
-    TRACKING_TIMEOUT = auto()
+    PLC_INIT_SUCCESS = OK
+    PLC_INIT_FAILED = auto()

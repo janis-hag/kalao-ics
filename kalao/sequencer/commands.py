@@ -13,18 +13,20 @@ import time
 
 import numpy as np
 
-from kalao import system
+from kalao import database, logger
 from kalao.cacao import aocontrol
 from kalao.fli import camera
-from kalao.plc import (adc, calib_unit, filterwheel, flip_mirror, laser,
+from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
                        plc_utils, shutter, tungsten)
-from kalao.utils import centering, database, file_handling, starfinder
+from kalao.sequencer import centering, focusing
+from kalao.utils import file_handling, starfinder
 
 from tcs_communication import t120
 
-from kalao.definitions.enums import (FlipMirrorPosition, LoopStatus,
-                                     ReturnCode, SequencerStatus, ShutterState,
-                                     TrackingStatus, TungstenState)
+from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
+                                     LoopStatus, ReturnCode, SequencerStatus,
+                                     ShutterState, TrackingStatus,
+                                     TungstenState)
 from kalao.definitions.exceptions import *
 
 import config
@@ -112,13 +114,13 @@ def tungsten_FLAT(**seq_args):
     if tungsten.on() != TungstenState.ON:
         raise TungstenNotOn
 
-    if np.isnan(calib_unit.move_to_tungsten_position()):
+    if np.isnan(calibunit.move_to_tungsten_position()):
         raise TungstenNotInPosition
 
     if shutter.close() != ShutterState.CLOSED:
         raise ShutterNotClosed
 
-    if flip_mirror.up() != FlipMirrorPosition.UP:
+    if flipmirror.up() != FlipMirrorPosition.UP:
         raise FlipMirrorNotUp
 
     # Check if an abort was requested
@@ -200,7 +202,7 @@ def sky_flat(**seq_args):
     if plc_utils.lamps_off() != 0:
         raise LampsNotOff
 
-    if flip_mirror.down() != FlipMirrorPosition.DOWN:
+    if flipmirror.down() != FlipMirrorPosition.DOWN:
         raise FlipMirrorNotDown
 
     if shutter.open() != ShutterState.OPEN:
@@ -245,7 +247,7 @@ def sky_flat(**seq_args):
         _check_abort(q)
 
     if shutter.close() != ShutterState.CLOSED:
-        system.print_and_log('[ERROR] Failed to close the shutter')  #TODO
+        logger.error('sequencer', 'Failed to close the shutter after sky flat')
 
     return ReturnCode.SEQ_OK
 
@@ -273,8 +275,8 @@ def target_observation(**seq_args):
     mag_v = seq_args.get('mv')
 
     if kalfilter is None:
-        system.print_and_log(
-            '[WARNING] No filter specified for take_image, using clear')
+        logger.warning('sequencer',
+                       'No filter specified for observation, using clear')
         kalfilter = 'clear'
 
     if isinstance(kalfilter, str):
@@ -290,9 +292,9 @@ def target_observation(**seq_args):
     if None in (q, dit):
         raise MissingKeyword
 
-    fo_delta = centering.get_latest_fo_delta()
+    fo_delta = focusing.get_latest_fo_delta()
     if fo_delta is not None:
-        system.print_and_log("Updating autofocus")
+        logger.info('sequencer', 'Updating autofocus')
         t120.update_fo_delta(fo_delta)
         t120.request_autofocus()
 
@@ -302,7 +304,7 @@ def target_observation(**seq_args):
     if plc_utils.lamps_off() != 0:
         raise LampsNotOff
 
-    if flip_mirror.down() != FlipMirrorPosition.DOWN:
+    if flipmirror.down() != FlipMirrorPosition.DOWN:
         raise FlipMirrorNotDown
 
     if shutter.open() != ShutterState.OPEN:
@@ -336,7 +338,7 @@ def target_observation(**seq_args):
         raise FilterWheelNotInPosition
 
     if kao == 'AO':
-        system.print_and_log("Trying to close loop")
+        logger.info('sequencer', 'Starting Adaptive Optics')
 
         # To be used and corrected if AO with manual is to be supported
         # if centering != 'aut':
@@ -353,8 +355,6 @@ def target_observation(**seq_args):
             raise LoopNotClosed
 
         time.sleep(config.Starfinder.AO_wait_settle)
-
-        system.print_and_log("Initial tip/tilt offload to telescope")
 
         aocontrol.tip_tilt_offload_ttm_to_telescope(override_threshold=True)
 
@@ -398,7 +398,8 @@ def focusing(**seq_args):
     dit = seq_args.get('dit')
 
     if kalfilter is None:
-        #system.print_and_log("[WARNING] No filter specified for take image, using clear")
+        logger.warning('sequencer',
+                       'No filter specified for focusing, using clear')
         kalfilter = 'clear'
 
     if isinstance(kalfilter, str):
@@ -418,7 +419,7 @@ def focusing(**seq_args):
     if plc_utils.lamps_off() != 0:
         raise LampsNotOff
 
-    if flip_mirror.down() != FlipMirrorPosition.DOWN:
+    if flipmirror.down() != FlipMirrorPosition.DOWN:
         raise FlipMirrorNotDown
 
     if shutter.open() != ShutterState.OPEN:
@@ -442,8 +443,8 @@ def focusing(**seq_args):
     if filterwheel.set_filter(kalfilter) != kalfilter:
         raise FilterWheelNotInPosition
 
-    ret = centering.focus_sequence(focus_points=6, focusing_dit=dit,
-                                   sequencer_arguments=seq_args)
+    ret = focusing.focus_sequence(focus_points=6, focusing_dit=dit,
+                                  sequencer_arguments=seq_args)
 
     if ret != 0:
         raise FLITakeImageFailed
@@ -504,36 +505,16 @@ def instrument_change(**seq_args):
     :return: nothing
     """
 
-    aocontrol.open_loops()
-    aocontrol.emgain_off()
-    aocontrol.set_exptime(0)
+    logger.info('sequencer', 'INSTRUMENTCHANGE received, moving into standby.')
 
-    # Note: do not turn DM off (only at the end of the night)
-
-    ret = tungsten.off()
-    if (ret != 0):
-        # TODO handle error
-        system.print_and_log(ret)
-
-    ret = laser.disable()
-    if ret != 0:
-        # TODO handle error
-        system.print_and_log(ret)
-
-    ret = shutter.close()
-    if ret != 0:
-        # TODO handle error
-        system.print_and_log(ret)
+    # Note: do NOT turn DM off (only at the end of the night)
+    _open_loops()
+    _shut_off_plc()
 
     database.store('obs', {
         'tracking_manual_centering': False,
         'tracking_status': TrackingStatus.IDLE
     })
-
-    # request_manual_centering(False)
-    # change tracking flaf
-
-    system.print_and_log('INSTRUMENTCHANGE received moving into standby.')
 
     return ReturnCode.SEQ_OK
 
@@ -545,19 +526,14 @@ def stopao(**seq_args):
     :return: nothing
     """
 
-    aocontrol.open_loops()
-    aocontrol.emgain_off()
-    aocontrol.set_exptime(0)
+    logger.info('sequencer', 'STOPAO received, opening loop.')
+
+    _open_loops()
 
     database.store('obs', {
         'tracking_manual_centering': False,
         'tracking_status': TrackingStatus.IDLE
     })
-
-    # request_manual_centering(False)
-    # change tracking flaf
-
-    system.print_and_log('STOPAO received, opening loop.')
 
     return ReturnCode.SEQ_OK
 
@@ -569,48 +545,29 @@ def end(**seq_args):
     :return: nothing
     """
 
-    aocontrol.open_loops()
-    aocontrol.emgain_off()
-    aocontrol.set_exptime(0)
+    logger.info('sequencer', 'END received, moving into standby.')
 
-    database.store('obs', {'tracking_status': TrackingStatus.IDLE})
+    _open_loops()
+    _shut_off_plc()
 
-    ret = tungsten.off()
-    if (ret != 0):
-        # TODO handle error
-        system.print_and_log(ret)
+    database.store('obs', {
+        'tracking_manual_centering': False,
+        'tracking_status': TrackingStatus.IDLE
+    })
 
-    ret = laser.disable()
-    if ret != 0:
-        # TODO handle error
-        system.print_and_log(ret)
-
-    ret = shutter.close()
-    if ret != 0:
-        # TODO handle error
-        system.print_and_log(ret)
-
-    ret = aocontrol.turn_dm_off()
-    if ret != 0:
-        system.print_and_log('[ERROR] Unable to turn off DM')
+    if aocontrol.turn_dm_off() != ReturnCode.OK:
+        logger.warn('sequencer', 'Unable to turn off DM')
 
     # Set to waiting for the Euler synchro to be released
-    database.store(
-        'obs', {
-            'sequencer_status': SequencerStatus.WAITING,
-            'tracking_manual_centering': False
-        })
+    database.store('obs', {
+        'sequencer_status': SequencerStatus.WAITING,
+    })
 
     time.sleep(2)
 
     database.store('obs', {'sequencer_status': SequencerStatus.BUSY})
     # Generate darks for this night
     centering.generate_night_darks()
-
-    # request_manual_centering(False)
-    # change tracking flag
-
-    system.print_and_log('END received moving into standby.')
 
     return ReturnCode.SEQ_OK
 
@@ -673,8 +630,9 @@ def _wait_for_tracking():
         time.sleep(config.SEQ.pointing_wait_time)
 
     else:
-        system.print_and_log('[ERROR] Timeout while waiting to be on target.')
-
+        logger.error(
+            'sequencer',
+            'Timeout while waiting for the telescope to be on target.')
         raise TrackingTimeout
 
 
@@ -713,6 +671,28 @@ def _wait_for_tungsten(q):
     database.store('obs', {'sequencer_status': SequencerStatus.BUSY})
 
     return ReturnCode.SEQ_OK
+
+
+def _open_loops():
+    if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
+        logger.warn('sequencer', 'Failed to open loops.')
+
+    if aocontrol.emgain_off() != ReturnCode.OK:
+        logger.warn('sequencer', 'Failed to turn WFS EM gain off.')
+
+    if aocontrol.set_exptime(0) != ReturnCode.OK:
+        logger.warn('sequencer', 'Failed to reset WFS exposure time.')
+
+
+def _shut_off_plc():
+    if tungsten.off() != TungstenState.OFF:
+        logger.warn('sequencer', 'Failed to turn off tungsten lamp.')
+
+    if laser.disable() != LaserState.OFF:
+        logger.warn('sequencer', 'Failed to turn off laser.')
+
+    if shutter.close() != ShutterState.CLOSED:
+        logger.warn('sequencer', 'Failed to close shutter.')
 
 
 commands = {

@@ -1,6 +1,7 @@
 import numpy as np
 
 from PySide6.QtCore import Slot
+from PySide6.QtGui import QCursor, QGuiApplication, Qt
 
 from guis.kalao.mixins import SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
@@ -72,7 +73,11 @@ class CalibrationWindow(KalAOMainWindow, SceneHoverMixin):
 
     @Slot(bool)
     def on_reload_button_clicked(self, checked):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+
         self.data = self.backend.get_calibration_data(self.conf, self.loop)
+
+        QGuiApplication.restoreOverrideCursor()
 
         self.mode_spinbox.setMaximum(self.max_mode_number())
 

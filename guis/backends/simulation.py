@@ -1,20 +1,23 @@
 import random
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 import pandas as pd
 
 from PySide6.QtCore import QTimer
 
+from kalao import database
 from kalao.interfaces import fake_data
-from kalao.utils import zernike
+from kalao.utils import kalao_string, zernike
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
+from guis.kalao import lorem
 
 from kalao.definitions.enums import (FlipMirrorPosition, IPPowerStatus,
                                      LaserState, LogLevel, PLCStatus,
-                                     RelayState, ShutterState, TungstenState)
+                                     RelayState, ServiceAction, ShutterState,
+                                     TungstenState)
 
 import config
 
@@ -88,29 +91,87 @@ class MainBackend(FakeSHMFPSBackend):
         for i in range(12):
             self.internal_state[f'dm02disp{i:02d}'] = np.zeros((2, ))
 
+        self.internal_state[config.Streams.MODALGAINS] = np.ones((90, ))
+        self.internal_state[config.Streams.MODALGAINS][1:90] = np.linspace(
+            1, 0, 89)
+
         self.internal_state.update({
-            'dm-loopON': True,
-            'dm-loopgain': 0.9,
-            'ttm-loopON': True,
-            'ttm-loopgain': 0,
-            'shutter_state': ShutterState.OPEN,
-            'flip_mirror_position': FlipMirrorPosition.DOWN,
-            'calib_unit_position': 24,
-            'calib_unit_state': PLCStatus.STANDING,
-            'laser_state': LaserState.OFF,
-            'laser_power': 0,
-            'tungsten_state': TungstenState.OFF,
-            'adc1_angle': 45,
-            'adc1_state': PLCStatus.STANDING,
-            'adc2_angle': -45,
-            'adc2_state': PLCStatus.STANDING,
-            'filterwheel_filter_position': 4,
-            'filterwheel_filter_name': 'z',
-            'remaining_time': 0,
-            'exposure_time': 60,
-            'ippower_rtc_status': IPPowerStatus.ON,
-            'ippower_bench_status': IPPowerStatus.ON,
-            'ippower_dm_status': IPPowerStatus.OFF,
+            'dm-loopON':
+                True,
+            'dm-loopgain':
+                0.9,
+            'ttm-loopON':
+                True,
+            'ttm-loopgain':
+                0,
+            'nuvu-emgain':
+                config.WFS.autogain_params[10][0],
+            'nuvu-exptime':
+                config.WFS.autogain_params[10][1],
+            'nuvu-autogain_on':
+                True,
+            'nuvu-autogain_setting':
+                10,
+            'bmc-max_stroke':
+                0.9,
+            'bmc-stroke_mode':
+                1,
+            'shwfs-algorithm':
+                1,
+            'shutter_state':
+                ShutterState.OPEN,
+            'flipmirror_position':
+                FlipMirrorPosition.DOWN,
+            'calibunit_position':
+                config.PLC.initial_pos[config.PLC.Node.CALIB_UNIT],
+            'calibunit_state':
+                PLCStatus.STANDING,
+            'laser_state':
+                LaserState.OFF,
+            'laser_power':
+                0,
+            'tungsten_state':
+                TungstenState.OFF,
+            'adc1_angle':
+                config.PLC.initial_pos[config.PLC.Node.ADC1],
+            'adc1_state':
+                PLCStatus.STANDING,
+            'adc2_angle':
+                config.PLC.initial_pos[config.PLC.Node.ADC2],
+            'adc2_state':
+                PLCStatus.STANDING,
+            'filterwheel_filter_position':
+                4,
+            'filterwheel_filter_name':
+                'z',
+            'remaining_time':
+                0,
+            'exposure_time':
+                60,
+            'ippower_rtc_status':
+                IPPowerStatus.ON,
+            'ippower_bench_status':
+                IPPowerStatus.ON,
+            'ippower_dm_status':
+                IPPowerStatus.OFF,
+            'kalao_nuvu.service': ('active', 'exited',
+                                   datetime.now(timezone.utc)),
+            'kalao_cacao.service': ('active', 'exited',
+                                    datetime.now(timezone.utc)),
+            'kalao_sequencer.service': ('active', 'running',
+                                        datetime.now(timezone.utc)),
+            'kalao_camera.service': ('active', 'running',
+                                     datetime.now(timezone.utc)),
+            'kalao_gop-server.service': ('active', 'running',
+                                         datetime.now(timezone.utc)),
+            'kalao_database-timer.service': ('active', 'running',
+                                             datetime.now(timezone.utc)),
+            'kalao_safety-timer.service': ('active', 'running',
+                                           datetime.now(timezone.utc)),
+            'kalao_loop-timer.service': ('active', 'running',
+                                         datetime.now(timezone.utc)),
+            'kalao_pump-timer.service': ('active', 'running',
+                                         datetime.now(timezone.utc))
         })
 
         self.internal_timer = QTimer()
@@ -154,7 +215,7 @@ class MainBackend(FakeSHMFPSBackend):
     @emit('streams_updated')
     @timeit
     def get_streams_all(self):
-        if self.internal_state['flip_mirror_position'] == FlipMirrorPosition.UP:
+        if self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP:
             illumination = 'laser'
             if self.internal_state['laser_state'] == LaserState.OFF:
                 flux = 0
@@ -179,7 +240,8 @@ class MainBackend(FakeSHMFPSBackend):
 
         self._update_stream(self.streams, config.Streams.DM,
                             self._get_dm01disp())
-        self._update_param(self.streams, config.FPS.BMC, 'max_stroke', 0.9)
+        self._update_param(self.streams, config.FPS.BMC, 'max_stroke',
+                           self.internal_state['bmc-max_stroke'])
 
         self._update_stream(self.streams, config.Streams.NUVU, nuvu_data)
 
@@ -204,7 +266,7 @@ class MainBackend(FakeSHMFPSBackend):
     @emit('fli_updated')
     @timeit
     def get_streams_fli(self):
-        if self.internal_state['flip_mirror_position'] == FlipMirrorPosition.UP:
+        if self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP:
             illumination = 'laser'
             if self.internal_state['laser_state'] == LaserState.OFF:
                 flux = 0
@@ -213,11 +275,11 @@ class MainBackend(FakeSHMFPSBackend):
         else:
             illumination = 'telescope'
             if self.internal_state['shutter_state'] == ShutterState.OPEN:
-                flux = 5000
+                flux = 10000
             else:
                 flux = 0
 
-        fli_data = fake_data.fli_frame(dmdisp=self._get_dm01disp(),
+        fli_data = fake_data.fli_frame(flux=flux, dmdisp=self._get_dm01disp(),
                                        tiptilt=self._get_dm02disp(),
                                        illumination=illumination)
 
@@ -232,12 +294,14 @@ class MainBackend(FakeSHMFPSBackend):
                             self._get_dm02disp())
 
         if self.first:
-            modalgains = np.ones((90, ))
-            modalgains[1:90] = np.linspace(1, 0, 89)
-
             self._update_stream(self.data, config.Streams.MODALGAINS,
-                                modalgains)
+                                self.internal_state[config.Streams.MODALGAINS])
             self.first = False
+
+        if self.internal_state['nuvu-exptime'] == 0:
+            mfrate = 1805.5
+        else:
+            mfrate = min(1000 / self.internal_state['nuvu-exptime'], 1805.5)
 
         self._update_stream_keywords(
             self.data, config.Streams.NUVU_RAW, {
@@ -246,38 +310,49 @@ class MainBackend(FakeSHMFPSBackend):
                 'T_PSU': 35,
                 'T_FPGA': 35,
                 'T_HSINK': 15.5,
-                'EMGAIN': 1000,
+                'EMGAIN': self.internal_state['nuvu-emgain'],
                 'DETGAIN': 1,
-                'EXPTIME': 0.5,
-                'MFRATE': 1800,
+                'EXPTIME': self.internal_state['nuvu-exptime'],
+                'MFRATE': mfrate,
             })
 
-        self._update_param(self.data, config.FPS.NUVU, 'autogain_on', True)
+        self._update_param(self.data, config.FPS.NUVU, 'autogain_on',
+                           self.internal_state['nuvu-autogain_on'])
+        self._update_param(self.data, config.FPS.NUVU, 'autogain_setting',
+                           self.internal_state['nuvu-autogain_setting'])
 
-        self._update_param(self.data, 'mfilt-1', 'loopON',
+        self._update_param(self.data, config.FPS.BMC, 'max_stroke',
+                           self.internal_state['bmc-max_stroke'])
+        self._update_param(self.data, config.FPS.BMC, 'stroke_mode',
+                           self.internal_state['bmc-stroke_mode'])
+
+        self._update_param(self.data, config.FPS.SHWFS, 'algorithm',
+                           self.internal_state['shwfs-algorithm'])
+
+        self._update_param(self.data, config.FPS.DMLOOP, 'loopON',
                            self.internal_state['dm-loopON'])
-        self._update_param(self.data, 'mfilt-1', 'loopgain',
+        self._update_param(self.data, config.FPS.DMLOOP, 'loopgain',
                            self.internal_state['dm-loopgain'])
-        self._update_param(self.data, 'mfilt-1', 'loopmult', 0.99)
-        self._update_param(self.data, 'mfilt-1', 'looplimit', 1)
+        self._update_param(self.data, config.FPS.DMLOOP, 'loopmult', 0.99)
+        self._update_param(self.data, config.FPS.DMLOOP, 'looplimit', 1)
 
-        self._update_param(self.data, 'mfilt-2', 'loopON',
+        self._update_param(self.data, config.FPS.TTMLOOP, 'loopON',
                            self.internal_state['ttm-loopON'])
-        self._update_param(self.data, 'mfilt-2', 'loopgain',
+        self._update_param(self.data, config.FPS.TTMLOOP, 'loopgain',
                            self.internal_state['ttm-loopgain'])
-        self._update_param(self.data, 'mfilt-2', 'loopmult', 0.99)
-        self._update_param(self.data, 'mfilt-2', 'looplimit', 1)
+        self._update_param(self.data, config.FPS.TTMLOOP, 'loopmult', 0.99)
+        self._update_param(self.data, config.FPS.TTMLOOP, 'looplimit', 1)
 
         self._update_dict(
             self.data, 'plc', {
                 'shutter_state':
                     self.internal_state['shutter_state'],
-                'flip_mirror_position':
-                    self.internal_state['flip_mirror_position'],
-                'calib_unit_position':
-                    self.internal_state['calib_unit_position'],
-                'calib_unit_state':
-                    self.internal_state['calib_unit_state'],
+                'flipmirror_position':
+                    self.internal_state['flipmirror_position'],
+                'calibunit_position':
+                    self.internal_state['calibunit_position'],
+                'calibunit_state':
+                    self.internal_state['calibunit_state'],
                 'laser_state':
                     self.internal_state['laser_state'],
                 'laser_power':
@@ -312,32 +387,30 @@ class MainBackend(FakeSHMFPSBackend):
                     RelayState.OFF,
                 'fan_status':
                     RelayState.ON,
-                'flow_value':
+                'coolant_flow_rate':
                     2.5
             })
 
         self._update_dict(
             self.data, 'services', {
                 'kalao_nuvu.service':
-                    ('active', 'exited', datetime(2023, 12, 4, 20, 15, 42)),
+                    self.internal_state['kalao_nuvu.service'],
                 'kalao_cacao.service':
-                    ('active', 'exited', datetime(2023, 12, 7, 9, 15, 25)),
+                    self.internal_state['kalao_cacao.service'],
                 'kalao_sequencer.service':
-                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
-                'kalao_camera.service': ('activating', 'auto-restart',
-                                         datetime(2023, 12, 7, 10, 52, 17)),
-                'kalao_flask-gui.service':
-                    ('inactive', 'dead', datetime(1970, 1, 1, 0, 0)),
+                    self.internal_state['kalao_sequencer.service'],
+                'kalao_camera.service':
+                    self.internal_state['kalao_camera.service'],
                 'kalao_gop-server.service':
-                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
+                    self.internal_state['kalao_gop-server.service'],
                 'kalao_database-timer.service':
-                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
+                    self.internal_state['kalao_database-timer.service'],
                 'kalao_safety-timer.service':
-                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
+                    self.internal_state['kalao_safety-timer.service'],
                 'kalao_loop-timer.service':
-                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17)),
+                    self.internal_state['kalao_loop-timer.service'],
                 'kalao_pump-timer.service':
-                    ('active', 'running', datetime(2023, 12, 7, 10, 52, 17))
+                    self.internal_state['kalao_pump-timer.service'],
             })
 
         self._update_dict(
@@ -377,11 +450,22 @@ class MainBackend(FakeSHMFPSBackend):
     def get_monitoringandtelemetry(self):
         self.monitoringandtelemetry = {}
 
-        self._update_dict(
-            self.monitoringandtelemetry, 'db-timestamps', {
-                'monitoring': datetime.now(timezone.utc),
-                'telemetry': datetime.now(timezone.utc),
-            })
+        monitoring_dt = datetime.now(timezone.utc)
+        monitoring_dt -= timedelta(
+            seconds=monitoring_dt.second %
+            config.Database.monitoring_update_interval,
+            microseconds=monitoring_dt.microsecond)
+
+        telemetry_dt = datetime.now(timezone.utc)
+        telemetry_dt -= timedelta(
+            seconds=telemetry_dt.second %
+            config.Database.telemetry_update_interval,
+            microseconds=telemetry_dt.microsecond)
+
+        self._update_dict(self.monitoringandtelemetry, 'db-timestamps', {
+            'monitoring': monitoring_dt,
+            'telemetry': telemetry_dt,
+        })
 
         return self.monitoringandtelemetry
 
@@ -391,7 +475,7 @@ class MainBackend(FakeSHMFPSBackend):
         if dm_number not in self.dmdisp:
             self.dmdisp[dm_number] = {}
 
-        if dm_number == 1:
+        if dm_number == config.AO.DM_loop_number:
             self._update_stream(self.dmdisp[dm_number], f'dm01disp',
                                 self._get_dm01disp())
 
@@ -399,7 +483,7 @@ class MainBackend(FakeSHMFPSBackend):
                 self._update_stream(self.dmdisp[dm_number],
                                     f'dm{dm_number:02d}disp{i:02d}',
                                     self.internal_state[f'dm01disp{i:02d}'])
-        else:
+        elif dm_number == config.AO.TTM_loop_number:
             self._update_stream(self.dmdisp[dm_number], f'dm02disp',
                                 self._get_dm02disp())
 
@@ -408,10 +492,17 @@ class MainBackend(FakeSHMFPSBackend):
                                     f'dm{dm_number:02d}disp{i:02d}',
                                     self.internal_state[f'dm02disp{i:02d}'])
 
+        else:
+            raise Exception(f'Unknown DM number {dm_number}')
+
         return self.dmdisp[dm_number]
 
     def plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
                    obs_keys):
+        now = datetime.now(timezone.utc)
+        if dt_end > now:
+            dt_end = now
+
         return {
             'monitoring':
                 self._generate_plots_data(
@@ -553,35 +644,82 @@ class MainBackend(FakeSHMFPSBackend):
 
     # DM Loop
 
-    def set_dm_loop_on(self, state):
+    def set_dmloop_on(self, state):
         self.internal_state['dm-loopON'] = state
         print(f'Set DM loop to {state} (virtually)')
 
-    def set_dm_loop_gain(self, gain):
+    def set_dmloop_gain(self, gain):
         self.internal_state['dm-loopgain'] = gain
         print(f'Set DM gain to {gain} (virtually)')
 
-    def set_dm_loop_mult(self, mult):
+    def set_dmloop_mult(self, mult):
         print(f'Set DM mult to {mult} (virtually)')
 
-    def set_dm_loop_limit(self, limit):
+    def set_dmloop_limit(self, limit):
         print(f'Set DM limit to {limit} (virtually)')
 
     # TTM Loop
 
-    def set_ttm_loop_on(self, state):
+    def set_ttmloop_on(self, state):
         self.internal_state['ttm-loopON'] = state
         print(f'Set TTM loop to {state} (virtually)')
 
-    def set_ttm_loop_gain(self, gain):
+    def set_ttmloop_gain(self, gain):
         self.internal_state['ttm-loopgain'] = gain
         print(f'Set TTM gain to {gain} (virtually)')
 
-    def set_ttm_loop_mult(self, mult):
+    def set_ttmloop_mult(self, mult):
         print(f'Set TTM mult to {mult} (virtually)')
 
-    def set_ttm_loop_limit(self, limit):
+    def set_ttmloop_limit(self, limit):
         print(f'Set TTM limit to {limit} (virtually)')
+
+    # Wavefront Sensor
+
+    def set_nuvu_emgain(self, emgain):
+        self.internal_state['nuvu-emgain'] = emgain
+        print(f'Set Nüvü EM Gain to {emgain} (virtually)')
+
+    def set_nuvu_exposuretime(self, exposuretime):
+        self.internal_state['nuvu-exptime'] = exposuretime
+        print(f'Set Nüvü Exposure Time to {exposuretime} (virtually)')
+
+    def set_nuvu_autogain_on(self, state):
+        self.internal_state['nuvu-autogain_on'] = state
+
+        if state:
+            setting = self.internal_state['nuvu-autogain_setting']
+            self.internal_state['nuvu-emgain'] = config.WFS.autogain_params[
+                setting][0]
+            self.internal_state['nuvu-exptime'] = config.WFS.autogain_params[
+                setting][1]
+
+        print(f'Set Nüvü Auto-gain to {state} (virtually)')
+
+    def set_nuvu_autogain_setting(self, setting):
+        self.internal_state['nuvu-autogain_setting'] = setting
+
+        if self.internal_state['nuvu-autogain_on']:
+            self.internal_state['nuvu-emgain'] = config.WFS.autogain_params[
+                setting][0]
+            self.internal_state['nuvu-exptime'] = config.WFS.autogain_params[
+                setting][1]
+
+        print(f'Set Nüvü Auto-gain setting to {setting} (virtually)')
+
+    # Deformable Mirror
+
+    def set_bmc_maxstroke(self, stroke):
+        self.internal_state['bmc-max_stroke'] = stroke
+        print(f'Set BMC Max Stroke to {stroke} (virtually)')
+
+    def set_bmc_strokemode(self, mode):
+        self.internal_state['bmc-stroke_mode'] = mode
+        print(f'Set BMC Stroke Mode to {mode} (virtually)')
+
+    def set_modalgains(self, modalgains):
+        self.internal_state[config.Streams.MODALGAINS] = modalgains
+        print(f'Set Modal Gains to {modalgains} (virtually)')
 
     ##### Engineering
 
@@ -590,30 +728,13 @@ class MainBackend(FakeSHMFPSBackend):
         print(f'Set Shutter state to {state} (virtually)')
 
     def set_plc_flipmirror_position(self, position):
-        self.internal_state['flip_mirror_position'] = FlipMirrorPosition(
+        self.internal_state['flipmirror_position'] = FlipMirrorPosition(
             position)
         print(f'Set Flip Mirror position to {position} (virtually)')
 
     def set_plc_calibunit_position(self, position):
-        self.internal_state['calib_unit_state'] = PLCStatus.MOVING
-
-        if position - self.internal_state['calib_unit_position'] > 0:
-            while self.internal_state['calib_unit_position'] < position:
-                time.sleep(1)
-                self.internal_state[
-                    'calib_unit_position'] += config.CalibUnit.velocity
-
-            self.internal_state['calib_unit_state'] = PLCStatus.STANDING
-            self.internal_state['calib_unit_position'] = position
-        else:
-            while self.internal_state['calib_unit_position'] > position:
-                time.sleep(1)
-                self.internal_state[
-                    'calib_unit_position'] -= config.CalibUnit.velocity
-
-            self.internal_state['calib_unit_state'] = PLCStatus.STANDING
-            self.internal_state['calib_unit_position'] = position
-
+        self._fake_motor_move(position, 'calibunit_position',
+                              'calibunit_state', config.CalibUnit.velocity)
         print(f'Set Calibration Unit position to {position} (virtually)')
 
     def set_plc_tungsten_state(self, state):
@@ -621,6 +742,7 @@ class MainBackend(FakeSHMFPSBackend):
             self.internal_state['tungsten_state'] = TungstenState.ON
         else:
             self.internal_state['tungsten_state'] = TungstenState.OFF
+
         print(f'Set Tungsten state to {state} (virtually)')
 
     def set_plc_laser_state(self, state):
@@ -628,6 +750,7 @@ class MainBackend(FakeSHMFPSBackend):
             self.internal_state['laser_state'] = LaserState.ON
         else:
             self.internal_state['laser_state'] = LaserState.OFF
+
         print(f'Set Laser state to {state} (virtually)')
 
     def set_plc_laser_power(self, power):
@@ -635,54 +758,82 @@ class MainBackend(FakeSHMFPSBackend):
         print(f'Set Laser power to {power} (virtually)')
 
     def set_plc_filterwheel_filter(self, filter):
-        self.internal_state['filterwheel_filter_position'] = 0  #TODO
+        self.internal_state[
+            'filterwheel_filter_position'] = config.FilterWheel.position_list.index(
+                filter)
         self.internal_state['filterwheel_filter_name'] = filter
         print(f'Set Filter Wheel filter to {filter} (virtually)')
 
     def set_plc_adc_1_angle(self, position):
-        self.internal_state['adc1_state'] = PLCStatus.MOVING
-
-        if position - self.internal_state['adc1_angle'] > 0:
-            while self.internal_state['adc1_angle'] < position:
-                time.sleep(1)
-                self.internal_state['adc1_angle'] += config.ADC.velocity
-
-            self.internal_state['adc1_state'] = PLCStatus.STANDING
-            self.internal_state['adc1_angle'] = position
-        else:
-            while self.internal_state['adc1_angle'] > position:
-                time.sleep(1)
-                self.internal_state['adc1_angle'] -= config.ADC.velocity
-
-            self.internal_state['adc1_state'] = PLCStatus.STANDING
-            self.internal_state['adc1_angle'] = position
-
+        self._fake_motor_move(position, 'adc1_angle', 'adc1_state',
+                              config.ADC.velocity)
         print(f'Set ADC1 position to {position} (virtually)')
 
     def set_plc_adc_2_angle(self, position):
-        self.internal_state['adc2_state'] = PLCStatus.MOVING
-
-        if position - self.internal_state['adc2_angle'] > 0:
-            while self.internal_state['adc2_angle'] < position:
-                time.sleep(1)
-                self.internal_state['adc2_angle'] += config.ADC.velocity
-
-            self.internal_state['adc2_state'] = PLCStatus.STANDING
-            self.internal_state['adc2_angle'] = position
-        else:
-            while self.internal_state['adc2_angle'] > position:
-                time.sleep(1)
-                self.internal_state['adc2_angle'] -= config.ADC.velocity
-
-            self.internal_state['adc2_state'] = PLCStatus.STANDING
-            self.internal_state['adc2_angle'] = position
-
+        self._fake_motor_move(position, 'adc2_angle', 'adc2_state',
+                              config.ADC.velocity)
         print(f'Set ADC2 position to {position} (virtually)')
+
+    def get_plc_calibunit_init(self):
+        self._fake_motor_move(0, 'calibunit_position', 'calibunit_state',
+                              config.CalibUnit.velocity)
+        self._fake_motor_move(
+            config.PLC.initial_pos[config.PLC.Node.CALIB_UNIT],
+            'calibunit_position', 'calibunit_state', config.CalibUnit.velocity)
+        print(f'Init Calibration Unit (virtually)')
+
+    def get_plc_calibunit_laser(self):
+        self._fake_motor_move(config.Laser.position, 'calibunit_position',
+                              'calibunit_state', config.CalibUnit.velocity)
+        print(f'Moved Calibration Unit to Laser position (virtually)')
+
+    def get_plc_calibunit_tungsten(self):
+        self._fake_motor_move(config.Tungsten.position, 'calibunit_position',
+                              'calibunit_state', config.CalibUnit.velocity)
+        print(f'Moved Calibration Unit to Tungsten position (virtually)')
+
+    def get_plc_adc1_init(self):
+        self._fake_motor_move(0, 'adc1_angle', 'adc1_state',
+                              config.ADC.velocity)
+        self._fake_motor_move(config.PLC.initial_pos[config.PLC.Node.ADC1],
+                              'adc1_angle', 'adc1_state', config.ADC.velocity)
+        print(f'Init ADC1 (virtually)')
+
+    def get_plc_adc2_init(self):
+        self._fake_motor_move(0, 'adc2_angle', 'adc2_state',
+                              config.ADC.velocity)
+        self._fake_motor_move(config.PLC.initial_pos[config.PLC.Node.ADC2],
+                              'adc2_angle', 'adc2_state', config.ADC.velocity)
+        print(f'Init ADC2 (virtually)')
+
+    def get_plc_adc_zerodisp(self):
+        # TODO
+        print(f'Set ADC to zero dispersion (virtually)')
+
+    def get_plc_adc_maxdisp(self):
+        # TODO
+        print(f'Set ADC to maximum dispersion (virtually)')
+
+    def _fake_motor_move(self, position, position_key, state_key, velocity):
+        self.internal_state[state_key] = PLCStatus.MOVING
+
+        if position - self.internal_state[position_key] > 0:
+            step = velocity
+        else:
+            step = -velocity
+
+        while np.abs(self.internal_state[position_key] -
+                     position) > np.abs(step):
+            self.internal_state[position_key] += step
+            time.sleep(1)
+
+        self.internal_state[state_key] = PLCStatus.STANDING
+        self.internal_state[position_key] = position
 
     def set_fli_image(self, exposure_time):
         print(f'Started FLI exposure of {exposure_time} (virtually)')
 
-        self.internal_state['remaining_time'] = exposure_time
+        self.internal_state['exposure_time'] = exposure_time
         self.internal_state['remaining_time'] = exposure_time
 
         while self.internal_state['remaining_time'] > 0:
@@ -729,29 +880,39 @@ class MainBackend(FakeSHMFPSBackend):
         print(f'Laser centering launched (virtually)')
 
     def set_services_action(self, unit, action):
+        if action in [ServiceAction.STOP, ServiceAction.KILL]:
+            state = ('inactive', '', datetime.now(timezone.utc))
+        else:
+            state = ('active', '', datetime.now(timezone.utc))
+
+        self.internal_state[unit] = state
         print(f'Sent {action} to {unit} (virtually)')
 
     ##### DM channels
 
     def reset_dm(self, dm_number):
-        if dm_number == 1:
+        if dm_number == config.AO.DM_loop_number:
             for i in range(12):
                 self.internal_state[
                     f'dm01disp{i:02d}'] = zernike.generate_pattern([0],
                                                                    (12, 12))
-        else:
+        elif dm_number == config.AO.TTM_loop_number:
             for i in range(12):
                 self.internal_state[f'dm02disp{i:02d}'] = np.zeros((2, ))
+        else:
+            raise Exception(f'Unknown DM number {dm_number}')
 
         print(f'Resetted DM {dm_number} (virtually)')
 
     def reset_channel(self, dm_number, channel):
-        if dm_number == 1:
+        if dm_number == config.AO.DM_loop_number:
             self.internal_state[
                 f'dm01disp{channel:02d}'] = zernike.generate_pattern([0],
                                                                      (12, 12))
-        else:
+        elif dm_number == config.AO.TTM_loop_number:
             self.internal_state[f'dm02disp{channel:02d}'] = np.zeros((2, ))
+        else:
+            raise Exception(f'Unknown DM number {dm_number}')
 
         print(f'Resetted channel {channel} of DM {dm_number} (virtually)')
 
@@ -768,6 +929,15 @@ class MainBackend(FakeSHMFPSBackend):
     ##### Logs
 
     def get_logs_init(self):
+        self.logs_logs = ['']
+        for key in sorted(database.definitions['logs']['metadata'].keys()):
+            self.logs_logs.append(kalao_string.get_log_name(key))
+
+        self.logs_services = ['systemd']
+        for service in config.Systemd.services.values():
+            self.logs_services.append(
+                kalao_string.get_service_name(service['unit']))
+
         logs = []
 
         for _ in range(config.GUI.initial_logs_entries):
@@ -786,15 +956,11 @@ class MainBackend(FakeSHMFPSBackend):
     def _generate_log(self):
         timestamp = datetime.now().strftime("%y-%m-%d %H:%M:%S")
 
-        origin = random.sample(sorted(config.Systemd.services), 1)[0]
-        origin = config.Systemd.services[origin]['unit'].removeprefix(
-            'kalao_').removesuffix('.service')
+        origin = random.choice(self.logs_services)
 
-        message = ' '.join(random.sample(lorem_words, 8))
-        message = message[0].upper() + message[1:] + '.'
+        message = lorem.get_random_lorem(8)
 
         level = random.random()
-
         if level <= 0.001:
             level = LogLevel.ERROR
             message = '[ERROR] ' + message
@@ -803,6 +969,11 @@ class MainBackend(FakeSHMFPSBackend):
             message = '[WARNING] ' + message
         else:
             level = LogLevel.INFO
+            message = '[INFO] ' + message
+
+        log = random.choice(self.logs_logs)
+        if log != '':
+            message = f'{log:>14s} | {message}'
 
         return {
             'level': level,
@@ -810,220 +981,3 @@ class MainBackend(FakeSHMFPSBackend):
             'origin': origin,
             'message': message
         }
-
-
-lorem = (
-    "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod "
-    "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim "
-    "veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
-    "commodo consequat. Duis aute irure dolor in reprehenderit in voluptate "
-    "velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint "
-    "occaecat cupidatat non proident, sunt in culpa qui officia deserunt "
-    "mollit anim id est laborum.")
-
-lorem_words = (
-    "exercitationem",
-    "perferendis",
-    "perspiciatis",
-    "laborum",
-    "eveniet",
-    "sunt",
-    "iure",
-    "nam",
-    "nobis",
-    "eum",
-    "cum",
-    "officiis",
-    "excepturi",
-    "odio",
-    "consectetur",
-    "quasi",
-    "aut",
-    "quisquam",
-    "vel",
-    "eligendi",
-    "itaque",
-    "non",
-    "odit",
-    "tempore",
-    "quaerat",
-    "dignissimos",
-    "facilis",
-    "neque",
-    "nihil",
-    "expedita",
-    "vitae",
-    "vero",
-    "ipsum",
-    "nisi",
-    "animi",
-    "cumque",
-    "pariatur",
-    "velit",
-    "modi",
-    "natus",
-    "iusto",
-    "eaque",
-    "sequi",
-    "illo",
-    "sed",
-    "ex",
-    "et",
-    "voluptatibus",
-    "tempora",
-    "veritatis",
-    "ratione",
-    "assumenda",
-    "incidunt",
-    "nostrum",
-    "placeat",
-    "aliquid",
-    "fuga",
-    "provident",
-    "praesentium",
-    "rem",
-    "necessitatibus",
-    "suscipit",
-    "adipisci",
-    "quidem",
-    "possimus",
-    "voluptas",
-    "debitis",
-    "sint",
-    "accusantium",
-    "unde",
-    "sapiente",
-    "voluptate",
-    "qui",
-    "aspernatur",
-    "laudantium",
-    "soluta",
-    "amet",
-    "quo",
-    "aliquam",
-    "saepe",
-    "culpa",
-    "libero",
-    "ipsa",
-    "dicta",
-    "reiciendis",
-    "nesciunt",
-    "doloribus",
-    "autem",
-    "impedit",
-    "minima",
-    "maiores",
-    "repudiandae",
-    "ipsam",
-    "obcaecati",
-    "ullam",
-    "enim",
-    "totam",
-    "delectus",
-    "ducimus",
-    "quis",
-    "voluptates",
-    "dolores",
-    "molestiae",
-    "harum",
-    "dolorem",
-    "quia",
-    "voluptatem",
-    "molestias",
-    "magni",
-    "distinctio",
-    "omnis",
-    "illum",
-    "dolorum",
-    "voluptatum",
-    "ea",
-    "quas",
-    "quam",
-    "corporis",
-    "quae",
-    "blanditiis",
-    "atque",
-    "deserunt",
-    "laboriosam",
-    "earum",
-    "consequuntur",
-    "hic",
-    "cupiditate",
-    "quibusdam",
-    "accusamus",
-    "ut",
-    "rerum",
-    "error",
-    "minus",
-    "eius",
-    "ab",
-    "ad",
-    "nemo",
-    "fugit",
-    "officia",
-    "at",
-    "in",
-    "id",
-    "quos",
-    "reprehenderit",
-    "numquam",
-    "iste",
-    "fugiat",
-    "sit",
-    "inventore",
-    "beatae",
-    "repellendus",
-    "magnam",
-    "recusandae",
-    "quod",
-    "explicabo",
-    "doloremque",
-    "aperiam",
-    "consequatur",
-    "asperiores",
-    "commodi",
-    "optio",
-    "dolor",
-    "labore",
-    "temporibus",
-    "repellat",
-    "veniam",
-    "architecto",
-    "est",
-    "esse",
-    "mollitia",
-    "nulla",
-    "a",
-    "similique",
-    "eos",
-    "alias",
-    "dolore",
-    "tenetur",
-    "deleniti",
-    "porro",
-    "facere",
-    "maxime",
-    "corrupti",
-)
-
-COMMON_WORDS = (
-    "lorem",
-    "ipsum",
-    "dolor",
-    "sit",
-    "amet",
-    "consectetur",
-    "adipisicing",
-    "elit",
-    "sed",
-    "do",
-    "eiusmod",
-    "tempor",
-    "incididunt",
-    "ut",
-    "labore",
-    "et",
-    "dolore",
-    "magna",
-    "aliqua",
-)

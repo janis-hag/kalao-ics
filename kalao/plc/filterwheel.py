@@ -11,11 +11,11 @@ camera.py is part of the KalAO Instrument Control Software
 
 import time
 
-from kalao.utils import database
+from kalao import database, logger
 
 from microscope.filterwheels import thorlabs
 
-from kalao.definitions.enums import FilterwheelStatus
+from kalao.definitions.enums import FilterwheelStatus, ReturnCode
 
 import config
 
@@ -27,11 +27,8 @@ def get_names_to_positions():
 def translate_to_filter_position(filter):
     if type(filter) == int:
         if filter not in range(0, 6):
-            database.store(
-                'obs', {
-                    'filterwheel_log':
-                        f'[ERROR] Wrong filter position, (got {filter})'
-                })
+            logger.error('filterwheel',
+                         f'Wrong filter position, (got {filter})')
             return FilterwheelStatus.ERROR_POSITION
         else:
             return filter
@@ -39,9 +36,7 @@ def translate_to_filter_position(filter):
         filter = filter.lower()
 
         if filter not in config.FilterWheel.position_list:
-            database.store('obs', {
-                'filterwheel_log': f'[ERROR] Wrong filter name (got {filter})'
-            })
+            logger.error('filterwheel', f'Wrong filter name (got {filter})')
             return FilterwheelStatus.ERROR_POSITION
         else:
             return config.FilterWheel.position_list.index(filter)
@@ -52,11 +47,8 @@ def translate_to_filter_position(filter):
 def translate_to_filter_name(filter):
     if type(filter) == int:
         if filter not in range(0, 6):
-            database.store(
-                'obs', {
-                    'filterwheel_log':
-                        f'[ERROR] Wrong filter position, (got {filter})'
-                })
+            logger.error('filterwheel',
+                         f'Wrong filter position, (got {filter})')
             return FilterwheelStatus.ERROR_NAME
         else:
             return config.FilterWheel.position_list[filter]
@@ -64,9 +56,7 @@ def translate_to_filter_name(filter):
         filter = filter.lower()
 
         if filter not in config.FilterWheel.position_list:
-            database.store('obs', {
-                'filterwheel_log': f'[ERROR] Wrong filter name (got {filter})'
-            })
+            logger.error('filterwheel', f'Wrong filter name (got {filter})')
             return FilterwheelStatus.ERROR_NAME
         else:
             return filter
@@ -78,10 +68,8 @@ def set_filter(filter):
     position = translate_to_filter_position(filter)
     name = translate_to_filter_name(filter)
 
-    database.store('obs', {
-        'filterwheel_log':
-            f'Setting filter wheel position to {position} ({name})'
-    })
+    logger.info('filterwheel',
+                f'Setting filter wheel position to {position} ({name})')
 
     for retry in range(config.FilterWheel.retries):
         try:
@@ -108,34 +96,30 @@ def set_filter(filter):
             else:
                 database.store(
                     'obs', {
-                        'filterwheel_log':
-                            f'[ERROR] Filter position expected {position} ({name}), but got {position_act} ({name_act})',
-                        'filterwheel_filter_name':
-                            name_act,
-                        'filterwheel_filter_position':
-                            position_act
+                        'filterwheel_filter_name': name_act,
+                        'filterwheel_filter_position': position_act
                     })
+                logger.error(
+                    'filterwheel',
+                    f'Filter position expected {position} ({name}), but got {position_act} ({name_act})'
+                )
                 return _return_filter(position_act, filter)
 
         except thorlabs.serial.SerialException:
-            database.store(
-                'obs', {
-                    'filterwheel_log':
-                        f'[WARNING] SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
-                })
+            logger.warn(
+                'filterwheel',
+                f'SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
+            )
             time.sleep(config.FilterWheel.retry_wait)
 
         except ValueError:
-            database.store(
-                'obs', {
-                    'filterwheel_log':
-                        f'[WARNING] ValueError on filter wheel. Retrying ({retry + 1}/{config.FilterWheel.retries}).'
-                })
+            logger.warn(
+                'filterwheel',
+                f'ValueError on filter wheel. Retrying ({retry + 1}/{config.FilterWheel.retries}).'
+            )
             time.sleep(config.FilterWheel.retry_wait)
 
-    database.store('obs', {
-        'filterwheel_log': '[ERROR] Filter wheel failed too many time.'
-    })
+    logger.error('filterwheel', 'Filter wheel failed too many time.')
     return _return_filter(FilterwheelStatus.ERROR_POSITION, filter)
 
 
@@ -153,24 +137,20 @@ def get_filter(type=str, from_db=False):
                 return _return_filter(position, type)
 
             except thorlabs.serial.SerialException:
-                database.store(
-                    'obs', {
-                        'filterwheel_log':
-                            f'[WARNING] SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
-                    })
+                logger.warn(
+                    'filterwheel',
+                    f'SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
+                )
                 time.sleep(config.FilterWheel.retry_wait)
 
             except ValueError:
-                database.store(
-                    'obs', {
-                        'filterwheel_log':
-                            f'[WARNING] ValueError on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
-                    })
+                logger.warn(
+                    'filterwheel',
+                    f'ValueError on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
+                )
                 time.sleep(config.FilterWheel.retry_wait)
 
-    database.store('obs', {
-        'filterwheel_log': '[ERROR] Filter wheel failed too many time.'
-    })
+    logger.error('filterwheel', 'Filter wheel failed too many time.')
     return _return_filter(FilterwheelStatus.ERROR_POSITION, type)
 
 
@@ -183,14 +163,12 @@ def _return_filter(filter, return_type):
     elif return_type == int:
         return translate_to_filter_position(filter)
     else:
-        database.store('obs', {
-            'filterwheel_log': f'[ERROR] Unknown return type ({return_type}).'
-        })
+        logger.error('filterwheel', f'Unknown return type ({return_type}).')
         return None
 
 
 def init():
-    database.store('obs', {'filterwheel_log': f'Initialising filter wheel'})
+    logger.info('filterwheel', 'Initialising filter wheel')
 
     for retry in range(config.FilterWheel.retries):
         try:
@@ -201,25 +179,25 @@ def init():
             fw.initialize()
             time.sleep(config.FilterWheel.initialization_wait)
 
-            database.store('obs',
-                           {'filterwheel_log': f'Filter wheel initialised'})
+            logger.info('filterwheel', 'Filter wheel initialised')
 
-            return 0
+            return ReturnCode.PLC_INIT_SUCCESS
 
         except thorlabs.serial.SerialException:
-            database.store(
-                'obs', {
-                    'filterwheel_log':
-                        f'[WARNING] SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
-                })
+            logger.warn(
+                'filterwheel',
+                f'SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
+            )
             time.sleep(config.FilterWheel.retry_wait)
 
-    database.store('obs', {
-        'filterwheel_log': '[ERROR] Filter wheel failed too many time.'
-    })
+        except ValueError:
+            logger.warn(
+                'filterwheel',
+                f'ValueError on filter wheel. Retrying ({retry + 1}/{config.FilterWheel.retries}).'
+            )
+            time.sleep(config.FilterWheel.retry_wait)
 
-    database.store('obs', {
-        'filterwheel_log': f'[ERROR] Filter wheel initialisation failed'
-    })
+    logger.error('filterwheel', 'Filter wheel failed too many time.')
+    logger.error('filterwheel', 'Filter wheel initialisation failed')
 
-    return -1
+    return ReturnCode.PLC_INIT_FAILED

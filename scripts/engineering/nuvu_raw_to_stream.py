@@ -11,27 +11,18 @@ nuvu_raw_to_stream.py is part of the KalAO Instrument Control Software
 
 import numpy as np
 
-from pyMilk.interfacing.shm import SHM
+from kalao.cacao import toolbox
+
+import config
 
 
 def run():
-    # initialise stream
-    cam = SHM('nuvu_raw')
-
-    # Get initial data
-    data = cam.get_data(check=True)[4:-2, ::8].astype(np.int16)
-
-    # Create stream
-    nuvu_out_stream = SHM(
-        'nuvu_proc_stream',
-        data,  # 30x30 int16 np.array
-        location=-1,  # CPU
-        shared=True,  # Shared
-    )
+    nuvu_in_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
+    nuvu_out_stream = toolbox.open_or_create_stream(config.Streams.NUVU,
+                                                    (64, 64), np.int16)
 
     while True:
-        data = cam.get_data(check=True)[4:-2, ::8].astype(np.int16)
-        # Get new data and refresh stream
+        data = nuvu_in_stream.get_data(check=True)[4:-2, ::8].astype(np.int16)
         nuvu_out_stream.set_data(data)
 
 

@@ -12,11 +12,10 @@ from threading import Thread
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
-from kalao import services
-from kalao.plc import (adc, calib_unit, filterwheel, flip_mirror, laser,
-                       shutter, tungsten)
+from kalao import database, logger, services
+from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser, shutter,
+                       tungsten)
 from kalao.sequencer import commands
-from kalao.utils import database
 
 from kalao.definitions.enums import ReturnCode, SequencerStatus
 from kalao.definitions.exceptions import *
@@ -37,11 +36,8 @@ def handler(signal_received, frame):
         if socketSeq is not None:
             socketSeq.close()
 
-        database.store(
-            'obs', {
-                'sequencer_log': f'Sequencer server off',
-                'sequencer_status': SequencerStatus.OFF
-            })
+        database.store('obs', {'sequencer_status': SequencerStatus.OFF})
+        logger.info('sequencer', 'Sequencer server off')
 
         exit(0)
 
@@ -49,8 +45,8 @@ def handler(signal_received, frame):
 def init():
     init_list = [
         services.init,
-        calib_unit.init,
-        flip_mirror.init,
+        calibunit.init,
+        flipmirror.init,
         shutter.init,
         tungsten.init,
         laser.init,
@@ -86,9 +82,7 @@ def init():
     # Terminate remaining ones
     for f, p in processes.items():
         if p.is_alive():
-            database.store('obs', {
-                'sequencer_log': f'[WARNING] Terminating process for {f}'
-            })
+            logger.warn('sequencer', f'Terminating process for {f}')
             processes_terminated[f] = p
 
             p.terminate()
@@ -99,9 +93,7 @@ def init():
     # Kill them if necessary
     for f, p in processes.items():
         if p.is_alive():
-            database.store('obs', {
-                'sequencer_log': f'[WARNING] Killing process for {f}'
-            })
+            logger.warn('sequencer', f'Killing process for {f}')
             processes_killed[f] = p
 
             p.kill()
@@ -117,19 +109,15 @@ def init():
         returns.update(return_queue.get_nowait())
 
     for f, ret in returns.items():
-        if ret != ReturnCode.NOERROR:
-            database.store(
-                'obs', {
-                    'sequencer_log':
-                        f'[ERROR] Initialisation failed for {f}, returned {ret}'
-                })
+        if ret != ReturnCode.OK:
+            logger.error('sequencer',
+                         f'Initialisation failed for {f}, returned {ret}')
             processes_error[f] = ret
 
-    database.store(
-        'obs', {
-            'sequencer_log':
-                f'Initialisation finished in {time_stop - time_start:.1f}s. {len(processes)} launched, {len(processes_terminated)} terminated, {len(processes_killed)} killed, {len(processes_error)} returned with error'
-        })
+    logger.info(
+        'sequencer',
+        f'Initialisation finished in {time_stop - time_start:.1f}s. {len(processes)} launched, {len(processes_terminated)} terminated, {len(processes_killed)} killed, {len(processes_error)} returned with error'
+    )
 
     return 0
 
@@ -151,16 +139,13 @@ def serve():
     q = Queue()
     th = None
 
-    database.store('obs', {
-        'sequencer_log': f'Server on',
-        'sequencer_status': SequencerStatus.WAITING
-    })
+    database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
+    logger.info('sequencer', 'Server on')
 
     while True:
         socketSeq.listen()
-        database.store('obs', {'sequencer_log': 'Waiting on connection'}
-                       # Do NOT update sequencer_status
-                       )
+        # Do NOT update sequencer_status
+        logger.info('sequencer', 'Waiting on connection')
 
         conn, address = socketSeq.accept()
 
@@ -172,13 +157,9 @@ def serve():
         command = commandList[0]
         arguments = commandList[1:]
 
-        database.store(
-            'obs', {
-                'sequencer_log':
-                    f'command=> {command} < arg={" ".join(arguments)}',
-                'sequencer_status':
-                    SequencerStatus.BUSY
-            })
+        database.store('obs', {'sequencer_status': SequencerStatus.BUSY})
+        logger.info('sequencer',
+                    f'command=> {command} < arg={" ".join(arguments)}')
 
         if command == 'exit':
             break
@@ -200,21 +181,16 @@ def serve():
         # try to cast every values of args dict in type needed
         check = cast_args(args)
         if check != 0:
-            database.store(
-                'obs', {
-                    'sequencer_log': '[ERROR] Casting of args went wrong',
-                    'sequencer_status': SequencerStatus.ERROR
-                })
+            database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+            logger.error('sequencer', 'Casting of args went wrong')
             continue
 
         # if abort command, stop last command with Queue object q
         # and start abort func
         if 'ABORT' in command:
-            database.store(
-                'obs', {
-                    'sequencer_log': f'Received {command}. Aborting sequence.',
-                    'sequencer_status': SequencerStatus.ABORTING
-                })
+            database.store('obs',
+                           {'sequencer_status': SequencerStatus.ABORTING})
+            logger.info('sequencer', f'Received {command}. Aborting sequence.')
 
             q.put('abort')
             commands.commands[command]()
@@ -240,11 +216,8 @@ def serve():
                     'telescope_dec': c.dec.deg
                 })
 
-            database.store(
-                'obs', {
-                    'sequencer_log': f'Starting {command}',
-                    'sequencer_status': SequencerStatus.SETUP
-                })
+            database.store('obs', {'sequencer_status': SequencerStatus.SETUP})
+            logger.info('sequencer', f'Starting {command}')
 
             th = Thread(target=execute_command, kwargs={
                 'command': command,
@@ -255,11 +228,8 @@ def serve():
     # in case of break, we disconnect the socket
     conn.close()
     socketSeq.close()
-    database.store(
-        'obs', {
-            'sequencer_log': f'Sequencer server off',
-            'sequencer_status': SequencerStatus.OFF
-        })
+    database.store('obs', {'sequencer_status': SequencerStatus.OFF})
+    logger.info('sequencer', 'Sequencer server off')
 
 
 def cast_args(args):
@@ -282,19 +252,14 @@ def cast_args(args):
             if v.isdigit():
                 args[k] = int(v)
             else:
-                database.store('obs', {
-                    'sequencer_log':
-                        f'[ERROR] {k} value cannot be convert in int'
-                })
+                logger.error('sequencer',
+                             f'{k} value cannot be convert in int')
         elif k in config.SEQ.gop_arg_float:
             if v.replace('.', '', 1).isdigit():
                 args[k] = float(v)
             else:
-                database.store(
-                    'obs', {
-                        'sequencer_log':
-                            f'[ERROR] {k} value cannot be convert in float'
-                    })
+                logger.error('sequencer',
+                             f'{k} value cannot be convert in float')
         elif k in config.SEQ.gop_arg_string:
             # If filterposition arg is not a digit, then he must be a name
             # Get the int id from the dict Id_filter
@@ -305,7 +270,7 @@ def cast_args(args):
                 args[k] = int(v)
         # else:
         #     ignored_args[k] = v
-        #     database.store('obs',{'sequencer_log': f'[ERROR] {k} not in arg list'})
+        #     logger.error('sequencer', f'{k} not in arg list')
         #     return 1
 
     return 0
@@ -315,53 +280,31 @@ def execute_command(command, seq_args):
     try:
         commands.commands[command](**seq_args)
     except AbortRequested:
-        database.store(
-            'obs', {
-                'sequencer_log': f'{command} aborted on request',
-                'sequencer_status': SequencerStatus.WAITING
-            })
+        database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
+        logger.info('sequencer', f'{command} aborted on request')
     except FLICancelFailed:
-        database.store(
-            'obs', {
-                'sequencer_log': f'FLI cancel failed in {command}',
-                'sequencer_status': SequencerStatus.WAITING
-            })
+        database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
+        logger.info('sequencer', f'FLI cancel failed in {command}')
     except SequencerException as e:
-        database.store(
-            'obs', {
-                'sequencer_log':
-                    f'[ERROR] "{e.__doc__}" happened during {command}',
-                'sequencer_status':
-                    SequencerStatus.ERROR
-            })
+        database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+        logger.error('sequencer', f'"{e.__doc__}" happened during {command}')
     except Exception as e:
-        database.store(
-            'obs', {
-                'sequencer_log':
-                    f'[ERROR] Unknown exception occured during {command}',
-                'sequencer_status':
-                    SequencerStatus.ERROR
-            })
+        database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+        logger.error('sequencer',
+                     f'Unknown exception occured during {command}')
 
         traceback.print_exc()
     else:
-        database.store(
-            'obs', {
-                'sequencer_log': f'{command} ended',
-                'sequencer_status': SequencerStatus.WAITING
-            })
+        database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
+        logger.info('sequencer', f'{command} ended')
 
 
 if __name__ == "__main__":
-    database.store(
-        'obs', {
-            'sequencer_log': 'Server initialisation',
-            'sequencer_status': SequencerStatus.INITIALISING
-        })
+    database.store('obs', {'sequencer_status': SequencerStatus.INITIALISING})
+    logger.info('sequencer', 'Server initialisation')
 
     if init() != 0:
-        database.store('obs',
-                       {'sequencer_log': '[ERROR] Initialisation failed'})
+        logger.error('sequencer', 'Initialisation failed')
 
     signal.signal(signal.SIGTERM, handler)
     signal.signal(signal.SIGINT, handler)

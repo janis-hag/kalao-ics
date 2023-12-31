@@ -18,10 +18,11 @@ import numpy as np
 
 from astropy.io import fits
 
+from kalao import database, logger
 from kalao.cacao import toolbox
-from kalao.plc import flip_mirror
+from kalao.plc import flipmirror
 from kalao.timers import database as database_timer
-from kalao.utils import database, file_handling
+from kalao.utils import file_handling
 
 import requests
 import requests.exceptions
@@ -91,7 +92,7 @@ def _update_fli_stream(img, filepath):
         fli_stream.set_data(img, True)
 
         keywords = {
-            'laser': flip_mirror.get_position() == FlipMirrorPosition.UP,
+            'laser': flipmirror.get_position() == FlipMirrorPosition.UP,
         }
 
         for i in range(math.ceil(len(filepath.name) / 16)):
@@ -99,11 +100,10 @@ def _update_fli_stream(img, filepath):
 
         fli_stream.set_keywords(keywords)
     else:
-        database.store(
-            'obs', {
-                f'fli_log':
-                    f'[ERROR] {config.Streams.FLI} not updated, shapes are inconsistent.'
-            })
+        logger.error(
+            'fli',
+            f'{config.Streams.FLI} not updated, shapes are inconsistent (stream={fli_stream.shape}, frame={img.shape}).'
+        )
 
 
 def take_image(
@@ -117,11 +117,9 @@ def take_image(
     """
 
     if dit <= 0.001:
-        database.store(
-            'obs', {
-                f'fli_log':
-                    f'[ERROR] Abort before exposure started. DIT={dit} below min value 0.001'
-            })
+        logger.error(
+            'fli',
+            f'Abort before exposure started. DIT={dit} below min value 0.001')
         return None
 
     if filepath is None:
@@ -133,7 +131,6 @@ def take_image(
 
     database.store('obs', {
         'sequencer_status': SequencerStatus.EXP,
-        'fli_texp': dit
     })
 
     img = take_frame(dit, filepath=filepath)
@@ -191,7 +188,7 @@ def take_tech(dit=0.05, seq_args=None, filepath=None):
     return take_image(dit=dit, filepath=None, sequencer_arguments=seq_args)
 
 
-def increment_image_counter():
+def increment_image_counter(exptime):
     """
     Increments the image counter by one
 
@@ -205,7 +202,10 @@ def increment_image_counter():
     else:
         image_count += 1
 
-    database.store('obs', {'fli_image_count': image_count})
+    database.store('obs', {
+        'fli_image_count': image_count,
+        'fli_exposure_time': exptime
+    })
 
     return image_count
 
@@ -273,7 +273,7 @@ def _send_request(request_type, params={}):
 
     else:
         if request_type == 'acquire':
-            increment_image_counter()
+            increment_image_counter(params['exptime'])
 
         url = f'http://{config.FLI.ip}:{config.FLI.port}/{request_type}'
 
@@ -305,11 +305,10 @@ def _send_request(request_type, params={}):
             else:
                 text = f' {data}'
 
-            database.store(
-                'obs', {
-                    f'fli_log':
-                        f'[ERROR] Camera server answered with an Error {req.status_code}.{text}'
-                })
+            logger.error(
+                'fli',
+                f'Camera server answered with an Error {req.status_code}.{text}'
+            )
 
             return ReturnCode.CAMERA_ERROR, data
 

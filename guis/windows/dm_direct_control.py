@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QDoubleSpinBox, QLabel
 from kalao.utils import kalao_tools, zernike
 
 from guis.kalao.colormaps import CoolWarm
+from guis.kalao.mixins import BackendActionMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOMainWindow
 
@@ -44,7 +45,7 @@ class DMSpinBox(QDoubleSpinBox):
         super().setValue(val)
 
 
-class DMDirectControl(KalAOMainWindow):
+class DMDirectControl(KalAOMainWindow, BackendActionMixin):
     colormap = CoolWarm()
     zernike_indices = list(range(15))
 
@@ -97,7 +98,7 @@ class DMDirectControl(KalAOMainWindow):
 
             dm[x, y] = s.value()
 
-        self.backend.set_dm_to(dm)
+        self.action_send([], self.backend.set_dm_to, dm)
 
     @Slot(bool)
     def on_reset_button_clicked(self, checked):
@@ -110,7 +111,7 @@ class DMDirectControl(KalAOMainWindow):
 
         self.reset_all_sides_boxes()
 
-        self.backend.set_dm_to(np.zeros((12, 12)))
+        self.action_send([], self.backend.set_dm_to, np.zeros((12, 12)))
 
     @Slot(int)
     def on_all_slider_valueChanged(self, value):
@@ -122,7 +123,7 @@ class DMDirectControl(KalAOMainWindow):
 
         dm = np.ones((12, 12)) * value / 100
 
-        self.backend.set_dm_to(dm)
+        self.action_send([], self.backend.set_dm_to, dm)
 
     def on_zernike_spinbox_valueChanged(self, d):
         self.compute_all()
@@ -180,7 +181,7 @@ class DMDirectControl(KalAOMainWindow):
             with QSignalBlocker(self.actuators_spinboxes[i]):
                 self.actuators_spinboxes[i].setValue(pattern[x, y])
 
-        self.backend.set_dm_to(pattern)
+        self.action_send([], self.backend.set_dm_to, pattern)
 
     def compute_zernike(self):
         coeffs = np.zeros(max(self.zernike_indices) + 1)

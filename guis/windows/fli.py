@@ -10,7 +10,7 @@ from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KalAOWidget
-from guis.windows.fli_zoom import FLIZoomWindow
+from guis.windows.fli_zoom import FLIZoomWindow, find_star_fast
 
 import config
 
@@ -60,6 +60,11 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     zoom_window = None
 
+    star_x = np.nan
+    star_y = np.nan
+    star_peak = np.nan
+    star_fwhm = np.nan
+
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 
@@ -83,12 +88,7 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.WFS_fov / 2, self.WFS_fov, self.WFS_fov, pen)
         self.roi.setZValue(1)
 
-        self.star_label.updateText(x=np.nan, y=np.nan, peak=np.nan,
-                                   fwhm=np.nan, precision=np.nan,
-                                   data_unit=self.data_unit,
-                                   axis_unit=self.axis_unit)
-
-        self.parang = 0
+        self.update_labels()
 
         self.fli_view.hovered.connect(self.hover_xyv_to_str)
         backend.data_updated.connect(self.data_updated)
@@ -103,23 +103,28 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         img = self.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
-            self.parang = (self.parang + 5) % 360
-            self.fli_view.addParang(self.parang)
+            #self.fli_view.addNEIndicator(parang from keywords)
 
             img_min, img_max = self.compute_min_max(img)
 
             self.fli_view.setImage(img, img_min, img_max)
 
-            #x, y, peak, fwhm = starfinder.find_star(img) #TODO
-            x, y, peak, fwhm = np.nan, np.nan, np.nan, np.nan
+            self.star_x, self.star_y, self.star_peak, self.star_fwhm = find_star_fast(
+                img)
 
-            self.star_label.updateText(x=x * self.axis_scaling,
-                                       y=y * self.axis_scaling,
-                                       peak=peak * self.data_scaling,
-                                       fwhm=fwhm * self.axis_scaling,
-                                       precision=self.axis_precision,
-                                       data_unit=self.data_unit,
-                                       axis_unit=self.axis_unit)
+            self.update_labels()
+
+    def update_labels(self):
+        self.star_label.updateText(
+            x=(self.star_x - self.data_center_x) * self.axis_scaling,
+            y=(self.star_y - self.data_center_y) * self.axis_scaling,
+            peak=self.star_peak * self.data_scaling,
+            fwhm=self.star_fwhm * self.axis_scaling,
+            data_unit=self.data_unit,
+            data_precision=self.data_precision,
+            axis_unit=self.axis_unit,
+            axis_precision=self.axis_precision + 1,
+        )
 
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:
@@ -130,6 +135,8 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.axis_scaling = 1
             self.axis_unit = ' px'
             self.axis_precision = 0
+
+        self.update_labels()
 
         ticks_x = []
         ticks_y = []
@@ -173,4 +180,6 @@ class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             else:
                 img = None
 
-            self.zoom_window = FLIZoomWindow(self.backend, img)
+            self.zoom_window = FLIZoomWindow(
+                self.backend, img, on_sky_unit=(self.axis_unit == ' asec'),
+                parent=self)

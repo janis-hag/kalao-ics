@@ -70,13 +70,3 @@
 - keyword: LST
   value:
   comment: lst-hms
-
-- keyword: EQUINOX
-  value:
-  comment: Standard radecsys_value
-
-# TODO check if FK5 or ICRS
-# RADECSYS keyword is deprecated, use RADESYSa.
-- keyword: RADECSYS
-  value:
-  comment: Coordinate system

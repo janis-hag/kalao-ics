@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : obs.py
+# @Filename : edp.py
 # @Date : 2021-01-02-16-50
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
@@ -12,8 +12,9 @@ datasets specific for the KalAO flask graphic user interface (GUI).
 
 from datetime import datetime, timezone
 
+from kalao import database
 from kalao.plc import tungsten
-from kalao.utils import database, kalao_time
+from kalao.utils import kalao_time
 
 from kalao.definitions.enums import SequencerStatus
 
@@ -41,7 +42,7 @@ def kalao_status():
     elif sequencer_status_value == SequencerStatus.WAITLAMP:
         status_string = f'|status|BUSY|{elapsed_time(sequencer_status):.0f}'
     elif sequencer_status_value == SequencerStatus.EXP:
-        texp = database.get_last_value('obs', 'fli_texp')
+        texp = database.get_last_value('obs', 'fli_exposure_time')
         status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{texp:.0f}'
     else:
         #  TODO get alt/az and focus offset from cacao.telemetry and add to string

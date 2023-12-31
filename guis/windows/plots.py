@@ -3,12 +3,13 @@ from datetime import timezone
 import numpy as np
 
 from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis, QXYSeries
-from PySide6.QtCore import (QDateTime, QPointF, Qt, QTimer, QTimeZone, Signal,
-                            Slot)
-from PySide6.QtGui import QPen
-from PySide6.QtWidgets import QPushButton
+from PySide6.QtCore import (QDateTime, QEvent, QObject, QPointF,
+                            QSignalBlocker, QTimer, QTimeZone, Signal, Slot)
+from PySide6.QtGui import QCursor, QGuiApplication, QPen, Qt
+from PySide6.QtWidgets import QListWidget, QListWidgetItem, QPushButton
 
-from kalao.utils import database, kalao_time
+from kalao import database
+from kalao.utils import kalao_string, kalao_time
 
 from guis.kalao.definitions import ColorPalette
 from guis.kalao.ui_loader import loadUi
@@ -37,24 +38,11 @@ class PlotsWidget(KalAOWidget):
         self.items = {}
 
         for k, v in sorted(
-                database.definitions['monitoring']['metadata'].items(),
-                key=lambda t: t[1]['short'].lower()):
-            item = KalAOListWidgetItem(k, self.get_display_name(v))
-            item.setToolTip(v['long'])
-
-            group = v.get('group', 'Generic')
-            if group not in self.groups:
-                self.groups[group] = []
-            self.groups[group].append(('monitoring', k))
-
-            self.monitoring_list.addItem(item)
-            self.items[f'monitoring/{k}'] = item
-
-        for k, v in sorted(
                 database.definitions['telemetry']['metadata'].items(),
-                key=lambda t: t[1]['short'].lower()):
+                key=lambda t: t[1]['short'].casefold()):
             item = KalAOListWidgetItem(k, self.get_display_name(v))
-            item.setToolTip(v['long'])
+            item.hover_text = v['long']
+            # item.installEventFilter(self)
 
             group = v.get('group', 'Generic')
             if group not in self.groups:
@@ -63,17 +51,36 @@ class PlotsWidget(KalAOWidget):
 
             self.telemetry_list.addItem(item)
             self.items[f'telemetry/{k}'] = item
+        self.telemetry_list.installEventFilter(self)
+
+        for k, v in sorted(
+                database.definitions['monitoring']['metadata'].items(),
+                key=lambda t: t[1]['short'].casefold()):
+            item = KalAOListWidgetItem(k, self.get_display_name(v))
+            item.hover_text = v['long']
+            # item.installEventFilter(self)
+
+            group = v.get('group', 'Generic')
+            if group not in self.groups:
+                self.groups[group] = []
+            self.groups[group].append(('monitoring', k))
+
+            self.monitoring_list.addItem(item)
+            self.items[f'monitoring/{k}'] = item
+        self.monitoring_list.installEventFilter(self)
 
         for k, v in sorted(database.definitions['obs']['metadata'].items(),
-                           key=lambda t: t[1]['short'].lower()):
-            if k in config.GUI.plots_exclude_list or '_log' in k:
+                           key=lambda t: t[1]['short'].casefold()):
+            if k in config.GUI.plots_exclude_list:
                 continue
 
             item = KalAOListWidgetItem(k, self.get_display_name(v))
-            item.setToolTip(v['long'])
+            item.hover_text = v['long']
+            # item.installEventFilter(self)
             self.obs_list.addItem(item)
 
             self.items[f'obs/{k}'] = item
+        self.obs_list.installEventFilter(self)
 
         # Create Chart and set General Chart setting
         chart = self.plots_view.chart
@@ -96,7 +103,8 @@ class PlotsWidget(KalAOWidget):
 
         ### Group buttons
 
-        for group in sorted(self.groups.keys(), key=lambda key: key.lower()):
+        for group in sorted(self.groups.keys(),
+                            key=lambda key: key.casefold()):
             button = QPushButton(group)
             button.clicked.connect(lambda checked=False, group=group: self.
                                    on_group_button_clicked(checked, group))
@@ -107,7 +115,7 @@ class PlotsWidget(KalAOWidget):
         self.on_tonight_button_clicked(None)
 
     def get_display_name(self, metadata):
-        unit = metadata.get("unit")
+        unit = metadata.get('unit')
         if unit is None or unit == '':
             unit = ' [-]'
         else:
@@ -128,6 +136,18 @@ class PlotsWidget(KalAOWidget):
                 self.telemetry_list.scrollToItem(item)
             elif collection == 'obs':
                 self.obs_list.scrollToItem(item)
+
+    @Slot(QListWidgetItem)
+    def on_telemetry_list_itemEntered(self, item):
+        self.hovered.emit(item.hover_text)
+
+    @Slot(QListWidgetItem)
+    def on_monitoring_list_itemEntered(self, item):
+        self.hovered.emit(item.hover_text)
+
+    @Slot(QListWidgetItem)
+    def on_obs_list_itemEntered(self, item):
+        self.hovered.emit(item.hover_text)
 
     @Slot(bool)
     def on_reset_button_clicked(self, checked):
@@ -153,6 +173,16 @@ class PlotsWidget(KalAOWidget):
         self.axis_x.setRange(self.start_datetimeedit.dateTime(),
                              self.end_datetimeedit.dateTime())
 
+    @Slot(float)
+    def on_min_spinbox_valueChanged(self, d):
+        self.max_spinbox.setMinimum(d)
+        self.axis_y.setMin(d)
+
+    @Slot(float)
+    def on_max_spinbox_valueChanged(self, d):
+        self.min_spinbox.setMaximum(d)
+        self.axis_y.setMax(d)
+
     @Slot(bool)
     def on_last_hour_button_clicked(self, checked):
         now = QDateTime.currentDateTime()
@@ -163,7 +193,7 @@ class PlotsWidget(KalAOWidget):
 
     @Slot(bool)
     def on_tonight_button_clicked(self, checked):
-        start_of_night = kalao_time.get_start_of_night_dt(kalao_time.now())
+        start_of_night = kalao_time.get_start_of_night(kalao_time.now())
 
         start = QDateTime.fromSecsSinceEpoch(int(start_of_night.timestamp()))
         end = start.addSecs(86400)
@@ -174,7 +204,7 @@ class PlotsWidget(KalAOWidget):
     @Slot(int)
     def on_live_checkbox_stateChanged(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.live_timer.setInterval(int(1000 * config.GUI.refresharte_dbs))
+            self.live_timer.setInterval(int(1000 / config.GUI.refreshrate_dbs))
             self.live_timer.timeout.connect(self.on_live_timer_timeout)
 
             self.on_live_timer_timeout()
@@ -209,14 +239,17 @@ class PlotsWidget(KalAOWidget):
         for item in self.obs_list.selectedItems():
             obs_keys.append(item.key)
 
-        dt_start = self.start_datetimeedit.dateTime().toUTC().toPython()
-        dt_end = self.end_datetimeedit.dateTime().toUTC().toPython()
+        dt_start = self.start_datetimeedit.dateTime().toUTC().toPython(
+        ).replace(tzinfo=timezone.utc)
+        dt_end = self.end_datetimeedit.dateTime().toUTC().toPython().replace(
+            tzinfo=timezone.utc)
 
-        dt_start = dt_start.replace(tzinfo=timezone.utc)
-        dt_end = dt_end.replace(tzinfo=timezone.utc)
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
 
         data = self.backend.plots_data(dt_start, dt_end, monitoring_keys,
                                        telemetry_keys, obs_keys)
+
+        QGuiApplication.restoreOverrideCursor()
 
         chart = self.plots_view.chart
 
@@ -276,6 +309,16 @@ class PlotsWidget(KalAOWidget):
 
                     series.append(QPointF(timestamp, v))
 
+                if name == 'obs' and series.count() > 0:
+                    now = QDateTime.currentDateTime().toMSecsSinceEpoch()
+                    prev = series.points()[-1]
+                    if now > prev.x():
+                        series.append(QPointF(now, prev.y()))
+
+                        series.setPointConfiguration(series.count() - 1, {
+                            QXYSeries.PointConfiguration.Visibility: False
+                        })
+
                 chart.addSeries(series)
                 series.attachAxis(self.axis_x)
                 series.attachAxis(self.axis_y)
@@ -307,6 +350,14 @@ class PlotsWidget(KalAOWidget):
         self.axis_y.setTickCount(20)
         self.axis_y.applyNiceNumbers()
 
+        with QSignalBlocker(self.min_spinbox):
+            self.min_spinbox.setMaximum(self.axis_y.max())
+            self.min_spinbox.setValue(self.axis_y.min())
+
+        with QSignalBlocker(self.max_spinbox):
+            self.max_spinbox.setMinimum(self.axis_y.min())
+            self.max_spinbox.setValue(self.axis_y.max())
+
     def hover_xy_to_str(self, x, y):
         if not np.isnan(x) and not np.isnan(y):
             metadata = database.definitions[self.current_name]['metadata'][
@@ -320,11 +371,7 @@ class PlotsWidget(KalAOWidget):
             x = QDateTime.fromMSecsSinceEpoch(
                 int(x)).toString("HH:mm:ss dd-MM-yy")
 
-            unit = metadata.get('unit')
-            if unit is None or unit == '':
-                unit = ''
-            else:
-                unit = f' {unit}'
+            unit = kalao_string.get_unit_string(metadata)
 
             self.hovered.emit(
                 f'{metadata["short"]}: {y:.5g}{unit}{y_true} at {x}')
@@ -336,3 +383,9 @@ class PlotsWidget(KalAOWidget):
         self.current_key = key
 
         self.plots_view.chart.pointHoveredEvent(point, state, self.series[key])
+
+    def eventFilter(self, source, event):
+        if isinstance(source, QListWidget):
+            if event.type() == QEvent.Leave:
+                self.hovered.emit('')
+        return QObject.eventFilter(self, source, event)

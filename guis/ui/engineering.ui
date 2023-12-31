@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1064</width>
-    <height>682</height>
+    <width>1206</width>
+    <height>697</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,22 +19,12 @@
      <item>
       <widget class="QGroupBox" name="plc_groupbox">
        <property name="title">
-        <string>PLC</string>
+        <string>PLC (Beckhoff)</string>
        </property>
        <property name="checkable">
         <bool>false</bool>
        </property>
-       <layout class="QGridLayout" name="gridLayout_4" rowstretch="1,1,1,1,1,1,1,1,1,0" columnstretch="0,0,1">
-        <item row="7" column="0">
-         <widget class="QLabel" name="adc1_label">
-          <property name="text">
-           <string>ADC 1</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
+       <layout class="QGridLayout" name="gridLayout_4" columnstretch="0,0,1">
         <item row="4" column="0">
          <widget class="QLabel" name="laser_state_label">
           <property name="text">
@@ -42,278 +32,6 @@
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="KalAOStatusIndicator" name="laser_state_indicator">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="KalAOStatusIndicator" name="shutter_indicator">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="KalAOStatusIndicator" name="flipmirror_indicator">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="2">
-         <widget class="QCheckBox" name="laser_state_checkbox">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="laser_power_label">
-          <property name="text">
-           <string>Laser Intensity</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QComboBox" name="flipmirror_combobox"/>
-        </item>
-        <item row="5" column="1">
-         <widget class="KalAOStatusIndicator" name="laser_power_indicator">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="KalAOStatusIndicator" name="filterwheel_indicator">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="calibunit_label">
-          <property name="text">
-           <string>Calibration Unit</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QLabel" name="filterwheel_label">
-          <property name="text">
-           <string>Filterwheel</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="2">
-         <widget class="QDoubleSpinBox" name="laser_power_spinbox">
-          <property name="keyboardTracking">
-           <bool>false</bool>
-          </property>
-          <property name="suffix">
-           <string> mW</string>
-          </property>
-          <property name="maximum">
-           <double>8.000000000000000</double>
-          </property>
-          <property name="singleStep">
-           <double>0.100000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="2">
-         <widget class="QDoubleSpinBox" name="adc2_spinbox">
-          <property name="keyboardTracking">
-           <bool>false</bool>
-          </property>
-          <property name="suffix">
-           <string>°</string>
-          </property>
-          <property name="minimum">
-           <double>-360.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>360.000000000000000</double>
-          </property>
-          <property name="singleStep">
-           <double>0.100000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QComboBox" name="shutter_combobox"/>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="tungsten_state_label">
-          <property name="text">
-           <string>Tungsten Enabled</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="2">
-         <widget class="QCheckBox" name="tungsten_state_checkbox">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="KalAOStatusIndicator" name="calibunit_indicator">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="flipmirror_label">
-          <property name="text">
-           <string>Flip Mirror State</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2">
-         <widget class="QDoubleSpinBox" name="calibunit_spinbox">
-          <property name="keyboardTracking">
-           <bool>false</bool>
-          </property>
-          <property name="suffix">
-           <string> mm</string>
-          </property>
-          <property name="maximum">
-           <double>100.000000000000000</double>
-          </property>
-          <property name="singleStep">
-           <double>0.100000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="2">
-         <widget class="QDoubleSpinBox" name="adc1_spinbox">
-          <property name="keyboardTracking">
-           <bool>false</bool>
-          </property>
-          <property name="suffix">
-           <string>°</string>
-          </property>
-          <property name="minimum">
-           <double>-360.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>360.000000000000000</double>
-          </property>
-          <property name="singleStep">
-           <double>0.100000000000000</double>
           </property>
          </widget>
         </item>
@@ -337,12 +55,272 @@
             <height>20</height>
            </size>
           </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
          </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="laser_power_label">
+          <property name="text">
+           <string>Laser Intensity</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2">
+         <widget class="QCheckBox" name="laser_state_checkbox">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="2">
+         <widget class="QDoubleSpinBox" name="adc2_spinbox">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="suffix">
+           <string>°</string>
+          </property>
+          <property name="minimum">
+           <double>-360.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>360.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="KalAOStatusIndicator" name="laser_power_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QComboBox" name="shutter_combobox"/>
         </item>
         <item row="0" column="0">
          <widget class="QLabel" name="shutter_label">
           <property name="text">
            <string>Shutter State</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="calibunit_label">
+          <property name="text">
+           <string>Calibration Unit</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0" colspan="3">
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="0" column="0" colspan="2">
+           <widget class="QPushButton" name="calibunit_initialize_button">
+            <property name="text">
+             <string>Initalize Calibration Unit</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="calibunit_tungsten_button">
+            <property name="text">
+             <string>Tungsten position</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QPushButton" name="adc_zero_disp_button">
+            <property name="text">
+             <string>Zero dispersion</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="calibunit_laser_button">
+            <property name="text">
+             <string>Laser position</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QPushButton" name="adc_max_disp_button">
+            <property name="text">
+             <string>Max dispersion</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="adc1_initialize_button">
+            <property name="text">
+             <string>Initialize ADC1</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QPushButton" name="adc2_initialize_button">
+            <property name="text">
+             <string>Initialize ADC2</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="1">
+         <widget class="KalAOStatusIndicator" name="shutter_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="filterwheel_label">
+          <property name="text">
+           <string>Filterwheel</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="2">
+         <widget class="QComboBox" name="filterwheel_combobox"/>
+        </item>
+        <item row="2" column="1">
+         <widget class="KalAOStatusIndicator" name="calibunit_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="2">
+         <widget class="QDoubleSpinBox" name="laser_power_spinbox">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="suffix">
+           <string> mW</string>
+          </property>
+          <property name="maximum">
+           <double>8.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QDoubleSpinBox" name="calibunit_spinbox">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="suffix">
+           <string> mm</string>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="KalAOStatusIndicator" name="flipmirror_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="flipmirror_label">
+          <property name="text">
+           <string>Flip Mirror State</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -369,10 +347,23 @@
             <height>20</height>
            </size>
           </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
          </widget>
         </item>
-        <item row="6" column="2">
-         <widget class="QComboBox" name="filterwheel_combobox"/>
+        <item row="1" column="2">
+         <widget class="QComboBox" name="flipmirror_combobox"/>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="tungsten_state_label">
+          <property name="text">
+           <string>Tungsten Enabled</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
         </item>
         <item row="8" column="0">
          <widget class="QLabel" name="adc2_label">
@@ -381,6 +372,92 @@
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <widget class="QCheckBox" name="tungsten_state_checkbox">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="2">
+         <widget class="QDoubleSpinBox" name="adc1_spinbox">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="suffix">
+           <string>°</string>
+          </property>
+          <property name="minimum">
+           <double>-360.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>360.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="KalAOStatusIndicator" name="filterwheel_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="adc1_label">
+          <property name="text">
+           <string>ADC 1</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="KalAOStatusIndicator" name="laser_state_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
           </property>
          </widget>
         </item>
@@ -404,9 +481,12 @@
             <height>20</height>
            </size>
           </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
          </widget>
         </item>
-        <item row="9" column="0" colspan="3">
+        <item row="10" column="0" colspan="3">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -425,7 +505,7 @@
      <item>
       <widget class="QGroupBox" name="fli_groupbox">
        <property name="title">
-        <string>Science Camera</string>
+        <string>Science Camera (First Light Imaging)</string>
        </property>
        <layout class="QFormLayout" name="formLayout_2">
         <property name="labelAlignment">
@@ -460,17 +540,10 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0" colspan="2">
-         <widget class="QPushButton" name="fli_new_image_button">
+        <item row="1" column="0">
+         <widget class="QLabel" name="fli_remaining_time_label">
           <property name="text">
-           <string>Take a new image</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0" colspan="2">
-         <widget class="QPushButton" name="fli_cancel_button">
-          <property name="text">
-           <string>Cancel exposure</string>
+           <string>Remaining time</string>
           </property>
          </widget>
         </item>
@@ -499,10 +572,17 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="fli_remaining_time_label">
+        <item row="2" column="0" colspan="2">
+         <widget class="QPushButton" name="fli_new_image_button">
           <property name="text">
-           <string>Remaining time</string>
+           <string>Take a new image</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" colspan="2">
+         <widget class="QPushButton" name="fli_cancel_button">
+          <property name="text">
+           <string>Cancel exposure</string>
           </property>
          </widget>
         </item>
@@ -594,6 +674,9 @@
             <height>20</height>
            </size>
           </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
          </widget>
         </item>
         <item row="1" column="1">
@@ -615,6 +698,9 @@
             <width>20</width>
             <height>20</height>
            </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
           </property>
          </widget>
         </item>
@@ -653,6 +739,9 @@
             <width>20</width>
             <height>20</height>
            </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
           </property>
          </widget>
         </item>

@@ -14,120 +14,151 @@ pi_tilt:
 
 # Nüvü camera (temperatures)
 nuvu_temp_ccd:
-  short: EMCCD Temp.
-  long: Temperature of the EMCCD
+  short: Nüvü EMCCD Temp.
+  long: Temperature of the Nüvü EMCCD
   unit: °C
   group: Nüvü
   error_range: [ -60.1, -59.9 ]
 
 nuvu_temp_controller:
-  short: CNTRLR Temp.
+  short: Nüvü CNTRLR Temp.
   long: Temperature of the Nüvü controller
   unit: °C
   group: Nüvü
 
-nuvu_temp_power_supply:
-  short: PSU Temp.
+nuvu_temp_powersupply:
+  short: Nüvü PSU Temp.
   long: Temperature of the Nüvü power supply
   unit: °C
   group: Nüvü
 
 nuvu_temp_fpga:
-  short: FPGA Temp.
+  short: Nüvü FPGA Temp.
   long: Temperature of the Nüvü FPGA
   unit: °C
   group: Nüvü
 
 nuvu_temp_heatsink:
-  short: HS Temp.
+  short: Nüvü HS Temp.
   long: Temperature of the Nüvü heatsink
   unit: °C
   group: Nüvü
 
 # Nüvü camera (exposure)
 nuvu_emgain:
-  short: EM Gain
-  long: EM gain of the EMCCD
+  short: Nüvü EM Gain
+  long: EM gain of the Nüvü EMCCD
   unit:
   group: Nüvü
   fits_keyword: HIERARCH ESO AOS WFS EMGAIN
 
 nuvu_detgain:
-  short: Detector gain
-  long: Analogic detector gain
+  short: Nüvü Detector gain
+  long: Nüvü analogic detector gain
   unit:
   group: Nüvü
 
 nuvu_exposuretime:
-  short: Exp. time
-  long: Exposure time of the EMCCD
+  short: Nüvü Exp. time
+  long: Exposure time of the Nüvü EMCCD
   unit: ms
   group: Nüvü
   fits_keyword: HIERARCH ESO AOS WFS DIT
 
 nuvu_mframerate:
-  short: Framerate
-  long: Measured frame rate
+  short: Nüvü Framerate
+  long: Measured frame rate of the Nüvü
   unit: Hz
   group: Nüvü
   fits_keyword: HIERARCH ESO AOS WFS FRATE
 
+nuvu_autogain_on:
+  short: Nüvü Auto-gain state
+  long: State of the autogain for the Nüvü
+  unit:
+  group: Nüvü
+
+nuvu_autogain_setting:
+  short: Nüvü Auto-gain setting
+  long: Setting of the autogain for the Nüvü
+  unit:
+  group: Nüvü
+
+# BMC deformable mirror
+bmc_max_stroke:
+  short: BMC Max stroke
+  long: Maximum stroke of the BMC DM
+  unit:
+  group: BMC
+
+bmc_stroke_mode:
+  short: BMC Stroke Mode
+  long: Stroke mode of the BMC DM
+  unit:
+  group: BMC
+
 # Shack-Hartmann WFS
-slopes_flux_subaperture_avg:
-  short: Avg. flux
-  long: Average flux active subapertures
+shwfs_algorithm:
+  short: WFS Algorithm
+  long: Algorithm used to compute slopes
+  unit:
+  group: Shack-Hartmann WFS
+
+shwfs_flux_subaperture_avg:
+  short: WFS Avg. flux
+  long: Average flux of active subapertures
   unit: ADU
   group: Shack-Hartmann WFS
 
-slopes_flux_subaperture_brightest:
-  short: Max. flux
-  long: Maximum flux active subapertures
+shwfs_flux_subaperture_brightest:
+  short: WFS Max. flux
+  long: Maximum flux of active subapertures
   unit: ADU
   group: Shack-Hartmann WFS
 
-slopes_residual:
+shwfs_residual:
   short: WFS RMS error
-  long: WFS RMS residuals
+  long: RMS residuals of active subapertures
   unit: px
   group: Shack-Hartmann WFS
 
 # AO loops status
-dm_loop_on:
+dmloop_on:
   short: DM Loop ON/OFF
   long: DM Loop ON/OFF
   unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP ST
 
-dm_loop_gain:
+dmloop_gain:
   short: DM Loop gain
   long: DM Loop gain
   unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP GAIN
 
-dm_loop_mult:
+dmloop_mult:
   short: DM Loop mult. coeff.
   long: DM Loop multiplication coefficient
   unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP MULT
 
-ttm_loop_on:
+ttmloop_on:
   short: TTM Loop ON/OFF
   long: TTM Loop ON/OFF
   unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP ST
 
-ttm_loop_gain:
+ttmloop_gain:
   short: TTM Loop gain
   long: TTM Loop gain
   unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP GAIN
 
-ttm_loop_mult:
+ttmloop_mult:
   short: TTM Loop mult. coeff.
   long: TTM Loop multiplication coefficient
   unit:

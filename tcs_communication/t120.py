@@ -17,8 +17,7 @@ import time
 
 import pandas as pd
 
-from kalao import euler
-from kalao.utils import database, kalao_time
+from kalao import database, euler, logger
 
 import requests
 import requests.exceptions
@@ -43,12 +42,11 @@ def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec):
 
     #print ("ipc.init_remote_client, returns:",socketId)
     # if (socketId <= 0):
-    #     database.store('obs', {'t120_log': 'Error connecting to T120'})
+    #     logger.error('t120', f'Error connecting to T120')
     #     return -1
 
-    database.store('obs', {
-        't120_log': f'Sending {delta_az_arcsec} and {delta_alt_arcsec} offsets'
-    })
+    logger.info('t120',
+                f'Sending {delta_az_arcsec} and {delta_alt_arcsec} offsets')
 
     params = {'az_arcsec': delta_az_arcsec, 'el_arcsec': delta_alt_arcsec}
 
@@ -73,21 +71,17 @@ def send_focus_offset(focus_offset):
     """
 
     #if focus_offset > focus_offset_limit:
-    #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limit {focus_offset_limit}')
+    #    logger.error('t120', f'set_focus value {focus_offset} above limit {focus_offset_limit}')
 
     #Verify offset value below limit differentiate between offsets and absolute values
     if type(focus_offset) is str:
         if focus_offset[0] == '+' and float(focus_offset) > 200:
-            database.store('obs', {
-                't120_log':
-                    f'Error set_focus value out of bounds: {focus_offset}'
-            })
+            logger.error('t120',
+                         f'set_focus value out of bounds: {focus_offset}')
             return -1
         elif focus_offset[0] == '-' and float(focus_offset) < -200:
-            database.store('obs', {
-                't120_log':
-                    f'Error set_focus value out of bounds: {focus_offset}'
-            })
+            logger.error('t120',
+                         f'set_focus value out of bounds: {focus_offset}')
             return -1
 
         new_position = get_focus_value() + focus_offset
@@ -96,12 +90,10 @@ def send_focus_offset(focus_offset):
         new_position = focus_offset
 
     if new_position > 35000 or new_position < 25000:
-        database.store('obs', {
-            't120_log': f'Error set_focus value out of bounds: {new_position}'
-        })
+        logger.error('t120', f'set_focus value out of bounds: {new_position}')
         return -1
 
-    database.store('obs', {'t120_log': f'Sending focus {new_position}'})
+    logger.info('t120', f'Sending focus {new_position}')
 
     #params = {"position": 32000}
     params = {"position": new_position}
@@ -117,7 +109,7 @@ def send_focus_offset(focus_offset):
 def update_fo_delta(focus_offset):
 
     #if focus_offset > focus_offset_limit:
-    #    system.print_and_log(f'ERROR, set_focus value {focus_offset} above limit {focus_offset_limit}')
+    #    logger.error('t120', f'set_focus value {focus_offset} above limit {focus_offset_limit}')
 
     host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
 
@@ -126,12 +118,10 @@ def update_fo_delta(focus_offset):
                                       config.T120.semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
-        database.store('obs', {'t120_log': 'Error connecting to T120'})
+        logger.error('t120', 'Error connecting to T120')
         return -1
 
-    database.store('obs', {
-        't120_log': f'Updating focus offset value fo.delta {focus_offset}'
-    })
+    logger.info('t120', f'Updating focus offset value fo.delta {focus_offset}')
 
     offset_cmd = 'fo.delta=' + str(focus_offset)
     ipc.send_cmd(offset_cmd, config.T120.connection_timeout,
@@ -145,7 +135,7 @@ def get_focus_value():
 
     rValue, resp = _send_request('/m2/status')
 
-    database.store('obs', {'t120_log': f'Received focus value {resp["z"]}'})
+    logger.info('t120', f'Received focus value {resp["z"]}')
 
     position = resp['z']
     # Position format: 31997.12426757813
@@ -162,10 +152,10 @@ def request_autofocus():
                                       config.T120.semkey)
     #print ("ipc.init_remote_client, returns:",socketId)
     if (socketId <= 0):
-        database.store('obs', {'t120_log': 'Error connecting to T120'})
+        logger.error('t120', 'Error connecting to T120')
         return -1
 
-    database.store('obs', {'t120_log': 'Requesting autofocus.'})
+    logger.info('t120', 'Requesting autofocus.')
 
     autofocus_cmd = '@t120_autofocus "kalao"'
     ipc.send_cmd(autofocus_cmd, config.T120.connection_timeout,
@@ -180,7 +170,7 @@ def test_connection():
 
     :return:
     """
-    database.store('obs', {'t120_log': 'Testing connection using "show i"'})
+    logger.info('t120', 'Testing connection using "show i"')
 
     host = database.get_last_value('obs', 't120_host') + '.ls.eso.org'
 
@@ -189,7 +179,7 @@ def test_connection():
                                       config.T120.semkey)
 
     if (socketId <= 0):
-        database.store('obs', {'t120_log': 'Error connecting to T120'})
+        logger.error('t120', 'Error connecting to T120')
         return -1
 
     ipc.send_cmd('show i', config.T120.connection_timeout,
@@ -264,11 +254,10 @@ def _send_request(request_path, params={}):
         else:
             text = f' {data}'
 
-            database.store(
-                'obs', {
-                    f't120_log':
-                        f'[ERROR] Telescope server answered with an Error {req.status_code}.{text}'
-                })
+            logger.error(
+                't120',
+                f'Telescope server answered with an Error {req.status_code}.{text}'
+            )
 
             return ReturnCode.T120_ERROR, data
 

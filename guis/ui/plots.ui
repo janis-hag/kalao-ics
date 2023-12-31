@@ -14,10 +14,122 @@
    <string>Plots - KalAO</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="1,0">
-   <item row="0" column="0">
+   <item row="1" column="0">
     <widget class="KalAOChartView" name="plots_view"/>
    </item>
-   <item row="0" column="1" rowspan="3">
+   <item row="2" column="0">
+    <widget class="QLabel" name="selection_label">
+     <property name="font">
+      <font>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Quick Selection</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <layout class="QHBoxLayout" name="group_layout">
+     <item>
+      <widget class="QPushButton" name="reset_button">
+       <property name="text">
+        <string>Reset all</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="min_label">
+       <property name="text">
+        <string>Min</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDoubleSpinBox" name="min_spinbox">
+       <property name="decimals">
+        <number>1</number>
+       </property>
+       <property name="minimum">
+        <double>-999.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>999.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Maximum</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="max_label">
+       <property name="text">
+        <string>Max</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDoubleSpinBox" name="max_spinbox">
+       <property name="decimals">
+        <number>1</number>
+       </property>
+       <property name="minimum">
+        <double>-999.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>999.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="1" rowspan="4">
     <layout class="QFormLayout" name="formLayout">
      <item row="0" column="0">
       <widget class="QLabel" name="start_label">
@@ -70,8 +182,11 @@
      </item>
      <item row="5" column="0" colspan="2">
       <widget class="QListWidget" name="telemetry_list">
-       <property name="toolTipDuration">
-        <number>2147483647</number>
+       <property name="cursor" stdset="0">
+        <cursorShape>WhatsThisCursor</cursorShape>
+       </property>
+       <property name="mouseTracking">
+        <bool>true</bool>
        </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::MultiSelection</enum>
@@ -95,8 +210,11 @@
      </item>
      <item row="7" column="0" colspan="2">
       <widget class="QListWidget" name="monitoring_list">
-       <property name="toolTipDuration">
-        <number>2147483647</number>
+       <property name="cursor" stdset="0">
+        <cursorShape>WhatsThisCursor</cursorShape>
+       </property>
+       <property name="mouseTracking">
+        <bool>true</bool>
        </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::MultiSelection</enum>
@@ -122,8 +240,11 @@
      </item>
      <item row="9" column="0" colspan="2">
       <widget class="QListWidget" name="obs_list">
-       <property name="toolTipDuration">
-        <number>2147483647</number>
+       <property name="cursor" stdset="0">
+        <cursorShape>WhatsThisCursor</cursorShape>
+       </property>
+       <property name="mouseTracking">
+        <bool>true</bool>
        </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::MultiSelection</enum>
@@ -160,32 +281,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item row="2" column="0">
-    <layout class="QHBoxLayout" name="group_layout">
-     <item>
-      <widget class="QPushButton" name="reset_button">
-       <property name="text">
-        <string>Reset all</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="selection_label">
-     <property name="font">
-      <font>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Quick Selection</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

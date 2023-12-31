@@ -11,10 +11,10 @@ laser.py is part of the KalAO Instrument Control Software
 
 from time import sleep
 
+from kalao import database, logger
 from kalao.cacao import aocontrol
 from kalao.plc import core
-from kalao.timers import database as database_timer
-from kalao.utils import database, kalao_time
+from kalao.utils import kalao_time
 
 from opcua import ua
 
@@ -95,7 +95,7 @@ def get_switch_time():
 
 
 @core.beckhoff_autoconnect
-def set_power(power, beck=None):
+def set_power(power, enable=False, beck=None):
     """
     Set light intensity of the laser source
 
@@ -103,7 +103,7 @@ def set_power(power, beck=None):
 
     :return: value of the new intensity
     """
-    database.store('obs', {'laser_log': f'Setting laser intensity to {power}'})
+    logger.info('laser', f'Setting laser intensity to {power}')
 
     if power != 0:
         aocontrol.emgain_off()
@@ -129,10 +129,12 @@ def set_power(power, beck=None):
             ua.Variant(True,
                        laser_bSetIntensity.get_data_type_as_variant_type())))
 
-    sleep(config.Laser.switch_wait)
-    current = beck.get_node(f'{config.PLC.Node.LASER}.Current').get_value()
+    if enable and get_state() != LaserState.ON:
+        _switch('bEnable', beck=beck)
 
-    return current
+    sleep(config.Laser.switch_wait)
+
+    return get_power(beck=beck)
 
 
 @core.beckhoff_autoconnect
@@ -150,14 +152,14 @@ def _switch(action_name, beck=None):
         action_name = 'bDisable'
 
     if action_name == 'bEnable':
-        database.store('obs', {'laser_log': 'Enabling laser'})
+        logger.info('laser', 'Enabling laser')
         aocontrol.emgain_off()
     elif action_name == 'bDisable':
-        database.store('obs', {'laser_log': 'Disabling laser'})
+        logger.info('laser', 'Disabling laser')
     elif action_name == 'bLock':
-        database.store('obs', {'laser_log': 'Locking laser'})
+        logger.info('laser', 'Locking laser')
     elif action_name == 'bUnlock':
-        database.store('obs', {'laser_log': 'Unlocking laser'})
+        logger.info('laser', 'Unlocking laser')
 
     laser_switch = beck.get_node(f'{config.PLC.Node.LASER}.{action_name}')
     laser_switch.set_attribute(
@@ -171,7 +173,7 @@ def _switch(action_name, beck=None):
 
 
 def init():
-    database.store('obs', {'laser_log': 'Initialising laser'})
-    database.store('obs', {'laser_log': 'Laser initialised'})
+    logger.info('laser', 'Initialising laser')
+    logger.info('laser', 'Laser initialised')
 
-    return 0
+    return ReturnCode.PLC_INIT_SUCCESS

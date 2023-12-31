@@ -3,8 +3,7 @@
 """
 @author: Nathanaël Restori
 """
-
-from kalao.utils import database
+from kalao import logger
 
 import requests
 
@@ -22,8 +21,7 @@ def switch(power_port, state):
     :return: return code of the switching
     """
 
-    database.store('obs',
-                   {'ippower_log': f'Switching port {power_port} to {state}'})
+    logger.info('ippower', f'Switching port {power_port} to {state}')
 
     params = {'components': 50947, 'cmd': 1, 'p': power_port, 's': int(state)}
     req = requests.get(config.IPPower.url, params=params)
@@ -34,11 +32,10 @@ def switch(power_port, state):
         if new_state in [0, 1]:
             return IPPowerStatus(new_state)
 
-    database.store(
-        'obs', {
-            'ippower_log':
-                f'Could not switch camera IP-power for port {power_port} to {state}. HTTP-response: {req.text}  ({req.status_code})'
-        })
+    logger.error(
+        'ippower',
+        f'Could not switch camera IP-power for port {power_port} to {state}. HTTP-response: {req.text}  ({req.status_code})'
+    )
     return IPPowerStatus.ERROR
 
 
@@ -59,11 +56,10 @@ def status(power_port):
         if state in [0, 1]:
             return IPPowerStatus(state)
 
-    database.store(
-        'obs', {
-            'ippower_log':
-                f'Could not get camera IP-power status for port {power_port}. HTTP-response: {req.text}  ({req.status_code})'
-        })
+    logger.error(
+        'ippower',
+        f'Could not get camera IP-power status for port {power_port}. HTTP-response: {req.text}  ({req.status_code})'
+    )
     return IPPowerStatus.ERROR
 
 

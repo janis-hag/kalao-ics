@@ -22,23 +22,23 @@ class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     axis_unit = ' px'
     axis_precision = 0
 
+    flux_avg = np.nan
+    flux_brightest = np.nan
+
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 
         self.backend = backend
         self.mask = kalao_tools.generate_flux_mask_from_subaps(
-            config.AO.masked_subaps)
+            config.WFS.masked_subaps)
 
         loadUi('flux.ui', self)
         self.resize(600, 400)
 
         self.init_minmax(self.flux_view)
 
+        self.update_labels()
         self.change_colormap(Qt.Unchecked)
-
-        self.flux_avg_label.updateText(flux_avg=np.nan, unit=self.data_unit)
-        self.flux_brightest_label.updateText(flux_brightest=np.nan,
-                                             unit=self.data_unit)
 
         self.flux_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_updated.connect(self.streams_updated)
@@ -56,15 +56,22 @@ class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         flux_avg = self.consume_param(data, config.FPS.SHWFS,
                                       'flux_subaperture_avg')
         if flux_avg is not None:
-            self.flux_avg_label.updateText(
-                flux_avg=flux_avg * self.data_scaling, unit=self.data_unit)
+            self.flux_avg = flux_avg
 
         flux_brightest = self.consume_param(data, config.FPS.SHWFS,
                                             'flux_subaperture_brightest')
         if flux_brightest is not None:
-            self.flux_brightest_label.updateText(
-                flux_brightest=flux_brightest * self.data_scaling,
-                unit=self.data_unit)
+            self.flux_brightest = flux_brightest
+
+        if flux_avg is not None or flux_brightest is not None:
+            self.update_labels()
+
+    def update_labels(self):
+        self.flux_avg_label.updateText(
+            flux_avg=self.flux_avg * self.data_scaling, unit=self.data_unit)
+        self.flux_brightest_label.updateText(
+            flux_brightest=self.flux_brightest * self.data_scaling,
+            unit=self.data_unit)
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:

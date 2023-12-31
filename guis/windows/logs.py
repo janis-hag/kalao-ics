@@ -1,8 +1,9 @@
-from PySide6.QtCore import QTimer, Signal, Slot
+from PySide6.QtCore import QSignalBlocker, QTimer, Signal, Slot
 from PySide6.QtGui import QFontDatabase, Qt, QTextBlockUserData, QTextCursor
 from PySide6.QtWidgets import QTreeWidgetItem
 
-from kalao.utils import database
+from kalao import database
+from kalao.utils import kalao_string
 
 from guis.kalao.definitions import Color
 from guis.kalao.ui_loader import loadUi
@@ -102,8 +103,7 @@ class LogsWidget(KalAOWidget):
 
         for service in sorted(config.Systemd.services.values(),
                               key=lambda x: x['unit']):
-            unit = service['unit'].removeprefix('kalao_').removesuffix(
-                '.service')
+            unit = kalao_string.get_service_name(service['unit'])
             child = QTreeWidgetItem([unit])
             child.setCheckState(0, Qt.Checked)
             child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
@@ -127,14 +127,13 @@ class LogsWidget(KalAOWidget):
         logs.addChild(child)
         self.logs_items['<none>'] = child
 
-        for key in sorted(database.definitions['obs']['metadata'].keys()):
-            if key.endswith('_log'):
-                key = key.removesuffix('_log').replace('_', ' ').upper()
-                child = QTreeWidgetItem([key])
-                child.setCheckState(0, Qt.Checked)
-                child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-                logs.addChild(child)
-                self.logs_items[key] = child
+        for key in sorted(database.definitions['logs']['metadata'].keys()):
+            key = kalao_string.get_log_name(key)
+            child = QTreeWidgetItem([key])
+            child.setCheckState(0, Qt.Checked)
+            child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            logs.addChild(child)
+            self.logs_items[key] = child
 
         self.filters_tree.addTopLevelItem(logs)
         logs.setExpanded(True)
@@ -149,7 +148,7 @@ class LogsWidget(KalAOWidget):
         self.on_acknowledge_button_clicked(None)
 
         self.timer = QTimer()
-        self.timer.setInterval(int(1000. / config.GUI.refreshrate_logs))
+        self.timer.setInterval(int(1000 / config.GUI.refreshrate_logs))
         self.timer.timeout.connect(self.get_logs_new)
         self.timer.start()
 
@@ -174,7 +173,7 @@ class LogsWidget(KalAOWidget):
             self.logged.emit(self.errors_spinbox.value(),
                              self.warnings_spinbox.value())
 
-            style_origin = '<span class="bold red">'
+            style_origin = '<span class="bold red blink">'
             style_message = '<span class="bold red">'
         elif entry['level'] == LogLevel.WARNING:
             self.warnings_spinbox.setValue(self.warnings_spinbox.value() + 1)
@@ -185,7 +184,7 @@ class LogsWidget(KalAOWidget):
             style_message = '<span class="bold yellow">'
 
         self.logs_textedit.appendHtml(
-            f'{style_timestamp}{entry["timestamp"]}{style_end} {style_origin}{entry["origin"]:>15s}{style_end}: {style_message}{entry["message"]}{style_end}'
+            f'{style_timestamp}{entry["timestamp"]}{style_end} {style_origin}{entry["origin"]:>14s}{style_end}: {style_message}{entry["message"]}{style_end}'
         )
 
         block = self.logs_textedit.document().lastBlock()
@@ -201,6 +200,44 @@ class LogsWidget(KalAOWidget):
 
     @Slot(QTreeWidgetItem, int)
     def on_filters_tree_itemChanged(self, item, column):
+        self.filter_logs()
+
+    @Slot(bool)
+    def on_check_all_button_clicked(self, checked):
+        with QSignalBlocker(self.filters_tree):
+            for item in self.levels_items.values():
+                item.setCheckState(0, Qt.Checked)
+
+            for item in self.services_items.values():
+                item.setCheckState(0, Qt.Checked)
+
+            for item in self.logs_items.values():
+                item.setCheckState(0, Qt.Checked)
+
+        self.filter_logs()
+
+    @Slot(bool)
+    def on_clear_levels_button_clicked(self, checked):
+        with QSignalBlocker(self.filters_tree):
+            for item in self.levels_items.values():
+                item.setCheckState(0, Qt.Unchecked)
+
+        self.filter_logs()
+
+    @Slot(bool)
+    def on_clear_services_button_clicked(self, checked):
+        with QSignalBlocker(self.filters_tree):
+            for item in self.services_items.values():
+                item.setCheckState(0, Qt.Unchecked)
+
+        self.filter_logs()
+
+    @Slot(bool)
+    def on_clear_logs_button_clicked(self, checked):
+        with QSignalBlocker(self.filters_tree):
+            for item in self.logs_items.values():
+                item.setCheckState(0, Qt.Unchecked)
+
         self.filter_logs()
 
     def entry_visible(self, entry):

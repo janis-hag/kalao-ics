@@ -5,4 +5,4 @@ source /home/kalao/kalao-venv/bin/activate
 
 cd /home/kalao/kalao-ics
 
-python -c 'from kalao.cacao import aocontrol; aocontrol.restart_wfs()'
+python -c 'from kalao.cacao import aocontrol; aocontrol.start_wfs()'

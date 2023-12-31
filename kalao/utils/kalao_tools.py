@@ -89,7 +89,7 @@ def subaperture_to_slopes_2d(i):
     return [(row, col), (row, col + 11)]
 
 
-def get_subapertures_from_file(file):
+def read_spots_file(file):
     spots_df = pd.read_csv(file, delim_whitespace=True, header=None,
                            comment='#')
 
@@ -107,6 +107,21 @@ def get_subapertures_from_file(file):
         masked_subaps.remove(i)
 
     return all_subaps, active_subaps, masked_subaps
+
+
+def read_autogain_file(file):
+    spots_df = pd.read_csv(file, delim_whitespace=True, header=None,
+                           comment='#')
+
+    autogain_params = []
+
+    for index, row in spots_df.iterrows():
+        if row[0] != 'EXP':
+            continue
+
+        autogain_params.append((row[1], row[2]))
+
+    return autogain_params
 
 
 def get_dm_flux_map(upsampled=1, upsampling=4, radius_out_factor=1,

@@ -1,7 +1,8 @@
 import numpy as np
 
 from PySide6.QtCharts import QLineSeries, QValueAxis
-from PySide6.QtCore import QPointF, QSignalBlocker, Qt, Signal, Slot
+from PySide6.QtCore import QPointF, QSignalBlocker, Signal, Slot
+from PySide6.QtGui import Qt
 
 from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
@@ -39,6 +40,29 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
 
         loadUi('loop_controls.ui', self)
         self.resize(600, 400)
+
+        with QSignalBlocker(self.nuvu_emgain_spinbox):
+            self.nuvu_emgain_spinbox.setMaximum(config.WFS.max_emgain)
+
+        with QSignalBlocker(self.nuvu_exposuretime_spinbox):
+            self.nuvu_exposuretime_spinbox.setMinimum(
+                config.WFS.min_exposuretime)
+
+        with QSignalBlocker(self.nuvu_autogain_setting_spinbox):
+            self.nuvu_autogain_setting_spinbox.setMaximum(
+                config.WFS.max_autogain_setting)
+
+        with QSignalBlocker(self.bmc_strokemode_combobox):
+            for mode in config.AO.bmc_stroke_modes:
+                self.bmc_strokemode_combobox.addItem(mode)
+
+            self.bmc_strokemode_combobox.setCurrentIndex(-1)
+
+        with QSignalBlocker(self.shwfs_algorithm_combobox):
+            for alogrithm in config.AO.shwfs_algorithms:
+                self.shwfs_algorithm_combobox.addItem(alogrithm)
+
+            self.shwfs_algorithm_combobox.setCurrentIndex(-1)
 
         # Create Chart and set General Chart setting
         chart = self.modalgains_plot.chart
@@ -87,25 +111,64 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
     def data_updated(self, data):
         # DM Loop
 
-        self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'loopON'),
-                            self.dm_loop_on_checkbox, true_value=True)
-        self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'loopgain'),
-                            self.dm_loop_gain_spinbox)
-        self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'loopmult'),
-                            self.dm_loop_mult_spinbox)
-        self.data_to_widget(self.consume_dict(data, 'mfilt-1', 'looplimit'),
-                            self.dm_loop_limit_spinbox)
+        self.data_to_widget(
+            self.consume_dict(data, config.FPS.DMLOOP, 'loopON'),
+            self.dmloop_on_checkbox, true_value=True)
+        self.data_to_widget(
+            self.consume_dict(data, config.FPS.DMLOOP, 'loopgain'),
+            self.dmloop_gain_spinbox)
+        self.data_to_widget(
+            self.consume_dict(data, config.FPS.DMLOOP, 'loopmult'),
+            self.dmloop_mult_spinbox)
+        self.data_to_widget(
+            self.consume_dict(data, config.FPS.DMLOOP, 'looplimit'),
+            self.dmloop_limit_spinbox)
 
         # TTM Loop
 
-        self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'loopON'),
-                            self.ttm_loop_on_checkbox, true_value=True)
-        self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'loopgain'),
-                            self.ttm_loop_gain_spinbox)
-        self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'loopmult'),
-                            self.ttm_loop_mult_spinbox)
-        self.data_to_widget(self.consume_dict(data, 'mfilt-2', 'looplimit'),
-                            self.ttm_loop_limit_spinbox)
+        self.data_to_widget(
+            self.consume_dict(data, config.FPS.TTMLOOP, 'loopON'),
+            self.ttmloop_on_checkbox, true_value=True)
+        self.data_to_widget(
+            self.consume_dict(data, config.FPS.TTMLOOP, 'loopgain'),
+            self.ttmloop_gain_spinbox)
+        self.data_to_widget(
+            self.consume_dict(data, config.FPS.TTMLOOP, 'loopmult'),
+            self.ttmloop_mult_spinbox)
+        self.data_to_widget(
+            self.consume_dict(data, config.FPS.TTMLOOP, 'looplimit'),
+            self.ttmloop_limit_spinbox)
+
+        # Wavefront Sensor
+
+        self.data_to_widget(
+            self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
+                                        'EMGAIN'), self.nuvu_emgain_spinbox)
+        self.data_to_widget(
+            self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
+                                        'EXPTIME'),
+            self.nuvu_exposuretime_spinbox)
+        self.data_to_widget(
+            self.consume_param(data, config.FPS.NUVU, 'autogain_on'),
+            self.nuvu_autogain_checkbox, true_value=True)
+        self.data_to_widget(
+            self.consume_param(data, config.FPS.NUVU, 'autogain_setting'),
+            self.nuvu_autogain_setting_spinbox)
+
+        # Deformable Mirror
+
+        self.data_to_widget(
+            self.consume_param(data, config.FPS.BMC, 'max_stroke'),
+            self.bmc_maxstroke_spinbox)
+        self.data_to_widget(
+            self.consume_param(data, config.FPS.BMC, 'stroke_mode'),
+            self.bmc_strokemode_combobox)
+
+        # Slopes
+
+        self.data_to_widget(
+            self.consume_param(data, config.FPS.SHWFS, 'algorithm'),
+            self.shwfs_algorithm_combobox)
 
         # Modal gains
 
@@ -125,47 +188,81 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
     # DM Loop
 
     @Slot(int)
-    def on_dm_loop_on_checkbox_stateChanged(self, state):
-        self.action_send(self.dm_loop_on_checkbox, self.backend.set_dm_loop_on,
+    def on_dmloop_on_checkbox_stateChanged(self, state):
+        self.action_send(self.dmloop_on_checkbox, self.backend.set_dmloop_on,
                          Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
-    def on_dm_loop_gain_spinbox_valueChanged(self, d):
-        self.action_send(self.dm_loop_gain_spinbox,
-                         self.backend.set_dm_loop_gain, d)
+    def on_dmloop_gain_spinbox_valueChanged(self, d):
+        self.action_send(self.dmloop_gain_spinbox,
+                         self.backend.set_dmloop_gain, d)
 
     @Slot(float)
-    def on_dm_loop_mult_spinbox_valueChanged(self, d):
-        self.action_send(self.dm_loop_mult_spinbox,
-                         self.backend.set_dm_loop_mult, d)
+    def on_dmloop_mult_spinbox_valueChanged(self, d):
+        self.action_send(self.dmloop_mult_spinbox,
+                         self.backend.set_dmloop_mult, d)
 
     @Slot(float)
-    def on_dm_loop_limit_spinbox_valueChanged(self, d):
-        self.action_send(self.dm_loop_limit_spinbox,
-                         self.backend.set_dm_loop_limit, d)
+    def on_dmloop_limit_spinbox_valueChanged(self, d):
+        self.action_send(self.dmloop_limit_spinbox,
+                         self.backend.set_dmloop_limit, d)
 
     # TTM Loop
 
     @Slot(int)
-    def on_ttm_loop_on_checkbox_stateChanged(self, state):
-        self.action_send(self.ttm_loop_on_checkbox,
-                         self.backend.set_ttm_loop_on,
+    def on_ttmloop_on_checkbox_stateChanged(self, state):
+        self.action_send(self.ttmloop_on_checkbox, self.backend.set_ttmloop_on,
                          Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
-    def on_ttm_loop_gain_spinbox_valueChanged(self, d):
-        self.action_send(self.ttm_loop_gain_spinbox,
-                         self.backend.set_ttm_loop_gain, d)
+    def on_ttmloop_gain_spinbox_valueChanged(self, d):
+        self.action_send(self.ttmloop_gain_spinbox,
+                         self.backend.set_ttmloop_gain, d)
 
     @Slot(float)
-    def on_ttm_loop_mult_spinbox_valueChanged(self, d):
-        self.action_send(self.ttm_loop_mult_spinbox,
-                         self.backend.set_ttm_loop_mult, d)
+    def on_ttmloop_mult_spinbox_valueChanged(self, d):
+        self.action_send(self.ttmloop_mult_spinbox,
+                         self.backend.set_ttmloop_mult, d)
 
     @Slot(float)
-    def on_ttm_loop_limit_spinbox_valueChanged(self, d):
-        self.action_send(self.ttm_loop_limit_spinbox,
-                         self.backend.set_ttm_loop_limit, d)
+    def on_ttmloop_limit_spinbox_valueChanged(self, d):
+        self.action_send(self.ttmloop_limit_spinbox,
+                         self.backend.set_ttmloop_limit, d)
+
+    # Wavefront Sensor
+
+    @Slot(int)
+    def on_nuvu_emgain_spinbox_valueChanged(self, i):
+        self.action_send(self.nuvu_emgain_spinbox,
+                         self.backend.set_nuvu_emgain, i)
+
+    @Slot(float)
+    def on_nuvu_exposuretime_spinbox_valueChanged(self, d):
+        self.action_send(self.nuvu_exposuretime_spinbox,
+                         self.backend.set_nuvu_exposuretime, d)
+
+    @Slot(int)
+    def on_nuvu_autogain_checkbox_stateChanged(self, state):
+        self.action_send(self.nuvu_autogain_checkbox,
+                         self.backend.set_nuvu_autogain_on,
+                         Qt.CheckState(state) == Qt.Checked)
+
+    @Slot(int)
+    def on_nuvu_autogain_setting_spinbox_valueChanged(self, i):
+        self.action_send(self.nuvu_autogain_setting_spinbox,
+                         self.backend.set_nuvu_autogain_setting, i)
+
+    # Deformable Mirror
+
+    @Slot(float)
+    def on_bmc_maxstroke_spinbox_valueChanged(self, d):
+        self.action_send(self.bmc_maxstroke_spinbox,
+                         self.backend.set_bmc_maxstroke, d)
+
+    @Slot(int)
+    def on_bmc_strokemode_combobox_currentIndexChanged(self, index):
+        self.action_send(self.bmc_strokemode_combobox,
+                         self.backend.set_bmc_strokemode, index)
 
     # Modal gains
 
@@ -186,6 +283,12 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         self.modalgains_plot.chart.current_dragged_index = None
 
         self.hovered.emit('')
+
+        modalgains = []
+        for point in self.modalgains_series.points():
+            modalgains.append(point.y())
+
+        self.action_send([], self.backend.set_modalgains, np.array(modalgains))
 
     def hover_xy_to_str(self, x, y):
         if not np.isnan(x) and not np.isnan(y):
@@ -217,6 +320,8 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         modalgains[last + 1:] = 0
 
         self.display_modalgains(modalgains)
+
+        self.action_send([], self.backend.set_modalgains, modalgains)
 
     def display_modalgains(self, modalgains):
         self.modalgains_series.removePoints(0, self.modalgains_series.count())

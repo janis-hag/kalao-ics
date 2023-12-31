@@ -29,7 +29,10 @@ class DMChannelsWindow(KalAOMainWindow, BackendActionMixin, MinMaxMixin,
         loadUi('dm_channels.ui', self)
         self.resize(400, 800)
 
-        if dm_number == 2:
+        if dm_number == config.AO.DM_loop_number:
+            prefix = 'DM_'
+            disp_name = config.Streams.DM
+        elif dm_number == config.AO.TTM_loop_number:
             self.associated_stream = config.Streams.TTM
             self.stream_info = config.StreamInfo.dm02disp
             self.data_unit = ' mrad'
@@ -42,8 +45,7 @@ class DMChannelsWindow(KalAOMainWindow, BackendActionMixin, MinMaxMixin,
             prefix = 'TTM_'
             disp_name = config.Streams.TTM
         else:
-            prefix = 'DM_'
-            disp_name = config.Streams.DM
+            raise Exception(f'Unknown DM number {dm_number}')
 
         self.dm_view.updateColormap(colormaps.CoolWarm())
         self.dm_view.hovered.connect(self.hover_xyv_to_str)
@@ -80,7 +82,7 @@ class DMChannelsWindow(KalAOMainWindow, BackendActionMixin, MinMaxMixin,
         self.backend.dmdisp_updated.connect(self.dmdisp_updated)
 
         self.timer = QTimer()
-        self.timer.setInterval(int(1000. / config.GUI.refreshrate_streams))
+        self.timer.setInterval(int(1000 / config.GUI.refreshrate_streams))
         self.timer.timeout.connect(lambda: self.backend.get_streams_dmdisp(
             self.dm_number))
         self.timer.start()

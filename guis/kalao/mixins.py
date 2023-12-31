@@ -2,7 +2,7 @@ import numpy as np
 
 from PySide6.QtCore import (QObject, QRunnable, QSignalBlocker, QThreadPool,
                             Signal, Slot)
-from PySide6.QtGui import QImage, Qt
+from PySide6.QtGui import QCursor, QGuiApplication, QImage, Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox
 
 from kalao.utils.image import LinearScale
@@ -16,6 +16,9 @@ import config
 class ArrayToImageMixin:
     colormap = colormaps.BlackBody()
     image = None
+
+    def __init__(self, *args, **kwargs):
+        pass
 
     def prepare_array_for_qimage(self, img, img_min=None, img_max=None,
                                  scale=LinearScale):
@@ -101,7 +104,8 @@ class MinMaxMixin:
 
         self.data_symetric = symetric
 
-        self.update_spinboxes_unit(self.data_unit, self.data_scaling)
+        self.update_spinboxes_unit(self.data_unit, self.data_scaling,
+                                   self.data_precision)
 
     @Slot(float)
     def on_min_spinbox_valueChanged(self, d):
@@ -159,15 +163,16 @@ class MinMaxMixin:
         for view in self.views:
             view.updateMinMax(self.stream_info['min'], self.stream_info['max'])
 
-    def update_spinboxes_unit(self, unit, scaling):
-        self.min_spinbox.setScale(scaling)
-        self.max_spinbox.setScale(scaling)
+    def update_spinboxes_unit(self, unit, scaling, precision):
+        self.min_spinbox.setScale(scaling, precision)
+        self.max_spinbox.setScale(scaling, precision)
 
         self.min_spinbox.setSuffix(unit)
         self.max_spinbox.setSuffix(unit)
 
         self.data_scaling = scaling
         self.data_unit = unit
+        self.data_precision = precision
 
     def compute_min_max(self, img, cuts=None):
         if cuts is None:
@@ -244,6 +249,8 @@ class BackendActionMixin:
         self.threadpool = QThreadPool()
 
     def action_send(self, widget_list, fun, *args):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+
         if not isinstance(widget_list, list):
             widget_list = [widget_list]
 
@@ -258,6 +265,8 @@ class BackendActionMixin:
         self.threadpool.start(worker)
 
     def action_clean(self, widget_list):
+        QGuiApplication.restoreOverrideCursor()
+
         for widget in widget_list:
             widget.setEnabled(True)
 
@@ -377,7 +386,10 @@ class BackendDataMixin:
 
         with QSignalBlocker(widget):
             if isinstance(widget, QComboBox):
-                widget.setCurrentIndex(widget.findData(data))
+                if isinstance(data, int):
+                    widget.setCurrentIndex(data)
+                else:
+                    widget.setCurrentIndex(widget.findData(data))
             elif isinstance(widget, QCheckBox):
                 if not isinstance(true_value, list):
                     true_value = [true_value]

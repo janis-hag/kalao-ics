@@ -6,126 +6,46 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>810</width>
-    <height>630</height>
+    <width>1133</width>
+    <height>806</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Loop Controls - KalAO</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="1,1">
-   <item row="0" column="1">
-    <widget class="QGroupBox" name="ttm_groupbox">
-     <property name="title">
-      <string>Tip-Tilt Mirror</string>
-     </property>
-     <layout class="QFormLayout" name="formLayout_4">
-      <property name="labelAlignment">
-       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-      </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="ttm_loop_on_label">
-        <property name="text">
-         <string>Loop ON</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="ttm_loop_gain_label">
-        <property name="text">
-         <string>Loop Gain</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="ttm_loop_mult_label">
-        <property name="text">
-         <string>Loop Mult</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="ttm_loop_limit_label">
-        <property name="text">
-         <string>Loop Limit</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="ttm_loop_on_checkbox">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="ttm_loop_gain_spinbox">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="singleStep">
-         <double>0.010000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QDoubleSpinBox" name="ttm_loop_mult_spinbox">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="maximum">
-         <double>1.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.010000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QDoubleSpinBox" name="ttm_loop_limit_spinbox">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="singleStep">
-         <double>0.010000000000000</double>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
+  <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0" columnstretch="1,1">
    <item row="0" column="0">
-    <widget class="QGroupBox" name="dm_groupbox">
+    <widget class="QGroupBox" name="dmloop_groupbox">
      <property name="title">
-      <string>Deformable Mirror</string>
+      <string>Deformable Mirror Loop</string>
      </property>
      <layout class="QFormLayout" name="formLayout_3">
       <property name="labelAlignment">
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
       <item row="0" column="0">
-       <widget class="QLabel" name="dm_loop_on_label">
+       <widget class="QLabel" name="dmloop_on_label">
         <property name="text">
          <string>Loop ON</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QCheckBox" name="dm_loop_on_checkbox">
+       <widget class="QCheckBox" name="dmloop_on_checkbox">
         <property name="text">
          <string/>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="dm_loopgain_label">
+       <widget class="QLabel" name="dmloopgain_label">
         <property name="text">
          <string>Loop Gain</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="dm_loop_gain_spinbox">
+       <widget class="QDoubleSpinBox" name="dmloop_gain_spinbox">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -135,7 +55,7 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QDoubleSpinBox" name="dm_loop_mult_spinbox">
+       <widget class="QDoubleSpinBox" name="dmloop_mult_spinbox">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -148,21 +68,21 @@
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="QLabel" name="dm_loop_mult_label">
+       <widget class="QLabel" name="dmloop_mult_label">
         <property name="text">
          <string>Loop Mult</string>
         </property>
        </widget>
       </item>
       <item row="3" column="0">
-       <widget class="QLabel" name="dm_loop_limit_label">
+       <widget class="QLabel" name="dmloop_limit_label">
         <property name="text">
          <string>Loop Limit</string>
         </property>
        </widget>
       </item>
       <item row="3" column="1">
-       <widget class="QDoubleSpinBox" name="dm_loop_limit_spinbox">
+       <widget class="QDoubleSpinBox" name="dmloop_limit_spinbox">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -174,14 +94,18 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" colspan="2">
+   <item row="3" column="0" colspan="2">
     <widget class="QGroupBox" name="modalgains_groupbox">
      <property name="title">
       <string>Modal Gains</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_11">
       <item row="0" column="0">
-       <widget class="KalAODraggableChartView" name="modalgains_plot"/>
+       <widget class="KalAODraggableChartView" name="modalgains_plot">
+        <property name="cursor" stdset="0">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+       </widget>
       </item>
       <item row="3" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout">
@@ -232,49 +156,244 @@
         <item>
          <widget class="QComboBox" name="law_combobox"/>
         </item>
-        <item>
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Maximum</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>80</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Reload</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton_2">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Apply</string>
-          </property>
-         </widget>
-        </item>
        </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QGroupBox" name="bmc_groupbox">
+     <property name="title">
+      <string>Deformable Mirror (Boston Micromachines Corporation)</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_5">
+      <property name="labelAlignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="bmc_maxstroke_label">
+        <property name="text">
+         <string>Max stroke</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QDoubleSpinBox" name="bmc_maxstroke_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.050000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="bmc_strokemode_label">
+        <property name="text">
+         <string>Stroke mode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="bmc_strokemode_combobox"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QGroupBox" name="ttmloop_groupbox">
+     <property name="title">
+      <string>Tip-Tilt Mirror Loop</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_4">
+      <property name="labelAlignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="ttmloop_on_label">
+        <property name="text">
+         <string>Loop ON</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="ttmloop_gain_label">
+        <property name="text">
+         <string>Loop Gain</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="ttmloop_mult_label">
+        <property name="text">
+         <string>Loop Mult</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="ttmloop_limit_label">
+        <property name="text">
+         <string>Loop Limit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="ttmloop_on_checkbox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="ttmloop_gain_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QDoubleSpinBox" name="ttmloop_mult_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="maximum">
+         <double>1.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QDoubleSpinBox" name="ttmloop_limit_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QGroupBox" name="shwfs_groupbox">
+     <property name="title">
+      <string>Slopes (Shack-Hartmann WFS)</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout">
+      <property name="labelAlignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="shwfs_algorithm_label">
+        <property name="text">
+         <string>Algorithm</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="shwfs_algorithm_combobox">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" rowspan="2">
+    <widget class="QGroupBox" name="nuvu_groupbox">
+     <property name="title">
+      <string>Wavefront Sensor (Nüvü)</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_2">
+      <property name="labelAlignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="nuvu_emgain_label">
+        <property name="text">
+         <string>EM Gain</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="nuvu_emgain_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>1000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="nuvu_exposuretime_label">
+        <property name="text">
+         <string>Exposure time</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="nuvu_exposuretime_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string> ms</string>
+        </property>
+        <property name="decimals">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <double>1000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="nuvu_autogain_label">
+        <property name="text">
+         <string>Auto-gain</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="nuvu_autogain_checkbox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="nuvu_autogain_setting_label">
+        <property name="text">
+         <string>Auto-gain setting</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSpinBox" name="nuvu_autogain_setting_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

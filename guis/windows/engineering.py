@@ -1,6 +1,7 @@
 import numpy as np
 
-from PySide6.QtCore import QSignalBlocker, Qt, Slot
+from PySide6.QtCore import QEvent, QObject, QSignalBlocker, Signal, Slot
+from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton
 
 from guis.kalao.definitions import Color
@@ -20,6 +21,8 @@ import config
 
 
 class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
+    hovered = Signal(str)
+
     dm_channels = None
     ttm_channels = None
     dm_calibration = None
@@ -35,31 +38,45 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         loadUi('engineering.ui', self)
         self.resize(600, 400)
 
+        for key in dir(self):
+            attr = getattr(self, key)
+
+            if isinstance(attr, KalAOStatusIndicator):
+                attr.installEventFilter(self)
+
         with QSignalBlocker(self.shutter_combobox):
             for state in [ShutterState.CLOSED, ShutterState.OPEN]:
                 self.shutter_combobox.addItem(state, state)
 
+            self.shutter_combobox.setCurrentIndex(-1)
+
         with QSignalBlocker(self.flipmirror_combobox):
             for position in [FlipMirrorPosition.DOWN, FlipMirrorPosition.UP]:
                 self.flipmirror_combobox.addItem(position, position)
+
+            self.flipmirror_combobox.setCurrentIndex(-1)
 
         with QSignalBlocker(self.filterwheel_combobox):
             for filter in config.FilterWheel.position_list:
                 self.filterwheel_combobox.addItem(
                     self.filter_display_name(filter), filter)
 
+            self.filterwheel_combobox.setCurrentIndex(-1)
+
         s = 5
         self.services_widgets = {}
-        for i, service in enumerate(config.Systemd.services.values()):
-            label = QLabel(service['unit'].removeprefix('kalao_').removesuffix(
-                '.service').replace('-', ' ').title())
+        for i, (key, service) in enumerate(config.Systemd.services.items()):
+            label = QLabel(key)
             label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
             lineedit = QLineEdit()
             lineedit.setReadOnly(True)
-            lineedit.setToolTipDuration(2147483647)
+            lineedit.setCursor(Qt.WhatsThisCursor)
+            lineedit.installEventFilter(self)
 
             indicator = KalAOStatusIndicator()
+            indicator.setCursor(Qt.WhatsThisCursor)
+            indicator.installEventFilter(self)
 
             self.services_widgets[service['unit']] = {
                 'lineedit': lineedit,
@@ -86,8 +103,8 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
                     self.on_set_services_action_clicked(checked, unit, action))
                 self.services_groupbox.layout().addWidget(button, i, 3 + j)
 
-                if action == ServiceAction.RELOAD and service[
-                        'unit'] != "kalao_cacao.service":
+                if action == ServiceAction.RELOAD and not service.get(
+                        'reload-allowed', False):
                     button.setEnabled(False)
 
         self.services_groupbox.layout().setColumnStretch(0, 0)
@@ -137,48 +154,48 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             else:  # ERROR
                 self.shutter_indicator.setStatus(Color.RED, shutter_state.name)
 
-        flip_mirror_position = self.consume_dict(data, 'plc',
-                                                 'flip_mirror_position')
-        if flip_mirror_position is not None:
+        flipmirror_position = self.consume_dict(data, 'plc',
+                                                'flipmirror_position')
+        if flipmirror_position is not None:
             with QSignalBlocker(self.flipmirror_combobox):
                 self.flipmirror_combobox.setCurrentIndex(
-                    self.flipmirror_combobox.findData(flip_mirror_position))
+                    self.flipmirror_combobox.findData(flipmirror_position))
 
-            if flip_mirror_position == FlipMirrorPosition.DOWN:
+            if flipmirror_position == FlipMirrorPosition.DOWN:
                 self.flipmirror_indicator.setStatus(Color.BLACK,
-                                                    flip_mirror_position.name)
-            elif flip_mirror_position == FlipMirrorPosition.UP:
+                                                    flipmirror_position.name)
+            elif flipmirror_position == FlipMirrorPosition.UP:
                 self.flipmirror_indicator.setStatus(Color.YELLOW,
-                                                    flip_mirror_position.name)
-            elif flip_mirror_position == FlipMirrorPosition.UNKNOWN:
+                                                    flipmirror_position.name)
+            elif flipmirror_position == FlipMirrorPosition.UNKNOWN:
                 self.flipmirror_indicator.setStatus(Color.BLUE,
-                                                    flip_mirror_position.name)
+                                                    flipmirror_position.name)
             else:  # ERROR
                 self.flipmirror_indicator.setStatus(Color.RED,
-                                                    flip_mirror_position.name)
+                                                    flipmirror_position.name)
 
-        calib_unit_position = self.consume_dict(data, 'plc',
-                                                'calib_unit_position')
-        if calib_unit_position is not None:
+        calibunit_position = self.consume_dict(data, 'plc',
+                                               'calibunit_position')
+        if calibunit_position is not None:
             with QSignalBlocker(self.calibunit_spinbox):
-                self.calibunit_spinbox.setValue(calib_unit_position)
+                self.calibunit_spinbox.setValue(calibunit_position)
 
-        calib_unit_state = self.consume_dict(data, 'plc', 'calib_unit_state')
-        if calib_unit_state is not None:
-            if calib_unit_state == PLCStatus.STANDING:
+        calibunit_state = self.consume_dict(data, 'plc', 'calibunit_state')
+        if calibunit_state is not None:
+            if calibunit_state == PLCStatus.STANDING:
                 self.calibunit_indicator.setStatus(Color.GREEN,
-                                                   calib_unit_state.name)
-            elif calib_unit_state == PLCStatus.MOVING:
+                                                   calibunit_state.name)
+            elif calibunit_state == PLCStatus.MOVING:
                 self.calibunit_indicator.setStatus(Color.BLUE,
-                                                   calib_unit_state.name)
-            elif calib_unit_state == PLCStatus.INITIALISING:
+                                                   calibunit_state.name)
+            elif calibunit_state == PLCStatus.INITIALISING:
                 self.calibunit_indicator.setStatus(Color.ORANGE,
-                                                   calib_unit_state.name)
+                                                   calibunit_state.name)
             else:  # DISABLED, UNINITIALISED, ERROR, UNKNOWN
                 self.calibunit_indicator.setStatus(Color.RED,
-                                                   calib_unit_state.name)
+                                                   calibunit_state.name)
 
-            if calib_unit_state in [PLCStatus.MOVING, PLCStatus.INITIALISING]:
+            if calibunit_state in [PLCStatus.MOVING, PLCStatus.INITIALISING]:
                 self.calibunit_spinbox.setEnabled(False)
             else:
                 self.calibunit_spinbox.setEnabled(True)
@@ -346,9 +363,12 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             status = self.consume_dict(data, 'services', service['unit'])
             if status is not None:
                 widgets = self.services_widgets[service['unit']]
-                widgets['lineedit'].setText(f'{status[0]} | {status[1]}')
-                widgets['lineedit'].setToolTip(
-                    status[2].astimezone().strftime('%H:%M:%S %d-%m-%Y'))
+                if status[1] != '':
+                    widgets['lineedit'].setText(f'{status[0]} | {status[1]}')
+                else:
+                    widgets['lineedit'].setText(f'{status[0]}')
+                widgets[
+                    'lineedit'].hover_text = f'Since: {status[2].astimezone().strftime("%H:%M:%S %d-%m-%Y")}'
 
                 if status[0] in ['active']:
                     widgets['indicator'].setStatus(Color.GREEN, status[0])
@@ -410,6 +430,41 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
                          d)
 
     @Slot(bool)
+    def on_calibunit_initialize_button_clicked(self, checked):
+        self.action_send(self.calibunit_initialize_button,
+                         self.backend.get_plc_calibunit_init)
+
+    @Slot(bool)
+    def on_calibunit_laser_button_clicked(self, checked):
+        self.action_send(self.calibunit_laser_button,
+                         self.backend.get_plc_calibunit_laser)
+
+    @Slot(bool)
+    def on_calibunit_tungsten_button_clicked(self, checked):
+        self.action_send(self.calibunit_tungsten_button,
+                         self.backend.get_plc_calibunit_tungsten)
+
+    @Slot(bool)
+    def on_adc1_initialize_button_clicked(self, checked):
+        self.action_send(self.adc1_initialize_button,
+                         self.backend.get_plc_adc1_init)
+
+    @Slot(bool)
+    def on_adc2_initialize_button_clicked(self, checked):
+        self.action_send(self.adc2_initialize_button,
+                         self.backend.get_plc_adc2_init)
+
+    @Slot(bool)
+    def on_adc_zero_disp_button_clicked(self, checked):
+        self.action_send(self.adc_zero_disp_button,
+                         self.backend.get_plc_adc_zerodisp)
+
+    @Slot(bool)
+    def on_adc_max_disp_button_clicked(self, checked):
+        self.action_send(self.adc_max_disp_button,
+                         self.backend.get_plc_adc_maxdisp)
+
+    @Slot(bool)
     def on_fli_new_image_button_clicked(self, checked):
         self.action_send(self.fli_new_image_button, self.backend.set_fli_image,
                          self.fli_exposure_time_spinbox.value())
@@ -454,7 +509,9 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             self.dm_channels.show()
             self.dm_channels.activateWindow()
         else:
-            self.dm_channels = DMChannelsWindow(self.backend, 1)
+            self.dm_channels = DMChannelsWindow(self.backend,
+                                                config.AO.DM_loop_number,
+                                                parent=self)
 
     @Slot(bool)
     def on_ttm_channels_button_clicked(self, checked):
@@ -462,7 +519,9 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             self.ttm_channels.show()
             self.ttm_channels.activateWindow()
         else:
-            self.ttm_channels = DMChannelsWindow(self.backend, 2)
+            self.ttm_channels = DMChannelsWindow(self.backend,
+                                                 config.AO.TTM_loop_number,
+                                                 parent=self)
 
     @Slot(bool)
     def on_dm_calibration_button_clicked(self, checked):
@@ -471,8 +530,10 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             self.dm_calibration.activateWindow()
         else:
             from guis.windows.calibration import CalibrationWindow
-            self.dm_calibration = CalibrationWindow(self.backend, 'dm', 1,
-                                                    (11, 22), (12, 12))
+            self.dm_calibration = CalibrationWindow(self.backend, 'dm',
+                                                    config.AO.DM_loop_number,
+                                                    (11, 22), (12, 12),
+                                                    parent=self)
 
     @Slot(bool)
     def on_ttm_calibration_button_clicked(self, checked):
@@ -481,8 +542,10 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             self.ttm_calibration.activateWindow()
         else:
             from guis.windows.calibration import CalibrationWindow
-            self.ttm_calibration = CalibrationWindow(self.backend, 'ttm', 2,
-                                                     (12, 12), (1, 2))
+            self.ttm_calibration = CalibrationWindow(self.backend, 'ttm',
+                                                     config.AO.TTM_loop_number,
+                                                     (12, 12), (1, 2),
+                                                     parent=self)
 
     @Slot(bool)
     def on_dm_direct_control_button_clicked(self, checked):
@@ -490,7 +553,7 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             self.dm_direct_control.show()
             self.dm_direct_control.activateWindow()
         else:
-            self.dm_direct_control = DMDirectControl(self.backend)
+            self.dm_direct_control = DMDirectControl(self.backend, parent=self)
 
     @Slot(bool)
     def on_ttm_direct_control_button_clicked(self, checked):
@@ -498,7 +561,8 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             self.ttm_direct_control.show()
             self.ttm_direct_control.activateWindow()
         else:
-            self.ttm_direct_control = TTMDirectControl(self.backend)
+            self.ttm_direct_control = TTMDirectControl(self.backend,
+                                                       parent=self)
 
     @Slot(bool)
     def on_centering_star_button_clicked(self, checked):
@@ -512,3 +576,11 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
 
     def on_set_services_action_clicked(self, checked, unit, action):
         self.action_send([], self.backend.set_services_action, unit, action)
+
+    def eventFilter(self, source, event):
+        if hasattr(source, 'hover_text'):
+            if event.type() == QEvent.Enter:
+                self.hovered.emit(source.hover_text)
+            elif event.type() == QEvent.Leave:
+                self.hovered.emit('')
+        return QObject.eventFilter(self, source, event)

@@ -11,13 +11,13 @@ shutter.py is part of the KalAO Instrument Control Software
 
 from time import sleep
 
+from kalao import database, logger
 from kalao.plc import core
-from kalao.timers import database as database_timer
-from kalao.utils import database, kalao_time
+from kalao.utils import kalao_time
 
 from opcua import ua
 
-from kalao.definitions.enums import ShutterState
+from kalao.definitions.enums import ReturnCode, ShutterState
 
 import config
 
@@ -38,8 +38,7 @@ def get_state(beck=None):
         error_text = beck.get_node(
             f'{config.PLC.Node.SHUTTER}.Shutter.stat.sErrorText').get_value()
 
-        database.store('obs',
-                       {'shutter_log': f'[ERROR] {error_text} ({error_code})'})
+        logger.error('shutter', f'{error_text} ({error_code})')
 
         return ShutterState.ERROR
 
@@ -58,19 +57,16 @@ def init(beck=None):
 
     :return: status of shutter
     """
-    database.store('obs', {'shutter_log': 'Initialising shutter'})
-
-    init_status = beck.get_node(
-        f'{config.PLC.Node.SHUTTER}.Shutter.stat.nErrorCode').get_value()
+    logger.info('shutter', 'Initialising shutter')
 
     # Do the shutter gym
     close(beck=beck)
     open(beck=beck)
     close(beck=beck)
 
-    database.store('obs', {'shutter_log': 'Shutter initialised'})
+    logger.info('shutter', 'Shutter initialised')
 
-    return init_status
+    return ReturnCode.PLC_INIT_SUCCESS
 
 
 def open(beck=None):
@@ -108,9 +104,9 @@ def _switch(action_name, beck=None):
         action_name = 'bClose_Shutter'
 
     if action_name == 'bOpen_Shutter':
-        database.store('obs', {'shutter_log': 'Opening shutter'})
+        logger.info('shutter', 'Opening shutter')
     elif action_name == 'bClose_Shutter':
-        database.store('obs', {'shutter_log': 'Closing shutter'})
+        logger.info('shutter', 'Closing shutter')
 
     shutter_switch = beck.get_node(f'{config.PLC.Node.SHUTTER}.{action_name}')
     shutter_switch.set_attribute(

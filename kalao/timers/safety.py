@@ -12,18 +12,16 @@ import time
 
 import numpy as np
 
-from kalao import euler, ippower
+from kalao import database, euler, ippower, logger
 from kalao.cacao import aocontrol, toolbox
-from kalao.fli import camera
-from kalao.plc import (adc, calib_unit, flip_mirror, laser, shutter,
+from kalao.plc import (adc, calibunit, flipmirror, laser, shutter,
                        temperature_control)
-from kalao.utils import database, kalao_time
+from kalao.utils import kalao_time
 
 import schedule
 
-from kalao.definitions.enums import (CameraServerStatus, IPPowerStatus,
-                                     LaserState, LoopStatus, RelayState,
-                                     ShutterState)
+from kalao.definitions.enums import (IPPowerStatus, LaserState, LoopStatus,
+                                     RelayState, ShutterState)
 
 import config
 
@@ -51,9 +49,8 @@ def _check_shutteropen_inactive():
     # TODO ADD if tracking status IDLE, close
 
     if shutter.get_state() == ShutterState.OPEN:
-        database.store('obs', {
-            'safety_timer_log': 'Closing shutter due to inactivity timeout'
-        })
+        logger.info('safety_timer',
+                    'Closing shutter due to inactivity timeout')
         shutter.close()
 
     return 0
@@ -72,9 +69,7 @@ def _check_dm_inactive():
     if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
         (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
             ippower.status(config.IPPower.Port.BMC_DM) == IPPowerStatus.ON):
-        database.store('obs', {
-            'safety_timer_log': 'Turning off DM due to inactivity timeout'
-        })
+        logger.info('safety_timer', 'Turning off DM due to inactivity timeout')
 
         aocontrol.turn_dm_off()
 
@@ -95,9 +90,8 @@ def _check_wfs_inactive():
 
     if nuvu_acquire_fps is not None and nuvu_acquire_fps.get_param(
             'emgain') > 1:
-        database.store('obs', {
-            'safety_timer_log': 'Turning off EM gain due to inactivity timeout'
-        })
+        logger.info('safety_timer',
+                    'Turning off EM gain due to inactivity timeout')
 
         aocontrol.emgain_off()
         aocontrol.set_exptime(0)
@@ -114,9 +108,7 @@ def _check_loops_inactive():
     """
 
     if aocontrol.check_loops() != LoopStatus.ALL_LOOPS_OFF:
-        database.store('obs', {
-            'safety_timer_log': 'Opening loops due to inactivity timeout'
-        })
+        logger.info('safety_timer', 'Opening loops due to inactivity timeout')
         aocontrol.open_loops()
 
     return 0
@@ -131,9 +123,8 @@ def _check_laseron_inactive():
     """
 
     if laser.get_state() != LaserState.OFF:
-        database.store('obs', {
-            'safety_timer_log': 'Turning off laser due to inactivity timeout'
-        })
+        logger.info('safety_timer',
+                    'Turning off laser due to inactivity timeout')
         laser.disable()
 
     return 0
@@ -166,42 +157,35 @@ def _check_cooling_status():
     :return: 0
     """
 
-    cooling_status = temperature_control.get_cooling_values()
-    ret = 0
-
     min_water_temp = database.definitions['monitoring']['metadata'][
-        'temp_water_in']['error_range'][0]
+        'temp_water_in']['warn_range'][0]
     unit = database.definitions['monitoring']['metadata']['temp_water_in'][
         'unit']
-    water_temp = cooling_status['temp_water_in']
+    water_temp = temperature_control.get_temperatures()['temp_water_in']
 
     if water_temp < min_water_temp:
         if temperature_control.heater_status() != RelayState.ON:
-            database.store(
-                'obs', {
-                    'safety_timer_log':
-                        f'Water temperature too low ({water_temp} {unit}), starting heater'
-                })
+            logger.info(
+                'safety_timer',
+                f'Water temperature too low ({water_temp} {unit}), starting heater'
+            )
             temperature_control.heater_on()
-
-        ret = -1
 
     elif water_temp > min_water_temp + config.Cooling.heater_hysteresis_temp:
         if temperature_control.heater_status() != RelayState.OFF:
-            database.store(
-                'obs', {
-                    'safety_timer_log':
-                        f'Water temperature high enough ({water_temp} {unit}), stopping heater'
-                })
+            logger.info(
+                'safety_timer',
+                f'Water temperature high enough ({water_temp} {unit}), stopping heater'
+            )
             temperature_control.heater_off()
 
-    return ret
+    return 0
 
 
 def _check_plc():
-    database.store('obs', {'safety_timer_log': 'Doing PLC housekeeping'})
+    logger.info('safety_timer', 'Doing PLC housekeeping')
 
-    calib_unit.init(force_init=True)
+    calibunit.init(force_init=True)
     adc.init(config.PLC.Node.ADC1, force_init=True)
     adc.init(config.PLC.Node.ADC2, force_init=True)
 
@@ -211,11 +195,11 @@ def _check_plc():
         shutter.open()
         shutter.close()
 
-    state, switch_time = flip_mirror.get_switch_time()
+    state, switch_time = flipmirror.get_switch_time()
     if switch_time > 86400:
-        flip_mirror.down()
-        flip_mirror.up()
-        flip_mirror.down()
+        flipmirror.down()
+        flipmirror.up()
+        flipmirror.down()
 
 
 if __name__ == "__main__":

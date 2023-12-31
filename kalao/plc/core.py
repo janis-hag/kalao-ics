@@ -17,7 +17,7 @@ import numpy as np
 
 from opcua import Client, ua
 
-from kalao.definitions.enums import PLCStatus
+from kalao.definitions.enums import PLCStatus, ReturnCode
 
 import config
 
@@ -89,7 +89,7 @@ def motor_init(node, force_init=True, beck=None):
                            motor_bEnable.get_data_type_as_variant_type())))
 
         if not beck.get_node(f"{node}.stat.bEnabled").get_value():
-            return -1
+            return ReturnCode.PLC_INIT_FAILED
 
     # Check if init, if not do init
     if not beck.get_node(f"{node}.stat.bInitialised").get_value() or force_init:
@@ -100,9 +100,9 @@ def motor_init(node, force_init=True, beck=None):
                   lambda: motor_is_initialising(node, beck=beck), 5)
 
         if not beck.get_node(f"{node}.stat.bInitialised").get_value():
-            return -1
+            return ReturnCode.PLC_INIT_FAILED
 
-    return 0
+    return ReturnCode.PLC_INIT_SUCCESS
 
 
 @beckhoff_autoconnect

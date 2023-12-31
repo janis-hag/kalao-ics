@@ -26,7 +26,7 @@ from numpy.polynomial import Polynomial
 
 from kalao.utils import kalao_tools
 
-from kalao.definitions.enums import TrackingStatus
+from kalao.definitions.enums import PLCStatus, TrackingStatus
 
 kalao_ics_path = Path(__file__).absolute().parent
 epsilon = 1e-12
@@ -89,6 +89,26 @@ class ADC:
     }
 
 
+class AO:
+    cacao_workdir = Path('/home/kalao/kalao-cacao-workdir/')
+
+    DM_loop_number = 1
+    TTM_loop_number = 2
+
+    # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
+    FLI_tip_to_TTM = 0.008497723325890764  # mrad / px
+    FLI_tilt_to_TTM = -0.008497723325890764  # mrad / px
+
+    # Should be 0.5 * 1/(1.2*7.09899) * 1200 / 20 * 1000 * 48e-6 = 0.169 mrad / px (2x2 binning)
+    WFS_tip_to_TTM = -0.28649303833986856  # mrad / px
+    WFS_tilt_to_TTM = 0.25807611836775707  # mrad / px
+
+    wait_fps_run = 3  # s
+
+    shwfs_algorithms = ['Quadcell', 'Center of mass']
+    bmc_stroke_modes = ['Mid-stroke', 'Minimize stroke']
+
+
 class DM:
     # 1.75 um zernike coefficient on tip or tilt = 3.5um stroke (-1.75 to 1.75)
     # np.arctan(3.5e-6/4.4e-3) / 1.75 * 1000 = 0.455 mrad / um
@@ -118,8 +138,8 @@ class FLI:
     ip = "127.0.0.1"
     port = 9080
 
-    # Max exposure time limited to 10 minutes due to this timeout setting
-    request_timeout = 3500  # s
+    # Note: max exposure time is limited due to this timeout setting
+    request_timeout = 3600  # s
 
     # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
     plate_scale = 0.0507  # arcsec / px
@@ -142,13 +162,40 @@ class FLI:
 class WFS:
     max_emgain = 1000
     min_exposuretime = 0.5
-    max_autogain_setting = 15
 
     # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
     plate_scale = 1.16  # arcsec / px
 
     laser_calib_power = 8  # mW
     laser_calib_exptime = 1.5  # ms
+
+    illumination_threshold = 1000  # ADU
+    illumination_fraction = 0.5  # -
+    centering_timeout = 30  # s
+    centering_slope_threshold = 0.005  # px
+
+    flux_map = kalao_tools.get_wfs_flux_map()
+
+    fully_illuminated_subaps = np.flatnonzero(flux_map > 0.9).tolist()
+    all_illuminated_subaps = np.flatnonzero(flux_map > 0.15).tolist()
+
+    spots_file = AO.cacao_workdir / 'setupfiles/hw/KalAO-hwloop-rundir/spots_tel_pupil.txt'
+    autogain_file = AO.cacao_workdir / 'setupfiles/hw/KalAO-hwloop-rundir/autogain_params.txt'
+
+    # Default values, will be updated from spots_file at startup
+    all_subaps = list(range(121))
+    masked_subaps = [
+        0, 1, 2, 3, 7, 8, 9, 10, 11, 12, 20, 21, 22, 32, 33, 43, 48, 49, 50,
+        59, 60, 61, 70, 71, 72, 77, 87, 88, 98, 99, 100, 108, 109, 110, 111,
+        112, 113, 117, 118, 119, 120
+    ]
+
+    # Default values, will be updated from autogain_file at startup
+    autogain_params = [(1, 0.5), (2, 0.5), (4, 0.5), (8, 0.5), (16, 0.5),
+                       (32, 0.5), (64, 0.5), (128, 0.5), (256, 0.5),
+                       (512, 0.5), (1000, 0.5), (1000, 1.0), (1000, 2.0),
+                       (1000, 4.0), (1000, 8.0)]
+    max_autogain_setting = len(autogain_params) - 1
 
 
 class FilterWheel:
@@ -368,7 +415,7 @@ class FITS:
     }
 
     db_from_telheader = {
-        'target': 'OBJECT',
+        'target_name': 'OBJECT',
         'target_ra': 'HIERARCH ESO TEL ALPHA',
         'target_dec': 'HIERARCH ESO TEL DELTA',
         'target_magnitude': 'HIERARCH ESO OBS TARG MV',
@@ -423,63 +470,49 @@ class Systemd:
     service_restart_wait = 15  # s
 
     services = {
-        'nuvu': {
+        'Nüvü (Wavefront Sensor)': {
             'unit': "kalao_nuvu.service",
-            'log': 'nuvu_log',
             'enabled': True,
             'restart': False
         },
-        'cacao': {
+        'CACAO': {
             'unit': "kalao_cacao.service",
-            'log': None,
             'enabled': True,
-            'restart': False
+            'restart': False,
+            'reload-allowed': True
         },
-        'sequencer': {
+        'Sequencer': {
             'unit': "kalao_sequencer.service",
-            'log': 'sequencer_log',
             'enabled': True,
             'restart': False  # Do NOT put to True (restart loop)
         },
-        'camera': {
+        'FLI (Science Camera)': {
             'unit': "kalao_camera.service",
-            'log': 'fli_log',
             'enabled': True,
             'restart': True
         },
-        'flask-gui': {
-            'unit': "kalao_flask-gui.service",
-            'log': 'flask_log',
-            'enabled': False,
-            'restart': True
-        },
-        'gop-server': {
+        'GOP server': {
             'unit': "kalao_gop-server.service",
-            'log': 'gop_log',
             'enabled': True,
             'restart': True
         },
-        'database-timer': {
+        'Database Timer': {
             'unit': "kalao_database-timer.service",
-            'log': 'database_timer_log',
             'enabled': True,
             'restart': True
         },
-        'safety-timer': {
+        'Safety Timer': {
             'unit': "kalao_safety-timer.service",
-            'log': 'safety_timer_log',
             'enabled': True,
             'restart': True
         },
-        'loop-timer': {
+        'Loop Timer': {
             'unit': "kalao_loop-timer.service",
-            'log': 'loop_timer_log',
             'enabled': True,
             'restart': True
         },
-        'pump-timer': {
+        'Pump Timer': {
             'unit': "kalao_pump-timer.service",
-            'log': 'pump_timer_log',
             'enabled': True,
             'restart': True
         },
@@ -516,45 +549,6 @@ class T120:
     dummy_telescope = False
 
 
-class AO:
-    WFS_illumination_threshold = 1000  # ADU
-    WFS_illumination_fraction = 0.5  # -
-    WFS_centering_timeout = 30  # s
-    WFS_centering_slope_threshold = 0.005  # px
-
-    cacao_workdir = Path('/home/kalao/kalao-cacao-workdir/')
-
-    DM_loop_number = 1
-    TTM_loop_number = 2
-
-    # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
-    FLI_tip_to_TTM = 0.008497723325890764  # mrad / px
-    FLI_tilt_to_TTM = -0.008497723325890764  # mrad / px
-
-    # Should be 0.5 * 1/(1.2*7.09899) * 1200 / 20 * 1000 * 48e-6 = 0.169 mrad / px (2x2 binning)
-    WFS_tip_to_TTM = -0.28649303833986856  # mrad / px
-    WFS_tilt_to_TTM = 0.25807611836775707  # mrad / px
-
-    spots_file = Path(
-        '/home/kalao/kalao-cacao-workdir/setupfiles/hw/KalAO-hwloop-rundir/spots_tel_pupil.txt'
-    )
-
-    flux_map = kalao_tools.get_wfs_flux_map()
-
-    fully_illuminated_subaps = np.flatnonzero(flux_map > 0.9).tolist()
-    all_illuminated_subaps = np.flatnonzero(flux_map > 0.15).tolist()
-
-    all_subaps = list(range(121))
-    masked_subaps = [
-        0, 1, 2, 3, 7, 8, 9, 10, 11, 12, 20, 21, 22, 32, 33, 43, 48, 49, 50,
-        59, 60, 61, 70, 71, 72, 77, 87, 88, 98, 99, 100, 108, 109, 110, 111,
-        112, 113, 117, 118, 119, 120
-    ]
-
-    wait_fps_run = 3  # s
-    wait_camstack_start = 45  # s
-
-
 class Cooling:
     heater_hysteresis_temp = 2  # °C
 
@@ -581,6 +575,7 @@ class GUI:
     plots_mapping = {
         # -1
         'ERROR': -1,
+        'UNKNOWN': -1,
 
         # 0
         False: 0,
@@ -599,15 +594,26 @@ class GUI:
         TrackingStatus.POINTING: 1,
         TrackingStatus.CENTERING: 2,
         TrackingStatus.TRACKING: 3,
+
+        # PLC status
+        PLCStatus.DISABLED: -1,
+        PLCStatus.UNINITIALISED: -1,
+        PLCStatus.INITIALISING: 0,
+        PLCStatus.STANDING: 1,
+        PLCStatus.MOVING: 2,
     }
 
-    plots_exclude_list = ['observer_name', 'observer_email']
+    plots_exclude_list = [
+        'observer_name', 'observer_email', 'fli_last_image_path',
+        'fli_temporary_image_path', 'tcs_header_path',
+        'filterwheel_filter_name', 'sequencer_command_received', 't120_host'
+    ]
 
     refreshrate_streams = 10  # /s
     refreshrate_data = 1  # /s
     refreshrate_logs = 1  # /s
-    refresharte_dbs = min(Database.monitoring_update_interval,
-                          Database.telemetry_update_interval)
+    refreshrate_dbs = 1 / min(Database.monitoring_update_interval,
+                              Database.telemetry_update_interval)  # /s
 
     http_port = 6666
     http_dataformat = 'pickle'
@@ -617,6 +623,8 @@ class FPS:
     NUVU = 'nuvu_acquire-1'
     SHWFS = 'shwfs_process-1'
     BMC = 'bmc_display-1'
+    DMLOOP = 'mfilt-1'
+    TTMLOOP = 'mfilt-2'
 
 
 class Streams:
@@ -645,13 +653,23 @@ class StreamInfo:
     nuvu_stream = {'shape': (64, 64), 'min': 0, 'max': 2**16 - 1}
     fli_stream = {'shape': (1024, 1024), 'min': 0, 'max': 2**16 - 1}
     shwfs_slopes = {'shape': (11, 22), 'min': -2, 'max': 2}
-    shwfs_slopes_flux = {'shape': (11, 11), 'min': 0, 'max': (2**16 - 1) * 4}
+    shwfs_slopes_flux = {'shape': (11, 11), 'min': 0, 'max': 2**16 - 1}
     dm01disp = {'shape': (12, 12), 'min': -1.75, 'max': 1.75}
     dm02disp = {'shape': (2, ), 'min': -2.5, 'max': 2.5}
 
 
-if AO.spots_file.exists():
-    AO.all_subaps, AO.active_subaps, AO.masked_subaps = kalao_tools.get_subapertures_from_file(
-        AO.spots_file)
+if WFS.spots_file.exists():
+    WFS.all_subaps, WFS.active_subaps, WFS.masked_subaps = kalao_tools.read_spots_file(
+        WFS.spots_file)
 else:
-    print(f'CONFIG | [WARNING] {AO.spots_file} does not exists')
+    print(
+        f'CONFIG | [WARNING] {WFS.spots_file} does not exists, using default value in config (may not be up-to-date)'
+    )
+
+if WFS.autogain_file.exists():
+    WFS.autogain_params = kalao_tools.read_autogain_file(WFS.autogain_file)
+    WFS.max_autogain_setting = len(WFS.autogain_params) - 1
+else:
+    print(
+        f'CONFIG | [WARNING] {WFS.autogain_file} does not exists, using default value in config (may not be up-to-date)'
+    )
