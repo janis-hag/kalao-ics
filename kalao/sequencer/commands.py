@@ -301,6 +301,9 @@ def target_observation(**seq_args):
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
 
+    if aocontrol.start_wfs_acquisition() != 0:
+        raise WFSNotOn
+
     if plc_utils.lamps_off() != 0:
         raise LampsNotOff
 
@@ -557,6 +560,9 @@ def end(**seq_args):
 
     if aocontrol.turn_dm_off() != ReturnCode.OK:
         logger.warn('sequencer', 'Unable to turn off DM')
+
+    if aocontrol.stop_wfs_acquisition() != ReturnCode.OK:
+        logger.warn('sequencer', 'Unable to stop WFS acquisition')
 
     # Set to waiting for the Euler synchro to be released
     database.store('obs', {

@@ -163,6 +163,9 @@ class WFS:
     max_emgain = 1000
     min_exposuretime = 0.5
 
+    acquisition_time_timeout = 5
+    acquisition_start_wait = 1
+
     # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
     plate_scale = 1.16  # arcsec / px
 

@@ -9,6 +9,7 @@ Timer to verify KalAO bench health (KalAO-ICS).
 """
 
 import time
+from datetime import datetime
 
 import numpy as np
 
@@ -25,7 +26,7 @@ from kalao.definitions.enums import (IPPowerStatus, LaserState, LoopStatus,
 
 import config
 
-fps_list = {}
+shm_and_fps_cache = {}
 
 
 def _get_elapsed_time_since_activity():
@@ -64,7 +65,7 @@ def _check_dm_inactive():
     :return:
     """
 
-    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, fps_list)
+    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
 
     if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
         (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
@@ -86,7 +87,8 @@ def _check_wfs_inactive():
 
     # TODO: check also EMGAIN keyword in nuvu_stream
 
-    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU, fps_list)
+    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU,
+                                             shm_and_fps_cache)
 
     if nuvu_acquire_fps is not None and nuvu_acquire_fps.get_param(
             'emgain') > 1:
@@ -95,6 +97,18 @@ def _check_wfs_inactive():
 
         aocontrol.emgain_off()
         aocontrol.set_exptime(0)
+
+    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW,
+                                               shm_and_fps_cache)
+
+    if nuvu_raw_stream is not None and (
+            datetime.now() - datetime.fromtimestamp(
+                nuvu_raw_stream.get_keywords()['_MAQTIME'] /
+                1e6)).total_seconds() < config.WFS.acquisition_time_timeout:
+        logger.info('safety_timer',
+                    'Stopping WFS acquisition due to inactivity timeout')
+
+        aocontrol.stop_wfs_acquisition()
 
     return 0
 

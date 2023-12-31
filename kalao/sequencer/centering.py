@@ -15,7 +15,8 @@ from tcs_communication import t120
 from kalao.definitions.enums import (FlipMirrorPosition, ReturnCode,
                                      ShutterState)
 from kalao.definitions.exceptions import (DMNotOn, FilterWheelNotInPosition,
-                                          FlipMirrorNotUp, ShutterNotClosed)
+                                          FlipMirrorNotUp, ShutterNotClosed,
+                                          WFSNotOn)
 
 import config
 
@@ -164,6 +165,9 @@ def center_on_laser():
 
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
+
+    if aocontrol.start_wfs_acquisition() != 0:
+        raise WFSNotOn
 
     # Move calib unit to approximately correct position if too far #TODO: make similar to others
     if np.abs(calibunit.get_position() - config.Laser.position) > 0.5:

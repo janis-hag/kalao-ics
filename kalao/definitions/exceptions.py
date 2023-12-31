@@ -26,6 +26,10 @@ class DMNotOn(SequencerException):
     """Failed to power on DM driver"""
 
 
+class WFSNotOn(SequencerException):
+    """Failed to start WFS acquisition"""
+
+
 class DMResetFailed(SequencerException):
     """Failed to reset DMs"""
 

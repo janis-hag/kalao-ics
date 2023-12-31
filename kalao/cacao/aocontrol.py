@@ -10,6 +10,7 @@ aocontrol.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 
 import subprocess
 import time
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -508,9 +509,6 @@ def check_wfs_flux():
 
 
 def turn_dm_on():
-
-    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
-
     if ippower.status(config.IPPower.Port.BMC_DM) == IPPowerStatus.OFF:
         logger.info('dm', 'Powering on DM ippower')
 
@@ -524,6 +522,8 @@ def turn_dm_on():
             return -1
 
         time.sleep(config.Timers.dm_wait_between_actions)
+
+    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
 
     if bmc_display_fps is not None:
         if not bmc_display_fps.run_runs():
@@ -568,6 +568,41 @@ def turn_dm_off():
         return 0
     else:
         return -1
+
+
+def start_wfs_acquisition():
+    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW,
+                                               shm_and_fps_cache)
+
+    if nuvu_raw_stream is None:
+        return -1
+
+    # Check if already running
+    if (datetime.now() - datetime.fromtimestamp(
+            nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6)
+        ).total_seconds() < config.WFS.acquisition_time_timeout:
+        return 0
+
+    logger.info('nuvu', 'Starting WFS acquisition')
+
+    _set_tmux_value('nuvu_ctrl', 'SetContinuousAcquisition')
+
+    time.sleep(config.WFS.acquisition_start_wait)
+
+    if (datetime.now() - datetime.fromtimestamp(
+            nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6)
+        ).total_seconds() > config.WFS.acquisition_time_timeout:
+        return -1
+
+    return 0
+
+
+def stop_wfs_acquisition():
+    logger.info('nuvu', 'Stopping WFS acquisition')
+
+    _set_tmux_value('nuvu_ctrl', 'AbortAcquisition')
+
+    return 0
 
 
 def stop_wfs():
@@ -719,7 +754,7 @@ def _set_fps_value(fps_name, key, value):
     return fps.set_param(key, value)
 
 
-def _set_tmux_value(session, key, value):
+def _set_tmux_value(session, key, value=''):
     server = libtmux.Server()
 
     try:
