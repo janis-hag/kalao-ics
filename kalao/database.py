@@ -287,6 +287,8 @@ def store_log(name, level, message):
     db = _get_db(timestamp)
     collection = _get_collection(db, 'logs')
 
+    name += '_log'
+
     if name not in definitions['logs']['metadata']:
         raise KeyError(f'Inserting unknown log "{name}" in database')
 
