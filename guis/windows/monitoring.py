@@ -155,10 +155,10 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
                         since_text=since_text, warn_min=warn_min,
                         warn_max=warn_max, unit=lineedit.unit)
                 else:
-                    lineedit.setStyleSheet(f'')
+                    lineedit.setStyleSheet(f'color: {Color.BLACK.name()};')
                     lineedit.hover_text = since_text
             else:
-                lineedit.setStyleSheet(f'')
+                lineedit.setStyleSheet(f'color: {Color.BLACK.name()};')
                 lineedit.hover_text = since_text
 
         monitoring = self.consume_dict(data, 'db-timestamps', 'monitoring')

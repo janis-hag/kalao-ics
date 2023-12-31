@@ -598,7 +598,7 @@ def stop_wfs():
             nuvu_acquire_fps.run_stop()
 
     subprocess.run([
-        '/home/kalao/kalao-camstack/scripts/cam-nuvustart', 'close'
+        '/home/kalao/kalao-camstack/scripts/cam-nuvustart', 'stop'
     ])
 
     Path('/tmp/milk/nuvu_raw.im.shm').unlink(missing_ok=True)
