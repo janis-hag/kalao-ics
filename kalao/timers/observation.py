@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : loop.py
+# @Filename : observation.py
 # @Date : 2023-09-21-13-20
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
@@ -30,7 +30,7 @@ def _update_adc(beck=None):
 def _offload_ttm():
     if aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON:
         aocontrol.tip_tilt_offload_ttm_to_telescope(
-            port=config.T120.port_loop_timer)
+            port=config.T120.port_observation_timer)
 
 
 if __name__ == "__main__":

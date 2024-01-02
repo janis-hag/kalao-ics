@@ -5,4 +5,4 @@ source /home/kalao/kalao-venv/bin/activate
 
 cd /home/kalao/kalao-ics
 
-python /home/kalao/kalao-ics/kalao/timers/pump.py
+python /home/kalao/kalao-ics/kalao/timers/observation.py

@@ -169,17 +169,13 @@ def database_timer(action):
                         action)
 
 
-def safety_timer(action):
-    return unit_control(config.Systemd.services['safety-timer']['unit'],
+def hardware_timer(action):
+    return unit_control(config.Systemd.services['hardware-timer']['unit'],
                         action)
 
 
-def loop_timer(action):
-    return unit_control(config.Systemd.services['loop-timer']['unit'], action)
-
-
-def pump_timer(action):
-    return unit_control(config.Systemd.services['pump-timer']['unit'], action)
+def observation_timer(action):
+    return unit_control(config.Systemd.services['observation-timer']['unit'], action)
 
 
 def init():

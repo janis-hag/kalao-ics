@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : safety.py
+# @Filename : hardware.py
 # @Date : 2021-03-15-10-29
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
@@ -15,7 +15,7 @@ import numpy as np
 
 from kalao import database, euler, ippower, logger
 from kalao.cacao import aocontrol, toolbox
-from kalao.plc import (adc, calibunit, flipmirror, laser, shutter,
+from kalao.plc import (adc, calibunit, core, flipmirror, laser, shutter,
                        temperature_control)
 from kalao.utils import kalao_time
 
@@ -50,9 +50,25 @@ def _check_shutteropen_inactive():
     # TODO ADD if tracking status IDLE, close
 
     if shutter.get_state() == ShutterState.OPEN:
-        logger.info('safety_timer',
+        logger.info('hardware_timer',
                     'Closing shutter due to inactivity timeout')
         shutter.close()
+
+    return 0
+
+
+def _check_laseron_inactive():
+    """
+    Verify for how long the laser is on and there is not observing activity.
+    Turn off laser if inactivity is longer than the value set in kalao.config file.
+
+    :return:
+    """
+
+    if laser.get_state() != LaserState.OFF:
+        logger.info('hardware_timer',
+                    'Turning off laser due to inactivity timeout')
+        laser.disable()
 
     return 0
 
@@ -70,7 +86,7 @@ def _check_dm_inactive():
     if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
         (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
             ippower.status(config.IPPower.Port.BMC_DM) == IPPowerStatus.ON):
-        logger.info('safety_timer', 'Turning off DM due to inactivity timeout')
+        logger.info('hardware_timer', 'Turning off DM due to inactivity timeout')
 
         aocontrol.turn_dm_off()
 
@@ -92,7 +108,7 @@ def _check_wfs_inactive():
 
     if nuvu_acquire_fps is not None and nuvu_acquire_fps.get_param(
             'emgain') > 1:
-        logger.info('safety_timer',
+        logger.info('hardware_timer',
                     'Turning off EM gain due to inactivity timeout')
 
         aocontrol.emgain_off()
@@ -106,7 +122,7 @@ def _check_wfs_inactive():
             nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
         if (datetime.now() -
                 maqtime).total_seconds() < config.WFS.acquisition_time_timeout:
-            logger.info('safety_timer',
+            logger.info('hardware_timer',
                         'Stopping WFS acquisition due to inactivity timeout')
 
             aocontrol.stop_wfs_acquisition()
@@ -123,29 +139,13 @@ def _check_loops_inactive():
     """
 
     if aocontrol.check_loops() != LoopStatus.ALL_LOOPS_OFF:
-        logger.info('safety_timer', 'Opening loops due to inactivity timeout')
+        logger.info('hardware_timer', 'Opening loops due to inactivity timeout')
         aocontrol.open_loops()
 
     return 0
 
 
-def _check_laseron_inactive():
-    """
-    Verify for how long the laser is on and there is not observing activity.
-    Turn off laser if inactivity is longer than the value set in kalao.config file.
-
-    :return:
-    """
-
-    if laser.get_state() != LaserState.OFF:
-        logger.info('safety_timer',
-                    'Turning off laser due to inactivity timeout')
-        laser.disable()
-
-    return 0
-
-
-def _check_bench_status():
+def _check_inactivity():
     """
     Checks the status of multiple bench components.
 
@@ -181,7 +181,7 @@ def _check_cooling_status():
     if water_temp < min_water_temp:
         if temperature_control.heater_status() != RelayState.ON:
             logger.info(
-                'safety_timer',
+                'hardware_timer',
                 f'Water temperature too low ({water_temp} {unit}), starting heater'
             )
             temperature_control.heater_on()
@@ -189,7 +189,7 @@ def _check_cooling_status():
     elif water_temp > min_water_temp + config.Cooling.heater_hysteresis_temp:
         if temperature_control.heater_status() != RelayState.OFF:
             logger.info(
-                'safety_timer',
+                'hardware_timer',
                 f'Water temperature high enough ({water_temp} {unit}), stopping heater'
             )
             temperature_control.heater_off()
@@ -197,31 +197,47 @@ def _check_cooling_status():
     return 0
 
 
-def _check_plc():
-    logger.info('safety_timer', 'Doing daily PLC housekeeping')
+@core.beckhoff_autoconnect
+def _check_pump_temp(beck=None):
+    pump_temp = temperature_control.pump_temperature(beck=beck)
+    pump_status = temperature_control.pump_status(beck=beck)
 
-    calibunit.init(force_init=True)
-    adc.init(config.PLC.Node.ADC1, force_init=True)
-    adc.init(config.PLC.Node.ADC2, force_init=True)
+    if pump_temp > config.Cooling.max_pump_temperature and pump_status == RelayState.ON:
+        logger.warn('hardware_timer', 'Pump overheat, shutting off')
+        temperature_control.pump_off(beck=beck)
+
+    elif pump_temp < config.Cooling.pump_restart_temp and pump_status == RelayState.OFF:
+        logger.warn('hardware_timer', 'Pump cooled down, powering up')
+        temperature_control.pump_on(beck=beck)
+
+
+@core.beckhoff_autoconnect
+def _check_plc(beck=None):
+    logger.info('hardware_timer', 'Doing daily PLC housekeeping')
+
+    calibunit.init(force_init=True,beck=beck)
+    adc.init(config.PLC.Node.ADC1, force_init=True, beck=beck)
+    adc.init(config.PLC.Node.ADC2, force_init=True, beck=beck)
 
     state, switch_time = shutter.get_switch_time()
     if switch_time > 86400:
-        shutter.close()
-        shutter.open()
-        shutter.close()
+        shutter.close(beck=beck)
+        shutter.open(beck=beck)
+        shutter.close(beck=beck)
 
     state, switch_time = flipmirror.get_switch_time()
     if switch_time > 86400:
-        flipmirror.down()
-        flipmirror.up()
-        flipmirror.down()
+        flipmirror.down(beck=beck)
+        flipmirror.up(beck=beck)
+        flipmirror.down(beck=beck)
 
 
 if __name__ == "__main__":
-    schedule.every(config.Timers.temperature_check_interval).seconds.do(
+    schedule.every(config.Timers.cooling_check_interval).seconds.do(
         _check_cooling_status)
     schedule.every(
-        config.Timers.bench_check_interval).seconds.do(_check_bench_status)
+        config.Timers.inactivity_check_interval).seconds.do(_check_inactivity)
+    schedule.every(60).seconds.do(_check_pump_temp)
     schedule.every().day.at('15:00', 'America/Santiago').do(_check_plc)
 
     while True:

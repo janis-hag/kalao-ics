@@ -321,7 +321,7 @@ if __name__ == '__main__':
 
     if camera.check_server_status() != CameraServerStatus.UP:
         print(
-            'Error connecting to camera. Please try to restart the kalao_camera service.'
+            'Error connecting to camera. Please try to restart the kalao_fli service.'
         )
         exit(-1)
 

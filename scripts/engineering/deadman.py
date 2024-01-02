@@ -13,13 +13,13 @@ while True:
 
     if ellapsed_time > 86400:
         logger.info(
-            'safety_timer',
-            'Killing safety dead-man as it has been running since more than 24 hours.'
+            'hardware_timer',
+            'Killing inactivity dead-man as it has been running since more than 24 hours.'
         )
         break
 
-    logger.info('safety_timer',
-                f'Safety dead-man triggered (turn off if unused).')
+    logger.info('hardware_timer',
+                f'Inactivity dead-man triggered (turn off if unused).')
     database.store('obs', {'deadman_keepalive': tick})
 
     tick += 1

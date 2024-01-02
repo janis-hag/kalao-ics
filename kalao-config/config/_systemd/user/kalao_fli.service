@@ -1,5 +1,5 @@
 [Unit]
-Description=KalAO - Camera control server
+Description=KalAO - FLI Science Camera control server
 
 [Service]
 Type=simple

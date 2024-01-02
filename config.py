@@ -467,7 +467,7 @@ class Euler:
 
 
 class GOP:
-    ip = "kalaortc01"  # 10.10.132.120
+    ip = 'kalaortc01'  # 10.10.132.120
     port = 18234
     verbosity = 0
 
@@ -477,48 +477,43 @@ class Systemd:
 
     services = {
         'FLI (Science Camera)': {
-            'unit': "kalao_camera.service",
+            'unit': 'kalao_fli.service',
             'enabled': True,
             'restart': False
         },
         'Nüvü (Wavefront Sensor)': {
-            'unit': "kalao_nuvu.service",
+            'unit': 'kalao_nuvu.service',
             'enabled': True,
             'restart': False
         },
         'CACAO': {
-            'unit': "kalao_cacao.service",
+            'unit': 'kalao_cacao.service',
             'enabled': True,
             'restart': False,
             'reload-allowed': True
         },
         'Sequencer': {
-            'unit': "kalao_sequencer.service",
+            'unit': 'kalao_sequencer.service',
             'enabled': True,
             'restart': False  # Do NOT put to True (restart loop)
         },
         'GOP server': {
-            'unit': "kalao_gop-server.service",
+            'unit': 'kalao_gop-server.service',
             'enabled': True,
             'restart': True
         },
         'Database Timer': {
-            'unit': "kalao_database-timer.service",
+            'unit': 'kalao_database-timer.service',
             'enabled': True,
             'restart': True
         },
-        'Safety Timer': {
-            'unit': "kalao_safety-timer.service",
+        'Hardware Timer': {
+            'unit': 'kalao_hardware-timer.service',
             'enabled': True,
             'restart': True
         },
-        'Loop Timer': {
-            'unit': "kalao_loop-timer.service",
-            'enabled': True,
-            'restart': True
-        },
-        'Pump Timer': {
-            'unit': "kalao_pump-timer.service",
+        'Observation Timer': {
+            'unit': 'kalao_observation-timer.service',
             'enabled': True,
             'restart': True
         },
@@ -548,7 +543,7 @@ class T120:
     symb_name = "inter"
     rcmd = "ipcsrv"
     request_timeout = 120
-    port_loop_timer = 17002
+    port_observation_timer = 17002
     focus_offset_limit = 1500
     temperature_file = "/disks/synology/gls/data/services/CURRENT/temperature_telescope.rdb"
     temperature_file_timeout = 120
@@ -563,8 +558,8 @@ class Cooling:
 
 
 class Timers:
-    temperature_check_interval = 5  # s
-    bench_check_interval = 30  # s
+    cooling_check_interval = 5  # s
+    inactivity_check_interval = 30  # s
 
     inactivity_timeout = 2700  # s
 

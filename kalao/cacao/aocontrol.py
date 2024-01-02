@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-from kalao import ippower, logger
+from kalao import database, ippower, logger
 from kalao.cacao import toolbox
 from kalao.utils import kalao_tools
 
@@ -514,7 +514,8 @@ def turn_dm_on():
     if ippower.status(config.IPPower.Port.BMC_DM) == IPPowerStatus.OFF:
         logger.info('dm', 'Powering on DM ippower')
 
-        # Avoid safety turning DM off immediately
+        # Prevent inactivity checks from turning DM off immediately
+        database.store('obs', {'deadman_keepalive': 0})
         time.sleep(1)
 
         ret = ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
@@ -531,7 +532,8 @@ def turn_dm_on():
         if not bmc_display_fps.run_runs():
             logger.info('dm', f'Starting {config.FPS.BMC}')
 
-            # Avoid safety turning DM off immediately
+            # Prevent inactivity checks from turning DM off immediately
+            database.store('obs', {'deadman_keepalive': 0})
             time.sleep(1)
 
             bmc_display_fps.run_start()
@@ -587,6 +589,10 @@ def start_wfs_acquisition():
         return 0
 
     logger.info('nuvu', 'Starting WFS acquisition')
+
+    # Prevent inactivity checks from turning WFS off immediately
+    database.store('obs', {'deadman_keepalive': 0})
+    time.sleep(1)
 
     _set_tmux_value('nuvu_ctrl', 'SetContinuousAcquisition')
 

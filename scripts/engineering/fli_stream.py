@@ -51,7 +51,7 @@ def run(args):
             camera.take_frame(args.dit)
     else:
         print(
-            'Error connecting to camera. Please try to stop or restart the kalao_camera service'
+            'Error connecting to camera. Please try to stop or restart the kalao_fli service'
         )
 
 

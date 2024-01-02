@@ -89,9 +89,9 @@ gop_log:
   long: GOP server log
   unit:
 
-safety_timer_log:
-  short: Safety timer log
-  long: Safety timer log
+hardware_timer_log:
+  short: Hardware timer log
+  long: Hardware timer log
   unit:
 
 database_timer_log:
@@ -99,14 +99,9 @@ database_timer_log:
   long: Database timer log
   unit:
 
-loop_timer_log:
-  short: Loop timer log
-  long: Loop timer log
-  unit:
-
-pump_timer_log:
-  short: Pump timer log
-  long: Pump timer log
+observation_timer_log:
+  short: Observation timer log
+  long: Observation timer log
   unit:
 
 t120_log:

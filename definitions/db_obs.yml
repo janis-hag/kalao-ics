@@ -237,5 +237,5 @@ focusing_fo_delta:
 # Dead-man
 deadman_keepalive:
   short: Dead-man keepalive
-  long: Dead-man keepalive (prevent safety inactivity check from triggering)
+  long: Dead-man keepalive (prevent inactivity checks from triggering)
   unit:

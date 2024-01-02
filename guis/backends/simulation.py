@@ -162,18 +162,16 @@ class MainBackend(FakeSHMFPSBackend):
                                     datetime.now(timezone.utc)),
             'kalao_sequencer.service': ('active', 'running',
                                         datetime.now(timezone.utc)),
-            'kalao_camera.service': ('active', 'running',
+            'kalao_fli.service': ('active', 'running',
                                      datetime.now(timezone.utc)),
             'kalao_gop-server.service': ('active', 'running',
                                          datetime.now(timezone.utc)),
             'kalao_database-timer.service': ('active', 'running',
                                              datetime.now(timezone.utc)),
-            'kalao_safety-timer.service': ('active', 'running',
+            'kalao_hardware-timer.service': ('active', 'running',
                                            datetime.now(timezone.utc)),
-            'kalao_loop-timer.service': ('active', 'running',
+            'kalao_observation-timer.service': ('active', 'running',
                                          datetime.now(timezone.utc)),
-            'kalao_pump-timer.service': ('active', 'running',
-                                         datetime.now(timezone.utc))
         })
 
         self.internal_timer = QTimer()
@@ -407,18 +405,16 @@ class MainBackend(FakeSHMFPSBackend):
                     self.internal_state['kalao_cacao.service'],
                 'kalao_sequencer.service':
                     self.internal_state['kalao_sequencer.service'],
-                'kalao_camera.service':
-                    self.internal_state['kalao_camera.service'],
+                'kalao_fli.service':
+                    self.internal_state['kalao_fli.service'],
                 'kalao_gop-server.service':
                     self.internal_state['kalao_gop-server.service'],
                 'kalao_database-timer.service':
                     self.internal_state['kalao_database-timer.service'],
-                'kalao_safety-timer.service':
-                    self.internal_state['kalao_safety-timer.service'],
-                'kalao_loop-timer.service':
-                    self.internal_state['kalao_loop-timer.service'],
-                'kalao_pump-timer.service':
-                    self.internal_state['kalao_pump-timer.service'],
+                'kalao_hardware-timer.service':
+                    self.internal_state['kalao_hardware-timer.service'],
+                'kalao_observation-timer.service':
+                    self.internal_state['kalao_observation-timer.service'],
             })
 
         self._update_dict(

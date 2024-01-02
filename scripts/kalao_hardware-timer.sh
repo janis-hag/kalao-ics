@@ -5,4 +5,4 @@ source /home/kalao/kalao-venv/bin/activate
 
 cd /home/kalao/kalao-ics
 
-python -c 'from kalao.plc import temperature_control; temperature_control.pump_on()'
+python /home/kalao/kalao-ics/kalao/timers/hardware.py
