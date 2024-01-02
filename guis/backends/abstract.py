@@ -1,4 +1,5 @@
 import time
+from datetime import datetime, timezone
 from functools import wraps
 
 from PySide6.QtCore import QObject, Signal
@@ -26,7 +27,12 @@ def timeit(fun):
 
         end = time.monotonic()
 
-        data.update({'metadata': {'duration': end - start}})
+        data.update({
+            'metadata': {
+                'duration': end - start,
+                'timestamp': datetime.now(timezone.utc)
+            }
+        })
 
         return data
 

@@ -9,8 +9,8 @@ adc.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
+import time
 from enum import IntEnum
-from time import sleep
 
 import numpy as np
 from scipy.optimize import minimize_scalar
@@ -136,7 +136,7 @@ def set_angle(angle, beck=None):
     rotate(config.PLC.Node.ADC2, config.ADC.max_disp_angle_2 + angle/2,
            wait=False, beck=beck)
 
-    sleep(2)
+    time.sleep(2)
 
     wait_rotate_both(beck=beck)
 

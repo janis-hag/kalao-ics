@@ -14,7 +14,7 @@ from kalao.cacao import toolbox
 import config
 
 
-def gather(shm_and_fps_cache={}):
+def gather(shm_and_fps_cache):
     telemetry_data = {}
 
     # Nuvu stream

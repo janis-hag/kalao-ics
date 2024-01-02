@@ -9,7 +9,7 @@ temperature_control.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from time import sleep
+import time
 
 from kalao import database, logger
 from kalao.plc import core
@@ -106,7 +106,7 @@ def switch(node, on, beck=None):
         ua.DataValue(
             ua.Variant(on, relay_switch.get_data_type_as_variant_type())))
 
-    sleep(1)
+    time.sleep(1)
 
     relay_status = get_state(node, beck=beck)
 

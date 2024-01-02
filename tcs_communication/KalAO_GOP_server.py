@@ -12,9 +12,10 @@ This server is the communication interface between the Euler telescope software 
 """
 
 import socket
-from time import sleep
+import time
 
 from kalao import database, logger
+from kalao.interfaces import edp
 
 from tcs_communication.pygop import tcs_srv_gop
 
@@ -114,7 +115,7 @@ def gop_server():
                 socketSeq.close()
 
         if socket_connection_error:
-            sleep(10)
+            time.sleep(10)
             continue
 
         if command == 'TEST':
@@ -161,7 +162,7 @@ def gop_server():
             break
 
         elif command == 'STATUS':
-            message = obs.kalao_status()
+            message = edp.kalao_status()
             logger.info('gop', f'Sending status: {message}')
             gop.write(message)
 

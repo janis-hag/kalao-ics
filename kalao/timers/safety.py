@@ -9,7 +9,7 @@ Timer to verify KalAO bench health (KalAO-ICS).
 """
 
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 
@@ -101,14 +101,15 @@ def _check_wfs_inactive():
     nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW,
                                                shm_and_fps_cache)
 
-    if nuvu_raw_stream is not None and (
-            datetime.now() - datetime.fromtimestamp(
-                nuvu_raw_stream.get_keywords()['_MAQTIME'] /
-                1e6)).total_seconds() < config.WFS.acquisition_time_timeout:
-        logger.info('safety_timer',
-                    'Stopping WFS acquisition due to inactivity timeout')
+    if nuvu_raw_stream is not None:
+        maqtime = datetime.fromtimestamp(
+            nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
+        if (datetime.now() -
+                maqtime).total_seconds() < config.WFS.acquisition_time_timeout:
+            logger.info('safety_timer',
+                        'Stopping WFS acquisition due to inactivity timeout')
 
-        aocontrol.stop_wfs_acquisition()
+            aocontrol.stop_wfs_acquisition()
 
     return 0
 
@@ -197,7 +198,7 @@ def _check_cooling_status():
 
 
 def _check_plc():
-    logger.info('safety_timer', 'Doing PLC housekeeping')
+    logger.info('safety_timer', 'Doing daily PLC housekeeping')
 
     calibunit.init(force_init=True)
     adc.init(config.PLC.Node.ADC1, force_init=True)

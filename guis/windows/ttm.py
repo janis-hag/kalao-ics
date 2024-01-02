@@ -1,3 +1,4 @@
+import math
 from datetime import datetime
 
 import numpy as np
@@ -127,7 +128,7 @@ class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
             y_min = self.min_spinbox.value() * self.data_scaling
             y_max = self.max_spinbox.value() * self.data_scaling
 
-        if abs(y_max - y_min) < config.epsilon:
+        if math.isclose(y_min, y_max):
             y_min -= 0.01
             y_max += 0.01
 

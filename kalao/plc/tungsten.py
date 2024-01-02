@@ -10,7 +10,7 @@ tungsten.py is part of the KalAO Instrument Control Software
 
 """
 
-from time import sleep
+import time
 
 from kalao import database, logger
 from kalao.plc import core
@@ -85,7 +85,7 @@ def send_command(nCommand_value, beck=None):
     # Execute
     core.motor_send_execute(tungsten_bExecute)
 
-    sleep(config.Tungsten.switch_wait)
+    time.sleep(config.Tungsten.switch_wait)
 
     return get_state(beck=beck)
 
@@ -105,10 +105,10 @@ def init(beck=None):
             f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():
         send_command(TungstenCommand.INIT, beck=beck)
 
-        sleep(15)
+        time.sleep(15)
         while (beck.get_node(f'{config.PLC.Node.TUNGSTEN}.stat.sStatus').
                get_value() == 'INITIALISING'):
-            sleep(15)
+            time.sleep(15)
 
         if not beck.get_node(
                 f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():

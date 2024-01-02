@@ -10,7 +10,7 @@ aocontrol.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 
 import subprocess
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -164,10 +164,10 @@ def set_emgain(emgain=1, method='fps'):
 
     emgain = int(emgain)
 
-    if emgain > config.WFS.max_emgain:
+    if emgain < config.WFS.min_emgain:
+        emgain = config.WFS.min_emgain
+    elif emgain > config.WFS.max_emgain:
         emgain = config.WFS.max_emgain
-    elif emgain < 1:
-        emgain = 1
 
     if method == 'fps':
         _set_fps_value(config.FPS.NUVU, 'emgain', emgain)
@@ -189,6 +189,8 @@ def set_exptime(exptime=0, method='fps'):
 
     if exptime < config.WFS.min_exposuretime:
         exptime = config.WFS.min_exposuretime
+    elif exptime > config.WFS.max_exposuretime:
+        exptime = config.WFS.max_exposuretime
 
     if method == 'fps':
         _set_fps_value(config.FPS.NUVU, 'exposuretime', exptime)
@@ -578,9 +580,10 @@ def start_wfs_acquisition():
         return -1
 
     # Check if already running
-    if (datetime.now() - datetime.fromtimestamp(
-            nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6)
-        ).total_seconds() < config.WFS.acquisition_time_timeout:
+    maqtime = datetime.fromtimestamp(
+        nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
+    if (datetime.now() -
+            maqtime).total_seconds() < config.WFS.acquisition_time_timeout:
         return 0
 
     logger.info('nuvu', 'Starting WFS acquisition')
@@ -589,9 +592,11 @@ def start_wfs_acquisition():
 
     time.sleep(config.WFS.acquisition_start_wait)
 
-    if (datetime.now() - datetime.fromtimestamp(
-            nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6)
-        ).total_seconds() > config.WFS.acquisition_time_timeout:
+    maqtime = datetime.fromtimestamp(
+        nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
+    if (datetime.now() -
+            maqtime).total_seconds() > config.WFS.acquisition_time_timeout:
+        logger.info('nuvu', 'Failed to start WFS acquisition')
         return -1
 
     return 0

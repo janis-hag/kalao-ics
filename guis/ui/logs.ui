@@ -194,14 +194,14 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="errors_label">
+      <widget class="QLabel" name="warnings_label">
        <property name="text">
-        <string>Errors:</string>
+        <string>Warnings:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="errors_spinbox">
+      <widget class="QSpinBox" name="warnings_spinbox">
        <property name="readOnly">
         <bool>true</bool>
        </property>
@@ -230,14 +230,14 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="warnings_label">
+      <widget class="QLabel" name="errors_label">
        <property name="text">
-        <string>Warnings:</string>
+        <string>Errors:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="warnings_spinbox">
+      <widget class="QSpinBox" name="errors_spinbox">
        <property name="readOnly">
         <bool>true</bool>
        </property>

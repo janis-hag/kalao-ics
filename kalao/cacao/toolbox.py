@@ -3,52 +3,23 @@
 """
 @author: Nathanaël Restori
 """
-
+import math
 from pathlib import Path
 
 import numpy as np
 
 from astropy.io import fits
 
-from pyMilk.interfacing import isio_shmlib
 from pyMilk.interfacing.fps import FPS
 from pyMilk.interfacing.shm import SHM
 
-
-def check_stream(stream_name):
-    """
-    Function verifies if stream_name exists
-
-    :param stream_name: stream to check existence
-    :return: boolean, stream_name_clean
-    """
-    # stream_path = Path(os.environ["MILK_SHM_DIR"])
-    milk_path = Path('/tmp/milk')
-    stream_name_clean = isio_shmlib.check_SHM_name(stream_name)
-    stream_path = milk_path / (stream_name_clean+'.im.shm')
-
-    return stream_path.exists(), stream_name_clean
-
-
-def check_fps(fps_name):
-    """
-    Function verifies if fps_name exists
-
-    :param fps_name: fps to check existence
-    :return: boolean, fps_name_clean
-    """
-    # fps_path = Path(os.environ["MILK_SHM_DIR"])
-    milk_path = Path('/tmp/milk')
-    fps_name_clean = isio_shmlib.check_SHM_name(fps_name)
-    fps_path = milk_path / (fps_name_clean+'.fps.shm')
-
-    return fps_path.exists(), fps_name_clean
+milk_path = Path('/tmp/milk')
 
 
 def open_or_create_stream(stream_name, shape, dtype):
-    stream_exists, stream_name = check_stream(stream_name)
+    shm_path = milk_path / (stream_name+'.im.shm')
 
-    if stream_exists:
+    if shm_path.exists():
         shm = SHM(stream_name)
     else:
         img = np.zeros(shape, dtype)
@@ -63,36 +34,54 @@ def open_or_create_stream(stream_name, shape, dtype):
     return shm
 
 
-def open_stream_once(stream_name, streams_list={}):
-    opened_stream = streams_list.get(stream_name)
+def open_stream_once(stream_name, shm_cache):
+    shm_info = shm_cache.get(stream_name)
+    shm_path = milk_path / (stream_name+'.im.shm')
 
-    if opened_stream is None:
-        stream_exists, stream_name = check_stream(stream_name)
+    if not shm_path.exists():
+        return None
 
-        if stream_exists:
-            opened_stream = SHM(stream_name)
-            streams_list[stream_name] = opened_stream
-            return opened_stream
-        else:
-            return None
+    stat = shm_path.stat()
+
+    if shm_info is not None and stat.st_ino == shm_info[
+            'stat'].st_ino and math.isclose(stat.st_ctime,
+                                            shm_info['stat'].st_ctime):
+        return shm_info['shm']
     else:
-        return opened_stream
+        if shm_info is not None:
+            shm_info['shm'].close()
+
+        shm = SHM(stream_name)
+        shm_cache[stream_name] = {
+            'shm': shm,
+            'stat': stat,
+        }
+        return shm
 
 
-def open_fps_once(fps_name, fps_list):
-    opened_fps = fps_list.get(fps_name)
+def open_fps_once(fps_name, fps_cache):
+    fps_info = fps_cache.get(fps_name)
+    fps_path = milk_path / (fps_name+'.fps.shm')
 
-    if opened_fps is None:
-        fps_exists, fps_name = check_fps(fps_name)
+    if not fps_path.exists():
+        return None
 
-        if fps_exists:
-            opened_fps = FPS(fps_name)
-            fps_list[fps_name] = opened_fps
-            return opened_fps
-        else:
-            return None
+    stat = fps_path.stat()
+
+    if fps_info is not None and stat.st_ino == fps_info[
+            'stat'].st_ino and math.isclose(stat.st_ctime,
+                                            fps_info['stat'].st_ctime):
+        return fps_info['fps']
     else:
-        return opened_fps
+        if fps_info is not None:
+            fps_info['fps'].close()
+
+        fps = FPS(fps_name)
+        fps_cache[fps_name] = {
+            'fps': fps,
+            'stat': stat,
+        }
+        return fps
 
 
 def zero_stream(stream_or_name):
@@ -101,12 +90,10 @@ def zero_stream(stream_or_name):
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_exists, stream_name = check_stream(stream_or_name)
+        stream_shm = open_stream_once(stream_or_name, {})
 
-        if not stream_exists:
+        if stream_shm is None:
             return -1
-
-        stream_shm = SHM(stream_name)
 
     pattern = np.zeros(stream_shm.shape, stream_shm.nptype)
     stream_shm.set_data(pattern)
@@ -120,12 +107,10 @@ def save_stream_to_fits(stream_or_name, fits_file):
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_exists, stream_name = check_stream(stream_or_name)
+        stream_shm = open_stream_once(stream_or_name, {})
 
-        if not stream_exists:
+        if stream_shm is None:
             return -1
-
-        stream_shm = SHM(stream_name)
 
     fits.PrimaryHDU(stream_shm.get_data(True)).writeto(fits_file)
 
@@ -138,12 +123,10 @@ def load_fits_to_stream(fits_file, stream_or_name):
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_exists, stream_name = check_stream(stream_or_name)
+        stream_shm = open_stream_once(stream_or_name, {})
 
-        if not stream_exists:
+        if stream_shm is None:
             return -1
-
-        stream_shm = SHM(stream_name)
 
     pattern = fits.getdata(fits_file)
 

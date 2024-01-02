@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import numpy as np
 
 from PySide6.QtCore import QEvent, QObject, QSignalBlocker, Signal, Slot
@@ -83,14 +85,11 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
                 'indicator': indicator
             }
 
-            self.services_groupbox.layout().addWidget(label, i, 0,
-                                                      Qt.AlignVCenter)
-            self.services_groupbox.layout().addWidget(lineedit, i, 2,
-                                                      Qt.AlignVCenter)
+            self.services_layout.addWidget(label, i, 0, Qt.AlignVCenter)
+            self.services_layout.addWidget(lineedit, i, 2, Qt.AlignVCenter)
 
             indicator.setFixedSize(20, 20)
-            self.services_groupbox.layout().addWidget(indicator, i, 1,
-                                                      Qt.AlignVCenter)
+            self.services_layout.addWidget(indicator, i, 1, Qt.AlignVCenter)
 
             for j, action in enumerate([
                     ServiceAction.START, ServiceAction.STOP,
@@ -101,20 +100,20 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
                 button.clicked.connect(
                     lambda checked=False, unit=service['unit'], action=action:
                     self.on_set_services_action_clicked(checked, unit, action))
-                self.services_groupbox.layout().addWidget(button, i, 3 + j)
+                self.services_layout.addWidget(button, i, 3 + j)
 
                 if action == ServiceAction.RELOAD and not service.get(
                         'reload-allowed', False):
                     button.setEnabled(False)
 
-        self.services_groupbox.layout().setColumnStretch(0, 0)
-        self.services_groupbox.layout().setColumnStretch(1, 0)
-        self.services_groupbox.layout().setColumnStretch(2, 1)
-        self.services_groupbox.layout().setColumnStretch(3, 1)
-        self.services_groupbox.layout().setColumnStretch(4, 1)
-        self.services_groupbox.layout().setColumnStretch(5, 1)
-        self.services_groupbox.layout().setColumnStretch(6, 1)
-        self.services_groupbox.layout().setColumnStretch(7, 1)
+        self.services_layout.setColumnStretch(0, 0)
+        self.services_layout.setColumnStretch(1, 0)
+        self.services_layout.setColumnStretch(2, 2)
+        self.services_layout.setColumnStretch(3, 1)
+        self.services_layout.setColumnStretch(4, 1)
+        self.services_layout.setColumnStretch(5, 1)
+        self.services_layout.setColumnStretch(6, 1)
+        self.services_layout.setColumnStretch(7, 1)
 
         backend.data_updated.connect(self.data_updated)
 
@@ -359,6 +358,19 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
                 self.fli_new_image_button.setEnabled(False)
                 self.fli_exposure_time_spinbox.setEnabled(False)
 
+        maqtime = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
+                                              '_MAQTIME', force=True)
+        timestamp = self.consume_metadata(data, 'timestamp')
+        if maqtime is not None:
+            maqtime = datetime.fromtimestamp(maqtime / 1e6, tz=timezone.utc)
+            time_since_last_frame = (timestamp - maqtime).total_seconds()
+            if time_since_last_frame < config.WFS.acquisition_time_timeout:
+                self.wfs_acquisition_indicator.setStatus(
+                    Color.GREEN, time_since_last_frame)
+            else:
+                self.wfs_acquisition_indicator.setStatus(
+                    Color.BLACK, time_since_last_frame)
+
         for i, service in enumerate(config.Systemd.services.values()):
             status = self.consume_dict(data, 'services', service['unit'])
             if status is not None:
@@ -472,6 +484,16 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
     @Slot(bool)
     def on_fli_cancel_button_clicked(self, checked):
         self.action_send(self.fli_cancel_button, self.backend.get_fli_cancel)
+
+    @Slot(bool)
+    def on_wfs_acquisition_start_button_clicked(self, checked):
+        self.action_send(self.wfs_acquisition_start_button,
+                         self.backend.get_nuvu_acquisition_start)
+
+    @Slot(bool)
+    def on_wfs_acquisition_stop_button_clicked(self, checked):
+        self.action_send(self.wfs_acquisition_start_button,
+                         self.backend.get_nuvu_acquisition_stop)
 
     @Slot(bool)
     def on_ippower_rtc_on_button_clicked(self, checked):

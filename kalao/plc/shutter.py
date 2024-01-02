@@ -9,7 +9,7 @@ shutter.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from time import sleep
+import time
 
 from kalao import database, logger
 from kalao.plc import core
@@ -114,7 +114,7 @@ def _switch(action_name, beck=None):
         ua.DataValue(
             ua.Variant(True, shutter_switch.get_data_type_as_variant_type())))
 
-    sleep(1)
+    time.sleep(1)
 
     state = get_state(beck=beck)
 

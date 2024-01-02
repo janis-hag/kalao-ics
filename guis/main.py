@@ -3,7 +3,7 @@ from signal import SIGINT, signal
 
 import numpy as np
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QMetaObject, Qt, QThread, QTimer
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
@@ -14,6 +14,10 @@ import config
 
 def handler(signal_received, frame):
     app.quit()
+
+
+def cleanup():
+    backend_thread.quit()
 
 
 if __name__ == "__main__":
@@ -37,10 +41,12 @@ if __name__ == "__main__":
     np.set_printoptions(nanstr='--')
 
     # Qt stuff
+
     loader = QUiLoader()
 
     app = QApplication(['KalAO - AO tools'])
     app.setQuitOnLastWindowClosed(True)
+    app.aboutToQuit.connect(cleanup)
 
     if False:
         app.setStyleSheet("""
@@ -50,6 +56,9 @@ if __name__ == "__main__":
         """)
 
     # Backend
+
+    backend_thread = QThread(app)
+
     if args.simulation:
         import guis.backends.simulation as backends
     elif args.http:
@@ -58,28 +67,37 @@ if __name__ == "__main__":
         import guis.backends.local as backends
 
     backend = backends.MainBackend()
+    backend.moveToThread(backend_thread)
 
     # Timer
+
     streams_timer = QTimer()
     streams_timer.setInterval(int(1000 / config.GUI.refreshrate_streams))
     streams_timer.timeout.connect(backend.get_streams_all)
+    # streams_timer.moveToThread(backend_thread)
 
     data_timer = QTimer()
     data_timer.setInterval(int(1000 / config.GUI.refreshrate_data))
     data_timer.timeout.connect(backend.get_all)
+    # data_timer.moveToThread(backend_thread)
 
     monitoringandtelemetry_timer = QTimer()
     monitoringandtelemetry_timer.setInterval(
         int(1000 / config.GUI.refreshrate_dbs))
     monitoringandtelemetry_timer.timeout.connect(
         backend.get_monitoringandtelemetry)
+    # monitoringandtelemetry_timer.moveToThread(backend_thread)
 
     # Windows
+
     unified = MainWindow(backend, streams_timer, expert_mode=args.expert,
                          on_sky_unit=args.onsky)
 
-    backend.get_all()
-    backend.get_monitoringandtelemetry()
+    backend_thread.start()
+
+    QMetaObject.invokeMethod(backend, "get_all", Qt.QueuedConnection)
+    QMetaObject.invokeMethod(backend, "get_monitoringandtelemetry",
+                             Qt.QueuedConnection)
 
     streams_timer.start()
     data_timer.start()

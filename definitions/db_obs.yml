@@ -233,3 +233,9 @@ focusing_fo_delta:
   short: Optimal M2 focusing offset
   long: Optimal M2 position offset in Z to apply to value derived by model
   unit: mm
+
+# Dead-man
+deadman_keepalive:
+  short: Dead-man keepalive
+  long: Dead-man keepalive (prevent safety inactivity check from triggering)
+  unit:

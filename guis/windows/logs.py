@@ -170,16 +170,16 @@ class LogsWidget(KalAOWidget):
         if entry['level'] == LogLevel.ERROR:
             self.errors_spinbox.setValue(self.errors_spinbox.value() + 1)
 
-            self.logged.emit(self.errors_spinbox.value(),
-                             self.warnings_spinbox.value())
+            self.logged.emit(self.warnings_spinbox.value(),
+                             self.errors_spinbox.value())
 
             style_origin = '<span class="bold red blink">'
             style_message = '<span class="bold red">'
         elif entry['level'] == LogLevel.WARNING:
             self.warnings_spinbox.setValue(self.warnings_spinbox.value() + 1)
 
-            self.logged.emit(self.errors_spinbox.value(),
-                             self.warnings_spinbox.value())
+            self.logged.emit(self.warnings_spinbox.value(),
+                             self.errors_spinbox.value())
 
             style_message = '<span class="bold yellow">'
 
@@ -298,8 +298,8 @@ class LogsWidget(KalAOWidget):
         self.errors_spinbox.setValue(0)
         self.warnings_spinbox.setValue(0)
 
-        self.logged.emit(self.errors_spinbox.value(),
-                         self.warnings_spinbox.value())
+        self.logged.emit(self.warnings_spinbox.value(),
+                         self.errors_spinbox.value())
 
     def reset_scrollbars(self):
         horizontal_scrollbar = self.logs_textedit.horizontalScrollBar()

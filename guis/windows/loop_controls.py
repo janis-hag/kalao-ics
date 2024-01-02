@@ -42,11 +42,14 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         self.resize(600, 400)
 
         with QSignalBlocker(self.nuvu_emgain_spinbox):
+            self.nuvu_emgain_spinbox.setMinimum(config.WFS.min_emgain)
             self.nuvu_emgain_spinbox.setMaximum(config.WFS.max_emgain)
 
         with QSignalBlocker(self.nuvu_exposuretime_spinbox):
             self.nuvu_exposuretime_spinbox.setMinimum(
                 config.WFS.min_exposuretime)
+            self.nuvu_exposuretime_spinbox.setMaximum(
+                config.WFS.max_exposuretime)
 
         with QSignalBlocker(self.nuvu_autogain_setting_spinbox):
             self.nuvu_autogain_setting_spinbox.setMaximum(
@@ -157,9 +160,11 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
 
         # Deformable Mirror
 
-        self.data_to_widget(
-            self.consume_param(data, config.FPS.BMC, 'max_stroke'),
-            self.bmc_maxstroke_spinbox)
+        max_stroke = self.consume_param(data, config.FPS.BMC, 'max_stroke')
+        if max_stroke is not None:
+            with QSignalBlocker(self.bmc_maxstroke_spinbox):
+                self.bmc_maxstroke_spinbox.setValue(max_stroke * 100)
+
         self.data_to_widget(
             self.consume_param(data, config.FPS.BMC, 'stroke_mode'),
             self.bmc_strokemode_combobox)
@@ -257,7 +262,7 @@ class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
     @Slot(float)
     def on_bmc_maxstroke_spinbox_valueChanged(self, d):
         self.action_send(self.bmc_maxstroke_spinbox,
-                         self.backend.set_bmc_maxstroke, d)
+                         self.backend.set_bmc_maxstroke, d / 100)
 
     @Slot(int)
     def on_bmc_strokemode_combobox_currentIndexChanged(self, index):

@@ -160,10 +160,13 @@ class FLI:
 
 
 class WFS:
+    min_emgain = 1
     max_emgain = 1000
-    min_exposuretime = 0.5
+    min_exposuretime = 0
+    max_exposuretime = 1000
+    readouttime = 0.5538
 
-    acquisition_time_timeout = 5
+    acquisition_time_timeout = 1
     acquisition_start_wait = 1
 
     # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
@@ -267,7 +270,7 @@ class FilterWheel:
 
 class Laser:
     max_power = 8  # mW
-    switch_wait = 5  # s
+    switch_wait = 10  # s
     position = 24.12  # mm
 
 
@@ -473,6 +476,11 @@ class Systemd:
     service_restart_wait = 15  # s
 
     services = {
+        'FLI (Science Camera)': {
+            'unit': "kalao_camera.service",
+            'enabled': True,
+            'restart': False
+        },
         'Nüvü (Wavefront Sensor)': {
             'unit': "kalao_nuvu.service",
             'enabled': True,
@@ -488,11 +496,6 @@ class Systemd:
             'unit': "kalao_sequencer.service",
             'enabled': True,
             'restart': False  # Do NOT put to True (restart loop)
-        },
-        'FLI (Science Camera)': {
-            'unit': "kalao_camera.service",
-            'enabled': True,
-            'restart': True
         },
         'GOP server': {
             'unit': "kalao_gop-server.service",

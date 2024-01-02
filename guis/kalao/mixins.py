@@ -277,6 +277,12 @@ class BackendDataMixin:
 
         self.data_cache = {}
 
+    def consume_metadata(self, data, key, default=None, force=False):
+        try:
+            return data['metadata'][key]
+        except KeyError:
+            return default
+
     def consume_stream(self, data, stream_name, default=None, force=False):
         try:
             if stream_name not in self.data_cache:

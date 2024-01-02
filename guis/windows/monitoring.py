@@ -21,6 +21,7 @@ import config
 
 class MonitoringWidget(KalAOWidget, BackendDataMixin):
     hovered = Signal(str)
+    updated = Signal(int, int, int)
 
     formatter = KalAOFormatter()
 
@@ -105,6 +106,10 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
         self.lineedits[f'{collection}/{key}'] = lineedit
 
     def monitoringandtelemetry_updated(self, data):
+        outdated = 0
+        errors = 0
+        warnings = 0
+
         for lineedit in self.lineedits.values():
             value, timestamp = self.consume_db(data, lineedit.collection,
                                                lineedit.key)
@@ -130,6 +135,7 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
                     lineedit.timestamp).total_seconds() > max_age:
                 lineedit.setStyleSheet(f'color: {Color.GREY.name()};')
                 lineedit.hover_text = f'{since_text} (outdated)'
+                outdated += 1
             elif isinstance(value, float) or isinstance(value, int):
                 error_range = lineedit.metadata.get('error_range',
                                                     [np.nan, np.nan])
@@ -147,13 +153,14 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
                         '{since_text} | Outside of error range [{error_min}{unit}; {error_max}{unit}]',
                         since_text=since_text, error_min=error_min,
                         error_max=error_max, unit=lineedit.unit)
-
+                    errors += 1
                 elif value > warn_max or value < warn_min:
                     lineedit.setStyleSheet(f'color: {Color.ORANGE.name()};')
                     lineedit.hover_text = self.formatter.format(
                         '{since_text} | Outside of warning range [{warn_min}{unit}; {warn_max}{unit}]',
                         since_text=since_text, warn_min=warn_min,
                         warn_max=warn_max, unit=lineedit.unit)
+                    warnings += 1
                 else:
                     lineedit.setStyleSheet(f'color: {Color.BLACK.name()};')
                     lineedit.hover_text = since_text
@@ -172,6 +179,8 @@ class MonitoringWidget(KalAOWidget, BackendDataMixin):
             self.telemetry_update_label.updateText(
                 telemetry_update=telemetry.astimezone().strftime(
                     '%H:%M:%S %d-%m-%Y'))
+
+        self.updated.emit(outdated, warnings, errors)
 
     def eventFilter(self, source, event):
         if hasattr(source, 'hover_text'):

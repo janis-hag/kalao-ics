@@ -104,6 +104,8 @@ class MainBackend(FakeSHMFPSBackend):
                 True,
             'ttm-loopgain':
                 0,
+            'nuvu-acq':
+                True,
             'nuvu-emgain':
                 config.WFS.autogain_params[10][0],
             'nuvu-exptime':
@@ -144,9 +146,9 @@ class MainBackend(FakeSHMFPSBackend):
                 4,
             'filterwheel_filter_name':
                 'z',
-            'remaining_time':
+            'fli-remaining_time':
                 0,
-            'exposure_time':
+            'fli-exposure_time':
                 60,
             'ippower_rtc_status':
                 IPPowerStatus.ON,
@@ -243,23 +245,25 @@ class MainBackend(FakeSHMFPSBackend):
         self._update_param(self.streams, config.FPS.BMC, 'max_stroke',
                            self.internal_state['bmc-max_stroke'])
 
-        self._update_stream(self.streams, config.Streams.NUVU, nuvu_data)
+        if self.internal_state['nuvu-acq']:
+            self._update_stream(self.streams, config.Streams.NUVU, nuvu_data)
 
-        self._update_stream(self.streams, config.Streams.SLOPES, slopes_data)
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x',
-                           slopes_params['slope_x'])
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y',
-                           slopes_params['slope_y'])
-        self._update_param(self.streams, config.FPS.SHWFS, 'residual',
-                           slopes_params['residual'])
+            self._update_stream(self.streams, config.Streams.SLOPES,
+                                slopes_data)
+            self._update_param(self.streams, config.FPS.SHWFS, 'slope_x',
+                               slopes_params['slope_x'])
+            self._update_param(self.streams, config.FPS.SHWFS, 'slope_y',
+                               slopes_params['slope_y'])
+            self._update_param(self.streams, config.FPS.SHWFS, 'residual',
+                               slopes_params['residual'])
 
-        self._update_stream(self.streams, config.Streams.FLUX, flux_data)
-        self._update_param(self.streams, config.FPS.SHWFS,
-                           'flux_subaperture_avg',
-                           flux_params['flux_subaperture_avg'])
-        self._update_param(self.streams, config.FPS.SHWFS,
-                           'flux_subaperture_brightest',
-                           flux_params['flux_subaperture_brightest'])
+            self._update_stream(self.streams, config.Streams.FLUX, flux_data)
+            self._update_param(self.streams, config.FPS.SHWFS,
+                               'flux_subaperture_avg',
+                               flux_params['flux_subaperture_avg'])
+            self._update_param(self.streams, config.FPS.SHWFS,
+                               'flux_subaperture_brightest',
+                               flux_params['flux_subaperture_brightest'])
 
         return self.streams
 
@@ -298,23 +302,27 @@ class MainBackend(FakeSHMFPSBackend):
                                 self.internal_state[config.Streams.MODALGAINS])
             self.first = False
 
-        if self.internal_state['nuvu-exptime'] == 0:
-            mfrate = 1805.5
+        if not self.internal_state['nuvu-acq']:
+            mfrate = 0
+        elif self.internal_state['nuvu-exptime'] < config.WFS.readouttime:
+            mfrate = 1000 / config.WFS.readouttime
         else:
-            mfrate = min(1000 / self.internal_state['nuvu-exptime'], 1805.5)
+            mfrate = 1000 / self.internal_state['nuvu-exptime']
 
-        self._update_stream_keywords(
-            self.data, config.Streams.NUVU_RAW, {
-                'T_CCD': -60,
-                'T_CNTRLR': 35,
-                'T_PSU': 35,
-                'T_FPGA': 35,
-                'T_HSINK': 15.5,
-                'EMGAIN': self.internal_state['nuvu-emgain'],
-                'DETGAIN': 1,
-                'EXPTIME': self.internal_state['nuvu-exptime'],
-                'MFRATE': mfrate,
-            })
+        if self.internal_state['nuvu-acq']:
+            self._update_stream_keywords(
+                self.data, config.Streams.NUVU_RAW, {
+                    'T_CCD': -60,
+                    'T_CNTRLR': 35,
+                    'T_PSU': 35,
+                    'T_FPGA': 35,
+                    'T_HSINK': 15.5,
+                    'EMGAIN': self.internal_state['nuvu-emgain'],
+                    'DETGAIN': 1,
+                    'EXPTIME': self.internal_state['nuvu-exptime'],
+                    'MFRATE': mfrate,
+                    '_MAQTIME': datetime.now(timezone.utc).timestamp() * 1e6,
+                })
 
         self._update_param(self.data, config.FPS.NUVU, 'autogain_on',
                            self.internal_state['nuvu-autogain_on'])
@@ -415,8 +423,8 @@ class MainBackend(FakeSHMFPSBackend):
 
         self._update_dict(
             self.data, 'fli', {
-                'remaining_time': self.internal_state['remaining_time'],
-                'exposure_time': self.internal_state['exposure_time'],
+                'remaining_time': self.internal_state['fli-remaining_time'],
+                'exposure_time': self.internal_state['fli-exposure_time'],
                 'heatsink': 15.5,
                 'ccd': -30
             })
@@ -833,21 +841,28 @@ class MainBackend(FakeSHMFPSBackend):
     def set_fli_image(self, exposure_time):
         print(f'Started FLI exposure of {exposure_time} (virtually)')
 
-        self.internal_state['exposure_time'] = exposure_time
-        self.internal_state['remaining_time'] = exposure_time
+        self.internal_state['fli-exposure_time'] = exposure_time
+        self.internal_state['fli-remaining_time'] = exposure_time
 
-        while self.internal_state['remaining_time'] > 0:
+        while self.internal_state['fli-remaining_time'] > 0:
             time.sleep(1)
-            if self.internal_state['remaining_time'] > 0:
-                self.internal_state['remaining_time'] -= 1
+            if self.internal_state['fli-remaining_time'] > 0:
+                self.internal_state['fli-remaining_time'] -= 1
 
-        if self.internal_state['remaining_time'] < 0:
-            self.internal_state['remaining_time'] = 0
+        if self.internal_state['fli-remaining_time'] < 0:
+            self.internal_state['fli-remaining_time'] = 0
 
     def get_fli_cancel(self):
-        self.internal_state['remaining_time'] = 0
-
+        self.internal_state['fli-remaining_time'] = 0
         print(f'Canceled FLI exposure (virtually)')
+
+    def get_nuvu_acquisition_start(self):
+        self.internal_state['nuvu-acq'] = True
+        print(f'Started Nüvü acquisition (virtually)')
+
+    def get_nuvu_acquisition_stop(self):
+        self.internal_state['nuvu-acq'] = False
+        print(f'Stopped Nüvü acquisition (virtually)')
 
     def get_ippower_rtc_on(self):
         self.internal_state['ippower_rtc_status'] = IPPowerStatus.ON

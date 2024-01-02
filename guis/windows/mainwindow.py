@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 
 from PySide6.QtGui import Qt
-from PySide6.QtWidgets import QApplication, QCheckBox, QTabWidget
+from PySide6.QtWidgets import QApplication, QCheckBox, QStyle, QTabWidget
 
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin
@@ -27,9 +27,9 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         self.streams_timer = streams_timer
 
         #self.showMaximized()
+        self.move(100, 50)
+        self.resize(1200, 800)
 
-        self.move(100, 0)
-        self.resize(1300, 900)
         self.show()
 
         self.tabwidget = QTabWidget(parent=self)
@@ -44,8 +44,8 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         self.logs = LogsWidget(backend, parent=self)
 
         self.widgets = [
-            self.main, self.loop_controls, self.monitoring, self.engineering,
-            self.plots, self.logs
+            self.main, self.loop_controls, self.monitoring, self.plots,
+            self.engineering, self.logs
         ]
 
         for widget in self.widgets:
@@ -74,8 +74,9 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         ]:
             widget.hovered.connect(self.info_to_statusbar)
 
-        self.logs_initial_tab_color = self.tabwidget.tabBar().tabTextColor(
-            self.tabwidget.indexOf(self.logs))
+        self.initial_tab_color = self.tabwidget.tabBar().tabTextColor(0)
+
+        self.monitoring.updated.connect(self.on_monitoring_updated)
         self.logs.logged.connect(self.on_logs_logged)
 
         backend.streams_updated.connect(self.streams_updated)
@@ -87,10 +88,13 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
 
         self.tabwidget.setCurrentIndex(0)
 
-    def on_logs_logged(self, errors, warnings):
+    def on_monitoring_updated(self, outdated, warnings, errors):
         list = []
-        color = self.logs_initial_tab_color
-        text = 'Logs'
+        color = self.initial_tab_color
+        text = self.monitoring.windowTitle().removesuffix(" - KalAO")
+
+        if outdated != 0:
+            list.append(f'O: {outdated}')
 
         if warnings != 0:
             color = Color.ORANGE
@@ -103,10 +107,29 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         if len(list) > 0:
             text += f' ({", ".join(list)})'
 
-        self.tabwidget.tabBar().setTabText(self.tabwidget.indexOf(self.logs),
-                                           text)
-        self.tabwidget.tabBar().setTabTextColor(
-            self.tabwidget.indexOf(self.logs), color)
+        tab_index = self.tabwidget.indexOf(self.monitoring)
+        self.tabwidget.tabBar().setTabText(tab_index, text)
+        self.tabwidget.tabBar().setTabTextColor(tab_index, color)
+
+    def on_logs_logged(self, warnings, errors):
+        list = []
+        color = self.initial_tab_color
+        text = self.logs.windowTitle().removesuffix(" - KalAO")
+
+        if warnings != 0:
+            color = Color.ORANGE
+            list.append(f'W: {warnings}')
+
+        if errors != 0:
+            color = Color.RED
+            list.append(f'E: {errors}')
+
+        if len(list) > 0:
+            text += f' ({", ".join(list)})'
+
+        tab_index = self.tabwidget.indexOf(self.logs)
+        self.tabwidget.tabBar().setTabText(tab_index, text)
+        self.tabwidget.tabBar().setTabTextColor(tab_index, color)
 
     def on_tabwidget_currentChanged(self, i):
         # Main tab

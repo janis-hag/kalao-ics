@@ -382,6 +382,12 @@ class MainBackend(SHMFPSBackend):
     def get_fli_cancel(self):
         camera.cancel()
 
+    def get_nuvu_acquisition_start(self):
+        aocontrol.start_wfs_acquisition()
+
+    def get_nuvu_acquisition_stop(self):
+        aocontrol.stop_wfs_acquisition()
+
     def get_ippower_rtc_on(self):
         ippower.switch(config.IPPower.Port.RTC, IPPowerStatus.ON)
 

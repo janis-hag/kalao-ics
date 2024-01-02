@@ -9,7 +9,7 @@ laser.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-from time import sleep
+import time
 
 from kalao import database, logger
 from kalao.cacao import aocontrol
@@ -132,7 +132,7 @@ def set_power(power, enable=False, beck=None):
     if enable and get_state() != LaserState.ON:
         _switch('bEnable', beck=beck)
 
-    sleep(config.Laser.switch_wait)
+    time.sleep(config.Laser.switch_wait)
 
     return get_power(beck=beck)
 
@@ -167,7 +167,7 @@ def _switch(action_name, beck=None):
         ua.DataValue(
             ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
 
-    sleep(config.Laser.switch_wait)
+    time.sleep(config.Laser.switch_wait)
 
     return get_state(beck=beck)
 
