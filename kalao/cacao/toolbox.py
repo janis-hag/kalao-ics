@@ -74,7 +74,7 @@ def open_fps_once(fps_name, fps_cache):
         return fps_info['fps']
     else:
         if fps_info is not None:
-            fps_info['fps'].close()
+            fps_info['fps'].disconnect()
 
         fps = FPS(fps_name)
         fps_cache[fps_name] = {
