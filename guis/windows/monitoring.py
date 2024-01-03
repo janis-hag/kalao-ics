@@ -14,12 +14,12 @@ from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin
 from guis.kalao.string_formatter import KalAOFormatter
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KWidget
 
 import config
 
 
-class MonitoringWidget(KalAOWidget, BackendDataMixin):
+class MonitoringWidget(KWidget, BackendDataMixin):
     hovered = Signal(str)
     updated = Signal(int, int, int)
 

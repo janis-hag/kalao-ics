@@ -6,12 +6,12 @@ from guis.kalao import colormaps
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KWidget
 
 import config
 
 
-class WFSWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
+class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.NUVU
     stream_info = config.StreamInfo.nuvu_stream
 

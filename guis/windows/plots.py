@@ -13,12 +13,12 @@ from kalao.utils import kalao_string, kalao_time
 
 from guis.kalao.definitions import ColorPalette
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOListWidgetItem, KalAOWidget
+from guis.kalao.widgets import KListWidgetItem, KWidget
 
 import config
 
 
-class PlotsWidget(KalAOWidget):
+class PlotsWidget(KWidget):
     hovered = Signal(str)
     point_size = 3
 
@@ -40,7 +40,7 @@ class PlotsWidget(KalAOWidget):
         for k, v in sorted(
                 database.definitions['telemetry']['metadata'].items(),
                 key=lambda t: t[1]['short'].casefold()):
-            item = KalAOListWidgetItem(k, self.get_display_name(v))
+            item = KListWidgetItem(k, self.get_display_name(v))
             item.hover_text = v['long']
             # item.installEventFilter(self)
 
@@ -56,7 +56,7 @@ class PlotsWidget(KalAOWidget):
         for k, v in sorted(
                 database.definitions['monitoring']['metadata'].items(),
                 key=lambda t: t[1]['short'].casefold()):
-            item = KalAOListWidgetItem(k, self.get_display_name(v))
+            item = KListWidgetItem(k, self.get_display_name(v))
             item.hover_text = v['long']
             # item.installEventFilter(self)
 
@@ -74,7 +74,7 @@ class PlotsWidget(KalAOWidget):
             if k in config.GUI.plots_exclude_list:
                 continue
 
-            item = KalAOListWidgetItem(k, self.get_display_name(v))
+            item = KListWidgetItem(k, self.get_display_name(v))
             item.hover_text = v['long']
             # item.installEventFilter(self)
             self.obs_list.addItem(item)

@@ -5,12 +5,12 @@ from PySide6.QtGui import Qt
 from guis.kalao import colormaps
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KWidget
 
 import config
 
 
-class DMWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
+class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.DM
     stream_info = config.StreamInfo.dm01disp
 

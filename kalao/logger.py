@@ -16,7 +16,7 @@ def error(name, message):
 
 
 def log(name, level, message):
-    print(f'{name.replace("_", " ").upper():>14s} | [{level.value}] {message}',
+    print(f'{name.replace("_", " ").upper()} | [{level.value}] {message}',
           flush=True)
 
     database.store_log(name, level, message)

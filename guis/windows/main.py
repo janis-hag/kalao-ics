@@ -6,7 +6,7 @@ from PySide6.QtGui import Qt
 from guis.kalao.definitions import Color, Logo
 from guis.kalao.mixins import BackendDataMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KWidget
 from guis.windows.dm import DMWidget
 from guis.windows.fli import FLIWidget
 from guis.windows.flux import FluxWidget
@@ -17,7 +17,7 @@ from guis.windows.wfs import WFSWidget
 import config
 
 
-class MainWidget(KalAOWidget, BackendDataMixin):
+class MainWidget(KWidget, BackendDataMixin):
     def __init__(self, backend, streams_timer, on_sky_unit=False, parent=None):
         super().__init__(parent)
 

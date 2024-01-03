@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="1,0">
    <item row="1" column="0">
-    <widget class="KalAOChartView" name="plots_view"/>
+    <widget class="KChartView" name="plots_view"/>
    </item>
    <item row="2" column="0">
     <widget class="QLabel" name="selection_label">
@@ -139,7 +139,7 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="KalAODateTimeEdit" name="start_datetimeedit">
+      <widget class="KDateTimeEdit" name="start_datetimeedit">
        <property name="currentSection">
         <enum>QDateTimeEdit::HourSection</enum>
        </property>
@@ -156,7 +156,7 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="KalAODateTimeEdit" name="end_datetimeedit">
+      <widget class="KDateTimeEdit" name="end_datetimeedit">
        <property name="currentSection">
         <enum>QDateTimeEdit::HourSection</enum>
        </property>
@@ -286,12 +286,12 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOChartView</class>
+   <class>KChartView</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAODateTimeEdit</class>
+   <class>KDateTimeEdit</class>
    <extends>QDateTimeEdit</extends>
    <header>kalao</header>
   </customwidget>

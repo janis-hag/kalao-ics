@@ -7,12 +7,12 @@ from kalao.utils import kalao_tools
 from guis.kalao import colormaps
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KWidget
 
 import config
 
 
-class FluxWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
+class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.FLUX
     stream_info = config.StreamInfo.shwfs_slopes_flux
 

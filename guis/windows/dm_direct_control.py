@@ -9,7 +9,7 @@ from kalao.utils import kalao_tools, zernike
 from guis.kalao.colormaps import CoolWarm
 from guis.kalao.mixins import BackendActionMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOMainWindow
+from guis.kalao.widgets import KMainWindow
 
 
 class DMSpinBox(QDoubleSpinBox):
@@ -45,7 +45,7 @@ class DMSpinBox(QDoubleSpinBox):
         super().setValue(val)
 
 
-class DMDirectControl(KalAOMainWindow, BackendActionMixin):
+class DMDirectControl(KMainWindow, BackendActionMixin):
     colormap = CoolWarm()
     zernike_indices = list(range(15))
 

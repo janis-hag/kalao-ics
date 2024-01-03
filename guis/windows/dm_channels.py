@@ -4,12 +4,12 @@ from guis.kalao import colormaps
 from guis.kalao.mixins import (BackendActionMixin, BackendDataMixin,
                                MinMaxMixin, SceneHoverMixin)
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOMainWindow
+from guis.kalao.widgets import KMainWindow
 
 import config
 
 
-class DMChannelsWindow(KalAOMainWindow, BackendActionMixin, MinMaxMixin,
+class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                        SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.DM
     stream_info = config.StreamInfo.dm01disp

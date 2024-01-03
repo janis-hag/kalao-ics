@@ -89,7 +89,7 @@
    <item row="0" column="2" rowspan="3">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
-      <widget class="KalAOSvgWidget" name="logo_label" native="true">
+      <widget class="KSvgWidget" name="logo_label" native="true">
        <property name="minimumSize">
         <size>
          <width>250</width>
@@ -172,7 +172,7 @@
        </property>
        <layout class="QGridLayout" name="gridLayout_8">
         <item row="1" column="1">
-         <widget class="KalAOStatusIndicator" name="dmloop_indicator">
+         <widget class="KStatusIndicator" name="dmloop_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -194,7 +194,7 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="KalAOStatusIndicator" name="ttmloop_indicator">
+         <widget class="KStatusIndicator" name="ttmloop_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -286,7 +286,7 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="KalAOLineEdit" name="fli_remaining_time_lineedit">
+         <widget class="KLineEdit" name="fli_remaining_time_lineedit">
           <property name="text">
            <string>{remaining_time:.3f} s</string>
           </property>
@@ -312,7 +312,7 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="KalAOStatusIndicator" name="fli_exposure_indicator">
+         <widget class="KStatusIndicator" name="fli_exposure_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -350,7 +350,7 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="KalAOLineEdit" name="fli_exposure_time_lineedit">
+         <widget class="KLineEdit" name="fli_exposure_time_lineedit">
           <property name="text">
            <string>{exposure_time:.3f} s</string>
           </property>
@@ -376,7 +376,7 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="KalAOLineEdit" name="fli_ccd_temperature_lineedit">
+         <widget class="KLineEdit" name="fli_ccd_temperature_lineedit">
           <property name="text">
            <string>{ccd_temperature:.1f} °C</string>
           </property>
@@ -395,7 +395,7 @@
        </property>
        <layout class="QGridLayout" name="gridLayout_10">
         <item row="2" column="1">
-         <widget class="KalAOLineEdit" name="nuvu_exposuretime_lineedit">
+         <widget class="KLineEdit" name="nuvu_exposuretime_lineedit">
           <property name="text">
            <string>{exposuretime:.2f} ms</string>
           </property>
@@ -421,7 +421,7 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="KalAOLineEdit" name="nuvu_emgain_lineedit">
+         <widget class="KLineEdit" name="nuvu_emgain_lineedit">
           <property name="text">
            <string>{emgain:.0f}</string>
           </property>
@@ -447,7 +447,7 @@
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="KalAOLineEdit" name="nuvu_ccd_temperature_lineedit">
+         <widget class="KLineEdit" name="nuvu_ccd_temperature_lineedit">
           <property name="text">
            <string>{ccd_temperature:.1f} °C</string>
           </property>
@@ -473,7 +473,7 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="KalAOLineEdit" name="nuvu_framerate_lineedit">
+         <widget class="KLineEdit" name="nuvu_framerate_lineedit">
           <property name="text">
            <string>{framerate:.2f} Hz</string>
           </property>
@@ -515,7 +515,7 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="KalAOStatusIndicator" name="nuvu_autogain_indicator">
+         <widget class="KStatusIndicator" name="nuvu_autogain_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -660,18 +660,18 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOStatusIndicator</class>
+   <class>KStatusIndicator</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAOSvgWidget</class>
+   <class>KSvgWidget</class>
    <extends>QWidget</extends>
    <header>kalao</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>KalAOLineEdit</class>
+   <class>KLineEdit</class>
    <extends>QLineEdit</extends>
    <header>kalao</header>
   </customwidget>

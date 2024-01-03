@@ -9,7 +9,7 @@ from kalao.utils import kalao_tools
 from guis.kalao.definitions import HORI, VERT, Color, PokeState
 from guis.kalao.mixins import BackendDataMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOMainWindow
+from guis.kalao.widgets import KMainWindow
 
 import config
 
@@ -21,7 +21,7 @@ class AlignmentSubwindow(QWidget):
         loadUi('alignment_subwindow.ui', self)
 
 
-class AlignmentWindow(KalAOMainWindow, BackendDataMixin):
+class AlignmentWindow(KMainWindow, BackendDataMixin):
     def __init__(self, backend, wfs):
         super().__init__()
 

@@ -5,10 +5,10 @@ from PySide6.QtGui import QCursor, QGuiApplication, Qt
 
 from guis.kalao.mixins import SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOGraphicsView, KalAOMainWindow
+from guis.kalao.widgets import KGraphicsView, KMainWindow
 
 
-class CalibrationWindow(KalAOMainWindow, SceneHoverMixin):
+class CalibrationWindow(KMainWindow, SceneHoverMixin):
     data_unit = ''
     data_scaling = 1
     data_precision = 0
@@ -37,7 +37,7 @@ class CalibrationWindow(KalAOMainWindow, SceneHoverMixin):
         for key in dir(self):
             attr = getattr(self, key)
 
-            if isinstance(attr, KalAOGraphicsView):
+            if isinstance(attr, KGraphicsView):
                 attr.hovered.connect(self.hover_xyv_to_str)
 
         self.hovered.connect(self.info_to_statusbar)

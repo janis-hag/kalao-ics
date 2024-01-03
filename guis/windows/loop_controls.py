@@ -6,7 +6,7 @@ from PySide6.QtGui import Qt
 
 from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KWidget
 
 import config
 
@@ -30,7 +30,7 @@ laws = {
 }
 
 
-class LoopControlsWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
+class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
     hovered = Signal(str)
 
     def __init__(self, backend, parent=None):

@@ -39,7 +39,7 @@ class OffsetedTextItem(QGraphicsSimpleTextItem):
                       b.y() - self.offset_y, b.width(), b.height())
 
 
-class KalAOLabel(QLabel, ArrayToImageMixin):
+class KLabel(QLabel, ArrayToImageMixin):
     pixmap_ = None
     text_format = None
     formatter = KalAOFormatter()
@@ -93,7 +93,7 @@ class KalAOLabel(QLabel, ArrayToImageMixin):
         self.setText(self.formatter.format(self.text_format, **kwargs))
 
 
-class KalAOLineEdit(QLineEdit):
+class KLineEdit(QLineEdit):
     text_format = None
     formatter = KalAOFormatter()
 
@@ -116,7 +116,7 @@ class KalAOLineEdit(QLineEdit):
         self.setText(self.formatter.format(self.text_format, **kwargs))
 
 
-class KalAODateTimeEdit(QDateTimeEdit):
+class KDateTimeEdit(QDateTimeEdit):
     _overrideSteps = (
         QDateTimeEdit.Section.MonthSection,
         QDateTimeEdit.Section.DaySection,
@@ -163,7 +163,7 @@ class KalAODateTimeEdit(QDateTimeEdit):
         self.setDateTime(dt)
 
 
-class KalAOScaledDoubleSpinbox(QDoubleSpinBox):
+class KScaledDoubleSpinbox(QDoubleSpinBox):
     scale = 1
 
     def __init__(self, *args, **kwargs):
@@ -196,11 +196,11 @@ class KalAOScaledDoubleSpinbox(QDoubleSpinBox):
         self.scale = scale
 
 
-class KalAOSvgWidget(QSvgWidget):
+class KSvgWidget(QSvgWidget):
     pass
 
 
-class KalAOMainWindow(QMainWindow):
+class KMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -213,7 +213,7 @@ class KalAOMainWindow(QMainWindow):
             self.statusBar().clearMessage()
 
 
-class KalAODetachedTab(KalAOMainWindow):
+class KDetachedTabWindow(KMainWindow):
     def __init__(self, widget, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -259,7 +259,7 @@ class KalAODetachedTab(KalAOMainWindow):
         event.accept()
 
 
-class KalAOWidget(QWidget):
+class KWidget(QWidget):
     associated_stream = None
     opened = 0
 
@@ -268,19 +268,19 @@ class KalAOWidget(QWidget):
 
         self.setWindowIcon(QIcon(str(Logo.ico)))
         self.resize(600, 400)
-        self.move(50 + 50 * KalAOWidget.opened, 50 + 30 * KalAOWidget.opened)
+        self.move(50 + 50 * KWidget.opened, 50 + 30 * KWidget.opened)
 
-        KalAOWidget.opened += 1
+        KWidget.opened += 1
 
 
-class KalAOListWidgetItem(QListWidgetItem):
+class KListWidgetItem(QListWidgetItem):
     def __init__(self, key, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.key = key
 
 
-class KalAOHoverableGraphicsScene(QGraphicsScene):
+class KHoverableGraphicsScene(QGraphicsScene):
     x = np.nan
     y = np.nan
 
@@ -358,7 +358,7 @@ class KalAOHoverableGraphicsScene(QGraphicsScene):
             self.hovered.emit(self.x, self.y)
 
 
-class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
+class KGraphicsView(QGraphicsView, ArrayToImageMixin):
     img = None
     pixmap = None
     pixmap_item = None
@@ -374,7 +374,7 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.scene = KalAOHoverableGraphicsScene()
+        self.scene = KHoverableGraphicsScene()
         self.setScene(self.scene)
 
         self.setRenderHints(QPainter.Antialiasing |
@@ -698,7 +698,7 @@ class KalAOGraphicsView(QGraphicsView, ArrayToImageMixin):
                                  -self.parang_group.boundingRect().y() + 50)
 
 
-class KalAOChart(QChart):
+class KChart(QChart):
     hovered = Signal(float, float)
 
     point_size = 3
@@ -765,13 +765,13 @@ class KalAOChart(QChart):
         return x**2 + y**2
 
 
-class KalAOChartView(QChartView):
+class KChartView(QChartView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setRenderHint(QPainter.Antialiasing)
 
-        self.chart = KalAOChart()
+        self.chart = KChart()
         self.chart.setMargins(QMargins(0, 0, 0, 0))
 
         self.chart.setBackgroundVisible(True)
@@ -783,7 +783,7 @@ class KalAOChartView(QChartView):
         self.chart.axisY().setRange(y_min, y_max)
 
 
-class KalAODraggableChartView(KalAOChartView):
+class KDraggableChartView(KChartView):
     drag_max = 1
     drag_min = 0
 
@@ -812,7 +812,7 @@ class KalAODraggableChartView(KalAOChartView):
         super().mouseMoveEvent(event)
 
 
-class KalAOStatusIndicator(QGraphicsView):
+class KStatusIndicator(QGraphicsView):
     diameter = 100
     border = 8
     view = QRectF(0, 0, diameter, diameter)

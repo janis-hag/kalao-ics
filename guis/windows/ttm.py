@@ -10,12 +10,12 @@ from PySide6.QtGui import QPen, Qt
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KWidget
 
 import config
 
 
-class TTMWidget(KalAOWidget, MinMaxMixin, BackendDataMixin):
+class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
     associated_stream = config.Streams.TTM
     stream_info = config.StreamInfo.dm02disp
 

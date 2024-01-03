@@ -7,7 +7,7 @@ from kalao import database, ippower, logs, services
 from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
-                       plc_utils, shutter, tungsten)
+                       plc_utils, shutter, temperature_control, tungsten)
 from kalao.sequencer import centering
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
@@ -375,6 +375,24 @@ class MainBackend(SHMFPSBackend):
 
     def get_plc_adc_maxdisp(self):
         adc.set_max_disp()
+
+    def set_plc_pump_state(self, state):
+        if state:
+            temperature_control.pump_on()
+        else:
+            temperature_control.pump_off()
+
+    def set_plc_fan_state(self, state):
+        if state:
+            temperature_control.fan_on()
+        else:
+            temperature_control.fan_off()
+
+    def set_plc_heater_state(self, state):
+        if state:
+            temperature_control.heater_on()
+        else:
+            temperature_control.heater_off()
 
     def set_fli_image(self, exposure_time):
         camera.take_frame(exposure_time)

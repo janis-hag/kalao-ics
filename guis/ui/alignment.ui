@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="2" column="0" colspan="2">
-     <widget class="KalAOLabel" name="average_label">
+     <widget class="KLabel" name="average_label">
       <property name="text">
        <string>Average: {rs[0]:.3f}px @ {phis[0]:.0f}° | {rs[1]:.3f}px @ {phis[1]:.0f}° | {rs[2]:.3f}px @ {phis[2]:.0f}° | {rs[3]:.3f}px @ {phis[3]:.0f}°</string>
       </property>
@@ -219,7 +219,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOLabel</class>
+   <class>KLabel</class>
    <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>

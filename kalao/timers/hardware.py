@@ -86,7 +86,8 @@ def _check_dm_inactive():
     if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
         (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
             ippower.status(config.IPPower.Port.BMC_DM) == IPPowerStatus.ON):
-        logger.info('hardware_timer', 'Turning off DM due to inactivity timeout')
+        logger.info('hardware_timer',
+                    'Turning off DM due to inactivity timeout')
 
         aocontrol.turn_dm_off()
 
@@ -139,7 +140,8 @@ def _check_loops_inactive():
     """
 
     if aocontrol.check_loops() != LoopStatus.ALL_LOOPS_OFF:
-        logger.info('hardware_timer', 'Opening loops due to inactivity timeout')
+        logger.info('hardware_timer',
+                    'Opening loops due to inactivity timeout')
         aocontrol.open_loops()
 
     return 0
@@ -215,7 +217,7 @@ def _check_pump_temp(beck=None):
 def _check_plc(beck=None):
     logger.info('hardware_timer', 'Doing daily PLC housekeeping')
 
-    calibunit.init(force_init=True,beck=beck)
+    calibunit.init(force_init=True, beck=beck)
     adc.init(config.PLC.Node.ADC1, force_init=True, beck=beck)
     adc.init(config.PLC.Node.ADC2, force_init=True, beck=beck)
 
@@ -233,8 +235,8 @@ def _check_plc(beck=None):
 
 
 if __name__ == "__main__":
-    schedule.every(config.Timers.cooling_check_interval).seconds.do(
-        _check_cooling_status)
+    schedule.every(
+        config.Timers.cooling_check_interval).seconds.do(_check_cooling_status)
     schedule.every(
         config.Timers.inactivity_check_interval).seconds.do(_check_inactivity)
     schedule.every(60).seconds.do(_check_pump_temp)

@@ -25,7 +25,7 @@
     <widget class="QTreeWidget" name="filters_tree">
      <property name="maximumSize">
       <size>
-       <width>160</width>
+       <width>200</width>
        <height>16777215</height>
       </size>
      </property>

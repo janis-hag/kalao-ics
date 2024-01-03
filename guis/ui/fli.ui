@@ -52,7 +52,7 @@
       </widget>
      </item>
      <item>
-      <widget class="KalAOScaledDoubleSpinbox" name="min_spinbox">
+      <widget class="KScaledDoubleSpinbox" name="min_spinbox">
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
@@ -94,7 +94,7 @@
       </widget>
      </item>
      <item>
-      <widget class="KalAOScaledDoubleSpinbox" name="max_spinbox">
+      <widget class="KScaledDoubleSpinbox" name="max_spinbox">
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
@@ -177,7 +177,7 @@
     </layout>
    </item>
    <item>
-    <widget class="KalAOGraphicsView" name="fli_view">
+    <widget class="KGraphicsView" name="fli_view">
      <property name="enabled">
       <bool>true</bool>
      </property>
@@ -196,7 +196,7 @@
     </widget>
    </item>
    <item>
-    <widget class="KalAOLabel" name="star_label">
+    <widget class="KLabel" name="star_label">
      <property name="text">
       <string>X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, FWHM: {fwhm:.{axis_precision}f}{axis_unit}, Peak: {peak:.{data_precision}f}{data_unit}</string>
      </property>
@@ -239,17 +239,17 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOGraphicsView</class>
+   <class>KGraphicsView</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAOLabel</class>
+   <class>KLabel</class>
    <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAOScaledDoubleSpinbox</class>
+   <class>KScaledDoubleSpinbox</class>
    <extends>QDoubleSpinBox</extends>
    <header>kalao</header>
   </customwidget>

@@ -497,7 +497,7 @@ class Systemd:
             'enabled': True,
             'restart': False  # Do NOT put to True (restart loop)
         },
-        'GOP server': {
+        'GOP Server': {
             'unit': 'kalao_gop-server.service',
             'enabled': True,
             'restart': True

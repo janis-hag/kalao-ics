@@ -175,7 +175,8 @@ def hardware_timer(action):
 
 
 def observation_timer(action):
-    return unit_control(config.Systemd.services['observation-timer']['unit'], action)
+    return unit_control(config.Systemd.services['observation-timer']['unit'],
+                        action)
 
 
 def init():

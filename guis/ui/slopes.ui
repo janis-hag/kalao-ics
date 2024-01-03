@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="4" column="0">
-    <widget class="KalAOLabel" name="residual_label">
+    <widget class="KLabel" name="residual_label">
      <property name="text">
       <string>Residual: {residual:.3f}{unit}</string>
      </property>
@@ -25,7 +25,7 @@
     </widget>
    </item>
    <item row="2" column="0">
-    <widget class="KalAOGraphicsView" name="slopes_view">
+    <widget class="KGraphicsView" name="slopes_view">
      <property name="enabled">
       <bool>true</bool>
      </property>
@@ -59,7 +59,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="KalAOLabel" name="tip_label">
+      <widget class="KLabel" name="tip_label">
        <property name="text">
         <string>Tip: {tip:.3f}{unit}</string>
        </property>
@@ -85,7 +85,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="KalAOLabel" name="tilt_label">
+      <widget class="KLabel" name="tilt_label">
        <property name="text">
         <string>Tilt: {tilt:.3f}{unit}</string>
        </property>
@@ -147,7 +147,7 @@
       </widget>
      </item>
      <item>
-      <widget class="KalAOScaledDoubleSpinbox" name="min_spinbox">
+      <widget class="KScaledDoubleSpinbox" name="min_spinbox">
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
@@ -189,7 +189,7 @@
       </widget>
      </item>
      <item>
-      <widget class="KalAOScaledDoubleSpinbox" name="max_spinbox">
+      <widget class="KScaledDoubleSpinbox" name="max_spinbox">
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
@@ -275,17 +275,17 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOGraphicsView</class>
+   <class>KGraphicsView</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAOLabel</class>
+   <class>KLabel</class>
    <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAOScaledDoubleSpinbox</class>
+   <class>KScaledDoubleSpinbox</class>
    <extends>QDoubleSpinBox</extends>
    <header>kalao</header>
   </customwidget>

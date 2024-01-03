@@ -9,20 +9,20 @@ from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOStatusIndicator, KalAOWidget
+from guis.kalao.widgets import KStatusIndicator, KWidget
 from guis.windows.dm_channels import DMChannelsWindow
 from guis.windows.dm_direct_control import DMDirectControl
 from guis.windows.ttm_direct_control import TTMDirectControl
 
 from kalao.definitions.enums import (FilterwheelStatus, FlipMirrorPosition,
                                      IPPowerStatus, LaserState, PLCStatus,
-                                     ServiceAction, ShutterState,
+                                     RelayState, ServiceAction, ShutterState,
                                      TungstenState)
 
 import config
 
 
-class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
+class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     hovered = Signal(str)
 
     dm_channels = None
@@ -43,7 +43,7 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
         for key in dir(self):
             attr = getattr(self, key)
 
-            if isinstance(attr, KalAOStatusIndicator):
+            if isinstance(attr, KStatusIndicator):
                 attr.installEventFilter(self)
 
         with QSignalBlocker(self.shutter_combobox):
@@ -76,7 +76,7 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             lineedit.setCursor(Qt.WhatsThisCursor)
             lineedit.installEventFilter(self)
 
-            indicator = KalAOStatusIndicator()
+            indicator = KStatusIndicator()
             indicator.setCursor(Qt.WhatsThisCursor)
             indicator.installEventFilter(self)
 
@@ -302,6 +302,44 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
             else:
                 self.adc2_spinbox.setEnabled(True)
 
+        pump_status = self.consume_dict(data, 'plc', 'pump_status')
+        if pump_status is not None:
+            with QSignalBlocker(self.pump_checkbox):
+                self.pump_checkbox.setChecked(pump_status == RelayState.ON)
+
+            if pump_status == RelayState.ON:
+                self.pump_indicator.setStatus(Color.GREEN, pump_status.name)
+            elif pump_status == RelayState.OFF:
+                self.pump_indicator.setStatus(Color.BLACK, pump_status.name)
+            else:
+                self.pump_indicator.setStatus(Color.RED, pump_status.name)
+
+        fan_status = self.consume_dict(data, 'plc', 'fan_status')
+        if fan_status is not None:
+            with QSignalBlocker(self.fan_checkbox):
+                self.fan_checkbox.setChecked(fan_status == RelayState.ON)
+
+            if fan_status == RelayState.ON:
+                self.fan_indicator.setStatus(Color.GREEN, fan_status.name)
+            elif fan_status == RelayState.OFF:
+                self.fan_indicator.setStatus(Color.BLACK, fan_status.name)
+            else:
+                self.fan_indicator.setStatus(Color.RED, fan_status.name)
+
+        heater_status = self.consume_dict(data, 'plc', 'heater_status')
+        if heater_status is not None:
+            with QSignalBlocker(self.heater_checkbox):
+                self.heater_checkbox.setChecked(heater_status == RelayState.ON)
+
+            if heater_status == RelayState.ON:
+                self.heater_indicator.setStatus(Color.GREEN,
+                                                heater_status.name)
+            elif heater_status == RelayState.OFF:
+                self.heater_indicator.setStatus(Color.BLACK,
+                                                heater_status.name)
+            else:
+                self.heater_indicator.setStatus(Color.RED, heater_status.name)
+
         ippower_rtc_status = self.consume_dict(data, 'ippower',
                                                'ippower_rtc_status')
         if ippower_rtc_status is not None:
@@ -475,6 +513,21 @@ class EngineeringWidget(KalAOWidget, BackendActionMixin, BackendDataMixin):
     def on_adc_max_disp_button_clicked(self, checked):
         self.action_send(self.adc_max_disp_button,
                          self.backend.get_plc_adc_maxdisp)
+
+    @Slot(int)
+    def on_pump_checkbox_stateChanged(self, state):
+        self.action_send(self.pump_checkbox, self.backend.set_plc_pump_state,
+                         Qt.CheckState(state) == Qt.Checked)
+
+    @Slot(int)
+    def on_fan_checkbox_stateChanged(self, state):
+        self.action_send(self.fan_checkbox, self.backend.set_plc_fan_state,
+                         Qt.CheckState(state) == Qt.Checked)
+
+    @Slot(int)
+    def on_heater_checkbox_stateChanged(self, state):
+        self.action_send(self.pump_checkbox, self.backend.set_plc_heater_state,
+                         Qt.CheckState(state) == Qt.Checked)
 
     @Slot(bool)
     def on_fli_new_image_button_clicked(self, checked):

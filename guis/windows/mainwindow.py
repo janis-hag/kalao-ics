@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QApplication, QCheckBox, QStyle, QTabWidget
 
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin
-from guis.kalao.widgets import KalAODetachedTab, KalAOLabel, KalAOMainWindow
+from guis.kalao.widgets import KDetachedTabWindow, KLabel, KMainWindow
 from guis.windows.engineering import EngineeringWidget
 from guis.windows.logs import LogsWidget
 from guis.windows.loop_controls import LoopControlsWidget
@@ -15,7 +15,7 @@ from guis.windows.monitoring import MonitoringWidget
 from guis.windows.plots import PlotsWidget
 
 
-class MainWindow(KalAOMainWindow, BackendDataMixin):
+class MainWindow(KMainWindow, BackendDataMixin):
     previous_update_time = 0
     fps = 0
 
@@ -53,11 +53,11 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
                 widget,
                 widget.windowTitle().removesuffix(" - KalAO"))
 
-        self.fps_label = KalAOLabel("Streams refresh rate : {fps:04.1f} FPS |",
-                                    parent=self)
+        self.fps_label = KLabel("Streams refresh rate : {fps:04.1f} FPS |",
+                                parent=self)
         self.statusBar().addPermanentWidget(self.fps_label)
 
-        self.last_update_label = KalAOLabel(parent=self)
+        self.last_update_label = KLabel(parent=self)
         self.statusBar().addPermanentWidget(self.last_update_label)
 
         self.expert_checkbox = QCheckBox('Expert Mode', parent=self)
@@ -148,7 +148,7 @@ class MainWindow(KalAOMainWindow, BackendDataMixin):
         if i == 0:
             return
 
-        KalAODetachedTab(self.tabwidget.widget(i), parent=self)
+        KDetachedTabWindow(self.tabwidget.widget(i), parent=self)
 
     def on_expert_checkbox_stateChanged(self, state):
         if Qt.CheckState(state) == Qt.Checked:

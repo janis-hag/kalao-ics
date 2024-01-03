@@ -9,7 +9,7 @@ from guis.kalao import colormaps
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KWidget
 from guis.windows.fli_zoom import FLIZoomWindow, find_star_fast
 
 import config
@@ -38,7 +38,7 @@ def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
         return file_handling.get_last_image_path()
 
 
-class FLIWidget(KalAOWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
+class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.FLI
     stream_info = config.StreamInfo.fli_stream
 

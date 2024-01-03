@@ -26,7 +26,7 @@
      </widget>
     </item>
     <item row="2" column="3">
-     <widget class="KalAOGraphicsView" name="wfsmap_stream_view"/>
+     <widget class="KGraphicsView" name="wfsmap_stream_view"/>
     </item>
     <item row="0" column="3">
      <widget class="QLabel" name="wfsmap_label">
@@ -49,7 +49,7 @@
      </widget>
     </item>
     <item row="5" column="4">
-     <widget class="KalAOGraphicsView" name="DMmodes_stream_view"/>
+     <widget class="KGraphicsView" name="DMmodes_stream_view"/>
     </item>
     <item row="0" column="0">
      <widget class="QLabel" name="wfsrerf_label">
@@ -72,7 +72,7 @@
      </widget>
     </item>
     <item row="5" column="3">
-     <widget class="KalAOGraphicsView" name="dmmap_stream_view"/>
+     <widget class="KGraphicsView" name="dmmap_stream_view"/>
     </item>
     <item row="0" column="2">
      <widget class="QLabel" name="wfsmask_label">
@@ -85,10 +85,10 @@
      </widget>
     </item>
     <item row="4" column="4">
-     <widget class="KalAOGraphicsView" name="DMmodes_fits_view"/>
+     <widget class="KGraphicsView" name="DMmodes_fits_view"/>
     </item>
     <item row="2" column="2">
-     <widget class="KalAOGraphicsView" name="wfsmask_stream_view"/>
+     <widget class="KGraphicsView" name="wfsmask_stream_view"/>
     </item>
     <item row="3" column="3">
      <widget class="QLabel" name="dmmap_label">
@@ -101,10 +101,10 @@
      </widget>
     </item>
     <item row="2" column="4">
-     <widget class="KalAOGraphicsView" name="modesWFS_stream_view"/>
+     <widget class="KGraphicsView" name="modesWFS_stream_view"/>
     </item>
     <item row="4" column="3">
-     <widget class="KalAOGraphicsView" name="dmmap_fits_view"/>
+     <widget class="KGraphicsView" name="dmmap_fits_view"/>
     </item>
     <item row="0" column="4">
      <widget class="QLabel" name="modesWFS_label">
@@ -117,10 +117,10 @@
      </widget>
     </item>
     <item row="2" column="1">
-     <widget class="KalAOGraphicsView" name="wfsrefc_stream_view"/>
+     <widget class="KGraphicsView" name="wfsrefc_stream_view"/>
     </item>
     <item row="4" column="2">
-     <widget class="KalAOGraphicsView" name="dmmask_fits_view"/>
+     <widget class="KGraphicsView" name="dmmask_fits_view"/>
     </item>
     <item row="4" column="0" rowspan="2" colspan="2">
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -174,25 +174,25 @@
      </layout>
     </item>
     <item row="5" column="2">
-     <widget class="KalAOGraphicsView" name="dmmask_stream_view"/>
+     <widget class="KGraphicsView" name="dmmask_stream_view"/>
     </item>
     <item row="2" column="0">
-     <widget class="KalAOGraphicsView" name="wfsref_stream_view"/>
+     <widget class="KGraphicsView" name="wfsref_stream_view"/>
     </item>
     <item row="1" column="4">
-     <widget class="KalAOGraphicsView" name="modesWFS_fits_view"/>
+     <widget class="KGraphicsView" name="modesWFS_fits_view"/>
     </item>
     <item row="1" column="3">
-     <widget class="KalAOGraphicsView" name="wfsmap_fits_view"/>
+     <widget class="KGraphicsView" name="wfsmap_fits_view"/>
     </item>
     <item row="1" column="2">
-     <widget class="KalAOGraphicsView" name="wfsmask_fits_view"/>
+     <widget class="KGraphicsView" name="wfsmask_fits_view"/>
     </item>
     <item row="1" column="1">
-     <widget class="KalAOGraphicsView" name="wfsrefc_fits_view"/>
+     <widget class="KGraphicsView" name="wfsrefc_fits_view"/>
     </item>
     <item row="1" column="0">
-     <widget class="KalAOGraphicsView" name="wfsref_fits_view"/>
+     <widget class="KGraphicsView" name="wfsref_fits_view"/>
     </item>
    </layout>
   </widget>
@@ -210,7 +210,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOGraphicsView</class>
+   <class>KGraphicsView</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>

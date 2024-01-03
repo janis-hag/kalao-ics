@@ -14,15 +14,15 @@ class UiLoader(QUiLoader):
         self.baseinstance = baseinstance
         self.customWidgets = customWidgets
 
-        self.registerCustomWidget(KalAOLabel)
-        self.registerCustomWidget(KalAOLineEdit)
-        self.registerCustomWidget(KalAOGraphicsView)
-        self.registerCustomWidget(KalAOChartView)
-        self.registerCustomWidget(KalAODraggableChartView)
-        self.registerCustomWidget(KalAOSvgWidget)
-        self.registerCustomWidget(KalAODateTimeEdit)
-        self.registerCustomWidget(KalAOStatusIndicator)
-        self.registerCustomWidget(KalAOScaledDoubleSpinbox)
+        self.registerCustomWidget(KLabel)
+        self.registerCustomWidget(KLineEdit)
+        self.registerCustomWidget(KGraphicsView)
+        self.registerCustomWidget(KChartView)
+        self.registerCustomWidget(KDraggableChartView)
+        self.registerCustomWidget(KSvgWidget)
+        self.registerCustomWidget(KDateTimeEdit)
+        self.registerCustomWidget(KStatusIndicator)
+        self.registerCustomWidget(KScaledDoubleSpinbox)
 
     def createWidget(self, class_name, parent=None, name=''):
         if parent is None and self.baseinstance:

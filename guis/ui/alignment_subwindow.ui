@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="1" column="0">
-    <widget class="KalAOLabel" name="label_1">
+    <widget class="KLabel" name="label_1">
      <property name="text">
       <string>{r:.3f}px @ {phi:.0f}°</string>
      </property>
@@ -25,7 +25,7 @@
     </widget>
    </item>
    <item row="2" column="0">
-    <widget class="KalAOGraphicsView" name="view_3">
+    <widget class="KGraphicsView" name="view_3">
      <property name="verticalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
      </property>
@@ -35,7 +35,7 @@
     </widget>
    </item>
    <item row="0" column="0">
-    <widget class="KalAOGraphicsView" name="view_1">
+    <widget class="KGraphicsView" name="view_1">
      <property name="verticalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
      </property>
@@ -45,7 +45,7 @@
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="KalAOGraphicsView" name="view_2">
+    <widget class="KGraphicsView" name="view_2">
      <property name="verticalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
      </property>
@@ -55,7 +55,7 @@
     </widget>
    </item>
    <item row="2" column="1">
-    <widget class="KalAOGraphicsView" name="view_4">
+    <widget class="KGraphicsView" name="view_4">
      <property name="verticalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
      </property>
@@ -65,7 +65,7 @@
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="KalAOLabel" name="label_2">
+    <widget class="KLabel" name="label_2">
      <property name="text">
       <string>{r:.3f}px @ {phi:.0f}°</string>
      </property>
@@ -75,7 +75,7 @@
     </widget>
    </item>
    <item row="3" column="0">
-    <widget class="KalAOLabel" name="label_3">
+    <widget class="KLabel" name="label_3">
      <property name="text">
       <string>{r:.3f}px @ {phi:.0f}°</string>
      </property>
@@ -85,7 +85,7 @@
     </widget>
    </item>
    <item row="3" column="1">
-    <widget class="KalAOLabel" name="label_4">
+    <widget class="KLabel" name="label_4">
      <property name="text">
       <string>{r:.3f}px @ {phi:.0f}°</string>
      </property>
@@ -98,12 +98,12 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOGraphicsView</class>
+   <class>KGraphicsView</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAOLabel</class>
+   <class>KLabel</class>
    <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>

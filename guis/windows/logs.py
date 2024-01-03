@@ -7,7 +7,7 @@ from kalao.utils import kalao_string
 
 from guis.kalao.definitions import Color
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOWidget
+from guis.kalao.widgets import KWidget
 
 from kalao.definitions.enums import LogLevel
 
@@ -21,7 +21,7 @@ class LogsData(QTextBlockUserData):
         self.data = data.copy()
 
 
-class LogsWidget(KalAOWidget):
+class LogsWidget(KWidget):
     logged = Signal(int, int)
 
     lines = config.GUI.logs_lines
@@ -183,8 +183,15 @@ class LogsWidget(KalAOWidget):
 
             style_message = '<span class="bold yellow">'
 
+        message = entry["message"]
+        message_splitted = entry['message'].split(' | ')
+        if len(message_splitted) > 1:
+            message = ' | '.join([f'{message_splitted[0]:>17s}'] + message_splitted[1:])
+        else:
+            message = ' '*17 + ' | ' + message
+
         self.logs_textedit.appendHtml(
-            f'{style_timestamp}{entry["timestamp"]}{style_end} {style_origin}{entry["origin"]:>14s}{style_end}: {style_message}{entry["message"]}{style_end}'
+            f'{style_timestamp}{entry["timestamp"]}{style_end} {style_origin}{entry["origin"]:>17s}{style_end}: {style_message}{message}{style_end}'
         )
 
         block = self.logs_textedit.document().lastBlock()

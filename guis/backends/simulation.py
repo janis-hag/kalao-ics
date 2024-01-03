@@ -146,6 +146,12 @@ class MainBackend(FakeSHMFPSBackend):
                 4,
             'filterwheel_filter_name':
                 'z',
+            'pump_status':
+                RelayState.ON,
+            'heater_status':
+                RelayState.OFF,
+            'fan_status':
+                RelayState.ON,
             'fli-remaining_time':
                 0,
             'fli-exposure_time':
@@ -163,15 +169,15 @@ class MainBackend(FakeSHMFPSBackend):
             'kalao_sequencer.service': ('active', 'running',
                                         datetime.now(timezone.utc)),
             'kalao_fli.service': ('active', 'running',
-                                     datetime.now(timezone.utc)),
+                                  datetime.now(timezone.utc)),
             'kalao_gop-server.service': ('active', 'running',
                                          datetime.now(timezone.utc)),
             'kalao_database-timer.service': ('active', 'running',
                                              datetime.now(timezone.utc)),
             'kalao_hardware-timer.service': ('active', 'running',
-                                           datetime.now(timezone.utc)),
+                                             datetime.now(timezone.utc)),
             'kalao_observation-timer.service': ('active', 'running',
-                                         datetime.now(timezone.utc)),
+                                                datetime.now(timezone.utc)),
         })
 
         self.internal_timer = QTimer()
@@ -386,13 +392,13 @@ class MainBackend(FakeSHMFPSBackend):
                 'temp_water_out':
                     15,
                 'pump_status':
-                    RelayState.ON,
+                    self.internal_state['pump_status'],
                 'pump_temp':
                     35,
                 'heater_status':
-                    RelayState.OFF,
+                    self.internal_state['heater_status'],
                 'fan_status':
-                    RelayState.ON,
+                    self.internal_state['fan_status'],
                 'coolant_flow_rate':
                     2.5
             })
@@ -818,6 +824,30 @@ class MainBackend(FakeSHMFPSBackend):
         # TODO
         print(f'Set ADC to maximum dispersion (virtually)')
 
+    def set_plc_pump_state(self, state):
+        if state:
+            self.internal_state['pump_status'] = RelayState.ON
+        else:
+            self.internal_state['pump_status'] = RelayState.OFF
+
+        print(f'Set Pump to {state} (virtually)')
+
+    def set_plc_fan_state(self, state):
+        if state:
+            self.internal_state['fan_status'] = RelayState.ON
+        else:
+            self.internal_state['fan_status'] = RelayState.OFF
+
+        print(f'Set Fan to {state} (virtually)')
+
+    def set_plc_heater_state(self, state):
+        if state:
+            self.internal_state['heater_status'] = RelayState.ON
+        else:
+            self.internal_state['heater_status'] = RelayState.OFF
+
+        print(f'Set Heater to {state} (virtually)')
+
     def _fake_motor_move(self, position, position_key, state_key, velocity):
         self.internal_state[state_key] = PLCStatus.MOVING
 
@@ -984,7 +1014,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         log = random.choice(self.logs_logs)
         if log != '':
-            message = f'{log:>14s} | {message}'
+            message = f'{log} | {message}'
 
         return {
             'level': level,

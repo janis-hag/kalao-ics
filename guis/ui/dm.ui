@@ -52,7 +52,7 @@
       </widget>
      </item>
      <item>
-      <widget class="KalAOScaledDoubleSpinbox" name="min_spinbox">
+      <widget class="KScaledDoubleSpinbox" name="min_spinbox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -100,7 +100,7 @@
       </widget>
      </item>
      <item>
-      <widget class="KalAOScaledDoubleSpinbox" name="max_spinbox">
+      <widget class="KScaledDoubleSpinbox" name="max_spinbox">
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
@@ -183,7 +183,7 @@
     </layout>
    </item>
    <item>
-    <widget class="KalAOGraphicsView" name="dm_view">
+    <widget class="KGraphicsView" name="dm_view">
      <property name="enabled">
       <bool>true</bool>
      </property>
@@ -202,7 +202,7 @@
     </widget>
    </item>
    <item>
-    <widget class="KalAOLabel" name="stroke_raw_label">
+    <widget class="KLabel" name="stroke_raw_label">
      <property name="text">
       <string>Stroke (raw): {stroke_raw:.2f}{unit}</string>
      </property>
@@ -212,7 +212,7 @@
     </widget>
    </item>
    <item>
-    <widget class="KalAOLabel" name="stroke_effective_label">
+    <widget class="KLabel" name="stroke_effective_label">
      <property name="text">
       <string>Stroke (actual): {stroke_effective:.2f}{unit}</string>
      </property>
@@ -225,17 +225,17 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOGraphicsView</class>
+   <class>KGraphicsView</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAOLabel</class>
+   <class>KLabel</class>
    <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KalAOScaledDoubleSpinbox</class>
+   <class>KScaledDoubleSpinbox</class>
    <extends>QDoubleSpinBox</extends>
    <header>kalao</header>
   </customwidget>

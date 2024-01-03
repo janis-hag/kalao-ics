@@ -9,7 +9,7 @@ from guis.kalao import colormaps
 from guis.kalao.definitions import Color, Cuts, Scale
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOMainWindow
+from guis.kalao.widgets import KMainWindow
 
 import config
 
@@ -31,7 +31,7 @@ def find_star_fast(img, psf_bb=25):
     return x, y, peak, fwhm
 
 
-class FLIZoomWindow(KalAOMainWindow, MinMaxMixin, SceneHoverMixin,
+class FLIZoomWindow(KMainWindow, MinMaxMixin, SceneHoverMixin,
                     BackendDataMixin):
     associated_stream = config.Streams.FLI
     stream_info = config.StreamInfo.fli_stream

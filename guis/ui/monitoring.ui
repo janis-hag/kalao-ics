@@ -15,7 +15,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0,0">
    <item row="2" column="1">
-    <widget class="KalAOLabel" name="telemetry_interval_label">
+    <widget class="KLabel" name="telemetry_interval_label">
      <property name="font">
       <font>
        <weight>75</weight>
@@ -31,7 +31,7 @@
     </widget>
    </item>
    <item row="2" column="0">
-    <widget class="KalAOLabel" name="monitoring_interval_label">
+    <widget class="KLabel" name="monitoring_interval_label">
      <property name="font">
       <font>
        <weight>75</weight>
@@ -50,7 +50,7 @@
     <layout class="QHBoxLayout" name="data_layout"/>
    </item>
    <item row="1" column="0">
-    <widget class="KalAOLabel" name="monitoring_update_label">
+    <widget class="KLabel" name="monitoring_update_label">
      <property name="font">
       <font>
        <weight>75</weight>
@@ -66,7 +66,7 @@
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="KalAOLabel" name="telemetry_update_label">
+    <widget class="KLabel" name="telemetry_update_label">
      <property name="font">
       <font>
        <weight>75</weight>
@@ -85,7 +85,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KalAOLabel</class>
+   <class>KLabel</class>
    <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>

@@ -2,10 +2,10 @@ from PySide6.QtCore import Slot
 
 from guis.kalao.mixins import BackendActionMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KalAOMainWindow
+from guis.kalao.widgets import KMainWindow
 
 
-class TTMDirectControl(KalAOMainWindow, BackendActionMixin):
+class TTMDirectControl(KMainWindow, BackendActionMixin):
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 
