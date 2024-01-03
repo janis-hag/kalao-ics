@@ -10,11 +10,11 @@ laser.py is part of the KalAO Instrument Control Software
 """
 
 import time
+from datetime import datetime, timezone
 
 from kalao import database, logger
 from kalao.cacao import aocontrol
 from kalao.plc import core
-from kalao.utils import kalao_time
 
 from opcua import ua
 
@@ -90,8 +90,8 @@ def get_switch_time():
     if data.get('since') is None:
         return data['current']['value'], 0
 
-    return data['current']['value'], (
-        kalao_time.now() - data['since']['timestamp']).total_seconds()
+    return data['current']['value'], (datetime.now(
+        timezone.utc) - data['since']['timestamp']).total_seconds()
 
 
 @core.beckhoff_autoconnect

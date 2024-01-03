@@ -186,7 +186,8 @@ class LogsWidget(KWidget):
         message = entry["message"]
         message_splitted = entry['message'].split(' | ')
         if len(message_splitted) > 1:
-            message = ' | '.join([f'{message_splitted[0]:>17s}'] + message_splitted[1:])
+            message = ' | '.join([f'{message_splitted[0]:>17s}'] +
+                                 message_splitted[1:])
         else:
             message = ' '*17 + ' | ' + message
 

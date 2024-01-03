@@ -10,6 +10,7 @@ database.py is part of the KalAO Instrument Control Software
 """
 
 import time
+from datetime import datetime, timezone
 
 import numpy as np
 
@@ -18,7 +19,7 @@ from kalao.cacao import telemetry
 from kalao.fli import camera
 from kalao.plc import plc_utils
 from kalao.rtc import gpu, sensors
-from kalao.utils import kalao_string, kalao_time
+from kalao.utils import kalao_string
 
 import schedule
 
@@ -76,7 +77,7 @@ def _gather_for_monitoring():
 
 def update_monitoring_db():
     last_update = database.get_collection_last_update('monitoring')
-    if (kalao_time.now() - last_update
+    if (datetime.now(timezone.utc) - last_update
         ).total_seconds() < config.Database.monitoring_min_update_interval:
         return
 

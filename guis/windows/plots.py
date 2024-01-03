@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import datetime, timezone
 
 import numpy as np
 
@@ -193,7 +193,8 @@ class PlotsWidget(KWidget):
 
     @Slot(bool)
     def on_tonight_button_clicked(self, checked):
-        start_of_night = kalao_time.get_start_of_night(kalao_time.now())
+        start_of_night = kalao_time.get_start_of_night(
+            datetime.now(timezone.utc))
 
         start = QDateTime.fromSecsSinceEpoch(int(start_of_night.timestamp()))
         end = start.addSecs(86400)
@@ -282,6 +283,7 @@ class PlotsWidget(KWidget):
                 series.setPen(pen)
 
                 for t, v in values.items():
+                    t = t.astimezone(timezone.utc)
                     timestamp = QDateTime(t.date(), t.time(),
                                           QTimeZone.utc()).toMSecsSinceEpoch()
 
@@ -310,7 +312,7 @@ class PlotsWidget(KWidget):
                     series.append(QPointF(timestamp, v))
 
                 if name == 'obs' and series.count() > 0:
-                    now = QDateTime.currentDateTime().toMSecsSinceEpoch()
+                    now = QDateTime.currentMSecsSinceEpoch()
                     prev = series.points()[-1]
                     if now > prev.x():
                         series.append(QPointF(now, prev.y()))

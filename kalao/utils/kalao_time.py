@@ -4,7 +4,6 @@
 @author: Nathanaël Restori
 """
 
-import math
 from datetime import datetime, timedelta, timezone
 
 import pytz
@@ -26,7 +25,7 @@ def get_start_of_night(dt=None):
     """
 
     if dt is None:
-        dt = now()
+        dt = datetime.now(timezone.utc)
 
     check_time_format(dt)
 
@@ -68,30 +67,3 @@ def check_time_format(dt):
         raise ValueError('Datetime must be between year 1801 and 2099')
 
     return dt
-
-
-def get_isotime(now_time=None):
-    """
-    Takes an datetime object or otherwise the current UTC time and returns a string in ISO 8601 format format such as
-    YYYY-MM-DDTHH.MM.SS.mmm = %Y-%m-%dT%H:%M:%S[.fff]
-    leaving out the UTC offset information.
-
-    :param now_time: datetime object
-    :return: datetime string in iso format
-    """
-
-    if now_time is None:
-        return now().astimezone().isoformat(timespec='milliseconds')
-    else:
-        check_time_format(now_time)
-        return now_time.astimezone().isoformat(timespec='milliseconds')
-
-
-def now():
-    """
-    Gets the current UTC time as a timezone aware datetime object
-
-    :return: datetime object
-    """
-
-    return datetime.now(timezone.utc)

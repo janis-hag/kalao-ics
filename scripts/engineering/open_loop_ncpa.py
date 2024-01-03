@@ -12,6 +12,7 @@ open_loop_ncpa.py is part of the KalAO Instrument Control Software
 import argparse
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from signal import SIGINT, signal
 from sys import exit
@@ -216,8 +217,6 @@ def run(args):
 
             print(TC.UP * (8 + len(zernike_coeffs)), end=TC.CLEAR)
 
-    time_name = kalao_time.get_isotime()
-
     peak = display_and_measure(dm_stream, zernike_coeffs, args)
 
     print(TC.UP + TC.CLEAR + f'Final coefficients:')
@@ -237,7 +236,9 @@ def run(args):
 
     time.sleep(10)
 
-    folder = Path(f'ncpa_{time_name}')
+    folder = Path(
+        f'ncpa_{datetime.now(timezone.utc).isoformat(timespec="milliseconds")}'
+    )
     folder.mkdir(parents=True)
 
     np.savetxt(folder / 'dm_zernike_coeffs.txt', zernike_coeffs)

@@ -1,4 +1,5 @@
 import time
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -7,7 +8,7 @@ from astropy.io import fits
 
 from kalao import database, logger
 from kalao.fli import camera
-from kalao.utils import file_handling, kalao_time
+from kalao.utils import file_handling
 
 from tcs_communication import t120
 
@@ -136,7 +137,7 @@ def get_latest_fo_delta():
     if fo_delta_record.get('value') is None:
         return None
 
-    fo_delta_age = (kalao_time.now() -
+    fo_delta_age = (datetime.now(timezone.utc) -
                     fo_delta_record['timestamp']).total_seconds()
 
     if fo_delta_age > 12 * 3600:

@@ -66,7 +66,7 @@ def _get_db(dt=None):
 
     # If dt is None, get db for today, otherwise get db for the day/night specified by dt
     if dt is None:
-        dt = kalao_time.now()
+        dt = datetime.now(timezone.utc)
 
     return client[kalao_time.get_night_str(dt=dt)]
 
@@ -80,7 +80,7 @@ def _get_collection(db, collection_name):
 
 
 def get_collection_last_update(collection_name):
-    dt = kalao_time.now()
+    dt = datetime.now(timezone.utc)
     day = 0
 
     while day <= config.Database.max_days:
@@ -110,7 +110,7 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
     data = {}
 
     if dt is None:
-        dt = kalao_time.now()
+        dt = datetime.now(timezone.utc)
 
     if days is not None:
         max_days = days
@@ -197,7 +197,7 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
 
 
 def get_time_since_state(collection_name, key, condition='==', value=None):
-    dt = kalao_time.now()
+    dt = datetime.now(timezone.utc)
     day = 0
     data = {}
 
@@ -245,7 +245,7 @@ def store(collection_name, data):
     if len(data) == 0:
         return 0
 
-    timestamp = kalao_time.now()
+    timestamp = datetime.now(timezone.utc)
 
     db = _get_db(timestamp)
 
@@ -294,7 +294,7 @@ def store(collection_name, data):
 
 
 def store_log(name, level, message):
-    timestamp = kalao_time.now()
+    timestamp = datetime.now(timezone.utc)
 
     db = _get_db(timestamp)
     collection = _get_collection(db, 'logs')
@@ -391,7 +391,7 @@ def read_mongo_to_pandas(collection_name, keys=None, dt=None, days=1,
         keys = definitions[collection_name]['metadata'].keys()
 
     if dt is None:
-        dt = kalao_time.now()
+        dt = datetime.now(timezone.utc)
 
     data_db = get(collection_name, keys, nb_of_point=np.inf, dt=dt, days=days)
 

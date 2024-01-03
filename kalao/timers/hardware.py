@@ -17,7 +17,6 @@ from kalao import database, euler, ippower, logger
 from kalao.cacao import aocontrol, toolbox
 from kalao.plc import (adc, calibunit, core, flipmirror, laser, shutter,
                        temperature_control)
-from kalao.utils import kalao_time
 
 import schedule
 
@@ -33,7 +32,8 @@ def _get_elapsed_time_since_activity():
     latest_obs_entry_time = database.get_last_time('obs')
 
     if latest_obs_entry_time is not None:
-        return (kalao_time.now() - latest_obs_entry_time).total_seconds()
+        return (datetime.now(timezone.utc) -
+                latest_obs_entry_time).total_seconds()
     else:
         return np.inf
 
@@ -121,7 +121,7 @@ def _check_wfs_inactive():
     if nuvu_raw_stream is not None:
         maqtime = datetime.fromtimestamp(
             nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
-        if (datetime.now() -
+        if (datetime.now(timezone.utc) -
                 maqtime).total_seconds() < config.WFS.acquisition_time_timeout:
             logger.info('hardware_timer',
                         'Stopping WFS acquisition due to inactivity timeout')

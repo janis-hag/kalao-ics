@@ -44,7 +44,7 @@ def generate_image_filepath(tmp_night_folder=None):
     if tmp_night_folder is None:
         tmp_night_folder, _ = create_night_folders()
 
-    filename = f'tmp_KALAO.{kalao_time.get_isotime()}.fits'
+    filename = f'tmp_KALAO.{datetime.now(timezone.utc).isoformat(timespec="milliseconds")}.fits'
     filepath = tmp_night_folder / filename
 
     return filepath
@@ -378,7 +378,7 @@ def _header_from_last_telescope_header():
 
     tcs_header_path_record = database.get_last('obs', 'tcs_header_path')
 
-    header_age = (kalao_time.now() -
+    header_age = (datetime.now(timezone.utc) -
                   tcs_header_path_record['timestamp']).total_seconds()
 
     if 'home' in tcs_header_path_record['value']:
@@ -427,7 +427,7 @@ def _dynamic_cards_update(header_df, obs_type, seq_args=None):
     date_obs = header_df.loc['DATE-OBS', 'value']
     date_end = header_df.loc['DATE-END', 'value']
 
-    dt_obs = datetime.fromisoformat(date_obs)
+    dt_obs = datetime.fromisoformat(date_obs).replace(tzinfo=timezone.utc)
 
     location = euler.observing_location()
 

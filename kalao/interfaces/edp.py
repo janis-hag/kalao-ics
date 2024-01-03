@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 
 from kalao import database
 from kalao.plc import tungsten
-from kalao.utils import kalao_time
 
 from kalao.definitions.enums import SequencerStatus
 
@@ -81,7 +80,7 @@ def elapsed_time(sequencer_status):
             if k_type in config.SEQ.timings:
                 expected_time = config.SEQ.timings[k_type]
 
-        elapsed_time = expected_time - (kalao_time.now() -
+        elapsed_time = expected_time - (datetime.now(timezone.utc) -
                                         sequencer_status_time).total_seconds()
 
     return elapsed_time
@@ -99,7 +98,8 @@ def elapsed_exposure_seconds():
 
     if last_exposure_start > last_exposure_end:
         # An exposure is running
-        elapsed_time = (kalao_time.now() - last_exposure_start).total_seconds()
+        elapsed_time = (datetime.now(timezone.utc) -
+                        last_exposure_start).total_seconds()
     else:
         elapsed_time = (last_exposure_end -
                         last_exposure_start).total_seconds()

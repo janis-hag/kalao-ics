@@ -584,7 +584,7 @@ def start_wfs_acquisition():
     # Check if already running
     maqtime = datetime.fromtimestamp(
         nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
-    if (datetime.now() -
+    if (datetime.now(timezone.utc) -
             maqtime).total_seconds() < config.WFS.acquisition_time_timeout:
         return 0
 
@@ -600,7 +600,7 @@ def start_wfs_acquisition():
 
     maqtime = datetime.fromtimestamp(
         nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
-    if (datetime.now() -
+    if (datetime.now(timezone.utc) -
             maqtime).total_seconds() > config.WFS.acquisition_time_timeout:
         logger.info('nuvu', 'Failed to start WFS acquisition')
         return -1

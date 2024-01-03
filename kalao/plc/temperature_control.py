@@ -10,10 +10,10 @@ temperature_control.py is part of the KalAO Instrument Control Software
 """
 
 import time
+from datetime import datetime, timezone
 
 from kalao import database, logger
 from kalao.plc import core
-from kalao.utils import kalao_time
 
 from opcua import ua
 
@@ -239,7 +239,8 @@ def get_flow_threshold_time(flow_threshold, beck=None):
     if data.get('since') is None:
         return 0
 
-    return (kalao_time.now() - data['since']['timestamp']).total_seconds()
+    return (datetime.now(timezone.utc) -
+            data['since']['timestamp']).total_seconds()
 
 
 @core.beckhoff_autoconnect

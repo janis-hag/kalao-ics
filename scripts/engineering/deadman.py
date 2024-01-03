@@ -1,15 +1,15 @@
 import time
+from datetime import datetime, timezone
 
 from kalao import database, logger
-from kalao.utils import kalao_time
 
 import config
 
-start_time = kalao_time.now()
+start_time = datetime.now(timezone.utc)
 tick = 0
 
 while True:
-    ellapsed_time = (kalao_time.now() - start_time).total_seconds()
+    ellapsed_time = (datetime.now(timezone.utc) - start_time).total_seconds()
 
     if ellapsed_time > 86400:
         logger.info(

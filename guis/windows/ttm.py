@@ -1,10 +1,10 @@
 import math
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 
 from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis
-from PySide6.QtCore import QDateTime, QPointF, QSignalBlocker
+from PySide6.QtCore import QDateTime, QPointF, QSignalBlocker, QTimeZone
 from PySide6.QtGui import QPen, Qt
 
 from guis.kalao.definitions import Color
@@ -80,7 +80,9 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         img = self.consume_stream(data, config.Streams.TTM)
 
         if img is not None:
-            timestamp = QDateTime(datetime.now()).toMSecsSinceEpoch()
+            timestamp = self.consume_metadata(data, 'timestamp').astimezone(timezone.utc)
+            timestamp = QDateTime(timestamp.date(), timestamp.time(),
+                                  QTimeZone.utc()).toMSecsSinceEpoch()
             self.tip, self.tilt = img
 
             self.tip_series.append(
