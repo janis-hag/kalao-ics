@@ -3,7 +3,7 @@ from PySide6.QtGui import QFontDatabase, Qt, QTextBlockUserData, QTextCursor
 from PySide6.QtWidgets import QTreeWidgetItem
 
 from kalao import database
-from kalao.utils import kalao_string
+from kalao.utils import kstring
 
 from guis.kalao.definitions import Color
 from guis.kalao.ui_loader import loadUi
@@ -103,7 +103,7 @@ class LogsWidget(KWidget):
 
         for service in sorted(config.Systemd.services.values(),
                               key=lambda x: x['unit']):
-            unit = kalao_string.get_service_name(service['unit'])
+            unit = kstring.get_service_name(service['unit'])
             child = QTreeWidgetItem([unit])
             child.setCheckState(0, Qt.Checked)
             child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
@@ -128,7 +128,7 @@ class LogsWidget(KWidget):
         self.logs_items['<none>'] = child
 
         for key in sorted(database.definitions['logs']['metadata'].keys()):
-            key = kalao_string.get_log_name(key)
+            key = kstring.get_log_name(key)
             child = QTreeWidgetItem([key])
             child.setCheckState(0, Qt.Checked)
             child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)

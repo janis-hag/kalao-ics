@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 from numpy.polynomial import Polynomial
 
-from kalao.utils import kalao_tools
+from kalao.utils import ktools
 
 from kalao.definitions.enums import PLCStatus, TrackingStatus
 
@@ -180,7 +180,7 @@ class WFS:
     centering_timeout = 30  # s
     centering_slope_threshold = 0.005  # px
 
-    flux_map = kalao_tools.get_wfs_flux_map()
+    flux_map = ktools.get_wfs_flux_map()
 
     fully_illuminated_subaps = np.flatnonzero(flux_map > 0.9).tolist()
     all_illuminated_subaps = np.flatnonzero(flux_map > 0.15).tolist()
@@ -660,7 +660,7 @@ class StreamInfo:
 
 
 if WFS.spots_file.exists():
-    WFS.all_subaps, WFS.active_subaps, WFS.masked_subaps = kalao_tools.read_spots_file(
+    WFS.all_subaps, WFS.active_subaps, WFS.masked_subaps = ktools.read_spots_file(
         WFS.spots_file)
 else:
     print(
@@ -668,7 +668,7 @@ else:
     )
 
 if WFS.autogain_file.exists():
-    WFS.autogain_params = kalao_tools.read_autogain_file(WFS.autogain_file)
+    WFS.autogain_params = ktools.read_autogain_file(WFS.autogain_file)
     WFS.max_autogain_setting = len(WFS.autogain_params) - 1
 else:
     print(

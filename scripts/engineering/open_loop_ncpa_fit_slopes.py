@@ -5,7 +5,7 @@ import numpy as np
 
 from astropy.io import fits
 
-from kalao.utils import kalao_math, kalao_tools, zernike
+from kalao.utils import kmath, ktools, zernike
 
 import matplotlib.pyplot as plt
 
@@ -28,9 +28,9 @@ additional_masked_subaps = [
 def run(args):
     slopes = fits.getdata(args.ncpa_folder / 'slopes_median.fits')
 
-    mask = kalao_tools.generate_slopes_mask_from_subaps(
-        config.WFS.masked_subaps, slopes.shape)
-    mask_additional = kalao_tools.generate_slopes_mask_from_subaps(
+    mask = ktools.generate_slopes_mask_from_subaps(config.WFS.masked_subaps,
+                                                   slopes.shape)
+    mask_additional = ktools.generate_slopes_mask_from_subaps(
         additional_masked_subaps, slopes.shape)
 
     slopes_coeffs = zernike.fit_slopes(slopes, args.orders_to_fit,
@@ -110,12 +110,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not kalao_math.is_triangular(args.orders_to_fit):
+    if not kmath.is_triangular(args.orders_to_fit):
         print(
             '[WARNING] The number of orders to fit is not triangular. Correction will be asymmetric'
         )
         print(
-            f'Recommended values are {", ".join(str(_) for _ in kalao_math.triangular_up_to(121))}'
+            f'Recommended values are {", ".join(str(_) for _ in kmath.triangular_up_to(121))}'
         )
 
     run(args)

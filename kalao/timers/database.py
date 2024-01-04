@@ -19,7 +19,7 @@ from kalao.cacao import telemetry
 from kalao.fli import camera
 from kalao.plc import plc_utils
 from kalao.rtc import gpu, sensors
-from kalao.utils import kalao_string
+from kalao.utils import kstring
 
 import schedule
 
@@ -118,7 +118,7 @@ def check_range(key, value, metadata):
     warn_min = warn_range[0]
     warn_max = warn_range[1]
 
-    unit = kalao_string.get_unit_string(metadata)
+    unit = kstring.get_unit_string(metadata)
 
     if value > error_max:
         logger.error(

@@ -34,18 +34,18 @@ def get_temperatures(beck=None):
     return {
         'temp_bench_air':
             config.PLC.temp_bench_air_offset +
-            beck.get_node(config.PLC.Node.TEMP_BENCH_AIR).get_value() / 10,
+            beck.get_node(config.PLC.Node.TEMP_BENCH_AIR).get_value(),
         'temp_bench_board':
             config.PLC.temp_bench_board_offset +
-            beck.get_node(config.PLC.Node.TEMP_BENCH_BOARD).get_value() / 10,
+            beck.get_node(config.PLC.Node.TEMP_BENCH_BOARD).get_value(),
         'temp_water_in':
             config.PLC.temp_water_in_offset +
-            beck.get_node(config.PLC.Node.TEMP_WATER_IN).get_value() / 10,
+            beck.get_node(config.PLC.Node.TEMP_WATER_IN).get_value(),
         'temp_water_out':
             config.PLC.temp_water_out_offset +
-            beck.get_node(config.PLC.Node.TEMP_WATER_OUT).get_value() / 10,
+            beck.get_node(config.PLC.Node.TEMP_WATER_OUT).get_value(),
         'hygro_bench_air':
-            beck.get_node(config.PLC.Node.HYGROMETER).get_value() * 10,
+            beck.get_node(config.PLC.Node.HYGROMETER).get_value(),
     }
 
 
@@ -155,7 +155,7 @@ def pump_temperature(beck=None):
     :return: temperature of the pump in degrees
     """
 
-    pump_temp = beck.get_node(config.PLC.Node.TEMP_PUMP).get_value() / 10
+    pump_temp = beck.get_node(config.PLC.Node.TEMP_PUMP).get_value()
 
     return pump_temp
 

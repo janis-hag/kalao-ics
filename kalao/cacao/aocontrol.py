@@ -17,7 +17,7 @@ import numpy as np
 
 from kalao import database, ippower, logger
 from kalao.cacao import toolbox
-from kalao.utils import kalao_tools
+from kalao.utils import ktools
 
 import libtmux
 import libtmux.exc
@@ -503,7 +503,7 @@ def check_wfs_flux():
 
     slopes_flux = slopes_flux_stream.get_data(check=True)
 
-    illuminated_fraction = kalao_tools.wfs_illumination_fraction(
+    illuminated_fraction = ktools.wfs_illumination_fraction(
         slopes_flux, config.WFS.illumination_threshold,
         config.WFS.fully_illuminated_subaps)
 

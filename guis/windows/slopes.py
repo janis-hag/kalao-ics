@@ -2,7 +2,7 @@ import numpy as np
 
 from PySide6.QtGui import Qt
 
-from kalao.utils import kalao_tools
+from kalao.utils import ktools
 
 from guis.kalao import colormaps
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
@@ -30,7 +30,7 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         super().__init__(parent)
 
         self.backend = backend
-        self.mask = kalao_tools.generate_slopes_mask_from_subaps(
+        self.mask = ktools.generate_slopes_mask_from_subaps(
             config.WFS.masked_subaps)
 
         loadUi('slopes.ui', self)

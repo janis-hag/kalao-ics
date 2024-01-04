@@ -25,7 +25,7 @@ from astropy.io import fits
 from astropy.time import Time
 
 from kalao import database, euler, logger
-from kalao.utils import kalao_string, kalao_time, starfinder
+from kalao.utils import kstring, ktime, starfinder
 
 import yaml
 
@@ -55,9 +55,9 @@ def create_night_folders():
     # check if folder exists
     # remove temporary folder of previous night if empty
 
-    tmp_night_folder = config.FITS.temporary_data_storage / kalao_time.get_night_str(
+    tmp_night_folder = config.FITS.temporary_data_storage / ktime.get_night_str(
     )
-    science_night_folder = config.FITS.science_data_storage / kalao_time.get_night_str(
+    science_night_folder = config.FITS.science_data_storage / ktime.get_night_str(
     )
 
     # Check if tmp and science folders exist
@@ -85,7 +85,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
     :param sequencer_arguments: argument list received by the sequencer
     :return:
     '''
-    science_night_folder = config.FITS.science_data_storage / kalao_time.get_night_str(
+    science_night_folder = config.FITS.science_data_storage / ktime.get_night_str(
     )
 
     # Remove tmp_ from filename
@@ -324,7 +324,7 @@ def _header_from_db(collection_name, dt):
             if comment is None or len(comment) > max_comment_length:
                 comment = v.get('short')
 
-            comment = kalao_string.ellipsis(comment, max_comment_length)
+            comment = kstring.ellipsis(comment, max_comment_length)
 
             header_dict[fits_keyword] = {
                 'value': None,
@@ -510,7 +510,7 @@ def _header_to_string(header_df, max_length=45, float_length=20):
         if length[col] > max_length:
             length[col] = max_length
 
-        formatters[col] = lambda _, length=length[col]: kalao_string.ellipsis(
+        formatters[col] = lambda _, length=length[col]: kstring.ellipsis(
             str(_).ljust(length, ' '), max_length)
 
         float_format = lambda _: f'{_:.{float_length}f}'[0:float_length].ljust(

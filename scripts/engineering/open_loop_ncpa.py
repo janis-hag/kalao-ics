@@ -25,7 +25,7 @@ from astropy.io import fits
 from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser
-from kalao.utils import kalao_math, kalao_time, zernike
+from kalao.utils import kmath, ktime, zernike
 
 from kalao.definitions.enums import CameraServerStatus
 
@@ -66,7 +66,7 @@ def take_and_measure(args):
 
         p0 = (peak_hw, peak_hw, 2, 2, 0, img_peak[peak_hw, peak_hw])
         errorfunction = lambda p: np.ravel(
-            kalao_math.gaussian_2d_rotated(x, y, *p) - img_peak)
+            kmath.gaussian_2d_rotated(x, y, *p) - img_peak)
         p, success = optimize.leastsq(errorfunction, p0)
 
         #print(f'mu_x: {p[0]}, mu_y: {p[1]}, sigma_x: {p[2]}, sigma_y: {p[3]}, theta: {p[4]}, A: {p[5]}, peak: {img_peak[peak_hw,peak_hw]}'
@@ -304,20 +304,20 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not kalao_math.is_triangular(args.orders_to_correct):
+    if not kmath.is_triangular(args.orders_to_correct):
         print(
             'Warning, the number of orders to correct is not triangular. Correction will be asymmetric.'
         )
         print(
-            f'Recommended values are {", ".join(str(_) for _ in kalao_math.triangular_up_to(121))}'
+            f'Recommended values are {", ".join(str(_) for _ in kmath.triangular_up_to(121))}'
         )
 
-    if not kalao_math.is_triangular(args.orders_to_skip):
+    if not kmath.is_triangular(args.orders_to_skip):
         print(
             'Warning, the number of orders to skip is not triangular. Correction will be asymmetric.'
         )
         print(
-            f'Recommended values are {", ".join(str(_) for _ in kalao_math.triangular_up_to(121))}'
+            f'Recommended values are {", ".join(str(_) for _ in kmath.triangular_up_to(121))}'
         )
 
     if camera.check_server_status() != CameraServerStatus.UP:

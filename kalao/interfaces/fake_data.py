@@ -12,7 +12,7 @@ from scipy import ndimage
 
 from astropy.nddata import block_reduce, block_replicate
 
-from kalao.utils import kalao_math, kalao_tools, zernike
+from kalao.utils import kmath, ktools, zernike
 
 import config
 
@@ -41,10 +41,10 @@ def nuvu_frame(bias=2000, readoutnoise=20, flux=5000, tiptilt=np.zeros(
     frame = np.zeros((64 * upsampling, 64 * upsampling), dtype=np.float32)
 
     if illumination == 'telescope':
-        flux_map = kalao_tools.get_wfs_flux_map()
+        flux_map = ktools.get_wfs_flux_map()
     else:
-        flux_map = kalao_tools.get_wfs_flux_map(radius_in_factor=0,
-                                                radius_out_factor=1.1)
+        flux_map = ktools.get_wfs_flux_map(radius_in_factor=0,
+                                           radius_out_factor=1.1)
 
     ttm_tip_px = tiptilt[0] * config.TTM.plate_scale / config.WFS.plate_scale
     ttm_tilt_px = tiptilt[1] * config.TTM.plate_scale / config.WFS.plate_scale
@@ -85,7 +85,7 @@ def nuvu_frame(bias=2000, readoutnoise=20, flux=5000, tiptilt=np.zeros(
             A = intensity * flux_map[i, j]
 
             frame[psf_y_i - hwindow:psf_y_i + hwindow, psf_x_i -
-                  hwindow:psf_x_i + hwindow] += kalao_math.gaussian_2d_rotated(
+                  hwindow:psf_x_i + hwindow] += kmath.gaussian_2d_rotated(
                       y, x, mu_y, mu_x, sigma, sigma, 0, A, 0)
 
     # Reduce to final size with photon shot noise
@@ -103,12 +103,12 @@ def slopes(nuvu_fr=None):
     if nuvu_fr is None:
         nuvu_fr = nuvu_frame()
 
-    _, subapertures = kalao_tools.get_roi_and_subapertures(nuvu_fr)
+    _, subapertures = ktools.get_roi_and_subapertures(nuvu_fr)
 
     slopes = np.zeros((11, 22))
 
     for i, subap in enumerate(subapertures):
-        j, k = kalao_tools.get_subaperture_2d(i)
+        j, k = ktools.get_subaperture_2d(i)
 
         x, y = np.clip(
             np.array(ndimage.center_of_mass(subap)) - [1.5, 1.5], -2, 2)
@@ -116,8 +116,7 @@ def slopes(nuvu_fr=None):
         slopes[k, j] = x
         slopes[k, j + 11] = y
 
-    mask = kalao_tools.generate_slopes_mask_from_subaps(
-        config.WFS.masked_subaps)
+    mask = ktools.generate_slopes_mask_from_subaps(config.WFS.masked_subaps)
 
     return np.ma.masked_array(slopes, mask=mask, fill_value=0).filled()
 
@@ -126,16 +125,16 @@ def flux(nuvu_fr=None):
     if nuvu_fr is None:
         nuvu_fr = nuvu_frame()
 
-    _, subapertures = kalao_tools.get_roi_and_subapertures(nuvu_fr)
+    _, subapertures = ktools.get_roi_and_subapertures(nuvu_fr)
 
     flux = np.zeros((11, 11))
 
     for i, subap in enumerate(subapertures):
-        j, k = kalao_tools.get_subaperture_2d(i)
+        j, k = ktools.get_subaperture_2d(i)
 
         flux[k, j] = np.sum(subap)
 
-    mask = kalao_tools.generate_flux_mask_from_subaps(config.WFS.masked_subaps)
+    mask = ktools.generate_flux_mask_from_subaps(config.WFS.masked_subaps)
 
     return np.ma.masked_array(flux, mask=mask, fill_value=0).filled()
 
@@ -181,11 +180,11 @@ def fli_frame(bias=1070, readoutnoise=7, psf_x=config.FLI.center_x,
     hwindow = 2**5
 
     if illumination == 'telescope':
-        flux_map = kalao_tools.get_dm_flux_map(upsampled=upsampling)
+        flux_map = ktools.get_dm_flux_map(upsampled=upsampling)
     else:
-        flux_map = kalao_tools.get_dm_flux_map(upsampled=upsampling,
-                                               radius_in_factor=0,
-                                               radius_out_factor=1.1)
+        flux_map = ktools.get_dm_flux_map(upsampled=upsampling,
+                                          radius_in_factor=0,
+                                          radius_out_factor=1.1)
 
     flux_map /= np.sum(flux_map)
 

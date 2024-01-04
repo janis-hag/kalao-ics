@@ -3,7 +3,7 @@ import time
 import numpy as np
 
 from kalao.cacao import toolbox
-from kalao.utils import kalao_tools
+from kalao.utils import ktools
 
 from PySide2.QtCore import Signal
 
@@ -40,7 +40,7 @@ class AlignmentBackend(SHMFPSBackend):
 
         # Do not poke actuators
         for act in self.alignment_window.actuators_to_poke:
-            dm_array[kalao_tools.get_actuator_2d(act)] = 0
+            dm_array[ktools.get_actuator_2d(act)] = 0
 
         self.poke_stream.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
@@ -55,7 +55,7 @@ class AlignmentBackend(SHMFPSBackend):
 
         # Poke actuators down
         for act in self.alignment_window.actuators_to_poke:
-            dm_array[kalao_tools.get_actuator_2d(
+            dm_array[ktools.get_actuator_2d(
                 act)] = -self.alignment_window.poke_amplitude
 
         self.poke_stream.set_data(dm_array, True)
@@ -67,7 +67,7 @@ class AlignmentBackend(SHMFPSBackend):
 
         # Poke actuators up
         for act in self.alignment_window.actuators_to_poke:
-            dm_array[kalao_tools.get_actuator_2d(
+            dm_array[ktools.get_actuator_2d(
                 act)] = self.alignment_window.poke_amplitude
 
         self.poke_stream.set_data(dm_array, True)

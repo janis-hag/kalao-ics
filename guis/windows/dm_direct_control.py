@@ -4,7 +4,7 @@ from PySide6.QtCore import QSignalBlocker, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QDoubleSpinBox, QLabel
 
-from kalao.utils import kalao_tools, zernike
+from kalao.utils import ktools, zernike
 
 from guis.kalao.colormaps import CoolWarm
 from guis.kalao.mixins import BackendActionMixin
@@ -59,7 +59,7 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
 
         self.actuators_spinboxes = {}
         for i in range(140):
-            x, y = kalao_tools.get_actuator_2d(i)
+            x, y = ktools.get_actuator_2d(i)
             spinbox = DMSpinBox(self.colormap)
             self.actuator_grid.addWidget(spinbox, x, y)
 
@@ -94,7 +94,7 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
         dm = np.zeros((12, 12))
 
         for k, s in self.actuators_spinboxes.items():
-            x, y = kalao_tools.get_actuator_2d(k)
+            x, y = ktools.get_actuator_2d(k)
 
             dm[x, y] = s.value()
 
@@ -176,7 +176,7 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
         pattern += self.compute_grating()
 
         for i in range(140):
-            x, y = kalao_tools.get_actuator_2d(i)
+            x, y = ktools.get_actuator_2d(i)
 
             with QSignalBlocker(self.actuators_spinboxes[i]):
                 self.actuators_spinboxes[i].setValue(pattern[x, y])
@@ -211,7 +211,7 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
         pattern = np.zeros((12, 12))
         for i in range(12):
             for j in range(12):
-                k = kalao_tools.get_actuator_1d(i, j)
+                k = ktools.get_actuator_1d(i, j)
 
                 if k is None:
                     continue

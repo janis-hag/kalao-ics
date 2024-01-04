@@ -3,7 +3,7 @@ import numpy as np
 from PySide6.QtCore import Signal
 
 from kalao.interfaces import fake_data
-from kalao.utils import kalao_tools, zernike
+from kalao.utils import ktools, zernike
 
 from guis.backends.abstract import emit, timeit
 from guis.backends.simulation import FakeSHMFPSBackend
@@ -23,12 +23,12 @@ class AlignmentBackend(FakeSHMFPSBackend):
     def get_streams_all(self):
         data_dm_down = zernike.generate_pattern([0], (12, 12))
         for act in self.alignment_window.actuators_to_poke:
-            data_dm_down[kalao_tools.get_actuator_2d(
+            data_dm_down[ktools.get_actuator_2d(
                 act)] = -self.alignment_window.poke_amplitude
 
         data_dm_up = zernike.generate_pattern([0], (12, 12))
         for act in self.alignment_window.actuators_to_poke:
-            data_dm_up[kalao_tools.get_actuator_2d(
+            data_dm_up[ktools.get_actuator_2d(
                 act)] = self.alignment_window.poke_amplitude
 
         data_nuvu = {

@@ -80,7 +80,8 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         img = self.consume_stream(data, config.Streams.TTM)
 
         if img is not None:
-            timestamp = self.consume_metadata(data, 'timestamp').astimezone(timezone.utc)
+            timestamp = self.consume_metadata(data, 'timestamp').astimezone(
+                timezone.utc)
             timestamp = QDateTime(timestamp.date(), timestamp.time(),
                                   QTimeZone.utc()).toMSecsSinceEpoch()
             self.tip, self.tilt = img

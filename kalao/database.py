@@ -15,7 +15,7 @@ from pprint import pprint
 import numpy as np
 import pandas as pd
 
-from kalao.utils import kalao_time
+from kalao.utils import ktime
 
 import yaml
 from bson.codec_options import CodecOptions
@@ -68,7 +68,7 @@ def _get_db(dt=None):
     if dt is None:
         dt = datetime.now(timezone.utc)
 
-    return client[kalao_time.get_night_str(dt=dt)]
+    return client[ktime.get_night_str(dt=dt)]
 
 
 def _get_collection(db, collection_name):

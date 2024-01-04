@@ -9,7 +9,7 @@ from PySide6.QtCore import QTimer
 
 from kalao import database
 from kalao.interfaces import fake_data
-from kalao.utils import kalao_string, zernike
+from kalao.utils import kstring, zernike
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 from guis.kalao import lorem
@@ -972,12 +972,12 @@ class MainBackend(FakeSHMFPSBackend):
     def get_logs_init(self):
         self.logs_logs = ['']
         for key in sorted(database.definitions['logs']['metadata'].keys()):
-            self.logs_logs.append(kalao_string.get_log_name(key))
+            self.logs_logs.append(kstring.get_log_name(key))
 
         self.logs_services = ['systemd']
         for service in config.Systemd.services.values():
-            self.logs_services.append(
-                kalao_string.get_service_name(service['unit']))
+            self.logs_services.append(kstring.get_service_name(
+                service['unit']))
 
         logs = []
 

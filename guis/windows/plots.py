@@ -9,7 +9,7 @@ from PySide6.QtGui import QCursor, QGuiApplication, QPen, Qt
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QPushButton
 
 from kalao import database
-from kalao.utils import kalao_string, kalao_time
+from kalao.utils import kstring, ktime
 
 from guis.kalao.definitions import ColorPalette
 from guis.kalao.ui_loader import loadUi
@@ -193,8 +193,7 @@ class PlotsWidget(KWidget):
 
     @Slot(bool)
     def on_tonight_button_clicked(self, checked):
-        start_of_night = kalao_time.get_start_of_night(
-            datetime.now(timezone.utc))
+        start_of_night = ktime.get_start_of_night(datetime.now(timezone.utc))
 
         start = QDateTime.fromSecsSinceEpoch(int(start_of_night.timestamp()))
         end = start.addSecs(86400)
@@ -373,7 +372,7 @@ class PlotsWidget(KWidget):
             x = QDateTime.fromMSecsSinceEpoch(
                 int(x)).toString("HH:mm:ss dd-MM-yy")
 
-            unit = kalao_string.get_unit_string(metadata)
+            unit = kstring.get_unit_string(metadata)
 
             self.hovered.emit(
                 f'{metadata["short"]}: {y:.5g}{unit}{y_true} at {x}')

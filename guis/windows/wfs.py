@@ -1,6 +1,6 @@
 from PySide6.QtGui import QPen, Qt
 
-from kalao.utils import kalao_tools
+from kalao.utils import ktools
 
 from guis.kalao import colormaps
 from guis.kalao.definitions import Color
@@ -45,7 +45,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         # Add grid to window
         self.rois = {}
         for i in config.WFS.all_subaps:
-            j, k = kalao_tools.get_subaperture_2d(i)
+            j, k = ktools.get_subaperture_2d(i)
 
             if i in config.WFS.masked_subaps:
                 color = Color.DARK_GREY
@@ -97,7 +97,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 axis_unit=self.axis_unit, data_precision=self.data_precision,
                 data_unit=self.data_unit)
 
-            subap = kalao_tools.subap_at_px(x, y)
+            subap = ktools.subap_at_px(x, y)
             if subap is not None:
                 self.reset_subap_color()
 
@@ -105,7 +105,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 self.subap_previous_pen = self.rois[subap].pen()
                 self.rois[subap].setPen(pen)
 
-                #i,j = kalao_tools.get_subaperture_2d(subap)
+                #i,j = ktools.get_subaperture_2d(subap)
             else:
                 self.reset_subap_color()
 

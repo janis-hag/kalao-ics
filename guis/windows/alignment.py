@@ -4,7 +4,7 @@ from scipy import ndimage
 from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import QWidget
 
-from kalao.utils import kalao_tools
+from kalao.utils import ktools
 
 from guis.kalao.definitions import HORI, VERT, Color, PokeState
 from guis.kalao.mixins import BackendDataMixin
@@ -60,7 +60,7 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
         self.subwindows = []
         for j, actuator in enumerate(self.actuators_to_poke):
             subwindow = AlignmentSubwindow()
-            subwindow.subap_indexes = kalao_tools.get_subapertures_around_actuator(
+            subwindow.subap_indexes = ktools.get_subapertures_around_actuator(
                 actuator)
 
             frame = getattr(self, f'frame_{j+1}')
@@ -116,8 +116,8 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
                     frame = self.consume_stream(
                         data, f'{config.Streams.NUVU}_{state}', force=True)
 
-                    _, subapertures[
-                        state] = kalao_tools.get_roi_and_subapertures(frame)
+                    _, subapertures[state] = ktools.get_roi_and_subapertures(
+                        frame)
 
                     pos[state] = np.clip(
                         ndimage.center_of_mass(

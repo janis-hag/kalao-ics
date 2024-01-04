@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QGridLayout, QGroupBox, QLabel, QLineEdit,
                                QSizePolicy, QSpacerItem, QVBoxLayout)
 
 from kalao import database
-from kalao.utils import kalao_string
+from kalao.utils import kstring
 
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin
@@ -92,7 +92,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
         lineedit.key = key
         lineedit.timestamp = None
         lineedit.metadata = metadata
-        lineedit.unit = kalao_string.get_unit_string(metadata)
+        lineedit.unit = kstring.get_unit_string(metadata)
         lineedit.hover_text = 'No data'
         lineedit.installEventFilter(self)
 

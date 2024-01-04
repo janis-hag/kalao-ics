@@ -1,7 +1,7 @@
 import pprint
 from datetime import datetime, timedelta
 
-from kalao.utils import kalao_string
+from kalao.utils import kstring
 
 from systemd import journal
 
@@ -71,7 +71,7 @@ def process_entry(entry, output_type=LogsOutputType.JSON):
                     level = LogLevel.ERROR
             else:
                 if '_SYSTEMD_USER_UNIT' in entry:
-                    origin = kalao_string.get_service_name(
+                    origin = kstring.get_service_name(
                         entry['_SYSTEMD_USER_UNIT'])
                 elif '_COMM' in entry:
                     origin = entry['_COMM']
