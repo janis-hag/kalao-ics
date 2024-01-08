@@ -86,6 +86,7 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
             self.zernike_spinboxes[i] = spinbox
 
         self.show()
+        self.center()
         self.setFixedSize(self.size())
 
     def on_actuator_spinbox_valueChanged(self, d, i):

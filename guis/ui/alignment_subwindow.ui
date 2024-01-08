@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>AlignmentSubwindow</class>
+ <widget class="QWidget" name="AlignmentSubwindow">
   <property name="geometry">
    <rect>
     <x>0</x>

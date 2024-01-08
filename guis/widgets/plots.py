@@ -2,7 +2,8 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis, QXYSeries
+from PySide6.QtCharts import (QChartView, QDateTimeAxis, QLineSeries,
+                              QValueAxis, QXYSeries)
 from PySide6.QtCore import (QDateTime, QEvent, QObject, QPointF,
                             QSignalBlocker, QTimer, QTimeZone, Signal, Slot)
 from PySide6.QtGui import QCursor, QGuiApplication, QPen, Qt
@@ -83,7 +84,7 @@ class PlotsWidget(KWidget):
         self.obs_list.installEventFilter(self)
 
         # Create Chart and set General Chart setting
-        chart = self.plots_view.chart
+        chart = self.plots_view.chart()
 
         # X Axis Settings
         self.axis_x = QDateTimeAxis()
@@ -110,7 +111,9 @@ class PlotsWidget(KWidget):
                                    on_group_button_clicked(checked, group))
             self.group_layout.addWidget(button)
 
-        self.plots_view.chart.hovered.connect(self.hover_xy_to_str)
+        chart.hovered.connect(self.hover_xy_to_str)
+
+        self.plots_view.setRubberBand(QChartView.RectangleRubberBand)
 
         self.on_tonight_button_clicked(None)
 
@@ -251,7 +254,7 @@ class PlotsWidget(KWidget):
 
         QGuiApplication.restoreOverrideCursor()
 
-        chart = self.plots_view.chart
+        chart = self.plots_view.chart()
 
         chart.removeAllSeries()
         self.series = {}
@@ -383,7 +386,8 @@ class PlotsWidget(KWidget):
         self.current_name = name
         self.current_key = key
 
-        self.plots_view.chart.pointHoveredEvent(point, state, self.series[key])
+        self.plots_view.chart().pointHoveredEvent(point, state,
+                                                  self.series[key])
 
     def eventFilter(self, source, event):
         if isinstance(source, QListWidget):

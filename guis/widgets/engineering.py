@@ -190,7 +190,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             elif calibunit_state == PLCStatus.INITIALISING:
                 self.calibunit_indicator.setStatus(Color.ORANGE,
                                                    calibunit_state.name)
-            else:  # DISABLED, UNINITIALISED, ERROR, UNKNOWN
+            else:  # NOT_ENABLED, NOT_INITIALISED, ERROR, UNKNOWN
                 self.calibunit_indicator.setStatus(Color.RED,
                                                    calibunit_state.name)
 
@@ -233,17 +233,14 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                                             force=True)
 
             if laser_state == LaserState.ON and laser_power > 0:
-                self.laser_state_indicator.setStatus(Color.YELLOW,
-                                                     laser_state.name)
-                self.laser_power_indicator.setStatus(Color.YELLOW, laser_power)
+                self.laser_indicator.setStatus(
+                    Color.YELLOW, f'{laser_state.name} & {laser_power}')
             elif laser_state == LaserState.OFF or laser_power == 0:
-                self.laser_state_indicator.setStatus(Color.BLACK,
-                                                     laser_state.name)
-                self.laser_power_indicator.setStatus(Color.BLACK, laser_power)
+                self.laser_indicator.setStatus(
+                    Color.BLACK, f'{laser_state.name} & {laser_power}')
             else:  # ERROR or < 0
-                self.laser_state_indicator.setStatus(Color.RED,
-                                                     laser_state.name)
-                self.laser_power_indicator.setStatus(Color.RED, laser_power)
+                self.laser_indicator.setStatus(
+                    Color.RED, f'{laser_state.name} & {laser_power}')
 
         filterwheel_filter_name = self.consume_dict(data, 'plc',
                                                     'filterwheel_filter_name')
@@ -273,7 +270,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.adc1_indicator.setStatus(Color.BLUE, adc1_state.name)
             elif adc1_state == PLCStatus.INITIALISING:
                 self.adc1_indicator.setStatus(Color.ORANGE, adc1_state.name)
-            else:  # DISABLED, UNINITIALISED, ERROR, UNKNOWN
+            else:  # NOT_ENABLED, NOT_INITIALISED, ERROR, UNKNOWN
                 self.adc1_indicator.setStatus(Color.RED, adc1_state.name)
 
             if adc1_state in [PLCStatus.MOVING, PLCStatus.INITIALISING]:
@@ -294,7 +291,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.adc2_indicator.setStatus(Color.BLUE, adc2_state.name)
             elif adc2_state == PLCStatus.INITIALISING:
                 self.adc2_indicator.setStatus(Color.ORANGE, adc2_state.name)
-            else:  # DISABLED, UNINITIALISED, ERROR, UNKNOWN
+            else:  # NOT_ENABLED, NOT_INITIALISED, ERROR, UNKNOWN
                 self.adc2_indicator.setStatus(Color.RED, adc2_state.name)
 
             if adc2_state in [PLCStatus.MOVING, PLCStatus.INITIALISING]:
@@ -435,52 +432,29 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          self.backend.set_plc_shutter_state,
                          self.shutter_combobox.currentData())
 
+    @Slot(bool)
+    def on_shutter_init_button_clicked(self, checked):
+        self.action_send(self.shutter_init_button,
+                         self.backend.get_plc_shutter_init)
+
     @Slot(int)
     def on_flipmirror_combobox_currentIndexChanged(self, index):
         self.action_send(self.flipmirror_combobox,
                          self.backend.set_plc_flipmirror_position,
                          self.flipmirror_combobox.currentData())
 
+    @Slot(bool)
+    def on_flipmirror_init_button_clicked(self, checked):
+        self.action_send(self.flipmirror_init_button,
+                         self.backend.get_plc_flipmirror_init)
+
     @Slot(float)
     def on_calibunit_spinbox_valueChanged(self, d):
         self.action_send(self.calibunit_spinbox,
                          self.backend.set_plc_calibunit_position, d)
 
-    @Slot(int)
-    def on_tungsten_state_checkbox_stateChanged(self, state):
-        self.action_send(self.tungsten_state_checkbox,
-                         self.backend.set_plc_tungsten_state,
-                         Qt.CheckState(state) == Qt.Checked)
-
-    @Slot(int)
-    def on_laser_state_checkbox_stateChanged(self, state):
-        self.action_send(self.laser_state_checkbox,
-                         self.backend.set_plc_laser_state,
-                         Qt.CheckState(state) == Qt.Checked)
-
-    @Slot(float)
-    def on_laser_power_spinbox_valueChanged(self, d):
-        self.action_send(self.laser_power_spinbox,
-                         self.backend.set_plc_laser_power, d)
-
-    @Slot(int)
-    def on_filterwheel_combobox_currentIndexChanged(self, index):
-        self.action_send(self.filterwheel_combobox,
-                         self.backend.set_plc_filterwheel_filter,
-                         self.filterwheel_combobox.currentData())
-
-    @Slot(float)
-    def on_adc1_spinbox_valueChanged(self, d):
-        self.action_send(self.adc1_spinbox, self.backend.set_plc_adc_1_angle,
-                         d)
-
-    @Slot(float)
-    def on_adc2_spinbox_valueChanged(self, d):
-        self.action_send(self.adc2_spinbox, self.backend.set_plc_adc_2_angle,
-                         d)
-
     @Slot(bool)
-    def on_calibunit_initialize_button_clicked(self, checked):
+    def on_calibunit_init_button_clicked(self, checked):
         self.action_send(self.calibunit_initialize_button,
                          self.backend.get_plc_calibunit_init)
 
@@ -494,15 +468,61 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send(self.calibunit_tungsten_button,
                          self.backend.get_plc_calibunit_tungsten)
 
-    @Slot(bool)
-    def on_adc1_initialize_button_clicked(self, checked):
-        self.action_send(self.adc1_initialize_button,
-                         self.backend.get_plc_adc1_init)
+    @Slot(int)
+    def on_tungsten_state_checkbox_stateChanged(self, state):
+        self.action_send(self.tungsten_state_checkbox,
+                         self.backend.set_plc_tungsten_state,
+                         Qt.CheckState(state) == Qt.Checked)
 
     @Slot(bool)
-    def on_adc2_initialize_button_clicked(self, checked):
-        self.action_send(self.adc2_initialize_button,
-                         self.backend.get_plc_adc2_init)
+    def on_tungsten_init_button_clicked(self, checked):
+        self.action_send(self.tungsten_init_button,
+                         self.backend.get_plc_tungsten_init)
+
+    @Slot(int)
+    def on_laser_state_checkbox_stateChanged(self, state):
+        self.action_send(self.laser_state_checkbox,
+                         self.backend.set_plc_laser_state,
+                         Qt.CheckState(state) == Qt.Checked)
+
+    @Slot(float)
+    def on_laser_power_spinbox_valueChanged(self, d):
+        self.action_send(self.laser_power_spinbox,
+                         self.backend.set_plc_laser_power, d)
+
+    @Slot(bool)
+    def on_laser_init_button_clicked(self, checked):
+        self.action_send(self.laser_init_button,
+                         self.backend.get_plc_laser_init)
+
+    @Slot(int)
+    def on_filterwheel_combobox_currentIndexChanged(self, index):
+        self.action_send(self.filterwheel_combobox,
+                         self.backend.set_plc_filterwheel_filter,
+                         self.filterwheel_combobox.currentData())
+
+    @Slot(bool)
+    def on_filterwheel_init_button_clicked(self, checked):
+        self.action_send(self.filterwheel_init_button,
+                         self.backend.get_plc_filterwheel_init)
+
+    @Slot(float)
+    def on_adc1_spinbox_valueChanged(self, d):
+        self.action_send(self.adc1_spinbox, self.backend.set_plc_adc_1_angle,
+                         d)
+
+    @Slot(bool)
+    def on_adc1_init_button_clicked(self, checked):
+        self.action_send(self.adc1_init_button, self.backend.get_plc_adc1_init)
+
+    @Slot(float)
+    def on_adc2_spinbox_valueChanged(self, d):
+        self.action_send(self.adc2_spinbox, self.backend.set_plc_adc_2_angle,
+                         d)
+
+    @Slot(bool)
+    def on_adc2_init_button_clicked(self, checked):
+        self.action_send(self.adc2_init_button, self.backend.get_plc_adc2_init)
 
     @Slot(bool)
     def on_adc_zero_disp_button_clicked(self, checked):

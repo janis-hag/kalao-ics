@@ -7,9 +7,9 @@ from PySide6.QtCore import QTimer
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
+from guis.widgets.slopes import SlopesWidget
+from guis.widgets.wfs import WFSWidget
 from guis.windows.alignment import AlignmentWindow
-from guis.windows.slopes import SlopesWidget
-from guis.windows.wfs import WFSWidget
 
 import config
 

@@ -325,35 +325,17 @@ class MainBackend(SHMFPSBackend):
     def set_plc_shutter_state(self, state):
         shutter._switch(state)
 
+    def get_plc_shutter_init(self):
+        shutter.init(force_init=True)
+
     def set_plc_flipmirror_position(self, position):
         flipmirror._switch(position)
 
+    def get_plc_flipmirror_init(self):
+        flipmirror.init(force_init=True)
+
     def set_plc_calibunit_position(self, position):
         calibunit.move(position)
-
-    def set_plc_tungsten_state(self, state):
-        if state:
-            tungsten.on()
-        else:
-            tungsten.off()
-
-    def set_plc_laser_state(self, state):
-        if state:
-            laser.enable()
-        else:
-            laser.disable()
-
-    def set_plc_laser_power(self, power):
-        laser.set_power(power)
-
-    def set_plc_filterwheel_filter(self, filter):
-        filterwheel.set_filter(filter)
-
-    def set_plc_adc_1_angle(self, position):
-        adc.rotate(config.PLC.Node.ADC1, position)
-
-    def set_plc_adc_2_angle(self, position):
-        adc.rotate(config.PLC.Node.ADC2, position)
 
     def get_plc_calibunit_init(self):
         calibunit.init(force_init=True)
@@ -364,8 +346,41 @@ class MainBackend(SHMFPSBackend):
     def get_plc_calibunit_tungsten(self):
         calibunit.move_to_tungsten_position()
 
+    def set_plc_tungsten_state(self, state):
+        if state:
+            tungsten.on()
+        else:
+            tungsten.off()
+
+    def get_plc_tungsten_init(self):
+        tungsten.init(force_init=True)
+
+    def set_plc_laser_state(self, state):
+        if state:
+            laser.enable()
+        else:
+            laser.disable()
+
+    def set_plc_laser_power(self, power):
+        laser.set_power(power)
+
+    def get_plc_laser_init(self):
+        laser.init(force_init=True)
+
+    def set_plc_filterwheel_filter(self, filter):
+        filterwheel.set_filter(filter)
+
+    def get_plc_filterwheel_init(self):
+        filterwheel.init(force_init=True)
+
+    def set_plc_adc_1_angle(self, position):
+        adc.rotate(config.PLC.Node.ADC1, position)
+
     def get_plc_adc1_init(self):
         adc.init(config.PLC.Node.ADC1, force_init=True)
+
+    def set_plc_adc_2_angle(self, position):
+        adc.rotate(config.PLC.Node.ADC2, position)
 
     def get_plc_adc2_init(self):
         adc.init(config.PLC.Node.ADC2, force_init=True)
@@ -460,7 +475,7 @@ class MainBackend(SHMFPSBackend):
     def get_logs_init(self):
         entries = []
         for entry in logs.seek(self.reader,
-                               entries_number=config.GUI.initial_logs_entries):
+                               entries_number=config.GUI.logs_initial_entries):
             entries.append(entry)
 
         return entries

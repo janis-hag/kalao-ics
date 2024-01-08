@@ -106,6 +106,8 @@ class MainBackend(FakeSHMFPSBackend):
                 0,
             'nuvu-acq':
                 True,
+            'nuvu-maqtime':
+                0,
             'nuvu-emgain':
                 config.WFS.autogain_params[10][0],
             'nuvu-exptime':
@@ -161,7 +163,7 @@ class MainBackend(FakeSHMFPSBackend):
             'ippower_bench_status':
                 IPPowerStatus.ON,
             'ippower_dm_status':
-                IPPowerStatus.OFF,
+                IPPowerStatus.ON,
             'kalao_nuvu.service': ('active', 'exited',
                                    datetime.now(timezone.utc)),
             'kalao_cacao.service': ('active', 'exited',
@@ -310,23 +312,26 @@ class MainBackend(FakeSHMFPSBackend):
             mfrate = 0
         elif self.internal_state['nuvu-exptime'] < config.WFS.readouttime:
             mfrate = 1000 / config.WFS.readouttime
+            self.internal_state['nuvu-maqtime'] = datetime.now(
+                timezone.utc).timestamp() * 1e6
         else:
             mfrate = 1000 / self.internal_state['nuvu-exptime']
+            self.internal_state['nuvu-maqtime'] = datetime.now(
+                timezone.utc).timestamp() * 1e6
 
-        if self.internal_state['nuvu-acq']:
-            self._update_stream_keywords(
-                self.data, config.Streams.NUVU_RAW, {
-                    'T_CCD': -60,
-                    'T_CNTRLR': 35,
-                    'T_PSU': 35,
-                    'T_FPGA': 35,
-                    'T_HSINK': 15.5,
-                    'EMGAIN': self.internal_state['nuvu-emgain'],
-                    'DETGAIN': 1,
-                    'EXPTIME': self.internal_state['nuvu-exptime'],
-                    'MFRATE': mfrate,
-                    '_MAQTIME': datetime.now(timezone.utc).timestamp() * 1e6,
-                })
+        self._update_stream_keywords(
+            self.data, config.Streams.NUVU_RAW, {
+                'T_CCD': -60,
+                'T_CNTRLR': 35,
+                'T_PSU': 35,
+                'T_FPGA': 35,
+                'T_HSINK': 15.5,
+                'EMGAIN': self.internal_state['nuvu-emgain'],
+                'DETGAIN': 1,
+                'EXPTIME': self.internal_state['nuvu-exptime'],
+                'MFRATE': mfrate,
+                '_MAQTIME': self.internal_state['nuvu-maqtime'],
+            })
 
         self._update_param(self.data, config.FPS.NUVU, 'autogain_on',
                            self.internal_state['nuvu-autogain_on'])
@@ -737,52 +742,21 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state['shutter_state'] = ShutterState(state)
         print(f'Set Shutter state to {state} (virtually)')
 
+    def get_plc_shutter_init(self):
+        print(f'Init Shutter (virtually)')
+
     def set_plc_flipmirror_position(self, position):
         self.internal_state['flipmirror_position'] = FlipMirrorPosition(
             position)
         print(f'Set Flip Mirror position to {position} (virtually)')
 
+    def get_plc_flipmirror_init(self):
+        print(f'Init Flip Mirror (virtually)')
+
     def set_plc_calibunit_position(self, position):
         self._fake_motor_move(position, 'calibunit_position',
                               'calibunit_state', config.CalibUnit.velocity)
         print(f'Set Calibration Unit position to {position} (virtually)')
-
-    def set_plc_tungsten_state(self, state):
-        if state:
-            self.internal_state['tungsten_state'] = TungstenState.ON
-        else:
-            self.internal_state['tungsten_state'] = TungstenState.OFF
-
-        print(f'Set Tungsten state to {state} (virtually)')
-
-    def set_plc_laser_state(self, state):
-        if state:
-            self.internal_state['laser_state'] = LaserState.ON
-        else:
-            self.internal_state['laser_state'] = LaserState.OFF
-
-        print(f'Set Laser state to {state} (virtually)')
-
-    def set_plc_laser_power(self, power):
-        self.internal_state['laser_power'] = power
-        print(f'Set Laser power to {power} (virtually)')
-
-    def set_plc_filterwheel_filter(self, filter):
-        self.internal_state[
-            'filterwheel_filter_position'] = config.FilterWheel.position_list.index(
-                filter)
-        self.internal_state['filterwheel_filter_name'] = filter
-        print(f'Set Filter Wheel filter to {filter} (virtually)')
-
-    def set_plc_adc_1_angle(self, position):
-        self._fake_motor_move(position, 'adc1_angle', 'adc1_state',
-                              config.ADC.velocity)
-        print(f'Set ADC1 position to {position} (virtually)')
-
-    def set_plc_adc_2_angle(self, position):
-        self._fake_motor_move(position, 'adc2_angle', 'adc2_state',
-                              config.ADC.velocity)
-        print(f'Set ADC2 position to {position} (virtually)')
 
     def get_plc_calibunit_init(self):
         self._fake_motor_move(0, 'calibunit_position', 'calibunit_state',
@@ -802,12 +776,58 @@ class MainBackend(FakeSHMFPSBackend):
                               'calibunit_state', config.CalibUnit.velocity)
         print(f'Moved Calibration Unit to Tungsten position (virtually)')
 
+    def set_plc_tungsten_state(self, state):
+        if state:
+            self.internal_state['tungsten_state'] = TungstenState.ON
+        else:
+            self.internal_state['tungsten_state'] = TungstenState.OFF
+
+        print(f'Set Tungsten state to {state} (virtually)')
+
+    def get_plc_tungsten_init(self):
+        print(f'Init Tungsten (virtually)')
+
+    def set_plc_laser_state(self, state):
+        if state:
+            self.internal_state['laser_state'] = LaserState.ON
+        else:
+            self.internal_state['laser_state'] = LaserState.OFF
+
+        print(f'Set Laser state to {state} (virtually)')
+
+    def set_plc_laser_power(self, power):
+        self.internal_state['laser_power'] = power
+        print(f'Set Laser power to {power} (virtually)')
+
+    def get_plc_laser_init(self):
+        print(f'Init Laser (virtually)')
+
+    def set_plc_filterwheel_filter(self, filter):
+        self.internal_state[
+            'filterwheel_filter_position'] = config.FilterWheel.position_list.index(
+                filter)
+        self.internal_state['filterwheel_filter_name'] = filter
+        print(f'Set Filter Wheel filter to {filter} (virtually)')
+
+    def get_plc_filterwheel_init(self):
+        print(f'Init Filter Wheel (virtually)')
+
+    def set_plc_adc_1_angle(self, position):
+        self._fake_motor_move(position, 'adc1_angle', 'adc1_state',
+                              config.ADC.velocity)
+        print(f'Set ADC1 position to {position} (virtually)')
+
     def get_plc_adc1_init(self):
         self._fake_motor_move(0, 'adc1_angle', 'adc1_state',
                               config.ADC.velocity)
         self._fake_motor_move(config.PLC.initial_pos[config.PLC.Node.ADC1],
                               'adc1_angle', 'adc1_state', config.ADC.velocity)
         print(f'Init ADC1 (virtually)')
+
+    def set_plc_adc_2_angle(self, position):
+        self._fake_motor_move(position, 'adc2_angle', 'adc2_state',
+                              config.ADC.velocity)
+        print(f'Set ADC2 position to {position} (virtually)')
 
     def get_plc_adc2_init(self):
         self._fake_motor_move(0, 'adc2_angle', 'adc2_state',
@@ -981,7 +1001,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         logs = []
 
-        for _ in range(config.GUI.initial_logs_entries):
+        for _ in range(config.GUI.logs_initial_entries):
             logs.append(self._generate_log())
 
         return logs

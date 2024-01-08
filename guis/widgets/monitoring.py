@@ -127,12 +127,10 @@ class MonitoringWidget(KWidget, BackendDataMixin):
             if lineedit.timestamp is None:
                 continue
 
-            max_age = 2 * config.Database.monitoring_update_interval
-
             since_text = f'Since: {lineedit.timestamp.astimezone().strftime("%H:%M:%S %d-%m-%Y")}'
 
-            if (datetime.now(timezone.utc) -
-                    lineedit.timestamp).total_seconds() > max_age:
+            if (datetime.now(timezone.utc) - lineedit.timestamp
+                ).total_seconds() > config.GUI.monitoring_max_age:
                 lineedit.setStyleSheet(f'color: {Color.GREY.name()};')
                 lineedit.hover_text = f'{since_text} (outdated)'
                 outdated += 1

@@ -147,10 +147,10 @@ class LogsWidget(KWidget):
 
         self.on_acknowledge_button_clicked(None)
 
-        self.timer = QTimer()
-        self.timer.setInterval(int(1000 / config.GUI.refreshrate_logs))
-        self.timer.timeout.connect(self.get_logs_new)
-        self.timer.start()
+        self.logs_timer = QTimer()
+        self.logs_timer.setInterval(int(1000 / config.GUI.refreshrate_logs))
+        self.logs_timer.timeout.connect(self.get_logs_new)
+        self.logs_timer.start()
 
     def get_logs_new(self):
         entries = self.backend.get_logs_new()

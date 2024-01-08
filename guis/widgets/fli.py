@@ -107,6 +107,11 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             img_min, img_max = self.compute_min_max(img)
 
+            if img.max() >= self.stream_info['max']:
+                self.saturation_label.setText('Saturated !')
+            else:
+                self.saturation_label.setText('')
+
             self.fli_view.setImage(img, img_min, img_max)
 
             self.star_x, self.star_y, self.star_peak, self.star_fwhm = find_star_fast(
@@ -115,15 +120,28 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.update_labels()
 
     def update_labels(self):
-        self.star_label.updateText(
+        self.star_x_label.updateText(
             x=(self.star_x - self.data_center_x) * self.axis_scaling,
-            y=(self.star_y - self.data_center_y) * self.axis_scaling,
-            peak=self.star_peak * self.data_scaling,
-            fwhm=self.star_fwhm * self.axis_scaling,
-            data_unit=self.data_unit,
-            data_precision=self.data_precision,
             axis_unit=self.axis_unit,
             axis_precision=self.axis_precision + 1,
+        )
+
+        self.star_y_label.updateText(
+            y=(self.star_y - self.data_center_y) * self.axis_scaling,
+            axis_unit=self.axis_unit,
+            axis_precision=self.axis_precision + 1,
+        )
+
+        self.star_fwhm_label.updateText(
+            fwhm=self.star_fwhm * self.axis_scaling,
+            axis_unit=self.axis_unit,
+            axis_precision=self.axis_precision + 1,
+        )
+
+        self.star_peak_label.updateText(
+            peak=self.star_peak * self.data_scaling,
+            data_unit=self.data_unit,
+            data_precision=self.data_precision,
         )
 
     def change_units(self, state):

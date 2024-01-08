@@ -3,10 +3,10 @@ import math
 import numpy as np
 
 from PySide6.QtCharts import QChart, QChartView, QDateTimeAxis, QXYSeries
-from PySide6.QtCore import (QEvent, QLineF, QMargins, QPointF, QRect, QRectF,
-                            QSignalBlocker, QSize, Signal)
-from PySide6.QtGui import (QBrush, QFont, QIcon, QPainter, QPainterPath, QPen,
-                           QPixmap, QPolygonF, Qt)
+from PySide6.QtCore import (QEvent, QLineF, QMargins, QPoint, QPointF, QRect,
+                            QRectF, QSignalBlocker, QSize, Signal)
+from PySide6.QtGui import (QBrush, QFont, QGuiApplication, QIcon, QPainter,
+                           QPainterPath, QPen, QPixmap, QPolygonF, Qt)
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
                                QGraphicsScene, QGraphicsSimpleTextItem,
@@ -212,6 +212,11 @@ class KMainWindow(QMainWindow):
         else:
             self.statusBar().clearMessage()
 
+    def center(self):
+        self.move(
+            QGuiApplication.primaryScreen().availableGeometry().center() -
+            self.rect().center())
+
 
 class KDetachedTabWindow(KMainWindow):
     def __init__(self, widget, *args, **kwargs):
@@ -223,8 +228,9 @@ class KDetachedTabWindow(KMainWindow):
 
         self.setWindowTitle(widget.windowTitle())
         self.setCentralWidget(widget)
-        self.show()
         self.resize(parent.size())
+        self.show()
+        self.center()
 
         if hasattr(widget, 'hovered'):
             self.statusBar().show()
@@ -473,12 +479,15 @@ class KGraphicsView(QGraphicsView, ArrayToImageMixin):
 
             if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
                 self.setCursor(Qt.CrossCursor)
-                self.hovered.emit(x, y, self.img[y, x])
+                if np.ma.is_masked(self.img):
+                    self.hovered.emit(x, y, self.img.filled()[y, x])
+                else:
+                    self.hovered.emit(x, y, self.img[y, x])
             else:
-                self.setCursor(Qt.ArrowCursor)
+                self.unsetCursor()
                 self.hovered.emit(-1, -1, np.nan)
         else:
-            self.setCursor(Qt.ArrowCursor)
+            self.unsetCursor()
             self.hovered.emit(-1, -1, np.nan)
 
     def addTicks(self, spacing, length, text_spacing, fontsize, ticks_x,
@@ -716,6 +725,7 @@ class KChart(QChart):
             series.setPointConfiguration(self.current_hovered_index, {
                 QXYSeries.PointConfiguration.Size: self.point_size
             })
+            self.hovered.emit(np.nan, np.nan)
 
         if not self.point_visible(series, closest_index):
             return
@@ -771,16 +781,55 @@ class KChartView(QChartView):
 
         self.setRenderHint(QPainter.Antialiasing)
 
-        self.chart = KChart()
-        self.chart.setMargins(QMargins(0, 0, 0, 0))
+        chart = KChart()
+        chart.setMargins(QMargins(0, 0, 0, 0))
+        chart.setBackgroundVisible(True)
 
-        self.chart.setBackgroundVisible(True)
         self.setStyleSheet("background: transparent")
 
-        self.setChart(self.chart)
+        self.setChart(chart)
+
+        self._value_pos = QPoint()
+        self.setMouseTracking(True)
 
     def updateMinMax(self, y_min, y_max):
-        self.chart.axisY().setRange(y_min, y_max)
+        self.chart().axisY().setRange(y_min, y_max)
+
+    def drawForeground(self, painter, rect):
+        super().drawForeground(painter, rect)
+        if self.chart() is None or self._value_pos.isNull():
+            return
+
+        pen = QPen(Color.GREY, 0.5, Qt.DashLine, Qt.FlatCap, Qt.MiterJoin)
+        painter.setPen(pen)
+
+        area = self.chart().plotArea()
+        sp = self._value_pos
+        x1 = QPointF(area.left() + pen.width() / 2, sp.y())
+        x2 = QPointF(area.right() - pen.width() / 2, sp.y())
+        y1 = QPointF(sp.x(), area.top() + pen.width() / 2)
+        y2 = QPointF(sp.x(), area.bottom() - pen.width() / 2)
+
+        if area.left() <= sp.x() <= area.right():
+            painter.drawLine(y1, y2)
+        if area.top() < sp.y() < area.bottom():
+            painter.drawLine(x1, x2)
+
+    def mouseMoveEvent(self, event):
+        super().mouseMoveEvent(event)
+
+        if self.chart() is None:
+            return
+
+        pos = self.mapToScene(event.pos())
+        if self.chart().plotArea().contains(pos):
+            self._value_pos = pos
+            self.setCursor(Qt.CrossCursor)
+        else:
+            self._value_pos = QPoint()
+            self.unsetCursor()
+
+        self.update()
 
 
 class KDraggableChartView(KChartView):
@@ -792,20 +841,23 @@ class KDraggableChartView(KChartView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.chart.current_dragged_series = None
-        self.chart.current_dragged_point = None
-        self.chart.current_dragged_index = None
+        chart = self.chart()
+
+        chart.current_dragged_series = None
+        chart.current_dragged_point = None
+        chart.current_dragged_index = None
 
     def mouseMoveEvent(self, event):
-        if self.chart.current_dragged_index is not None:
-            pos = self.chart.mapToValue(event.pos(),
-                                        self.chart.current_dragged_series)
+        chart = self.chart()
 
-            x = self.chart.current_dragged_point.x()
+        if chart.current_dragged_index is not None:
+            pos = chart.mapToValue(event.pos(), chart.current_dragged_series)
+
+            x = chart.current_dragged_point.x()
             y = max(min(pos.y(), self.drag_max), self.drag_min)
 
-            self.chart.current_dragged_series.replace(
-                self.chart.current_dragged_index, QPointF(x, y))
+            chart.current_dragged_series.replace(chart.current_dragged_index,
+                                                 QPointF(x, y))
 
             self.dragged.emit(x, y)
 

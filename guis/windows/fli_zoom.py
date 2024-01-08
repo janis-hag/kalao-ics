@@ -47,7 +47,7 @@ class FLIZoomWindow(KMainWindow, MinMaxMixin, SceneHoverMixin,
 
     zoom_center_x = config.FLI.center_x
     zoom_center_y = config.FLI.center_y
-    zoom_level = 8
+    zoom_level = 16
     zoom_min = 2
     zoom_max = 128
 
@@ -71,7 +71,7 @@ class FLIZoomWindow(KMainWindow, MinMaxMixin, SceneHoverMixin,
         self.img = img
 
         loadUi('fli_zoom.ui', self)
-        self.resize(900, 600)
+        self.resize(1400, 600)
 
         self.init_minmax([self.fli_view, self.zoom_view])
 
@@ -306,15 +306,28 @@ class FLIZoomWindow(KMainWindow, MinMaxMixin, SceneHoverMixin,
             view=QRectF(self.view_shift_x, self.view_shift_y, 2 * hw, 2 * hw))
 
     def update_labels(self):
-        self.star_label.updateText(
+        self.star_x_label.updateText(
             x=(self.star_x - self.data_center_x) * self.axis_scaling,
-            y=(self.star_y - self.data_center_y) * self.axis_scaling,
-            peak=self.star_peak * self.data_scaling,
-            fwhm=self.star_fwhm * self.axis_scaling,
-            data_unit=self.data_unit,
-            data_precision=self.data_precision,
             axis_unit=self.axis_unit,
             axis_precision=self.axis_precision + 1,
+        )
+
+        self.star_y_label.updateText(
+            y=(self.star_y - self.data_center_y) * self.axis_scaling,
+            axis_unit=self.axis_unit,
+            axis_precision=self.axis_precision + 1,
+        )
+
+        self.star_fwhm_label.updateText(
+            fwhm=self.star_fwhm * self.axis_scaling,
+            axis_unit=self.axis_unit,
+            axis_precision=self.axis_precision + 1,
+        )
+
+        self.star_peak_label.updateText(
+            peak=self.star_peak * self.data_scaling,
+            data_unit=self.data_unit,
+            data_precision=self.data_precision,
         )
 
     @Slot(int)

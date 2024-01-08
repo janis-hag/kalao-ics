@@ -31,6 +31,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin):
         self.dm_shape = dm_shape
 
         loadUi('calibration.ui', self)
+        self.resize(800, 400)
 
         self.setWindowTitle(f'{conf.upper()} - {self.windowTitle()}')
 
@@ -45,6 +46,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin):
         self.on_reload_button_clicked(False)
         self.on_mode_spinbox_valueChanged(self.mode_spinbox.value())
 
+        self.center()
         self.show()
 
     def max_mode_number(self):

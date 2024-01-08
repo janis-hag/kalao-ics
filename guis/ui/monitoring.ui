@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>MonitoringWidget</class>
+ <widget class="QWidget" name="MonitoringWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -13,12 +13,11 @@
   <property name="windowTitle">
    <string>Monitoring - KalAO</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0,0">
+  <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0">
    <item row="2" column="1">
     <widget class="KLabel" name="telemetry_interval_label">
      <property name="font">
       <font>
-       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -34,7 +33,6 @@
     <widget class="KLabel" name="monitoring_interval_label">
      <property name="font">
       <font>
-       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -53,7 +51,6 @@
     <widget class="KLabel" name="monitoring_update_label">
      <property name="font">
       <font>
-       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -69,7 +66,6 @@
     <widget class="KLabel" name="telemetry_update_label">
      <property name="font">
       <font>
-       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>

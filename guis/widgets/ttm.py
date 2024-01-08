@@ -37,10 +37,9 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
 
         self.init_minmax(self.tiptilt_plot)
 
-        chart = self.tiptilt_plot.chart
+        chart = self.tiptilt_plot.chart()
 
         pen = QPen(Color.RED, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
-        pen.setCosmetic(True)
 
         tip_series = self.tip_series = QLineSeries()
         tip_series.setPen(pen)
@@ -48,7 +47,6 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         chart.addSeries(tip_series)
 
         pen = QPen(Color.BLUE, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
-        pen.setCosmetic(True)
 
         tilt_series = self.tilt_series = QLineSeries()
         tilt_series.setPen(pen)
@@ -58,14 +56,14 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         # X Axis Settings
         axis_x = self.axis_x = QDateTimeAxis()
         axis_x.setTickCount(5)
-        axis_x.setFormat("HH:mm")
+        axis_x.setFormat('H:mm')
         chart.addAxis(axis_x, Qt.AlignBottom)
         tip_series.attachAxis(axis_x)
         tilt_series.attachAxis(axis_x)
 
         # Y Axis Settings
         axis_y = self.axis_y = QValueAxis()
-        axis_y.setTickCount(3)
+        axis_y.setTickCount(5)
         chart.addAxis(axis_y, Qt.AlignLeft)
         tip_series.attachAxis(axis_y)
         tilt_series.attachAxis(axis_y)
@@ -85,6 +83,14 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
             timestamp = QDateTime(timestamp.date(), timestamp.time(),
                                   QTimeZone.utc()).toMSecsSinceEpoch()
             self.tip, self.tilt = img
+
+            if self.tip <= self.stream_info[
+                    'min'] or self.tip >= self.stream_info[
+                        'max'] or self.tilt <= self.stream_info[
+                            'min'] or self.tilt >= self.stream_info['max']:
+                self.saturation_label.setText('Saturated !')
+            else:
+                self.saturation_label.setText('')
 
             self.tip_series.append(
                 QPointF(timestamp, self.tip * self.data_scaling))

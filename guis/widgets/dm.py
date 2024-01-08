@@ -53,6 +53,13 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         if img is not None:
             img_min, img_max = self.compute_min_max(img)
 
+            if img.min(
+            ) <= self.stream_info['min'] * self.max_stroke or img.max(
+            ) >= self.stream_info['max'] * self.max_stroke:
+                self.saturation_label.setText('Saturated !')
+            else:
+                self.saturation_label.setText('')
+
             self.dm_view.setImage(img, img_min, img_max)
 
             stroke_max = np.max(img)

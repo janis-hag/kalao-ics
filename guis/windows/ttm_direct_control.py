@@ -15,6 +15,7 @@ class TTMDirectControl(KMainWindow, BackendActionMixin):
         self.resize(800, 125)
 
         self.show()
+        self.center()
         self.setFixedSize(self.size())
 
     @Slot(int)

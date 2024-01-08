@@ -73,6 +73,12 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         if img is not None:
             img_min, img_max = self.compute_min_max(img)
 
+            # Do not check min due to bias subtraction
+            if img.max() >= self.stream_info['max']:
+                self.saturation_label.setText('Saturated !')
+            else:
+                self.saturation_label.setText('')
+
             self.wfs_view.setImage(img, img_min, img_max)
 
     def change_colormap(self, state):

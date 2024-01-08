@@ -172,7 +172,7 @@ def set_emgain(emgain=1, method='fps'):
     if method == 'fps':
         _set_fps_value(config.FPS.NUVU, 'emgain', emgain)
     elif method == 'tmux':
-        _set_tmux_value('nuvu_ctrl', 'SetEMCalibratedGain', emgain)
+        _set_tmux_value('kalaocam_ctrl', 'SetEMCalibratedGain', emgain)
     else:
         logger.error('ao', f'Unknown method {method} in set_emgain')
 
@@ -195,7 +195,7 @@ def set_exptime(exptime=0, method='fps'):
     if method == 'fps':
         _set_fps_value(config.FPS.NUVU, 'exposuretime', exptime)
     elif method == 'tmux':
-        _set_tmux_value('nuvu_ctrl', 'SetExposureTime', exptime)
+        _set_tmux_value('kalaocam_ctrl', 'SetExposureTime', exptime)
     else:
         logger.error('ao', f'Unknown method {method} in set_exptime')
 
@@ -232,7 +232,7 @@ def emgain_off():
         ret = -1
 
     try:
-        _set_tmux_value('nuvu_ctrl', 'SetEMCalibratedGain', 1)
+        _set_tmux_value('kalaocam_ctrl', 'SetEMCalibratedGain', 1)
     except Exception as err:
         print(f'Can\'t turn off emgain, nucu_ctrl seems not to be running.')
         print(Exception, err)
@@ -594,7 +594,7 @@ def start_wfs_acquisition():
     database.store('obs', {'deadman_keepalive': 0})
     time.sleep(1)
 
-    _set_tmux_value('nuvu_ctrl', 'SetContinuousAcquisition')
+    _set_tmux_value('kalaocam_ctrl', 'SetContinuousAcquisition')
 
     time.sleep(config.WFS.acquisition_start_wait)
 
@@ -611,7 +611,7 @@ def start_wfs_acquisition():
 def stop_wfs_acquisition():
     logger.info('nuvu', 'Stopping WFS acquisition')
 
-    _set_tmux_value('nuvu_ctrl', 'AbortAcquisition')
+    _set_tmux_value('kalaocam_ctrl', 'AbortAcquisition')
 
     return 0
 
@@ -643,9 +643,20 @@ def stop_wfs():
 
             nuvu_acquire_fps.run_stop()
 
-    subprocess.run([
-        '/home/kalao/kalao-camstack/scripts/cam-nuvustart', 'stop'
-    ])
+    server = libtmux.Server()
+
+    try:
+        session = server.sessions.get(session_name='kalaocam_ctrl')
+        pane = session.attached_pane
+        pane.send_keys('C-c', enter=False)
+        pane.send_keys('close()', enter=True)
+        time.sleep(10)
+        pane.send_keys('C-c', enter=False)
+        pane.send_keys('C-z', enter=False)
+        pane.send_keys('kill %', enter=True)
+        session.kill_session()
+    except libtmux.exc.TmuxObjectDoesNotExist:
+        pass
 
     Path('/tmp/milk/nuvu_raw.im.shm').unlink(missing_ok=True)
 
@@ -660,7 +671,10 @@ def start_wfs(start_nuvu_acquire=True, start_shwfs_process=True):
     nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU,
                                              shm_and_fps_cache)
 
-    subprocess.run(['/home/kalao/kalao-camstack/scripts/cam-nuvustart'])
+    subprocess.run([
+        'python', '/home/kalao/kalao-camstack/camstack/cam_mains/main.py',
+        'KALAOCAM'
+    ])
 
     logger.info('nuvu', f'Waiting for nuvu_raw to start')
 

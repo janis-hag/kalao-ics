@@ -7,7 +7,7 @@ from PySide6.QtCore import QMetaObject, Qt, QThread, QTimer
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
-from guis.windows.mainwindow import MainWindow
+from guis.windows.main import MainWindow
 
 import config
 

@@ -88,6 +88,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.timer.start()
 
         self.show()
+        self.center()
         self.setFixedSize(self.size())
 
     def dmdisp_updated(self, data):

@@ -571,7 +571,10 @@ class GUI:
     ttm_plot_length = 300  # s
 
     logs_lines = 10000  # -
-    initial_logs_entries = 1000  # -
+    logs_initial_entries = 1000  # -
+
+    monitoring_max_age = 2 * max(Database.monitoring_update_interval,
+                                 Database.telemetry_update_interval)  # s
 
     plots_mapping = {
         # -1
@@ -597,8 +600,8 @@ class GUI:
         TrackingStatus.TRACKING: 3,
 
         # PLC status
-        PLCStatus.DISABLED: -1,
-        PLCStatus.UNINITIALISED: -1,
+        PLCStatus.NOT_ENABLED: -1,
+        PLCStatus.NOT_INITIALISED: -1,
         PLCStatus.INITIALISING: 0,
         PLCStatus.STANDING: 1,
         PLCStatus.MOVING: 2,
@@ -607,7 +610,8 @@ class GUI:
     plots_exclude_list = [
         'observer_name', 'observer_email', 'fli_last_image_path',
         'fli_temporary_image_path', 'tcs_header_path',
-        'filterwheel_filter_name', 'sequencer_command_received', 't120_host'
+        'filterwheel_filter_name', 'sequencer_command_received', 't120_host',
+        'psf_file'
     ]
 
     refreshrate_streams = 10  # /s

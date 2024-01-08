@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>PlotsWidget</class>
+ <widget class="QWidget" name="PlotsWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -44,7 +44,7 @@
     </layout>
    </item>
    <item row="0" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="scale_layout">
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -130,7 +130,7 @@
     </layout>
    </item>
    <item row="0" column="1" rowspan="4">
-    <layout class="QFormLayout" name="formLayout">
+    <layout class="QFormLayout" name="side_layout">
      <item row="0" column="0">
       <widget class="QLabel" name="start_label">
        <property name="text">

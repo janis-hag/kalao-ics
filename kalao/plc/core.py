@@ -184,11 +184,11 @@ def motor_get_status(node, beck=None):
     status = beck.get_node(f'{node}.stat.sStatus').get_value()
 
     if not enabled:
-        return PLCStatus.DISABLED
+        return PLCStatus.NOT_ENABLED
     elif 'INITIALISING' in status:
         return PLCStatus.INITIALISING
     elif not initialised:
-        return PLCStatus.UNINITIALISED
+        return PLCStatus.NOT_INITIALISED
     elif 'ERROR' in status:
         return PLCStatus.ERROR
     elif 'MOVING' in status:

@@ -69,8 +69,7 @@ def open_fps_once(fps_name, fps_cache):
     stat = fps_path.stat()
 
     # Note: only check inode number as ctime is too aggressive
-    if fps_info is not None and stat.st_ino == fps_info[
-            'stat'].st_ino:
+    if fps_info is not None and stat.st_ino == fps_info['stat'].st_ino:
         return fps_info['fps']
     else:
         if fps_info is not None:

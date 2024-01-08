@@ -34,7 +34,6 @@ def gather(shm_and_fps_cache):
         telemetry_data['nuvu_mframerate'] = stream_keywords['MFRATE']
 
     # Nuvu process
-
     nuvu_fps = toolbox.open_fps_once(config.FPS.NUVU, shm_and_fps_cache)
 
     if nuvu_fps is not None and nuvu_fps.run_runs():
@@ -43,7 +42,6 @@ def gather(shm_and_fps_cache):
             'autogain_setting')
 
     # BMC process
-
     bmc_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
 
     if bmc_fps is not None and bmc_fps.run_runs():

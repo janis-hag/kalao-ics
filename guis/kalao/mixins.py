@@ -161,7 +161,8 @@ class MinMaxMixin:
             self.max_spinbox.setValue(self.stream_info['max'])
 
         for view in self.views:
-            view.updateMinMax(self.stream_info['min'], self.stream_info['max'])
+            view.updateMinMax(self.stream_info['min'] * self.data_scaling,
+                              self.stream_info['max'] * self.data_scaling)
 
     def update_spinboxes_unit(self, unit, scaling, precision):
         self.min_spinbox.setScale(scaling, precision)

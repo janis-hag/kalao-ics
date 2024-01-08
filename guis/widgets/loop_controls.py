@@ -2,8 +2,9 @@ import numpy as np
 
 from PySide6.QtCharts import QLineSeries, QValueAxis
 from PySide6.QtCore import QPointF, QSignalBlocker, Signal, Slot
-from PySide6.QtGui import Qt
+from PySide6.QtGui import QPen, Qt
 
+from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KWidget
@@ -68,7 +69,19 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.shwfs_algorithm_combobox.setCurrentIndex(-1)
 
         # Create Chart and set General Chart setting
-        chart = self.modalgains_plot.chart
+        chart = self.modalgains_plot.chart()
+
+        # Serie
+        pen = QPen(Color.BLUE, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+
+        series = self.modalgains_series = QLineSeries()
+        series.setPen(pen)
+        series.setMarkerSize(3)
+        series.setName("Modal gains")
+        series.setPointsVisible(True)
+        series.pressed.connect(self.on_modalgains_pressed)
+        series.released.connect(self.on_modalgains_released)
+        chart.addSeries(series)
 
         # X Axis Settings
         axis_x = self.axis_x = QValueAxis()
@@ -78,6 +91,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_x.setTickType(QValueAxis.TicksDynamic)
         axis_x.setRange(-1, 1)
         chart.addAxis(axis_x, Qt.AlignBottom)
+        series.attachAxis(axis_x)
 
         # Y Axis Settings
         axis_y = self.axis_y = QValueAxis()
@@ -86,27 +100,19 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_y.setTickType(QValueAxis.TicksDynamic)
         axis_y.setRange(-0.05, 1.05)
         chart.addAxis(axis_y, Qt.AlignLeft)
-
-        # Serie
-        series = self.modalgains_series = QLineSeries()
-        series.setName("Modal gains")
-        series.setPointsVisible(True)
-        series.pressed.connect(self.on_modalgains_pressed)
-        series.released.connect(self.on_modalgains_released)
-
-        series.hovered.connect(lambda point, state, series=self.
-                               modalgains_series: self.modalgains_plot.chart.
-                               pointHoveredEvent(point, state, series))
-
-        chart.addSeries(series)
-        series.attachAxis(axis_x)
         series.attachAxis(axis_y)
+
+        chart.legend().hide()
+
+        series.hovered.connect(lambda point, state, series=self
+                               .modalgains_series: self.modalgains_plot.chart(
+                               ).pointHoveredEvent(point, state, series))
 
         with QSignalBlocker(self.law_combobox):
             for s in laws.keys():
                 self.law_combobox.addItem(s)
 
-        self.modalgains_plot.chart.hovered.connect(self.hover_xy_to_str)
+        chart.hovered.connect(self.hover_xy_to_str)
         self.modalgains_plot.dragged.connect(self.hover_xy_to_str)
 
         backend.data_updated.connect(self.data_updated)
@@ -273,19 +279,22 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     def on_modalgains_pressed(self, point):
         points = self.modalgains_series.points()
+        chart = self.modalgains_plot.chart()
 
-        p, i = self.modalgains_plot.chart.find_closest_point(point, points)
+        p, i = chart.find_closest_point(point, points)
 
-        self.modalgains_plot.chart.current_dragged_series = self.modalgains_series
-        self.modalgains_plot.chart.current_dragged_point = p
-        self.modalgains_plot.chart.current_dragged_index = i
+        chart.current_dragged_series = self.modalgains_series
+        chart.current_dragged_point = p
+        chart.current_dragged_index = i
 
         self.hovered.emit(f'X: {p.x():.0f}, Y: {p.y():.2f}')
 
     def on_modalgains_released(self, point):
-        self.modalgains_plot.chart.current_dragged_series = None
-        self.modalgains_plot.chart.current_dragged_point = None
-        self.modalgains_plot.chart.current_dragged_index = None
+        chart = self.modalgains_plot.chart()
+
+        chart.current_dragged_series = None
+        chart.current_dragged_point = None
+        chart.current_dragged_index = None
 
         self.hovered.emit('')
 

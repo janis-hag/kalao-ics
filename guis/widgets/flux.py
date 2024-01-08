@@ -47,9 +47,14 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         img = self.consume_stream(data, config.Streams.FLUX)
 
         if img is not None:
-            img = np.ma.masked_array(img, mask=self.mask, fill_value=0)
+            img = np.ma.masked_array(img, mask=self.mask, fill_value=np.nan)
 
             img_min, img_max = self.compute_min_max(img)
+
+            if img.max() >= self.stream_info['max']:
+                self.saturation_label.setText('Saturated !')
+            else:
+                self.saturation_label.setText('')
 
             self.flux_view.setImage(img, img_min, img_max)
 
