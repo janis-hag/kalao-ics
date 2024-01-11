@@ -46,8 +46,10 @@ class AlignmentBackend(SHMFPSBackend):
         time.sleep(self.alignment_window.wait_after_poke)
         self._update_stream(self.streams, config.Streams.NUVU,
                             key=f'{config.Streams.NUVU}_{PokeState.FLAT}')
-        self._update_stream(self.streams, config.Streams.SHWFS,
-                            key=f'{config.Streams.SHWFS}_{PokeState.FLAT}')
+        self._update_stream(self.streams, config.Streams.SLOPES,
+                            key=f'{config.Streams.SLOPES}_{PokeState.FLAT}')
+
+        self._update_stream(self.streams, config.Streams.FLUX)
 
         self._update_param(self.streams, config.FPS.SHWFS, 'slope_x')
         self._update_param(self.streams, config.FPS.SHWFS, 'slope_y')
@@ -62,8 +64,8 @@ class AlignmentBackend(SHMFPSBackend):
         time.sleep(self.alignment_window.wait_after_poke)
         self._update_stream(self.streams, config.Streams.NUVU,
                             key=f'{config.Streams.NUVU}_{PokeState.DOWN}')
-        self._update_stream(self.streams, config.Streams.SHWFS,
-                            key=f'{config.Streams.SHWFS}_{PokeState.DOWN}')
+        self._update_stream(self.streams, config.Streams.SLOPES,
+                            key=f'{config.Streams.SLOPES}_{PokeState.DOWN}')
 
         # Poke actuators up
         for act in self.alignment_window.actuators_to_poke:
@@ -74,8 +76,8 @@ class AlignmentBackend(SHMFPSBackend):
         time.sleep(self.alignment_window.wait_after_poke)
         self._update_stream(self.streams, config.Streams.NUVU,
                             key=f'{config.Streams.NUVU}_{PokeState.UP}')
-        self._update_stream(self.streams, config.Streams.SHWFS,
-                            key=f'{config.Streams.SHWFS}_{PokeState.UP}')
+        self._update_stream(self.streams, config.Streams.SLOPES,
+                            key=f'{config.Streams.SLOPES}_{PokeState.UP}')
 
         self.streams[config.Streams.NUVU] = self.streams[
             f'{config.Streams.NUVU}_{self.alignment_window.display}']

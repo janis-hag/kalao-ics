@@ -45,6 +45,7 @@ class TrackingStatus(StrEnum):
     IDLE = 'IDLE'
     POINTING = 'POINTING'
     CENTERING = 'CENTERING'
+    FOCUSING = 'FOCUSING'
     TRACKING = 'TRACKING'
 
 
@@ -72,7 +73,7 @@ class CameraServerStatus(StrEnum):
     ERROR = 'ERROR'
 
 
-class T120ServerStatus(StrEnum):
+class ETCSServerStatus(StrEnum):
     UP = 'UP'
     DOWN = 'DOWN'
     ERROR = 'ERROR'
@@ -138,9 +139,9 @@ class ReturnCode(IntFlag):
     CAMERA_SERVER_DOWN = auto()
     CAMERA_ERROR = auto()
 
-    T120_OK = OK
-    T120_SERVER_DOWN = auto()
-    T120_ERROR = auto()
+    ETCS_OK = OK
+    ETCS_SERVER_DOWN = auto()
+    ETCS_ERROR = auto()
 
     PLC_INIT_SUCCESS = OK
     PLC_INIT_FAILED = auto()

@@ -196,7 +196,7 @@
      <item>
       <widget class="QLabel" name="warnings_label">
        <property name="text">
-        <string>Warnings:</string>
+        <string>Warnings</string>
        </property>
       </widget>
      </item>
@@ -232,7 +232,7 @@
      <item>
       <widget class="QLabel" name="errors_label">
        <property name="text">
-        <string>Errors:</string>
+        <string>Errors</string>
        </property>
       </widget>
      </item>

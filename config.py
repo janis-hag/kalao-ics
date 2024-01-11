@@ -95,14 +95,6 @@ class AO:
     DM_loop_number = 1
     TTM_loop_number = 2
 
-    # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
-    FLI_tip_to_TTM = 0.008497723325890764  # mrad / px
-    FLI_tilt_to_TTM = -0.008497723325890764  # mrad / px
-
-    # Should be 0.5 * 1/(1.2*7.09899) * 1200 / 20 * 1000 * 48e-6 = 0.169 mrad / px (2x2 binning)
-    WFS_tip_to_TTM = -0.28649303833986856  # mrad / px
-    WFS_tilt_to_TTM = 0.25807611836775707  # mrad / px
-
     wait_fps_run = 3  # s
 
     shwfs_algorithms = ['Quadcell', 'Center of mass']
@@ -144,9 +136,13 @@ class FLI:
     # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
     plate_scale = 0.0507  # arcsec / px
 
-    # For offsets
-    px_x_to_onsky = 0.0658  # arcsec / px
-    px_y_to_onsky = 0.0512  # arcsec / px
+    # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
+    tip_to_onsky = 0.0658  # arcsec / px
+    tilt_to_onsky = 0.0512  # arcsec / px
+
+    # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
+    tip_to_TTM = 0.008497723325890764  # mrad / px
+    tilt_to_TTM = -0.008497723325890764  # mrad / px
 
     center_x = 505  # px 505
     center_y = 545  # px 545
@@ -171,6 +167,14 @@ class WFS:
 
     # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
     plate_scale = 1.16  # arcsec / px
+
+    # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
+    tip_to_onsky = -1.16  # arcsec / px
+    tilt_to_onsky = -1.16  # arcsec / px
+
+    # Should be 0.5 * 1/(1.2*7.09899) * 1200 / 20 * 1000 * 48e-6 = 0.169 mrad / px (2x2 binning)
+    tip_to_TTM = -0.28649303833986856  # mrad / px
+    tilt_to_TTM = 0.25807611836775707  # mrad / px
 
     laser_calib_power = 8  # mW
     laser_calib_exptime = 1.5  # ms
@@ -443,9 +447,6 @@ class FITS:
 
 class Starfinder:
     centering_timeout = 30
-    focusing_step = 10  # switched from mm to mum with new m2 drive 0.01
-    focusing_pixels = 30
-    focusing_dit = 20
     min_flux = 4096
     max_flux = 32768
     max_dit = 60
@@ -455,6 +456,15 @@ class Starfinder:
 
     # For 1" seeing and with 0.0507"/px plate scale, should be 1 / 0.0507 = 20 px
     FWHM = 30  # px
+
+
+class Focusing:
+    steps = 7
+    step_size = 10  # µm
+    dit = 20
+
+    autofocus_f0 = 29.772
+    autofocus_f1 = 0.032
 
 
 class Euler:
@@ -531,22 +541,15 @@ class Database:
     monitoring_min_update_interval = 5  # s
 
 
-class T120:
-    connection_timeout = 5
-    altaz_timeout = 10
-    focus_timeout = 20
-    ip = "10.10.132.102"
-    http_port = 10002
-    host = "glslogin1.ls.eso.org"
-    port = 17001
-    semkey = 4000
-    symb_name = "inter"
-    rcmd = "ipcsrv"
+class ETCS:
+    ip = '10.10.132.102'
+    port = 10002
+    token = 'ETCS_API_TOKEN_2023'
     request_timeout = 120
-    port_observation_timer = 17002
-    focus_offset_limit = 1500
-    temperature_file = "/disks/synology/gls/data/services/CURRENT/temperature_telescope.rdb"
-    temperature_file_timeout = 120
+
+    temperature_file = '/disks/synology/gls/data/services/CURRENT/temperature_telescope.rdb'
+    max_age = 120
+
     dummy_telescope = False
 
 

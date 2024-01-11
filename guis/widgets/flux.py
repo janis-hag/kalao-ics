@@ -5,6 +5,7 @@ from PySide6.QtGui import Qt
 from kalao.utils import ktools
 
 from guis.kalao import colormaps
+from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KWidget
@@ -51,10 +52,15 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             img_min, img_max = self.compute_min_max(img)
 
-            if img.max() >= self.stream_info['max']:
+            saturation = img.max() / self.stream_info['max']
+            if saturation >= 1:
                 self.saturation_label.setText('Saturated !')
+                self.saturation_label.setStyleSheet(
+                    f'color: {Color.RED.name()};')
             else:
-                self.saturation_label.setText('')
+                self.saturation_label.updateText(saturation=saturation * 100)
+                self.saturation_label.setStyleSheet(
+                    f'color: {Color.BLACK.name()};')
 
             self.flux_view.setImage(img, img_min, img_max)
 

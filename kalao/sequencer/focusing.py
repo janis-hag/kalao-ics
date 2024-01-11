@@ -8,17 +8,15 @@ from astropy.io import fits
 
 from kalao import database, logger
 from kalao.fli import camera
-from kalao.utils import file_handling
-
-from tcs_communication import t120
-
-from kalao.definitions.enums import SequencerStatus
+from kalao.interfaces import etcs
+from kalao.utils import file_handling, starfinder
 
 import config
 
 
-def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
-                   sequencer_arguments=None):
+def focus_sequence(steps=config.Focusing.steps,
+                   step_size=config.Focusing.step_size,
+                   dit=config.Focusing.dit, sequencer_arguments=None):
     """
     Starts a sequence to find best telescope M2 focus position.
 
@@ -26,8 +24,8 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
     TODO handle abort of sequence
 
     :param sequencer_arguments:
-    :param focus_points: number of points to take for in the sequence
-    :param focusing_dit: integration time for each image
+    :param steps: number of points to take for in the sequence
+    :param dit: integration time for each image
     :return:
     """
 
@@ -36,98 +34,122 @@ def focus_sequence(focus_points=4, focusing_dit=config.Starfinder.focusing_dit,
     else:
         q = sequencer_arguments.get('q')
 
-    # TODO define focusing_dit in kalao.config or pass as argument
-    focus_points = np.around(focus_points)
+    # TODO: dit optimization
 
-    initial_focus = t120.get_focus_value()
+    initial_focus = etcs.get_focus()
+    focus_start = initial_focus - steps/2*step_size
+    focus_stop = initial_focus + steps/2*step_size
 
-    # focusing_dit = optimise_dit(focusing_dit)
-    #
-    # if focusing_dit == -1:
-    #     system.print_and_log(
-    #             'Error optimising dit for focusing sequence. Target brightness out of range'
-    #     )
+    focus_sequence = np.linspace(focus_start, focus_stop, steps)
 
-    file_path = camera.take_image(dit=focusing_dit,
-                                  sequencer_arguments=sequencer_arguments)
+    data = pd.DataFrame({'focus': focus_sequence},
+                        columns=['focus', 'x', 'y', 'peak', 'fwhm'])
 
-    #time.sleep(5)
-    file_handling.add_comment(file_path, 'Focus sequence: 0')
-
-    image = fits.getdata(file_path)
-    flux = np.sort(np.ravel(image))[-config.Starfinder.focusing_pixels:].sum()
-
-    if flux < config.Starfinder.min_flux:
-        database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
-        logger.error('sequencer', f'No flux detected on science camera')
-        return -1
-
-    focus_flux = pd.DataFrame({'set_focus': [initial_focus], 'flux': [flux]})
-
-    # Get even number of focus_points in order to include 0 in the sequence.
-    if (focus_points % 2) == 1:
-        focus_points = focus_points + 1
-
-    focusing_sequence = (np.arange(focus_points + 1) -
-                         focus_points/2) * config.Starfinder.focusing_step
-
-    for step, focus_offset in enumerate(focusing_sequence):
-        database.store('obs', {
-            'sequencer_status': f'Focus {step+1}:{len(focusing_sequence)}'
-        })  #TODO: this is irregular, do better
-        logger.info('sequencer', f'Focus {step+1}:{len(focusing_sequence)}')
-
+    for step, focus in enumerate(focus_sequence):
         # Check if an abort was requested
         if q is not None and not q.empty():
             q.get()
             return -1
-        if focus_offset == 0:
-            # skip set_focus zero as it was already taken
-            continue
 
-        new_focus = focus_offset + initial_focus
+        etcs.set_focus(focus)
 
-        t120.send_focus_offset(new_focus)
-
-        # TODO: Remove sleep if send_focus is blocking
-        # TODO check what the new focus settling time is
-        time.sleep(5)
-
-        file_path = camera.take_image(dit=focusing_dit,
+        file_path = camera.take_image(dit=dit,
                                       sequencer_arguments=sequencer_arguments)
 
-        file_handling.add_comment(file_path, f'Focus sequence: {new_focus}')
+        file_handling.add_comment(
+            file_path, f'Focus sequence {step+1}/{steps}: focus={focus}µm')
 
         image = fits.getdata(file_path)
 
-        flux = np.sort(
-            np.ravel(image))[-config.Starfinder.focusing_pixels:].sum()
+        x_star, y_star, peak, fwhm = starfinder.find_star(image)
 
-        focus_flux.loc[len(focus_flux.index)] = [new_focus, flux]
+        data.iloc[step] = {
+            'focus': focus,
+            'x': x_star,
+            'y': y_star,
+            'peak': peak,
+            'fwhm': fwhm
+        }
 
-    # Keep best set_focus
-    best_focus = focus_flux.loc[focus_flux['flux'].idxmax(), 'set_focus']
+        logger.info(
+            'focusing',
+            f'Focus sequence {step+1}/{steps}: focus={focus}µm, x={x_star}px, y={y_star}px, peak={peak}ADU, FWHM={fwhm}px'
+        )
 
-    print(focus_flux)
-    logger.info('sequencer', f'Best focus value: {best_focus}')
+    data = data.apply(pd.to_numeric)
 
-    temps = t120.get_tube_temp()
+    idxmin = data['fwhm'].idxmin()
 
-    if (time.time() -
-            float(temps.tunix)) < float(config.T120.temperature_file_timeout):
+    if idxmin == 0 or idxmin == len(focus_sequence):
+        logger.error('focusing', 'No minima found during focus sequence')
+        return -1
+
+    x = data['focus'].to_numpy()
+    y = data['fwhm'].to_numpy()
+
+    fit = np.polynomial.polynomial.Polynomial.fit(x, y, 2)
+    a, b, c = fit.coef
+
+    best_focus = -b / 2 * a
+    best_fwhm = fit(x)
+
+    logger.info('focusing', f'Best focus found at {best_focus} µm')
+
+    etcs.set_focus(best_focus)
+
+    # Update autofocus
+
+    temps = etcs.get_tube_temps()
+
+    if (time.time() - int(temps['tunix'])) < config.ETCS.max_age:
+        logger.info('focusing', 'Updated autofocusing model')
+
+        f0, f1 = update_autofocus_model(best_focus, temps['temttb'],
+                                        temps['temtth'])
 
         database.store(
             'obs', {
                 'focusing_best': best_focus,
-                'focusing_temttb': temps.temttb,
-                'focusing_temtth': temps.temtth,
-                'focusing_fo_delta': best_focus - initial_focus
+                'focusing_temttb': temps['temttb'],
+                'focusing_temtth': temps['temtth'],
+                'focusing_f0': f0,
+                'focusing_f1': f1,
             })
-
-    # best_focus = initial_focus + correction
-    t120.update_fo_delta(best_focus - initial_focus)
+    else:
+        database.store('obs', {
+            'focusing_best': best_focus,
+        })
 
     return 0
+
+
+def autofocus():
+    temps = etcs.get_tube_temps()
+
+    temttb = temps['temttb']
+    temtth = temps['temtth']
+
+    f0 = database.get_last('obs', 'focusing_f0')
+    f1 = database.get_last('obs', 'focusing_f1')
+
+    if f0 is None:
+        f0 = config.Focusing.autofocus_f0
+
+    if f1 is None:
+        f1 = config.Focusing.autofocus_f1
+
+    focus = f0 + f1 * (temttb-1.2+temtth) / 2
+
+    logger.info('focusing', f'Autofocus: setting focus to {focus} µm')
+
+    etcs.set_focus(focus)
+
+
+def update_autofocus_model(focus, temttb, temtth):
+    f1 = config.Focusing.autofocus_f1
+    f0 = focus - f1 * (temttb-1.2+temtth) / 2
+
+    return f0, f1
 
 
 def get_latest_fo_delta():

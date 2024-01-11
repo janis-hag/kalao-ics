@@ -84,6 +84,11 @@ centering_log:
   long: Centering log
   unit:
 
+focusing_log:
+  short: Focusing log
+  long: Focusing log
+  unit:
+
 gop_log:
   short: GOP log
   long: GOP server log
@@ -104,7 +109,7 @@ observation_timer_log:
   long: Observation timer log
   unit:
 
-t120_log:
-  short: T120 log
-  long: T120 client log
+etcs_log:
+  short: ETCS log
+  long: ETCS client log
   unit:

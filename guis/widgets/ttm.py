@@ -84,13 +84,19 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
                                   QTimeZone.utc()).toMSecsSinceEpoch()
             self.tip, self.tilt = img
 
-            if self.tip <= self.stream_info[
-                    'min'] or self.tip >= self.stream_info[
-                        'max'] or self.tilt <= self.stream_info[
-                            'min'] or self.tilt >= self.stream_info['max']:
+            saturation_tip = max(self.tip / self.stream_info['max'],
+                                 self.tip / self.stream_info['min'])
+            saturation_tilt = max(self.tip / self.stream_info['max'],
+                                  self.tilt / self.stream_info['min'])
+            saturation = max(saturation_tip, saturation_tilt)
+            if saturation >= 1:
                 self.saturation_label.setText('Saturated !')
+                self.saturation_label.setStyleSheet(
+                    f'color: {Color.RED.name()};')
             else:
-                self.saturation_label.setText('')
+                self.saturation_label.updateText(saturation=saturation * 100)
+                self.saturation_label.setStyleSheet(
+                    f'color: {Color.BLACK.name()};')
 
             self.tip_series.append(
                 QPointF(timestamp, self.tip * self.data_scaling))

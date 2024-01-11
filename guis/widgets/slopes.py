@@ -5,6 +5,7 @@ from PySide6.QtGui import Qt
 from kalao.utils import ktools
 
 from guis.kalao import colormaps
+from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KWidget
@@ -50,11 +51,16 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         if img is not None:
             img = np.ma.masked_array(img, mask=self.mask, fill_value=np.nan)
 
-            if img.min() <= self.stream_info['min'] or img.max(
-            ) >= self.stream_info['max']:
+            saturation = max(img.max() / self.stream_info['max'],
+                             img.min() / self.stream_info['min'])
+            if saturation >= 1:
                 self.saturation_label.setText('Saturated !')
+                self.saturation_label.setStyleSheet(
+                    f'color: {Color.RED.name()};')
             else:
-                self.saturation_label.setText('')
+                self.saturation_label.updateText(saturation=saturation * 100)
+                self.saturation_label.setStyleSheet(
+                    f'color: {Color.BLACK.name()};')
 
             img_min, img_max = self.compute_min_max(img)
 

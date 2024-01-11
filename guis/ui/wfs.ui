@@ -139,12 +139,9 @@
       </spacer>
      </item>
      <item row="4" column="0" colspan="2">
-      <widget class="QLabel" name="saturation_label">
-       <property name="styleSheet">
-        <string notr="true">color: #ed1515;</string>
-       </property>
+      <widget class="KLabel" name="saturation_label">
        <property name="text">
-        <string/>
+        <string>Saturation {saturation:.0f} %</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -164,6 +161,11 @@
   <customwidget>
    <class>KScaledDoubleSpinbox</class>
    <extends>QDoubleSpinBox</extends>
+   <header>kalao</header>
+  </customwidget>
+  <customwidget>
+   <class>KLabel</class>
+   <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

@@ -3,6 +3,7 @@ from astropy.coordinates import AltAz, EarthLocation, SkyCoord, get_sun
 from astropy.time import Time
 
 from kalao import database
+from kalao.interfaces import etcs
 
 import config
 
@@ -45,21 +46,14 @@ def star_coord():
     return c
 
 
-def telescope_coord():
-    tel_ra = database.get_last_value('obs', 'telescope_ra')
-    tel_dec = database.get_last_value('obs', 'telescope_dec')
-
-    # TODO verify tel_ra and tel_dec validity
-
-    c = SkyCoord(ra=tel_ra * u.degree, dec=tel_dec * u.degree, frame='icrs')
-
-    return c
-
-
 def telescope_coord_altaz():
-    altaz_frame = AltAz(location=observing_location(), obstime=Time.now())
+    time = Time.now()
+    altaz_frame = AltAz(location=observing_location(), obstime=time)
 
-    return telescope_coord().transform_to(altaz_frame)
+    altitude, azimut = etcs.get_altaz()
+
+    return SkyCoord(alt=altitude * u.degree, az=azimut * u.degree,
+                    frame=altaz_frame)
 
 
 def telescope_zenith_angle():
@@ -68,9 +62,3 @@ def telescope_zenith_angle():
 
 def telescope_tracking():
     return database.get_last_value('obs', 'tracking_status')
-
-
-def compute_altaz_offset(alt_offset_arcsec, az_offset_arcsec):
-    return telescope_coord_altaz().spherical_offsets_by(
-        alt_offset_arcsec * u.arcsec,
-        az_offset_arcsec * u.arcsec).transform_to('icrs')

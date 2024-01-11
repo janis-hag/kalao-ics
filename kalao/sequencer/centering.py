@@ -7,10 +7,9 @@ from astropy.io import fits
 from kalao import database, logger
 from kalao.cacao import aocontrol
 from kalao.fli import camera
+from kalao.interfaces import etcs
 from kalao.plc import calibunit, filterwheel, flipmirror, laser, shutter
 from kalao.utils import file_handling, starfinder
-
-from tcs_communication import t120
 
 from kalao.definitions.enums import (FlipMirrorPosition, ReturnCode,
                                      ShutterState)
@@ -61,7 +60,7 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
                 #     # Start WFS centering procedure
                 #     aocontrol.wfs_centering(tt_threshold=config.AO.
                 #                             WFS_centering_slope_threshold)
-                #     aocontrol.tip_tilt_offload_ttm_to_telescope()
+                #     aocontrol.tiptilt_offload_ttm_to_telescope()
 
                 return ReturnCode.CENTERING_OK
 
@@ -79,7 +78,8 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
 
         if x != -1 and y != -1:
 
-            send_pixel_offset(x, y)
+            tiptilt_fli_to_telescope(x - config.FLI.center_x,
+                                     y - config.FLI.center_y)
 
             image_path = camera.take_image(dit=dit)
             if image_path is None:
@@ -90,8 +90,8 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
 
             if x != -1 and y != -1:
                 # Fine centering with TTM
-                aocontrol.tip_tilt_offset_fli_to_ttm(x - config.FLI.center_x,
-                                                     y - config.FLI.center_y)
+                aocontrol.tiptilt_fli_to_ttm(x - config.FLI.center_x,
+                                             y - config.FLI.center_y)
 
             if kao == 'AO':
                 # Check if enough light is on the WFS for precise centering
@@ -214,7 +214,7 @@ def center_on_laser():
                                                 laser_spot=True)
 
         if x != -1 and y != -1:
-            aocontrol.tip_tilt_offset_fli_to_ttm(x - config.FLI.center_x, 0)
+            aocontrol.tiptilt_fli_to_ttm(x - config.FLI.center_x, 0)
 
     # Precise centering with WFS
     aocontrol.emgain_off()
@@ -222,7 +222,7 @@ def center_on_laser():
     laser.set_power(config.WFS.laser_calib_power, enable=True)
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
 
-    aocontrol.tip_tilt_wfs_to_ttm()
+    aocontrol.tiptilt_wfs_to_ttm()
 
     return 0
 
@@ -237,7 +237,7 @@ def manual_centering(x, y, AO=False, sequencer_arguments=None):
     # TODO add docstring
     # TODO verify value validity before sending
 
-    send_pixel_offset(x, y)
+    tiptilt_fli_to_telescope(x - config.FLI.center_x, y - config.FLI.center_y)
     image_path = camera.take_image(dit=config.FLI.exp_time,
                                    sequencer_arguments=sequencer_arguments)
     if image_path is None:
@@ -251,7 +251,7 @@ def manual_centering(x, y, AO=False, sequencer_arguments=None):
     return ret
 
 
-def send_pixel_offset(x, y):
+def tiptilt_fli_to_telescope(x, y, gain=1):
     """
     Send offsets to telescope converting the pixel offset into telescope alt/az offset.
 
@@ -260,12 +260,10 @@ def send_pixel_offset(x, y):
     :return: success status
     """
 
-    alt_offset = (x - config.FLI.center_x) * config.FLI.px_x_to_onsky
-    az_offset = (y - config.FLI.center_y) * config.FLI.px_y_to_onsky
+    alt_offset = x * config.FLI.tip_to_onsky * gain
+    az_offset = y * config.FLI.tilt_to_onsky * gain
 
-    t120.send_altaz_offset(alt_offset, az_offset)
-
-    time.sleep(2)
+    etcs.send_altaz_offset(alt_offset, az_offset)
 
     return 0
 

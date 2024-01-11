@@ -207,13 +207,12 @@ def serve():
                 th = None
 
             if 'alphacat' in args and 'deltacat' in args:
-
                 c = SkyCoord(ra=args['alphacat'], dec=args['deltacat'],
                              unit=(u.hourangle, u.deg), frame='icrs')
 
                 database.store('obs', {
-                    'telescope_ra': c.ra.deg,
-                    'telescope_dec': c.dec.deg
+                    'target_ra': c.ra.deg,
+                    'target_dec': c.dec.deg
                 })
 
             database.store('obs', {'sequencer_status': SequencerStatus.SETUP})

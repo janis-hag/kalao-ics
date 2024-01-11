@@ -98,6 +98,11 @@ class Grayscale(ColormapExtrapolated):
     colors = [(0, 0, 0), (1, 1, 1)]
 
 
+class GrayscaleTransparent(ColormapExtrapolated):
+    colors = [(0, 0, 0), (1, 1, 1)]
+    has_transparency = True
+
+
 class GrayscaleSaturationTransparent(ColormapExtrapolated):
     colors = [(0, 0, 0), (1, 1, 1)]
     color_saturation_low = (0, 0, 1)

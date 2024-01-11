@@ -40,10 +40,9 @@ app.json = KalAOProvider(app)
 def serve(fun):
     try:
         if request.method == 'GET':
-            ret = fun(backend)
+            ret = fun()
         elif request.method == 'POST':
-            ret = fun(backend, *tuple(request.json['args']),
-                      **request.json['kwargs'])
+            ret = fun(*tuple(request.json['args']), **request.json['kwargs'])
 
         if config.GUI.http_dataformat == 'pickle':
             content = pickle.dumps(ret)
@@ -77,7 +76,9 @@ if __name__ == "__main__":
 
     backend = backends.MainBackend()
 
-    for key, item in backends.MainBackend.__dict__.items():
+    for key in dir(backend):
+        item = getattr(backend, key)
+
         if isinstance(item, Signal):
             print(f'Converting signal {key}')
             setattr(backend, key, FakeSignal(key))

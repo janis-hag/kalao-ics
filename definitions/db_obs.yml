@@ -38,16 +38,6 @@ tracking_manual_centering:
   long: Flag do indicate if manual centering is needed
   unit:
 
-telescope_ra:
-  short: Telescope RA
-  long: Telescope right ascension
-  unit:
-
-telescope_dec:
-  short: Telescope DEC
-  long: Telescope declination
-  unit:
-
 psf_file:
   short: PSF file
   long: File used for PSF fitting

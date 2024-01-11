@@ -61,6 +61,9 @@ class AlignmentBackend(FakeSHMFPSBackend):
         self._update_stream(self.streams, config.Streams.NUVU,
                             data_nuvu[self.alignment_window.display])
 
+        self._update_stream(self.streams, config.Streams.FLUX,
+                            fake_data.flux(data_nuvu[PokeState.FLAT]))
+
         if self.alignment_window.display == PokeState.FLAT:
             self._update_stream(self.streams, config.Streams.SLOPES,
                                 data_slopes[PokeState.FLAT])

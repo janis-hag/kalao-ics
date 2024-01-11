@@ -17,12 +17,11 @@ import numpy as np
 
 from kalao import database, ippower, logger
 from kalao.cacao import toolbox
+from kalao.interfaces import etcs
 from kalao.utils import ktools
 
 import libtmux
 import libtmux.exc
-
-from tcs_communication import t120
 
 from kalao.definitions.enums import IPPowerStatus, LoopStatus, ReturnCode
 
@@ -294,15 +293,14 @@ def set_bmc_stroke_mode(stroke_mode):
     return _set_fps_value(config.FPS.BMC, 'stroke_mode', stroke_mode)
 
 
-def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain,
-                                      override_threshold=False,
-                                      input_stream=config.Streams.TTM,
-                                      port=config.T120.port):
+def tiptilt_ttm_to_telescope(gain=config.TTM.offload_gain,
+                             threshold=config.TTM.offload_threshold,
+                             override_threshold=False,
+                             input_stream=config.Streams.TTM):
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
 
-    :param gain: Gain factor, set to 0.25 by default.
     :return:
     """
 
@@ -316,7 +314,7 @@ def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain,
 
     to_offload = np.sqrt(tip**2 + tilt**2)
 
-    if override_threshold or to_offload > config.TTM.offload_threshold:
+    if override_threshold or to_offload > threshold:
         alt_offload = tip * config.TTM.tip_to_onsky * gain
         az_offload = tilt * config.TTM.tilt_to_onsky * gain
 
@@ -331,13 +329,13 @@ def tip_tilt_offload_ttm_to_telescope(gain=config.TTM.offload_gain,
             f'Offloading tip-tilt to telescope. On TTM: tip={tip}mrad, tilt={tilt}mrad. Offloaded: alt={alt_offload}asec, az={az_offload}asec'
         )
 
-        t120.send_altaz_offset(alt_offload, az_offload, port=port)
+        etcs.send_altaz_offset(alt_offload, az_offload)
 
     return 0
 
 
-def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
-                               output_stream=config.Streams.TTM_CENTERING):
+def tiptilt_fli_to_ttm(x_tip, y_tilt, absolute=False,
+                       output_stream=config.Streams.TTM_CENTERING):
     """
     Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
 
@@ -381,12 +379,13 @@ def tip_tilt_offset_fli_to_ttm(x_tip, y_tilt, absolute=False,
     return 0
 
 
-def tip_tilt_wfs_to_ttm(tt_threshold=config.WFS.centering_slope_threshold,
-                        output_stream=config.Streams.TTM_CENTERING):
+def tiptilt_wfs_to_ttm(gain=1, threshold=config.WFS.centering_slope_threshold,
+                       override_threshold=False,
+                       output_stream=config.Streams.TTM_CENTERING):
     """
     Precise tip/tilt centering on the wavefront sensor.
 
-    :param tt_threshold: precision at which the centering need to be based on the residual slope.
+    :param threshold: precision at which the centering need to be based on the residual slope.
     :return:
     """
 
@@ -418,17 +417,17 @@ def tip_tilt_wfs_to_ttm(tt_threshold=config.WFS.centering_slope_threshold,
         tip_residual = slopes_fps.get_param('slope_y')
         tilt_residual = slopes_fps.get_param('slope_x')
 
-        if np.abs(tip_residual) < tt_threshold:
+        if np.abs(tip_residual) < threshold:
             tip_centered = True
             new_tip = tip
         else:
-            new_tip = tip + tip_residual * config.AO.WFS_tip_to_TTM
+            new_tip = tip + tip_residual * config.WFS.tip_to_TTM
 
-        if np.abs(tilt_residual) < tt_threshold:
+        if np.abs(tilt_residual) < threshold:
             tilt_centered = True
             new_tilt = tilt
         else:
-            new_tilt = tilt + tilt_residual * config.AO.WFS_tilt_to_TTM
+            new_tilt = tilt + tilt_residual * config.WFS.tilt_to_TTM
 
         new_tip, new_tilt = check_ttm_saturation(new_tip, new_tilt)
 
@@ -440,6 +439,42 @@ def tip_tilt_wfs_to_ttm(tt_threshold=config.WFS.centering_slope_threshold,
         ttm_stream.set_data(np.array([new_tip, new_tilt]), True)
 
         time.sleep(1)
+
+    return 0
+
+
+def tiptilt_wfs_to_telescope(gain=1,
+                             threshold=config.WFS.centering_slope_threshold,
+                             override_threshold=False):
+    """
+    Precise tip/tilt centering on the wavefront sensor.
+
+    :return:
+    """
+
+    slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS, shm_and_fps_cache)
+
+    if slopes_fps is None:
+        logger.error('ttm', f'{config.FPS.SHWFS} is missing')
+        return -1
+
+    tip = slopes_fps.get_param('slope_y')
+    tilt = slopes_fps.get_param('slope_x')
+
+    to_offload = np.sqrt(tip**2 + tilt**2)
+
+    if override_threshold or to_offload > threshold:
+        alt_offload = tip * config.WFS.tip_to_onsky * gain
+        az_offload = tilt * config.WFS.tilt_to_onsky * gain
+
+        # logger.info(
+        #     'ttm',
+        #     f'Offloading WFS tip-tilt to telescope. On WFS: tip={tip}px, tilt={tilt}px. Offloaded: alt={alt_offload}asec, az={az_offload}asec'
+        # )
+
+        etcs.send_altaz_offset(alt_offload, az_offload)
+
+    time.sleep(1)
 
     return 0
 

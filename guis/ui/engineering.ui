@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1349</width>
-    <height>882</height>
+    <width>1489</width>
+    <height>1305</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -51,9 +51,6 @@
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
          </widget>
-        </item>
-        <item row="5" column="2" colspan="3">
-         <widget class="QComboBox" name="filterwheel_combobox"/>
         </item>
         <item row="3" column="1">
          <widget class="KStatusIndicator" name="tungsten_state_indicator">
@@ -459,9 +456,6 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="2" colspan="3">
-         <widget class="QComboBox" name="shutter_combobox"/>
-        </item>
         <item row="1" column="1">
          <widget class="KStatusIndicator" name="flipmirror_indicator">
           <property name="sizePolicy">
@@ -617,36 +611,6 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="2" colspan="3">
-         <widget class="QComboBox" name="flipmirror_combobox"/>
-        </item>
-        <item row="4" column="2" colspan="3">
-         <layout class="QHBoxLayout" name="laser_layout" stretch="0,1">
-          <item>
-           <widget class="QCheckBox" name="laser_state_checkbox">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QDoubleSpinBox" name="laser_power_spinbox">
-            <property name="keyboardTracking">
-             <bool>false</bool>
-            </property>
-            <property name="suffix">
-             <string> mW</string>
-            </property>
-            <property name="maximum">
-             <double>8.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
         <item row="9" column="1" colspan="4">
          <layout class="QGridLayout" name="init_layout">
           <item row="0" column="0">
@@ -736,6 +700,55 @@
            <enum>QFrame::Sunken</enum>
           </property>
          </widget>
+        </item>
+        <item row="4" column="2">
+         <layout class="QHBoxLayout" name="laser_layout" stretch="0,1">
+          <item>
+           <widget class="QCheckBox" name="laser_state_checkbox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="laser_power_spinbox">
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string> mW</string>
+            </property>
+            <property name="maximum">
+             <double>8.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="3" column="3" rowspan="2" colspan="2">
+         <widget class="QPushButton" name="pushButton">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Lamps Off</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="2">
+         <widget class="QComboBox" name="filterwheel_combobox"/>
+        </item>
+        <item row="1" column="2">
+         <widget class="QComboBox" name="flipmirror_combobox"/>
+        </item>
+        <item row="0" column="2">
+         <widget class="QComboBox" name="shutter_combobox"/>
         </item>
        </layout>
       </widget>
@@ -839,21 +852,21 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0" colspan="2">
+        <item row="4" column="0" colspan="2">
          <widget class="QPushButton" name="fli_new_image_button">
           <property name="text">
            <string>Take a new image</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="0" colspan="2">
+        <item row="5" column="0" colspan="2">
          <widget class="QPushButton" name="fli_cancel_button">
           <property name="text">
            <string>Cancel exposure</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="0" colspan="2">
+        <item row="6" column="0" colspan="2">
          <spacer name="verticalSpacer_3">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -865,6 +878,43 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="spinBox_2">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QSpinBox" name="spinBox">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="buttonSymbols">
+           <enum>QAbstractSpinBox::NoButtons</enum>
+          </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Frames</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Remaining frames</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

@@ -313,7 +313,7 @@ def generate_wcs():
     ])
 
     # RA, DEC at reference
-    coord = euler.telescope_coord()
+    coord = euler.star_coord()
     w.wcs.crval = [coord.ra.degree, coord.dec.degree]
 
     # Gnomonic (TAN) projection
@@ -344,7 +344,7 @@ def parallactic_angle(dt=None, coord=None):
     if isinstance(coord, SkyCoord):
         print(f'Using custom coord: {coord}')
     else:
-        coord = euler.telescope_coord()
+        coord = euler.star_coord()
 
     r2d = 180 / np.pi
     d2r = np.pi / 180

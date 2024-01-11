@@ -28,6 +28,7 @@ from kalao import database, euler, logger
 from kalao.utils import kstring, ktime, starfinder
 
 import yaml
+from unidecode import unidecode
 
 from kalao.definitions.enums import SequencerStatus, ShutterState
 
@@ -324,6 +325,7 @@ def _header_from_db(collection_name, dt):
             if comment is None or len(comment) > max_comment_length:
                 comment = v.get('short')
 
+            comment = unidecode(comment, errors='strict')
             comment = kstring.ellipsis(comment, max_comment_length)
 
             header_dict[fits_keyword] = {

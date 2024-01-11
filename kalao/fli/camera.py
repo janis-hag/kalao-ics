@@ -224,7 +224,7 @@ def get_exposure_status():
     if ret == ReturnCode.CAMERA_OK:
         return exposure_status
     else:
-        return {'remaining_time': -1, 'exposure_time': -1}
+        return {'remaining_time': -1, 'exposure_time': -1, 'frames': -1, 'remaining_frames': -1}
 
 
 def get_temperatures():

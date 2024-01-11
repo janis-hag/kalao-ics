@@ -16,12 +16,11 @@ import numpy as np
 from kalao import database, logger
 from kalao.cacao import aocontrol
 from kalao.fli import camera
+from kalao.interfaces import etcs
 from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
                        plc_utils, shutter, tungsten)
 from kalao.sequencer import centering, focusing
 from kalao.utils import file_handling, starfinder
-
-from tcs_communication import t120
 
 from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
                                      LoopStatus, ReturnCode, SequencerStatus,
@@ -85,7 +84,7 @@ def dark_abort(**seq_args):
     return _abort_camera()
 
 
-def tungsten_FLAT(**seq_args):
+def tungsten_flat(**seq_args):
     """
     :param q: Queue object for multithreads communication
     :param beck:
@@ -161,7 +160,7 @@ def tungsten_FLAT(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def tungsten_FLAT_abort(**seq_args):
+def tungsten_flat_abort(**seq_args):
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -252,6 +251,15 @@ def sky_flat(**seq_args):
     return ReturnCode.SEQ_OK
 
 
+def sky_flat_abort(**seq_args):
+    """
+    Send abort instruction to fli camera and change sequencer status to 'WAITING'.
+    :return: nothing
+    """
+
+    return _abort_camera()
+
+
 def target_observation(**seq_args):
     """
     On sky target observation sequence
@@ -275,8 +283,8 @@ def target_observation(**seq_args):
     mag_v = seq_args.get('mv')
 
     if kalfilter is None:
-        logger.warning('sequencer',
-                       'No filter specified for observation, using clear')
+        logger.warn('sequencer',
+                    'No filter specified for observation, using clear')
         kalfilter = 'clear'
 
     if isinstance(kalfilter, str):
@@ -292,11 +300,11 @@ def target_observation(**seq_args):
     if None in (q, dit):
         raise MissingKeyword
 
-    fo_delta = focusing.get_latest_fo_delta()
-    if fo_delta is not None:
-        logger.info('sequencer', 'Updating autofocus')
-        t120.update_fo_delta(fo_delta)
-        t120.request_autofocus()
+    # fo_delta = focusing.get_latest_fo_delta()
+    # if fo_delta is not None:
+    #     logger.info('sequencer', 'Updating autofocus')
+    #     etcs.update_fo_delta(fo_delta)
+    #     etcs.request_autofocus()
 
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
@@ -359,7 +367,7 @@ def target_observation(**seq_args):
 
         time.sleep(config.Starfinder.AO_wait_settle)
 
-        aocontrol.tip_tilt_offload_ttm_to_telescope(override_threshold=True)
+        aocontrol.tiptilt_ttm_to_telescope(override_threshold=True)
 
         time.sleep(config.Starfinder.AO_wait_settle)
 
@@ -386,7 +394,7 @@ def target_observation_abort(**seq_args):
     return _abort_camera()
 
 
-def focusing(**seq_args):
+def focus(**seq_args):
     """
     :param q: Queue object for multithreads communication
     :param dit: float for exposition time
@@ -401,8 +409,8 @@ def focusing(**seq_args):
     dit = seq_args.get('dit')
 
     if kalfilter is None:
-        logger.warning('sequencer',
-                       'No filter specified for focusing, using clear')
+        logger.warn('sequencer',
+                    'No filter specified for focusing, using clear')
         kalfilter = 'clear'
 
     if isinstance(kalfilter, str):
@@ -446,7 +454,7 @@ def focusing(**seq_args):
     if filterwheel.set_filter(kalfilter) != kalfilter:
         raise FilterWheelNotInPosition
 
-    ret = focusing.focus_sequence(focus_points=6, focusing_dit=dit,
+    ret = focusing.focus_sequence(steps=6, dit=dit,
                                   sequencer_arguments=seq_args)
 
     if ret != 0:
@@ -455,7 +463,7 @@ def focusing(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def focusing_abort(**seq_args):
+def focus_abort(**seq_args):
     """
     Send abort instruction to fli camera and change sequencer status to 'WAITING'.
     :return: nothing
@@ -704,15 +712,16 @@ def _shut_off_plc():
 commands = {
     "K_DARK": dark,
     "K_DARK_ABORT": dark_abort,
-    "K_LMPFLT": tungsten_FLAT,
-    "K_LMPFLT_ABORT": tungsten_FLAT_abort,
+    "K_LMPFLT": tungsten_flat,
+    "K_LMPFLT_ABORT": tungsten_flat_abort,
     "K_SKYFLT": sky_flat,
+    "K_SKYFLT_ABORT": sky_flat_abort,
     "K_TRGOBS": target_observation,
     "K_TRGOBS_ABORT": target_observation_abort,
     "K_LAMPON": lamp_on,
     "K_LAMPOF": lamp_off,
-    "K_FOCUS": focusing,
-    "K_FOCUS_ABORT": focusing_abort,
+    "K_FOCUS": focus,
+    "K_FOCUS_ABORT": focus_abort,
     "K_CONFIG": edp_config,
     "ABORT": abort,
     "INSTRUMENTCHANGE": instrument_change,

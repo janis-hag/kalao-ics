@@ -74,10 +74,15 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             img_min, img_max = self.compute_min_max(img)
 
             # Do not check min due to bias subtraction
-            if img.max() >= self.stream_info['max']:
+            saturation = img.max() / self.stream_info['max']
+            if saturation >= 1:
                 self.saturation_label.setText('Saturated !')
+                self.saturation_label.setStyleSheet(
+                    f'color: {Color.RED.name()};')
             else:
-                self.saturation_label.setText('')
+                self.saturation_label.updateText(saturation=saturation * 100)
+                self.saturation_label.setStyleSheet(
+                    f'color: {Color.BLACK.name()};')
 
             self.wfs_view.setImage(img, img_min, img_max)
 
