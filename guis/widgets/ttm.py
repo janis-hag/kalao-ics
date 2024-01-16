@@ -24,6 +24,7 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
 
     plot_length = config.GUI.ttm_plot_length * 1000
 
+    saturation = np.nan
     tip = np.nan
     tilt = np.nan
 
@@ -88,15 +89,7 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
                                  self.tip / self.stream_info['min'])
             saturation_tilt = max(self.tip / self.stream_info['max'],
                                   self.tilt / self.stream_info['min'])
-            saturation = max(saturation_tip, saturation_tilt)
-            if saturation >= 1:
-                self.saturation_label.setText('Saturated !')
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.RED.name()};')
-            else:
-                self.saturation_label.updateText(saturation=saturation * 100)
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.BLACK.name()};')
+            self.saturation = max(saturation_tip, saturation_tilt)
 
             self.tip_series.append(
                 QPointF(timestamp, self.tip * self.data_scaling))
@@ -115,6 +108,13 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
                                   unit=self.data_unit)
         self.tilt_label.updateText(tilt=self.tilt * self.data_scaling,
                                    unit=self.data_unit)
+
+        if self.saturation >= 1:
+            self.saturation_label.setText('Saturated !')
+            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+        else:
+            self.saturation_label.updateText(saturation=self.saturation * 100)
+            self.saturation_label.setStyleSheet('')
 
     def update_axis(self):
         y_min = np.inf
@@ -160,7 +160,7 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
     def change_units(self, state):
         prev_scaling = self.data_scaling
         if Qt.CheckState(state) == Qt.Checked:
-            self.update_spinboxes_unit(' asec', config.TTM.plate_scale, 2)
+            self.update_spinboxes_unit('"', config.TTM.plate_scale, 2)
         else:
             self.update_spinboxes_unit(' mrad', 1, 2)
 

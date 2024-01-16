@@ -106,9 +106,7 @@ def _update_fli_stream(img, filepath):
         )
 
 
-def take_image(
-        dit=0.05, filepath=None,
-        sequencer_arguments=None):  # obs_category='TEST', obs_type='LAMP'):
+def take_image(obs_type, dit=0.05, filepath=None):
     """
     :param sequencer_arguments:
     :param dit: Detector integration time to use
@@ -137,55 +135,11 @@ def take_image(
 
     if img is not None:
         database.store('obs', {'fli_temporary_image_path': filepath})
-        target_path_name = file_handling.save_tmp_image(
-            filepath, sequencer_arguments=sequencer_arguments)
+        target_path_name = file_handling.save_tmp_image(filepath, obs_type)
 
         return target_path_name
     else:
         return None
-
-
-def take_target(dit=0.05, seq_args=None, filepath=None):
-    """
-    Convenience function to interactively execute a target observation.
-
-    :param dit: detector integration time in seconds.
-    :param seq_args: dictionary of sequencer arguments.
-    :param filepath:
-    :return:
-    """
-
-    seq_args = {'type': 'K_TRGOBS'}
-
-    return take_image(dit=dit, filepath=None, sequencer_arguments=seq_args)
-
-
-def take_dark(dit=0.05, seq_args=None, filepath=None):
-    """
-    Convenience function to interactively execute a dark exposure.
-
-    :param dit:  detector integration time in seconds.
-    :param seq_args: dictionary of sequencer arguments.
-    :param filepath:
-    :return:
-    """
-    seq_args = {'type': 'K_DARK'}
-
-    return take_image(dit=dit, filepath=None, sequencer_arguments=seq_args)
-
-
-def take_tech(dit=0.05, seq_args=None, filepath=None):
-    """
-    Convenience function to interactively execute a dark exposure.
-
-    :param dit:  detector integration time in seconds.
-    :param seq_args: dictionary of sequencer arguments.
-    :param filepath:
-    :return:
-    """
-    seq_args = {'type': 'K_TECH'}
-
-    return take_image(dit=dit, filepath=None, sequencer_arguments=seq_args)
 
 
 def increment_image_counter(exptime):
@@ -224,7 +178,12 @@ def get_exposure_status():
     if ret == ReturnCode.CAMERA_OK:
         return exposure_status
     else:
-        return {'remaining_time': -1, 'exposure_time': -1, 'frames': -1, 'remaining_frames': -1}
+        return {
+            'remaining_time': -1,
+            'exposure_time': -1,
+            'frames': -1,
+            'remaining_frames': -1
+        }
 
 
 def get_temperatures():

@@ -387,6 +387,38 @@ class BackendDataMixin:
         except KeyError:
             return default
 
+    def consume_fits(self, data, key, default=None, force=False):
+        try:
+            if key not in self.data_cache:
+                self.data_cache[key] = {}
+
+            mtime = data[key]['mtime']
+            prev = self.data_cache[key].get('mtime', None)
+
+            if mtime != prev or force:
+                self.data_cache[key]['mtime'] = mtime
+                return data[key]['data']
+            else:
+                return default
+        except KeyError:
+            return default
+
+    def consume_fits_full(self, data, key, default=None, force=False):
+        try:
+            if key not in self.data_cache:
+                self.data_cache[key] = {}
+
+            mtime = data[key]['mtime']
+            prev = self.data_cache[key].get('mtime', None)
+
+            if mtime != prev or force:
+                self.data_cache[key]['mtime'] = mtime
+                return data[key]['hdul']
+            else:
+                return default
+        except KeyError:
+            return default
+
     def data_to_widget(self, data, widget, true_value=[]):
         if data is None:
             return

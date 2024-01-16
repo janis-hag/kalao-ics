@@ -35,10 +35,16 @@ def tiptilt(nb_points=1, seed=np.zeros((2, )), sigma=0.01, leak=0.01):
         return tiptilt
 
 
-def nuvu_frame(bias=2000, readoutnoise=20, flux=5000, tiptilt=np.zeros(
-    (2, )), dmdisp=zernike.generate_pattern([0], (12, 12)),
-               illumination='telescope', upsampling=4):
-    frame = np.zeros((64 * upsampling, 64 * upsampling), dtype=np.float32)
+def nuvu_frame(
+    bias=2000,
+    readoutnoise=20,
+    flux=5000,
+    tiptilt=np.zeros((2, )),
+    dmdisp=zernike.generate_pattern([0], (12, 12)),
+    illumination='telescope',
+    upsampling=4,
+):
+    frame = np.zeros((64 * upsampling, 64 * upsampling), dtype=np.float64)
 
     if illumination == 'telescope':
         flux_map = ktools.get_wfs_flux_map()
@@ -60,7 +66,7 @@ def nuvu_frame(bias=2000, readoutnoise=20, flux=5000, tiptilt=np.zeros(
     sigma *= upsampling
     hwindow = math.ceil(3 * sigma)
 
-    x, y = np.mgrid[0:2 * hwindow, 0:2 * hwindow]
+    y, x = np.mgrid[0:2 * hwindow, 0:2 * hwindow]
 
     for i in range(11):
         for j in range(11):
@@ -99,11 +105,8 @@ def nuvu_frame(bias=2000, readoutnoise=20, flux=5000, tiptilt=np.zeros(
     return np.clip(np.rint(frame), 0, 2**16 - 1) - bias
 
 
-def slopes(nuvu_fr=None):
-    if nuvu_fr is None:
-        nuvu_fr = nuvu_frame()
-
-    _, subapertures = ktools.get_roi_and_subapertures(nuvu_fr)
+def slopes(nuvu_frame):
+    _, subapertures = ktools.get_roi_and_subapertures(nuvu_frame)
 
     slopes = np.zeros((11, 22))
 
@@ -121,11 +124,8 @@ def slopes(nuvu_fr=None):
     return np.ma.masked_array(slopes, mask=mask, fill_value=0).filled()
 
 
-def flux(nuvu_fr=None):
-    if nuvu_fr is None:
-        nuvu_fr = nuvu_frame()
-
-    _, subapertures = ktools.get_roi_and_subapertures(nuvu_fr)
+def flux(nuvu_frame):
+    _, subapertures = ktools.get_roi_and_subapertures(nuvu_frame)
 
     flux = np.zeros((11, 11))
 
@@ -147,10 +147,17 @@ def dmdisp(zernike_coeffs=None, orders=15):
     return zernike.generate_pattern(zernike_coeffs, (12, 12))
 
 
-def fli_frame(bias=1070, readoutnoise=7, psf_x=config.FLI.center_x,
-              psf_y=config.FLI.center_y, flux=2**15, tiptilt=np.zeros(
-                  (2, )), dmdisp=np.zeros((12, 12)), illumination='telescope'):
-    frame = np.zeros((1024, 1024))
+def fli_frame(
+    bias=1070,
+    readoutnoise=7,
+    psf_x=config.FLI.center_x,
+    psf_y=config.FLI.center_y,
+    flux=2**15,
+    tiptilt=np.zeros((2, )),
+    dmdisp=zernike.generate_pattern([0], (12, 12)),
+    illumination='telescope',
+):
+    frame = np.zeros((1024, 1024), dtype=np.float64)
 
     ttm_tip_px = tiptilt[0] * config.TTM.plate_scale / config.FLI.plate_scale
     ttm_tilt_px = tiptilt[1] * config.TTM.plate_scale / config.FLI.plate_scale

@@ -23,7 +23,7 @@ from kalao.utils import kstring
 
 import schedule
 
-from kalao.definitions.enums import CameraServerStatus, TrackingStatus
+from kalao.definitions.enums import CameraServerStatus
 
 import config
 
@@ -63,14 +63,13 @@ def _gather_for_monitoring():
             'heatsink')
         monitoring_data.update(fli_temperatures)
 
-    if euler.telescope_tracking() == TrackingStatus.TRACKING:
-        # Telescope
-        telescope = euler.telescope_coord_altaz()
-        telescope_status = {
-            'telescope_altitude': telescope.alt.deg,
-            'telescope_azimut': telescope.az.deg
-        }
-        monitoring_data.update(telescope_status)
+    # Telescope
+    telescope = euler.telescope_coord_altaz()
+    telescope_status = {
+        'telescope_altitude': telescope.alt.deg,
+        'telescope_azimut': telescope.az.deg
+    }
+    monitoring_data.update(telescope_status)
 
     return monitoring_data
 

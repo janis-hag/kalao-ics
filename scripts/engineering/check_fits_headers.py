@@ -24,7 +24,7 @@ def run(args):
 
     df = pd.concat([
         fli_header,
-        file_handling._header_from_yml(config.FITS.fits_header_file),
+        file_handling._header_from_yml(config.FITS.fits_default_header_file),
         file_handling._header_from_db('obs', dt=None),
         file_handling._header_from_db('telemetry', dt=None),
         file_handling._header_from_db('monitoring', dt=None),

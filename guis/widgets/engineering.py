@@ -11,8 +11,9 @@ from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KStatusIndicator, KWidget
 from guis.windows.dm_channels import DMChannelsWindow
-from guis.windows.dm_direct_control import DMDirectControl
-from guis.windows.ttm_direct_control import TTMDirectControl
+from guis.windows.dm_direct_control import DMDirectControlWindow
+from guis.windows.focus import FocusWindow
+from guis.windows.ttm_direct_control import TTMDirectControlWindow
 
 from kalao.definitions.enums import (FilterwheelStatus, FlipMirrorPosition,
                                      IPPowerStatus, LaserState, PLCStatus,
@@ -31,6 +32,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     ttm_calibration = None
     dm_direct_control = None
     ttm_direct_control = None
+    focus = None
 
     def __init__(self, backend, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -97,9 +99,10 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                     ServiceAction.RELOAD
             ]):
                 button = QPushButton(action.value.title())
-                button.clicked.connect(
-                    lambda checked=False, unit=service['unit'], action=action:
-                    self.on_set_services_action_clicked(checked, unit, action))
+                button.clicked.connect(lambda checked=False, unit=service[
+                    'unit'], action=action: self.
+                                       on_service_action_button_clicked(
+                                           checked, unit, action))
                 self.services_layout.addWidget(button, i, 3 + j)
 
                 if action == ServiceAction.RELOAD and not service.get(
@@ -386,12 +389,24 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             with QSignalBlocker(self.fli_remaining_time_spinbox):
                 self.fli_remaining_time_spinbox.setValue(remaining_time)
 
-            if remaining_time < 0.001:
+        frames = self.consume_dict(data, 'fli', 'frames')
+        if frames is not None:
+            with QSignalBlocker(self.fli_frames_spinbox):
+                self.fli_frames_spinbox.setValue(frames)
+
+        remaining_frames = self.consume_dict(data, 'fli', 'remaining_frames')
+        if remaining_frames is not None:
+            with QSignalBlocker(self.fli_remaining_frames_spinbox):
+                self.fli_remaining_frames_spinbox.setValue(remaining_frames)
+
+            if remaining_frames == 0:
                 self.fli_new_image_button.setEnabled(True)
                 self.fli_exposure_time_spinbox.setEnabled(True)
+                self.fli_frames_spinbox.setEnabled(True)
             else:
                 self.fli_new_image_button.setEnabled(False)
                 self.fli_exposure_time_spinbox.setEnabled(False)
+                self.fli_frames_spinbox.setEnabled(False)
 
         maqtime = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
                                               '_MAQTIME', force=True)
@@ -495,6 +510,10 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send(self.laser_init_button,
                          self.backend.get_plc_laser_init)
 
+    @Slot(bool)
+    def on_lamps_off_button_clicked(self, checked):
+        self.action_send(self.lamps_off_button, self.backend.get_plc_lamps_off)
+
     @Slot(int)
     def on_filterwheel_combobox_currentIndexChanged(self, index):
         self.action_send(self.filterwheel_combobox,
@@ -552,7 +571,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     @Slot(bool)
     def on_fli_new_image_button_clicked(self, checked):
         self.action_send(self.fli_new_image_button, self.backend.set_fli_image,
-                         self.fli_exposure_time_spinbox.value())
+                         self.fli_exposure_time_spinbox.value(),
+                         self.fli_frames_spinbox.value())
 
     @Slot(bool)
     def on_fli_cancel_button_clicked(self, checked):
@@ -648,7 +668,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.dm_direct_control.show()
             self.dm_direct_control.activateWindow()
         else:
-            self.dm_direct_control = DMDirectControl(self.backend, parent=self)
+            self.dm_direct_control = DMDirectControlWindow(
+                self.backend, parent=self)
 
     @Slot(bool)
     def on_ttm_direct_control_button_clicked(self, checked):
@@ -656,8 +677,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.ttm_direct_control.show()
             self.ttm_direct_control.activateWindow()
         else:
-            self.ttm_direct_control = TTMDirectControl(self.backend,
-                                                       parent=self)
+            self.ttm_direct_control = TTMDirectControlWindow(
+                self.backend, parent=self)
 
     @Slot(bool)
     def on_centering_star_button_clicked(self, checked):
@@ -669,7 +690,25 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send(self.centering_laser_button,
                          self.backend.get_centering_laser)
 
-    def on_set_services_action_clicked(self, checked, unit, action):
+    @Slot(bool)
+    def on_focusing_window_button_clicked(self, checked):
+        if self.focus is not None:
+            self.focus.show()
+            self.focus.activateWindow()
+        else:
+            self.focus = FocusWindow(self.backend, parent=self)
+
+    @Slot(bool)
+    def on_focusing_sequence_button_clicked(self, checked):
+        self.action_send(self.focusing_sequence_button,
+                         self.backend.get_focus_sequence)
+
+    @Slot(bool)
+    def on_focusing_autofocus_button_clicked(self, checked):
+        self.action_send(self.focusing_autofocus_button,
+                         self.backend.get_focus_autofocus)
+
+    def on_service_action_button_clicked(self, checked, unit, action):
         self.action_send([], self.backend.set_services_action, unit, action)
 
     def eventFilter(self, source, event):

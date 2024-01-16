@@ -19,7 +19,7 @@ from kalao import database, euler, logger
 from kalao.plc import core, filterwheel
 from kalao.utils import atmosphere
 
-from kalao.definitions.enums import ReturnCode, TrackingStatus
+from kalao.definitions.enums import ReturnCode
 
 import config
 
@@ -44,15 +44,19 @@ def get_optimal_adc_angle(zenith_angle, wavelength, T, P, H):
         return 0
 
 
-def configure(beck=None, override_threshold=False):
-    if euler.telescope_tracking() == TrackingStatus.IDLE:
+def configure(zenith_angle=None, override_threshold=False,
+              skip_tracking_check=False, blocking=True, beck=None):
+    if not skip_tracking_check and not euler.telescope_tracking():
         logger.warn('adc', 'Configuring ADC while telescope is not tracking')
 
     filter_name = filterwheel.get_filter(type=str, from_db=True)
+
     T = euler.outside_temperature()
     P = euler.outside_pressure()
     H = euler.outside_hygrometry()
-    zenith_angle = euler.telescope_zenith_angle()
+
+    if zenith_angle is None:
+        zenith_angle = euler.telescope_zenith_angle()
 
     wavelength = config.FilterWheel.filter_to_wavelength[filter_name]
 
@@ -70,7 +74,7 @@ def configure(beck=None, override_threshold=False):
 
     if override_threshold or np.abs(angle -
                                     get_angle()) > config.ADC.angle_threshold:
-        set_angle(angle, beck=beck)
+        set_angle(angle, blocking=blocking, beck=beck)
 
     return 0
 
@@ -83,22 +87,23 @@ def set_zero_disp(beck=None):
     return set_angle(ADCCommand.ZERO_DISP, beck=beck)
 
 
-def set_angle(angle, beck=None):
+def set_angle(angle, blocking=True, beck=None):
     logger.info('adc', f'Setting angle between ADC prisms to {angle}°')
+
+    database.store('obs', {'adc_angle': angle})
 
     # Motors are face to face, offset by same angle so they are counter-rotating
     rotate(config.PLC.Node.ADC1, config.ADC.max_disp_angle_1 + angle/2,
-           wait=False, beck=beck)
+           blocking=False, beck=beck)
     rotate(config.PLC.Node.ADC2, config.ADC.max_disp_angle_2 + angle/2,
-           wait=False, beck=beck)
+           blocking=False, beck=beck)
 
-    time.sleep(2)
+    if blocking:
+        time.sleep(2)
 
-    wait_rotate_both(beck=beck)
+        wait_rotate_both(beck=beck)
 
     # TODO: check motors moved successfully
-    database.store('obs', {'adc_angle': angle})
-
     return angle
 
 
@@ -111,16 +116,24 @@ def get_angle():
         return angle
 
 
-def rotate(node, position, velocity=config.ADC.velocity, wait=True, beck=None):
+def rotate(node, position, velocity=config.ADC.velocity, blocking=True,
+           beck=None):
     logger.info('adc',
                 f'Moving ADC {node} to position {position}° at {velocity}°/s')
 
-    new_position = core.motor_move(node, position, velocity, wait, beck=beck)
+    new_position = core.motor_move(node, position, velocity, blocking,
+                                   beck=beck)
 
-    if wait:
+    if blocking:
         logger.info('adc', f'Moved ADC {node} to position {new_position}°')
 
     return new_position
+
+
+@core.beckhoff_autoconnect
+def stop(node, beck=None):
+    logger.info('adc', f'Stopping ADC {node}')
+    core.motor_send_stop(node, beck=beck)
 
 
 @core.beckhoff_autoconnect

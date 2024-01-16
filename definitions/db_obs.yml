@@ -28,11 +28,6 @@ target_spt:
   long: Target spectral type
   unit:
 
-tracking_status:
-  short: Tracking status
-  long: Status of the tracking
-  unit:
-
 tracking_manual_centering:
   short: Manual centering flag
   long: Flag do indicate if manual centering is needed
@@ -104,6 +99,11 @@ sequencer_command_received:
 sequencer_obs_type:
   short: Sequencer observation type requested
   long: obs type requested to the sequencer
+  unit:
+
+sequencer_on_target:
+  short: On target
+  long: On target
   unit:
 
 t120_host:
@@ -207,7 +207,7 @@ tel_led_status:
 focusing_best:
   short: Optimal M2 focus
   long: Optimal M2 position in Z found by focusing sequence
-  unit: mm
+  unit: µm
 
 focusing_temttb:
   short: Telescope bottom temperature when focusing
@@ -219,10 +219,15 @@ focusing_temtth:
   long: Temperature at the top of the telescope tube during the focusing sequence
   unit: °C
 
-focusing_fo_delta:
-  short: Optimal M2 focusing offset
-  long: Optimal M2 position offset in Z to apply to value derived by model
-  unit: mm
+focusing_f0:
+  short: Autofocus constant term
+  long: Constant term of autofocus model
+  unit: µm
+
+focusing_f1:
+  short: Autofocus linear term
+  long: Linear term of autofocus model
+  unit:
 
 # Dead-man
 deadman_keepalive:

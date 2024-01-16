@@ -17,14 +17,14 @@ from kalao.plc import adc
 
 import schedule
 
-from kalao.definitions.enums import LoopStatus, TrackingStatus
+from kalao.definitions.enums import LoopStatus
 
 import config
 
 
 def _update_adc(beck=None):
-    if euler.telescope_tracking() == TrackingStatus.TRACKING:
-        adc.configure(beck=beck)
+    if euler.telescope_tracking():
+        adc.configure(beck=beck, skip_tracking_check=True)
 
 
 def _offload_ttm():

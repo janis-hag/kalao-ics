@@ -52,7 +52,7 @@ def take_and_measure(args):
     peak_hw = (args.peak_window - 1) // 2
 
     max = 0
-    x, y = np.mgrid[0:args.peak_window, 0:args.peak_window]
+    y, x = np.mgrid[0:args.peak_window, 0:args.peak_window]
 
     img_cube = camera.take_cube(args.dit, args.img_avg)
 

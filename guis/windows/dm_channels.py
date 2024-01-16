@@ -81,11 +81,12 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.backend.dmdisp_updated.connect(self.dmdisp_updated)
 
-        self.timer = QTimer()
-        self.timer.setInterval(int(1000 / config.GUI.refreshrate_streams))
-        self.timer.timeout.connect(lambda: self.backend.get_streams_dmdisp(
-            self.dm_number))
-        self.timer.start()
+        self.channels_timer = QTimer(parent=self)
+        self.channels_timer.setInterval(
+            int(1000 / config.GUI.refreshrate_streams))
+        self.channels_timer.timeout.connect(lambda: self.backend.
+                                            get_streams_dmdisp(self.dm_number))
+        self.channels_timer.start()
 
         self.show()
         self.center()
@@ -108,18 +109,18 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 view.setImage(img, img_min, img_max)
 
     def on_reset_button_clicked(self, checked, i):
-        self.action_send(self.reset_buttons[i], self.backend.reset_channel,
-                         self.dm_number, i)
+        self.action_send(self.reset_buttons[i],
+                         self.backend.set_channels_reset, self.dm_number, i)
 
     @Slot(bool)
     def on_reset_all_button_clicked(self, checked):
-        self.action_send(self.reset_all_button, self.backend.reset_dm,
-                         self.dm_number)
+        self.action_send(self.reset_all_button,
+                         self.backend.set_channels_resetall, self.dm_number)
 
     def closeEvent(self, event):
-        self.timer.stop()
+        self.channels_timer.stop()
         event.accept()
 
     def showEvent(self, event):
-        self.timer.start()
+        self.channels_timer.start()
         event.accept()

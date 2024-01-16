@@ -25,8 +25,6 @@ class PlotsWidget(KWidget):
 
     current_index = -1
 
-    live_timer = QTimer()
-
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 
@@ -102,6 +100,10 @@ class PlotsWidget(KWidget):
 
         #chart.legend().hide()
 
+        chart.hovered.connect(self.hover_xy_to_str)
+
+        self.plots_view.setRubberBand(QChartView.RectangleRubberBand)
+
         ### Group buttons
 
         for group in sorted(self.groups.keys(),
@@ -111,9 +113,7 @@ class PlotsWidget(KWidget):
                                    on_group_button_clicked(checked, group))
             self.group_layout.addWidget(button)
 
-        chart.hovered.connect(self.hover_xy_to_str)
-
-        self.plots_view.setRubberBand(QChartView.RectangleRubberBand)
+        self.live_timer = QTimer(parent=self)
 
         self.on_tonight_button_clicked(None)
 

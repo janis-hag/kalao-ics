@@ -1,3 +1,5 @@
+import numpy as np
+
 from PySide6.QtGui import QPen, Qt
 
 from kalao.utils import ktools
@@ -21,6 +23,11 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     axis_unit = ' px'
     axis_precision = 0
 
+    subap_current = None
+    act_current = None
+
+    saturation = np.nan
+
     def __init__(self, backend, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -43,7 +50,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.subaps_pitch = 5
 
         # Add grid to window
-        self.rois = {}
+        self.subapertures = {}
         for i in config.WFS.all_subaps:
             j, k = ktools.get_subaperture_2d(i)
 
@@ -60,7 +67,21 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 self.subaps_pitch * j + self.subaps_offset, self.subaps_size,
                 self.subaps_size, pen)
             roi.setZValue(1)
-            self.rois[i] = roi
+            self.subapertures[i] = roi
+
+        self.actuators = {}
+        for i in list(range(140)):
+            j, k = ktools.get_actuator_2d(i)
+
+            pen = QPen(Color.DARK_GREY, 1.5, Qt.SolidLine, Qt.SquareCap,
+                       Qt.MiterJoin)
+            pen.setCosmetic(True)
+
+            roi = self.wfs_view.scene.addEllipse(
+                self.subaps_pitch * k + self.subaps_offset - 1,
+                self.subaps_pitch * j + self.subaps_offset - 1, 1, 1, pen)
+            roi.setZValue(1)
+            self.actuators[i] = roi
 
         self.wfs_view.setView(self.stream_info['shape'])
 
@@ -74,17 +95,19 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             img_min, img_max = self.compute_min_max(img)
 
             # Do not check min due to bias subtraction
-            saturation = img.max() / self.stream_info['max']
-            if saturation >= 1:
-                self.saturation_label.setText('Saturated !')
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.RED.name()};')
-            else:
-                self.saturation_label.updateText(saturation=saturation * 100)
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.BLACK.name()};')
+            self.saturation = img.max() / self.stream_info['max']
 
             self.wfs_view.setImage(img, img_min, img_max)
+
+            self.update_labels()
+
+    def update_labels(self):
+        if self.saturation >= 1:
+            self.saturation_label.setText('Saturated !')
+            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+        else:
+            self.saturation_label.updateText(saturation=self.saturation * 100)
+            self.saturation_label.setStyleSheet('')
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
@@ -92,8 +115,6 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 colormaps.GrayscaleSaturationTransparent())
         else:
             self.wfs_view.updateColormap(colormaps.BlackBody())
-
-    subap_current = None
 
     def hover_xyv_to_str(self, x, y, v):
         pen = QPen(Color.GREEN, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
@@ -108,27 +129,50 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 axis_unit=self.axis_unit, data_precision=self.data_precision,
                 data_unit=self.data_unit)
 
-            subap = ktools.subap_at_px(x, y)
-            if subap is not None:
-                self.reset_subap_color()
+            subaperture = ktools.subaperture_at_px(x, y)
+            actuator = ktools.actuator_at_px(x, y)
 
-                self.subap_current = subap
-                self.subap_previous_pen = self.rois[subap].pen()
-                self.rois[subap].setPen(pen)
+            if subaperture != self.subap_current:
+                self.reset_subaperture_highlight()
 
-                #i,j = ktools.get_subaperture_2d(subap)
+                if subaperture is not None:
+                    self.subap_current = subaperture
+                    self.subap_previous_pen = self.subapertures[
+                        subaperture].pen()
+                    self.subapertures[subaperture].setPen(pen)
+
+            if actuator != self.act_current:
+                self.reset_actuator_highlight()
+
+                if actuator is not None:
+                    self.act_current = actuator
+                    self.act_previous_pen = self.actuators[actuator].pen()
+                    self.actuators[actuator].setPen(pen)
+
+            if subaperture is not None:
+                self.hovered.emit(f'Subaperture: {subaperture}, ' + string)
+            elif actuator is not None:
+                self.hovered.emit(f'Actuator: {actuator}, ' + string)
             else:
-                self.reset_subap_color()
-
-            self.hovered.emit(string)
+                self.reset_subaperture_highlight()
+                self.reset_actuator_highlight()
+                self.hovered.emit(string)
         else:
-            self.reset_subap_color()
-
+            self.reset_subaperture_highlight()
+            self.reset_actuator_highlight()
             self.hovered.emit('')
 
-    def reset_subap_color(self):
+    def reset_subaperture_highlight(self):
         if self.subap_current is not None:
-            self.rois[self.subap_current].setPen(self.subap_previous_pen)
+            self.subapertures[self.subap_current].setPen(
+                self.subap_previous_pen)
 
             self.subap_current = None
             self.subap_previous_pen = None
+
+    def reset_actuator_highlight(self):
+        if self.act_current is not None:
+            self.actuators[self.act_current].setPen(self.act_previous_pen)
+
+            self.act_current = None
+            self.act_previous_pen = None

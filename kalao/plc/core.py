@@ -10,7 +10,6 @@ beck.py is part of the KalAO Instrument Control Software
 """
 
 import time
-import traceback
 from functools import wraps
 
 import numpy as np
@@ -55,14 +54,18 @@ def beckhoff_autoconnect(fun):
     return wrapper
 
 
-def motor_send_execute(motor_bExecute):
+def motor_send_execute(node, beck):
+    motor_bExecute = beck.get_node(f"{node}.ctrl.bExecute")
+
     motor_bExecute.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
             ua.Variant(True, motor_bExecute.get_data_type_as_variant_type())))
 
 
-def motor_send_init(motor_nCommand, motor_bExecute):
+def motor_send_init(node, beck):
+    motor_nCommand = beck.get_node(f"{node}.ctrl.nCommand")
+
     motor_nCommand.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
@@ -70,14 +73,20 @@ def motor_send_init(motor_nCommand, motor_bExecute):
                        motor_nCommand.get_data_type_as_variant_type())))
 
     # Execute
-    motor_send_execute(motor_bExecute)
+    motor_send_execute(node, beck=beck)
+
+
+def motor_send_stop(node, beck):
+    motor_bStop = beck.get_node(f"{node}.ctrl.bStop")
+
+    motor_bStop.set_attribute(
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(True, motor_bStop.get_data_type_as_variant_type())))
 
 
 @beckhoff_autoconnect
 def motor_init(node, force_init=True, beck=None):
-    motor_nCommand = beck.get_node(f"{node}.ctrl.nCommand")
-    motor_bExecute = beck.get_node(f"{node}.ctrl.bExecute")
-
     # Check if enabled, if not do enable
     if not beck.get_node(f"{node}.stat.bEnabled").get_value() or force_init:
         motor_bEnable = beck.get_node(f"{node}.ctrl.bEnable")
@@ -93,7 +102,7 @@ def motor_init(node, force_init=True, beck=None):
 
     # Check if init, if not do init
     if not beck.get_node(f"{node}.stat.bInitialised").get_value() or force_init:
-        motor_send_init(motor_nCommand, motor_bExecute)
+        motor_send_init(node, beck=beck)
 
         time.sleep(15)
         wait_loop(f'Waiting for {node} initialisation',
@@ -106,9 +115,8 @@ def motor_init(node, force_init=True, beck=None):
 
 
 @beckhoff_autoconnect
-def motor_move(node, position, velocity, wait, beck=None):
+def motor_move(node, position, velocity, blocking, beck=None):
     motor_nCommand = beck.get_node(f"{node}.ctrl.nCommand")
-    motor_bExecute = beck.get_node(f"{node}.ctrl.bExecute")
 
     # Check if initialised
     init_result = motor_init(node, force_init=False, beck=beck)
@@ -141,9 +149,9 @@ def motor_move(node, position, velocity, wait, beck=None):
                        motor_nCommand.get_data_type_as_variant_type())))
 
     # Execute
-    motor_send_execute(motor_bExecute)
+    motor_send_execute(node, beck=beck)
 
-    if wait:
+    if blocking:
         # Wait for movement
         time.sleep(2)
         wait_loop(f'Waiting for {node} movement',

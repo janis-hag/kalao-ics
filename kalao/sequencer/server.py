@@ -12,7 +12,7 @@ from threading import Thread
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
-from kalao import database, logger, services
+from kalao import database, euler, logger, services
 from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser, shutter,
                        tungsten)
 from kalao.sequencer import commands
@@ -176,7 +176,7 @@ def serve():
         else:
             database.store('obs', {'sequencer_command_received': args})
 
-        args["q"] = q
+        args['q'] = q
 
         # try to cast every values of args dict in type needed
         check = cast_args(args)
@@ -194,8 +194,12 @@ def serve():
 
             q.put('abort')
             commands.commands[command]()
-            th.join()
 
+            if th is not None:
+                th.join()
+                th = None
+
+            # Empty abort queue
             while not q.empty():
                 q.get()
 
@@ -207,13 +211,18 @@ def serve():
                 th = None
 
             if 'alphacat' in args and 'deltacat' in args:
-                c = SkyCoord(ra=args['alphacat'], dec=args['deltacat'],
-                             unit=(u.hourangle, u.deg), frame='icrs')
+                coord = SkyCoord(ra=args['alphacat'], dec=args['deltacat'],
+                                 unit=(u.hourangle, u.deg), frame='icrs')
 
                 database.store('obs', {
-                    'target_ra': c.ra.deg,
-                    'target_dec': c.dec.deg
+                    'target_ra': coord.ra.deg,
+                    'target_dec': coord.dec.deg
                 })
+
+                # Pre-configure ADCs
+                zenith_angle = euler.telescope_future_zenith_angle(coord)
+                adc.configure(zenith_angle=zenith_angle,
+                              skip_tracking_check=True, blocking=False)
 
             database.store('obs', {'sequencer_status': SequencerStatus.SETUP})
             logger.info('sequencer', f'Starting {command}')
@@ -271,6 +280,9 @@ def cast_args(args):
         #     ignored_args[k] = v
         #     logger.error('sequencer', f'{k} not in arg list')
         #     return 1
+
+        if k == 'kalfilter' and isinstance(v, str):
+            args[k] = v.lower()
 
     return 0
 

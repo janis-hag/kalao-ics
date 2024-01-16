@@ -2,24 +2,25 @@ import time
 
 import numpy as np
 
-from astropy.io import fits
-
 from kalao import database, logger
 from kalao.cacao import aocontrol
 from kalao.fli import camera
 from kalao.interfaces import etcs
 from kalao.plc import calibunit, filterwheel, flipmirror, laser, shutter
-from kalao.utils import file_handling, starfinder
+from kalao.sequencer.seq_context import with_sequencer_status
+from kalao.utils import starfinder
 
-from kalao.definitions.enums import (FlipMirrorPosition, ReturnCode,
-                                     ShutterState)
+from kalao.definitions.enums import (FlipMirrorPosition, ObservationType,
+                                     ReturnCode, SequencerStatus, ShutterState)
 from kalao.definitions.exceptions import (DMNotOn, FilterWheelNotInPosition,
-                                          FlipMirrorNotUp, ShutterNotClosed,
-                                          WFSNotOn)
+                                          FlipMirrorNotUp,
+                                          ManualCenteringTimeout,
+                                          ShutterNotClosed, WFSNotOn)
 
 import config
 
 
+@with_sequencer_status(SequencerStatus.CENTERING)
 def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
     """
     Start star centering sequence:
@@ -65,7 +66,7 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
                 return ReturnCode.CENTERING_OK
 
         # TODO use exptime given by nseq args
-        image_path = camera.take_image(dit=dit)
+        image_path = camera.take_image(ObservationType.CENTERING, dit=dit)
 
         # TODO add dit optimisation
         #  focusing_dit = optimise_dit(focusing_dit)
@@ -81,7 +82,7 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
             tiptilt_fli_to_telescope(x - config.FLI.center_x,
                                      y - config.FLI.center_y)
 
-            image_path = camera.take_image(dit=dit)
+            image_path = camera.take_image(ObservationType.CENTERING, dit=dit)
             if image_path is None:
                 logger.error('centering', 'No image received.')
                 return -1
@@ -100,8 +101,6 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
                     #aocontrol.wfs_centering(tt_threshold=config.AO.
                     #                        WFS_centering_slope_threshold)
 
-                    request_manual_centering(False)
-
                     return ReturnCode.CENTERING_OK
                 else:
                     # Retry centering
@@ -111,14 +110,13 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
 
             else:
                 # Centering is good enough
-                request_manual_centering(False)
                 return ReturnCode.CENTERING_OK
 
         else:
             # Start manual centering
             # TODO start timeout (value in kalao.config)
             # Set flag for manual centering
-            request_manual_centering(True)
+            request_manual_centering()
 
             # Wait 10 seconds before trying another star detection
             time.sleep(10)
@@ -149,6 +147,7 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
         return ReturnCode.CENTERING_TIMEOUT
 
 
+@with_sequencer_status(SequencerStatus.CENTERING)
 def center_on_laser():
     """
     Center the calibration unit the laser on the WFS.
@@ -227,19 +226,37 @@ def center_on_laser():
     return 0
 
 
-def request_manual_centering(flag=True):
-    # TODO add docstring
+def request_manual_centering():
+    logger.info('centering', 'Starting manual centering.')
+    database.store('obs', {'tracking_manual_centering': True})
 
-    database.store('obs', {'tracking_manual_centering': flag})
+    timeout = time.monotonic() + config.Centering.manual_timeout
+
+    while time.monotonic() < timeout:
+        centering = database.get_last_value('obs', 'tracking_manual_centering')
+
+        if centering is False:
+            return 0
+
+        time.sleep(1)
+    else:
+        logger.error('centering',
+                     'Timeout while waiting for manual centering from user.')
+        raise ManualCenteringTimeout
 
 
-def manual_centering(x, y, AO=False, sequencer_arguments=None):
+def validate_manual_centering():
+    logger.info('centering', 'Manual centering done.')
+    database.store('obs', {'tracking_manual_centering': False})
+
+
+def manual_centering(x, y, AO=False):
     # TODO add docstring
     # TODO verify value validity before sending
 
     tiptilt_fli_to_telescope(x - config.FLI.center_x, y - config.FLI.center_y)
-    image_path = camera.take_image(dit=config.FLI.exp_time,
-                                   sequencer_arguments=sequencer_arguments)
+    image_path = camera.take_image(ObservationType.CENTERING,
+                                   dit=config.FLI.exp_time)
     if image_path is None:
         ret = -1
     else:
@@ -264,36 +281,5 @@ def tiptilt_fli_to_telescope(x, y, gain=1):
     az_offset = y * config.FLI.tilt_to_onsky * gain
 
     etcs.send_altaz_offset(alt_offset, az_offset)
-
-    return 0
-
-
-def generate_night_darks(science_folder=None):
-    """
-    Generate the darks needed for the calibration of the night which is assumed to have ended.
-
-    :param filepath:
-    :return:
-    """
-
-    # TODO add docstring
-
-    if science_folder is None:
-        _, science_folder = file_handling.create_night_folders()
-
-    exp_times = file_handling.get_exposure_times(science_folder)
-
-    if len(exp_times) == 0:
-        print(f'WARN: Not generating darks as {science_folder} is empty.')
-        return 0
-    else:
-        for dit in exp_times:
-            for i in range(config.Calib.dark_number):
-                print(dit, i)  #TODO: print sequencer?
-                image_path = camera.take_dark(dit=dit)
-                with fits.open(image_path, mode='update') as hdul:
-                    hdul[0].header.set('HIERARCH ESO TPL ID', 'K_DARK')
-                    hdul[0].header.set('HIERARCH ESO OBS TARGET NAME', 'Dark')
-                    hdul.flush()
 
     return 0

@@ -9,7 +9,7 @@ Utilities for star and laser centering.
 
 starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
-
+import math
 import time
 from datetime import datetime
 
@@ -25,13 +25,69 @@ from astropy.time import Time
 from photutils.detection import DAOStarFinder
 
 from kalao import database, euler
-from kalao.fli import camera
-from kalao.utils import file_handling
+
+import skimage
 
 import config
 
 
-def find_star(img):
+def find_star(img, peak_min=100, hw=20):
+    star = find_stars(img, peak_min=peak_min, hw=hw, num=1)
+
+    if len(star) == 0:
+        return np.nan, np.nan, np.nan, np.nan
+    else:
+        return star[0]
+
+
+def find_stars(img, peak_min=100, hw=20, num=math.inf):
+    stars, bad_pixels = find_stars_and_bad_pixels(img, peak_min=peak_min,
+                                                  hw=hw, num=num)
+
+    return stars
+
+
+def find_stars_and_bad_pixels(img, peak_min=100, hw=20, num=math.inf):
+    Y, X = np.mgrid[0:img.shape[0], 0:img.shape[1]]
+
+    img_filtered = skimage.filters.median(img, skimage.morphology.square(3))
+    img_filtered = skimage.filters.gaussian(img_filtered, 2)
+
+    mean_filtered, median_filtered, stddev_filtered = sigma_clipped_stats(
+        img_filtered)
+
+    img_diff = img - img_filtered
+    bad_pixels = np.argwhere((np.abs(img_diff) > 6 * img_diff.std()))
+
+    threshold = median_filtered + max(6 * stddev_filtered, peak_min)
+    stars = skimage.feature.peak_local_max(img_filtered, min_distance=1,
+                                           threshold_abs=threshold,
+                                           num_peaks=num)
+
+    mean, median, stddev = sigma_clipped_stats(img)
+    frame_fit = img - median
+
+    stars_fitted = []
+    for star_y, star_x in stars:
+        if [star_y, star_x] in bad_pixels:
+            continue
+
+        gaussian_init = models.Gaussian2D(x_mean=star_x, y_mean=star_y,
+                                          amplitude=frame_fit[star_y, star_x])
+        fitter = fitting.LevMarLSQFitter()
+        gaussian = fitter(
+            gaussian_init, X[star_y - hw:star_y + hw, star_x - hw:star_x + hw],
+            Y[star_y - hw:star_y + hw, star_x - hw:star_x + hw],
+            frame_fit[star_y - hw:star_y + hw, star_x - hw:star_x + hw])
+
+        stars_fitted.append((gaussian.x_mean.value, gaussian.y_mean.value,
+                             gaussian.amplitude.value,
+                             np.sqrt(gaussian.x_fwhm * gaussian.y_fwhm)))
+
+    return stars_fitted, bad_pixels
+
+
+def find_star_dao(img, xycoords=None):
     """
     Finds the position of a star spot in an image taken with the FLI camera
 
@@ -43,7 +99,7 @@ def find_star(img):
     mean, median, std = sigma_clipped_stats(img, sigma=3.0)
 
     daofind = DAOStarFinder(fwhm=config.Starfinder.FWHM, threshold=5. * std,
-                            brightest=1)
+                            brightest=1, xycoords=xycoords)
     sources = daofind(img - median)
 
     if sources is None:
@@ -242,57 +298,6 @@ def find_star_custom_algo(image, spot_size=7, estim_error=0.05, nb_step=5,
     return x_star, y_star
 
 
-def optimise_dit(starting_dit, sequencer_arguments=None,
-                 min_flux=config.Starfinder.min_flux,
-                 max_flux=config.Starfinder.max_flux):
-    """
-    Search for optimal dit value to reach the requested ADU.
-
-    TODO implement filter change to nd if dit too short.
-
-    :return: optimal dit value
-    """
-
-    new_dit = starting_dit
-
-    for i in range(config.Starfinder.dit_optimization_trials):
-
-        file_path = camera.take_image(dit=new_dit,
-                                      sequencer_arguments=sequencer_arguments)
-
-        #time.sleep(20)
-        file_handling.add_comment(file_path,
-                                  "Dit optimisation sequence: " + str(new_dit))
-
-        image = fits.getdata(file_path)
-        # flux = image[np.argpartition(image, -6)][-6:].sum()
-        #flux = np.sort(np.ravel(image))[-focusing_pixels:].sum()
-
-        print(new_dit, image.max(), max_flux, min_flux)
-        if image.mean() >= max_flux:
-            new_dit = int(np.floor(max_flux / (1.5 * image.mean())))
-            #new_dit = int(np.floor(0.8 * new_dit))
-            if new_dit <= 1:
-                print('Max flux ' + str(image.max()) +
-                      ' above max permitted value ' + str(max_flux))
-                return -1
-            continue
-        elif image.mean() <= min_flux:
-            new_dit = int(np.floor(1.5 * min_flux / image.mean()))
-            #new_dit = int(np.ceil(1.2 * new_dit))
-            if new_dit >= config.Starfinder.max_dit:
-                print('Max flux ' + str(image.max()) +
-                      ' below minimum permitted value: ' + str(min_flux))
-                return -1
-            continue
-        else:
-            break
-
-    print('Optimal dit: ' + str(new_dit))
-
-    return new_dit
-
-
 def generate_wcs():
     """
     Queries the current telescope coordinates to generate a WCS object.
@@ -442,3 +447,74 @@ def fit_2dgaussian(image, xc, yc, bb):
     f = fit_f(f_init, x, y, box)
 
     return f
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    rng = np.random.default_rng()
+
+    frame = np.zeros((1024, 1024), dtype=np.float32)
+    Y, X = np.mgrid[0:1024, 0:1024]
+
+    gaussian = models.Gaussian2D()
+
+    # Add stars
+    for i in range(5):
+        x = rng.uniform(50, 1024 - 50)
+        y = rng.uniform(50, 1024 - 50)
+        peak = rng.uniform(100, 3000)
+        stddev = rng.uniform(2, 30)
+
+        frame += gaussian.evaluate(X, Y, peak, x, y, stddev, stddev, 0)
+
+    frame = rng.poisson(frame).astype(np.float64)
+
+    # Add dead pixels
+    for i in range(10):
+        x = round(rng.uniform(50, 1024 - 50))
+        y = round(rng.uniform(50, 1024 - 50))
+
+        frame[y, x] = 0
+
+    # Add stuck pixels
+    for i in range(10):
+        x = round(rng.uniform(50, 1024 - 50))
+        y = round(rng.uniform(50, 1024 - 50))
+
+        frame[y, x] = 65535
+
+    # Add hot pixels
+    for i in range(10):
+        x = round(rng.uniform(50, 1024 - 50))
+        y = round(rng.uniform(50, 1024 - 50))
+        v = round(rng.uniform(10, 4000))
+
+        frame[y, x] += v
+
+    frame += rng.normal(1000, 20, size=frame.shape)
+
+    frame = np.clip(np.rint(frame), 0, 2**16 - 1)
+
+    start = time.monotonic()
+    stars, bad_pixels = find_stars_and_bad_pixels(frame)
+    print(time.monotonic() - start)
+
+    frame_nan = frame.copy()
+    frame_nan[bad_pixels] = np.nan
+
+    plt.figure()
+    plt.imshow(frame, norm='log', vmin=np.nanmin(frame_nan),
+               vmax=np.nanmax(frame_nan))
+
+    fig = plt.gcf()
+    ax = fig.gca()
+
+    for x, y, peak, fwhm in stars:
+        plt.plot(x, y, 'r+')
+        ax.add_patch(
+            plt.Circle((x, y), fwhm / 2, edgecolor='r', facecolor='#ffffff00'))
+
+    plt.plot(bad_pixels[:, 1], bad_pixels[:, 0], 'g+')
+
+    plt.show()

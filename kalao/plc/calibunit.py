@@ -81,7 +81,8 @@ def move_px(pixel, absolute=False):
     return new_position
 
 
-def move(position, velocity=config.CalibUnit.velocity, wait=True, beck=None):
+def move(position, velocity=config.CalibUnit.velocity, blocking=True,
+         beck=None):
     """
     Move the calibration unit to position
     """
@@ -106,13 +107,19 @@ def move(position, velocity=config.CalibUnit.velocity, wait=True, beck=None):
     )
 
     new_position = core.motor_move(config.PLC.Node.CALIB_UNIT, position,
-                                   velocity, wait, beck=beck)
+                                   velocity, blocking, beck=beck)
 
-    if wait:
+    if blocking:
         logger.info('calibunit',
                     f'Moved calibration unit to position {new_position} mm')
 
     return new_position
+
+
+@core.beckhoff_autoconnect
+def stop(beck=None):
+    logger.info('calibunit', f'Stopping calibration unit')
+    core.motor_send_stop(config.PLC.Node.CALIB_UNIT, beck=beck)
 
 
 @core.beckhoff_autoconnect

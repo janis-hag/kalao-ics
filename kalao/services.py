@@ -156,29 +156,6 @@ def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
     return get_status(unit)
 
 
-def camera(action):
-    return unit_control(config.Systemd.services['camera']['unit'], action)
-
-
-def gop(action):
-    return unit_control(config.Systemd.services['gop-server']['unit'], action)
-
-
-def database_timer(action):
-    return unit_control(config.Systemd.services['database-timer']['unit'],
-                        action)
-
-
-def hardware_timer(action):
-    return unit_control(config.Systemd.services['hardware-timer']['unit'],
-                        action)
-
-
-def observation_timer(action):
-    return unit_control(config.Systemd.services['observation-timer']['unit'],
-                        action)
-
-
 def init():
     '''
     Initialise all system services and run sanity checks

@@ -23,6 +23,7 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     axis_unit = ' px'
     axis_precision = 0
 
+    saturation = np.nan
     flux_avg = np.nan
     flux_brightest = np.nan
 
@@ -52,15 +53,7 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             img_min, img_max = self.compute_min_max(img)
 
-            saturation = img.max() / self.stream_info['max']
-            if saturation >= 1:
-                self.saturation_label.setText('Saturated !')
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.RED.name()};')
-            else:
-                self.saturation_label.updateText(saturation=saturation * 100)
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.BLACK.name()};')
+            self.saturation = img.max() / self.stream_info['max']
 
             self.flux_view.setImage(img, img_min, img_max)
 
@@ -83,6 +76,13 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.flux_brightest_label.updateText(
             flux_brightest=self.flux_brightest * self.data_scaling,
             unit=self.data_unit)
+
+        if self.saturation >= 1:
+            self.saturation_label.setText('Saturated !')
+            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+        else:
+            self.saturation_label.updateText(saturation=self.saturation * 100)
+            self.saturation_label.setStyleSheet('')
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:

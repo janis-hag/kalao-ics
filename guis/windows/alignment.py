@@ -74,7 +74,7 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
         pen_red.setCosmetic(True)
 
         for subap in self.top_subaps + self.bottom_subaps + self.left_subaps + self.right_subaps:
-            wfs.rois[subap].setPen(pen_yellow)
+            wfs.subapertures[subap].setPen(pen_yellow)
 
         self.subwindows = []
         for j, actuator in enumerate(self.actuators_to_poke):
@@ -91,7 +91,7 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
             subwindow.views = []
 
             for i, subap in enumerate(subwindow.subap_indexes):
-                wfs.rois[subap].setPen(pen_red)
+                wfs.subapertures[subap].setPen(pen_red)
 
                 view = getattr(subwindow, f'view_{i + 1}')
                 view.updateColormap(colormaps.Grayscale())

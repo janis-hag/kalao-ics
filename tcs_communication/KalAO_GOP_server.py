@@ -19,8 +19,6 @@ from kalao.interfaces import edp
 
 from tcs_communication.pygop import tcs_srv_gop
 
-from kalao.definitions.enums import TrackingStatus
-
 import config
 
 #TODO check if socket is available  and handle case when "Error: connection to sequencer refused" with retry and timeout
@@ -84,19 +82,12 @@ def gop_server():
 
         logger.info('gop', f'command=> {command} < arg={" ".join(arguments)}')
 
-        socket_connection_error = False
-
-        # if command == "STOPAO" or command == "INSTRUMENTCHANGE" or command == "NOTHING":
-        #     # For the moment no difference is made for these three cases
-        #     database.store('obs',{'tracking_status': TrackingStatus.IDLE})
-        #     commandList[0] = 'K_END'
-        #     command = 'K_END'
-        #     #gop.write("/OK")
-
         # Check if it's a KalAO command and send it
-        if command[
-                0] == 'K' or command == 'INSTRUMENTCHANGE' or command == 'THE_END' or command == 'ABORT' or command == 'STOPAO':
-            database.store('obs', {'tracking_status': TrackingStatus.IDLE})
+        if command.startswith('K_') or command in [
+                'INSTRUMENTCHANGE', 'THE_END', 'ABORT', 'STOPAO'
+        ]:
+            if command in ['INSTRUMENTCHANGE', 'THE_END', 'STOPAO']:
+                database.store('obs', {'sequencer_on_target': False})
 
             hostSeq, portSeq = (config.SEQ.ip, config.SEQ.port)
             socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -110,15 +101,12 @@ def gop_server():
 
             except ConnectionRefusedError:
                 logger.error('gop', 'Connection to sequencer refused')
-                socket_connection_error = True
+                time.sleep(10)
+                continue
             finally:
                 socketSeq.close()
 
-        if socket_connection_error:
-            time.sleep(10)
-            continue
-
-        if command == 'TEST':
+        elif command == 'TEST':
             message = '/OK'
             logger.info('gop', f'Sending acknowledge: {message}')
             gop.write(message)
@@ -130,25 +118,11 @@ def gop_server():
                 'tcs_header_path': arguments[0],
             })
 
-            # Update tracking status separately to ensure ordering
-            database.store('obs', {'tracking_status': TrackingStatus.TRACKING})
+            database.store('obs', {'sequencer_on_target': True})
 
             logger.info('gop', f'Received fits header path: {arguments[0]}')
 
             gop.write(message)
-
-        # elif command == "STOPAO" or command == "INSTRUMENTCHANGE" or command == "NOTHING":
-        #     # TODO
-        #     # Stop AO
-        #     # Close shutter
-        #     # reset_dms:
-        #     aocontrol.reset_dm(config.AO.TTM_loop_number)
-        #     # Set tracking to no-tracking keyword
-        #     # Disable manual centering flag
-        #     message = "/OK"
-        #     database.store('obs',{'tracking_status': TrackingStatus.IDLE})
-        #     logger.info('gop', f'Sending acknowledge and quit: {message}')
-        #     gop.write(message)
 
         elif command == 'quit' or command == 'exit':
             message = '/OK'
@@ -170,7 +144,6 @@ def gop_server():
     logger.info('gop', f'{config.GOP.ip} close gop connection and exit')
 
     gop.closeConnection()
-    #sys.exit(0)
 
     return 0
 

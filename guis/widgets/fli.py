@@ -60,6 +60,7 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     zoom_window = None
 
+    saturation = np.nan
     star_x = np.nan
     star_y = np.nan
     star_peak = np.nan
@@ -99,6 +100,13 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         if cnt != None:
             self.backend.get_streams_fli()
 
+        tracking_manual_centering_v, tracking_manual_centering_t = self.consume_db(
+            data, 'obs', 'sequencer_status')
+        if tracking_manual_centering_v is not None:
+            if tracking_manual_centering_v is True:
+                self.open_zoom_window()
+                self.zoom_window.enter_manual_centering()
+
     def fli_updated(self, data):
         img = self.consume_stream(data, config.Streams.FLI)
 
@@ -107,15 +115,7 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             img_min, img_max = self.compute_min_max(img)
 
-            saturation = img.max() / self.stream_info['max']
-            if saturation >= 1:
-                self.saturation_label.setText('Saturated !')
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.RED.name()};')
-            else:
-                self.saturation_label.updateText(saturation=saturation * 100)
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.BLACK.name()};')
+            self.saturation = img.max() / self.stream_info['max']
 
             self.fli_view.setImage(img, img_min, img_max)
 
@@ -149,10 +149,17 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             data_precision=self.data_precision,
         )
 
+        if self.saturation >= 1:
+            self.saturation_label.setText('Saturated !')
+            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+        else:
+            self.saturation_label.updateText(saturation=self.saturation * 100)
+            self.saturation_label.setStyleSheet('')
+
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:
             self.axis_scaling = config.FLI.plate_scale
-            self.axis_unit = ' asec'
+            self.axis_unit = '"'
             self.axis_precision = 1
         else:
             self.axis_scaling = 1
@@ -191,6 +198,9 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_zoom_window_button_clicked(self, checked):
+        self.open_zoom_window()
+
+    def open_zoom_window(self):
         if self.zoom_window is not None:
             self.zoom_window.show()
             self.zoom_window.activateWindow()
@@ -204,5 +214,5 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 img = None
 
             self.zoom_window = FLIZoomWindow(
-                self.backend, img, on_sky_unit=(self.axis_unit == ' asec'),
+                self.backend, img, on_sky_unit=(self.axis_unit == '"'),
                 parent=self)

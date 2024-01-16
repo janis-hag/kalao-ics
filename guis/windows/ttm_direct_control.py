@@ -5,7 +5,7 @@ from guis.kalao.ui_loader import loadUi
 from guis.kalao.widgets import KMainWindow
 
 
-class TTMDirectControl(KMainWindow, BackendActionMixin):
+class TTMDirectControlWindow(KMainWindow, BackendActionMixin):
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 
@@ -30,7 +30,7 @@ class TTMDirectControl(KMainWindow, BackendActionMixin):
     def on_tip_spinbox_valueChanged(self, d):
         self.tip_slider.setValue(round(d * 1000))
 
-        self.action_send([], self.backend.set_ttm_to,
+        self.action_send([], self.backend.set_ttm_pattern,
                          [self.tip_spinbox.value(),
                           self.tilt_spinbox.value()])
 
@@ -38,6 +38,6 @@ class TTMDirectControl(KMainWindow, BackendActionMixin):
     def on_tilt_spinbox_valueChanged(self, d):
         self.tilt_slider.setValue(round(d * 1000))
 
-        self.action_send([], self.backend.set_ttm_to,
+        self.action_send([], self.backend.set_ttm_pattern,
                          [self.tip_spinbox.value(),
                           self.tilt_spinbox.value()])

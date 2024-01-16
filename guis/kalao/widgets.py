@@ -40,7 +40,7 @@ class OffsetedTextItem(QGraphicsSimpleTextItem):
 
 
 class KLabel(QLabel, ArrayToImageMixin):
-    pixmap_ = None
+    _pixmap = None
     text_format = None
     formatter = KalAOFormatter()
 
@@ -51,28 +51,28 @@ class KLabel(QLabel, ArrayToImageMixin):
             self.text_format = args[0]
 
     def setPixmap(self, p):
-        self.pixmap_ = p
+        self._pixmap = p
         super().setPixmap(self.scaledPixmap())
 
     def heightForWidth(self, width):
-        if self.pixmap_ is None:
+        if self._pixmap is None:
             super().heightForWidth(width)
         else:
-            return self.pixmap_.height() * width / self.pixmap_.width()
+            return self._pixmap.height() * width / self._pixmap.width()
 
     def sizeHint(self):
-        if self.pixmap_ is None:
+        if self._pixmap is None:
             return super().sizeHint()
         else:
             w = self.width()
             return QSize(w, self.heightForWidth(w))
 
     def scaledPixmap(self):
-        return self.pixmap_.scaled(self.size(), Qt.KeepAspectRatio,
+        return self._pixmap.scaled(self.size(), Qt.KeepAspectRatio,
                                    Qt.FastTransformation)
 
     def resizeEvent(self, e):
-        if self.pixmap_ is not None:
+        if self._pixmap is not None:
             super().setPixmap(self.scaledPixmap())
 
     def setImage(self, img):
@@ -371,6 +371,7 @@ class KGraphicsView(QGraphicsView, ArrayToImageMixin):
     view = None
     margins = (0, 0, 0, 0)
     shape = (0, 0)
+    offset = QPointF(0, 0)
 
     tick_lines = []
     tick_labels = []
@@ -418,14 +419,19 @@ class KGraphicsView(QGraphicsView, ArrayToImageMixin):
             self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
 
     def setImage(self, img, img_min=None, img_max=None, scale=LinearScale,
-                 view=None):
-        if len(img.shape) < 2:
+                 view=None, offset=None):
+        if img is not None and len(img.shape) < 2:
             img = img[np.newaxis, :]
 
         self.img = img
         self.img_min = img_min
         self.img_max = img_max
         self.scale = scale
+
+        if img is None:
+            if self.pixmap_item is not None:
+                self.pixmap_item.setPixmap(QPixmap())
+            return
 
         self.prepare_array_for_qimage(img, img_min, img_max, scale)
 
@@ -438,6 +444,13 @@ class KGraphicsView(QGraphicsView, ArrayToImageMixin):
         else:
             self.pixmap_item.setPixmap(self.pixmap)
             self.scene.pixmap_updated()
+
+        if offset is None:
+            self.offset = QPointF(0, 0)
+        else:
+            self.offset = offset
+
+        self.pixmap_item.setOffset(self.offset)
 
         if self.shape != img.shape and view is None:
             view = self.pixmap.rect()
@@ -452,13 +465,15 @@ class KGraphicsView(QGraphicsView, ArrayToImageMixin):
         self.colormap = colormap
 
         if self.image is not None:
-            self.setImage(self.img, self.img_min, self.img_max, self.scale)
+            self.setImage(self.img, self.img_min, self.img_max, self.scale,
+                          self.view, self.offset)
 
     def updateScale(self, scale):
         self.scale = scale
 
         if self.image is not None:
-            self.setImage(self.img, self.img_min, self.img_max, self.scale)
+            self.setImage(self.img, self.img_min, self.img_max, self.scale,
+                          self.view, self.offset)
 
     def updateMinMax(self, img_min, img_max):
         self.img_min = img_min
@@ -473,16 +488,22 @@ class KGraphicsView(QGraphicsView, ArrayToImageMixin):
         self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
 
     def hover_to_xyv(self, x, y):
+        if self.img is None:
+            return
+
         if not (np.isnan(x) or np.isnan(y)):
             x = math.floor(x)
             y = math.floor(y)
+            x_img = math.floor(x - self.offset.x())
+            y_img = math.floor(y - self.offset.y())
 
-            if 0 <= y < self.img.shape[0] and 0 <= x < self.img.shape[1]:
+            if 0 <= y_img < self.img.shape[0] and 0 <= x_img < self.img.shape[
+                    1]:
                 self.setCursor(Qt.CrossCursor)
                 if np.ma.is_masked(self.img):
-                    self.hovered.emit(x, y, self.img.filled()[y, x])
+                    self.hovered.emit(x, y, self.img.filled()[y_img, x_img])
                 else:
-                    self.hovered.emit(x, y, self.img[y, x])
+                    self.hovered.emit(x, y, self.img[y_img, x_img])
             else:
                 self.unsetCursor()
                 self.hovered.emit(-1, -1, np.nan)

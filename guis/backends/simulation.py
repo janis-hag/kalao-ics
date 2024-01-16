@@ -5,11 +5,13 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 import pandas as pd
 
+from astropy.io import fits
+
 from PySide6.QtCore import QTimer
 
 from kalao import database
 from kalao.interfaces import fake_data
-from kalao.utils import kstring, zernike
+from kalao.utils import kmath, kstring, zernike
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 from guis.kalao import lorem
@@ -154,10 +156,14 @@ class MainBackend(FakeSHMFPSBackend):
                 RelayState.OFF,
             'fan_status':
                 RelayState.ON,
-            'fli-remaining_time':
-                0,
             'fli-exposure_time':
                 60,
+            'fli-remaining_time':
+                0,
+            'fli-frames':
+                0,
+            'fli-remaining_frames':
+                0,
             'ippower_rtc_status':
                 IPPowerStatus.ON,
             'ippower_bench_status':
@@ -180,9 +186,11 @@ class MainBackend(FakeSHMFPSBackend):
                                              datetime.now(timezone.utc)),
             'kalao_observation-timer.service': ('active', 'running',
                                                 datetime.now(timezone.utc)),
+            'focusing-step':
+                0,
         })
 
-        self.internal_timer = QTimer()
+        self.internal_timer = QTimer(parent=self)
         self.internal_timer.setInterval(100)
         self.internal_timer.timeout.connect(self._internal_update)
         self.internal_timer.start()
@@ -200,7 +208,7 @@ class MainBackend(FakeSHMFPSBackend):
         return dm02disp
 
     def _internal_update(self):
-        if time.monotonic() - self.last_fli_update > 0.01:
+        if time.monotonic() - self.last_fli_update > 5:
             self._update_stream_cnt(self.data, config.Streams.FLI)
             self.last_fli_update = time.monotonic()
 
@@ -430,10 +438,18 @@ class MainBackend(FakeSHMFPSBackend):
 
         self._update_dict(
             self.data, 'fli', {
-                'remaining_time': self.internal_state['fli-remaining_time'],
-                'exposure_time': self.internal_state['fli-exposure_time'],
-                'heatsink': 15.5,
-                'ccd': -30
+                'exposure_time':
+                    self.internal_state['fli-exposure_time'],
+                'remaining_time':
+                    self.internal_state['fli-remaining_time'],
+                'frames':
+                    self.internal_state['fli-frames'],
+                'remaining_frames':
+                    self.internal_state['fli-remaining_frames'],
+                'heatsink':
+                    15.5,
+                'ccd':
+                    -30
             })
 
         self._update_dict(
@@ -452,8 +468,8 @@ class MainBackend(FakeSHMFPSBackend):
                     'value': 'BUSY',
                     'timestamp': datetime(2023, 12, 7, 10, 52, 17)
                 }],
-                'tracking_status': [{
-                    'value': 'TRACKING',
+                'tracking_manual_centering': [{
+                    'value': False,
                     'timestamp': datetime(2023, 12, 7, 10, 52, 17)
                 }]
             })
@@ -511,6 +527,78 @@ class MainBackend(FakeSHMFPSBackend):
             raise Exception(f'Unknown DM number {dm_number}')
 
         return self.dmdisp[dm_number]
+
+    @emit('focus_updated')
+    @timeit
+    def get_focus(self):
+        if self.internal_state['focusing-step'] == config.Focusing.steps:
+            return {}
+
+        self.internal_state['focusing-step'] %= config.Focusing.steps
+        self.internal_state['focusing-step'] += 1
+
+        i = self.internal_state['focusing-step'] - 1
+
+        if i == 0:
+            hdul = fits.HDUList()
+            hdul.append(fits.PrimaryHDU())
+
+            self.internal_state['focusing-hdul'] = hdul
+        else:
+            hdul = self.internal_state['focusing-hdul']
+
+        x = np.arange(0, 80)
+        y = np.arange(0, 80)
+
+        X, Y = np.meshgrid(x, y)
+
+        focus = 30000 + i * config.Focusing.step_size
+        x_star = 40
+        y_star = 40
+        peak = 100
+        fwhm = 10 + (i - 3.5)**2 + np.random.normal(0, 0.5)
+
+        img_cut = kmath.gaussian_2d_rotated(X, Y, x_star, y_star,
+                                            fwhm / kmath.SIGMA_TO_FWHM, fwhm /
+                                            kmath.SIGMA_TO_FWHM, 0, peak)
+
+        hdu = fits.ImageHDU(img_cut, name=f'FOCUS{i + 1}')
+        hdu.header.set('HIERARCH FOCUS M2 POSITION', focus)
+        hdu.header.set('HIERARCH FOCUS STAR X', x_star)
+        hdu.header.set('HIERARCH FOCUS STAR Y', y_star)
+        hdu.header.set('HIERARCH FOCUS STAR PEAK', peak)
+        hdu.header.set('HIERARCH FOCUS STAR FWHM', fwhm)
+        hdul.append(hdu)
+
+        if i >= 2:
+            xs = []
+            ys = []
+
+            for j in range(1, len(hdul)):
+                xs.append(hdul[j].header['HIERARCH FOCUS M2 POSITION'])
+                ys.append(hdul[j].header['HIERARCH FOCUS STAR FWHM'])
+
+            fit = np.polynomial.polynomial.Polynomial.fit(xs, ys, 2)
+            c, b, a = fit.convert().coef
+
+            best_focus = -b / (2*a)
+            best_fwhm = fit(best_focus)
+
+            hdul[0].header.set('HIERARCH FOCUS FIT QUAD', a)
+            hdul[0].header.set('HIERARCH FOCUS FIT LIN', b)
+            hdul[0].header.set('HIERARCH FOCUS FIT CONST', c)
+
+        if i == config.Focusing.steps - 1:
+            hdul[0].header.set('HIERARCH FOCUS BEST M2 POSITION', best_focus)
+            hdul[0].header.set('HIERARCH FOCUS BEST STAR FWHM', best_fwhm)
+            hdul[0].header.set('HIERARCH FOCUS SUCCESS', True)
+
+        return {
+            'focus_sequence': {
+                'mtime': datetime.now(timezone.utc),
+                'hdul': hdul
+            }
+        }
 
     def plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
                    obs_keys):
@@ -654,6 +742,14 @@ class MainBackend(FakeSHMFPSBackend):
                     'data': np.zeros((1, 2, 5))
                 },
             }
+
+    ##### FLI Zoom
+
+    def set_centering_manual(self, x, y):
+        print(f'Centering manually on ({x}, {y}) (virtually)')
+
+    def get_centering_validate(self):
+        print(f'Validated manual centering (virtually)')
 
     ##### Loop controls
 
@@ -802,6 +898,11 @@ class MainBackend(FakeSHMFPSBackend):
     def get_plc_laser_init(self):
         print(f'Init Laser (virtually)')
 
+    def get_plc_lamps_off(self):
+        self.internal_state['tungsten_state'] = TungstenState.OFF
+        self.internal_state['laser_state'] = LaserState.OFF
+        print(f'Lamps off (virtually)')
+
     def set_plc_filterwheel_filter(self, filter):
         self.internal_state[
             'filterwheel_filter_position'] = config.FilterWheel.position_list.index(
@@ -884,19 +985,27 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state[state_key] = PLCStatus.STANDING
         self.internal_state[position_key] = position
 
-    def set_fli_image(self, exposure_time):
-        print(f'Started FLI exposure of {exposure_time} (virtually)')
+    def set_fli_image(self, exposure_time, frames):
+        print(
+            f'Started FLI {frames} exposure(s) of {exposure_time} s (virtually)'
+        )
 
-        self.internal_state['fli-exposure_time'] = exposure_time
-        self.internal_state['fli-remaining_time'] = exposure_time
+        self.internal_state['fli-frames'] = frames
+        self.internal_state['fli-remaining_frames'] = frames
 
-        while self.internal_state['fli-remaining_time'] > 0:
-            time.sleep(1)
-            if self.internal_state['fli-remaining_time'] > 0:
-                self.internal_state['fli-remaining_time'] -= 1
+        while self.internal_state['fli-remaining_frames'] > 0:
+            self.internal_state['fli-exposure_time'] = exposure_time
+            self.internal_state['fli-remaining_time'] = exposure_time
 
-        if self.internal_state['fli-remaining_time'] < 0:
-            self.internal_state['fli-remaining_time'] = 0
+            while self.internal_state['fli-remaining_time'] > 0:
+                time.sleep(1)
+                if self.internal_state['fli-remaining_time'] > 0:
+                    self.internal_state['fli-remaining_time'] -= 1
+
+            if self.internal_state['fli-remaining_time'] < 0:
+                self.internal_state['fli-remaining_time'] = 0
+
+            self.internal_state['fli-remaining_frames'] -= 1
 
     def get_fli_cancel(self):
         self.internal_state['fli-remaining_time'] = 0
@@ -951,7 +1060,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### DM channels
 
-    def reset_dm(self, dm_number):
+    def set_channels_resetall(self, dm_number):
         if dm_number == config.AO.DM_loop_number:
             for i in range(12):
                 self.internal_state[
@@ -965,7 +1074,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         print(f'Resetted DM {dm_number} (virtually)')
 
-    def reset_channel(self, dm_number, channel):
+    def set_channels_reset(self, dm_number, channel):
         if dm_number == config.AO.DM_loop_number:
             self.internal_state[
                 f'dm01disp{channel:02d}'] = zernike.generate_pattern([0],
@@ -979,13 +1088,22 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### DM & TTM control
 
-    def set_dm_to(self, array):
+    def set_dm_pattern(self, array):
         self.internal_state[config.Streams.DM_USER_CONTROLLED] = array
         print(f'Set DM to {array} (virtually)')
 
-    def set_ttm_to(self, array):
+    def set_ttm_pattern(self, array):
         self.internal_state[config.Streams.TTM_USER_CONTROLLED] = array
         print(f'Set TTM to {array} (virtually)')
+
+    ##### Focusing
+
+    def get_focus_autofocus(self):
+        print(f'Autofocus launched (virtually)')
+
+    def get_focus_sequence(self):
+        self.internal_state['focusing-step'] = 0
+        print(f'Focus sequence launched (virtually)')
 
     ##### Logs
 

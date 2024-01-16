@@ -8,7 +8,7 @@ from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
                        plc_utils, shutter, temperature_control, tungsten)
-from kalao.sequencer import centering
+from kalao.sequencer import centering, focusing
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
@@ -62,17 +62,16 @@ class SHMFPSBackend(AbstractBackend):
 
         data[stream_name]['cnt0'] = stream.IMAGE.md.cnt0,
 
-    def _update_param(self, data, fps_name, param_name, fps_missing=None):
+    def _update_param(self, data, fps_name, param_name):
         if fps_name not in data:
             data[fps_name] = {}
 
         fps = toolbox.open_fps_once(fps_name, self.streams_and_fps_cache)
 
         if fps is None:
-            if fps_missing is not None:
-                data[fps_name][param_name] = fps_missing
-        else:
-            data[fps_name][param_name] = fps.get_param(param_name)
+            return
+
+        data[fps_name][param_name] = fps.get_param(param_name)
 
     def _update_dict(self, data, key, dict):
         if key not in data:
@@ -90,12 +89,30 @@ class SHMFPSBackend(AbstractBackend):
         fits_file = Path(fits_file)
         key = fits_file.stem
 
+        if not fits_file.exists():
+            return
+
         data[key] = {
             'mtime':
                 datetime.fromtimestamp(fits_file.stat().st_mtime,
                                        tz=timezone.utc),
             'data':
                 fits.getdata(fits_file),
+        }
+
+    def _update_fits_full(self, data, fits_file):
+        fits_file = Path(fits_file)
+        key = fits_file.stem
+
+        if not fits_file.exists():
+            return
+
+        data[key] = {
+            'mtime':
+                datetime.fromtimestamp(fits_file.stat().st_mtime,
+                                       tz=timezone.utc),
+            'hdul':
+                fits.open(fits_file)
         }
 
 
@@ -171,7 +188,8 @@ class MainBackend(SHMFPSBackend):
 
         self._update_db(
             self.data, 'obs',
-            database.get('obs', ['sequencer_status', 'tracking_status']))
+            database.get('obs',
+                         ['sequencer_status', 'tracking_manual_centering']))
 
         return self.data
 
@@ -206,6 +224,13 @@ class MainBackend(SHMFPSBackend):
                                 f'dm{dm_number:02d}disp{i:02d}')
 
         return self.dmdisp[dm_number]
+
+    @emit('focus_updated')
+    @timeit
+    def get_focus(self):
+        self._update_fits_full(self.focus, '/tmp/focus_sequence.fits')
+
+        return self.focus
 
     def plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
                    obs_keys):
@@ -264,6 +289,14 @@ class MainBackend(SHMFPSBackend):
         self._update_stream(data, f'aol{loop}_DMmodes')
 
         return data
+
+    ##### FLI Zoom
+
+    def set_centering_manual(self, x, y):
+        centering.manual_centering(x, y)
+
+    def get_centering_validate(self):
+        centering.validate_manual_centering()
 
     ##### Loop controls
 
@@ -367,6 +400,9 @@ class MainBackend(SHMFPSBackend):
     def get_plc_laser_init(self):
         laser.init(force_init=True)
 
+    def get_plc_lamps_off(self):
+        plc_utils.lamps_off()
+
     def set_plc_filterwheel_filter(self, filter):
         filterwheel.set_filter(filter)
 
@@ -409,8 +445,11 @@ class MainBackend(SHMFPSBackend):
         else:
             temperature_control.heater_off()
 
-    def set_fli_image(self, exposure_time):
-        camera.take_frame(exposure_time)
+    def set_fli_image(self, exposure_time, frames):
+        if frames == 1:
+            camera.take_frame(exposure_time)
+        else:
+            camera.take_cube(exposure_time, frames)
 
     def get_fli_cancel(self):
         camera.cancel()
@@ -450,10 +489,10 @@ class MainBackend(SHMFPSBackend):
 
     ##### DM channels
 
-    def reset_dm(self, dm_number):
+    def set_channels_resetall(self, dm_number):
         aocontrol.reset_dm(dm_number)
 
-    def reset_channel(self, dm_number, channel):
+    def set_channels_reset(self, dm_number, channel):
         aocontrol.reset_channel(dm_number, channel)
 
     ##### DM & TTM control
@@ -469,6 +508,14 @@ class MainBackend(SHMFPSBackend):
                                           self.streams_and_fps_cache)
         if stream is not None:
             stream.set_data(array, True)
+
+    ##### Focusing
+
+    def get_focus_autofocus(self):
+        focusing.autofocus()
+
+    def get_focus_sequence(self):
+        focusing.focus_sequence()
 
     ##### Logs
 

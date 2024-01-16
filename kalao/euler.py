@@ -41,9 +41,10 @@ def star_coord():
 
     # TODO verify star_ra and star_dec validity
 
-    c = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree, frame='icrs')
+    coord = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree,
+                     frame='icrs')
 
-    return c
+    return coord
 
 
 def telescope_coord_altaz():
@@ -60,5 +61,12 @@ def telescope_zenith_angle():
     return 90 - telescope_coord_altaz().alt.deg
 
 
+def telescope_future_zenith_angle(coord):
+    time = Time.now()
+    altaz_frame = AltAz(location=observing_location(), obstime=time)
+
+    return 90 - coord.transform_to(altaz_frame).alt.deg
+
+
 def telescope_tracking():
-    return database.get_last_value('obs', 'tracking_status')
+    return etcs.get_tracking()

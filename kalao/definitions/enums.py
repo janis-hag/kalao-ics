@@ -10,6 +10,16 @@ class StrEnum(str, Enum):
         return self.value
 
 
+class ObservationType(StrEnum):
+    DARK = 'K_DARK'
+    SKY_FLAT = 'K_SKYFLT'
+    LAMP_FLAT = 'K_LMPFLT'
+    OBJECT = 'K_TRGOBS'
+    FOCUS = 'K_FOCUS'
+    TECHNICAL = 'K_TECH'
+    CENTERING = 'K_TECH'
+
+
 class LogsOutputType(StrEnum):
     RAW = 'RAW'
     JSON = 'JSON'
@@ -41,24 +51,19 @@ class LoopStatus(Flag):
     ALL_LOOPS_ON = DM_LOOP_ON | TTM_LOOP_ON
 
 
-class TrackingStatus(StrEnum):
-    IDLE = 'IDLE'
-    POINTING = 'POINTING'
-    CENTERING = 'CENTERING'
-    FOCUSING = 'FOCUSING'
-    TRACKING = 'TRACKING'
-
-
 class SequencerStatus(StrEnum):
     ERROR = 'ERROR'
+    OFF = 'OFF'
     INITIALISING = 'INITIALISING'
-    SETUP = 'SETUP'
     WAITING = 'WAITING'
+    SETUP = 'SETUP'
     WAITLAMP = 'WAITLAMP'
     BUSY = 'BUSY'
     EXP = 'EXP'
+    CENTERING = 'CENTERING'
+    FOCUSING = 'FOCUSING'
+    DARKS = 'DARKS'
     ABORTING = 'ABORTING'
-    OFF = 'OFF'
 
 
 class IPPowerStatus(IntEnum):

@@ -4,7 +4,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from kalao import database, euler, logger
+from kalao import logger
 
 import requests
 import requests.exceptions
@@ -17,6 +17,35 @@ import config
 # curl --header "Content-Type: application/json" --header "Authorization: ETCS_API_TOKEN_2023" http://10.10.132.102:10002/axis/status | jq
 
 
+def get_tracking():
+    ret, resp = _send_request('/tracking/status')
+
+    if ret == ReturnCode.ETCS_OK:
+        return resp['tracking']['b_trackingOn']
+    else:
+        return False
+
+
+def get_altaz():
+    ret, resp = _send_request('/axis/status')
+
+    if ret == ReturnCode.ETCS_OK:
+        # TODO: check homed?
+        if resp['homing']['azi']['b_homed']:
+            azimut = resp['positions']['azi']
+        else:
+            azimut = np.nan
+
+        if resp['homing']['ele']['b_homed']:
+            altitude = resp['positions']['ele']
+        else:
+            altitude = np.nan
+
+        return altitude, azimut
+    else:
+        return np.nan, np.nan
+
+
 def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec, wait=True):
     """
     Send altitude azimuth offset to ETCS telescope server.
@@ -26,15 +55,14 @@ def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec, wait=True):
     :return:
     """
 
-    logger.info('etcs',
-                f'Sending {delta_az_arcsec} and {delta_alt_arcsec} offsets')
+    logger.info(
+        'etcs',
+        f'Sending offsets of {delta_alt_arcsec}" in altitude and {delta_az_arcsec}" in azimut'
+    )
 
     params = {'az_arcsec': delta_az_arcsec, 'el_arcsec': delta_alt_arcsec}
 
     ret, resp = _send_request('tracking/offset', params)
-
-    # Offsets are corrections to pointing error, not actual change of the center of the field
-    # _update_db_ra_dec_offsets(delta_alt_arcsec, delta_az_arcsec)
 
     if wait:
         time.sleep(2)
@@ -46,8 +74,6 @@ def get_focus():
     ret, resp = _send_request('/m2/status')
 
     if ret == ReturnCode.ETCS_OK:
-        logger.info('etcs', f'Received focus value {resp["z"]} µm')
-
         return resp['z']
     else:
         return np.nan
@@ -66,7 +92,7 @@ def set_focus(position):
     #     logger.error('etcs', f'set_focus value out of bounds: {new_position}')
     #     return -1
 
-    logger.info('etcs', f'Sending focus {position} µm')
+    logger.info('etcs', f'Moving focus position to {position} µm')
 
     params = {"position": position}
 
@@ -80,9 +106,9 @@ def get_tube_temps():
                         header=0).iloc[-1]
 
     return {
-        'tunix': temps.tunix,
-        'temttb': temps.temttb,
-        'temtth': temps.temtth,
+        'tunix': int(temps.tunix),
+        'temttb': float(temps.temttb),
+        'temtth': float(temps.temtth),
     }
 
 
@@ -100,20 +126,6 @@ def set_m3_rot(position):
     ret, resp = _send_request('/m3/position/rot', params)
 
     return 0
-
-
-def get_altaz():
-    ret, resp = _send_request('/axis/status')
-
-    if ret == ReturnCode.ETCS_OK:
-        # TODO: check homed?
-
-        altitude = resp['positions']['ele']
-        azimut = resp['positions']['azi']
-        # logger.info('etcs', f'Received ')
-        return altitude, azimut
-    else:
-        return np.nan, np.nan
 
 
 def _send_request(request_path, params={}):

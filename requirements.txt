@@ -11,7 +11,7 @@ pytz
 PyYAML
 requests
 schedule
-unidecode
+Unidecode
 
 # Tmux
 libtmux

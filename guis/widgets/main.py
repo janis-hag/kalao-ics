@@ -80,11 +80,6 @@ class MainWidget(KWidget, BackendDataMixin):
         if sequencer_status_v is not None:
             self.sequencer_lineedit.setText(sequencer_status_v)
 
-        tracking_status_v, tracking_status_t = self.consume_db(
-            data, 'obs', 'tracking_status')
-        if tracking_status_v is not None:
-            self.tracking_lineedit.setText(tracking_status_v)
-
         ### AO
 
         loopON = self.consume_param(data, config.FPS.DMLOOP, 'loopON')

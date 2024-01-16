@@ -23,6 +23,7 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     axis_unit = ' px'
     axis_precision = 0
 
+    saturation = np.nan
     slope_x = np.nan
     slope_y = np.nan
     residual = np.nan
@@ -51,16 +52,8 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         if img is not None:
             img = np.ma.masked_array(img, mask=self.mask, fill_value=np.nan)
 
-            saturation = max(img.max() / self.stream_info['max'],
-                             img.min() / self.stream_info['min'])
-            if saturation >= 1:
-                self.saturation_label.setText('Saturated !')
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.RED.name()};')
-            else:
-                self.saturation_label.updateText(saturation=saturation * 100)
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.BLACK.name()};')
+            self.saturation = max(img.max() / self.stream_info['max'],
+                                  img.min() / self.stream_info['min'])
 
             img_min, img_max = self.compute_min_max(img)
 
@@ -89,9 +82,16 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.residual_label.updateText(
             residual=self.residual * self.data_scaling, unit=self.data_unit)
 
+        if self.saturation >= 1:
+            self.saturation_label.setText('Saturated !')
+            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+        else:
+            self.saturation_label.updateText(saturation=self.saturation * 100)
+            self.saturation_label.setStyleSheet('')
+
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.update_spinboxes_unit(' asec', config.WFS.plate_scale, 2)
+            self.update_spinboxes_unit('"', config.WFS.plate_scale, 2)
         else:
             self.update_spinboxes_unit(' px', 1, 2)
 

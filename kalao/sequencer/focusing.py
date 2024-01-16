@@ -9,30 +9,28 @@ from astropy.io import fits
 from kalao import database, logger
 from kalao.fli import camera
 from kalao.interfaces import etcs
+from kalao.sequencer.seq_context import with_sequencer_status
 from kalao.utils import file_handling, starfinder
+
+from kalao.definitions.enums import ObservationType, SequencerStatus
 
 import config
 
 
+@with_sequencer_status(SequencerStatus.FOCUSING)
 def focus_sequence(steps=config.Focusing.steps,
                    step_size=config.Focusing.step_size,
-                   dit=config.Focusing.dit, sequencer_arguments=None):
+                   dit=config.Focusing.dit, window_size=80, abort_queue=None):
     """
     Starts a sequence to find best telescope M2 focus position.
 
     TODO normalise flux by integration time and adapt focusing_dit in case of saturation
-    TODO handle abort of sequence
 
     :param sequencer_arguments:
     :param steps: number of points to take for in the sequence
     :param dit: integration time for each image
     :return:
     """
-
-    if sequencer_arguments is None:
-        q = None
-    else:
-        q = sequencer_arguments.get('q')
 
     # TODO: dit optimization
 
@@ -42,60 +40,120 @@ def focus_sequence(steps=config.Focusing.steps,
 
     focus_sequence = np.linspace(focus_start, focus_stop, steps)
 
-    data = pd.DataFrame({'focus': focus_sequence},
-                        columns=['focus', 'x', 'y', 'peak', 'fwhm'])
+    data = pd.DataFrame(columns=['focus', 'x', 'y', 'peak', 'fwhm'])
 
-    for step, focus in enumerate(focus_sequence):
-        # Check if an abort was requested
-        if q is not None and not q.empty():
-            q.get()
+    with open('/tmp/focus_sequence.fits',
+              'w+b') as file, fits.open(file, 'update') as hdul:
+        hdul.append(fits.PrimaryHDU())
+        hdul.flush()
+
+        for step, focus in enumerate(focus_sequence):
+            # Check if an abort was requested
+            if abort_queue is not None and not abort_queue.empty():
+                logger.info('focusing', 'Focus sequence aborted on request')
+                hdul[0].header.set('HIERARCH FOCUS SUCCESS', False,
+                                   'Abort requested')
+                hdul.flush()
+                return -1
+
+            etcs.set_focus(focus)
+
+            filepath = camera.take_image(ObservationType.FOCUS, dit=dit)
+
+            file_handling.add_comment(
+                filepath, f'Focus sequence {step+1}/{steps}: focus={focus}µm')
+
+            img = fits.getdata(filepath)
+
+            x_star, y_star, peak, fwhm = starfinder.find_star(img)
+
+            if np.isnan([x_star, y_star, peak, fwhm]).any():
+                logger.error('focusing',
+                             'Focus sequence aborted, star not found')
+                hdul[0].header.set('HIERARCH FOCUS SUCCESS', False,
+                                   'Star not found')
+                hdul.flush()
+                return -1
+
+            data.loc[step] = {
+                'focus': focus,
+                'x': x_star,
+                'y': y_star,
+                'peak': peak,
+                'fwhm': fwhm
+            }
+
+            img_cut = img[y_star - window_size//2:y_star + window_size//2,
+                          x_star - window_size//2:x_star + window_size//2]
+
+            hdu = fits.ImageHDU(img_cut, name=f'FOCUS{step+1}')
+            hdu.header.set('HIERARCH FOCUS M2 POSITION', focus, '[um]')
+            hdu.header.set('HIERARCH FOCUS STAR X', x_star, '[px]')
+            hdu.header.set('HIERARCH FOCUS STAR Y', y_star, '[px]')
+            hdu.header.set('HIERARCH FOCUS STAR PEAK', peak, '[ADU]')
+            hdu.header.set('HIERARCH FOCUS STAR FWHM', fwhm, '[px]')
+            hdu.header.set('HIERARCH FOCUS PATH', filepath, '')
+            hdul.append(hdu)
+
+            if step >= 2:
+                x = data['focus'].to_numpy()
+                y = data['fwhm'].to_numpy()
+
+                fit = np.polynomial.polynomial.Polynomial.fit(x, y, 2)
+                c, b, a = fit.convert().coef
+
+                hdul[0].header.set('HIERARCH FOCUS FIT QUAD', a,
+                                   '[1/um] Fit quadratic term')
+                hdul[0].header.set('HIERARCH FOCUS FIT LIN', b,
+                                   '[-] Fit linear term')
+                hdul[0].header.set('HIERARCH FOCUS FIT CONST', c,
+                                   '[um] Fit constant term')
+
+            hdul.flush()
+
+            logger.info(
+                'focusing',
+                f'Focus sequence {step+1}/{steps}: focus={focus}µm, x={x_star}px, y={y_star}px, peak={peak}ADU, FWHM={fwhm}px'
+            )
+
+        idxmin = data['fwhm'].idxmin()
+
+        if idxmin == 0 or idxmin == len(focus_sequence):
+            logger.error('focusing', 'No minima found during focus sequence')
+
+            best_focus = data['focus'][idxmin]
+            best_fwhm = fit(best_focus)
+
+            hdul[0].header.set('HIERARCH FOCUS BEST M2 POSITION', best_focus,
+                               '[um] Best focus (estimated using fit)')
+            hdul[0].header.set('HIERARCH FOCUS BEST STAR FWHM', best_fwhm,
+                               '[px] Best focus FWHM (estimated using fit)')
+            hdul[0].header.set('HIERARCH FOCUS SUCCESS', False,
+                               'No minima reached')
+            hdul.flush()
+
+            # Set focus to minimum value found anyway
+            etcs.set_focus(best_focus)
+
+            database.store('obs', {
+                'focusing_best': best_focus,
+            })
+
             return -1
 
-        etcs.set_focus(focus)
+        best_focus = -b / (2*a)
+        best_fwhm = fit(best_focus)
 
-        file_path = camera.take_image(dit=dit,
-                                      sequencer_arguments=sequencer_arguments)
+        logger.info('focusing', f'Best focus found at {best_focus} µm')
 
-        file_handling.add_comment(
-            file_path, f'Focus sequence {step+1}/{steps}: focus={focus}µm')
+        hdul[0].header.set('HIERARCH FOCUS BEST M2 POSITION', best_focus,
+                           '[um] Best focus (estimated using fit)')
+        hdul[0].header.set('HIERARCH FOCUS BEST STAR FWHM', best_fwhm,
+                           '[px] Best focus FWHM (estimated using fit)')
+        hdul[0].header.set('HIERARCH FOCUS SUCCESS', True, '')
+        hdul.flush()
 
-        image = fits.getdata(file_path)
-
-        x_star, y_star, peak, fwhm = starfinder.find_star(image)
-
-        data.iloc[step] = {
-            'focus': focus,
-            'x': x_star,
-            'y': y_star,
-            'peak': peak,
-            'fwhm': fwhm
-        }
-
-        logger.info(
-            'focusing',
-            f'Focus sequence {step+1}/{steps}: focus={focus}µm, x={x_star}px, y={y_star}px, peak={peak}ADU, FWHM={fwhm}px'
-        )
-
-    data = data.apply(pd.to_numeric)
-
-    idxmin = data['fwhm'].idxmin()
-
-    if idxmin == 0 or idxmin == len(focus_sequence):
-        logger.error('focusing', 'No minima found during focus sequence')
-        return -1
-
-    x = data['focus'].to_numpy()
-    y = data['fwhm'].to_numpy()
-
-    fit = np.polynomial.polynomial.Polynomial.fit(x, y, 2)
-    a, b, c = fit.coef
-
-    best_focus = -b / 2 * a
-    best_fwhm = fit(x)
-
-    logger.info('focusing', f'Best focus found at {best_focus} µm')
-
-    etcs.set_focus(best_focus)
+        etcs.set_focus(best_focus)
 
     # Update autofocus
 
@@ -132,11 +190,17 @@ def autofocus():
     f0 = database.get_last('obs', 'focusing_f0')
     f1 = database.get_last('obs', 'focusing_f1')
 
-    if f0 is None:
+    if f0 == {} or (datetime.now(timezone.utc) - f0['timestamp']
+                    ).total_seconds() > config.Focusing.autofocus_max_age:
         f0 = config.Focusing.autofocus_f0
+    else:
+        f0 = f0['value']
 
-    if f1 is None:
+    if f1 == {} or (datetime.now(timezone.utc) - f0['timestamp']
+                    ).total_seconds() > config.Focusing.autofocus_max_age:
         f1 = config.Focusing.autofocus_f1
+    else:
+        f1 = f1['value']
 
     focus = f0 + f1 * (temttb-1.2+temtth) / 2
 
@@ -150,19 +214,3 @@ def update_autofocus_model(focus, temttb, temtth):
     f0 = focus - f1 * (temttb-1.2+temtth) / 2
 
     return f0, f1
-
-
-def get_latest_fo_delta():
-
-    fo_delta_record = database.get_last('obs', 'focusing_fo_delta')
-
-    if fo_delta_record.get('value') is None:
-        return None
-
-    fo_delta_age = (datetime.now(timezone.utc) -
-                    fo_delta_record['timestamp']).total_seconds()
-
-    if fo_delta_age > 12 * 3600:
-        return None
-    else:
-        return fo_delta_record['value']

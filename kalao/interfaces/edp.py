@@ -35,16 +35,15 @@ def kalao_status():
         # If the status is not set, assume that the sequencer is down
         status_string = '|status|ERROR|0|DOWN'
     elif sequencer_status_value == SequencerStatus.WAITING:
-        status_string = f'|status|{sequencer_status_value}|path|{_last_filepath_archived()}'
+        status_string = f'|status|WAITING|path|{_last_filepath_archived()}'
     elif sequencer_status_value == SequencerStatus.ERROR:
-        status_string = f'|status|{sequencer_status_value}'
+        status_string = f'|status|ERROR'
     elif sequencer_status_value == SequencerStatus.WAITLAMP:
         status_string = f'|status|BUSY|{elapsed_time(sequencer_status):.0f}'
     elif sequencer_status_value == SequencerStatus.EXP:
         texp = database.get_last_value('obs', 'fli_exposure_time')
         status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{texp:.0f}'
     else:
-        #  TODO get alt/az and focus offset from cacao.telemetry and add to string
         status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{sequencer_status_value}'
 
     return status_string

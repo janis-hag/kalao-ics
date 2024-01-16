@@ -4,6 +4,7 @@
 # EUL PD = 1.2m
 # TTM PD = 20e-3 m
 # DM  PD = 4.4e-3 m
+# WFS PD = 2.64e-3 m
 #
 # EUL WFNO = 11.9849
 # WFS WFNO = 7.09899 (for ENPD = 1.2 m, 78.0889 for ENPD = 0.109091 m)
@@ -26,7 +27,7 @@ from numpy.polynomial import Polynomial
 
 from kalao.utils import ktools
 
-from kalao.definitions.enums import PLCStatus, TrackingStatus
+from kalao.definitions.enums import PLCStatus
 
 kalao_ics_path = Path(__file__).absolute().parent
 epsilon = 1e-12
@@ -184,10 +185,24 @@ class WFS:
     centering_timeout = 30  # s
     centering_slope_threshold = 0.005  # px
 
-    flux_map = ktools.get_wfs_flux_map()
+    # Flux at least 90%
+    fully_illuminated_subaps = [
+        4, 5, 6, 13, 14, 15, 16, 17, 18, 19, 23, 24, 25, 26, 27, 28, 29, 30,
+        31, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 51, 52, 53, 54,
+        55, 56, 57, 58, 62, 63, 64, 65, 66, 67, 68, 69, 73, 74, 75, 76, 78, 79,
+        80, 81, 82, 83, 84, 85, 86, 89, 90, 91, 92, 93, 94, 95, 96, 97, 101,
+        102, 103, 104, 105, 106, 107, 114, 115, 116
+    ]
 
-    fully_illuminated_subaps = np.flatnonzero(flux_map > 0.9).tolist()
-    all_illuminated_subaps = np.flatnonzero(flux_map > 0.15).tolist()
+    # Flux at least 15%
+    all_illuminated_subaps = [
+        3, 4, 5, 6, 7, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23, 24, 25, 26, 27,
+        28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+        47, 48, 50, 51, 52, 53, 54, 55, 56, 57, 58, 62, 63, 64, 65, 66, 67, 68,
+        69, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87,
+        89, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106,
+        107, 108, 113, 114, 115, 116, 117
+    ]
 
     spots_file = AO.cacao_workdir / 'setupfiles/hw/KalAO-hwloop-rundir/spots_tel_pupil.txt'
     autogain_file = AO.cacao_workdir / 'setupfiles/hw/KalAO-hwloop-rundir/autogain_params.txt'
@@ -385,7 +400,7 @@ class FITS:
     temporary_data_storage = Path("/home/kalao/data/tmp/")
     file_mask = 0o440
 
-    fits_header_file = kalao_ics_path / "definitions/fits_default_header.yaml"
+    fits_default_header_file = kalao_ics_path / "definitions/fits_default_header.yaml"
     tcs_header_validity = 3600
 
     max_comment_length = 40
@@ -398,6 +413,7 @@ class FITS:
             'DPR CATG': 'CALIB',
             'DPR TYPE': 'DARK',
             'PROG ID': '199',
+            'OBS TARGET NAME': 'DARK'
         },
         'K_SKYFLT': {
             'DPR CATG': 'CALIB',
@@ -408,6 +424,7 @@ class FITS:
             'DPR CATG': 'CALIB',
             'DPR TYPE': 'FLAT,LAMP',
             'PROG ID': '199',
+            'OBS TARGET NAME': 'LAMP'
         },
         'K_TRGOBS': {
             'DPR CATG': 'SCIENCE',
@@ -419,7 +436,6 @@ class FITS:
             'PROG ID': '199',
         },
         'K_TECH': {
-            'DPR TECH': 'IMAGE',
             'DPR CATG': 'TECHNICAL',
         },
     }
@@ -458,13 +474,19 @@ class Starfinder:
     FWHM = 30  # px
 
 
-class Focusing:
-    steps = 7
-    step_size = 10  # µm
-    dit = 20
+class Centering:
+    automatic_timeout = 30  # s
+    manual_timeout = 300  # s
 
-    autofocus_f0 = 29.772
-    autofocus_f1 = 0.032
+
+class Focusing:
+    steps = 7  # -
+    step_size = 25  # µm
+    dit = 20  # s
+
+    autofocus_f0 = 29772  # µm
+    autofocus_f1 = 32  # - (µm/µm)
+    autofocus_max_age = 3600  # s
 
 
 class Euler:
@@ -596,12 +618,6 @@ class GUI:
         'OPEN': 1,
         'UP': 1,
 
-        # Tracking status
-        TrackingStatus.IDLE: 0,
-        TrackingStatus.POINTING: 1,
-        TrackingStatus.CENTERING: 2,
-        TrackingStatus.TRACKING: 3,
-
         # PLC status
         PLCStatus.NOT_ENABLED: -1,
         PLCStatus.NOT_INITIALISED: -1,
@@ -620,6 +636,7 @@ class GUI:
     refreshrate_streams = 10  # /s
     refreshrate_data = 1  # /s
     refreshrate_logs = 1  # /s
+    refreshrate_focus = 1  # /s
     refreshrate_dbs = 1 / min(Database.monitoring_update_interval,
                               Database.telemetry_update_interval)  # /s
 

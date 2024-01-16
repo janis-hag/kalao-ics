@@ -128,11 +128,11 @@ def get_dm_flux_map(upsampled=1, upsampling=4, radius_out_factor=1,
                     radius_in_factor=1):
     size = 12 * upsampled * upsampling
 
-    radius_out = size * 5 / 12 * radius_out_factor  # Pupil radius in px on DM
+    radius_out = 0.5 * size * 4.4 / 4.8 * radius_out_factor  # Pupil radius in px on DM
     radius_in = radius_out * 336.4 / 1200 * radius_in_factor
 
-    xx, yy = np.mgrid[:size, :size]
-    circle = (xx - size/2 + 0.5)**2 + (yy - size/2 + 0.5)**2
+    y, x = np.mgrid[:size, :size]
+    circle = (x - size/2 + 0.5)**2 + (y - size/2 + 0.5)**2
     pupil = np.logical_and(circle <= radius_out**2, circle >= radius_in**2)
     flux = block_reduce(pupil, upsampling, np.mean)
 
@@ -140,24 +140,22 @@ def get_dm_flux_map(upsampled=1, upsampling=4, radius_out_factor=1,
 
 
 def get_wfs_flux_map(upsampling=4, radius_out_factor=1, radius_in_factor=1):
-    size = 64 * upsampling
+    size = 128 * upsampling
 
-    radius_out = size * 25 / 64 * radius_out_factor  # Pupil radius in px on WFS
+    radius_out = 0.5 * size * 55 / 64 * radius_out_factor  # Pupil radius in px on WFS
     radius_in = radius_out * 336.4 / 1200 * radius_in_factor
 
-    xx, yy = np.mgrid[:size, :size]
-    circle = (xx - size/2 + 0.5)**2 + (yy - size/2 + 0.5)**2
+    y, x = np.mgrid[:size, :size]
+    circle = (x - size/2 + 0.5)**2 + (y - size/2 + 0.5)**2
     pupil = np.logical_and(circle <= radius_out**2, circle >= radius_in**2)
     pupil = block_reduce(pupil, upsampling, np.mean)
 
-    _, subapertures = get_roi_and_subapertures(pupil)
-
     flux = np.zeros((11, 11))
 
-    for i, subap in enumerate(subapertures):
-        j, k = get_subaperture_2d(i)
-
-        flux[j, k] = np.mean(subap)
+    for i in range(11):
+        for j in range(11):
+            subap = pupil[9 + i*10:9 + (i+1) * 10, 9 + j*10:9 + (j+1) * 10]
+            flux[i, j] = np.mean(subap)
 
     return flux
 
@@ -174,11 +172,18 @@ def wfs_illumination_fraction(slopes_flux, threshold, subaps_list):
     return illuminated_subaps / len(subaps_list)
 
 
-def subap_at_px(x, y):
+def subaperture_at_px(x, y):
     if (x+1) % 5 == 0 or (y+1) % 5 == 0:
         return None
     else:
         return get_subaperture_1d((y-5) // 5, (x-5) // 5)
+
+
+def actuator_at_px(x, y):
+    if (x-4) % 5 == 0 and (y-4) % 5 == 0:
+        return get_actuator_1d((y-4) // 5, (x-4) // 5)
+    else:
+        return None
 
 
 def generate_slopes_mask_from_subaps(masked_subaps, shape=(11, 22)):
@@ -208,7 +213,7 @@ if __name__ == "__main__":
     for i in range(121):
         x, y = get_subaperture_2d(i)
         i_ = get_subaperture_1d(x, y)
-        print(i, (x, y), i_)
+        print(f'Subaperture {i:>3d} = ({x:>2d}, {y:>2d}) = {i_:>3d}')
 
     print()
 
@@ -216,14 +221,16 @@ if __name__ == "__main__":
     for i in range(140):
         x, y = get_actuator_2d(i)
         i_ = get_actuator_1d(x, y)
-        print(i, (x, y), i_)
+        print(f'Actuator {i:>3d} = ({x:>2d}, {y:>2d}) = {i_:>3d}')
 
     plt.figure()
-    plt.imshow(get_wfs_flux_map())
+    plt.imshow(get_wfs_flux_map(upsampling=16))
     plt.title("WFS flux map")
     plt.colorbar()
 
     plt.figure()
-    plt.imshow(get_dm_flux_map())
+    plt.imshow(get_dm_flux_map(upsampling=16))
     plt.title("DM flux map")
     plt.colorbar()
+
+    plt.show()

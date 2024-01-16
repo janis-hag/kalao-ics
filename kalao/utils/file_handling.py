@@ -30,7 +30,8 @@ from kalao.utils import kstring, ktime, starfinder
 import yaml
 from unidecode import unidecode
 
-from kalao.definitions.enums import SequencerStatus, ShutterState
+from kalao.definitions.enums import (ObservationType, SequencerStatus,
+                                     ShutterState)
 
 import config
 
@@ -78,7 +79,7 @@ def create_night_folders():
     return tmp_night_folder, science_night_folder
 
 
-def save_tmp_image(image_path, sequencer_arguments=None):
+def save_tmp_image(image_path, obs_type):
     '''
     Updates the temporary image header and saves into the archive.
 
@@ -94,7 +95,7 @@ def save_tmp_image(image_path, sequencer_arguments=None):
         'tmp_', '')
 
     if image_path.exists() and science_night_folder.exists():
-        update_header(image_path, sequencer_arguments=sequencer_arguments)
+        update_header(image_path, obs_type)
         shutil.move(image_path, target_path_name)
         # TODO Remove write permission
         # target_path_name.chmod(file_mask)
@@ -136,7 +137,7 @@ def update_db_from_telheader():
         return -1
 
 
-def update_header(image_path, sequencer_arguments=None):
+def update_header(image_path, obs_type):
     """
     Updates the image header with values from the observing, monitoring, and telemetry logs.
 
@@ -146,15 +147,11 @@ def update_header(image_path, sequencer_arguments=None):
     """
 
     # Reading the fits definitions
-    header_base = _header_from_yml(config.FITS.fits_header_file)
-    obs_type = ''
+    header_base = _header_from_yml(config.FITS.fits_default_header_file)
 
-    if sequencer_arguments is not None:
-        obs_type = sequencer_arguments.get('type')
-
-        if obs_type in config.FITS.base_header:
-            for k, v in config.FITS.base_header[obs_type].items():
-                header_base.loc[f'HIERARCH ESO {k}', 'value'] = v
+    if obs_type in config.FITS.base_header:
+        for key, value in config.FITS.base_header[obs_type].items():
+            header_base.loc[f'HIERARCH ESO {key}', 'value'] = value
 
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
@@ -184,8 +181,7 @@ def update_header(image_path, sequencer_arguments=None):
             header_telescope,
         ]).query('~index.duplicated(keep="last")')
 
-        header_df = _dynamic_cards_update(header_df, obs_type,
-                                          seq_args=sequencer_arguments)
+        header_df = _dynamic_cards_update(header_df, obs_type)
         header_df = _sort_header(header_df)
         _header_to_fits_header(header_df, fits_header)
 
@@ -204,8 +200,7 @@ def update_header(image_path, sequencer_arguments=None):
 def add_comment(image_path, comment_string):
     with fits.open(image_path, mode='update') as hdul:
         # Change something in hdul.
-        header = hdul[0].header
-        header.comment = comment_string
+        hdul[0].header.add_comment(comment_string)
         hdul.flush()
 
     return 0
@@ -314,7 +309,7 @@ def _header_from_db(collection_name, dt):
                 unit = ''
             else:
                 unit = f'[{unit}] '
-            unit = unit.replace('°', 'deg')
+            unit = unidecode(unit, errors='strict')
 
             max_comment_length = config.FITS.max_comment_length - len(unit)
 
@@ -425,7 +420,7 @@ def _clean_header(header_df):
     return header_df.rename(index=rename_dict)
 
 
-def _dynamic_cards_update(header_df, obs_type, seq_args=None):
+def _dynamic_cards_update(header_df, obs_type):
     date_obs = header_df.loc['DATE-OBS', 'value']
     date_end = header_df.loc['DATE-END', 'value']
 
@@ -494,8 +489,7 @@ def _dynamic_cards_update(header_df, obs_type, seq_args=None):
             'comment'] = f'[deg] {dec.to_string(unit=u.deg, sep=":", precision=1, pad=True)} DEC (J2000) pointing'
         header_df.loc['DEC', 'source'] += '+dynamic'
 
-    if seq_args is not None:
-        header_df.loc['HIERARCH ESO TPL ID', 'value'] = seq_args.get('type')
+    header_df.loc['HIERARCH ESO TPL ID', 'value'] = str(obs_type)
 
     return header_df
 
@@ -553,7 +547,7 @@ def directory_summary_df(folder):
     return df
 
 
-def get_exposure_times(folder, exclude_types=['K_DARK']):
+def get_exposure_times(folder, exclude_types=[ObservationType.DARK]):
     """
     Get the list of exposure times in the folder pointed at by filepath. By default, DARK exposure times are ignored.
 

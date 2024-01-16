@@ -1,5 +1,5 @@
 class SequencerException(Exception):
-    """Generic Sequencer error."""
+    """Generic sequencer error."""
 
 
 class AbortRequested(SequencerException):
@@ -88,3 +88,14 @@ class ADCConfigureFailed(SequencerException):
 
 class CenteringFailed(SequencerException):
     """Failed to center on target"""
+
+
+##### Centering
+
+
+class CenteringException(SequencerException):
+    """Generic centering error."""
+
+
+class ManualCenteringTimeout(CenteringException):
+    """Timeout during manual centering"""

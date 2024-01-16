@@ -1,8 +1,13 @@
+from pathlib import Path
+
 import numpy as np
+
+from astropy.io import fits
 
 from PySide6.QtCore import QSignalBlocker, Slot
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QDoubleSpinBox, QLabel
+from PySide6.QtWidgets import (QDoubleSpinBox, QErrorMessage, QFileDialog,
+                               QLabel)
 
 from kalao.utils import ktools, zernike
 
@@ -45,7 +50,7 @@ class DMSpinBox(QDoubleSpinBox):
         super().setValue(val)
 
 
-class DMDirectControl(KMainWindow, BackendActionMixin):
+class DMDirectControlWindow(KMainWindow, BackendActionMixin):
     colormap = CoolWarm()
     zernike_indices = list(range(15))
 
@@ -85,6 +90,8 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
 
             self.zernike_spinboxes[i] = spinbox
 
+        self.error_dialog = QErrorMessage(self)
+
         self.show()
         self.center()
         self.setFixedSize(self.size())
@@ -92,14 +99,13 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
     def on_actuator_spinbox_valueChanged(self, d, i):
         self.actuators_spinboxes[i].change_color(d)
 
-        dm = np.zeros((12, 12))
+        pattern = np.zeros((12, 12))
 
-        for k, s in self.actuators_spinboxes.items():
-            x, y = ktools.get_actuator_2d(k)
+        for i, spinbox in self.actuators_spinboxes.items():
+            j, k = ktools.get_actuator_2d(i)
+            pattern[j, k] = spinbox.value()
 
-            dm[x, y] = s.value()
-
-        self.action_send([], self.backend.set_dm_to, dm)
+        self.action_send([], self.backend.set_dm_pattern, pattern)
 
     @Slot(bool)
     def on_reset_button_clicked(self, checked):
@@ -112,29 +118,135 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
 
         self.reset_all_sides_boxes()
 
-        self.action_send([], self.backend.set_dm_to, np.zeros((12, 12)))
+        self.action_send([], self.backend.set_dm_pattern, np.zeros((12, 12)))
+
+    @Slot(bool)
+    def on_load_button_clicked(self, checked):
+        dialog = QFileDialog(self)
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setNameFilter(
+            'All (*.fits *.csv);;Images (*.fits);;Text files (*.csv)')
+        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+
+        try:
+            if dialog.exec():
+                filenames = dialog.selectedFiles()
+
+                if len(filenames) != 1:
+                    self.error_dialog.showMessage(
+                        f'Select only one file (got {len(filenames)}).')
+                    return
+
+                filename = Path(filenames[0])
+
+                if not filename.exists():
+                    self.error_dialog.showMessage('File does not exists.')
+                    return
+
+                if filename.suffix.lower() == '.fits':
+                    img = fits.getdata(filename)
+
+                    if img.shape != (12, 12):
+                        self.error_dialog.showMessage(
+                            f'FITS shape incorrect (expected {(12, 12)}, got {img.shape}).'
+                        )
+                        return
+
+                    self.set_spinboxes_to_pattern(img)
+                    self.action_send([], self.backend.set_dm_pattern, img)
+
+                elif filename.suffix.lower() == '.csv':
+                    data = np.loadtxt(filename)
+
+                    if data.shape != (140, ):
+                        self.error_dialog.showMessage(
+                            f'CSV shape incorrect (expected {(140,)}, got {data.shape}).'
+                        )
+                        return
+
+                    pattern = np.zeros((12, 12))
+                    for i in range(140):
+                        j, k = ktools.get_actuator_2d(i)
+                        pattern[j, k] = data[i]
+
+                    self.set_spinboxes_to_pattern(pattern)
+                    self.action_send([], self.backend.set_dm_pattern, pattern)
+
+                else:
+                    self.error_dialog.showMessage(
+                        f'Unsupported file extension "{filename.suffix}".')
+        except PermissionError:
+            self.error_dialog.showMessage(
+                'Can\'t read file, permission refused.')
+
+    @Slot(bool)
+    def on_save_button_clicked(self, checked):
+        dialog = QFileDialog(self)
+        dialog.setFileMode(QFileDialog.AnyFile)
+        dialog.setNameFilter(
+            'All (*.fits *.csv);;Images (*.fits);;Text files (*.csv)')
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+
+        try:
+            if dialog.exec():
+                filenames = dialog.selectedFiles()
+
+                if len(filenames) != 1:
+                    self.error_dialog.showMessage(
+                        f'Select only one file (got {len(filenames)}).')
+                    return
+
+                filename = Path(filenames[0])
+
+                if filename.suffix.lower() == '.fits':
+                    pattern = np.zeros((12, 12))
+
+                    for i, spinbox in self.actuators_spinboxes.items():
+                        j, k = ktools.get_actuator_2d(i)
+                        pattern[j, k] = spinbox.value()
+
+                    fits.PrimaryHDU(pattern).writeto(filename, overwrite=True)
+
+                elif filename.suffix.lower() == '.csv':
+                    pattern = np.zeros((140, ))
+
+                    for i, spinbox in self.actuators_spinboxes.items():
+                        pattern[i] = spinbox.value()
+
+                    np.savetxt(filename, pattern)
+
+                else:
+                    self.error_dialog.showMessage(
+                        f'Unsupported file extension "{filename.suffix}".')
+        except PermissionError:
+            self.error_dialog.showMessage(
+                'Can\'t write file, permission refused.')
+
+    def set_spinboxes_to_pattern(self, pattern):
+        for i, spinbox in self.actuators_spinboxes.items():
+            x, y = ktools.get_actuator_2d(i)
+
+            with QSignalBlocker(spinbox):
+                spinbox.setValue(pattern[x, y])
 
     @Slot(int)
     def on_all_slider_valueChanged(self, value):
         self.reset_all_sides_boxes()
 
-        for s in self.actuators_spinboxes.values():
-            with QSignalBlocker(s):
-                s.setValue(value / 100)
+        pattern = np.ones((12, 12)) * value / 100
 
-        dm = np.ones((12, 12)) * value / 100
-
-        self.action_send([], self.backend.set_dm_to, dm)
+        self.set_spinboxes_to_pattern(pattern)
+        self.action_send([], self.backend.set_dm_pattern, pattern)
 
     def on_zernike_spinbox_valueChanged(self, d):
         self.compute_all()
 
     @Slot(float)
-    def on_checkboard_amplitude_spinbox_valueChanged(self, d):
+    def on_checkerboard_amplitude_spinbox_valueChanged(self, d):
         self.compute_all()
 
     @Slot(float)
-    def on_checkboard_period_spinbox_valueChanged(self, d):
+    def on_checkerboard_period_spinbox_valueChanged(self, d):
         self.compute_all()
 
     @Slot(float)
@@ -154,11 +266,11 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
             with QSignalBlocker(s):
                 s.setValue(0)
 
-        with QSignalBlocker(self.checkboard_amplitude_spinbox):
-            self.checkboard_amplitude_spinbox.setValue(0)
+        with QSignalBlocker(self.checkerboard_amplitude_spinbox):
+            self.checkerboard_amplitude_spinbox.setValue(0)
 
-        with QSignalBlocker(self.checkboard_period_spinbox):
-            self.checkboard_period_spinbox.setValue(2)
+        with QSignalBlocker(self.checkerboard_period_spinbox):
+            self.checkerboard_period_spinbox.setValue(2)
 
         with QSignalBlocker(self.grating_amplitude_spinbox):
             self.grating_amplitude_spinbox.setValue(0)
@@ -173,16 +285,11 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
         pattern = np.zeros((12, 12))
 
         pattern += self.compute_zernike()
-        pattern += self.compute_checkboard()
+        pattern += self.compute_checkerboard()
         pattern += self.compute_grating()
 
-        for i in range(140):
-            x, y = ktools.get_actuator_2d(i)
-
-            with QSignalBlocker(self.actuators_spinboxes[i]):
-                self.actuators_spinboxes[i].setValue(pattern[x, y])
-
-        self.action_send([], self.backend.set_dm_to, pattern)
+        self.set_spinboxes_to_pattern(pattern)
+        self.action_send([], self.backend.set_dm_pattern, pattern)
 
     def compute_zernike(self):
         coeffs = np.zeros(max(self.zernike_indices) + 1)
@@ -192,9 +299,9 @@ class DMDirectControl(KMainWindow, BackendActionMixin):
 
         return zernike.generate_pattern(coeffs, (12, 12))
 
-    def compute_checkboard(self):
-        amplitude = self.checkboard_amplitude_spinbox.value()
-        period = self.checkboard_period_spinbox.value() // 2
+    def compute_checkerboard(self):
+        amplitude = self.checkerboard_amplitude_spinbox.value()
+        period = self.checkerboard_period_spinbox.value() // 2
 
         pattern = np.zeros((12, 12))
         for i in range(12):

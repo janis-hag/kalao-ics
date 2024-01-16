@@ -24,6 +24,7 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     max_stroke = 1
     stroke_raw = np.nan
     stroke_effective = np.nan
+    saturation = np.nan
 
     #TODO: modify stream_info with stroke_max?
 
@@ -54,17 +55,9 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         if img is not None:
             img_min, img_max = self.compute_min_max(img)
 
-            saturation = max(
+            self.saturation = max(
                 img.max() / self.stream_info['max'],
                 img.min() / self.stream_info['min']) / self.max_stroke
-            if saturation >= 1:
-                self.saturation_label.setText('Saturated !')
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.RED.name()};')
-            else:
-                self.saturation_label.updateText(saturation=saturation * 100)
-                self.saturation_label.setStyleSheet(
-                    f'color: {Color.BLACK.name()};')
 
             self.dm_view.setImage(img, img_min, img_max)
 
@@ -84,6 +77,13 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.stroke_effective_label.updateText(
             stroke_effective=self.stroke_effective * self.data_scaling,
             unit=self.data_unit)
+
+        if self.saturation >= 1:
+            self.saturation_label.setText('Saturated !')
+            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+        else:
+            self.saturation_label.updateText(saturation=self.saturation * 100)
+            self.saturation_label.setStyleSheet('')
 
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:

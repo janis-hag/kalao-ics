@@ -6,7 +6,7 @@ from PySide6.QtCore import QObject, Signal
 
 
 def emit(signal):
-    def emit_(fun):
+    def _emit(fun):
         @wraps(fun)
         def wrapper(self, *args, **kwargs):
             data = fun(self, *args, **kwargs)
@@ -15,7 +15,7 @@ def emit(signal):
 
         return wrapper
 
-    return emit_
+    return _emit
 
 
 def timeit(fun):
@@ -59,3 +59,6 @@ class AbstractBackend(QObject):
 
     dmdisp_updated = Signal(object)
     dmdisp = {}
+
+    focus_updated = Signal(object)
+    focus = {}

@@ -147,7 +147,7 @@ class LogsWidget(KWidget):
 
         self.on_acknowledge_button_clicked(None)
 
-        self.logs_timer = QTimer()
+        self.logs_timer = QTimer(parent=self)
         self.logs_timer.setInterval(int(1000 / config.GUI.refreshrate_logs))
         self.logs_timer.timeout.connect(self.get_logs_new)
         self.logs_timer.start()

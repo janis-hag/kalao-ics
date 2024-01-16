@@ -83,7 +83,11 @@ def send_command(nCommand_value, beck=None):
                        tungsten_nCommand.get_data_type_as_variant_type())))
 
     # Execute
-    core.motor_send_execute(tungsten_bExecute)
+    tungsten_bExecute.set_attribute(
+        ua.AttributeIds.Value,
+        ua.DataValue(
+            ua.Variant(True,
+                       tungsten_bExecute.get_data_type_as_variant_type())))
 
     time.sleep(config.Tungsten.switch_wait)
 
