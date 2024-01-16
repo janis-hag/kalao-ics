@@ -106,6 +106,10 @@ def gop_server():
             finally:
                 socketSeq.close()
 
+            message = "/OK"
+            logger.info('gop', f'Sending acknowledge: {message}')
+            gop.write(message)
+
         elif command == 'TEST':
             message = '/OK'
             logger.info('gop', f'Sending acknowledge: {message}')
