@@ -11,6 +11,7 @@ starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
 import math
 import time
+import warnings
 from datetime import datetime
 
 import numpy as np
@@ -22,6 +23,7 @@ from astropy.io import fits
 from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
 from astropy.time import Time
+from astropy.utils.exceptions import AstropyWarning
 from photutils.detection import DAOStarFinder
 
 from kalao import database, euler
@@ -47,7 +49,9 @@ def find_stars(img, peak_min=100, hw=20, num=math.inf):
     return stars
 
 
-def find_stars_and_bad_pixels(img, peak_min=100, hw=20, num=math.inf):
+def find_stars_and_bad_pixels(img, peak_min=500, hw=20, num=math.inf):
+    img = img.astype(np.float64)
+
     Y, X = np.mgrid[0:img.shape[0], 0:img.shape[1]]
 
     img_filtered = skimage.filters.median(img, skimage.morphology.square(3))
@@ -61,6 +65,7 @@ def find_stars_and_bad_pixels(img, peak_min=100, hw=20, num=math.inf):
 
     threshold = median_filtered + max(6 * stddev_filtered, peak_min)
     stars = skimage.feature.peak_local_max(img_filtered, min_distance=1,
+                                           exclude_border = hw,
                                            threshold_abs=threshold,
                                            num_peaks=num)
 
@@ -68,21 +73,31 @@ def find_stars_and_bad_pixels(img, peak_min=100, hw=20, num=math.inf):
     frame_fit = img - median
 
     stars_fitted = []
-    for star_y, star_x in stars:
-        if [star_y, star_x] in bad_pixels:
-            continue
 
-        gaussian_init = models.Gaussian2D(x_mean=star_x, y_mean=star_y,
-                                          amplitude=frame_fit[star_y, star_x])
-        fitter = fitting.LevMarLSQFitter()
-        gaussian = fitter(
-            gaussian_init, X[star_y - hw:star_y + hw, star_x - hw:star_x + hw],
-            Y[star_y - hw:star_y + hw, star_x - hw:star_x + hw],
-            frame_fit[star_y - hw:star_y + hw, star_x - hw:star_x + hw])
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', AstropyWarning)
 
-        stars_fitted.append((gaussian.x_mean.value, gaussian.y_mean.value,
-                             gaussian.amplitude.value,
-                             np.sqrt(gaussian.x_fwhm * gaussian.y_fwhm)))
+        for star_y, star_x in stars:
+            model_init = models.Gaussian2D(x_mean=star_x, y_mean=star_y,
+                                              amplitude=frame_fit[star_y, star_x])
+            fitter = fitting.LevMarLSQFitter()
+            model = fitter(
+                model_init, X[star_y - hw:star_y + hw, star_x - hw:star_x + hw],
+                Y[star_y - hw:star_y + hw, star_x - hw:star_x + hw],
+                frame_fit[star_y - hw:star_y + hw, star_x - hw:star_x + hw])
+
+            if not star_x - hw <= model.x_mean.value <= star_x + hw:
+                continue
+
+            if not star_y - hw <= model.y_mean.value <= star_y + hw:
+                continue
+
+            if np.sqrt(model.x_fwhm * model.y_fwhm) > 2*hw:
+                continue
+
+            stars_fitted.append((model.x_mean.value, model.y_mean.value,
+                                 model.amplitude.value,
+                                 np.sqrt(model.x_fwhm * model.y_fwhm)))
 
     return stars_fitted, bad_pixels
 
@@ -451,70 +466,87 @@ def fit_2dgaussian(image, xc, yc, bb):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+    import sys
 
-    rng = np.random.default_rng()
+    if len(sys.argv) == 1:
+        rng = np.random.default_rng()
 
-    frame = np.zeros((1024, 1024), dtype=np.float32)
-    Y, X = np.mgrid[0:1024, 0:1024]
+        frame = np.zeros((1024, 1024), dtype=np.float32)
+        Y, X = np.mgrid[0:1024, 0:1024]
 
-    gaussian = models.Gaussian2D()
+        gaussian = models.Gaussian2D()
 
-    # Add stars
-    for i in range(5):
-        x = rng.uniform(50, 1024 - 50)
-        y = rng.uniform(50, 1024 - 50)
-        peak = rng.uniform(100, 3000)
-        stddev = rng.uniform(2, 30)
+        # Add stars
+        for i in range(5):
+            x = rng.uniform(50, 1024 - 50)
+            y = rng.uniform(50, 1024 - 50)
+            peak = rng.uniform(100, 3000)
+            stddev = rng.uniform(2, 30)
 
-        frame += gaussian.evaluate(X, Y, peak, x, y, stddev, stddev, 0)
+            frame += gaussian.evaluate(X, Y, peak, x, y, stddev, stddev, 0)
 
-    frame = rng.poisson(frame).astype(np.float64)
+        frame = rng.poisson(frame).astype(np.float64)
 
-    # Add dead pixels
-    for i in range(10):
-        x = round(rng.uniform(50, 1024 - 50))
-        y = round(rng.uniform(50, 1024 - 50))
+        # Add dead pixels
+        for i in range(10):
+            x = round(rng.uniform(50, 1024 - 50))
+            y = round(rng.uniform(50, 1024 - 50))
 
-        frame[y, x] = 0
+            frame[y, x] = 0
 
-    # Add stuck pixels
-    for i in range(10):
-        x = round(rng.uniform(50, 1024 - 50))
-        y = round(rng.uniform(50, 1024 - 50))
+        # Add stuck pixels
+        for i in range(10):
+            x = round(rng.uniform(50, 1024 - 50))
+            y = round(rng.uniform(50, 1024 - 50))
 
-        frame[y, x] = 65535
+            frame[y, x] = 65535
 
-    # Add hot pixels
-    for i in range(10):
-        x = round(rng.uniform(50, 1024 - 50))
-        y = round(rng.uniform(50, 1024 - 50))
-        v = round(rng.uniform(10, 4000))
+        # Add hot pixels
+        for i in range(10):
+            x = round(rng.uniform(50, 1024 - 50))
+            y = round(rng.uniform(50, 1024 - 50))
+            v = round(rng.uniform(10, 4000))
 
-        frame[y, x] += v
+            frame[y, x] += v
 
-    frame += rng.normal(1000, 20, size=frame.shape)
+        frame += rng.normal(1000, 20, size=frame.shape)
 
-    frame = np.clip(np.rint(frame), 0, 2**16 - 1)
+        frame = np.clip(np.rint(frame), 0, 2**16 - 1).astype(np.uint16)
+        frames = [frame]
+    else:
+        frames = []
+        for i in range(1, len(sys.argv)):
+            frames.append(fits.getdata(sys.argv[i]))
 
-    start = time.monotonic()
-    stars, bad_pixels = find_stars_and_bad_pixels(frame)
-    print(time.monotonic() - start)
+    for i, frame in enumerate(frames):
+        if i+1 < len(sys.argv):
+            title = f'Frame {i} - {sys.argv[i+1]}'
+        else:
+            title =f'Frame {i}'
 
-    frame_nan = frame.copy()
-    frame_nan[bad_pixels] = np.nan
+        print(title)
 
-    plt.figure()
-    plt.imshow(frame, norm='log', vmin=np.nanmin(frame_nan),
-               vmax=np.nanmax(frame_nan))
+        plt.figure()
+        plt.title(title)
 
-    fig = plt.gcf()
-    ax = fig.gca()
+        start = time.monotonic()
+        stars, bad_pixels = find_stars_and_bad_pixels(frame)
+        print('Time to find stars:', time.monotonic() - start)
 
-    for x, y, peak, fwhm in stars:
-        plt.plot(x, y, 'r+')
-        ax.add_patch(
-            plt.Circle((x, y), fwhm / 2, edgecolor='r', facecolor='#ffffff00'))
+        frame_nan = frame.astype(np.float64)
+        frame_nan[bad_pixels] = np.nan
 
-    plt.plot(bad_pixels[:, 1], bad_pixels[:, 0], 'g+')
+        plt.imshow(frame, norm='log') #, vmin=np.nanmin(frame_nan), vmax=np.nanmax(frame_nan))
+
+        fig = plt.gcf()
+        ax = fig.gca()
+
+        for x, y, peak, fwhm in stars:
+            plt.plot(x, y, 'r+')
+            ax.add_patch(
+                plt.Circle((x, y), fwhm / 2, edgecolor='r', facecolor='#ffffff00'))
+
+        plt.plot(bad_pixels[:, 1], bad_pixels[:, 0], 'g+')
 
     plt.show()

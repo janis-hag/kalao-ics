@@ -22,7 +22,7 @@ from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
                        plc_utils, shutter, tungsten)
 from kalao.sequencer import centering, focusing
 from kalao.sequencer.seq_context import with_sequencer_status
-from kalao.utils import file_handling, starfinder
+from kalao.utils import file_handling
 
 from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
                                      LoopStatus, ObservationType, ReturnCode,
@@ -59,12 +59,9 @@ def dark(**seq_args):
     # Check if an abort was requested before taking image
     _check_abort(q)
 
-    filepath = file_handling.generate_image_filepath()
-
-    # Take nbPic image
+    # Take darks
     for _ in range(nbPic):
-        image_path = camera.take_image(ObservationType.DARK, dit=dit,
-                                       filepath=filepath)
+        image_path = camera.take_image(ObservationType.DARK, dit=dit)
 
         if image_path is None:
             raise FLITakeImageFailed
@@ -137,10 +134,7 @@ def tungsten_flat(**seq_args):
 
         dit = config.Tungsten.flat_dit_list[filter_name]
 
-        image_path = file_handling.generate_image_filepath()
-
-        image_path = camera.take_image(ObservationType.LAMP_FLAT, dit=dit,
-                                       filepath=image_path)
+        image_path = camera.take_image(ObservationType.LAMP_FLAT, dit=dit)
 
         if image_path is None:
             raise FLITakeImageFailed
@@ -204,8 +198,7 @@ def sky_flat(**seq_args):
     current_filter = filter_list[0]
     dit_list = config.Tungsten.flat_dit_list
 
-    ref_dit = optimise_dit(5, sequencer_arguments=seq_args,
-                           min_flux=config.Calib.flat_min_flux)
+    ref_dit = optimise_dit(5, min_flux=config.Calib.flat_min_flux)
 
     coef = ref_dit / dit_list[filter_list[0]]
 
@@ -347,10 +340,7 @@ def target_observation(**seq_args):
 
         time.sleep(config.Starfinder.AO_wait_settle)
 
-    image_path = file_handling.generate_image_filepath()
-
-    image_path = camera.take_image(ObservationType.OBJECT, dit=dit,
-                                   filepath=image_path)
+    image_path = camera.take_image(ObservationType.OBJECT, dit=dit)
 
     #Monitor AO and cancel exposure if needed
 
@@ -662,24 +652,25 @@ def optimise_dit(starting_dit, min_flux=config.Starfinder.min_flux,
 
 
 @with_sequencer_status(SequencerStatus.DARKS)
-def generate_night_darks(science_folder=None):
+def generate_night_darks(folder=None):
     """
     Generate the darks needed for the calibration of the night which is assumed to have ended.
     """
 
-    if science_folder is None:
-        _, science_folder = file_handling.create_night_folders()
+    if folder is None:
+        _, folder = file_handling.create_night_folders()
 
-    exp_times = file_handling.get_exposure_times(science_folder)
+    exp_times = file_handling.get_exposure_times(folder)
 
     if len(exp_times) == 0:
-        print(f'WARN: Not generating darks as {science_folder} is empty.')
+        logger.warn('sequencer', f'Not generating darks as {folder} is empty.')
         return 0
     else:
+        logger.info('sequencer', f'Generating {len(exp_times)} darks ({", ".join(str(dit) for dit in [1,3.5,3])})')
         for dit in exp_times:
             for i in range(config.Calib.dark_number):
-                print(dit, i)  #TODO: print sequencer?
-                image_path = camera.take_image(ObservationType.DARK, dit=dit)
+                logger.info('sequencer', f'Generating dark for {dit} s ({i}/{config.Calib.dark_number}')
+                camera.take_image(ObservationType.DARK, dit=dit)
 
     return 0
 

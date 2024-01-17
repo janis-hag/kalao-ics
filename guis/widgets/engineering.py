@@ -67,7 +67,6 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
             self.filterwheel_combobox.setCurrentIndex(-1)
 
-        s = 5
         self.services_widgets = {}
         for i, (key, service) in enumerate(config.Systemd.services.items()):
             label = QLabel(key)
@@ -474,6 +473,11 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          self.backend.get_plc_calibunit_init)
 
     @Slot(bool)
+    def on_calibunit_stop_button_clicked(self, checked):
+        self.action_send(self.calibunit_stop_button,
+                         self.backend.get_plc_calibunit_stop)
+
+    @Slot(bool)
     def on_calibunit_laser_button_clicked(self, checked):
         self.action_send(self.calibunit_laser_button,
                          self.backend.get_plc_calibunit_laser)
@@ -534,6 +538,11 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_adc1_init_button_clicked(self, checked):
         self.action_send(self.adc1_init_button, self.backend.get_plc_adc1_init)
 
+    @Slot(bool)
+    def on_adc1_stop_button_clicked(self, checked):
+        self.action_send(self.adc1_stop_button,
+                         self.backend.get_plc_adc1_stop)
+
     @Slot(float)
     def on_adc2_spinbox_valueChanged(self, d):
         self.action_send(self.adc2_spinbox, self.backend.set_plc_adc_2_angle,
@@ -542,6 +551,11 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     @Slot(bool)
     def on_adc2_init_button_clicked(self, checked):
         self.action_send(self.adc2_init_button, self.backend.get_plc_adc2_init)
+
+    @Slot(bool)
+    def on_adc2_stop_button_clicked(self, checked):
+        self.action_send(self.adc2_stop_button,
+                         self.backend.get_plc_adc2_stop)
 
     @Slot(bool)
     def on_adc_zero_disp_button_clicked(self, checked):

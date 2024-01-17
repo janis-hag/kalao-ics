@@ -302,6 +302,10 @@ class MainBackend(FakeSHMFPSBackend):
                                        illumination=illumination)
 
         self._update_stream(self.fli, config.Streams.FLI, fli_data)
+        self._update_stream_keywords(self.fli, config.Streams.FLI, {
+            'laser': self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP,
+            'timestamp': datetime.now(timezone.utc).timestamp(),
+        })
 
         return self.fli
 
@@ -862,6 +866,9 @@ class MainBackend(FakeSHMFPSBackend):
             'calibunit_position', 'calibunit_state', config.CalibUnit.velocity)
         print(f'Init Calibration Unit (virtually)')
 
+    def get_plc_calibunit_stop(self):
+        print(f'Stopped Calibration Unit (virtually)')
+
     def get_plc_calibunit_laser(self):
         self._fake_motor_move(config.Laser.position, 'calibunit_position',
                               'calibunit_state', config.CalibUnit.velocity)
@@ -925,6 +932,9 @@ class MainBackend(FakeSHMFPSBackend):
                               'adc1_angle', 'adc1_state', config.ADC.velocity)
         print(f'Init ADC1 (virtually)')
 
+    def get_plc_adc1_stop(self):
+        print(f'Stopped ADC1 (virtually)')
+
     def set_plc_adc_2_angle(self, position):
         self._fake_motor_move(position, 'adc2_angle', 'adc2_state',
                               config.ADC.velocity)
@@ -936,6 +946,9 @@ class MainBackend(FakeSHMFPSBackend):
         self._fake_motor_move(config.PLC.initial_pos[config.PLC.Node.ADC2],
                               'adc2_angle', 'adc2_state', config.ADC.velocity)
         print(f'Init ADC2 (virtually)')
+
+    def get_plc_adc2_stop(self):
+        print(f'Stopped ADC2 (virtually)')
 
     def get_plc_adc_zerodisp(self):
         # TODO
@@ -1133,7 +1146,7 @@ class MainBackend(FakeSHMFPSBackend):
         return logs
 
     def _generate_log(self):
-        timestamp = datetime.now().strftime("%y-%m-%d %H:%M:%S")
+        timestamp = datetime.now().strftime('%y-%m-%d %H:%M:%S')
 
         origin = random.choice(self.logs_services)
 

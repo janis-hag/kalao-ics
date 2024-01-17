@@ -373,6 +373,9 @@ class MainBackend(SHMFPSBackend):
     def get_plc_calibunit_init(self):
         calibunit.init(force_init=True)
 
+    def get_plc_calibunit_stop(self):
+        calibunit.stop()
+
     def get_plc_calibunit_laser(self):
         calibunit.move_to_laser_position()
 
@@ -415,11 +418,17 @@ class MainBackend(SHMFPSBackend):
     def get_plc_adc1_init(self):
         adc.init(config.PLC.Node.ADC1, force_init=True)
 
+    def get_plc_adc1_stop(self):
+        adc.stop(config.PLC.Node.ADC1)
+
     def set_plc_adc_2_angle(self, position):
         adc.rotate(config.PLC.Node.ADC2, position)
 
     def get_plc_adc2_init(self):
         adc.init(config.PLC.Node.ADC2, force_init=True)
+
+    def get_plc_adc2_stop(self):
+        adc.stop(config.PLC.Node.ADC2)
 
     def get_plc_adc_zerodisp(self):
         adc.set_zero_disp()
@@ -449,7 +458,7 @@ class MainBackend(SHMFPSBackend):
         if frames == 1:
             camera.take_frame(exposure_time)
         else:
-            camera.take_cube(exposure_time, frames)
+            camera.take_cube(frames, dit=exposure_time)
 
     def get_fli_cancel(self):
         camera.cancel()
@@ -497,13 +506,13 @@ class MainBackend(SHMFPSBackend):
 
     ##### DM & TTM control
 
-    def set_dm_to(self, array):
+    def set_dm_pattern(self, array):
         stream = toolbox.open_stream_once(config.Streams.DM_USER_CONTROLLED,
                                           self.streams_and_fps_cache)
         if stream is not None:
             stream.set_data(array, True)
 
-    def set_ttm_to(self, array):
+    def set_ttm_pattern(self, array):
         stream = toolbox.open_stream_once(config.Streams.TTM_USER_CONTROLLED,
                                           self.streams_and_fps_cache)
         if stream is not None:

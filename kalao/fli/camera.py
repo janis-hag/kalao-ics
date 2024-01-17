@@ -12,6 +12,7 @@ import json
 import math
 import shutil
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -46,7 +47,7 @@ def take_empty(filepath=None):
     return ret
 
 
-def take_frame(dit, filepath=None, nbflushes=None):
+def take_frame(dit=None, filepath=None, nbflushes=None):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
 
@@ -63,7 +64,7 @@ def take_frame(dit, filepath=None, nbflushes=None):
         return None
 
 
-def take_cube(dit, nbframes, filepath=None, nbflushes=None):
+def take_cube(nbframes, dit=None, filepath=None, nbflushes=None):
     if filepath is None:
         filepath = '/tmp/fli_cube.fits'
 
@@ -93,6 +94,7 @@ def _update_fli_stream(img, filepath):
 
         keywords = {
             'laser': flipmirror.get_position() == FlipMirrorPosition.UP,
+            'timestamp': datetime.now(timezone.utc).timestamp(),
         }
 
         for i in range(math.ceil(len(filepath.name) / 16)):
@@ -106,7 +108,7 @@ def _update_fli_stream(img, filepath):
         )
 
 
-def take_image(obs_type, dit=0.05, filepath=None):
+def take_image(obs_type, dit=None, filepath=None):
     """
     :param sequencer_arguments:
     :param dit: Detector integration time to use
@@ -114,7 +116,7 @@ def take_image(obs_type, dit=0.05, filepath=None):
     :return: path to the image
     """
 
-    if dit <= 0.001:
+    if dit is not None and dit < 0.001:
         logger.error(
             'fli',
             f'Abort before exposure started. DIT={dit} below min value 0.001')
@@ -131,7 +133,7 @@ def take_image(obs_type, dit=0.05, filepath=None):
         'sequencer_status': SequencerStatus.EXP,
     })
 
-    img = take_frame(dit, filepath=filepath)
+    img = take_frame(dit=dit, filepath=filepath)
 
     if img is not None:
         database.store('obs', {'fli_temporary_image_path': filepath})
@@ -142,7 +144,7 @@ def take_image(obs_type, dit=0.05, filepath=None):
         return None
 
 
-def increment_image_counter(exptime):
+def increment_image_counter(params):
     """
     Increments the image counter by one
 
@@ -156,10 +158,14 @@ def increment_image_counter(exptime):
     else:
         image_count += 1
 
-    database.store('obs', {
-        'fli_image_count': image_count,
-        'fli_exposure_time': exptime
-    })
+    data = {
+        'fli_image_count': image_count
+    }
+
+    if 'exptime' in params:
+        data['fli_exposure_time'] = params['exptime']
+
+    database.store('obs', data)
 
     return image_count
 
@@ -232,7 +238,7 @@ def _send_request(request_type, params={}):
 
     else:
         if request_type == 'acquire':
-            increment_image_counter(params['exptime'])
+            increment_image_counter(params)
 
         url = f'http://{config.FLI.ip}:{config.FLI.port}/{request_type}'
 

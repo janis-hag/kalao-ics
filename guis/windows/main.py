@@ -169,7 +169,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
 
     def data_updated(self, data):
         self.last_update_label.setText(
-            "Last update: " + datetime.now().strftime("%H:%M:%S %d-%m-%Y"))
+            'Last update: ' + datetime.now().strftime('%H:%M:%S %d-%m-%Y'))
 
     def closeEvent(self, event):
         app = QApplication.instance()

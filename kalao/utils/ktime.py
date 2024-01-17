@@ -47,7 +47,7 @@ def get_night_str(dt=None):
     :return: String object containing the night-date in YYYY-MM-DDD format.
     """
 
-    return get_start_of_night(dt).strftime("%Y-%m-%d")
+    return get_start_of_night(dt).strftime('%Y-%m-%d')
 
 
 def check_time_format(dt):

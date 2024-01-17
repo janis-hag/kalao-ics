@@ -15,7 +15,7 @@ from kalao.definitions.enums import (FlipMirrorPosition, ObservationType,
 from kalao.definitions.exceptions import (DMNotOn, FilterWheelNotInPosition,
                                           FlipMirrorNotUp,
                                           ManualCenteringTimeout,
-                                          ShutterNotClosed, WFSNotOn)
+                                          ShutterNotClosed, WFSNotOn, FLITakeImageFailed)
 
 import config
 
@@ -250,22 +250,14 @@ def validate_manual_centering():
     database.store('obs', {'tracking_manual_centering': False})
 
 
-def manual_centering(x, y, AO=False):
-    # TODO add docstring
-    # TODO verify value validity before sending
-
+def manual_centering(x, y):
     tiptilt_fli_to_telescope(x - config.FLI.center_x, y - config.FLI.center_y)
-    image_path = camera.take_image(ObservationType.CENTERING,
-                                   dit=config.FLI.exp_time)
-    if image_path is None:
-        ret = -1
-    else:
-        ret = 0
+    img_path = camera.take_image(ObservationType.CENTERING)
 
-    if AO:
-        ret = aocontrol.optimize_wfs_flux()
+    if img_path is None:
+        raise FLITakeImageFailed
 
-    return ret
+    return 0
 
 
 def tiptilt_fli_to_telescope(x, y, gain=1):

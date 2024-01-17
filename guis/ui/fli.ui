@@ -153,6 +153,16 @@
       </spacer>
      </item>
      <item>
+      <widget class="KLabel" name="timestamp_label">
+       <property name="text">
+        <string>Timestamp: {timestamp}</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="KLabel" name="star_x_label">
        <property name="text">
         <string>X: {x:.{axis_precision}f}{axis_unit}</string>
@@ -217,13 +227,13 @@
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KScaledDoubleSpinbox</class>
-   <extends>QDoubleSpinBox</extends>
+   <class>KLabel</class>
+   <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KLabel</class>
-   <extends>QLabel</extends>
+   <class>KScaledDoubleSpinbox</class>
+   <extends>QDoubleSpinBox</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

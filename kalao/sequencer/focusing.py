@@ -47,6 +47,8 @@ def focus_sequence(steps=config.Focusing.steps,
         hdul.append(fits.PrimaryHDU())
         hdul.flush()
 
+        logger.info('focusing', 'Starting focus sequence')
+
         for step, focus in enumerate(focus_sequence):
             # Check if an abort was requested
             if abort_queue is not None and not abort_queue.empty():
@@ -61,7 +63,7 @@ def focus_sequence(steps=config.Focusing.steps,
             filepath = camera.take_image(ObservationType.FOCUS, dit=dit)
 
             file_handling.add_comment(
-                filepath, f'Focus sequence {step+1}/{steps}: focus={focus}µm')
+                filepath, f'Focus sequence {step+1}/{steps}: focus={focus}um')
 
             img = fits.getdata(filepath)
 
@@ -83,6 +85,7 @@ def focus_sequence(steps=config.Focusing.steps,
                 'fwhm': fwhm
             }
 
+            # Store vignette and star info
             img_cut = img[y_star - window_size//2:y_star + window_size//2,
                           x_star - window_size//2:x_star + window_size//2]
 
@@ -95,6 +98,7 @@ def focus_sequence(steps=config.Focusing.steps,
             hdu.header.set('HIERARCH FOCUS PATH', filepath, '')
             hdul.append(hdu)
 
+            # If we have at least three points, start fitting a parabola
             if step >= 2:
                 x = data['focus'].to_numpy()
                 y = data['fwhm'].to_numpy()
@@ -116,6 +120,7 @@ def focus_sequence(steps=config.Focusing.steps,
                 f'Focus sequence {step+1}/{steps}: focus={focus}µm, x={x_star}px, y={y_star}px, peak={peak}ADU, FWHM={fwhm}px'
             )
 
+        # Check if we reached a minima
         idxmin = data['fwhm'].idxmin()
 
         if idxmin == 0 or idxmin == len(focus_sequence):
@@ -141,6 +146,7 @@ def focus_sequence(steps=config.Focusing.steps,
 
             return -1
 
+        # Determine best focus according to the fit
         best_focus = -b / (2*a)
         best_fwhm = fit(best_focus)
 
@@ -156,7 +162,6 @@ def focus_sequence(steps=config.Focusing.steps,
         etcs.set_focus(best_focus)
 
     # Update autofocus
-
     temps = etcs.get_tube_temps()
 
     if (time.time() - int(temps['tunix'])) < config.ETCS.max_age:

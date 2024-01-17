@@ -215,7 +215,7 @@ def fli_frame(
     frame += rng.normal(bias, readoutnoise, size=frame.shape)
 
     # Clip as unit16
-    return np.clip(np.rint(frame), 0, 2**16 - 1)
+    return np.clip(np.rint(frame), 0, 2**16 - 1).astype(np.uint16)
 
 
 def slopes_params(slopes):

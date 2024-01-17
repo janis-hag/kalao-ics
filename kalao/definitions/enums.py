@@ -19,6 +19,14 @@ class ObservationType(StrEnum):
     TECHNICAL = 'K_TECH'
     CENTERING = 'K_TECH'
 
+class CenteringMode(StrEnum):
+    MANUAL = 'man'
+    AUTOMATIC = 'auto'
+    NONE = 'non'
+
+class AdaptiveOpticsMode(StrEnum):
+    ENABLED = 'AO'
+    DISABLED = 'NO_AO'
 
 class LogsOutputType(StrEnum):
     RAW = 'RAW'

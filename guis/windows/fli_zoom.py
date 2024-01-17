@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import numpy as np
 
 from PySide6.QtCore import QPointF, QRectF, QSignalBlocker, Slot
@@ -70,6 +72,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
     ticks_pos = [-400, -300, -200, -100, 0, 100, 200, 300, 400]
 
     saturation = np.nan
+    timestamp = None
     star_x = np.nan
     star_y = np.nan
     star_peak = np.nan
@@ -169,6 +172,26 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         img = self.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
+            stars, bad_pixels = starfinder.find_stars_and_bad_pixels(
+                self.img, num=1)
+
+            if len(stars) == 0:
+                self.star_x = np.nan
+                self.star_y = np.nan
+                self.star_peak = np.nan
+                self.star_fwhm = np.nan
+            else:
+                self.star_x, self.star_y, self.star_peak, self.star_fwhm = stars[0]
+
+            self.bad_pixels = bad_pixels
+
+            timestamp = self.consume_stream_keyword(data, config.Streams.FLI, 'timestamp')
+            if timestamp is not None:
+                self.timestamp = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            else:
+                # To avoid not up-to-date timestamp
+                self.timestamp = None
+
             self.update_fli_view(img)
 
     @Slot(int)
@@ -385,20 +408,9 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.img = img
 
-        stars, bad_pixels = starfinder.find_stars_and_bad_pixels(
-            self.img, num=1)
-
-        if len(stars) == 0:
-            self.star_x = np.nan
-            self.star_y = np.nan
-            self.star_peak = np.nan
-            self.star_fwhm = np.nan
-        else:
-            self.star_x, self.star_y, self.star_peak, self.star_fwhm = stars[0]
-
         if self.cuts_combobox.currentIndex == 0:
             img_nan = img.copy()
-            img_nan[bad_pixels] = np.nan
+            img_nan[self.bad_pixels] = np.nan
             img_min = np.nanmin(img_nan)
             img_max = np.nanmax(img_nan)
 
@@ -464,6 +476,11 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                                 offset=QPointF(offset_x, offset_y))
 
     def update_labels(self):
+        if self.timestamp is None:
+            self.timestamp_label.updateText(timestamp='--')
+        else:
+            self.timestamp_label.updateText(timestamp=self.timestamp.strftime('%H:%M:%S %d-%m-%Y'))
+
         self.star_x_label.updateText(
             x=(self.star_x - self.data_center_x) * self.axis_scaling,
             axis_unit=self.axis_unit,

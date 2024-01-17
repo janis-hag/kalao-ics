@@ -6,12 +6,12 @@ from kalao import database
 def with_sequencer_status(status):
     def _with_sequencer_status(fun):
         @wraps(fun)
-        def wrapper(self, *args, **kwargs):
+        def wrapper(*args, **kwargs):
             previous_status = database.get_last_value('obs',
                                                       'sequencer_status')
             database.store('obs', {'sequencer_status': status})
 
-            ret = fun(self, *args, **kwargs)
+            ret = fun(*args, **kwargs)
 
             current_status = database.get_last_value('obs', 'sequencer_status')
 
