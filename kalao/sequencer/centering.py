@@ -139,6 +139,8 @@ def center_on_laser():
     # Reset tip tilt stream to 0
     aocontrol.reset_dm(config.AO.TTM_loop_number)
 
+    logger.info('centering', f'Starting centering on laser')
+
     try:
         xy = _get_star(config.FLI.laser_calib_dit)
         on_fli_with_calibunit(dit=config.FLI.laser_calib_dit, xy=xy)
@@ -217,6 +219,8 @@ def on_fli_with_calibunit(
     else:
         x, y = xy
 
+    logger.info('centering', 'Centering on FLI using calibration unit')
+
     for i in range(max_iter):
         dy = config.FLI.center_y - y
 
@@ -228,12 +232,15 @@ def on_fli_with_calibunit(
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
+        logger.info('centering', f'Centering step {i+1}')
+
         offsets.fli_to_calibunit(dy)
 
         x, y = _get_star(dit)
     else:
         raise CenteringMaxIter
 
+    logger.info('centering', 'Centered on FLI using calibration unit')
     return ReturnCode.CENTERING_OK
 
 
@@ -244,6 +251,8 @@ def on_fli_with_telescope(
         x, y = _get_star(dit)
     else:
         x, y = xy
+
+    logger.info('centering', 'Centering on FLI using telescope')
 
     for i in range(max_iter):
         dx = config.FLI.center_x - x
@@ -258,12 +267,15 @@ def on_fli_with_telescope(
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
+        logger.info('centering', f'Centering step {i+1}')
+
         offsets.fli_to_telescope(dx, dy)
 
         x, y = _get_star(dit)
     else:
         raise CenteringMaxIter
 
+    logger.info('centering', 'Centered on FLI using telescope')
     return ReturnCode.CENTERING_OK
 
 
@@ -274,6 +286,8 @@ def on_fli_with_ttm(dit, xy=None,
         x, y = _get_star(dit)
     else:
         x, y = xy
+
+    logger.info('centering', 'Centering on FLI using Tip-Tilt Mirror')
 
     for i in range(max_iter):
         dx = config.FLI.center_x - x
@@ -288,17 +302,22 @@ def on_fli_with_ttm(dit, xy=None,
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
+        logger.info('centering', f'Centering step {i+1}')
+
         offsets.fli_to_ttm(dx, dy)
 
         x, y = _get_star(dit)
     else:
         raise CenteringMaxIter
 
+    logger.info('centering', 'Centered on FLI using Tip-Tilt Mirror')
     return ReturnCode.CENTERING_OK
 
 
 def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
                     timeout=np.inf):
+    logger.info('centering', 'Centering on WFS using Tip-Tilt Mirror')
+
     slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS)
 
     if slopes_fps is None:
@@ -317,15 +336,18 @@ def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
+        logger.info('centering', f'Centering step {i+1}')
+
         offsets.wfs_to_ttm(dx, dy)
     else:
         raise CenteringMaxIter
 
+    logger.info('centering', 'Centered on WFS using Tip-Tilt Mirror')
     return ReturnCode.CENTERING_OK
 
 
 def _check_abort():
-    if database.get_last_value('sequencer_status') == SequencerStatus.ABORTING:
+    if database.get_last_value('obs', 'sequencer_status') == SequencerStatus.ABORTING:
         raise AbortRequested
 
 

@@ -279,7 +279,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="start_label">
+      <widget class="QLabel" name="since_label">
        <property name="text">
         <string>Since</string>
        </property>
@@ -312,7 +312,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="end_label">
+      <widget class="QLabel" name="until_label">
        <property name="text">
         <string>Until</string>
        </property>

@@ -135,14 +135,14 @@
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
      <item row="0" column="0">
-      <widget class="QLabel" name="start_label">
+      <widget class="QLabel" name="since_label">
        <property name="text">
         <string>Since</string>
        </property>
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="KDateTimeEdit" name="start_datetimeedit">
+      <widget class="KDateTimeEdit" name="since_datetimeedit">
        <property name="currentSection">
         <enum>QDateTimeEdit::HourSection</enum>
        </property>
@@ -152,14 +152,14 @@
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QLabel" name="end_label">
+      <widget class="QLabel" name="until_label">
        <property name="text">
         <string>Until</string>
        </property>
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="KDateTimeEdit" name="end_datetimeedit">
+      <widget class="KDateTimeEdit" name="until_datetimeedit">
        <property name="currentSection">
         <enum>QDateTimeEdit::HourSection</enum>
        </property>
