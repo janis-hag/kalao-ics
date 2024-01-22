@@ -536,7 +536,8 @@ def edp_config(**seq_args):
 
 
 def _check_abort():
-    if database.get_last_value('obs', 'sequencer_status') == SequencerStatus.ABORTING:
+    if database.get_last_value('obs',
+                               'sequencer_status') == SequencerStatus.ABORTING:
         raise AbortRequested
 
     return ReturnCode.SEQ_OK

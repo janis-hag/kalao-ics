@@ -325,8 +325,8 @@ def _header_from_db(collection_name, dt):
 
             # Comment
             comment = v.get('fits_comment')
-            if comment is None:
-                comment = v.get('long')
+            # if comment is None:
+            #     comment = v.get('long')
             if comment is None or len(comment) > max_comment_length:
                 comment = v.get('short')
 

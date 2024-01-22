@@ -24,7 +24,7 @@ def fli_to_telescope(dx, dy, gain=1):
     alt_offset = dx * config.Offsets.fli_x_to_tel_alt * gain
     az_offset = dy * config.Offsets.fli_y_to_tel_az * gain
 
-    etcs.send_altaz_offset(alt_offset, az_offset)
+    etcs.send_altaz_offset(alt_offset, az_offset, wait=True)
 
     return 0
 
@@ -38,7 +38,7 @@ def wfs_to_telescope(dx, dy, gain=1):
     #     f'Offloading WFS tip-tilt to telescope. On WFS: dx={dx}px, dy={dy}px. Offloaded: alt={alt_offset}asec, az={az_offset}asec'
     # )
 
-    etcs.send_altaz_offset(alt_offset, az_offset)
+    etcs.send_altaz_offset(alt_offset, az_offset, wait=True)
 
     return 0
 
@@ -63,6 +63,8 @@ def fli_to_ttm(dx, dy, gain=1, output_stream=config.Streams.TTM_CENTERING):
     # )
 
     ttm_stream.set_data(np.array([new_tip, new_tilt]), True)
+
+    time.sleep(1)
 
     return 0
 

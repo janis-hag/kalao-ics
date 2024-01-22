@@ -14,16 +14,11 @@ from kalao.utils import offsets, starfinder
 from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
                                      FlipMirrorPosition, ObservationType,
                                      ReturnCode, SequencerStatus, ShutterState)
-from kalao.definitions.exceptions import (AbortRequested,
-                                          AutomaticCenteringTimeout,
-                                          CenteringException,
-                                          CenteringFluxWFSTooLow,
-                                          CenteringMaxIter,
-                                          CenteringStarNotFound, DMNotOn,
-                                          FilterWheelNotInPosition,
-                                          FlipMirrorNotUp, FLITakeImageFailed,
-                                          ManualCenteringTimeout,
-                                          ShutterNotClosed, WFSNotOn)
+from kalao.definitions.exceptions import (
+    AbortRequested, AutomaticCenteringTimeout, CenteringException,
+    CenteringFluxWFSTooLow, CenteringMaxIter, CenteringStarNotFound, DMNotOn,
+    FilterWheelNotInPosition, FlipMirrorNotUp, FLITakeImageFailed,
+    ManualCenteringTimeout, ShutterNotClosed, WFSNotOn)
 
 import config
 
@@ -223,8 +218,9 @@ def on_fli_with_calibunit(
 
     for i in range(max_iter):
         dy = config.FLI.center_y - y
+        error = np.abs(dy)
 
-        if np.abs(dy) <= config.Centering.fli_with_calibunit_precision:
+        if error <= config.Centering.fli_with_calibunit_precision:
             break
 
         _check_abort()
@@ -232,7 +228,7 @@ def on_fli_with_calibunit(
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
-        logger.info('centering', f'Centering step {i+1}')
+        logger.info('centering', f'Centering step {i+1}, error = {error} px')
 
         offsets.fli_to_calibunit(dy)
 
@@ -240,7 +236,8 @@ def on_fli_with_calibunit(
     else:
         raise CenteringMaxIter
 
-    logger.info('centering', 'Centered on FLI using calibration unit')
+    logger.info('centering',
+                f'Centered on FLI using calibration unit, error = {error} px')
     return ReturnCode.CENTERING_OK
 
 
@@ -257,9 +254,9 @@ def on_fli_with_telescope(
     for i in range(max_iter):
         dx = config.FLI.center_x - x
         dy = config.FLI.center_y - y
+        error = np.sqrt(dx**2 + dy**2)
 
-        if np.sqrt(dx**2 +
-                   dy**2) <= config.Centering.fli_with_telescope_precision:
+        if error <= config.Centering.fli_with_telescope_precision:
             break
 
         _check_abort()
@@ -267,7 +264,7 @@ def on_fli_with_telescope(
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
-        logger.info('centering', f'Centering step {i+1}')
+        logger.info('centering', f'Centering step {i+1}, error = {error} px')
 
         offsets.fli_to_telescope(dx, dy)
 
@@ -275,7 +272,8 @@ def on_fli_with_telescope(
     else:
         raise CenteringMaxIter
 
-    logger.info('centering', 'Centered on FLI using telescope')
+    logger.info('centering',
+                f'Centered on FLI using telescope, error = {error} px')
     return ReturnCode.CENTERING_OK
 
 
@@ -292,9 +290,9 @@ def on_fli_with_ttm(dit, xy=None,
     for i in range(max_iter):
         dx = config.FLI.center_x - x
         dy = config.FLI.center_y - y
+        error = np.sqrt(dx**2 + dy**2)
 
-        if np.sqrt((x - config.FLI.center_x)**2 + (y - config.FLI.center_y)**2
-                   ) <= config.Centering.fli_with_ttm_precision:
+        if error <= config.Centering.fli_with_ttm_precision:
             break
 
         _check_abort()
@@ -302,7 +300,7 @@ def on_fli_with_ttm(dit, xy=None,
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
-        logger.info('centering', f'Centering step {i+1}')
+        logger.info('centering', f'Centering step {i+1}, error = {error} px')
 
         offsets.fli_to_ttm(dx, dy)
 
@@ -310,7 +308,8 @@ def on_fli_with_ttm(dit, xy=None,
     else:
         raise CenteringMaxIter
 
-    logger.info('centering', 'Centered on FLI using Tip-Tilt Mirror')
+    logger.info('centering',
+                f'Centered on FLI using Tip-Tilt Mirror, error = {error} px')
     return ReturnCode.CENTERING_OK
 
 
@@ -327,8 +326,9 @@ def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
     for i in range(max_iter):
         dx = -slopes_fps.get_param('slope_x_avg')
         dy = -slopes_fps.get_param('slope_y_avg')
+        error = np.sqrt(dx**2 + dy**2)
 
-        if np.sqrt(dx**2 + dy**2) <= config.Centering.wfs_with_ttm_precision:
+        if error <= config.Centering.wfs_with_ttm_precision:
             break
 
         _check_abort()
@@ -336,18 +336,20 @@ def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
-        logger.info('centering', f'Centering step {i+1}')
+        logger.info('centering', f'Centering step {i+1}, error = {error} px')
 
         offsets.wfs_to_ttm(dx, dy)
     else:
         raise CenteringMaxIter
 
-    logger.info('centering', 'Centered on WFS using Tip-Tilt Mirror')
+    logger.info('centering',
+                f'Centered on WFS using Tip-Tilt Mirror, error = {error} px')
     return ReturnCode.CENTERING_OK
 
 
 def _check_abort():
-    if database.get_last_value('obs', 'sequencer_status') == SequencerStatus.ABORTING:
+    if database.get_last_value('obs',
+                               'sequencer_status') == SequencerStatus.ABORTING:
         raise AbortRequested
 
 

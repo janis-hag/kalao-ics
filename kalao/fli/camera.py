@@ -104,7 +104,7 @@ def _update_fli_stream(img, filepath):
     else:
         logger.error(
             'fli',
-            f'{config.Streams.FLI} not updated, shapes are inconsistent (stream={fli_stream.shape}, frame={img.shape}).'
+            f'{config.Streams.FLI} not updated, shapes are inconsistent (stream = {fli_stream.shape}, frame = {img.shape}).'
         )
 
 
