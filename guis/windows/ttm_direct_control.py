@@ -1,3 +1,5 @@
+import numpy as np
+
 from PySide6.QtCore import Slot
 
 from guis.kalao.mixins import BackendActionMixin
@@ -30,14 +32,20 @@ class TTMDirectControlWindow(KMainWindow, BackendActionMixin):
     def on_tip_spinbox_valueChanged(self, d):
         self.tip_slider.setValue(round(d * 1000))
 
-        self.action_send([], self.backend.set_ttm_pattern,
-                         [self.tip_spinbox.value(),
-                          self.tilt_spinbox.value()])
+        tiptilt = np.array([
+            self.tip_spinbox.value(),
+            self.tilt_spinbox.value()
+        ])
+
+        self.action_send([], self.backend.set_ttm_pattern, tiptilt)
 
     @Slot(float)
     def on_tilt_spinbox_valueChanged(self, d):
         self.tilt_slider.setValue(round(d * 1000))
 
-        self.action_send([], self.backend.set_ttm_pattern,
-                         [self.tip_spinbox.value(),
-                          self.tilt_spinbox.value()])
+        tiptilt = np.array([
+            self.tip_spinbox.value(),
+            self.tilt_spinbox.value()
+        ])
+
+        self.action_send([], self.backend.set_ttm_pattern, tiptilt)

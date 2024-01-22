@@ -43,9 +43,9 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.change_colormap(Qt.Unchecked)
 
         self.flux_view.hovered.connect(self.hover_xyv_to_str)
-        backend.streams_updated.connect(self.streams_updated)
+        backend.streams_all_updated.connect(self.streams_all_updated)
 
-    def streams_updated(self, data):
+    def streams_all_updated(self, data):
         img = self.consume_stream(data, config.Streams.FLUX)
 
         if img is not None:
@@ -57,13 +57,11 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             self.flux_view.setImage(img, img_min, img_max)
 
-        flux_avg = self.consume_param(data, config.FPS.SHWFS,
-                                      'flux_subaperture_avg')
+        flux_avg = self.consume_param(data, config.FPS.SHWFS, 'flux_avg')
         if flux_avg is not None:
             self.flux_avg = flux_avg
 
-        flux_brightest = self.consume_param(data, config.FPS.SHWFS,
-                                            'flux_subaperture_brightest')
+        flux_brightest = self.consume_param(data, config.FPS.SHWFS, 'flux_max')
         if flux_brightest is not None:
             self.flux_brightest = flux_brightest
 

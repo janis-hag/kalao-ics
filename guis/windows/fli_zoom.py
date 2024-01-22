@@ -13,7 +13,7 @@ from guis.kalao.definitions import Color, Cuts, Scale
 from guis.kalao.mixins import (BackendActionMixin, BackendDataMixin,
                                MinMaxMixin, SceneHoverMixin)
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KMainWindow
+from guis.kalao.widgets import KMainWindow, KMessageBox
 
 from kalao.definitions.enums import StrEnum
 
@@ -79,6 +79,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
     star_fwhm = np.nan
 
     centering = False
+    centering_requested_by_user = False
 
     WFS_fov = 4 * config.WFS.plate_scale / config.FLI.plate_scale
 
@@ -160,7 +161,8 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.on_onsky_checkbox_stateChanged(self.onsky_checkbox.checkState())
 
         self.hovered.connect(self.info_to_statusbar)
-        backend.fli_updated.connect(self.fli_updated, Qt.UniqueConnection)
+        backend.streams_fli_updated.connect(self.streams_fli_updated,
+                                            Qt.UniqueConnection)
 
         if img is not None:
             self.update_fli_view(img)
@@ -168,7 +170,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.show()
         self.center()
 
-    def fli_updated(self, data):
+    def streams_fli_updated(self, data):
         img = self.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
@@ -181,13 +183,16 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 self.star_peak = np.nan
                 self.star_fwhm = np.nan
             else:
-                self.star_x, self.star_y, self.star_peak, self.star_fwhm = stars[0]
+                self.star_x, self.star_y, self.star_peak, self.star_fwhm = stars[
+                    0]
 
             self.bad_pixels = bad_pixels
 
-            timestamp = self.consume_stream_keyword(data, config.Streams.FLI, 'timestamp')
+            timestamp = self.consume_stream_keyword(data, config.Streams.FLI,
+                                                    'timestamp')
             if timestamp is not None:
-                self.timestamp = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                self.timestamp = datetime.fromtimestamp(
+                    timestamp, tz=timezone.utc)
             else:
                 # To avoid not up-to-date timestamp
                 self.timestamp = None
@@ -219,13 +224,19 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
     @Slot(bool)
     def on_centering_button_clicked(self, checked=None):
         if self.centering:
-            self.exit_manual_centering()
+            self.exit_manual_centering(requested_by_user=True)
         else:
-            self.enter_manual_centering(show_help=False)
+            self.enter_manual_centering(requested_by_user=True)
 
-    def enter_manual_centering(self, show_help=True):
+    def enter_manual_centering(self, requested_by_user=False):
+        # If KalAO ICS request centering while user activated centering mode, switch the flag
+        if self.centering and not requested_by_user:
+            self.centering_requested_by_user = False
+            return
+
         if not self.centering:
             self.centering = True
+            self.centering_requested_by_user = requested_by_user
 
             self.wfs_fov.setVisible(True)
 
@@ -242,17 +253,17 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
             self.centering_button.setText('Validate Manual Centering')
 
-            if True:
-                msgbox = QMessageBox(self)
+            if not requested_by_user:
+                msgbox = KMessageBox(self)
                 msgbox.setIcon(QMessageBox.Information)
                 msgbox.setText("<b>Manual centering needed!</b>")
                 msgbox.setInformativeText(
-                    'Manual centering has been requested. Click on a star to center it. Validate using the "Validate Manual Centering" button.'
+                    'Manual centering has been requested.\n\nClick on a star to center it.\n\nValidate using the "Validate Manual Centering" button.'
                 )
                 msgbox.setModal(False)
                 msgbox.show()
 
-    def exit_manual_centering(self):
+    def exit_manual_centering(self, requested_by_user=False):
         if self.centering:
             self.centering = False
 
@@ -272,8 +283,10 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
             self.centering_button.setText('Enter Manual Centering')
 
-            self.action_send(self.centering_button,
-                             self.backend.get_centering_validate)
+            # Send offsets only if centering requested KalAO ICS and validation was by user
+            if not self.centering_requested_by_user and requested_by_user:
+                self.action_send(self.centering_button,
+                                 self.backend.get_centering_validate)
 
     def hover_xyv_to_str_fli(self, x, y, v):
         if x != -1 and y != -1:
@@ -479,7 +492,8 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         if self.timestamp is None:
             self.timestamp_label.updateText(timestamp='--')
         else:
-            self.timestamp_label.updateText(timestamp=self.timestamp.strftime('%H:%M:%S %d-%m-%Y'))
+            self.timestamp_label.updateText(
+                timestamp=self.timestamp.strftime('%H:%M:%S %d-%m-%Y'))
 
         self.star_x_label.updateText(
             x=(self.star_x - self.data_center_x) * self.axis_scaling,
@@ -555,9 +569,10 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                                      self.tick_fontsize, ticks_x, ticks_y)
 
     def closeEvent(self, event):
-        self.backend.fli_updated.disconnect(self.fli_updated)
+        self.backend.streams_fli_updated.disconnect(self.streams_fli_updated)
         event.accept()
 
     def showEvent(self, event):
-        self.backend.fli_updated.connect(self.fli_updated, Qt.UniqueConnection)
+        self.backend.streams_fli_updated.connect(self.streams_fli_updated,
+                                                 Qt.UniqueConnection)
         event.accept()

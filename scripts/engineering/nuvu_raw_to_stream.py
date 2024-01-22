@@ -17,7 +17,7 @@ import config
 
 
 def run():
-    nuvu_in_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW, {})
+    nuvu_in_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
     nuvu_out_stream = toolbox.open_or_create_stream(config.Streams.NUVU,
                                                     (64, 64), np.int16)
 

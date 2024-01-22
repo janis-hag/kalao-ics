@@ -76,8 +76,8 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.monitoring.updated.connect(self.on_monitoring_updated)
         self.logs.logged.connect(self.on_logs_logged)
 
-        backend.streams_updated.connect(self.streams_updated)
-        backend.data_updated.connect(self.data_updated)
+        backend.streams_all_updated.connect(self.streams_all_updated)
+        backend.all_updated.connect(self.all_updated)
 
         self.tabwidget.currentChanged.connect(self.on_tabwidget_currentChanged)
         self.tabwidget.tabBarDoubleClicked.connect(
@@ -158,7 +158,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
             self.engineering.setEnabled(False)
             self.loop_controls.setEnabled(False)
 
-    def streams_updated(self, data):
+    def streams_all_updated(self, data):
         now = time.monotonic()
 
         self.fps = 0.9 * self.fps + 0.1 / (now - self.previous_update_time)
@@ -167,7 +167,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
 
         self.previous_update_time = now
 
-    def data_updated(self, data):
+    def all_updated(self, data):
         self.last_update_label.setText(
             'Last update: ' + datetime.now().strftime('%H:%M:%S %d-%m-%Y'))
 

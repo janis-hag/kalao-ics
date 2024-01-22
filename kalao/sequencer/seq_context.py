@@ -7,11 +7,17 @@ def with_sequencer_status(status):
     def _with_sequencer_status(fun):
         @wraps(fun)
         def wrapper(*args, **kwargs):
+            ret = None
+            exception = None
+
             previous_status = database.get_last_value('obs',
                                                       'sequencer_status')
             database.store('obs', {'sequencer_status': status})
 
-            ret = fun(*args, **kwargs)
+            try:
+                ret = fun(*args, **kwargs)
+            except Exception as e:
+                exception = e
 
             current_status = database.get_last_value('obs', 'sequencer_status')
 
@@ -19,6 +25,9 @@ def with_sequencer_status(status):
             # (e.g. do not change if status was switched to ABORTING or ERROR)
             if current_status == status:
                 database.store('obs', {'sequencer_status': previous_status})
+
+            if exception is not None:
+                raise exception
 
             return ret
 

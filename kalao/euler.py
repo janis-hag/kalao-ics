@@ -70,3 +70,7 @@ def telescope_future_zenith_angle(coord):
 
 def telescope_tracking():
     return etcs.get_tracking()
+
+
+def telescope_on_kalao():
+    return etcs.get_instrument() == 3

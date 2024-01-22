@@ -1,0 +1,15 @@
+[Unit]
+Description=KalAO - GUI Backend
+
+[Service]
+Type=simple
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_gui-backend.sh
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+Environment=MILK_SHM_DIR=/tmp/milk
+
+[Install]
+WantedBy=default.target

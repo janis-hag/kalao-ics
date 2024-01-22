@@ -73,9 +73,9 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
 
         self.update_labels()
 
-        backend.data_updated.connect(self.data_updated)
+        backend.all_updated.connect(self.all_updated)
 
-    def data_updated(self, data):
+    def all_updated(self, data):
         img = self.consume_stream(data, config.Streams.TTM)
 
         if img is not None:

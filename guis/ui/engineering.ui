@@ -1323,9 +1323,9 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QPushButton" name="focusing_window_button">
+         <widget class="QPushButton" name="open_focus_sequence_button">
           <property name="text">
-           <string>Focusing window</string>
+           <string>Open focus sequence ...</string>
           </property>
          </widget>
         </item>

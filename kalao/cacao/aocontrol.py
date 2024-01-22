@@ -17,7 +17,6 @@ import numpy as np
 
 from kalao import database, ippower, logger
 from kalao.cacao import toolbox
-from kalao.interfaces import etcs
 from kalao.utils import ktools
 
 import libtmux
@@ -26,8 +25,6 @@ import libtmux.exc
 from kalao.definitions.enums import IPPowerStatus, LoopStatus, ReturnCode
 
 import config
-
-shm_and_fps_cache = {}
 
 
 def close_loops():
@@ -53,12 +50,12 @@ def open_loops():
 def check_loops():
     status = LoopStatus(0)
 
-    dmloop_fps = toolbox.open_fps_once(config.FPS.DMLOOP, shm_and_fps_cache)
+    dmloop_fps = toolbox.open_fps_once(config.FPS.DMLOOP)
 
     if dmloop_fps is not None and dmloop_fps.get_param('loopON'):
         status |= LoopStatus.DM_LOOP_ON
 
-    ttmloop_fps = toolbox.open_fps_once(config.FPS.TTMLOOP, shm_and_fps_cache)
+    ttmloop_fps = toolbox.open_fps_once(config.FPS.TTMLOOP)
 
     if ttmloop_fps is not None and ttmloop_fps.get_param('loopON'):
         status |= LoopStatus.TTM_LOOP_ON
@@ -106,8 +103,7 @@ def switch_loop(loop_number, close=True):
     else:
         logger.info('ao', f'Opening loop {loop_number}')
 
-    fps_mfilt = toolbox.open_fps_once(f'mfilt-{loop_number}',
-                                      shm_and_fps_cache)
+    fps_mfilt = toolbox.open_fps_once(f'mfilt-{loop_number}')
 
     if fps_mfilt is None:
         logger.error('ao', f'mfilt-{loop_number} is missing')
@@ -265,8 +261,7 @@ def set_ttmloop_limit(limit):
 
 
 def set_modalgains(modalgains, stream_name=config.Streams.MODALGAINS):
-    modalgains_stream = toolbox.open_stream_once(stream_name,
-                                                 shm_and_fps_cache)
+    modalgains_stream = toolbox.open_stream_once(stream_name)
 
     delta = modalgains_stream.size - modalgains.size
 
@@ -293,213 +288,8 @@ def set_bmc_stroke_mode(stroke_mode):
     return _set_fps_value(config.FPS.BMC, 'stroke_mode', stroke_mode)
 
 
-def tiptilt_ttm_to_telescope(gain=config.TTM.offload_gain,
-                             threshold=config.TTM.offload_threshold,
-                             override_threshold=False,
-                             input_stream=config.Streams.TTM):
-    """
-    Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
-    The gain can be adjusted to set how much of the tip/tilt should be offloaded.
-
-    :return:
-    """
-
-    ttm_stream = toolbox.open_stream_once(input_stream, shm_and_fps_cache)
-
-    if ttm_stream is None:
-        logger.error('ttm', f'{input_stream} is missing')
-        return -1
-
-    tip, tilt = ttm_stream.get_data(check=False)
-
-    to_offload = np.sqrt(tip**2 + tilt**2)
-
-    if override_threshold or to_offload > threshold:
-        alt_offload = tip * config.TTM.tip_to_onsky * gain
-        az_offload = tilt * config.TTM.tilt_to_onsky * gain
-
-        # Keep offsets within defined range
-        alt_offload = np.clip(alt_offload, -config.TTM.max_tel_offload,
-                              config.TTM.max_tel_offload)
-        az_offload = np.clip(az_offload, -config.TTM.max_tel_offload,
-                             config.TTM.max_tel_offload)
-
-        logger.info(
-            'ttm',
-            f'Offloading tip-tilt to telescope. On TTM: tip={tip}mrad, tilt={tilt}mrad. Offloaded: alt={alt_offload}asec, az={az_offload}asec'
-        )
-
-        etcs.send_altaz_offset(alt_offload, az_offload)
-
-    return 0
-
-
-def tiptilt_fli_to_ttm(x_tip, y_tilt, absolute=False,
-                       output_stream=config.Streams.TTM_CENTERING):
-    """
-    Moves the tip tilt mirror by sending an offset in mrad. The value as input is given in pixels and converted.
-
-    :param x_tip: number of pixels to tip
-    :param y_tilt: number of pixels to tilt
-    :param absolute: Flag to indicate that tip tilt values are in absolute radian. By default, set to False.
-    :param output_stream: name of the stream to use to set the offset.
-
-    :return:
-    """
-
-    ttm_stream = toolbox.open_stream_once(output_stream, shm_and_fps_cache)
-
-    if ttm_stream is None:
-        logger.error('ttm', f'{output_stream} is missing')
-        return -1
-
-    tip, tilt = ttm_stream.get_data(check=False)
-
-    # TIP
-    if absolute:
-        new_tip = x_tip
-    else:
-        new_tip = tip + x_tip * config.AO.FLI_tip_to_TTM
-
-    # TILT
-    if absolute:
-        new_tilt = y_tilt
-    else:
-        new_tilt = tilt + y_tilt * config.AO.FLI_tilt_to_TTM
-
-    new_tip, new_tilt = check_ttm_saturation(new_tip, new_tilt)
-
-    logger.info(
-        'ttm',
-        f'Changing tip-tilt based on FLI. On FLI: tip={x_tip}px, tilt={y_tilt}px. TTM set to: tip={new_tip}mrad, tilt={new_tilt}mrad'
-    )
-
-    ttm_stream.set_data(np.array([new_tip, new_tilt]), True)
-
-    return 0
-
-
-def tiptilt_wfs_to_ttm(gain=1, threshold=config.WFS.centering_slope_threshold,
-                       override_threshold=False,
-                       output_stream=config.Streams.TTM_CENTERING):
-    """
-    Precise tip/tilt centering on the wavefront sensor.
-
-    :param threshold: precision at which the centering need to be based on the residual slope.
-    :return:
-    """
-
-    tip_centered = False
-    tilt_centered = False
-
-    ttm_stream = toolbox.open_stream_once(output_stream, shm_and_fps_cache)
-    slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS, shm_and_fps_cache)
-
-    if ttm_stream is None:
-        logger.error('ttm', f'{output_stream} is missing')
-        return -1
-
-    if slopes_fps is None:
-        logger.error('ttm', f'{config.FPS.SHWFS} is missing')
-        return -1
-
-    # TODO verify that shwfs enough illuminated for centering
-
-    timeout_time = time.monotonic() + config.Starfinder.centering_timeout
-
-    while not (tip_centered and tilt_centered):
-        if time.monotonic() > timeout_time:
-            logger.error('ttm', f'Timeout during centering using WFS')
-            return -1
-
-        tip, tilt = ttm_stream.get_data(check=False)
-
-        tip_residual = slopes_fps.get_param('slope_y')
-        tilt_residual = slopes_fps.get_param('slope_x')
-
-        if np.abs(tip_residual) < threshold:
-            tip_centered = True
-            new_tip = tip
-        else:
-            new_tip = tip + tip_residual * config.WFS.tip_to_TTM
-
-        if np.abs(tilt_residual) < threshold:
-            tilt_centered = True
-            new_tilt = tilt
-        else:
-            new_tilt = tilt + tilt_residual * config.WFS.tilt_to_TTM
-
-        new_tip, new_tilt = check_ttm_saturation(new_tip, new_tilt)
-
-        logger.info(
-            'ttm',
-            f'Changing tip-tilt based on WFS. On WFS: tip={tip_residual}px, tilt={tilt_residual}px. TTM set to: tip={new_tip}mrad, tilt={new_tilt}mrad'
-        )
-
-        ttm_stream.set_data(np.array([new_tip, new_tilt]), True)
-
-        time.sleep(1)
-
-    return 0
-
-
-def tiptilt_wfs_to_telescope(gain=1,
-                             threshold=config.WFS.centering_slope_threshold,
-                             override_threshold=False):
-    """
-    Precise tip/tilt centering on the wavefront sensor.
-
-    :return:
-    """
-
-    slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS, shm_and_fps_cache)
-
-    if slopes_fps is None:
-        logger.error('ttm', f'{config.FPS.SHWFS} is missing')
-        return -1
-
-    tip = slopes_fps.get_param('slope_y')
-    tilt = slopes_fps.get_param('slope_x')
-
-    to_offload = np.sqrt(tip**2 + tilt**2)
-
-    if override_threshold or to_offload > threshold:
-        alt_offload = tip * config.WFS.tip_to_onsky * gain
-        az_offload = tilt * config.WFS.tilt_to_onsky * gain
-
-        # logger.info(
-        #     'ttm',
-        #     f'Offloading WFS tip-tilt to telescope. On WFS: tip={tip}px, tilt={tilt}px. Offloaded: alt={alt_offload}asec, az={az_offload}asec'
-        # )
-
-        etcs.send_altaz_offset(alt_offload, az_offload)
-
-    time.sleep(1)
-
-    return 0
-
-
-def check_ttm_saturation(tip, tilt):
-    if tip > 2.45:
-        logger.warn('ttm', 'TTM saturated, limiting tip to 2.45')
-        tip = 2.45
-    elif tip < -2.45:
-        logger.warn('ttm', 'TTM saturated, limiting tip to -2.45')
-        tip = -2.45
-
-    if tilt > 2.45:
-        logger.warn('ttm', 'TTM saturated, limiting tilt to 2.45')
-        tilt = 2.45
-    elif tilt < -2.45:
-        logger.warn('ttm', 'TTM saturated, limiting tilt to -2.45')
-        tilt = -2.45
-
-    return tip, tilt
-
-
 def optimize_wfs_flux():
-    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU,
-                                             shm_and_fps_cache)
+    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU)
 
     if nuvu_acquire_fps is None:
         logger.error('nuvu', f'{config.FPS.NUVU} is missing')
@@ -529,8 +319,7 @@ def optimize_wfs_flux():
 
 
 def check_wfs_flux():
-    slopes_flux_stream = toolbox.open_stream_once(config.Streams.FLUX,
-                                                  shm_and_fps_cache)
+    slopes_flux_stream = toolbox.open_stream_once(config.Streams.FLUX)
 
     if slopes_flux_stream is None:
         logger.error('nuvu', f'{config.Streams.FLUX} is missing')
@@ -561,7 +350,7 @@ def turn_dm_on():
 
         time.sleep(config.Timers.dm_wait_between_actions)
 
-    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
+    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC)
 
     if bmc_display_fps is not None:
         if not bmc_display_fps.run_runs():
@@ -593,7 +382,7 @@ def turn_dm_off():
 
     time.sleep(config.Timers.dm_wait_between_actions)
 
-    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
+    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC)
     if bmc_display_fps is not None:
         logger.info('dm', f'Stopping {config.FPS.BMC}')
         bmc_display_fps.run_stop()
@@ -610,8 +399,7 @@ def turn_dm_off():
 
 
 def start_wfs_acquisition():
-    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW,
-                                               shm_and_fps_cache)
+    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
 
     if nuvu_raw_stream is None:
         return -1
@@ -654,10 +442,8 @@ def stop_wfs_acquisition():
 def stop_wfs():
     logger.info('nuvu', 'Stopping WFS')
 
-    shwfs_process_fps = toolbox.open_fps_once(config.FPS.SHWFS,
-                                              shm_and_fps_cache)
-    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU,
-                                             shm_and_fps_cache)
+    shwfs_process_fps = toolbox.open_fps_once(config.FPS.SHWFS)
+    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU)
 
     shwfs_process_was_running = False
     nuvu_acquire_was_running = False
@@ -701,10 +487,8 @@ def stop_wfs():
 def start_wfs(start_nuvu_acquire=True, start_shwfs_process=True):
     logger.info('nuvu', 'Starting WFS')
 
-    shwfs_process_fps = toolbox.open_fps_once(config.FPS.SHWFS,
-                                              shm_and_fps_cache)
-    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU,
-                                             shm_and_fps_cache)
+    shwfs_process_fps = toolbox.open_fps_once(config.FPS.SHWFS)
+    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU)
 
     subprocess.run([
         'python', '/home/kalao/kalao-camstack/camstack/cam_mains/main.py',
@@ -762,8 +546,7 @@ def reset_channel(dm_number, channel, force_flat=False):
     stream = f'dm{dm_number:02d}disp{channel:02d}'
 
     if stream == config.Streams.DM_LOOP or stream == config.Streams.TTM_LOOP:
-        mfilt_fps = toolbox.open_fps_once(f'mfilt-{dm_number}',
-                                          shm_and_fps_cache)
+        mfilt_fps = toolbox.open_fps_once(f'mfilt-{dm_number}')
         if mfilt_fps is not None:
             logger.info(log, f'Zeroing loop {dm_number}')
 
@@ -772,7 +555,7 @@ def reset_channel(dm_number, channel, force_flat=False):
     elif stream == config.Streams.DM_FLAT and not force_flat:
         return 0
 
-    stream = toolbox.open_stream_once(stream, shm_and_fps_cache)
+    stream = toolbox.open_stream_once(stream)
     toolbox.zero_stream(stream)
 
     return 0
@@ -805,7 +588,7 @@ def reset_all_dms():
 
 
 def _set_fps_value(fps_name, key, value):
-    fps = toolbox.open_fps_once(fps_name, shm_and_fps_cache)
+    fps = toolbox.open_fps_once(fps_name)
 
     if fps is None:
         logger.error('ao', f'Can\'t set {key}, {fps_name} is missing')

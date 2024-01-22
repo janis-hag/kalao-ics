@@ -27,8 +27,6 @@ from kalao.definitions.enums import CameraServerStatus
 
 import config
 
-shm_and_fps_cache = {}
-
 
 def _gather_for_monitoring():
     monitoring_data = {}
@@ -95,7 +93,7 @@ def update_monitoring_db():
 def update_telemetry_db():
     # logger.info('database_timer', 'Updating telemetry database')
 
-    telemetry_data = telemetry.gather(shm_and_fps_cache)
+    telemetry_data = telemetry.gather()
 
     for key, value in telemetry_data.items():
         check_range(key, value,

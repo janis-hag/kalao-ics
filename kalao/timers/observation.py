@@ -14,6 +14,7 @@ import time
 from kalao import euler
 from kalao.cacao import aocontrol
 from kalao.plc import adc
+from kalao.utils import offsets
 
 import schedule
 
@@ -23,13 +24,13 @@ import config
 
 
 def _update_adc(beck=None):
-    if euler.telescope_tracking():
+    if euler.telescope_tracking() and euler.telescope_on_kalao():
         adc.configure(beck=beck, skip_tracking_check=True)
 
 
 def _offload_ttm():
     if aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON:
-        aocontrol.tiptilt_ttm_to_telescope()
+        offsets.offload_ttm_to_telescope()
 
 
 if __name__ == "__main__":

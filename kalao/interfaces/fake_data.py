@@ -144,7 +144,7 @@ def dmdisp(zernike_coeffs=None, orders=15):
         zernike_coeffs = rng.normal(0, 0.5, orders)
         zernike_coeffs[0] = 0
 
-    return zernike.generate_pattern(zernike_coeffs, (12, 12))
+    return zernike.generate_pattern(zernike_coeffs, (12, 12)).filled()
 
 
 def fli_frame(
@@ -223,17 +223,14 @@ def slopes_params(slopes):
     tip = slopes[0:11, 11:22]
 
     return {
-        'slope_x': tip.mean(),
-        'slope_y': tilt.mean(),
-        'residual': np.sqrt((tip**2 + tilt**2).mean())
+        'slope_x_avg': tip.mean(),
+        'slope_y_avg': tilt.mean(),
+        'residual_rms': np.sqrt((tip**2 + tilt**2).mean())
     }
 
 
 def flux_params(flux):
-    return {
-        'flux_subaperture_avg': flux.mean(),
-        'flux_subaperture_brightest': flux.max()
-    }
+    return {'flux_avg': flux.mean(), 'flux_max': flux.max()}
 
 
 if __name__ == "__main__":

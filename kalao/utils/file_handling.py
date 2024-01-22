@@ -36,37 +36,18 @@ from kalao.definitions.enums import (ObservationType, SequencerStatus,
 import config
 
 
-def generate_image_filepath(tmp_night_folder=None):
+def get_tmp_image_filepath():
     """
     Creates a full filepath including filename. If the destination folder does not exist it is created.
 
     :return: the generated filepath
     """
 
-    if tmp_night_folder is None:
-        tmp_night_folder, _ = create_night_folders()
-
-    filename = f'tmp_KALAO.{datetime.now(timezone.utc).isoformat(timespec="milliseconds")}.fits'
-    filepath = tmp_night_folder / filename
-
-    return filepath
-
-
-def create_night_folders():
-    # Prepare temporary and science folder
-    # check if folder exists
-    # remove temporary folder of previous night if empty
-
     tmp_night_folder = config.FITS.temporary_data_storage / ktime.get_night_str(
     )
-    science_night_folder = config.FITS.science_data_storage / ktime.get_night_str(
-    )
 
-    # Check if tmp and science folders exist
     if not tmp_night_folder.exists():
         tmp_night_folder.mkdir(parents=True)
-    if not science_night_folder.exists():
-        science_night_folder.mkdir(parents=True)
 
     # Remove empty folder in tmp except for current night folder
     for folder in config.FITS.temporary_data_storage.iterdir():
@@ -76,7 +57,28 @@ def create_night_folders():
         if folder != tmp_night_folder and not any(folder.iterdir()):
             folder.rmdir()
 
-    return tmp_night_folder, science_night_folder
+    filename = f'tmp_KALAO.{datetime.now(timezone.utc).isoformat(timespec="milliseconds")}.fits'
+    filepath = tmp_night_folder / filename
+
+    return filepath
+
+
+def get_focus_sequence_filepath():
+    """
+    Creates a full filepath including filename. If the destination folder does not exist it is created.
+
+    :return: the generated filepath
+    """
+
+    focus_folder = config.FITS.focus_data_storage / ktime.get_night_str()
+
+    if not focus_folder.exists():
+        focus_folder.mkdir(parents=True)
+
+    filename = f'KALAO.FOCUS.{datetime.now(timezone.utc).isoformat(timespec="milliseconds")}.fits'
+    filepath = focus_folder / filename
+
+    return filepath
 
 
 def save_tmp_image(image_path, obs_type):
@@ -87,14 +89,18 @@ def save_tmp_image(image_path, obs_type):
     :param sequencer_arguments: argument list received by the sequencer
     :return:
     '''
+
     science_night_folder = config.FITS.science_data_storage / ktime.get_night_str(
     )
+
+    if not science_night_folder.exists():
+        science_night_folder.mkdir(parents=True)
 
     # Remove tmp_ from filename
     target_path_name = science_night_folder / image_path.name.replace(
         'tmp_', '')
 
-    if image_path.exists() and science_night_folder.exists():
+    if image_path.exists():
         update_header(image_path, obs_type)
         shutil.move(image_path, target_path_name)
         # TODO Remove write permission
@@ -103,6 +109,10 @@ def save_tmp_image(image_path, obs_type):
         # TODO possibly add the right UID and GID
         database.store('obs', {'fli_last_image_path': target_path_name})
         logger.info('sequencer', f'Saving {image_path} to {target_path_name}')
+
+        symlink = config.FITS.last_image
+        symlink.unlink(missing_ok=True)
+        symlink.symlink_to(target_path_name)
 
         return target_path_name
     else:
@@ -414,6 +424,8 @@ def _clean_header(header_df):
     for index, row in header_df.iterrows():
         if len(index) <= config.FITS.max_length_without_HIERARCH:
             rename_dict[index] = index.upper()
+        elif index.startswith('HIERARCH'):
+            rename_dict[index] = index.upper()
         else:
             rename_dict[index] = f'HIERARCH {index.upper()}'
 
@@ -547,7 +559,7 @@ def directory_summary_df(folder):
     return df
 
 
-def get_exposure_times(folder, exclude_types=[ObservationType.DARK]):
+def get_exposure_times(folder=None, exclude_types=[ObservationType.DARK]):
     """
     Get the list of exposure times in the folder pointed at by filepath. By default, DARK exposure times are ignored.
 
@@ -555,6 +567,12 @@ def get_exposure_times(folder, exclude_types=[ObservationType.DARK]):
     :param exclude_types: exposure types to exclude from the scan.
     :return: list of exposure times found.
     """
+
+    if folder is None:
+        folder = config.FITS.science_data_storage / ktime.get_night_str()
+
+    if not folder.exists():
+        return []
 
     directory_summary = directory_summary_df(folder)
 

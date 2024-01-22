@@ -112,13 +112,13 @@ def run(args):
     print(f'Setting DIT to {args.dit}')
 
     # Open DM stream
-    dm_stream = toolbox.open_stream_once(config.Streams.DM_NCPA, {})
+    dm_stream = toolbox.open_stream_once(config.Streams.DM_NCPA)
     if dm_stream is None:
         print(f'{config.Streams.DM_NCPA} missing')
         exit()
 
     # Open slopes stream
-    slopes_stream = toolbox.open_stream_once(config.Streams.SLOPES, {})
+    slopes_stream = toolbox.open_stream_once(config.Streams.SLOPES)
     if slopes_stream is None:
         print(f'{config.Streams.SLOPES} missing')
         exit()

@@ -131,10 +131,13 @@
    </item>
    <item row="0" column="1" rowspan="4">
     <layout class="QFormLayout" name="side_layout">
+     <property name="labelAlignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
      <item row="0" column="0">
       <widget class="QLabel" name="start_label">
        <property name="text">
-        <string>Start</string>
+        <string>Since</string>
        </property>
       </widget>
      </item>
@@ -151,7 +154,7 @@
      <item row="1" column="0">
       <widget class="QLabel" name="end_label">
        <property name="text">
-        <string>End</string>
+        <string>Until</string>
        </property>
       </widget>
      </item>

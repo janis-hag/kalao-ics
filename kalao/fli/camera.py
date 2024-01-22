@@ -124,7 +124,7 @@ def take_image(obs_type, dit=None, filepath=None):
 
     if filepath is None:
         # Generate filename including path
-        filepath = file_handling.generate_image_filepath()
+        filepath = file_handling.get_tmp_image_filepath()
 
     # Store monitoring status at start of exposure
     database_timer.update_monitoring_db()
@@ -158,9 +158,7 @@ def increment_image_counter(params):
     else:
         image_count += 1
 
-    data = {
-        'fli_image_count': image_count
-    }
+    data = {'fli_image_count': image_count}
 
     if 'exptime' in params:
         data['fli_exposure_time'] = params['exptime']

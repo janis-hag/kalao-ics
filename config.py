@@ -48,10 +48,6 @@ class CalibUnit:
     position_min = 0  # mm
     position_max = 99  # mm
 
-    # Should be 13e-3 * 11.9849 / 44.1023 = 0.00353 mm / px
-    px_to_mm = 0.00355
-    initial_offset = 22.23
-
 
 class ADC:
     velocity = 1  # °/s
@@ -96,6 +92,9 @@ class AO:
     DM_loop_number = 1
     TTM_loop_number = 2
 
+    # How long to wait after starting AO
+    settling_time = 2
+
     wait_fps_run = 3  # s
 
     shwfs_algorithms = ['Quadcell', 'Center of mass']
@@ -113,10 +112,6 @@ class TTM:
     # Should be 2 * 20 / 1200 / 1000 * 180/np.pi * 3600 = 6.88 arcsec / mrad
     plate_scale = 6.88  # arcsec / mrad
 
-    # For offloading
-    tip_to_onsky = 6.88  # arcsec / mrad
-    tilt_to_onsky = -6.88  # arcsec / mrad
-
     # Recommended: 0.5 * 5 * 0.05 (10% of TTM range)
     offload_threshold = 0.25  # mrad
     offload_gain = 0.05  # -
@@ -127,8 +122,7 @@ class TTM:
 
 
 class FLI:
-    exp_time = 5.0
-    ip = "127.0.0.1"
+    ip = '127.0.0.1'
     port = 9080
 
     # Note: max exposure time is limited due to this timeout setting
@@ -137,16 +131,10 @@ class FLI:
     # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
     plate_scale = 0.0507  # arcsec / px
 
-    # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
-    tip_to_onsky = 0.0658  # arcsec / px
-    tilt_to_onsky = 0.0512  # arcsec / px
-
-    # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
-    tip_to_TTM = 0.008497723325890764  # mrad / px
-    tilt_to_TTM = -0.008497723325890764  # mrad / px
-
     center_x = 505  # px 505
     center_y = 545  # px 545
+
+    median_bias = 1007  # ADU
 
     dummy_camera = False
     dummy_image_path = "/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits"
@@ -169,21 +157,11 @@ class WFS:
     # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
     plate_scale = 1.16  # arcsec / px
 
-    # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
-    tip_to_onsky = -1.16  # arcsec / px
-    tilt_to_onsky = -1.16  # arcsec / px
-
-    # Should be 0.5 * 1/(1.2*7.09899) * 1200 / 20 * 1000 * 48e-6 = 0.169 mrad / px (2x2 binning)
-    tip_to_TTM = -0.28649303833986856  # mrad / px
-    tilt_to_TTM = 0.25807611836775707  # mrad / px
-
     laser_calib_power = 8  # mW
     laser_calib_exptime = 1.5  # ms
 
     illumination_threshold = 1000  # ADU
     illumination_fraction = 0.5  # -
-    centering_timeout = 30  # s
-    centering_slope_threshold = 0.005  # px
 
     # Flux at least 90%
     fully_illuminated_subaps = [
@@ -224,12 +202,10 @@ class WFS:
 
 
 class FilterWheel:
-    device_port = "/dev/ttyUSB0"
+    device_port = '/dev/ttyUSB0'
     retries = 3  # -
     retry_wait = 2  # s
-    enable_wait = 2  # s
-    initialization_wait = 2  # s
-    position_change_wait = 6  # s
+
     position_list = ['clear', 'g', 'r', 'i', 'z', 'nd']
 
     filter_to_wavelength = {
@@ -294,9 +270,12 @@ class Laser:
 
 
 class Tungsten:
-    stabilisation_time = 300  # s
-    position = 88  # mm
     switch_wait = 2  # s
+    position = 88  # mm
+
+    stabilisation_time = 300  # s
+    stabilisation_poll_interval = 5  # s
+
     flat_dit_list = {
         "clear": 300,  # s
         "g": 360,  # s
@@ -308,7 +287,7 @@ class Tungsten:
 
 
 class PLC:
-    ip = "10.10.132.121"
+    ip = '10.10.132.121'
     port = 4840
     disabled = []
 
@@ -346,23 +325,6 @@ class PLC:
     }
 
 
-class Calib:
-    # yapf: disable
-    default_flat_list = [
-            "g", "g", "g", "g", "g",
-            "r", "r", "r", "r", "r",
-            "i", "i", "i", "i", "i",
-            "z", "z", "z", "z", "z",
-            "clear", "clear", "clear", "clear", "clear",
-            "nd", "nd", "nd", "nd", "nd"
-    ]
-    # yapf: enable
-
-    flat_min_flux = 10000  # ADU
-
-    dark_number = 5
-
-
 class SEQ:
     ip = "127.0.0.1"
     port = 5005
@@ -377,7 +339,7 @@ class SEQ:
     init_wait_kill = 1  # s
 
     # Pointing can be long when instrument change happens
-    pointing_wait_time = 2  # s
+    pointing_poll_interval = 2  # s
     pointing_timeout = 210  # s
 
     # Setup time to report to EDP
@@ -396,8 +358,13 @@ class SEQ:
 
 
 class FITS:
-    science_data_storage = Path("/gls/data/raw/kalao")
-    temporary_data_storage = Path("/home/kalao/data/tmp/")
+    science_data_storage = Path('/gls/data/raw/kalao')
+    focus_data_storage = science_data_storage / 'focus_sequences'
+    temporary_data_storage = Path('/home/kalao/data/tmp/')
+
+    last_image = science_data_storage / 'last_image.fits'
+    last_focus_sequence = science_data_storage / 'last_focus_sequence.fits'
+
     file_mask = 0o440
 
     fits_default_header_file = kalao_ics_path / "definitions/fits_default_header.yaml"
@@ -462,31 +429,110 @@ class FITS:
 
 
 class Starfinder:
-    centering_timeout = 30
-    min_flux = 4096
-    max_flux = 32768
-    max_dit = 60
-    dit_optimization_trials = 10
+    min_peak = 500
+    window = 20
 
-    AO_wait_settle = 2
 
-    # For 1" seeing and with 0.0507"/px plate scale, should be 1 / 0.0507 = 20 px
-    FWHM = 30  # px
+class Offsets:
+    # Should be 13e-3 * 11.9849 / 44.1023 = 0.00353 mm / px
+    fli_y_to_calibunit_mm = 0.00353  # mm / px
+
+    # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
+    fli_x_to_tel_alt = -0.0507  # arcsec / px
+    fli_y_to_tel_az = 0.0507  # arcsec / px
+
+    # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
+    fli_x_to_ttm_tip = -0.00737  # mrad / px
+    fli_y_to_ttm_tilt = 0.00737  # mrad / px
+
+    # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
+    nuvu_x_to_tel_az = -1.16  # arcsec / px
+    nuvu_y_to_tel_alt = 1.16  # arcsec / px
+
+    # Should be 0.5 * 1/(1.2*7.09899) * 1200 / 20 * 1000 * 48e-6 = 0.169 mrad / px (2x2 binning)
+    nuvu_x_to_ttm_tilt = -0.25807611836775707  # mrad / px
+    nuvu_y_to_ttm_tip = 0.28649303833986856  # mrad / px
+
+    # Should be 2 * 20 / 1200 / 1000 * 180/np.pi * 3600 = 6.88 arcsec / mrad
+    ttm_tip_to_tel_alt = 6.88  # arcsec / mrad
+    ttm_tilt_to_tel_az = 6.88  # arcsec / mrad
 
 
 class Centering:
-    automatic_timeout = 30  # s
-    manual_timeout = 300  # s
+    automatic_timeout = 300  # s
+    manual_timeout = 600  # s
+
+    fli_with_calibunit_max_iter = 5  # -
+    fli_with_calibunit_precision = 5  # px
+
+    fli_with_telescope_max_iter = 5  # -
+    fli_with_telescope_precision = 5  # px
+
+    fli_with_ttm_max_iter = 5  # -
+    fli_with_ttm_precision = 1  # px
+
+    wfs_with_ttm_max_iter = 5  # -
+    wfs_with_ttm_precision = 0.01  # px
 
 
 class Focusing:
-    steps = 7  # -
-    step_size = 25  # µm
-    dit = 20  # s
+    steps = 8  # -
+    step_size = 15  # µm
+    window_size = 80  # px
 
     autofocus_f0 = 29772  # µm
-    autofocus_f1 = 32  # - (µm/µm)
+    autofocus_f1 = 32  # µm/°C
     autofocus_max_age = 3600  # s
+
+
+class Exposure:
+    class Star:
+        # TODO: to be refined
+        mag_ref = 5  # visual magnitude
+        exptime_ref = 1  # s
+        adu_ref = 32768  # ADU
+        fwhm_ref = 1  # asec
+
+        # For finding optimal exposure time and filter for focusing and centering
+        min_exptime = 5  # s
+        min_adu = 2048  # ADU
+        max_adu = 32768  # ADU
+        filter_list = ['clear', 'g']
+
+    class SkyFlat:
+        # TODO: to be refined
+        exptime_ref = 10  # s
+        adu_ref = 32768  # ADU
+
+    filters_relative_flux = {
+        'clear': 1,
+        'g': 0.236,
+        'r': 0.260,
+        'i': 0.224,
+        'z': 0.155,
+    }
+
+
+class Calib:
+    class Flats:
+        # yapf: disable
+        default_flat_list = [
+                "g", "g", "g", "g", "g",
+                "r", "r", "r", "r", "r",
+                "i", "i", "i", "i", "i",
+                "z", "z", "z", "z", "z",
+                "clear", "clear", "clear", "clear", "clear",
+                "nd", "nd", "nd", "nd", "nd"
+        ]
+        # yapf: enable
+
+        target_adu = 10000  # ADU
+        min_exptime = 1  # s
+        max_exptime = 300  # s
+
+    class Darks:
+        # How many darks to make for every exposure time
+        dark_number = 5  # -
 
 
 class Euler:
@@ -549,6 +595,11 @@ class Systemd:
             'enabled': True,
             'restart': True
         },
+        'GUI Backend': {
+            'unit': 'kalao_gui-backend.service',
+            'enabled': False,
+            'restart': True
+        },
     }
 
 
@@ -595,7 +646,7 @@ class Timers:
 class GUI:
     ttm_plot_length = 300  # s
 
-    logs_lines = 10000  # -
+    logs_max_entries = 10000  # -
     logs_initial_entries = 1000  # -
 
     monitoring_max_age = 2 * max(Database.monitoring_update_interval,
@@ -641,7 +692,7 @@ class GUI:
                               Database.telemetry_update_interval)  # /s
 
     http_port = 6666
-    http_dataformat = 'pickle'
+    http_dataformat = 'application/octet-stream'
 
 
 class FPS:

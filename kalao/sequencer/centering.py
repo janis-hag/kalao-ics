@@ -2,26 +2,35 @@ import time
 
 import numpy as np
 
+from astropy.io import fits
+
 from kalao import database, logger
-from kalao.cacao import aocontrol
+from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
-from kalao.interfaces import etcs
 from kalao.plc import calibunit, filterwheel, flipmirror, laser, shutter
 from kalao.sequencer.seq_context import with_sequencer_status
-from kalao.utils import starfinder
+from kalao.utils import offsets, starfinder
 
-from kalao.definitions.enums import (FlipMirrorPosition, ObservationType,
+from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
+                                     FlipMirrorPosition, ObservationType,
                                      ReturnCode, SequencerStatus, ShutterState)
-from kalao.definitions.exceptions import (DMNotOn, FilterWheelNotInPosition,
-                                          FlipMirrorNotUp,
+from kalao.definitions.exceptions import (AbortRequested,
+                                          AutomaticCenteringTimeout,
+                                          CenteringException,
+                                          CenteringFluxWFSTooLow,
+                                          CenteringMaxIter,
+                                          CenteringStarNotFound, DMNotOn,
+                                          FilterWheelNotInPosition,
+                                          FlipMirrorNotUp, FLITakeImageFailed,
                                           ManualCenteringTimeout,
-                                          ShutterNotClosed, WFSNotOn, FLITakeImageFailed)
+                                          ShutterNotClosed, WFSNotOn)
 
 import config
 
 
 @with_sequencer_status(SequencerStatus.CENTERING)
-def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
+def center_on_target(dit, centering_mode=CenteringMode.AUTOMATIC,
+                     adaptiveoptics_mode=AdaptiveOpticsMode.DISABLED):
     """
     Start star centering sequence:
     - Sets this filter based on filter_arg request.
@@ -30,121 +39,64 @@ def center_on_target(kao='NO_AO', dit=config.FLI.exp_time):
     - If auto centering does not work request manual centering
 
     :param dit:
-    :param kao: flag to indicate if AO will be used, set to no by default.
+    :param adaptiveoptics_mode: flag to indicate if AO will be used, set to no by default.
 
     :return: 0 if centering succeded
     """
 
-    timeout_time = time.monotonic(
-    ) + config.Starfinder.centering_timeout + 3*dit
+    if centering_mode == CenteringMode.NONE:
+        return
 
-    # Check if we are alread on the star
-    # if check_wfs_flux() == 0:
-    #     # Start WFS centering procedure
-    #     aocontrol.wfs_centering(
-    #             tt_threshold=config.WFS.centering_slope_threshold)
-    #
-    #     request_manual_centering(False)
-    #
-    #     return 0
+    timeout = time.monotonic() + config.Centering.automatic_timeout
 
-    # Reset tip tilt stream to 0
-    #aocontrol.reset_dm(config.AO.TTM_loop_number)
+    if centering_mode == CenteringMode.AUTOMATIC:
+        logger.info('centering', f'Starting automatic centering')
 
-    while time.monotonic() < timeout_time:
+        try:
+            xy = _get_star(dit)
+            on_fli_with_telescope(dit=dit, xy=xy, timeout=timeout)
+            on_fli_with_ttm(dit=dit, xy=xy, timeout=timeout)
+        except (AbortRequested, FLITakeImageFailed) as e:
+            logger.error('centering',
+                         f'"{e.__doc__}" happened during centering on target')
 
-        # Check if we are already on target
-        if kao == 'AO':
-            # Check if enough light is on the WFS for precise centering
-            if aocontrol.optimize_wfs_flux() == 0:
-                # if aocontrol.check_loops() != LoopStatus.ALL_LOOPS_ON:
-                #     # Start WFS centering procedure
-                #     aocontrol.wfs_centering(tt_threshold=config.AO.
-                #                             WFS_centering_slope_threshold)
-                #     aocontrol.tiptilt_offload_ttm_to_telescope()
+            raise e
+        except CenteringException as e:
+            logger.error(
+                'centering',
+                f'"{e.__doc__}" happened during centering on target, switching to manual'
+            )
 
-                return ReturnCode.CENTERING_OK
-
-        # TODO use exptime given by nseq args
-        image_path = camera.take_image(ObservationType.CENTERING, dit=dit)
-
-        # TODO add dit optimisation
-        #  focusing_dit = optimise_dit(focusing_dit)
-
-        if image_path is None:
-            logger.error('centering', 'No image received.')
-            return -1
-
-        x, y, peak, fwhm = starfinder.find_star_fits(image_path)
-
-        if x != -1 and y != -1:
-
-            tiptilt_fli_to_telescope(x - config.FLI.center_x,
-                                     y - config.FLI.center_y)
-
-            image_path = camera.take_image(ObservationType.CENTERING, dit=dit)
-            if image_path is None:
-                logger.error('centering', 'No image received.')
-                return -1
-
-            x, y, peak, fwhm = starfinder.find_star_fits(image_path)
-
-            if x != -1 and y != -1:
-                # Fine centering with TTM
-                aocontrol.tiptilt_fli_to_ttm(x - config.FLI.center_x,
-                                             y - config.FLI.center_y)
-
-            if kao == 'AO':
-                # Check if enough light is on the WFS for precise centering
-                if aocontrol.optimize_wfs_flux() == 0:
-                    # Start WFS centering procedure
-                    #aocontrol.wfs_centering(tt_threshold=config.AO.
-                    #                        WFS_centering_slope_threshold)
-
-                    return ReturnCode.CENTERING_OK
-                else:
-                    # Retry centering
-                    logger.error('centering',
-                                 'No light on WFS, re-centering with FLI')
-                    continue
-
-            else:
-                # Centering is good enough
-                return ReturnCode.CENTERING_OK
-
-        else:
-            # Start manual centering
-            # TODO start timeout (value in kalao.config)
-            # Set flag for manual centering
+            # Will wait until manual centering is done, or raise an exception if manual centering timeout is reached
             request_manual_centering()
-
-            # Wait 10 seconds before trying another star detection
-            time.sleep(10)
-            continue
-
-            # if kao == 'AO':
-            #     while time.monotonic() < timeout_time:
-            #
-            #         # Check if we are centered and exit loop
-            #         ret = optimize_wfs_flux()
-            #         if ret == 0:
-            #             request_manual_centering(False)
-            #             return 0
-
-            #
-            # else:
-            #     # TODO for centering
-            #     return 0
-
-            # TODO wait for observer input
-            # TODO send gop message
-            # TODO send offset to telescope
-            # TODO verify if SHWFS enough illuminated
-            # if shwfs ok:
-            #    return 0
-
     else:
-        return ReturnCode.CENTERING_TIMEOUT
+        logger.info('centering', f'Starting manual centering')
+
+        # Take at least one image so the observer can click on it
+        img_path = camera.take_image(ObservationType.CENTERING)
+
+        if img_path is None:
+            raise FLITakeImageFailed
+
+        # Will wait until manual centering is done, or raise an exception if manual centering timeout is reached
+        request_manual_centering()
+
+    if adaptiveoptics_mode == AdaptiveOpticsMode.ENABLED:
+        # Check if enough light is on the WFS for precise centering
+        if aocontrol.optimize_wfs_flux() != 0:
+            raise CenteringFluxWFSTooLow
+
+        try:
+            on_wfs_with_ttm()
+        except (CenteringException, AbortRequested, FLITakeImageFailed) as e:
+            logger.error('centering',
+                         f'"{e.__doc__}" happened during centering on target')
+
+            raise e
+
+    logger.info('centering', f'Centering done')
+
+    return ReturnCode.CENTERING_OK
 
 
 @with_sequencer_status(SequencerStatus.CENTERING)
@@ -187,33 +139,14 @@ def center_on_laser():
     # Reset tip tilt stream to 0
     aocontrol.reset_dm(config.AO.TTM_loop_number)
 
-    # Rough centering loop with FLI
-    for i in range(3):
-        print(f'Centering step {i}')
-
-        image = camera.take_frame(dit=config.FLI.laser_calib_dit)
-
-        # X can be changed by the ttm_tip_offset value
-        # Y can be changed by the calibunit position or ttm_tilt_offset value
-        x, y = starfinder.find_star_custom_algo(image, spot_size=7,
-                                                estim_error=0.05, nb_step=5,
-                                                laser_spot=True)
-
-        if x != -1 and y != -1:
-            calibunit.move_px(config.FLI.center_y - y)
-            time.sleep(3)
-
-        # Check the new x position after the calib unit has been moved
-        image = camera.take_frame(dit=config.FLI.laser_calib_dit)
-
-        # X can be changed by the ttm_tip_offset value
-        # Y can be changed by the calibunit position or ttm_tilt_offset value
-        x, y = starfinder.find_star_custom_algo(image, spot_size=7,
-                                                estim_error=0.05, nb_step=5,
-                                                laser_spot=True)
-
-        if x != -1 and y != -1:
-            aocontrol.tiptilt_fli_to_ttm(x - config.FLI.center_x, 0)
+    try:
+        xy = _get_star(config.FLI.laser_calib_dit)
+        on_fli_with_calibunit(dit=config.FLI.laser_calib_dit, xy=xy)
+        on_fli_with_ttm(dit=config.FLI.laser_calib_dit, xy=xy)
+    except (CenteringException, AbortRequested, FLITakeImageFailed) as e:
+        logger.error('centering',
+                     f'"{e.__doc__}" happened during centering on laser')
+        return -1
 
     # Precise centering with WFS
     aocontrol.emgain_off()
@@ -221,57 +154,192 @@ def center_on_laser():
     laser.set_power(config.WFS.laser_calib_power, enable=True)
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
 
-    aocontrol.tiptilt_wfs_to_ttm()
+    try:
+        on_wfs_with_ttm()
+    except (CenteringException, AbortRequested, FLITakeImageFailed) as e:
+        logger.error('centering',
+                     f'"{e.__doc__}" happened during centering on laser')
+        return -1
 
-    return 0
+    return ReturnCode.CENTERING_OK
 
 
 def request_manual_centering():
     logger.info('centering', 'Starting manual centering.')
-    database.store('obs', {'tracking_manual_centering': True})
+    database.store('obs', {'centering_manual': True})
 
     timeout = time.monotonic() + config.Centering.manual_timeout
 
     while time.monotonic() < timeout:
-        centering = database.get_last_value('obs', 'tracking_manual_centering')
+        centering = database.get_last_value('obs', 'centering_manual')
 
         if centering is False:
-            return 0
+            return ReturnCode.CENTERING_OK
+
+        if database.get_last_value(
+                'sequencer_status') == SequencerStatus.ABORTING:
+            database.store('obs', {'centering_manual': False})
+            raise AbortRequested
 
         time.sleep(1)
     else:
         logger.error('centering',
                      'Timeout while waiting for manual centering from user.')
+        database.store('obs', {'centering_manual': False})
         raise ManualCenteringTimeout
 
 
 def validate_manual_centering():
     logger.info('centering', 'Manual centering done.')
-    database.store('obs', {'tracking_manual_centering': False})
+    database.store('obs', {'centering_manual': False})
+
+    return ReturnCode.CENTERING_OK
 
 
 def manual_centering(x, y):
-    tiptilt_fli_to_telescope(x - config.FLI.center_x, y - config.FLI.center_y)
+    dx = config.FLI.center_x - x
+    dy = config.FLI.center_y - y
+
+    offsets.fli_to_telescope(dx, dy)
     img_path = camera.take_image(ObservationType.CENTERING)
 
     if img_path is None:
         raise FLITakeImageFailed
 
-    return 0
+    return ReturnCode.CENTERING_OK
 
 
-def tiptilt_fli_to_telescope(x, y, gain=1):
-    """
-    Send offsets to telescope converting the pixel offset into telescope alt/az offset.
+def on_fli_with_calibunit(
+        dit, xy=None, max_iter=config.Centering.fli_with_calibunit_max_iter,
+        timeout=np.inf):
+    if xy is None:
+        x, y = _get_star(dit)
+    else:
+        x, y = xy
 
-    :param x: pixel offset along the x axis
-    :param y: pixel offset along the y axis
-    :return: success status
-    """
+    for i in range(max_iter):
+        dy = config.FLI.center_y - y
 
-    alt_offset = x * config.FLI.tip_to_onsky * gain
-    az_offset = y * config.FLI.tilt_to_onsky * gain
+        if np.abs(dy) <= config.Centering.fli_with_calibunit_precision:
+            break
 
-    etcs.send_altaz_offset(alt_offset, az_offset)
+        _check_abort()
 
-    return 0
+        if time.monotonic() > timeout:
+            raise AutomaticCenteringTimeout
+
+        offsets.fli_to_calibunit(dy)
+
+        x, y = _get_star(dit)
+    else:
+        raise CenteringMaxIter
+
+    return ReturnCode.CENTERING_OK
+
+
+def on_fli_with_telescope(
+        dit, xy=None, max_iter=config.Centering.fli_with_telescope_max_iter,
+        timeout=np.inf):
+    if xy is None:
+        x, y = _get_star(dit)
+    else:
+        x, y = xy
+
+    for i in range(max_iter):
+        dx = config.FLI.center_x - x
+        dy = config.FLI.center_y - y
+
+        if np.sqrt(dx**2 +
+                   dy**2) <= config.Centering.fli_with_telescope_precision:
+            break
+
+        _check_abort()
+
+        if time.monotonic() > timeout:
+            raise AutomaticCenteringTimeout
+
+        offsets.fli_to_telescope(dx, dy)
+
+        x, y = _get_star(dit)
+    else:
+        raise CenteringMaxIter
+
+    return ReturnCode.CENTERING_OK
+
+
+def on_fli_with_ttm(dit, xy=None,
+                    max_iter=config.Centering.fli_with_ttm_max_iter,
+                    timeout=np.inf):
+    if xy is None:
+        x, y = _get_star(dit)
+    else:
+        x, y = xy
+
+    for i in range(max_iter):
+        dx = config.FLI.center_x - x
+        dy = config.FLI.center_y - y
+
+        if np.sqrt((x - config.FLI.center_x)**2 + (y - config.FLI.center_y)**2
+                   ) <= config.Centering.fli_with_ttm_precision:
+            break
+
+        _check_abort()
+
+        if time.monotonic() > timeout:
+            raise AutomaticCenteringTimeout
+
+        offsets.fli_to_ttm(dx, dy)
+
+        x, y = _get_star(dit)
+    else:
+        raise CenteringMaxIter
+
+    return ReturnCode.CENTERING_OK
+
+
+def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
+                    timeout=np.inf):
+    slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS)
+
+    if slopes_fps is None:
+        logger.error('centering', f'{config.FPS.SHWFS} is missing')
+        return -1
+
+    for i in range(max_iter):
+        dx = -slopes_fps.get_param('slope_x_avg')
+        dy = -slopes_fps.get_param('slope_y_avg')
+
+        if np.sqrt(dx**2 + dy**2) <= config.Centering.wfs_with_ttm_precision:
+            break
+
+        _check_abort()
+
+        if time.monotonic() > timeout:
+            raise AutomaticCenteringTimeout
+
+        offsets.wfs_to_ttm(dx, dy)
+    else:
+        raise CenteringMaxIter
+
+    return ReturnCode.CENTERING_OK
+
+
+def _check_abort():
+    if database.get_last_value('sequencer_status') == SequencerStatus.ABORTING:
+        raise AbortRequested
+
+
+def _get_star(dit):
+    img_path = camera.take_image(ObservationType.CENTERING, dit=dit)
+
+    if img_path is None:
+        raise FLITakeImageFailed
+
+    img = fits.getdata(img_path)
+
+    x, y, peak, fwhm = starfinder.find_star(img)
+
+    if np.isnan([x, y, peak, fwhm]).any():
+        raise CenteringStarNotFound
+
+    return x, y

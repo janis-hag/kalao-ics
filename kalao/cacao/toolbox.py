@@ -15,12 +15,15 @@ from pyMilk.interfacing.shm import SHM
 
 milk_path = Path('/tmp/milk')
 
+# Will be shared within a process
+cache = {}
+
 
 def open_or_create_stream(stream_name, shape, dtype):
     shm_path = milk_path / (stream_name+'.im.shm')
 
     if shm_path.exists():
-        shm = SHM(stream_name)
+        shm = open_stream_once(stream_name)
     else:
         img = np.zeros(shape, dtype)
 
@@ -34,8 +37,8 @@ def open_or_create_stream(stream_name, shape, dtype):
     return shm
 
 
-def open_stream_once(stream_name, shm_cache):
-    shm_info = shm_cache.get(stream_name)
+def open_stream_once(stream_name):
+    shm_info = cache.get(stream_name)
     shm_path = milk_path / (stream_name+'.im.shm')
 
     if not shm_path.exists():
@@ -52,15 +55,15 @@ def open_stream_once(stream_name, shm_cache):
             shm_info['shm'].close()
 
         shm = SHM(stream_name)
-        shm_cache[stream_name] = {
+        cache[stream_name] = {
             'shm': shm,
             'stat': stat,
         }
         return shm
 
 
-def open_fps_once(fps_name, fps_cache):
-    fps_info = fps_cache.get(fps_name)
+def open_fps_once(fps_name):
+    fps_info = cache.get(fps_name)
     fps_path = milk_path / (fps_name+'.fps.shm')
 
     if not fps_path.exists():
@@ -76,7 +79,7 @@ def open_fps_once(fps_name, fps_cache):
             fps_info['fps'].disconnect()
 
         fps = FPS(fps_name)
-        fps_cache[fps_name] = {
+        cache[fps_name] = {
             'fps': fps,
             'stat': stat,
         }
@@ -89,7 +92,7 @@ def zero_stream(stream_or_name):
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_shm = open_stream_once(stream_or_name, {})
+        stream_shm = open_stream_once(stream_or_name)
 
         if stream_shm is None:
             return -1
@@ -106,7 +109,7 @@ def save_stream_to_fits(stream_or_name, fits_file):
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_shm = open_stream_once(stream_or_name, {})
+        stream_shm = open_stream_once(stream_or_name)
 
         if stream_shm is None:
             return -1
@@ -122,7 +125,7 @@ def load_fits_to_stream(fits_file, stream_or_name):
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_shm = open_stream_once(stream_or_name, {})
+        stream_shm = open_stream_once(stream_or_name)
 
         if stream_shm is None:
             return -1

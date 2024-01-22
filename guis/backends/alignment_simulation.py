@@ -15,10 +15,10 @@ import config
 class AlignmentBackend(FakeSHMFPSBackend):
     alignment_window = None
 
-    streams_updated = Signal(object)
+    streams_all_updated = Signal(object)
     streams = {}
 
-    @emit('streams_updated')
+    @emit('streams_all_updated')
     @timeit
     def get_streams_all(self):
         data_dm_down = zernike.generate_pattern([0], (12, 12))
@@ -73,11 +73,11 @@ class AlignmentBackend(FakeSHMFPSBackend):
                 data_slopes[self.alignment_window.display] -
                 data_slopes[PokeState.FLAT])
 
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x',
-                           slopes_params['slope_x'])
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y',
-                           slopes_params['slope_y'])
-        self._update_param(self.streams, config.FPS.SHWFS, 'residual',
-                           slopes_params['residual'])
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x_avg',
+                           slopes_params['slope_x_avg'])
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y_avg',
+                           slopes_params['slope_y_avg'])
+        self._update_param(self.streams, config.FPS.SHWFS, 'residual_rms',
+                           slopes_params['residual_rms'])
 
         return self.streams

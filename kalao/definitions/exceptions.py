@@ -90,6 +90,10 @@ class CenteringFailed(SequencerException):
     """Failed to center on target"""
 
 
+class FocusSequenceFailed(SequencerException):
+    """Focus sequence failed"""
+
+
 ##### Centering
 
 
@@ -99,3 +103,54 @@ class CenteringException(SequencerException):
 
 class ManualCenteringTimeout(CenteringException):
     """Timeout during manual centering"""
+
+
+class AutomaticCenteringTimeout(CenteringException):
+    """Timeout during automatic centering"""
+
+
+class CenteringMaxIter(CenteringException):
+    """Maximum iterations reached during centering"""
+
+
+class CenteringStarNotFound(CenteringException):
+    """Star not found"""
+
+
+class CenteringFluxWFSTooLow(CenteringException):
+    """Flux on WFS is too low"""
+
+
+##### Focusing
+
+
+class FocusingException(SequencerException):
+    """Generic focusing error."""
+
+
+class FocusingAbortRequested(FocusingException):
+    """Abort requested"""
+
+
+class FocusingTakeImageFailed(FocusingException):
+    """Camera returned no image"""
+
+
+class FocusingStarNotFound(FocusingException):
+    """Star not found"""
+
+
+class FocusingInvertedCurve(FocusingException):
+    """Inverted curve"""
+
+
+class FocusingMinimaOutsideRange(FocusingException):
+    """Minima outside focusing range"""
+
+
+class FocusingNoMinima(FocusingException):
+    """No minima reached"""
+
+
+class FocusingSaturated(FocusingException):
+    """Image saturated, can't estimate FWHM"""

@@ -1,16 +1,14 @@
 import argparse
+import logging
 import pickle
 import traceback
 from functools import partial
-
-from PySide6.QtCore import Signal
 
 from flask import Flask, jsonify, make_response, request
 from flask.json.provider import JSONProvider
 
 from guis.backends.abstract import name_to_url
-from guis.kalao.json_coder import (FakeSignal, KalAOJSONDecoder,
-                                   KalAOJSONEncoder)
+from guis.kalao.json_coder import KalAOJSONDecoder, KalAOJSONEncoder
 
 import config
 
@@ -36,22 +34,30 @@ app = Flask(__name__)
 app.json_provider_class = KalAOProvider
 app.json = KalAOProvider(app)
 
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
 
 def serve(fun):
     try:
         if request.method == 'GET':
-            ret = fun()
+            ret = fun(backend)
         elif request.method == 'POST':
-            ret = fun(*tuple(request.json['args']), **request.json['kwargs'])
+            ret = fun(backend, *tuple(request.json['args']),
+                      **request.json['kwargs'])
 
-        if config.GUI.http_dataformat == 'pickle':
+        response_type = request.args.get('response_type', 'application/json')
+
+        if response_type == 'application/octet-stream':
             content = pickle.dumps(ret)
 
             response = make_response(content)
             response.headers['Content-Length'] = len(content)
             response.headers['Content-Type'] = 'application/octet-stream'
-        else:
+        elif response_type == 'application/json':
             response = jsonify(ret)
+        else:
+            raise Exception(f'Unsupported MIME type {response_type}')
 
         return response
     except Exception:
@@ -74,16 +80,11 @@ if __name__ == "__main__":
     else:
         import guis.backends.local as backends
 
-    backend = backends.MainBackend()
+    for key in sorted(dir(backends.MainBackend)):
+        item = getattr(backends.MainBackend, key)
 
-    for key in dir(backend):
-        item = getattr(backend, key)
-
-        if isinstance(item, Signal):
-            print(f'Converting signal {key}')
-            setattr(backend, key, FakeSignal(key))
-
-        elif not key.startswith('_') and callable(item):
+        if (key.startswith('get_') or
+                key.startswith('set_')) and callable(item):
             fun = partial(serve, item)
             fun.__name__ = key
 
@@ -97,7 +98,14 @@ if __name__ == "__main__":
                 methods = ['POST']
 
             app.add_url_rule(url, view_func=fun, methods=methods)
-            print(f'Created route {url} with method(s) {", ".join(methods)}')
+
+            if args.debug:
+                print(
+                    f'Created route {url} with method(s) {", ".join(methods)}')
+
+    global backend
+    backend = backends.MainBackend()
+    backend._emit = False
 
     app.run(host='0.0.0.0', port=config.GUI.http_port, threaded=True,
             debug=args.debug)

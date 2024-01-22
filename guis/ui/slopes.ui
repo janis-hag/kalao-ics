@@ -134,9 +134,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="KLabel" name="tip_label">
+      <widget class="KLabel" name="slope_x_avg_label">
        <property name="text">
-        <string>Tip: {tip:.3f}{unit}</string>
+        <string>Average X: {slope_x_avg:.3f}{unit}</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -144,9 +144,9 @@
       </widget>
      </item>
      <item>
-      <widget class="KLabel" name="tilt_label">
+      <widget class="KLabel" name="slope_y_avg_label">
        <property name="text">
-        <string>Tilt: {tilt:.3f}{unit}</string>
+        <string>Average Y: {slope_y_avg:.3f}{unit}</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -154,9 +154,9 @@
       </widget>
      </item>
      <item>
-      <widget class="KLabel" name="residual_label">
+      <widget class="KLabel" name="residual_rms_label">
        <property name="text">
-        <string>Residual: {residual:.3f}{unit}</string>
+        <string>Residual: {residual_rms:.3f}{unit}</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

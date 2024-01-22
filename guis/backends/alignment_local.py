@@ -17,23 +17,20 @@ import config
 class AlignmentBackend(SHMFPSBackend):
     alignment_window = None
 
-    streams_updated = Signal(object)
+    streams_all_updated = Signal(object)
     streams = {}
 
     def __init__(self):
         super().__init__()
 
-        self.nuvu_stream = toolbox.open_stream_once(config.Streams.NUVU,
-                                                    self.streams_and_fps_cache)
+        self.nuvu_stream = toolbox.open_stream_once(config.Streams.NUVU)
         self.poke_stream = toolbox.open_stream_once(
-            config.Streams.DM_REGISTRATION, self.streams_and_fps_cache)
-        self.slopes_stream = toolbox.open_stream_once(
-            config.Streams.SLOPES, self.streams_and_fps_cache)
+            config.Streams.DM_REGISTRATION)
+        self.slopes_stream = toolbox.open_stream_once(config.Streams.SLOPES)
 
-        self.slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS,
-                                                self.streams_and_fps_cache)
+        self.slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS)
 
-    @emit('streams_updated')
+    @emit('streams_all_updated')
     @timeit
     def get_streams_all(self):
         dm_array = np.zeros(self.poke_stream.shape, self.poke_stream.nptype)
@@ -51,9 +48,9 @@ class AlignmentBackend(SHMFPSBackend):
 
         self._update_stream(self.streams, config.Streams.FLUX)
 
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x')
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y')
-        self._update_param(self.streams, config.FPS.SHWFS, 'residual')
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x_avg')
+        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y_avg')
+        self._update_param(self.streams, config.FPS.SHWFS, 'residual_rms')
 
         # Poke actuators down
         for act in self.alignment_window.actuators_to_poke:

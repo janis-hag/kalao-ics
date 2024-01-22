@@ -10,7 +10,7 @@ from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
                        plc_utils, shutter, temperature_control, tungsten)
 from kalao.sequencer import centering, focusing
 
-from guis.backends.abstract import AbstractBackend, emit, timeit
+from guis.backends.abstract import AbstractBackend, timeit
 
 from kalao.definitions.enums import IPPowerStatus
 
@@ -18,14 +18,11 @@ import config
 
 
 class SHMFPSBackend(AbstractBackend):
-    streams_and_fps_cache = {}
-
     def _update_stream(self, data, stream_name, key=None):
         if key is None:
             key = stream_name
 
-        stream = toolbox.open_stream_once(stream_name,
-                                          self.streams_and_fps_cache)
+        stream = toolbox.open_stream_once(stream_name)
 
         if stream is None:
             return
@@ -39,8 +36,7 @@ class SHMFPSBackend(AbstractBackend):
         })
 
     def _update_stream_keywords(self, data, stream_name):
-        stream = toolbox.open_stream_once(stream_name,
-                                          self.streams_and_fps_cache)
+        stream = toolbox.open_stream_once(stream_name)
 
         if stream is None:
             return
@@ -51,8 +47,7 @@ class SHMFPSBackend(AbstractBackend):
         data[stream_name]['keywords'] = stream.get_keywords()
 
     def _update_stream_cnt(self, data, stream_name):
-        stream = toolbox.open_stream_once(stream_name,
-                                          self.streams_and_fps_cache)
+        stream = toolbox.open_stream_once(stream_name)
 
         if stream is None:
             return
@@ -66,7 +61,7 @@ class SHMFPSBackend(AbstractBackend):
         if fps_name not in data:
             data[fps_name] = {}
 
-        fps = toolbox.open_fps_once(fps_name, self.streams_and_fps_cache)
+        fps = toolbox.open_fps_once(fps_name)
 
         if fps is None:
             return
@@ -122,132 +117,143 @@ class MainBackend(SHMFPSBackend):
 
         self.reader = logs.get_reader(True)
 
-    @emit('streams_updated')
     @timeit
     def get_streams_all(self):
-        self._update_stream(self.streams, config.Streams.DM)
-        self._update_param(self.streams, config.FPS.BMC, 'max_stroke')
+        data = {}
 
-        self._update_stream(self.streams, config.Streams.NUVU)
+        self._update_stream(data, config.Streams.DM)
+        self._update_param(data, config.FPS.BMC, 'max_stroke')
 
-        self._update_stream(self.streams, config.Streams.SLOPES)
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x')
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y')
-        self._update_param(self.streams, config.FPS.SHWFS, 'residual')
+        self._update_stream(data, config.Streams.NUVU)
 
-        self._update_stream(self.streams, config.Streams.FLUX)
-        self._update_param(self.streams, config.FPS.SHWFS,
-                           'flux_subaperture_avg')
-        self._update_param(self.streams, config.FPS.SHWFS,
-                           'flux_subaperture_brightest')
+        self._update_stream(data, config.Streams.SLOPES)
+        self._update_param(data, config.FPS.SHWFS, 'slope_x_avg')
+        self._update_param(data, config.FPS.SHWFS, 'slope_y_avg')
+        self._update_param(data, config.FPS.SHWFS, 'residual_rms')
 
-        return self.streams
+        self._update_stream(data, config.Streams.FLUX)
+        self._update_param(data, config.FPS.SHWFS, 'flux_avg')
+        self._update_param(data, config.FPS.SHWFS, 'flux_max')
 
-    @emit('fli_updated')
+        if self._emit:
+            self.streams_all_updated.emit(data)
+        return data
+
     @timeit
     def get_streams_fli(self):
-        self._update_stream(self.fli, config.Streams.FLI)
-        self._update_stream_keywords(self.fli, config.Streams.FLI)
+        data = {}
 
-        return self.fli
+        self._update_stream(data, config.Streams.FLI)
+        self._update_stream_keywords(data, config.Streams.FLI)
 
-    @emit('data_updated')
+        if self._emit:
+            self.streams_fli_updated.emit(data)
+        return data
+
     @timeit
     def get_all(self):
-        self._update_stream_cnt(self.data, config.Streams.FLI)
+        data = {}
 
-        self._update_stream(self.data, config.Streams.TTM)
-        self._update_stream(self.data, config.Streams.MODALGAINS)
+        self._update_stream_cnt(data, config.Streams.FLI)
 
-        self._update_stream_keywords(self.data, config.Streams.NUVU_RAW)
+        self._update_stream(data, config.Streams.TTM)
+        self._update_stream(data, config.Streams.MODALGAINS)
 
-        self._update_param(self.data, config.FPS.NUVU, 'autogain_on')
-        self._update_param(self.data, config.FPS.NUVU, 'autogain_setting')
+        self._update_param(data, config.FPS.NUVU, 'autogain_on')
+        self._update_param(data, config.FPS.NUVU, 'autogain_setting')
 
-        self._update_param(self.data, config.FPS.BMC, 'max_stroke')
-        self._update_param(self.data, config.FPS.BMC, 'stroke_mode')
+        self._update_param(data, config.FPS.BMC, 'max_stroke')
+        self._update_param(data, config.FPS.BMC, 'stroke_mode')
 
-        self._update_param(self.data, config.FPS.SHWFS, 'algorithm')
+        self._update_param(data, config.FPS.SHWFS, 'algorithm')
 
-        self._update_param(self.data, config.FPS.DMLOOP, 'loopON')
-        self._update_param(self.data, config.FPS.DMLOOP, 'loopgain')
-        self._update_param(self.data, config.FPS.DMLOOP, 'loopmult')
-        self._update_param(self.data, config.FPS.DMLOOP, 'looplimit')
+        self._update_param(data, config.FPS.DMLOOP, 'loopON')
+        self._update_param(data, config.FPS.DMLOOP, 'loopgain')
+        self._update_param(data, config.FPS.DMLOOP, 'loopmult')
+        self._update_param(data, config.FPS.DMLOOP, 'looplimit')
 
-        self._update_param(self.data, config.FPS.TTMLOOP, 'loopON')
-        self._update_param(self.data, config.FPS.TTMLOOP, 'loopgain')
-        self._update_param(self.data, config.FPS.TTMLOOP, 'loopmult')
-        self._update_param(self.data, config.FPS.TTMLOOP, 'looplimit')
+        self._update_param(data, config.FPS.TTMLOOP, 'loopON')
+        self._update_param(data, config.FPS.TTMLOOP, 'loopgain')
+        self._update_param(data, config.FPS.TTMLOOP, 'loopmult')
+        self._update_param(data, config.FPS.TTMLOOP, 'looplimit')
 
-        self._update_dict(self.data, 'plc',
+        self._update_dict(data, 'plc',
                           plc_utils.get_all_status(filter_from_db=True))
-        self._update_dict(self.data, 'services', services.get_all_status())
-        self._update_dict(self.data, 'fli', camera.get_exposure_status())
-        self._update_dict(self.data, 'fli', camera.get_temperatures())
-        self._update_dict(self.data, 'ippower', ippower.status_all())
+        self._update_dict(data, 'services', services.get_all_status())
+        self._update_dict(data, 'fli', camera.get_exposure_status())
+        self._update_dict(data, 'fli', camera.get_temperatures())
+        self._update_dict(data, 'ippower', ippower.status_all())
 
         self._update_db(
-            self.data, 'obs',
-            database.get('obs',
-                         ['sequencer_status', 'tracking_manual_centering']))
+            data, 'obs',
+            database.get('obs', ['sequencer_status', 'centering_manual']))
 
-        return self.data
+        # Last so it is the closest to timestamp computation
+        self._update_stream_keywords(data, config.Streams.NUVU_RAW)
 
-    @emit('monitoringandtelemetry_updated')
+        if self._emit:
+            self.all_updated.emit(data)
+        return data
+
     @timeit
     def get_monitoringandtelemetry(self):
-        self._update_db(self.monitoringandtelemetry, 'monitoring',
+        data = {}
+
+        self._update_db(data, 'monitoring',
                         database.get_all_last('monitoring'))
-        self._update_db(self.monitoringandtelemetry, 'telemetry',
-                        database.get_all_last('telemetry'))
+        self._update_db(data, 'telemetry', database.get_all_last('telemetry'))
 
         self._update_dict(
-            self.monitoringandtelemetry, 'db-timestamps', {
+            data, 'db-timestamps', {
                 'monitoring':
                     database.get_collection_last_update('monitoring'),
                 'telemetry':
                     database.get_collection_last_update('telemetry'),
             })
 
-        return self.monitoringandtelemetry
+        if self._emit:
+            self.monitoringandtelemetry_updated.emit(data)
+        return data
 
-    @emit('dmdisp_updated')
     @timeit
     def get_streams_dmdisp(self, dm_number):
-        if dm_number not in self.dmdisp:
-            self.dmdisp[dm_number] = {}
+        data = {}
 
-        self._update_stream(self.dmdisp[dm_number], f'dm{dm_number:02d}disp')
+        self._update_stream(data, f'dm{dm_number:02d}disp')
 
         for i in range(0, 12):
-            self._update_stream(self.dmdisp[dm_number],
-                                f'dm{dm_number:02d}disp{i:02d}')
+            self._update_stream(data, f'dm{dm_number:02d}disp{i:02d}')
 
-        return self.dmdisp[dm_number]
+        if self._emit:
+            self.streams_dmdisp_updated.emit(data)
+        return data
 
-    @emit('focus_updated')
     @timeit
     def get_focus(self):
-        self._update_fits_full(self.focus, '/tmp/focus_sequence.fits')
+        data = {}
 
-        return self.focus
+        self._update_fits_full(data, config.FITS.last_focus_sequence)
 
-    def plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
-                   obs_keys):
+        if self._emit:
+            self.focus_updated.emit(data)
+        return data
+
+    def set_plots_data(self, since, until, monitoring_keys, telemetry_keys,
+                       obs_keys):
 
         data = {}
 
         if len(monitoring_keys) > 0:
             data['monitoring'] = database.read_mongo_to_pandas_by_timestamp(
-                'monitoring', dt_start, dt_end, monitoring_keys)
+                'monitoring', since, until, monitoring_keys)
 
         if len(telemetry_keys) > 0:
             data['telemetry'] = database.read_mongo_to_pandas_by_timestamp(
-                'telemetry', dt_start, dt_end, telemetry_keys)
+                'telemetry', since, until, telemetry_keys)
 
         if len(obs_keys) > 0:
             data['obs'] = database.read_mongo_to_pandas_by_timestamp(
-                'obs', dt_start, dt_end, obs_keys)
+                'obs', since, until, obs_keys)
 
         return data
 
@@ -507,14 +513,12 @@ class MainBackend(SHMFPSBackend):
     ##### DM & TTM control
 
     def set_dm_pattern(self, array):
-        stream = toolbox.open_stream_once(config.Streams.DM_USER_CONTROLLED,
-                                          self.streams_and_fps_cache)
+        stream = toolbox.open_stream_once(config.Streams.DM_USER_CONTROLLED)
         if stream is not None:
             stream.set_data(array, True)
 
     def set_ttm_pattern(self, array):
-        stream = toolbox.open_stream_once(config.Streams.TTM_USER_CONTROLLED,
-                                          self.streams_and_fps_cache)
+        stream = toolbox.open_stream_once(config.Streams.TTM_USER_CONTROLLED)
         if stream is not None:
             stream.set_data(array, True)
 
@@ -529,17 +533,11 @@ class MainBackend(SHMFPSBackend):
     ##### Logs
 
     def get_logs_init(self):
-        entries = []
-        for entry in logs.seek(self.reader,
-                               entries_number=config.GUI.logs_initial_entries):
-            entries.append(entry)
-
-        return entries
+        return logs.seek(self.reader,
+                         entries_number=config.GUI.logs_initial_entries)
 
     def get_logs_new(self):
-        entries = []
+        return logs.get_last_entries(self.reader)
 
-        for entry in logs.get_last_entries(self.reader):
-            entries.append(entry)
-
-        return entries
+    def get_logs_between(self, since, until):
+        return logs.get_entries_between(self.reader, since, until)

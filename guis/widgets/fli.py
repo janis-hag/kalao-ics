@@ -5,6 +5,8 @@ import numpy as np
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QPen, Qt
 
+from kalao.utils.image import LogScale
+
 from guis.kalao import colormaps
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
@@ -61,6 +63,7 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     zoom_window = None
 
     saturation = np.nan
+    timestamp = None
     star_x = np.nan
     star_y = np.nan
     star_peak = np.nan
@@ -92,22 +95,26 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.update_labels()
 
         self.fli_view.hovered.connect(self.hover_xyv_to_str)
-        backend.data_updated.connect(self.data_updated)
-        backend.fli_updated.connect(self.fli_updated)
+        backend.all_updated.connect(self.all_updated)
+        backend.streams_fli_updated.connect(self.streams_fli_updated)
 
-    def data_updated(self, data):
+    def all_updated(self, data):
         cnt = self.consume_stream_cnt(data, config.Streams.FLI)
         if cnt != None:
             self.backend.get_streams_fli()
 
-        tracking_manual_centering_v, tracking_manual_centering_t = self.consume_db(
-            data, 'obs', 'sequencer_status')
-        if tracking_manual_centering_v is not None:
-            if tracking_manual_centering_v is True:
+        centering_manual_v, centering_manual_t = self.consume_db(
+            data, 'obs', 'centering_manual')
+        if centering_manual_v is not None:
+            if centering_manual_v is True:
                 self.open_zoom_window()
-                self.zoom_window.enter_manual_centering()
+                if self.zoom_window is not None:
+                    self.zoom_window.enter_manual_centering()
+            elif centering_manual_v is False:
+                if self.zoom_window is not None:
+                    self.zoom_window.exit_manual_centering()
 
-    def fli_updated(self, data):
+    def streams_fli_updated(self, data):
         img = self.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
@@ -117,14 +124,20 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             self.saturation = img.max() / self.stream_info['max']
 
-            self.fli_view.setImage(img, img_min, img_max)
+            self.fli_view.setImage(img, img_min, img_max, scale=LogScale)
 
-            self.star_x, self.star_y, self.star_peak, self.star_fwhm = find_star_fast(
-                img)
+            # self.star_x, self.star_y, self.star_peak, self.star_fwhm = find_star_fast(
+            #     img)
 
             self.update_labels()
 
     def update_labels(self):
+        if self.timestamp is None:
+            self.timestamp_label.updateText(timestamp='--')
+        else:
+            self.timestamp_label.updateText(
+                timestamp=self.timestamp.strftime('%H:%M:%S %d-%m-%Y'))
+
         self.star_x_label.updateText(
             x=(self.star_x - self.data_center_x) * self.axis_scaling,
             axis_unit=self.axis_unit,

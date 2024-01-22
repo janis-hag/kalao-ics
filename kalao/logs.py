@@ -49,6 +49,21 @@ def get_last_entries(reader, output_type=LogsOutputType.JSON):
     return entries
 
 
+def get_entries_between(since, until, filter=True,
+                        output_type=LogsOutputType.JSON):
+    reader = get_reader(filter=filter)
+    reader.seek_realtime(since)
+
+    entries = []
+    for entry in reader:
+        if entry['__REALTIME_TIMESTAMP'] > until:
+            break
+
+        entries.append(process_entry(entry, output_type))
+
+    return entries
+
+
 def process_entry(entry, output_type=LogsOutputType.JSON):
     if output_type == LogsOutputType.RAW:
         return pprint.pformat(entry, indent=4)

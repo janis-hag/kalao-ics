@@ -1,9 +1,14 @@
-from PySide6.QtCore import QSignalBlocker, QTimer, Signal, Slot
-from PySide6.QtGui import QFontDatabase, Qt, QTextBlockUserData, QTextCursor
+from datetime import datetime, timezone
+
+import numpy as np
+
+from PySide6.QtCore import QDateTime, QSignalBlocker, QTimer, Signal, Slot
+from PySide6.QtGui import (QCursor, QFontDatabase, QGuiApplication, Qt,
+                           QTextBlockUserData, QTextCursor)
 from PySide6.QtWidgets import QTreeWidgetItem
 
 from kalao import database
-from kalao.utils import kstring
+from kalao.utils import kstring, ktime
 
 from guis.kalao.definitions import Color
 from guis.kalao.ui_loader import loadUi
@@ -24,7 +29,7 @@ class LogsData(QTextBlockUserData):
 class LogsWidget(KWidget):
     logged = Signal(int, int)
 
-    lines = config.GUI.logs_lines
+    max_entries = config.GUI.logs_max_entries
 
     def __init__(self, backend, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -147,6 +152,14 @@ class LogsWidget(KWidget):
 
         self.on_acknowledge_button_clicked(None)
 
+        #####
+
+        until = QDateTime.currentDateTime()
+        since = until.addSecs(-3600)
+
+        self.since_datetimeedit.setDateTime(since)
+        self.until_datetimeedit.setDateTime(until)
+
         self.logs_timer = QTimer(parent=self)
         self.logs_timer.setInterval(int(1000 / config.GUI.refreshrate_logs))
         self.logs_timer.timeout.connect(self.get_logs_new)
@@ -200,11 +213,54 @@ class LogsWidget(KWidget):
 
         block.setVisible(self.entry_visible(entry))
 
-        while self.logs_textedit.document().blockCount() > self.lines:
+        while self.logs_textedit.document().blockCount() > self.max_entries:
             cursor = QTextCursor(self.logs_textedit.document().firstBlock())
             cursor.select(QTextCursor.BlockUnderCursor)
             cursor.removeSelectedText()
             cursor.deleteChar()
+
+    @Slot(QDateTime)
+    def on_since_datetimeedit_dateTimeChanged(self, datetime):
+        self.until_datetimeedit.setMinimumDateTime(datetime)
+
+    @Slot(QDateTime)
+    def on_until_datetimeedit_dateTimeChanged(self, datetime):
+        self.since_datetimeedit.setMaximumDateTime(datetime)
+
+    @Slot(bool)
+    def on_retieve_button_clicked(self, checked):
+        since = self.since_datetimeedit.dateTime().toUTC().toPython().replace(
+            tzinfo=timezone.utc)
+        until = self.until_datetimeedit.dateTime().toUTC().toPython().replace(
+            tzinfo=timezone.utc)
+
+        self.logs_timer.stop()
+
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+
+        entries = self.backend.get_logs_between(since, until)
+
+        QGuiApplication.restoreOverrideCursor()
+
+        self.logs_textedit.clear()
+
+        self.max_entries = np.inf
+
+        if entries is not None:
+            for entry in entries:
+                self.add_log_entry(entry)
+
+        self.on_acknowledge_button_clicked(None)
+
+    @Slot(bool)
+    def on_live_button_clicked(self, checked):
+        self.logs_textedit.clear()
+
+        self.max_entries = config.GUI.logs_max_entries
+
+        self.logs_timer.start()
+
+        #TODO: retrieve a bit
 
     @Slot(QTreeWidgetItem, int)
     def on_filters_tree_itemChanged(self, item, column):

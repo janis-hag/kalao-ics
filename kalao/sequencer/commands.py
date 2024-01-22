@@ -22,9 +22,10 @@ from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
                        plc_utils, shutter, tungsten)
 from kalao.sequencer import centering, focusing
 from kalao.sequencer.seq_context import with_sequencer_status
-from kalao.utils import file_handling
+from kalao.utils import exposure, file_handling
 
-from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
+from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
+                                     FlipMirrorPosition, LaserState,
                                      LoopStatus, ObservationType, ReturnCode,
                                      SequencerStatus, ShutterState,
                                      TungstenState)
@@ -43,11 +44,10 @@ def dark(**seq_args):
     :return: nothing
     """
 
-    q = seq_args.get('q')
     dit = seq_args.get('dit')
     nbPic = seq_args.get('nbPic', 1)
 
-    if None in (q, dit, nbPic):
+    if None in (dit, nbPic):
         raise MissingKeyword
 
     if plc_utils.lamps_off() != 0:
@@ -57,7 +57,7 @@ def dark(**seq_args):
         raise ShutterNotClosed
 
     # Check if an abort was requested before taking image
-    _check_abort(q)
+    _check_abort()
 
     # Take darks
     for _ in range(nbPic):
@@ -67,7 +67,7 @@ def dark(**seq_args):
             raise FLITakeImageFailed
 
         # Check if an abort was requested
-        _check_abort(q)
+        _check_abort()
 
     return ReturnCode.SEQ_OK
 
@@ -86,8 +86,8 @@ def tungsten_flat(**seq_args):
     :return: nothing
     """
 
-    q = seq_args.get('q')
-    filter_list = seq_args.get('filter_list', config.Calib.default_flat_list)
+    filter_list = seq_args.get('filter_list',
+                               config.Calib.Flats.default_flat_list)
     filepath = seq_args.get('filepath')
 
     # Commented out as it is not clear what is meant to be checked
@@ -99,6 +99,12 @@ def tungsten_flat(**seq_args):
 
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
+
+    if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
+        raise LoopsNotOpen
+
+    if aocontrol.reset_all_dms() != 0:
+        raise DMResetFailed
 
     if tungsten.on() != TungstenState.ON:
         raise TungstenNotOn
@@ -112,16 +118,10 @@ def tungsten_flat(**seq_args):
     if flipmirror.up() != FlipMirrorPosition.UP:
         raise FlipMirrorNotUp
 
+    _wait_for_tungsten()
+
     # Check if an abort was requested
-    _check_abort(q)
-
-    # if filepath is None:
-    #     filepath = file_handling.create_night_filepath()
-    # else:
-    #     # TODO, verify that temporary_path is in the filepath
-    #     temporary_path = file_handling.create_night_folder()
-
-    _wait_for_tungsten(q)
+    _check_abort()
 
     for filter_name in filter_list:
 
@@ -139,8 +139,8 @@ def tungsten_flat(**seq_args):
         if image_path is None:
             raise FLITakeImageFailed
 
-        # block for each picture and check if an abort was requested
-        _check_abort(q)
+        # Check if an abort was requested
+        _check_abort()
 
     # TODO move tungsen.off() to start of other commands so that the lamp stays on if needed
     # tungsten.off()
@@ -160,23 +160,22 @@ def sky_flat(**seq_args):
     :return: nothing
     """
 
-    #TODO abort sequence when flux too low
-
-    q = seq_args.get('q')
-    filter_list = seq_args.get('filter_list', config.Calib.default_flat_list)
+    filter_list = seq_args.get('filter_list',
+                               config.Calib.Flats.default_flat_list)
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
-
-    #if None in (q, dit, filepath):
-    if q is None:
-        # TODO verify which arguments are actually needed.
-        raise MissingKeyword
 
     if aocontrol.emgain_off() == -1:
         raise EMGainNotOff
 
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
+
+    if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
+        raise LoopsNotOpen
+
+    if aocontrol.reset_all_dms() != 0:
+        raise DMResetFailed
 
     if plc_utils.lamps_off() != 0:
         raise LampsNotOff
@@ -191,38 +190,46 @@ def sky_flat(**seq_args):
         raise FilterWheelNotInPosition
 
     # Check if an abort was requested
-    _check_abort(q)
+    _check_abort()
 
     _wait_for_tracking()
 
     current_filter = filter_list[0]
-    dit_list = config.Tungsten.flat_dit_list
 
-    ref_dit = optimise_dit(5, min_flux=config.Calib.flat_min_flux)
+    dit = exposure.flat_exptime(config.Calib.Flats.target_adu, current_filter)
 
-    coef = ref_dit / dit_list[filter_list[0]]
+    img = None
 
-    # Adapt integration times
-    for f, d in dit_list.items():
-        dit_list[f] = np.round(d * coef)
+    for filter in filter_list:
+        if img is not None:
+            dit = exposure.next_flat_exptime(config.Calib.Flats.target_adu,
+                                             img, dit, current_filter, filter)
 
-    for filter_name in filter_list:
+        if dit < config.Calib.Flats.min_exptime:
+            logger.error('sequencer',
+                         'Sky flat sequence stopped, exposure time too short')
+            break
 
-        if filter_name != current_filter:
-            current_filter = filter_name
-            if filterwheel.set_filter(filter_name) != filter_name:
+        if dit > config.Calib.Flats.max_exptime:
+            logger.error('sequencer',
+                         'Sky flat sequence stopped, exposure time too long')
+            break
+
+        if filter != current_filter:
+            if filterwheel.set_filter(filter) != filter:
                 raise FilterWheelNotInPosition
 
-        #dit = optimise_dit(5, sequencer_arguments=seq_args)
+            current_filter = filter
 
-        image_path = camera.take_image(ObservationType.SKY_FLAT,
-                                       dit=dit_list[filter_name])
+        image_path = camera.take_image(ObservationType.SKY_FLAT, dit=dit)
 
         if image_path is None:
             raise FLITakeImageFailed
 
+        img = fits.getdata(image_path)
+
         # Check if an abort was requested
-        _check_abort(q)
+        _check_abort()
 
     if shutter.close() != ShutterState.CLOSED:
         logger.error('sequencer', 'Failed to close the shutter after sky flat')
@@ -248,33 +255,39 @@ def target_observation(**seq_args):
     # TODO check for "'centering', 'non'"
     # TODO verify if we are already centred from previous observation
 
-    q = seq_args.get('q')
     kalfilter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
     kao = seq_args.get('kao').upper()
     auto_center = seq_args.get('auto_center')
-    mag_v = seq_args.get('mv')
+    mag = seq_args.get('mv')
 
     if kalfilter is None:
         logger.warn('sequencer',
                     'No filter specified for observation, using clear')
         kalfilter = 'clear'
 
-    # TODO
-    # if auto_center == 'aut' or not database.get_last_value(
-    #         'obs', 'tracking_status') == TrackingStatus.TRACKING:
-    #     aocontrol.open_loops()
-    #     aocontrol.reset_all_dms()
+    centering_exptime, centering_filter = exposure.optimal_exposure_time_and_filter(
+        mag)
 
-    if None in (q, dit):
-        raise MissingKeyword
+    ao_running = aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON
 
-    #TODO: update when focusing working
-    focusing.autofocus()
+    # Do not center if AO is running, as the AO kept the target centered
+    centering_needed = not ao_running and auto_center != CenteringMode.NONE
+
+    # Do not do a focus while AO is running (it will break the loop)
+    if not ao_running:
+        focusing.autofocus()
 
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
+
+    if kao == AdaptiveOpticsMode.DISABLED:
+        if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
+            raise LoopsNotOpen
+
+        if aocontrol.reset_all_dms() != 0:
+            raise DMResetFailed
 
     if aocontrol.start_wfs_acquisition() != 0:
         raise WFSNotOn
@@ -288,9 +301,12 @@ def target_observation(**seq_args):
     if shutter.open() != ShutterState.OPEN:
         raise ShutterNotOpen
 
-    # Put filter on clear to center on target
-    if auto_center == 'aut' and filterwheel.set_filter('clear') != 'clear':
-        raise FilterWheelNotInPosition
+    if centering_needed:
+        if filterwheel.set_filter(centering_filter) != centering_filter:
+            raise FilterWheelNotInPosition
+    else:
+        if filterwheel.set_filter(kalfilter) != kalfilter:
+            raise FilterWheelNotInPosition
 
     _wait_for_tracking()
 
@@ -298,47 +314,23 @@ def target_observation(**seq_args):
     if adc.configure() != 0:
         raise ADCConfigureFailed
 
-    if kao == 'NO_AO':
-        if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
-            raise LoopsNotOpen
-
-    if auto_center == 'aut' or kao == 'AO':
-        acq_dit = config.FLI.exp_time
-        if 8 < float(mag_v) < 10:
-            acq_dit = 10
-        if 10 < float(mag_v):
-            acq_dit = 20
-
-        if centering.center_on_target(kao=kao,
-                                      dit=acq_dit) != ReturnCode.CENTERING_OK:
+    if centering_needed:
+        if centering.center_on_target(
+                dit=centering_exptime,
+                adaptiveoptics_mode=kao) != ReturnCode.CENTERING_OK:
             raise CenteringFailed
 
     # Move filter to correct position for science
     if filterwheel.set_filter(kalfilter) != kalfilter:
         raise FilterWheelNotInPosition
 
-    if kao == 'AO':
+    if kao == AdaptiveOpticsMode.ENABLED:
         logger.info('sequencer', 'Starting Adaptive Optics')
-
-        # To be used and corrected if AO with manual is to be supported
-        # if centering != 'aut':
-        #     if starfinder.check_wfs_flux() != 0:
-        #         for i in range(5):
-        #             if _center_on_target(kao=kao, dit=acq_dit) == 0:
-        #                 break
-        #             time.sleep(3)
-        #
-        #     aocontrol.wfs_centering(tt_threshold=config.AO.
-        #                         WFS_centering_slope_threshold)
 
         if aocontrol.close_loops() != LoopStatus.ALL_LOOPS_ON:
             raise LoopNotClosed
 
-        time.sleep(config.Starfinder.AO_wait_settle)
-
-        aocontrol.tiptilt_ttm_to_telescope(override_threshold=True)
-
-        time.sleep(config.Starfinder.AO_wait_settle)
+        time.sleep(config.AO.settling_time)
 
     image_path = camera.take_image(ObservationType.OBJECT, dit=dit)
 
@@ -346,6 +338,8 @@ def target_observation(**seq_args):
 
     if image_path is None:
         raise FLITakeImageFailed
+
+    # Do not close shutter in case of successive exposures
 
     return ReturnCode.SEQ_OK
 
@@ -363,21 +357,25 @@ def focus(**seq_args):
     :return: nothing
     """
 
-    q = seq_args.get('q')
-    kalfilter = seq_args.get('kalfilter')
+    filter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
     dit = seq_args.get('dit')
+    mag = seq_args.get('mv')
 
-    if kalfilter is None:
+    if filter is None:
         logger.warn('sequencer',
                     'No filter specified for focusing, using clear')
-        kalfilter = 'clear'
+        filter = 'clear'
 
-    if q is None:
-        raise MissingKeyword
+    if dit <= 0:
+        exptime, filter = exposure.optimal_exposure_time_and_filter(mag)
+        dit = exptime
 
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
+
+    if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
+        raise LoopsNotOpen
 
     if aocontrol.reset_all_dms() != 0:
         raise DMResetFailed
@@ -391,28 +389,21 @@ def focus(**seq_args):
     if shutter.open() != ShutterState.OPEN:
         raise ShutterNotOpen
 
+    if filterwheel.set_filter(filter) != filter:
+        raise FilterWheelNotInPosition
+
     _wait_for_tracking()
 
     # Configure ADC once on target
     if adc.configure() != 0:
         raise ADCConfigureFailed
 
-    # if _center_on_target(kao=kao, dit=acq_dit) == -1:
-    #     return ReturnCode.SEQ_CENTERING_FAILED
+    if focusing.focus_sequence(dit=dit) != ReturnCode.FOCUSING_OK:
+        raise FocusSequenceFailed
 
-    # if dit is None:# in (q, dit):
-    #     system.print_and_log(
-    #             'No focusing dit given. Searching for optimal dit')
-    #     database.store('obs',{'sequencer_status': SequencerStatus.ERROR})
-    #     return -1
-
-    if filterwheel.set_filter(kalfilter) != kalfilter:
-        raise FilterWheelNotInPosition
-
-    ret = focusing.focus_sequence(dit=dit, abort_queue=q)
-
-    if ret != 0:
-        raise FLITakeImageFailed
+    if shutter.close() != ShutterState.CLOSED:
+        logger.error('sequencer',
+                     'Failed to close the shutter after focus sequence')
 
     return ReturnCode.SEQ_OK
 
@@ -465,7 +456,7 @@ def instrument_change(**seq_args):
     _shut_off_plc()
 
     database.store('obs', {
-        'tracking_manual_centering': False,
+        'centering_manual': False,
     })
 
     return ReturnCode.SEQ_OK
@@ -483,7 +474,7 @@ def stopao(**seq_args):
     _open_loops()
 
     database.store('obs', {
-        'tracking_manual_centering': False,
+        'centering_manual': False,
     })
 
     return ReturnCode.SEQ_OK
@@ -502,7 +493,7 @@ def end(**seq_args):
     _shut_off_plc()
 
     database.store('obs', {
-        'tracking_manual_centering': False,
+        'centering_manual': False,
     })
 
     if aocontrol.turn_dm_off() != ReturnCode.OK:
@@ -544,8 +535,8 @@ def edp_config(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def _check_abort(q):
-    if q is not None and not q.empty():
+def _check_abort():
+    if database.get_last_value('sequencer_status') == SequencerStatus.ABORTING:
         raise AbortRequested
 
     return ReturnCode.SEQ_OK
@@ -574,7 +565,7 @@ def _wait_for_tracking():
             file_handling.update_db_from_telheader()
             return ReturnCode.SEQ_OK
 
-        time.sleep(config.SEQ.pointing_wait_time)
+        time.sleep(config.SEQ.pointing_poll_interval)
 
     else:
         logger.error(
@@ -584,7 +575,7 @@ def _wait_for_tracking():
 
 
 @with_sequencer_status(SequencerStatus.WAITLAMP)
-def _wait_for_tungsten(q):
+def _wait_for_tungsten():
     # Wait for tungsten to warm up
     state, switch_time = tungsten.get_switch_time()
 
@@ -593,62 +584,13 @@ def _wait_for_tungsten(q):
         if state != TungstenState.ON:
             raise TungstenSwitchedOff
 
-        _check_abort(q)
+        _check_abort()
 
-        time.sleep(config.Tungsten.switch_wait)
+        time.sleep(config.Tungsten.stabilisation_poll_interval)
 
         state, switch_time = tungsten.get_switch_time()
 
     return ReturnCode.SEQ_OK
-
-
-def optimise_dit(starting_dit, min_flux=config.Starfinder.min_flux,
-                 max_flux=config.Starfinder.max_flux):
-    """
-    Search for optimal dit value to reach the requested ADU.
-
-    TODO implement filter change to nd if dit too short.
-
-    :return: optimal dit value
-    """
-
-    new_dit = starting_dit
-
-    for i in range(config.Starfinder.dit_optimization_trials):
-
-        filepath = camera.take_image(ObservationType.TECHNICAL, dit=new_dit)
-
-        #time.sleep(20)
-        file_handling.add_comment(filepath,
-                                  "Dit optimisation sequence: " + str(new_dit))
-
-        image = fits.getdata(filepath)
-        # flux = image[np.argpartition(image, -6)][-6:].sum()
-        #flux = np.sort(np.ravel(image))[-focusing_pixels:].sum()
-
-        print(new_dit, image.max(), max_flux, min_flux)
-        if image.mean() >= max_flux:
-            new_dit = int(np.floor(max_flux / (1.5 * image.mean())))
-            #new_dit = int(np.floor(0.8 * new_dit))
-            if new_dit <= 1:
-                print('Max flux ' + str(image.max()) +
-                      ' above max permitted value ' + str(max_flux))
-                return -1
-            continue
-        elif image.mean() <= min_flux:
-            new_dit = int(np.floor(1.5 * min_flux / image.mean()))
-            #new_dit = int(np.ceil(1.2 * new_dit))
-            if new_dit >= config.Starfinder.max_dit:
-                print('Max flux ' + str(image.max()) +
-                      ' below minimum permitted value: ' + str(min_flux))
-                return -1
-            continue
-        else:
-            break
-
-    print('Optimal dit: ' + str(new_dit))
-
-    return new_dit
 
 
 @with_sequencer_status(SequencerStatus.DARKS)
@@ -657,19 +599,22 @@ def generate_night_darks(folder=None):
     Generate the darks needed for the calibration of the night which is assumed to have ended.
     """
 
-    if folder is None:
-        _, folder = file_handling.create_night_folders()
+    exptimes = file_handling.get_exposure_times()
 
-    exp_times = file_handling.get_exposure_times(folder)
-
-    if len(exp_times) == 0:
+    if len(exptimes) == 0:
         logger.warn('sequencer', f'Not generating darks as {folder} is empty.')
         return 0
     else:
-        logger.info('sequencer', f'Generating {len(exp_times)} darks ({", ".join(str(dit) for dit in [1,3.5,3])})')
-        for dit in exp_times:
-            for i in range(config.Calib.dark_number):
-                logger.info('sequencer', f'Generating dark for {dit} s ({i}/{config.Calib.dark_number}')
+        logger.info(
+            'sequencer',
+            f'Generating {len(exptimes)} darks ({", ".join(str(dit) for dit in [1,3.5,3])})'
+        )
+        for dit in exptimes:
+            for i in range(config.Calib.Darks.dark_number):
+                logger.info(
+                    'sequencer',
+                    f'Generating dark for {dit} s ({i}/{config.Calib.Darks.dark_number}'
+                )
                 camera.take_image(ObservationType.DARK, dit=dit)
 
     return 0
@@ -684,6 +629,9 @@ def _open_loops():
 
     if aocontrol.set_exptime(0) != ReturnCode.OK:
         logger.warn('sequencer', 'Failed to reset WFS exposure time.')
+
+    if aocontrol.reset_all_dms() != 0:
+        logger.warn('sequencer', 'Failed to reset DM and TTM.')
 
 
 def _shut_off_plc():

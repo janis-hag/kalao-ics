@@ -1,25 +1,28 @@
 import numpy as np
 from numpy.polynomial import Polynomial
 
+from astropy.io import fits
+
 from PySide6.QtCharts import (QScatterSeries, QSplineSeries, QValueAxis,
                               QXYSeries)
 from PySide6.QtCore import QPointF, QTimer
 from PySide6.QtGui import QBrush, QFont, QPen, Qt
-from PySide6.QtWidgets import QLabel, QVBoxLayout
+from PySide6.QtWidgets import QLabel, QMessageBox, QVBoxLayout
 
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendDataMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KGraphicsView, KLabel, KMainWindow
+from guis.kalao.widgets import KGraphicsView, KLabel, KMainWindow, KMessageBox
 
 import config
 
 
 class FocusWindow(KMainWindow, BackendDataMixin):
-    def __init__(self, backend, parent=None):
+    def __init__(self, backend, file=None, parent=None):
         super().__init__(parent)
 
         self.backend = backend
+        self.file = file
 
         loadUi('focus.ui', self)
         self.resize(800, 400)
@@ -89,12 +92,21 @@ class FocusWindow(KMainWindow, BackendDataMixin):
 
         chart.legend().hide()
 
-        backend.focus_updated.connect(self.focus_updated, Qt.UniqueConnection)
+        self.clear()
+        self.status_label.updateText(status='--')
 
-        self.focus_timer = QTimer(parent=self)
-        self.focus_timer.setInterval(int(1000 / config.GUI.refreshrate_focus))
-        self.focus_timer.timeout.connect(self.backend.get_focus)
-        self.focus_timer.start()
+        if self.file is None:
+            backend.focus_updated.connect(self.focus_updated,
+                                          Qt.UniqueConnection)
+
+            self.focus_timer = QTimer(parent=self)
+            self.focus_timer.setInterval(
+                int(1000 / config.GUI.refreshrate_focus))
+            self.focus_timer.timeout.connect(self.backend.get_focus)
+            self.focus_timer.start()
+        else:
+            hdul = fits.open(self.file)
+            self.show_sequence(hdul)
 
         self.show()
         self.center()
@@ -103,9 +115,10 @@ class FocusWindow(KMainWindow, BackendDataMixin):
     def focus_updated(self, data):
         hdul = self.consume_fits_full(data, 'focus_sequence')
 
-        if hdul is None:
-            return
+        if hdul is not None:
+            self.show_sequence(hdul)
 
+    def show_sequence(self, hdul):
         self.clear()
 
         for i in range(1, len(hdul)):
@@ -162,6 +175,31 @@ class FocusWindow(KMainWindow, BackendDataMixin):
                 self.focus_series.count() - 1,
                 {QXYSeries.PointConfiguration.Color: Color.GREEN})
 
+        if 'HIERARCH FOCUS SUCCESS' in hdul[0].header:
+            sucess = hdul[0].header['HIERARCH FOCUS SUCCESS']
+
+            if self.file is None:
+                # Stop timer to spare ressources
+                self.focus_timer.stop()
+
+            if sucess:
+                self.status_label.updateText(status='Success!')
+            else:
+                reason = hdul[0].header.comments['HIERARCH FOCUS SUCCESS']
+
+                self.status_label.updateText(status=reason)
+                self.status_label.setStyleSheet(f'color: {Color.RED.name()};')
+
+                msgbox = KMessageBox(self)
+                msgbox.setIcon(QMessageBox.Critical)
+                msgbox.setText("<b>Focusing failed!</b>")
+                msgbox.setInformativeText(
+                    f'Focusing failed with the following error:\n\n{reason}')
+                msgbox.setModal(True)
+                msgbox.show()
+        else:
+            self.status_label.updateText(status=f'Step {len(hdul)-1}')
+
     def clear(self):
         self.focus_series.clear()
         self.focus_fit_series.clear()
@@ -174,12 +212,15 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             desc_label.updateText(fwhm=np.nan)
 
     def closeEvent(self, event):
-        self.focus_timer.stop()
-        self.backend.focus_updated.disconnect(self.focus_updated)
+        if self.file is None:
+            self.focus_timer.stop()
+            self.backend.focus_updated.disconnect(self.focus_updated)
+
         event.accept()
 
     def showEvent(self, event):
-        self.focus_timer.start()
-        self.backend.focus_updated.connect(self.focus_updated,
-                                           Qt.UniqueConnection)
+        if self.file is None:
+            self.focus_timer.start()
+            self.backend.focus_updated.connect(self.focus_updated,
+                                               Qt.UniqueConnection)
         event.accept()

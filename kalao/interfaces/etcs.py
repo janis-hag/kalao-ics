@@ -26,6 +26,15 @@ def get_tracking():
         return False
 
 
+def get_instrument():
+    ret, resp = _send_request('/m3/status')
+
+    if ret == ReturnCode.ETCS_OK:
+        return resp['instrument']
+    else:
+        return -1
+
+
 def get_altaz():
     ret, resp = _send_request('/axis/status')
 
@@ -117,7 +126,7 @@ def set_m3_lin(position):
 
     ret, resp = _send_request('/m3/position/lin', params)
 
-    return 0
+    return ret
 
 
 def set_m3_rot(position):
@@ -125,7 +134,7 @@ def set_m3_rot(position):
 
     ret, resp = _send_request('/m3/position/rot', params)
 
-    return 0
+    return ret
 
 
 def _send_request(request_path, params={}):

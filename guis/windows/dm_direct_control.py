@@ -6,15 +6,14 @@ from astropy.io import fits
 
 from PySide6.QtCore import QSignalBlocker, Slot
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QDoubleSpinBox, QErrorMessage, QFileDialog,
-                               QLabel)
+from PySide6.QtWidgets import QDoubleSpinBox, QFileDialog, QLabel, QMessageBox
 
 from kalao.utils import ktools, zernike
 
 from guis.kalao.colormaps import CoolWarm
 from guis.kalao.mixins import BackendActionMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KMainWindow
+from guis.kalao.widgets import KMainWindow, KMessageBox
 
 
 class DMSpinBox(QDoubleSpinBox):
@@ -90,7 +89,9 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
 
             self.zernike_spinboxes[i] = spinbox
 
-        self.error_dialog = QErrorMessage(self)
+        self.error_dialog = KMessageBox(self)
+        self.error_dialog.setIcon(QMessageBox.Critical)
+        self.error_dialog.setModal(True)
 
         self.show()
         self.center()
@@ -128,28 +129,35 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
             'All (*.fits *.csv);;Images (*.fits);;Text files (*.csv)')
         dialog.setAcceptMode(QFileDialog.AcceptOpen)
 
+        self.error_dialog.setText("<b>Loading failed!</b>")
+
         try:
             if dialog.exec():
                 filenames = dialog.selectedFiles()
 
                 if len(filenames) != 1:
-                    self.error_dialog.showMessage(
-                        f'Select only one file (got {len(filenames)}).')
+                    self.error_dialog.setInformativeText(
+                        f'Select one and only one file (got {len(filenames)}).'
+                    )
+                    self.error_dialog.show()
                     return
 
                 filename = Path(filenames[0])
 
                 if not filename.exists():
-                    self.error_dialog.showMessage('File does not exists.')
+                    self.error_dialog.setInformativeText(
+                        'File does not exists.')
+                    self.error_dialog.show()
                     return
 
                 if filename.suffix.lower() == '.fits':
                     img = fits.getdata(filename)
 
                     if img.shape != (12, 12):
-                        self.error_dialog.showMessage(
+                        self.error_dialog.setInformativeText(
                             f'FITS shape incorrect (expected {(12, 12)}, got {img.shape}).'
                         )
+                        self.error_dialog.show()
                         return
 
                     self.set_spinboxes_to_pattern(img)
@@ -159,9 +167,10 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
                     data = np.loadtxt(filename)
 
                     if data.shape != (140, ):
-                        self.error_dialog.showMessage(
+                        self.error_dialog.setInformativeText(
                             f'CSV shape incorrect (expected {(140,)}, got {data.shape}).'
                         )
+                        self.error_dialog.show()
                         return
 
                     pattern = np.zeros((12, 12))
@@ -173,11 +182,13 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
                     self.action_send([], self.backend.set_dm_pattern, pattern)
 
                 else:
-                    self.error_dialog.showMessage(
+                    self.error_dialog.setInformativeText(
                         f'Unsupported file extension "{filename.suffix}".')
+                    self.error_dialog.show()
         except PermissionError:
-            self.error_dialog.showMessage(
+            self.error_dialog.setInformativeText(
                 'Can\'t read file, permission refused.')
+            self.error_dialog.show()
 
     @Slot(bool)
     def on_save_button_clicked(self, checked):
@@ -187,13 +198,17 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
             'All (*.fits *.csv);;Images (*.fits);;Text files (*.csv)')
         dialog.setAcceptMode(QFileDialog.AcceptSave)
 
+        self.error_dialog.setText("<b>Saving failed!</b>")
+
         try:
             if dialog.exec():
                 filenames = dialog.selectedFiles()
 
                 if len(filenames) != 1:
-                    self.error_dialog.showMessage(
-                        f'Select only one file (got {len(filenames)}).')
+                    self.error_dialog.setInformativeText(
+                        f'Select one and only one file (got {len(filenames)}).'
+                    )
+                    self.error_dialog.show()
                     return
 
                 filename = Path(filenames[0])
@@ -216,11 +231,13 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
                     np.savetxt(filename, pattern)
 
                 else:
-                    self.error_dialog.showMessage(
+                    self.error_dialog.setInformativeText(
                         f'Unsupported file extension "{filename.suffix}".')
+                    self.error_dialog.show()
         except PermissionError:
-            self.error_dialog.showMessage(
+            self.error_dialog.setInformativeText(
                 'Can\'t write file, permission refused.')
+            self.error_dialog.show()
 
     def set_spinboxes_to_pattern(self, pattern):
         for i, spinbox in self.actuators_spinboxes.items():

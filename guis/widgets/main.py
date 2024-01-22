@@ -62,7 +62,7 @@ class MainWidget(KWidget, BackendDataMixin):
 
         self.onsky_checkbox.setChecked(on_sky_unit)
 
-        backend.data_updated.connect(self.data_updated)
+        backend.all_updated.connect(self.all_updated)
 
     @Slot(int)
     def on_freeze_checkbox_stateChanged(self, state):
@@ -72,7 +72,7 @@ class MainWidget(KWidget, BackendDataMixin):
         else:
             self.streams_timer.start()
 
-    def data_updated(self, data):
+    def all_updated(self, data):
         ### Instrument
 
         sequencer_status_v, sequencer_status_t = self.consume_db(

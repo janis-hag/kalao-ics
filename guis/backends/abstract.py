@@ -5,19 +5,6 @@ from functools import wraps
 from PySide6.QtCore import QObject, Signal
 
 
-def emit(signal):
-    def _emit(fun):
-        @wraps(fun)
-        def wrapper(self, *args, **kwargs):
-            data = fun(self, *args, **kwargs)
-
-            return getattr(self, signal).emit(data)
-
-        return wrapper
-
-    return _emit
-
-
 def timeit(fun):
     @wraps(fun)
     def wrapper(self, *args, **kwargs):
@@ -45,20 +32,11 @@ def name_to_url(name):
 
 
 class AbstractBackend(QObject):
-    streams_updated = Signal(object)
-    streams = {}
-
-    fli_updated = Signal(object)
-    fli = {}
-
-    data_updated = Signal(object)
-    data = {}
-
+    streams_all_updated = Signal(object)
+    streams_fli_updated = Signal(object)
+    all_updated = Signal(object)
     monitoringandtelemetry_updated = Signal(object)
-    monitoringandtelemetry = {}
-
-    dmdisp_updated = Signal(object)
-    dmdisp = {}
-
+    streams_dmdisp_updated = Signal(object)
     focus_updated = Signal(object)
-    focus = {}
+
+    _emit = True

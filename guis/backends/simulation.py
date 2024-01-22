@@ -13,7 +13,7 @@ from kalao import database
 from kalao.interfaces import fake_data
 from kalao.utils import kmath, kstring, zernike
 
-from guis.backends.abstract import AbstractBackend, emit, timeit
+from guis.backends.abstract import AbstractBackend, timeit
 from guis.kalao import lorem
 
 from kalao.definitions.enums import (FlipMirrorPosition, IPPowerStatus,
@@ -25,7 +25,10 @@ import config
 
 
 class FakeSHMFPSBackend(AbstractBackend):
-    streams_and_fps_cache = {}
+    def __init__(self):
+        super().__init__()
+
+        self.internal_state = {}
 
     def _update_stream(self, data, stream_name, stream_data, key=None):
         if key is None:
@@ -34,15 +37,17 @@ class FakeSHMFPSBackend(AbstractBackend):
         if key not in data:
             data[key] = {}
 
-        cnt0 = data[key].get('cnt0', -1)
+        cnt0 = self.internal_state.get(f'{stream_name}-cnt0', -1) + 1
 
         data[key].update({
-            'cnt0': cnt0 + 1,
+            'cnt0': cnt0,
             'data': stream_data,
         })
 
+        self.internal_state[f'{stream_name}-cnt0'] = cnt0
+
         if stream_name == 'fli_stream':
-            data[key]['cnt0'] = self.data.get('fli_stream', {}).get('cnt0', -1)
+            data[key]['cnt0'] = self.internal_state.get('fli-cnt0', -1)
 
     def _update_stream_keywords(self, data, stream_name, keywords):
         if stream_name not in data:
@@ -50,13 +55,11 @@ class FakeSHMFPSBackend(AbstractBackend):
 
         data[stream_name]['keywords'] = keywords
 
-    def _update_stream_cnt(self, data, stream_name):
+    def _update_stream_cnt(self, data, stream_name, cnt0):
         if stream_name not in data:
             data[stream_name] = {}
 
-        cnt0 = data[stream_name].get('cnt0', -1)
-
-        data[stream_name]['cnt0'] = cnt0 + 1
+        data[stream_name]['cnt0'] = cnt0
 
     def _update_param(self, data, fps_name, param_name, param):
         if fps_name not in data:
@@ -83,8 +86,6 @@ class MainBackend(FakeSHMFPSBackend):
 
     def __init__(self):
         super().__init__()
-
-        self.internal_state = {}
 
         for i in range(12):
             self.internal_state[f'dm01disp{i:02d}'] = zernike.generate_pattern(
@@ -156,6 +157,8 @@ class MainBackend(FakeSHMFPSBackend):
                 RelayState.OFF,
             'fan_status':
                 RelayState.ON,
+            'fli-cnt0':
+                0,
             'fli-exposure_time':
                 60,
             'fli-remaining_time':
@@ -209,7 +212,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     def _internal_update(self):
         if time.monotonic() - self.last_fli_update > 5:
-            self._update_stream_cnt(self.data, config.Streams.FLI)
+            self.internal_state['fli-cnt0'] += 1
             self.last_fli_update = time.monotonic()
 
         if self.internal_state['dm-loopON']:
@@ -228,9 +231,10 @@ class MainBackend(FakeSHMFPSBackend):
                     'ttm-loopgain'] * self.internal_state[
                         config.Streams.TTM_CENTERING]
 
-    @emit('streams_updated')
     @timeit
     def get_streams_all(self):
+        data = {}
+
         if self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP:
             illumination = 'laser'
             if self.internal_state['laser_state'] == LaserState.OFF:
@@ -254,36 +258,35 @@ class MainBackend(FakeSHMFPSBackend):
         slopes_params = fake_data.slopes_params(slopes_data)
         flux_params = fake_data.flux_params(flux_data)
 
-        self._update_stream(self.streams, config.Streams.DM,
-                            self._get_dm01disp())
-        self._update_param(self.streams, config.FPS.BMC, 'max_stroke',
+        self._update_stream(data, config.Streams.DM, self._get_dm01disp())
+        self._update_param(data, config.FPS.BMC, 'max_stroke',
                            self.internal_state['bmc-max_stroke'])
 
         if self.internal_state['nuvu-acq']:
-            self._update_stream(self.streams, config.Streams.NUVU, nuvu_data)
+            self._update_stream(data, config.Streams.NUVU, nuvu_data)
 
-            self._update_stream(self.streams, config.Streams.SLOPES,
-                                slopes_data)
-            self._update_param(self.streams, config.FPS.SHWFS, 'slope_x',
-                               slopes_params['slope_x'])
-            self._update_param(self.streams, config.FPS.SHWFS, 'slope_y',
-                               slopes_params['slope_y'])
-            self._update_param(self.streams, config.FPS.SHWFS, 'residual',
-                               slopes_params['residual'])
+            self._update_stream(data, config.Streams.SLOPES, slopes_data)
+            self._update_param(data, config.FPS.SHWFS, 'slope_x_avg',
+                               slopes_params['slope_x_avg'])
+            self._update_param(data, config.FPS.SHWFS, 'slope_y_avg',
+                               slopes_params['slope_y_avg'])
+            self._update_param(data, config.FPS.SHWFS, 'residual_rms',
+                               slopes_params['residual_rms'])
 
-            self._update_stream(self.streams, config.Streams.FLUX, flux_data)
-            self._update_param(self.streams, config.FPS.SHWFS,
-                               'flux_subaperture_avg',
-                               flux_params['flux_subaperture_avg'])
-            self._update_param(self.streams, config.FPS.SHWFS,
-                               'flux_subaperture_brightest',
-                               flux_params['flux_subaperture_brightest'])
+            self._update_stream(data, config.Streams.FLUX, flux_data)
+            self._update_param(data, config.FPS.SHWFS, 'flux_avg',
+                               flux_params['flux_avg'])
+            self._update_param(data, config.FPS.SHWFS, 'flux_max',
+                               flux_params['flux_max'])
 
-        return self.streams
+        if self._emit:
+            self.streams_all_updated.emit(data)
+        return data
 
-    @emit('fli_updated')
     @timeit
     def get_streams_fli(self):
+        data = {}
+
         if self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP:
             illumination = 'laser'
             if self.internal_state['laser_state'] == LaserState.OFF:
@@ -301,22 +304,31 @@ class MainBackend(FakeSHMFPSBackend):
                                        tiptilt=self._get_dm02disp(),
                                        illumination=illumination)
 
-        self._update_stream(self.fli, config.Streams.FLI, fli_data)
-        self._update_stream_keywords(self.fli, config.Streams.FLI, {
-            'laser': self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP,
-            'timestamp': datetime.now(timezone.utc).timestamp(),
-        })
+        self._update_stream(data, config.Streams.FLI, fli_data)
+        self._update_stream_keywords(
+            data, config.Streams.FLI, {
+                'laser':
+                    self.internal_state['flipmirror_position'] ==
+                    FlipMirrorPosition.UP,
+                'timestamp':
+                    datetime.now(timezone.utc).timestamp(),
+            })
 
-        return self.fli
+        if self._emit:
+            self.streams_fli_updated.emit(data)
+        return data
 
-    @emit('data_updated')
     @timeit
     def get_all(self):
-        self._update_stream(self.data, config.Streams.TTM,
-                            self._get_dm02disp())
+        data = {}
+
+        self._update_stream_cnt(data, config.Streams.FLI,
+                                self.internal_state['fli-cnt0'])
+
+        self._update_stream(data, config.Streams.TTM, self._get_dm02disp())
 
         if self.first:
-            self._update_stream(self.data, config.Streams.MODALGAINS,
+            self._update_stream(data, config.Streams.MODALGAINS,
                                 self.internal_state[config.Streams.MODALGAINS])
             self.first = False
 
@@ -332,7 +344,7 @@ class MainBackend(FakeSHMFPSBackend):
                 timezone.utc).timestamp() * 1e6
 
         self._update_stream_keywords(
-            self.data, config.Streams.NUVU_RAW, {
+            data, config.Streams.NUVU_RAW, {
                 'T_CCD': -60,
                 'T_CNTRLR': 35,
                 'T_PSU': 35,
@@ -345,35 +357,35 @@ class MainBackend(FakeSHMFPSBackend):
                 '_MAQTIME': self.internal_state['nuvu-maqtime'],
             })
 
-        self._update_param(self.data, config.FPS.NUVU, 'autogain_on',
+        self._update_param(data, config.FPS.NUVU, 'autogain_on',
                            self.internal_state['nuvu-autogain_on'])
-        self._update_param(self.data, config.FPS.NUVU, 'autogain_setting',
+        self._update_param(data, config.FPS.NUVU, 'autogain_setting',
                            self.internal_state['nuvu-autogain_setting'])
 
-        self._update_param(self.data, config.FPS.BMC, 'max_stroke',
+        self._update_param(data, config.FPS.BMC, 'max_stroke',
                            self.internal_state['bmc-max_stroke'])
-        self._update_param(self.data, config.FPS.BMC, 'stroke_mode',
+        self._update_param(data, config.FPS.BMC, 'stroke_mode',
                            self.internal_state['bmc-stroke_mode'])
 
-        self._update_param(self.data, config.FPS.SHWFS, 'algorithm',
+        self._update_param(data, config.FPS.SHWFS, 'algorithm',
                            self.internal_state['shwfs-algorithm'])
 
-        self._update_param(self.data, config.FPS.DMLOOP, 'loopON',
+        self._update_param(data, config.FPS.DMLOOP, 'loopON',
                            self.internal_state['dm-loopON'])
-        self._update_param(self.data, config.FPS.DMLOOP, 'loopgain',
+        self._update_param(data, config.FPS.DMLOOP, 'loopgain',
                            self.internal_state['dm-loopgain'])
-        self._update_param(self.data, config.FPS.DMLOOP, 'loopmult', 0.99)
-        self._update_param(self.data, config.FPS.DMLOOP, 'looplimit', 1)
+        self._update_param(data, config.FPS.DMLOOP, 'loopmult', 0.99)
+        self._update_param(data, config.FPS.DMLOOP, 'looplimit', 1)
 
-        self._update_param(self.data, config.FPS.TTMLOOP, 'loopON',
+        self._update_param(data, config.FPS.TTMLOOP, 'loopON',
                            self.internal_state['ttm-loopON'])
-        self._update_param(self.data, config.FPS.TTMLOOP, 'loopgain',
+        self._update_param(data, config.FPS.TTMLOOP, 'loopgain',
                            self.internal_state['ttm-loopgain'])
-        self._update_param(self.data, config.FPS.TTMLOOP, 'loopmult', 0.99)
-        self._update_param(self.data, config.FPS.TTMLOOP, 'looplimit', 1)
+        self._update_param(data, config.FPS.TTMLOOP, 'loopmult', 0.99)
+        self._update_param(data, config.FPS.TTMLOOP, 'looplimit', 1)
 
         self._update_dict(
-            self.data, 'plc', {
+            data, 'plc', {
                 'shutter_state':
                     self.internal_state['shutter_state'],
                 'flipmirror_position':
@@ -421,7 +433,7 @@ class MainBackend(FakeSHMFPSBackend):
             })
 
         self._update_dict(
-            self.data, 'services', {
+            data, 'services', {
                 'kalao_nuvu.service':
                     self.internal_state['kalao_nuvu.service'],
                 'kalao_cacao.service':
@@ -441,7 +453,7 @@ class MainBackend(FakeSHMFPSBackend):
             })
 
         self._update_dict(
-            self.data, 'fli', {
+            data, 'fli', {
                 'exposure_time':
                     self.internal_state['fli-exposure_time'],
                 'remaining_time':
@@ -457,7 +469,7 @@ class MainBackend(FakeSHMFPSBackend):
             })
 
         self._update_dict(
-            self.data, 'ippower', {
+            data, 'ippower', {
                 'ippower_rtc_status':
                     self.internal_state['ippower_rtc_status'],
                 'ippower_bench_status':
@@ -467,23 +479,24 @@ class MainBackend(FakeSHMFPSBackend):
             })
 
         self._update_db(
-            self.data, 'obs', {
+            data, 'obs', {
                 'sequencer_status': [{
                     'value': 'BUSY',
                     'timestamp': datetime(2023, 12, 7, 10, 52, 17)
                 }],
-                'tracking_manual_centering': [{
+                'centering_manual': [{
                     'value': False,
                     'timestamp': datetime(2023, 12, 7, 10, 52, 17)
                 }]
             })
 
-        return self.data
+        if self._emit:
+            self.all_updated.emit(data)
+        return data
 
-    @emit('monitoringandtelemetry_updated')
     @timeit
     def get_monitoringandtelemetry(self):
-        self.monitoringandtelemetry = {}
+        data = {}
 
         monitoring_dt = datetime.now(timezone.utc)
         monitoring_dt -= timedelta(
@@ -497,42 +510,39 @@ class MainBackend(FakeSHMFPSBackend):
             config.Database.telemetry_update_interval,
             microseconds=telemetry_dt.microsecond)
 
-        self._update_dict(self.monitoringandtelemetry, 'db-timestamps', {
+        self._update_dict(data, 'db-timestamps', {
             'monitoring': monitoring_dt,
             'telemetry': telemetry_dt,
         })
 
-        return self.monitoringandtelemetry
+        if self._emit:
+            self.monitoringandtelemetry_updated.emit(data)
+        return data
 
-    @emit('dmdisp_updated')
     @timeit
     def get_streams_dmdisp(self, dm_number):
-        if dm_number not in self.dmdisp:
-            self.dmdisp[dm_number] = {}
+        data = {}
 
         if dm_number == config.AO.DM_loop_number:
-            self._update_stream(self.dmdisp[dm_number], f'dm01disp',
-                                self._get_dm01disp())
+            self._update_stream(data, f'dm01disp', self._get_dm01disp())
 
             for i in range(0, 12):
-                self._update_stream(self.dmdisp[dm_number],
-                                    f'dm{dm_number:02d}disp{i:02d}',
+                self._update_stream(data, f'dm{dm_number:02d}disp{i:02d}',
                                     self.internal_state[f'dm01disp{i:02d}'])
         elif dm_number == config.AO.TTM_loop_number:
-            self._update_stream(self.dmdisp[dm_number], f'dm02disp',
-                                self._get_dm02disp())
+            self._update_stream(data, f'dm02disp', self._get_dm02disp())
 
             for i in range(0, 12):
-                self._update_stream(self.dmdisp[dm_number],
-                                    f'dm{dm_number:02d}disp{i:02d}',
+                self._update_stream(data, f'dm{dm_number:02d}disp{i:02d}',
                                     self.internal_state[f'dm02disp{i:02d}'])
 
         else:
             raise Exception(f'Unknown DM number {dm_number}')
 
-        return self.dmdisp[dm_number]
+        if self._emit:
+            self.streams_dmdisp_updated.emit(data)
+        return data
 
-    @emit('focus_updated')
     @timeit
     def get_focus(self):
         if self.internal_state['focusing-step'] == config.Focusing.steps:
@@ -551,14 +561,15 @@ class MainBackend(FakeSHMFPSBackend):
         else:
             hdul = self.internal_state['focusing-hdul']
 
-        x = np.arange(0, 80)
-        y = np.arange(0, 80)
+        x = np.arange(0, config.Focusing.window_size)
+        y = np.arange(0, config.Focusing.window_size)
 
         X, Y = np.meshgrid(x, y)
 
-        focus = 30000 + i * config.Focusing.step_size
-        x_star = 40
-        y_star = 40
+        focus = config.Focusing.autofocus_f0 + (
+            i - config.Focusing.steps / 2) * config.Focusing.step_size
+        x_star = config.Focusing.window_size / 2
+        y_star = config.Focusing.window_size / 2
         peak = 100
         fwhm = 10 + (i - 3.5)**2 + np.random.normal(0, 0.5)
 
@@ -597,36 +608,40 @@ class MainBackend(FakeSHMFPSBackend):
             hdul[0].header.set('HIERARCH FOCUS BEST STAR FWHM', best_fwhm)
             hdul[0].header.set('HIERARCH FOCUS SUCCESS', True)
 
-        return {
+        data = {
             'focus_sequence': {
                 'mtime': datetime.now(timezone.utc),
                 'hdul': hdul
             }
         }
 
-    def plots_data(self, dt_start, dt_end, monitoring_keys, telemetry_keys,
-                   obs_keys):
+        if self._emit:
+            self.streams_fli_updated.emit(data)
+        return data
+
+    def set_plots_data(self, since, until, monitoring_keys, telemetry_keys,
+                       obs_keys):
         now = datetime.now(timezone.utc)
-        if dt_end > now:
-            dt_end = now
+        if until > now:
+            until = now
 
         return {
             'monitoring':
                 self._generate_plots_data(
                     monitoring_keys,
                     pd.date_range(
-                        dt_start, dt_end,
-                        freq=f'{config.Database.monitoring_update_interval}S')
+                        since, until,
+                        freq=f'{config.Database.monitoring_update_interval}s')
                 ),
             'telemetry':
                 self._generate_plots_data(
                     telemetry_keys,
                     pd.date_range(
-                        dt_start, dt_end,
-                        freq=f'{config.Database.telemetry_update_interval}S')),
+                        since, until,
+                        freq=f'{config.Database.telemetry_update_interval}s')),
             'obs':
                 self._generate_plots_data(
-                    obs_keys, pd.date_range(dt_start, dt_end, freq='300S')),
+                    obs_keys, pd.date_range(since, until, freq='300s')),
         }
 
     def _generate_plots_data(self, keys, timestamps):
@@ -1145,8 +1160,21 @@ class MainBackend(FakeSHMFPSBackend):
 
         return logs
 
-    def _generate_log(self):
-        timestamp = datetime.now().strftime('%y-%m-%d %H:%M:%S')
+    def get_logs_between(self, since, until):
+        logs = []
+
+        timestamps = pd.date_range(since, until, freq=f'60s')
+
+        for timestamp in timestamps:
+            logs.append(self._generate_log(timestamp))
+
+        return logs
+
+    def _generate_log(self, timestamp=None):
+        if timestamp is None:
+            timestamp = datetime.now().strftime('%y-%m-%d %H:%M:%S')
+        else:
+            timestamp = timestamp.strftime('%y-%m-%d %H:%M:%S')
 
         origin = random.choice(self.logs_services)
 

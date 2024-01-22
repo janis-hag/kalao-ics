@@ -6,67 +6,152 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1256</width>
-    <height>764</height>
+    <width>1073</width>
+    <height>593</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Logs - KalAO</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" columnstretch="1,0">
-   <item row="2" column="1">
+  <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,0,0,0,0" columnstretch="1,0">
+   <item row="3" column="1">
     <widget class="QPushButton" name="clear_services_button">
      <property name="text">
       <string>Clear Services</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="QTreeWidget" name="filters_tree">
-     <property name="maximumSize">
-      <size>
-       <width>200</width>
-       <height>16777215</height>
-      </size>
-     </property>
-     <property name="showDropIndicator" stdset="0">
-      <bool>false</bool>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::NoSelection</enum>
-     </property>
-     <property name="rootIsDecorated">
-      <bool>false</bool>
-     </property>
-     <column>
-      <property name="text">
-       <string>Filters</string>
-      </property>
-     </column>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QPushButton" name="clear_logs_button">
-     <property name="text">
-      <string>Clear Logs</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
+   <item row="2" column="1">
     <widget class="QPushButton" name="clear_levels_button">
      <property name="text">
       <string>Clear Levels</string>
      </property>
     </widget>
    </item>
-   <item row="4" column="1">
+   <item row="5" column="1">
     <widget class="QPushButton" name="check_all_button">
      <property name="text">
       <string>Check All</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="0" rowspan="4">
+   <item row="4" column="1">
+    <widget class="QPushButton" name="clear_logs_button">
+     <property name="text">
+      <string>Clear Logs</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <layout class="QHBoxLayout" name="total_layout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="warnings_label">
+       <property name="text">
+        <string>Warnings</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="warnings_spinbox">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+       <property name="maximum">
+        <number>999</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Maximum</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>30</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="errors_label">
+       <property name="text">
+        <string>Errors</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="errors_spinbox">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::NoButtons</enum>
+       </property>
+       <property name="maximum">
+        <number>999</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Maximum</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>30</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="acknowledge_button">
+       <property name="text">
+        <string>Acknowledge warnings and errors</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="0" rowspan="4">
     <widget class="QPlainTextEdit" name="logs_textedit">
      <property name="palette">
       <palette>
@@ -178,10 +263,10 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout">
+   <item row="0" column="0">
+    <layout class="QHBoxLayout" name="time_layout">
      <item>
-      <spacer name="horizontalSpacer">
+      <spacer name="horizontalSpacer_5">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -194,27 +279,24 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="warnings_label">
+      <widget class="QLabel" name="start_label">
        <property name="text">
-        <string>Warnings</string>
+        <string>Since</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="warnings_spinbox">
-       <property name="readOnly">
-        <bool>true</bool>
+      <widget class="KDateTimeEdit" name="since_datetimeedit">
+       <property name="currentSection">
+        <enum>QDateTimeEdit::HourSection</enum>
        </property>
-       <property name="buttonSymbols">
-        <enum>QAbstractSpinBox::NoButtons</enum>
-       </property>
-       <property name="maximum">
-        <number>999</number>
+       <property name="displayFormat">
+        <string>HH:mm:ss dd.MM.yy</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_2">
+      <spacer name="horizontalSpacer_6">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -223,34 +305,31 @@
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>30</width>
+         <width>20</width>
          <height>20</height>
         </size>
        </property>
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="errors_label">
+      <widget class="QLabel" name="end_label">
        <property name="text">
-        <string>Errors</string>
+        <string>Until</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="errors_spinbox">
-       <property name="readOnly">
-        <bool>true</bool>
+      <widget class="KDateTimeEdit" name="until_datetimeedit">
+       <property name="currentSection">
+        <enum>QDateTimeEdit::HourSection</enum>
        </property>
-       <property name="buttonSymbols">
-        <enum>QAbstractSpinBox::NoButtons</enum>
-       </property>
-       <property name="maximum">
-        <number>999</number>
+       <property name="displayFormat">
+        <string>HH:mm:ss dd.MM.yy</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_3">
+      <spacer name="horizontalSpacer_8">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -259,21 +338,28 @@
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>30</width>
+         <width>20</width>
          <height>20</height>
         </size>
        </property>
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="acknowledge_button">
+      <widget class="QPushButton" name="retieve_button">
        <property name="text">
-        <string>Acknowledge warnings and errors</string>
+        <string>Retrieve</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_4">
+      <widget class="QPushButton" name="live_button">
+       <property name="text">
+        <string>Live</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_7">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -287,8 +373,39 @@
      </item>
     </layout>
    </item>
+   <item row="0" column="1" rowspan="2">
+    <widget class="QTreeWidget" name="filters_tree">
+     <property name="maximumSize">
+      <size>
+       <width>200</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="showDropIndicator" stdset="0">
+      <bool>false</bool>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::NoSelection</enum>
+     </property>
+     <property name="rootIsDecorated">
+      <bool>false</bool>
+     </property>
+     <column>
+      <property name="text">
+       <string>Filters</string>
+      </property>
+     </column>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>KDateTimeEdit</class>
+   <extends>QDateTimeEdit</extends>
+   <header>kalao</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

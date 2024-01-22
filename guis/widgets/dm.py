@@ -42,9 +42,9 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.change_colormap(Qt.Unchecked)
 
         self.dm_view.hovered.connect(self.hover_xyv_to_str)
-        backend.streams_updated.connect(self.streams_updated)
+        backend.streams_all_updated.connect(self.streams_all_updated)
 
-    def streams_updated(self, data):
+    def streams_all_updated(self, data):
         img = self.consume_stream(data, config.Streams.DM)
 
         max_stroke = self.consume_param(data, config.FPS.BMC, 'max_stroke')

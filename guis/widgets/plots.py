@@ -88,8 +88,8 @@ class PlotsWidget(KWidget):
         self.axis_x = QDateTimeAxis()
         self.axis_x.setTickCount(13)
         self.axis_x.setFormat("HH:mm")
-        self.axis_x.setRange(self.start_datetimeedit.dateTime(),
-                             self.end_datetimeedit.dateTime())
+        self.axis_x.setRange(self.since_datetimeedit.dateTime(),
+                             self.until_datetimeedit.dateTime())
         chart.addAxis(self.axis_x, Qt.AlignBottom)
 
         # Y Axis Settings
@@ -163,18 +163,18 @@ class PlotsWidget(KWidget):
         self.obs_list.scrollToTop()
 
     @Slot(QDateTime)
-    def on_start_datetimeedit_dateTimeChanged(self, datetime):
-        self.end_datetimeedit.setMinimumDateTime(datetime)
+    def on_since_datetimeedit_dateTimeChanged(self, datetime):
+        self.until_datetimeedit.setMinimumDateTime(datetime)
 
-        self.axis_x.setRange(self.start_datetimeedit.dateTime(),
-                             self.end_datetimeedit.dateTime())
+        self.axis_x.setRange(self.since_datetimeedit.dateTime(),
+                             self.until_datetimeedit.dateTime())
 
     @Slot(QDateTime)
-    def on_end_datetimeedit_dateTimeChanged(self, datetime):
-        self.start_datetimeedit.setMaximumDateTime(datetime)
+    def on_until_datetimeedit_dateTimeChanged(self, datetime):
+        self.since_datetimeedit.setMaximumDateTime(datetime)
 
-        self.axis_x.setRange(self.start_datetimeedit.dateTime(),
-                             self.end_datetimeedit.dateTime())
+        self.axis_x.setRange(self.since_datetimeedit.dateTime(),
+                             self.until_datetimeedit.dateTime())
 
     @Slot(float)
     def on_min_spinbox_valueChanged(self, d):
@@ -188,21 +188,21 @@ class PlotsWidget(KWidget):
 
     @Slot(bool)
     def on_last_hour_button_clicked(self, checked):
-        now = QDateTime.currentDateTime()
-        prev = now.addSecs(-3600)
+        until = QDateTime.currentDateTime()
+        since = until.addSecs(-3600)
 
-        self.start_datetimeedit.setDateTime(prev)
-        self.end_datetimeedit.setDateTime(now)
+        self.since_datetimeedit.setDateTime(since)
+        self.until_datetimeedit.setDateTime(until)
 
     @Slot(bool)
     def on_tonight_button_clicked(self, checked):
         start_of_night = ktime.get_start_of_night(datetime.now(timezone.utc))
 
-        start = QDateTime.fromSecsSinceEpoch(int(start_of_night.timestamp()))
-        end = start.addSecs(86400)
+        since = QDateTime.fromSecsSinceEpoch(int(start_of_night.timestamp()))
+        until = since.addSecs(86400)
 
-        self.start_datetimeedit.setDateTime(start)
-        self.end_datetimeedit.setDateTime(end)
+        self.since_datetimeedit.setDateTime(since)
+        self.until_datetimeedit.setDateTime(until)
 
     @Slot(int)
     def on_live_checkbox_stateChanged(self, state):
@@ -216,19 +216,19 @@ class PlotsWidget(KWidget):
             self.live_timer.stop()
 
     def on_live_timer_timeout(self):
-        time_delta = self.end_datetimeedit.dateTime().msecsTo(
-            self.start_datetimeedit.dateTime())
+        time_delta = self.until_datetimeedit.dateTime().msecsTo(
+            self.since_datetimeedit.dateTime())
 
         now = QDateTime.currentDateTime()
         prev = now.addMSecs(time_delta)
 
-        self.end_datetimeedit.setDateTime(now)
-        self.start_datetimeedit.setDateTime(prev)
+        self.until_datetimeedit.setDateTime(now)
+        self.since_datetimeedit.setDateTime(prev)
 
-        self.on_plot_button_clicked()
+        self.on_plot_button_clicked(None)
 
     @Slot(bool)
-    def on_plot_button_clicked(self, checked=None):
+    def on_plot_button_clicked(self, checked):
         monitoring_keys = []
         telemetry_keys = []
         obs_keys = []
@@ -242,15 +242,15 @@ class PlotsWidget(KWidget):
         for item in self.obs_list.selectedItems():
             obs_keys.append(item.key)
 
-        dt_start = self.start_datetimeedit.dateTime().toUTC().toPython(
-        ).replace(tzinfo=timezone.utc)
-        dt_end = self.end_datetimeedit.dateTime().toUTC().toPython().replace(
+        since = self.since_datetimeedit.dateTime().toUTC().toPython().replace(
+            tzinfo=timezone.utc)
+        until = self.until_datetimeedit.dateTime().toUTC().toPython().replace(
             tzinfo=timezone.utc)
 
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
 
-        data = self.backend.plots_data(dt_start, dt_end, monitoring_keys,
-                                       telemetry_keys, obs_keys)
+        data = self.backend.set_plots_data(since, until, monitoring_keys,
+                                           telemetry_keys, obs_keys)
 
         QGuiApplication.restoreOverrideCursor()
 
@@ -333,8 +333,8 @@ class PlotsWidget(KWidget):
 
                 color_index = (color_index+1) % len(ColorPalette)
 
-        time_delta = self.start_datetimeedit.dateTime().secsTo(
-            self.end_datetimeedit.dateTime())
+        time_delta = self.since_datetimeedit.dateTime().secsTo(
+            self.until_datetimeedit.dateTime())
         if time_delta > 86400:
             self.axis_x.setFormat("HH:mm dd.MM.yy")
         else:
@@ -348,8 +348,8 @@ class PlotsWidget(KWidget):
             plot_min -= 0.05 * delta
             plot_max += 0.05 * delta
 
-        self.axis_x.setRange(self.start_datetimeedit.dateTime().toUTC(),
-                             self.end_datetimeedit.dateTime().toUTC())
+        self.axis_x.setRange(self.since_datetimeedit.dateTime().toUTC(),
+                             self.until_datetimeedit.dateTime().toUTC())
         self.axis_y.setRange(plot_min, plot_max)
         self.axis_y.setTickCount(20)
         self.axis_y.applyNiceNumbers()

@@ -28,7 +28,7 @@ target_spt:
   long: Target spectral type
   unit:
 
-tracking_manual_centering:
+centering_manual:
   short: Manual centering flag
   long: Flag do indicate if manual centering is needed
   unit:
@@ -227,7 +227,7 @@ focusing_f0:
 focusing_f1:
   short: Autofocus linear term
   long: Linear term of autofocus model
-  unit:
+  unit: µm/°C
 
 # Dead-man
 deadman_keepalive:

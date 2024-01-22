@@ -17,7 +17,7 @@ from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser, shutter,
                        tungsten)
 from kalao.sequencer import commands
 
-from kalao.definitions.enums import ReturnCode, SequencerStatus
+from kalao.definitions.enums import ReturnCode, SequencerStatus, ShutterState
 from kalao.definitions.exceptions import *
 
 import config
@@ -136,7 +136,6 @@ def serve():
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socketSeq.bind((config.SEQ.ip, config.SEQ.port))
 
-    q = Queue()
     th = None
 
     database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
@@ -164,7 +163,7 @@ def serve():
         if command == 'exit':
             break
 
-        # Transform list of arg to a dict and add Queue Object q
+        # Transform list of arg to a dict
         # from: ['xxx', 'yyy', ... ] -> to: {'xxx': 'yyy', ... }
         args = dict(zip_longest(*[iter(arguments)] * 2, fillvalue=""))
         if 'type' in args:
@@ -176,8 +175,6 @@ def serve():
         else:
             database.store('obs', {'sequencer_command_received': args})
 
-        args['q'] = q
-
         # try to cast every values of args dict in type needed
         check = cast_args(args)
         if check != 0:
@@ -185,23 +182,17 @@ def serve():
             logger.error('sequencer', 'Casting of args went wrong')
             continue
 
-        # if abort command, stop last command with Queue object q
-        # and start abort func
+        # If abort command, start abort func and stop last command
         if 'ABORT' in command:
             database.store('obs',
                            {'sequencer_status': SequencerStatus.ABORTING})
             logger.info('sequencer', f'Received {command}. Aborting sequence.')
 
-            q.put('abort')
             commands.commands[command]()
 
             if th is not None:
                 th.join()
                 th = None
-
-            # Empty abort queue
-            while not q.empty():
-                q.get()
 
             database.store('obs',
                            {'sequencer_status': SequencerStatus.WAITING})
@@ -299,12 +290,22 @@ def execute_command(command, seq_args):
     except SequencerException as e:
         database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
         logger.error('sequencer', f'"{e.__doc__}" happened during {command}')
+
+        # Close shutter after exception
+        if shutter.close() != ShutterState.CLOSED:
+            logger.error('sequencer',
+                         'Failed to close the shutter after error')
     except Exception as e:
         database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
         logger.error('sequencer',
                      f'Unknown exception occured during {command}')
 
         traceback.print_exc()
+
+        # Close shutter after exception
+        if shutter.close() != ShutterState.CLOSED:
+            logger.error('sequencer',
+                         'Failed to close the shutter after error')
     else:
         database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
         logger.info('sequencer', f'{command} ended')

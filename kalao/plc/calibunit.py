@@ -57,30 +57,6 @@ def move_to_laser_position():
         return np.nan
 
 
-def move_px(pixel, absolute=False):
-    """
-    Move calib unit by amount of pixels
-
-    :param pixel: pixel to move to
-    :return:
-    """
-
-    if absolute and pixel < 0:
-        logger.error('calibunit', 'Calib unit position should not be negative')
-        return np.nan
-
-    current_position = get_position()
-
-    if absolute:
-        position = config.CalibUnit.initial_offset + config.CalibUnit.px_to_mm * pixel
-    else:
-        position = current_position + config.CalibUnit.px_to_mm * pixel
-
-    new_position = move(position)
-
-    return new_position
-
-
 def move(position, velocity=config.CalibUnit.velocity, blocking=True,
          beck=None):
     """

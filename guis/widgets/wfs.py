@@ -3,6 +3,7 @@ import numpy as np
 from PySide6.QtGui import QPen, Qt
 
 from kalao.utils import ktools
+from kalao.utils.image import LogScale
 
 from guis.kalao import colormaps
 from guis.kalao.definitions import Color
@@ -86,9 +87,9 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.wfs_view.setView(self.stream_info['shape'])
 
         self.wfs_view.hovered.connect(self.hover_xyv_to_str)
-        backend.streams_updated.connect(self.streams_updated)
+        backend.streams_all_updated.connect(self.streams_all_updated)
 
-    def streams_updated(self, data):
+    def streams_all_updated(self, data):
         img = self.consume_stream(data, config.Streams.NUVU)
 
         if img is not None:
@@ -97,7 +98,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             # Do not check min due to bias subtraction
             self.saturation = img.max() / self.stream_info['max']
 
-            self.wfs_view.setImage(img, img_min, img_max)
+            self.wfs_view.setImage(img, img_min, img_max, scale=LogScale)
 
             self.update_labels()
 

@@ -79,7 +79,8 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.hovered.connect(self.info_to_statusbar)
 
-        self.backend.dmdisp_updated.connect(self.dmdisp_updated)
+        self.backend.streams_dmdisp_updated.connect(
+            self.streams_dmdisp_updated)
 
         self.channels_timer = QTimer(parent=self)
         self.channels_timer.setInterval(
@@ -92,7 +93,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.center()
         self.setFixedSize(self.size())
 
-    def dmdisp_updated(self, data):
+    def streams_dmdisp_updated(self, data):
         img = self.consume_stream(data, f'dm{self.dm_number:02d}disp')
 
         if img is not None:

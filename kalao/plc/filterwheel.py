@@ -81,8 +81,7 @@ def set_filter(filter):
 
             fw.set_position(position)
 
-            time.sleep(config.FilterWheel.position_change_wait)
-
+            # Note: get_position() will wait for filter to be in position
             position_act = fw.get_position()
             name_act = translate_to_filter_name(position_act)
 
@@ -175,9 +174,7 @@ def init():
             fw = thorlabs.ThorlabsFilterWheel(
                 com=config.FilterWheel.device_port)
             fw.enable()
-            time.sleep(config.FilterWheel.enable_wait)
             fw.initialize()
-            time.sleep(config.FilterWheel.initialization_wait)
 
             logger.info('filterwheel', 'Filter wheel initialised')
 

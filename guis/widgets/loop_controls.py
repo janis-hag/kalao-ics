@@ -52,9 +52,12 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.nuvu_exposuretime_spinbox.setMaximum(
                 config.WFS.max_exposuretime)
 
-        with QSignalBlocker(self.nuvu_autogain_setting_spinbox):
-            self.nuvu_autogain_setting_spinbox.setMaximum(
-                config.WFS.max_autogain_setting)
+        with QSignalBlocker(self.nuvu_autogain_setting_combobox):
+            for emgain, exptime in config.WFS.autogain_params:
+                self.nuvu_autogain_setting_combobox.addItem(
+                    f'EM Gain: {emgain:d}, Exp. time: {exptime:.1f} ms')
+
+            self.nuvu_autogain_setting_combobox.setCurrentIndex(-1)
 
         with QSignalBlocker(self.bmc_strokemode_combobox):
             for mode in config.AO.bmc_stroke_modes:
@@ -115,9 +118,9 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         chart.hovered.connect(self.hover_xy_to_str)
         self.modalgains_plot.dragged.connect(self.hover_xy_to_str)
 
-        backend.data_updated.connect(self.data_updated)
+        backend.all_updated.connect(self.all_updated)
 
-    def data_updated(self, data):
+    def all_updated(self, data):
         # DM Loop
 
         self.data_to_widget(
@@ -162,7 +165,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.nuvu_autogain_checkbox, true_value=True)
         self.data_to_widget(
             self.consume_param(data, config.FPS.NUVU, 'autogain_setting'),
-            self.nuvu_autogain_setting_spinbox)
+            self.nuvu_autogain_setting_combobox)
 
         # Deformable Mirror
 
@@ -259,9 +262,9 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
-    def on_nuvu_autogain_setting_spinbox_valueChanged(self, i):
-        self.action_send(self.nuvu_autogain_setting_spinbox,
-                         self.backend.set_nuvu_autogain_setting, i)
+    def on_nuvu_autogain_setting_combobox_currentIndexChanged(self, index):
+        self.action_send(self.nuvu_autogain_setting_combobox,
+                         self.backend.set_nuvu_autogain_setting, index)
 
     # Deformable Mirror
 

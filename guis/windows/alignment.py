@@ -100,7 +100,7 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
                 view.subap = subap
                 view.label = getattr(subwindow, f'label_{i+1}')
 
-                view.lines = {
+                view.max_entries = {
                     PokeState.FLAT: {
                         VERT: view.scene.addLine(2, 0, 2, 4, pen_blue),
                         HORI: view.scene.addLine(0, 2, 4, 2, pen_blue)
@@ -117,11 +117,11 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
 
                 for j in PokeState:
                     for k in [VERT, HORI]:
-                        view.lines[j][k].setZValue(1)
+                        view.max_entries[j][k].setZValue(1)
 
-        backend.streams_updated.connect(self.streams_updated)
+        backend.streams_all_updated.connect(self.streams_all_updated)
 
-    def streams_updated(self, data):
+    def streams_all_updated(self, data):
         dxs = [0] * 4
         dys = [0] * 4
         rs = [0] * 4

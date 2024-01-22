@@ -33,6 +33,9 @@ def connect(addr=config.PLC.ip, port=config.PLC.port):
 def beckhoff_autoconnect(fun):
     @wraps(fun)
     def wrapper(*args, beck=None, **kwargs):
+        ret = None
+        exception = None
+
         if beck is None:
             disconnect_on_exit = True
             beck = connect()
@@ -42,12 +45,13 @@ def beckhoff_autoconnect(fun):
         try:
             ret = fun(*args, beck=beck, **kwargs)
         except Exception as e:
-            if disconnect_on_exit:
-                beck.disconnect()
-            raise e
+            exception = e
 
         if disconnect_on_exit:
             beck.disconnect()
+
+        if exception is not None:
+            raise exception
 
         return ret
 

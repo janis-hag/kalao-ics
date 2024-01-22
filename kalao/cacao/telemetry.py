@@ -14,11 +14,11 @@ from kalao.cacao import toolbox
 import config
 
 
-def gather(shm_and_fps_cache):
+def gather():
     telemetry_data = {}
 
     # Nuvu stream
-    nuvu_raw_stream = toolbox.open_stream_once('nuvu_raw', shm_and_fps_cache)
+    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
 
     if nuvu_raw_stream is not None:  # and session:
         stream_keywords = nuvu_raw_stream.get_keywords()
@@ -34,7 +34,7 @@ def gather(shm_and_fps_cache):
         telemetry_data['nuvu_mframerate'] = stream_keywords['MFRATE']
 
     # Nuvu process
-    nuvu_fps = toolbox.open_fps_once(config.FPS.NUVU, shm_and_fps_cache)
+    nuvu_fps = toolbox.open_fps_once(config.FPS.NUVU)
 
     if nuvu_fps is not None and nuvu_fps.run_runs():
         telemetry_data['nuvu_autogain_on'] = nuvu_fps.get_param('autogain_on')
@@ -42,26 +42,24 @@ def gather(shm_and_fps_cache):
             'autogain_setting')
 
     # BMC process
-    bmc_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
+    bmc_fps = toolbox.open_fps_once(config.FPS.BMC)
 
     if bmc_fps is not None and bmc_fps.run_runs():
         telemetry_data['bmc_max_stroke'] = bmc_fps.get_param('max_stroke')
         telemetry_data['bmc_stroke_mode'] = bmc_fps.get_param('stroke_mode')
 
     # SHWFS process
-    shwfs_fps = toolbox.open_fps_once(config.FPS.SHWFS, shm_and_fps_cache)
+    shwfs_fps = toolbox.open_fps_once(config.FPS.SHWFS)
 
     if shwfs_fps is not None and shwfs_fps.run_runs():
         telemetry_data['shwfs_algorithm'] = shwfs_fps.get_param('algorithm')
-        telemetry_data['shwfs_flux_subaperture_avg'] = shwfs_fps.get_param(
-            'flux_subaperture_avg')
-        telemetry_data[
-            'shwfs_flux_subaperture_brightest'] = shwfs_fps.get_param(
-                'flux_subaperture_brightest')
-        telemetry_data['shwfs_residual'] = shwfs_fps.get_param('residual')
+        telemetry_data['shwfs_flux_avg'] = shwfs_fps.get_param('flux_avg')
+        telemetry_data['shwfs_flux_max'] = shwfs_fps.get_param('flux_max')
+        telemetry_data['shwfs_residual_rms'] = shwfs_fps.get_param(
+            'residual_rms')
 
     # Tip/tilt stream
-    tt_stream = toolbox.open_stream_once(config.Streams.TTM, shm_and_fps_cache)
+    tt_stream = toolbox.open_stream_once(config.Streams.TTM)
 
     if tt_stream is not None:
         # Check turned off to prevent timeout. Data may be obsolete
@@ -71,7 +69,7 @@ def gather(shm_and_fps_cache):
         telemetry_data['pi_tilt'] = float(tt_data[1])
 
     # DM loop process
-    dmloop_fps = toolbox.open_fps_once(config.FPS.DMLOOP, shm_and_fps_cache)
+    dmloop_fps = toolbox.open_fps_once(config.FPS.DMLOOP)
 
     if dmloop_fps is not None and dmloop_fps.run_runs():
         telemetry_data['dmloop_gain'] = dmloop_fps.get_param('loopgain')
@@ -84,7 +82,7 @@ def gather(shm_and_fps_cache):
             telemetry_data['dmloop_on'] = 'OFF'
 
     # TTM loop process
-    ttmloop_fps = toolbox.open_fps_once(config.FPS.TTMLOOP, shm_and_fps_cache)
+    ttmloop_fps = toolbox.open_fps_once(config.FPS.TTMLOOP)
 
     if ttmloop_fps is not None and ttmloop_fps.run_runs():
         telemetry_data['ttmloop_gain'] = ttmloop_fps.get_param('loopgain')

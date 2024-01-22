@@ -1,15 +1,17 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 import numpy as np
 
 from PySide6.QtCore import QEvent, QObject, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import Qt
-from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton
+from PySide6.QtWidgets import (QFileDialog, QLabel, QLineEdit, QMessageBox,
+                               QPushButton)
 
 from guis.kalao.definitions import Color
 from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
 from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KStatusIndicator, KWidget
+from guis.kalao.widgets import KMessageBox, KStatusIndicator, KWidget
 from guis.windows.dm_channels import DMChannelsWindow
 from guis.windows.dm_direct_control import DMDirectControlWindow
 from guis.windows.focus import FocusWindow
@@ -17,7 +19,8 @@ from guis.windows.ttm_direct_control import TTMDirectControlWindow
 
 from kalao.definitions.enums import (FilterwheelStatus, FlipMirrorPosition,
                                      IPPowerStatus, LaserState, PLCStatus,
-                                     RelayState, ServiceAction, ShutterState,
+                                     RelayState, SequencerStatus,
+                                     ServiceAction, ShutterState,
                                      TungstenState)
 
 import config
@@ -32,7 +35,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     ttm_calibration = None
     dm_direct_control = None
     ttm_direct_control = None
-    focus = None
+    focus_window = None
 
     def __init__(self, backend, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -117,7 +120,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.services_layout.setColumnStretch(6, 1)
         self.services_layout.setColumnStretch(7, 1)
 
-        backend.data_updated.connect(self.data_updated)
+        backend.all_updated.connect(self.all_updated)
 
     def filter_display_name(self, filter):
         name = config.FilterWheel.filter_infos[filter]['name']
@@ -139,7 +142,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         else:
             return f'{name} ({start_str} – {end_str})'
 
-    def data_updated(self, data):
+    def all_updated(self, data):
         shutter_state = self.consume_dict(data, 'plc', 'shutter_state')
         if shutter_state is not None:
             with QSignalBlocker(self.shutter_combobox):
@@ -440,6 +443,14 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 else:  # failed
                     widgets['indicator'].setStatus(Color.RED, status[0])
 
+        sequencer_status_v, sequencer_status_t = self.consume_db(
+            data, 'obs', 'sequencer_status')
+        if sequencer_status_v is not None:
+            if sequencer_status_v == SequencerStatus.FOCUSING:
+                self.open_focus_window()
+                if self.focus_window is not None:
+                    self.focus_window.focus_timer.start()
+
     @Slot(int)
     def on_shutter_combobox_currentIndexChanged(self, index):
         self.action_send(self.shutter_combobox,
@@ -540,8 +551,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_adc1_stop_button_clicked(self, checked):
-        self.action_send(self.adc1_stop_button,
-                         self.backend.get_plc_adc1_stop)
+        self.action_send(self.adc1_stop_button, self.backend.get_plc_adc1_stop)
 
     @Slot(float)
     def on_adc2_spinbox_valueChanged(self, d):
@@ -554,8 +564,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_adc2_stop_button_clicked(self, checked):
-        self.action_send(self.adc2_stop_button,
-                         self.backend.get_plc_adc2_stop)
+        self.action_send(self.adc2_stop_button, self.backend.get_plc_adc2_stop)
 
     @Slot(bool)
     def on_adc_zero_disp_button_clicked(self, checked):
@@ -705,12 +714,45 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          self.backend.get_centering_laser)
 
     @Slot(bool)
-    def on_focusing_window_button_clicked(self, checked):
-        if self.focus is not None:
-            self.focus.show()
-            self.focus.activateWindow()
-        else:
-            self.focus = FocusWindow(self.backend, parent=self)
+    def on_open_focus_sequence_button_clicked(self, checked):
+        dialog = QFileDialog(self)
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setNameFilter('Images (*.fits)')
+        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+
+        error_dialog = KMessageBox(self)
+        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setModal(False)
+        error_dialog.setText("<b>Focus sequence loading failed!</b>")
+
+        try:
+            if dialog.exec():
+                filenames = dialog.selectedFiles()
+
+                if len(filenames) != 1:
+                    error_dialog.setInformativeText(
+                        f'Select one and only one file (got {len(filenames)}).'
+                    )
+                    error_dialog.show()
+                    return
+
+                filename = Path(filenames[0])
+
+                if not filename.exists():
+                    error_dialog.setInformativeText('File does not exists.')
+                    error_dialog.show()
+                    return
+
+                if filename.suffix.lower() != '.fits':
+                    error_dialog.setInformativeText(
+                        f'Unsupported file extension "{filename.suffix}".')
+                    error_dialog.show()
+
+                FocusWindow(self.backend, filename, parent=self)
+        except PermissionError:
+            error_dialog.setInformativeText(
+                'Can\'t read file, permission refused.')
+            error_dialog.show()
 
     @Slot(bool)
     def on_focusing_sequence_button_clicked(self, checked):
@@ -724,6 +766,13 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     def on_service_action_button_clicked(self, checked, unit, action):
         self.action_send([], self.backend.set_services_action, unit, action)
+
+    def open_focus_window(self):
+        if self.focus_window is not None:
+            self.focus_window.show()
+            self.focus_window.activateWindow()
+        else:
+            self.focus_window = FocusWindow(self.backend, parent=self)
 
     def eventFilter(self, source, event):
         if hasattr(source, 'hover_text'):

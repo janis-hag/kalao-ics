@@ -26,10 +26,13 @@ if __name__ == "__main__":
                         help='Engineering units')
     parser.add_argument('--expert', action="store_true", dest="expert",
                         help='Expert mode')
-    parser.add_argument('--simulation', action="store_true", dest="simulation",
-                        help='Simulation mode')
-    parser.add_argument('--http', action="store_true", dest="http",
-                        help='HTTP mode')
+
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument('--simulation', action="store_true", dest="simulation",
+                       help='Simulation mode')
+    group.add_argument('--http', action="store_true", dest="http",
+                       help='HTTP mode')
 
     args = parser.parse_args()
 

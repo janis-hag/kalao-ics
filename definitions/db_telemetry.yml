@@ -104,21 +104,21 @@ shwfs_algorithm:
   unit:
   group: Shack-Hartmann WFS
 
-shwfs_flux_subaperture_avg:
+shwfs_flux_avg:
   short: WFS Avg. flux
   long: Average flux of active subapertures
   unit: ADU
   group: Shack-Hartmann WFS
 
-shwfs_flux_subaperture_brightest:
+shwfs_flux_max:
   short: WFS Max. flux
   long: Maximum flux of active subapertures
   unit: ADU
   group: Shack-Hartmann WFS
 
-shwfs_residual:
+shwfs_residual_rms:
   short: WFS RMS error
-  long: RMS residuals of active subapertures
+  long: RMS residual of active subapertures
   unit: px
   group: Shack-Hartmann WFS
 

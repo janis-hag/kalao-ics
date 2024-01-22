@@ -2,13 +2,12 @@ import pickle
 import traceback
 from functools import partial
 
-from PySide6.QtCore import QByteArray, QEventLoop, QUrl, Signal
+from PySide6.QtCore import QByteArray, QEventLoop, QUrl
 from PySide6.QtNetwork import (QNetworkAccessManager, QNetworkReply,
                                QNetworkRequest)
 
 from guis.backends.abstract import AbstractBackend, name_to_url
-from guis.kalao.json_coder import (FakeSignal, KalAOJSONDecoder,
-                                   KalAOJSONEncoder)
+from guis.kalao.json_coder import KalAOJSONDecoder, KalAOJSONEncoder
 
 import config
 
@@ -21,32 +20,18 @@ class MainBackend(AbstractBackend):
         super().__init__()
 
     def __getattr__(self, path):
-        if '_updated' in path:
-            self.add_signal(path)
-            return getattr(self, path)
-        else:
-            return partial(self.forward, path)
-
-    def add_signal(self, name):
-        cls = self.__class__
-
-        new_cls = type(
-            cls.__name__,
-            cls.__bases__,
-            {
-                **cls.__dict__, name: Signal(object)
-            },
-        )
-
-        self.__class__ = new_cls
+        return partial(self.forward, path)
 
     def forward(self, path, *args, **kwargs):
         url = name_to_url(path)
 
         request = QNetworkRequest()
-        request.setUrl(QUrl(f"http://localhost:{config.GUI.http_port}{url}"))
+        request.setUrl(
+            QUrl(
+                f'http://localhost:{config.GUI.http_port}{url}?response_type={config.GUI.http_dataformat}'
+            ))
         request.setHeader(QNetworkRequest.ContentTypeHeader,
-                          "application/json")
+                          'application/json')
 
         data = {
             'args': list(args),
@@ -71,16 +56,22 @@ class MainBackend(AbstractBackend):
 
         try:
             data = reply.readAll()
-            if config.GUI.http_dataformat == 'pickle':
+            reply_type = reply.header(QNetworkRequest.ContentTypeHeader)
+            if reply_type == 'application/octet-stream':
                 ret = pickle.loads(data)
-            else:
+            elif reply_type == 'application/json':
                 ret = self.decoder.decode(data.data().decode("utf-8"))
+            else:
+                raise Exception(f'Unsupported MIME type {reply_type}')
         except Exception:
             print(f'[ERROR] An error occurred during data loading of {url}.')
             traceback.print_exc()
             return None
 
-        if isinstance(ret, FakeSignal):
-            return getattr(self, ret.name).emit(*ret.args)
+        signal = path.removeprefix('set_').removeprefix('get_')
+        signal = signal + '_updated'
+
+        if signal in self.__dict__:
+            self.__dict__[signal].emit(ret)
 
         return ret

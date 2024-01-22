@@ -24,9 +24,9 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     axis_precision = 0
 
     saturation = np.nan
-    slope_x = np.nan
-    slope_y = np.nan
-    residual = np.nan
+    slope_x_avg = np.nan
+    slope_y_avg = np.nan
+    residual_rms = np.nan
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
@@ -44,9 +44,9 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.change_colormap(Qt.Unchecked)
 
         self.slopes_view.hovered.connect(self.hover_xyv_to_str)
-        backend.streams_updated.connect(self.streams_updated)
+        backend.streams_all_updated.connect(self.streams_all_updated)
 
-    def streams_updated(self, data):
+    def streams_all_updated(self, data):
         img = self.consume_stream(data, config.Streams.SLOPES)
 
         if img is not None:
@@ -59,28 +59,32 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             self.slopes_view.setImage(img, img_min, img_max)
 
-        slope_x = self.consume_param(data, config.FPS.SHWFS, 'slope_x')
-        if slope_x is not None:
-            self.slope_x = slope_x
+        slope_x_avg = self.consume_param(data, config.FPS.SHWFS, 'slope_x_avg')
+        if slope_x_avg is not None:
+            self.slope_x_avg = slope_x_avg
 
-        slope_y = self.consume_param(data, config.FPS.SHWFS, 'slope_y')
-        if slope_y is not None:
-            self.slope_y = slope_y
+        slope_y_avg = self.consume_param(data, config.FPS.SHWFS, 'slope_y_avg')
+        if slope_y_avg is not None:
+            self.slope_y_avg = slope_y_avg
 
-        residual = self.consume_param(data, config.FPS.SHWFS, 'residual')
-        if residual is not None:
-            self.residual = residual
+        residual_rms = self.consume_param(data, config.FPS.SHWFS,
+                                          'residual_rms')
+        if residual_rms is not None:
+            self.residual_rms = residual_rms
 
-        if slope_x is not None or slope_y is not None or residual is not None:
+        if slope_x_avg is not None or slope_y_avg is not None or residual_rms is not None:
             self.update_labels()
 
     def update_labels(self):
-        self.tip_label.updateText(tip=self.slope_x * self.data_scaling,
-                                  unit=self.data_unit)
-        self.tilt_label.updateText(tilt=self.slope_y * self.data_scaling,
-                                   unit=self.data_unit)
-        self.residual_label.updateText(
-            residual=self.residual * self.data_scaling, unit=self.data_unit)
+        self.slope_x_avg_label.updateText(
+            slope_x_avg=self.slope_x_avg * self.data_scaling,
+            unit=self.data_unit)
+        self.slope_y_avg_label.updateText(
+            slope_y_avg=self.slope_y_avg * self.data_scaling,
+            unit=self.data_unit)
+        self.residual_rms_label.updateText(
+            residual_rms=self.residual_rms * self.data_scaling,
+            unit=self.data_unit)
 
         if self.saturation >= 1:
             self.saturation_label.setText('Saturated !')

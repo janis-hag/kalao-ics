@@ -25,8 +25,6 @@ from kalao.definitions.enums import (IPPowerStatus, LaserState, LoopStatus,
 
 import config
 
-shm_and_fps_cache = {}
-
 
 def _get_elapsed_time_since_activity():
     latest_obs_entry_time = database.get_last_time('obs')
@@ -81,7 +79,7 @@ def _check_dm_inactive():
     :return:
     """
 
-    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC, shm_and_fps_cache)
+    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC)
 
     if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
         (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
@@ -104,8 +102,7 @@ def _check_wfs_inactive():
 
     # TODO: check also EMGAIN keyword in nuvu_stream
 
-    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU,
-                                             shm_and_fps_cache)
+    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU)
 
     if nuvu_acquire_fps is not None and nuvu_acquire_fps.get_param(
             'emgain') > 1:
@@ -115,8 +112,7 @@ def _check_wfs_inactive():
         aocontrol.emgain_off()
         aocontrol.set_exptime(0)
 
-    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW,
-                                               shm_and_fps_cache)
+    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
 
     if nuvu_raw_stream is not None:
         maqtime = datetime.fromtimestamp(

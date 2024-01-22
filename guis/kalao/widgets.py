@@ -11,7 +11,8 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
                                QGraphicsScene, QGraphicsSimpleTextItem,
                                QGraphicsView, QLabel, QLineEdit,
-                               QListWidgetItem, QMainWindow, QWidget)
+                               QListWidgetItem, QMainWindow, QMessageBox,
+                               QSizePolicy, QSpacerItem, QWidget)
 
 from kalao.utils.image import LinearScale
 
@@ -480,7 +481,8 @@ class KGraphicsView(QGraphicsView, ArrayToImageMixin):
         self.img_max = img_max
 
         if self.image is not None:
-            self.setImage(self.img, self.img_min, self.img_max, self.scale)
+            self.setImage(self.img, self.img_min, self.img_max, self.scale,
+                          self.view, self.offset)
 
     def setView(self, shape):
         self.view = QRect(0, 0, shape[1], shape[0])
@@ -883,6 +885,23 @@ class KDraggableChartView(KChartView):
             self.dragged.emit(x, y)
 
         super().mouseMoveEvent(event)
+
+
+class KMessageBox(QMessageBox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def show(self):
+        super().show()
+
+        font_matrix = self.fontMetrics()
+        width = font_matrix.boundingRect(self.informativeText()).width()
+
+        spacer = QSpacerItem(width, 0, QSizePolicy.Minimum,
+                             QSizePolicy.Expanding)
+        self.layout().addItem(spacer,
+                              self.layout().rowCount(), 0, 1,
+                              self.layout().columnCount())
 
 
 class KStatusIndicator(QGraphicsView):
