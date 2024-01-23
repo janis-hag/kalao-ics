@@ -15,7 +15,7 @@ import config
 
 class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.FLUX
-    stream_info = config.StreamInfo.shwfs_slopes_flux
+    stream_info = config.StreamInfo.shwfs_flux
 
     data_unit = ' ADU'
     data_precision = 0

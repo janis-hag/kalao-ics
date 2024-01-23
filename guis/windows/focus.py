@@ -113,7 +113,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
         self.setFixedSize(self.size())
 
     def focus_updated(self, data):
-        hdul = self.consume_fits_full(data, 'focus_sequence')
+        hdul = self.consume_fits_full(data, 'last_focus_sequence')
 
         if hdul is not None:
             self.show_sequence(hdul)
@@ -185,7 +185,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             if sucess:
                 self.status_label.updateText(status='Success!')
             else:
-                reason = hdul[0].header.comments['HIERARCH FOCUS SUCCESS']
+                reason = hdul[0].header['HIERARCH FOCUS REASON']
 
                 self.status_label.updateText(status=reason)
                 self.status_label.setStyleSheet(f'color: {Color.RED.name()};')

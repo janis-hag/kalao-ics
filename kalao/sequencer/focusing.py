@@ -169,7 +169,7 @@ def focus_sequence(dit, steps=config.Focusing.steps,
 
             etcs.set_focus(best_focus)
         except (FocusingException, AbortRequested, FLITakeImageFailed) as e:
-            logger.info('focusing', f'Focus sequence aborted, "{e.__doc__}"')
+            logger.error('focusing', f'Focus sequence aborted, "{e.__doc__}"')
 
             hdul[0].header.set('HIERARCH FOCUS SUCCESS', False,
                                'Focus sequence successful')
@@ -179,6 +179,7 @@ def focus_sequence(dit, steps=config.Focusing.steps,
 
             if not isinstance(e, FocusingNoMinima):
                 # Restore focus
+                logger.info('focusing', f'Restoring focus using autofocus')
                 autofocus()
 
             return -1

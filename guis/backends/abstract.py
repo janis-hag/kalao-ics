@@ -5,6 +5,22 @@ from functools import wraps
 from PySide6.QtCore import QObject, Signal
 
 
+def emit(signal):
+    def _emit(fun):
+        @wraps(fun)
+        def wrapper(self, *args, **kwargs):
+            data = fun(self, *args, **kwargs)
+
+            if self._emit:
+                getattr(self, signal).emit(data)
+
+            return data
+
+        return wrapper
+
+    return _emit
+
+
 def timeit(fun):
     @wraps(fun)
     def wrapper(self, *args, **kwargs):
@@ -14,12 +30,10 @@ def timeit(fun):
 
         end = time.monotonic()
 
-        data.update({
-            'metadata': {
-                'duration': end - start,
-                'timestamp': datetime.now(timezone.utc)
-            }
-        })
+        data['metadata'] = {
+            'duration': end - start,
+            'timestamp': datetime.now(timezone.utc)
+        }
 
         return data
 
@@ -36,7 +50,8 @@ class AbstractBackend(QObject):
     streams_fli_updated = Signal(object)
     all_updated = Signal(object)
     monitoringandtelemetry_updated = Signal(object)
-    streams_dmdisp_updated = Signal(object)
+    streams_channels_dm_updated = Signal(object)
+    streams_channels_ttm_updated = Signal(object)
     focus_updated = Signal(object)
 
     _emit = True

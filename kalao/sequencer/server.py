@@ -240,11 +240,6 @@ def cast_args(args):
     :return: 0 if there was no error and 1 otherwise
     """
 
-    # Translate keyword if not already present
-    for edp_arg, kalao_arg in config.SEQ.EDP_translate.items():
-        if edp_arg in args and kalao_arg not in args:
-            args[kalao_arg] = args.pop(edp_arg)
-
     # Check for each key if the cast of the value is possible and cast it
     for k, v in args.items():
         if k in config.SEQ.gop_arg_int:

@@ -13,7 +13,7 @@ from kalao import database
 from kalao.interfaces import fake_data
 from kalao.utils import kmath, kstring, zernike
 
-from guis.backends.abstract import AbstractBackend, timeit
+from guis.backends.abstract import AbstractBackend, emit, timeit
 from guis.kalao import lorem
 
 from kalao.definitions.enums import (FlipMirrorPosition, IPPowerStatus,
@@ -231,6 +231,7 @@ class MainBackend(FakeSHMFPSBackend):
                     'ttm-loopgain'] * self.internal_state[
                         config.Streams.TTM_CENTERING]
 
+    @emit('streams_all_updated')
     @timeit
     def get_streams_all(self):
         data = {}
@@ -279,10 +280,9 @@ class MainBackend(FakeSHMFPSBackend):
             self._update_param(data, config.FPS.SHWFS, 'flux_max',
                                flux_params['flux_max'])
 
-        if self._emit:
-            self.streams_all_updated.emit(data)
         return data
 
+    @emit('streams_fli_updated')
     @timeit
     def get_streams_fli(self):
         data = {}
@@ -314,10 +314,9 @@ class MainBackend(FakeSHMFPSBackend):
                     datetime.now(timezone.utc).timestamp(),
             })
 
-        if self._emit:
-            self.streams_fli_updated.emit(data)
         return data
 
+    @emit('all_updated')
     @timeit
     def get_all(self):
         data = {}
@@ -490,10 +489,9 @@ class MainBackend(FakeSHMFPSBackend):
                 }]
             })
 
-        if self._emit:
-            self.all_updated.emit(data)
         return data
 
+    @emit('monitoringandtelemetry_updated')
     @timeit
     def get_monitoringandtelemetry(self):
         data = {}
@@ -515,34 +513,37 @@ class MainBackend(FakeSHMFPSBackend):
             'telemetry': telemetry_dt,
         })
 
-        if self._emit:
-            self.monitoringandtelemetry_updated.emit(data)
         return data
 
+    @emit('streams_channels_dm_updated')
     @timeit
-    def get_streams_dmdisp(self, dm_number):
+    def get_streams_channels_dm(self):
         data = {}
 
-        if dm_number == config.AO.DM_loop_number:
-            self._update_stream(data, f'dm01disp', self._get_dm01disp())
+        self._update_stream(data, config.Streams.DM, self._get_dm01disp())
 
-            for i in range(0, 12):
-                self._update_stream(data, f'dm{dm_number:02d}disp{i:02d}',
-                                    self.internal_state[f'dm01disp{i:02d}'])
-        elif dm_number == config.AO.TTM_loop_number:
-            self._update_stream(data, f'dm02disp', self._get_dm02disp())
+        for i in range(0, 12):
+            self._update_stream(
+                data, f'{config.Streams.DM}{i:02d}',
+                self.internal_state[f'{config.Streams.DM}{i:02d}'])
 
-            for i in range(0, 12):
-                self._update_stream(data, f'dm{dm_number:02d}disp{i:02d}',
-                                    self.internal_state[f'dm02disp{i:02d}'])
-
-        else:
-            raise Exception(f'Unknown DM number {dm_number}')
-
-        if self._emit:
-            self.streams_dmdisp_updated.emit(data)
         return data
 
+    @emit('streams_channels_ttm_updated')
+    @timeit
+    def get_streams_channels_ttm(self):
+        data = {}
+
+        self._update_stream(data, config.Streams.TTM, self._get_dm02disp())
+
+        for i in range(0, 12):
+            self._update_stream(
+                data, f'{config.Streams.TTM}{i:02d}',
+                self.internal_state[f'{config.Streams.TTM}{i:02d}'])
+
+        return data
+
+    @emit('focus_updated')
     @timeit
     def get_focus(self):
         if self.internal_state['focusing-step'] == config.Focusing.steps:
@@ -615,8 +616,6 @@ class MainBackend(FakeSHMFPSBackend):
             }
         }
 
-        if self._emit:
-            self.streams_fli_updated.emit(data)
         return data
 
     def set_plots_data(self, since, until, monitoring_keys, telemetry_keys,

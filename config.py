@@ -97,7 +97,7 @@ class AO:
 
     wait_fps_run = 3  # s
 
-    shwfs_algorithms = ['Quadcell', 'Center of mass']
+    shwfs_algorithms = ['Quad-cell', 'Center of mass']
     bmc_stroke_modes = ['Mid-stroke', 'Minimize stroke']
 
 
@@ -329,7 +329,7 @@ class SEQ:
     ip = "127.0.0.1"
     port = 5005
     gop_arg_int = []
-    gop_arg_float = ["dit", "intensity"]
+    gop_arg_float = ["dit", "intensity", "mv"]
     gop_arg_string = ["filepath", "filterposition"]
     init_duration = 120
     T4_root = Path("/disks/synology")
@@ -349,11 +349,6 @@ class SEQ:
         'K_SKYFLT': 20,  # s
         'K_TRGOBS': 20,  # s
         'K_FOCUS': 20,  # s
-    }
-
-    EDP_translate = {
-        "texp": "dit",
-        "centrage": "auto_center",
     }
 
 
@@ -494,10 +489,10 @@ class Exposure:
         fwhm_ref = 1  # asec
 
         # For finding optimal exposure time and filter for focusing and centering
-        min_exptime = 5  # s
+        min_exptime = 10  # s
         min_adu = 2048  # ADU
         max_adu = 32768  # ADU
-        filter_list = ['clear', 'g']
+        filter_list = ['clear', 'g', 'z']
 
     class SkyFlat:
         # TODO: to be refined
@@ -708,7 +703,7 @@ class Streams:
     NUVU = 'nuvu_stream'
     FLI = 'fli_stream'
     SLOPES = 'shwfs_slopes'
-    FLUX = 'shwfs_slopes_flux'
+    FLUX = 'shwfs_flux'
     DM = 'dm01disp'
     TTM = 'dm02disp'
     MODALGAINS = 'aol1_mgainfact'
@@ -729,7 +724,7 @@ class StreamInfo:
     nuvu_stream = {'shape': (64, 64), 'min': 0, 'max': 2**16 - 1}
     fli_stream = {'shape': (1024, 1024), 'min': 0, 'max': 2**16 - 1}
     shwfs_slopes = {'shape': (11, 22), 'min': -2, 'max': 2}
-    shwfs_slopes_flux = {'shape': (11, 11), 'min': 0, 'max': 2**16 - 1}
+    shwfs_flux = {'shape': (11, 11), 'min': 0, 'max': 2**16 - 1}
     dm01disp = {'shape': (12, 12), 'min': -1.75, 'max': 1.75}
     dm02disp = {'shape': (2, ), 'min': -2.5, 'max': 2.5}
 

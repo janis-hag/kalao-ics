@@ -10,7 +10,7 @@ from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
                        plc_utils, shutter, temperature_control, tungsten)
 from kalao.sequencer import centering, focusing
 
-from guis.backends.abstract import AbstractBackend, timeit
+from guis.backends.abstract import AbstractBackend, emit, timeit
 
 from kalao.definitions.enums import IPPowerStatus
 
@@ -117,6 +117,7 @@ class MainBackend(SHMFPSBackend):
 
         self.reader = logs.get_reader(True)
 
+    @emit('streams_all_updated')
     @timeit
     def get_streams_all(self):
         data = {}
@@ -135,10 +136,9 @@ class MainBackend(SHMFPSBackend):
         self._update_param(data, config.FPS.SHWFS, 'flux_avg')
         self._update_param(data, config.FPS.SHWFS, 'flux_max')
 
-        if self._emit:
-            self.streams_all_updated.emit(data)
         return data
 
+    @emit('streams_fli_updated')
     @timeit
     def get_streams_fli(self):
         data = {}
@@ -146,10 +146,9 @@ class MainBackend(SHMFPSBackend):
         self._update_stream(data, config.Streams.FLI)
         self._update_stream_keywords(data, config.Streams.FLI)
 
-        if self._emit:
-            self.streams_fli_updated.emit(data)
         return data
 
+    @emit('all_updated')
     @timeit
     def get_all(self):
         data = {}
@@ -191,10 +190,9 @@ class MainBackend(SHMFPSBackend):
         # Last so it is the closest to timestamp computation
         self._update_stream_keywords(data, config.Streams.NUVU_RAW)
 
-        if self._emit:
-            self.all_updated.emit(data)
         return data
 
+    @emit('monitoringandtelemetry_updated')
     @timeit
     def get_monitoringandtelemetry(self):
         data = {}
@@ -211,31 +209,39 @@ class MainBackend(SHMFPSBackend):
                     database.get_collection_last_update('telemetry'),
             })
 
-        if self._emit:
-            self.monitoringandtelemetry_updated.emit(data)
         return data
 
+    @emit('streams_channels_dm_updated')
     @timeit
-    def get_streams_dmdisp(self, dm_number):
+    def get_streams_channels_dm(self):
         data = {}
 
-        self._update_stream(data, f'dm{dm_number:02d}disp')
+        self._update_stream(data, config.Streams.DM)
 
         for i in range(0, 12):
-            self._update_stream(data, f'dm{dm_number:02d}disp{i:02d}')
+            self._update_stream(data, f'{config.Streams.DM}{i:02d}')
 
-        if self._emit:
-            self.streams_dmdisp_updated.emit(data)
         return data
 
+    @emit('streams_channels_ttm_updated')
+    @timeit
+    def get_streams_channels_ttm(self):
+        data = {}
+
+        self._update_stream(data, config.Streams.TTM)
+
+        for i in range(0, 12):
+            self._update_stream(data, f'{config.Streams.TTM}{i:02d}')
+
+        return data
+
+    @emit('focus_updated')
     @timeit
     def get_focus(self):
         data = {}
 
         self._update_fits_full(data, config.FITS.last_focus_sequence)
 
-        if self._emit:
-            self.focus_updated.emit(data)
         return data
 
     def set_plots_data(self, since, until, monitoring_keys, telemetry_keys,
@@ -540,4 +546,4 @@ class MainBackend(SHMFPSBackend):
         return logs.get_last_entries(self.reader)
 
     def get_logs_between(self, since, until):
-        return logs.get_entries_between(self.reader, since, until)
+        return logs.get_entries_between(since, until)

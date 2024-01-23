@@ -29,9 +29,18 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         loadUi('dm_channels.ui', self)
         self.resize(400, 800)
 
+        self.channels_timer = QTimer(parent=self)
+        self.channels_timer.setInterval(
+            int(1000 / config.GUI.refreshrate_streams))
+
         if dm_number == config.AO.DM_loop_number:
             prefix = 'DM_'
-            disp_name = config.Streams.DM
+            self.disp_name = config.Streams.DM
+
+            self.backend.streams_channels_dm_updated.connect(
+                self.streams_channels_updated)
+            self.channels_timer.timeout.connect(
+                self.backend.get_streams_channels_dm)
         elif dm_number == config.AO.TTM_loop_number:
             self.associated_stream = config.Streams.TTM
             self.stream_info = config.StreamInfo.dm02disp
@@ -43,7 +52,12 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 "Deformable Mirror", "Tip-Tilt Mirror"))
 
             prefix = 'TTM_'
-            disp_name = config.Streams.TTM
+            self.disp_name = config.Streams.TTM
+
+            self.backend.streams_channels_ttm_updated.connect(
+                self.streams_channels_updated)
+            self.channels_timer.timeout.connect(
+                self.backend.get_streams_channels_ttm)
         else:
             raise Exception(f'Unknown DM number {dm_number}')
 
@@ -69,7 +83,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         for key, value in config.Streams.__dict__.items():
             if key.startswith(prefix):
                 name = key.removeprefix(prefix).replace('_', ' ').title()
-                value = value.removeprefix(disp_name)
+                value = value.removeprefix(self.disp_name)
 
                 if name == 'Ncpa':
                     name = 'NCPA'
@@ -79,22 +93,14 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.hovered.connect(self.info_to_statusbar)
 
-        self.backend.streams_dmdisp_updated.connect(
-            self.streams_dmdisp_updated)
-
-        self.channels_timer = QTimer(parent=self)
-        self.channels_timer.setInterval(
-            int(1000 / config.GUI.refreshrate_streams))
-        self.channels_timer.timeout.connect(lambda: self.backend.
-                                            get_streams_dmdisp(self.dm_number))
         self.channels_timer.start()
 
         self.show()
         self.center()
         self.setFixedSize(self.size())
 
-    def streams_dmdisp_updated(self, data):
-        img = self.consume_stream(data, f'dm{self.dm_number:02d}disp')
+    def streams_channels_updated(self, data):
+        img = self.consume_stream(data, f'{self.disp_name}')
 
         if img is not None:
             img_min, img_max = self.compute_min_max(img)
@@ -102,8 +108,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.dm_view.setImage(img, img_min, img_max)
 
         for i in range(0, 12):
-            img = self.consume_stream(data,
-                                      f'dm{self.dm_number:02d}disp{i:02d}')
+            img = self.consume_stream(data, f'{self.disp_name}{i:02d}')
 
             if img is not None:
                 view = getattr(self, f'view_{i:02d}')

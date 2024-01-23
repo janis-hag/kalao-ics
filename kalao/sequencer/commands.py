@@ -44,7 +44,7 @@ def dark(**seq_args):
     :return: nothing
     """
 
-    dit = seq_args.get('dit')
+    dit = seq_args.get('texp')
     nbPic = seq_args.get('nbPic', 1)
 
     if None in (dit, nbPic):
@@ -163,7 +163,7 @@ def sky_flat(**seq_args):
     filter_list = seq_args.get('filter_list',
                                config.Calib.Flats.default_flat_list)
     filepath = seq_args.get('filepath')
-    dit = seq_args.get('dit')
+    dit = seq_args.get('texp')
 
     if aocontrol.emgain_off() == -1:
         raise EMGainNotOff
@@ -252,20 +252,17 @@ def target_observation(**seq_args):
     :return: nothing
     """
 
-    # TODO check for "'centering', 'non'"
-    # TODO verify if we are already centred from previous observation
-
-    kalfilter = seq_args.get('kalfilter')
+    filter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
-    dit = seq_args.get('dit')
+    dit = seq_args.get('texp')
     kao = seq_args.get('kao').upper()
-    auto_center = seq_args.get('auto_center')
+    auto_center = seq_args.get('centering')
     mag = seq_args.get('mv')
 
-    if kalfilter is None:
+    if filter is None:
         logger.warn('sequencer',
                     'No filter specified for observation, using clear')
-        kalfilter = 'clear'
+        filter = 'clear'
 
     centering_exptime, centering_filter = exposure.optimal_exposure_time_and_filter(
         mag)
@@ -282,15 +279,15 @@ def target_observation(**seq_args):
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
 
-    if kao == AdaptiveOpticsMode.DISABLED:
+    if kao == AdaptiveOpticsMode.ENABLED:
+        if aocontrol.start_wfs_acquisition() != 0:
+            raise WFSNotOn
+    else:
         if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
             raise LoopsNotOpen
 
         if aocontrol.reset_all_dms() != 0:
             raise DMResetFailed
-
-    if aocontrol.start_wfs_acquisition() != 0:
-        raise WFSNotOn
 
     if plc_utils.lamps_off() != 0:
         raise LampsNotOff
@@ -305,7 +302,7 @@ def target_observation(**seq_args):
         if filterwheel.set_filter(centering_filter) != centering_filter:
             raise FilterWheelNotInPosition
     else:
-        if filterwheel.set_filter(kalfilter) != kalfilter:
+        if filterwheel.set_filter(filter) != filter:
             raise FilterWheelNotInPosition
 
     _wait_for_tracking()
@@ -321,7 +318,7 @@ def target_observation(**seq_args):
             raise CenteringFailed
 
     # Move filter to correct position for science
-    if filterwheel.set_filter(kalfilter) != kalfilter:
+    if filterwheel.set_filter(filter) != filter:
         raise FilterWheelNotInPosition
 
     if kao == AdaptiveOpticsMode.ENABLED:
@@ -359,7 +356,7 @@ def focus(**seq_args):
 
     filter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
-    dit = seq_args.get('dit')
+    dit = seq_args.get('texp')
     mag = seq_args.get('mv')
 
     if filter is None:
@@ -559,10 +556,13 @@ def _wait_for_tracking():
     """
     timeout = time.monotonic() + config.SEQ.pointing_timeout
 
+    logger.info('sequencer', 'Waiting for telescope to be on target.')
+
     while time.monotonic() < timeout:
         on_target = database.get_last_value('obs', 'sequencer_on_target')
 
         if on_target:
+            logger.info('sequencer', 'Telescope on target.')
             file_handling.update_db_from_telheader()
             return ReturnCode.SEQ_OK
 
@@ -580,6 +580,8 @@ def _wait_for_tungsten():
     # Wait for tungsten to warm up
     state, switch_time = tungsten.get_switch_time()
 
+    logger.info('sequencer', 'Waiting for tungsten lamp to warm up.')
+
     while switch_time < config.Tungsten.stabilisation_time:
         # Check if lamp is still on
         if state != TungstenState.ON:
@@ -591,6 +593,7 @@ def _wait_for_tungsten():
 
         state, switch_time = tungsten.get_switch_time()
 
+    logger.info('sequencer', 'Tungsten lamp ready.')
     return ReturnCode.SEQ_OK
 
 
