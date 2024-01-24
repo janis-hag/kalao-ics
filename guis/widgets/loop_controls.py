@@ -178,6 +178,12 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.consume_param(data, config.FPS.BMC, 'stroke_mode'),
             self.bmc_strokemode_combobox)
 
+        target_stroke = self.consume_param(data, config.FPS.BMC,
+                                           'target_stroke')
+        if target_stroke is not None:
+            with QSignalBlocker(self.bmc_targetstroke_spinbox):
+                self.bmc_targetstroke_spinbox.setValue(target_stroke * 100)
+
         # Slopes
 
         self.data_to_widget(
@@ -221,6 +227,10 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send(self.dmloop_limit_spinbox,
                          self.backend.set_dmloop_limit, d)
 
+    @Slot(bool)
+    def on_dmloop_zero_button_clicked(self, checked):
+        self.action_send(self.dmloop_zero_button, self.backend.get_dmloop_zero)
+
     # TTM Loop
 
     @Slot(int)
@@ -242,6 +252,11 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_ttmloop_limit_spinbox_valueChanged(self, d):
         self.action_send(self.ttmloop_limit_spinbox,
                          self.backend.set_ttmloop_limit, d)
+
+    @Slot(bool)
+    def on_ttmloop_zero_button_clicked(self, checked):
+        self.action_send(self.ttmloop_zero_button,
+                         self.backend.get_ttmloop_zero)
 
     # Wavefront Sensor
 
@@ -277,6 +292,11 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_bmc_strokemode_combobox_currentIndexChanged(self, index):
         self.action_send(self.bmc_strokemode_combobox,
                          self.backend.set_bmc_strokemode, index)
+
+    @Slot(float)
+    def on_bmc_targetstroke_spinbox_valueChanged(self, d):
+        self.action_send(self.bmc_targetstroke_spinbox,
+                         self.backend.set_bmc_targetstroke, d / 100)
 
     # Modal gains
 

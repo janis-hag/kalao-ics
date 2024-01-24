@@ -123,6 +123,8 @@ class MainBackend(FakeSHMFPSBackend):
                 0.9,
             'bmc-stroke_mode':
                 1,
+            'bmc-target_stroke':
+                0.2,
             'shwfs-algorithm':
                 1,
             'shutter_state':
@@ -365,6 +367,8 @@ class MainBackend(FakeSHMFPSBackend):
                            self.internal_state['bmc-max_stroke'])
         self._update_param(data, config.FPS.BMC, 'stroke_mode',
                            self.internal_state['bmc-stroke_mode'])
+        self._update_param(data, config.FPS.BMC, 'target_stroke',
+                           self.internal_state['bmc-target_stroke'])
 
         self._update_param(data, config.FPS.SHWFS, 'algorithm',
                            self.internal_state['shwfs-algorithm'])
@@ -787,6 +791,9 @@ class MainBackend(FakeSHMFPSBackend):
     def set_dmloop_limit(self, limit):
         print(f'Set DM limit to {limit} (virtually)')
 
+    def get_dmloop_zero(self):
+        print(f'DM loop zeroed (virtually)')
+
     # TTM Loop
 
     def set_ttmloop_on(self, state):
@@ -802,6 +809,9 @@ class MainBackend(FakeSHMFPSBackend):
 
     def set_ttmloop_limit(self, limit):
         print(f'Set TTM limit to {limit} (virtually)')
+
+    def get_ttmloop_zero(self):
+        print(f'TTM loop zeroed (virtually)')
 
     # Wavefront Sensor
 
@@ -845,6 +855,12 @@ class MainBackend(FakeSHMFPSBackend):
     def set_bmc_strokemode(self, mode):
         self.internal_state['bmc-stroke_mode'] = mode
         print(f'Set BMC Stroke Mode to {mode} (virtually)')
+
+    def set_bmc_targetstroke(self, target):
+        self.internal_state['bmc-target_stroke'] = target
+        print(f'Set BMC Target Stroke to {target} (virtually)')
+
+    # Modal gains
 
     def set_modalgains(self, modalgains):
         self.internal_state[config.Streams.MODALGAINS] = modalgains

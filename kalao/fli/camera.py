@@ -47,35 +47,13 @@ def take_empty(filepath=None):
     return ret
 
 
-def take_frame(dit=None, filepath=None, nbflushes=None, roi=None):
+def take_frame(dit=None, filepath=None, nbflushes=None, roi=None,
+               nbframes=None):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
 
-    if roi is not None:
-        roi = {'x': roi[0], 'y': roi[1], 'width': roi[2], 'height': roi[3]}
-
-    params = {
-        'exptime': dit,
-        'filepath': filepath,
-        'nbflushes': nbflushes,
-        'roi': roi
-    }
-
-    ret, _ = _send_request('acquire', params)
-
-    if ret == ReturnCode.CAMERA_OK:
-        img = fits.getdata(filepath)
-
-        _update_fli_stream(img, filepath)
-
-        return img
-    else:
-        return None
-
-
-def take_cube(nbframes, dit=None, filepath=None, nbflushes=None, roi=None):
-    if filepath is None:
-        filepath = '/tmp/fli_cube.fits'
+    if nbframes == 1:
+        nbframes = None
 
     if roi is not None:
         roi = {'x': roi[0], 'y': roi[1], 'width': roi[2], 'height': roi[3]}
@@ -88,14 +66,17 @@ def take_cube(nbframes, dit=None, filepath=None, nbflushes=None, roi=None):
         'roi': roi
     }
 
-    ret, _ = _send_request('acquireCube', params)
+    ret, _ = _send_request('acquire', params)
 
     if ret == ReturnCode.CAMERA_OK:
-        img_cube = fits.getdata(filepath)
+        img = fits.getdata(filepath)
 
-        _update_fli_stream(img_cube[-1], filepath)
+        if len(img.shape == 2):
+            _update_fli_stream(img, filepath)
+        else:
+            _update_fli_stream(img[-1], filepath)
 
-        return img_cube
+        return img
     else:
         return None
 

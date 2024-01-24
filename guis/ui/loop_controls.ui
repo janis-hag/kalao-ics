@@ -91,6 +91,13 @@
         </property>
        </widget>
       </item>
+      <item row="4" column="0" colspan="2">
+       <widget class="QPushButton" name="dmloop_zero_button">
+        <property name="text">
+         <string>Zero loop</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -205,6 +212,35 @@
       <item row="1" column="1">
        <widget class="QComboBox" name="bmc_strokemode_combobox"/>
       </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="bmc_targetstroke_label">
+        <property name="text">
+         <string>Target stroke</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QDoubleSpinBox" name="bmc_targetstroke_spinbox">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string> %</string>
+        </property>
+        <property name="decimals">
+         <number>0</number>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>100.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>5.000000000000000</double>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -282,6 +318,13 @@
         </property>
         <property name="singleStep">
          <double>0.010000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <widget class="QPushButton" name="ttmloop_zero_button">
+        <property name="text">
+         <string>Zero loop</string>
         </property>
        </widget>
       </item>

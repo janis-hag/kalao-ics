@@ -248,6 +248,10 @@ def set_dmloop_limit(limit):
     return _set_fps_value(config.FPS.DMLOOP, 'looplimit', limit)
 
 
+def dmloop_zero():
+    return _set_fps_value(config.FPS.DMLOOP, 'loopZERO', True)
+
+
 def set_ttmloop_gain(gain):
     return _set_fps_value(config.FPS.TTMLOOP, 'loopgain', gain)
 
@@ -258,6 +262,10 @@ def set_ttmloop_mult(mult):
 
 def set_ttmloop_limit(limit):
     return _set_fps_value(config.FPS.TTMLOOP, 'looplimit', limit)
+
+
+def ttmloop_zero():
+    return _set_fps_value(config.FPS.TTMLOOP, 'loopZERO', True)
 
 
 def set_modalgains(modalgains, stream_name=config.Streams.MODALGAINS):
@@ -286,6 +294,10 @@ def set_bmc_max_stroke(max_stroke):
 
 def set_bmc_stroke_mode(stroke_mode):
     return _set_fps_value(config.FPS.BMC, 'stroke_mode', stroke_mode)
+
+
+def set_bmc_target_stroke(target_stroke):
+    return _set_fps_value(config.FPS.BMC, 'target_stroke', target_stroke)
 
 
 def optimize_wfs_flux():

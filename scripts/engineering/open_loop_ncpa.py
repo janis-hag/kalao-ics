@@ -54,7 +54,7 @@ def take_and_measure(args):
     max = 0
     y, x = np.mgrid[0:args.peak_window, 0:args.peak_window]
 
-    img_cube = camera.take_cube(args.img_avg, dit=args.dit)
+    img_cube = camera.take_frame(dit=args.dit, nbframes=args.img_avg)
 
     for i in range(args.img_avg):
         img = img_cube[i]

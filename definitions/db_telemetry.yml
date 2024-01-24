@@ -92,8 +92,14 @@ bmc_max_stroke:
   group: BMC
 
 bmc_stroke_mode:
-  short: BMC Stroke Mode
+  short: BMC Stroke mode
   long: Stroke mode of the BMC DM
+  unit:
+  group: BMC
+
+bmc_target_stroke:
+  short: BMC Target stroke
+  long: Target stroke of the BMC DM
   unit:
   group: BMC
 

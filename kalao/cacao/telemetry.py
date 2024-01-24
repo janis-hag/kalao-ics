@@ -47,6 +47,8 @@ def gather():
     if bmc_fps is not None and bmc_fps.run_runs():
         telemetry_data['bmc_max_stroke'] = bmc_fps.get_param('max_stroke')
         telemetry_data['bmc_stroke_mode'] = bmc_fps.get_param('stroke_mode')
+        telemetry_data['bmc_target_stroke'] = bmc_fps.get_param(
+            'target_stroke')
 
     # SHWFS process
     shwfs_fps = toolbox.open_fps_once(config.FPS.SHWFS)

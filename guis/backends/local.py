@@ -163,6 +163,7 @@ class MainBackend(SHMFPSBackend):
 
         self._update_param(data, config.FPS.BMC, 'max_stroke')
         self._update_param(data, config.FPS.BMC, 'stroke_mode')
+        self._update_param(data, config.FPS.BMC, 'target_stroke')
 
         self._update_param(data, config.FPS.SHWFS, 'algorithm')
 
@@ -326,6 +327,9 @@ class MainBackend(SHMFPSBackend):
     def set_dmloop_limit(selfself, limit):
         aocontrol.set_dmloop_limit(limit)
 
+    def get_dmloop_zero(self):
+        aocontrol.dmloop_zero()
+
     # TTM Loop
 
     def set_ttmloop_on(self, state):
@@ -339,6 +343,9 @@ class MainBackend(SHMFPSBackend):
 
     def set_ttmloop_limit(selfself, limit):
         aocontrol.set_ttmloop_limit(limit)
+
+    def get_ttmloop_zero(self):
+        aocontrol.ttmloop_zero()
 
     # Wavefront Sensor
 
@@ -354,9 +361,6 @@ class MainBackend(SHMFPSBackend):
     def set_nuvu_autogain_setting(self, setting):
         aocontrol.set_autogain_setting(setting)
 
-    def set_modalgains(self, modalgains):
-        aocontrol.set_modalgains(modalgains)
-
     # Deformable Mirror
 
     def set_bmc_maxstroke(self, stroke):
@@ -364,6 +368,14 @@ class MainBackend(SHMFPSBackend):
 
     def set_bmc_strokemode(self, mode):
         aocontrol.set_bmc_stroke_mode(mode)
+
+    def set_bmc_targetstroke(self, target):
+        aocontrol.set_bmc_target_stroke(target)
+
+    # Modal gains
+
+    def set_modalgains(self, modalgains):
+        aocontrol.set_modalgains(modalgains)
 
     ##### Engineering
 
@@ -467,10 +479,7 @@ class MainBackend(SHMFPSBackend):
             temperature_control.heater_off()
 
     def set_fli_image(self, exposure_time, frames):
-        if frames == 1:
-            camera.take_frame(exposure_time)
-        else:
-            camera.take_cube(frames, dit=exposure_time)
+        camera.take_frame(dit=exposure_time, nbframes=frames)
 
     def get_fli_cancel(self):
         camera.cancel()
