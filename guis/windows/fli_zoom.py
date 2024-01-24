@@ -8,33 +8,16 @@ from PySide6.QtWidgets import QMessageBox
 
 from kalao.utils import image, starfinder
 
-from guis.kalao import colormaps
-from guis.kalao.definitions import Color, Cuts, Scale
-from guis.kalao.mixins import (BackendActionMixin, BackendDataMixin,
+from guis.utils import colormaps
+from guis.utils.definitions import Color, Cuts, Scale
+from guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
                                MinMaxMixin, SceneHoverMixin)
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KMainWindow, KMessageBox
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KMainWindow, KMessageBox
 
 from kalao.definitions.enums import StrEnum
 
 import config
-
-
-def find_star_fast(img, psf_bb=25):
-    y, x = np.unravel_index(np.argmax(img, axis=None), img.shape)
-    background = np.median(img)
-
-    peak = img[y, x] - background
-
-    box = img[y - psf_bb:y + psf_bb, x - psf_bb:x + psf_bb] - background
-
-    circle = (2 * box > box.max()).sum()
-    if circle == 0:
-        fwhm = np.nan
-    else:
-        fwhm = 2 * np.sqrt(circle / np.pi)
-
-    return x, y, peak, fwhm
 
 
 class FollowMode(StrEnum):
@@ -183,8 +166,10 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 self.star_peak = np.nan
                 self.star_fwhm = np.nan
             else:
-                self.star_x, self.star_y, self.star_peak, self.star_fwhm = stars[
-                    0]
+                self.star_x = stars[0].x
+                self.star_y = stars[0].y
+                self.star_peak = stars[0].peak
+                self.star_fwhm = stars[0].fwhm
 
             self.bad_pixels = bad_pixels
 
@@ -252,6 +237,9 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.update_zoom_view()
 
             self.centering_button.setText('Validate Manual Centering')
+            self.status_label.setText(
+                'Manual centering requested. Don\'t forget to validate.')
+            self.status_label.setStyleSheet(f'color: {Color.RED.name()};')
 
             if not requested_by_user:
                 msgbox = KMessageBox(self)
@@ -282,6 +270,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.update_zoom_view()
 
             self.centering_button.setText('Enter Manual Centering')
+            self.status_label.setText('')
 
             # Send offsets only if centering requested KalAO ICS and validation was by user
             if not self.centering_requested_by_user and requested_by_user:

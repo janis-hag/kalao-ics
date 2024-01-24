@@ -361,9 +361,9 @@ def _get_star(dit):
 
     img = fits.getdata(img_path)
 
-    x, y, peak, fwhm = starfinder.find_star(img)
+    star = starfinder.find_star(img)
 
-    if np.isnan([x, y, peak, fwhm]).any():
+    if star is None:
         raise CenteringStarNotFound
 
-    return x, y
+    return star.x, star.y

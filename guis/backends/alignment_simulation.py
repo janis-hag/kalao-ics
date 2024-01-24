@@ -7,7 +7,7 @@ from kalao.utils import ktools, zernike
 
 from guis.backends.abstract import emit, timeit
 from guis.backends.simulation import FakeSHMFPSBackend
-from guis.kalao.definitions import PokeState
+from guis.utils.definitions import PokeState
 
 import config
 

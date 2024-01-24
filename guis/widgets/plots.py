@@ -12,9 +12,9 @@ from PySide6.QtWidgets import QListWidget, QListWidgetItem, QPushButton
 from kalao import database
 from kalao.utils import kstring, ktime
 
-from guis.kalao.definitions import ColorPalette
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KListWidgetItem, KWidget
+from guis.utils.definitions import ColorPalette
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KListWidgetItem, KWidget
 
 import config
 

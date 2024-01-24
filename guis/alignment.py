@@ -7,7 +7,7 @@ from PySide6.QtCore import QTimer
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
-from guis.kalao import colormaps
+from guis.utils import colormaps
 from guis.widgets.flux import FluxWidget
 from guis.widgets.slopes import SlopesWidget
 from guis.widgets.wfs import WFSWidget

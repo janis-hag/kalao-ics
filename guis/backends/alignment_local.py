@@ -9,7 +9,7 @@ from PySide2.QtCore import Signal
 
 from guis.backends.abstract import emit, timeit
 from guis.backends.local import SHMFPSBackend
-from guis.kalao.definitions import PokeState
+from guis.utils.definitions import PokeState
 
 import config
 

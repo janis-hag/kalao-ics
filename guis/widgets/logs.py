@@ -10,9 +10,9 @@ from PySide6.QtWidgets import QTreeWidgetItem
 from kalao import database
 from kalao.utils import kstring, ktime
 
-from guis.kalao.definitions import Color
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KWidget
+from guis.utils.definitions import Color
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KWidget
 
 from kalao.definitions.enums import LogLevel
 

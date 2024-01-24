@@ -10,11 +10,11 @@ from PySide6.QtWidgets import (QGridLayout, QGroupBox, QLabel, QLineEdit,
 from kalao import database
 from kalao.utils import kstring
 
-from guis.kalao.definitions import Color
-from guis.kalao.mixins import BackendDataMixin
-from guis.kalao.string_formatter import KalAOFormatter
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KWidget
+from guis.utils.definitions import Color
+from guis.utils.mixins import BackendDataMixin
+from guis.utils.string_formatter import KalAOFormatter
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KWidget
 
 import config
 

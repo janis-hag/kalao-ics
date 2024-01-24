@@ -304,7 +304,7 @@ def optimize_wfs_flux():
     for setting in range(config.WFS.max_autogain_setting + 1):
         nuvu_acquire_fps.set_param('autogain_setting', setting)
 
-        time.sleep(nuvu_acquire_fps.get_param('autogain_wait') / 1000)
+        time.sleep(nuvu_acquire_fps.get_param('autogain.wait_time') / 1000)
 
         for i in range(10):
             if check_wfs_flux():

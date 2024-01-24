@@ -4,10 +4,10 @@ from PySide6.QtCharts import QLineSeries, QValueAxis
 from PySide6.QtCore import QPointF, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QPen, Qt
 
-from guis.kalao.definitions import Color
-from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KWidget
+from guis.utils.definitions import Color
+from guis.utils.mixins import BackendActionMixin, BackendDataMixin
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KWidget
 
 import config
 

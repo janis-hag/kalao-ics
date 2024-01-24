@@ -3,7 +3,7 @@ from pathlib import Path
 from PySide6.QtCore import QMetaObject
 from PySide6.QtUiTools import QUiLoader
 
-from guis.kalao.widgets import *
+from guis.utils.widgets import *
 
 uipath = Path(__file__).absolute().parent.parent / 'ui'
 

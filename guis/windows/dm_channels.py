@@ -1,10 +1,10 @@
 from PySide6.QtCore import QTimer, Slot
 
-from guis.kalao import colormaps
-from guis.kalao.mixins import (BackendActionMixin, BackendDataMixin,
+from guis.utils import colormaps
+from guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
                                MinMaxMixin, SceneHoverMixin)
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KMainWindow
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KMainWindow
 
 import config
 

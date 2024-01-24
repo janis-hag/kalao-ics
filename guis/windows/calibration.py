@@ -3,9 +3,9 @@ import numpy as np
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QCursor, QGuiApplication, Qt
 
-from guis.kalao.mixins import SceneHoverMixin
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KGraphicsView, KMainWindow
+from guis.utils.mixins import SceneHoverMixin
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KGraphicsView, KMainWindow
 
 
 class CalibrationWindow(KMainWindow, SceneHoverMixin):

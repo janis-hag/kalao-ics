@@ -8,10 +8,10 @@ from PySide6.QtGui import Qt
 from PySide6.QtWidgets import (QFileDialog, QLabel, QLineEdit, QMessageBox,
                                QPushButton)
 
-from guis.kalao.definitions import Color
-from guis.kalao.mixins import BackendActionMixin, BackendDataMixin
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KMessageBox, KStatusIndicator, KWidget
+from guis.utils.definitions import Color
+from guis.utils.mixins import BackendActionMixin, BackendDataMixin
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KMessageBox, KStatusIndicator, KWidget
 from guis.windows.dm_channels import DMChannelsWindow
 from guis.windows.dm_direct_control import DMDirectControlWindow
 from guis.windows.focus import FocusWindow

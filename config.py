@@ -424,8 +424,10 @@ class FITS:
 
 
 class Starfinder:
-    min_peak = 500
-    window = 20
+    min_peak = 500  # ADU
+
+    # 40 px corresponds to 2 arcsec
+    window = 40  # px
 
 
 class Offsets:

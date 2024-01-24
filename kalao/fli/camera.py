@@ -47,11 +47,20 @@ def take_empty(filepath=None):
     return ret
 
 
-def take_frame(dit=None, filepath=None, nbflushes=None):
+def take_frame(dit=None, filepath=None, nbflushes=None, roi=None):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
 
-    params = {'exptime': dit, 'filepath': filepath, 'nbflushes': nbflushes}
+    if roi is not None:
+        roi = {'x': roi[0], 'y': roi[1], 'width': roi[2], 'height': roi[3]}
+
+    params = {
+        'exptime': dit,
+        'filepath': filepath,
+        'nbflushes': nbflushes,
+        'roi': roi
+    }
+
     ret, _ = _send_request('acquire', params)
 
     if ret == ReturnCode.CAMERA_OK:
@@ -64,16 +73,21 @@ def take_frame(dit=None, filepath=None, nbflushes=None):
         return None
 
 
-def take_cube(nbframes, dit=None, filepath=None, nbflushes=None):
+def take_cube(nbframes, dit=None, filepath=None, nbflushes=None, roi=None):
     if filepath is None:
         filepath = '/tmp/fli_cube.fits'
+
+    if roi is not None:
+        roi = {'x': roi[0], 'y': roi[1], 'width': roi[2], 'height': roi[3]}
 
     params = {
         'exptime': dit,
         'nbframes': nbframes,
         'filepath': filepath,
-        'nbflushes': nbflushes
+        'nbflushes': nbflushes,
+        'roi': roi
     }
+
     ret, _ = _send_request('acquireCube', params)
 
     if ret == ReturnCode.CAMERA_OK:

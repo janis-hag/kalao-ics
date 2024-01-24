@@ -8,7 +8,7 @@ from flask import Flask, jsonify, make_response, request
 from flask.json.provider import JSONProvider
 
 from guis.backends.abstract import name_to_url
-from guis.kalao.json_coder import KalAOJSONDecoder, KalAOJSONEncoder
+from guis.utils.json_coder import KalAOJSONDecoder, KalAOJSONEncoder
 
 import config
 

@@ -3,10 +3,10 @@ import numpy as np
 from PySide6.QtCore import Slot
 from PySide6.QtGui import Qt
 
-from guis.kalao.definitions import Color, Logo
-from guis.kalao.mixins import BackendDataMixin
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KWidget
+from guis.utils.definitions import Color, Logo
+from guis.utils.mixins import BackendDataMixin
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KWidget
 from guis.widgets.dm import DMWidget
 from guis.widgets.fli import FLIWidget
 from guis.widgets.flux import FluxWidget

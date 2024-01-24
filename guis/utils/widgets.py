@@ -16,9 +16,9 @@ from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
 
 from kalao.utils.image import LinearScale
 
-from guis.kalao.definitions import Color, Logo
-from guis.kalao.mixins import ArrayToImageMixin
-from guis.kalao.string_formatter import KalAOFormatter
+from guis.utils.definitions import Color, Logo
+from guis.utils.mixins import ArrayToImageMixin
+from guis.utils.string_formatter import KalAOFormatter
 
 
 class OffsetedTextItem(QGraphicsSimpleTextItem):

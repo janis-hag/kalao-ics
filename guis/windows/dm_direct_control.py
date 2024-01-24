@@ -10,10 +10,10 @@ from PySide6.QtWidgets import QDoubleSpinBox, QFileDialog, QLabel, QMessageBox
 
 from kalao.utils import ktools, zernike
 
-from guis.kalao.colormaps import CoolWarm
-from guis.kalao.mixins import BackendActionMixin
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KMainWindow, KMessageBox
+from guis.utils.colormaps import CoolWarm
+from guis.utils.mixins import BackendActionMixin
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KMainWindow, KMessageBox
 
 
 class DMSpinBox(QDoubleSpinBox):

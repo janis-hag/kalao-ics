@@ -11,6 +11,7 @@ starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 import math
 import time
 import warnings
+from dataclasses import dataclass, field
 from datetime import datetime
 
 import numpy as np
@@ -32,12 +33,27 @@ import skimage.filters
 import config
 
 
+@dataclass
+class Star:
+    x: float
+    y: float
+    peak: float
+    fwhm_w: float
+    fwhm_h: float
+    fwhm_angle: float
+
+    fwhm: float = field(init=False)
+
+    def __post_init__(self):
+        self.fwhm = np.sqrt(self.fwhm_w * self.fwhm_h)
+
+
 def find_star(img, min_peak=config.Starfinder.min_peak,
               hw=config.Starfinder.window // 2):
     star = find_stars(img, min_peak=min_peak, hw=hw, num=1)
 
     if len(star) == 0:
-        return np.nan, np.nan, np.nan, np.nan
+        return None
     else:
         return star[0]
 
@@ -79,7 +95,10 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', AstropyWarning)
 
-        for star_y, star_x in stars:
+        i = 0
+        while i < len(stars):
+            star_y, star_x = stars[i]
+
             model_init = models.Gaussian2D(x_mean=star_x, y_mean=star_y,
                                            amplitude=frame_fit[star_y, star_x])
             fitter = fitting.LevMarLSQFitter()
@@ -89,18 +108,46 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
                 Y[star_y - hw:star_y + hw, star_x - hw:star_x + hw],
                 frame_fit[star_y - hw:star_y + hw, star_x - hw:star_x + hw])
 
+            # Check that the fit is not aberrant
+
             if not star_x - hw <= model.x_mean.value <= star_x + hw:
                 continue
 
             if not star_y - hw <= model.y_mean.value <= star_y + hw:
                 continue
 
-            if np.sqrt(model.x_fwhm * model.y_fwhm) > 2 * hw:
+            if np.sqrt(model.x_fwhm * model.y_fwhm) > 4 * hw:
                 continue
 
+            # Exclude peaks that are within star radius
+
+            j = 0
+            while j < len(stars):
+                dx = stars[j][1] - model.x_mean.value
+                dy = stars[j][0] - model.x_mean.value
+
+                cos = np.cos(model.theta.value)
+                sin = np.sin(model.theta.value)
+
+                a = model.x_fwhm
+                b = model.y_fwhm
+
+                inside = (cos*dx + sin*dy) / a**2 + (sin*dx +
+                                                     cos*dy) / b**2 <= 1
+
+                if inside:
+                    stars = np.delete(stars, j, axis=0)
+                else:
+                    j += 1
+
+            # Add fit to star list
+
             stars_fitted.append(
-                (model.x_mean.value, model.y_mean.value, model.amplitude.value,
-                 np.sqrt(model.x_fwhm * model.y_fwhm)))
+                Star(model.x_mean.value, model.y_mean.value,
+                     model.amplitude.value, model.x_fwhm, model.y_fwhm,
+                     model.theta.value * 180 / np.pi))
+
+            i += 1
 
     return stars_fitted, bad_pixels
 
@@ -300,12 +347,13 @@ if __name__ == "__main__":
         fig = plt.gcf()
         ax = fig.gca()
 
-        for x, y, peak, fwhm in stars:
-            plt.plot(x, y, 'r+')
+        for star in stars:
+            plt.plot(star.x, star.y, 'r+')
             ax.add_patch(
-                plt.Circle((x, y), fwhm / 2, edgecolor='r',
-                           facecolor='#ffffff00'))
+                patches.Ellipse((star.x, star.y), star.fwhm_w, star.fwhm_h,
+                                angle=star.fwhm_angle, edgecolor='r',
+                                facecolor='#ffffff00'))
 
-        plt.plot(bad_pixels[:, 1], bad_pixels[:, 0], 'g+')
+        # plt.plot(bad_pixels[:, 1], bad_pixels[:, 0], 'g+')
 
     plt.show()

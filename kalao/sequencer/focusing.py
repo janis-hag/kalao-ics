@@ -72,35 +72,35 @@ def focus_sequence(dit, steps=config.Focusing.steps,
 
                 img = fits.getdata(filepath)
 
-                x_star, y_star, peak, fwhm = starfinder.find_star(img)
+                star = starfinder.find_star(img)
 
-                if peak >= 65535:
-                    raise FocusingSaturated
-
-                if np.isnan([x_star, y_star, peak, fwhm]).any():
+                if star is None:
                     raise FocusingStarNotFound
+
+                if star.peak >= 65535:
+                    raise FocusingSaturated
 
                 # Store star info for fitting
                 data.loc[step] = {
                     'focus': focus,
-                    'x': x_star,
-                    'y': y_star,
-                    'peak': peak,
-                    'fwhm': fwhm
+                    'x': star.x,
+                    'y': star.y,
+                    'peak': star.peak,
+                    'fwhm': star.fwhm
                 }
 
                 # Store vignette and star info in FITS
-                img_cut = img[round(y_star) - window_size//2:round(y_star) +
+                img_cut = img[round(star.y) - window_size//2:round(star.y) +
                               window_size//2,
-                              round(x_star) - window_size//2:round(x_star) +
+                              round(star.x) - window_size//2:round(star.x) +
                               window_size//2]
 
                 hdu = fits.ImageHDU(img_cut, name=f'FOCUS{step+1}')
                 hdu.header.set('HIERARCH FOCUS M2 POSITION', focus, '[um]')
-                hdu.header.set('HIERARCH FOCUS STAR X', x_star, '[px]')
-                hdu.header.set('HIERARCH FOCUS STAR Y', y_star, '[px]')
-                hdu.header.set('HIERARCH FOCUS STAR PEAK', peak, '[ADU]')
-                hdu.header.set('HIERARCH FOCUS STAR FWHM', fwhm, '[px]')
+                hdu.header.set('HIERARCH FOCUS STAR X', star.x, '[px]')
+                hdu.header.set('HIERARCH FOCUS STAR Y', star.y, '[px]')
+                hdu.header.set('HIERARCH FOCUS STAR PEAK', star.peak, '[ADU]')
+                hdu.header.set('HIERARCH FOCUS STAR FWHM', star.fwhm, '[px]')
                 hdu.header.set('HIERARCH FOCUS FILE', filepath.stem, '')
                 hdul.append(hdu)
 
@@ -123,7 +123,7 @@ def focus_sequence(dit, steps=config.Focusing.steps,
 
                 logger.info(
                     'focusing',
-                    f'Focus sequence {step+1}/{steps}: focus={focus:.2f}µm, x={x_star:.1f}px, y={y_star:.1f}px, peak={peak}ADU, FWHM={fwhm:.2f}px'
+                    f'Focus sequence {step+1}/{steps}: focus={focus:.2f}µm, x={star.x:.1f}px, y={star.y:.1f}px, peak={star.peak}ADU, FWHM={star.fwhm:.2f}px'
                 )
 
             # Check if we reached a minima

@@ -2,9 +2,9 @@ import numpy as np
 
 from PySide6.QtCore import Slot
 
-from guis.kalao.mixins import BackendActionMixin
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KMainWindow
+from guis.utils.mixins import BackendActionMixin
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KMainWindow
 
 
 class TTMDirectControlWindow(KMainWindow, BackendActionMixin):

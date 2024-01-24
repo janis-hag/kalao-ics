@@ -7,10 +7,10 @@ from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis
 from PySide6.QtCore import QDateTime, QPointF, QSignalBlocker, QTimeZone
 from PySide6.QtGui import QPen, Qt
 
-from guis.kalao.definitions import Color
-from guis.kalao.mixins import BackendDataMixin, MinMaxMixin
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KWidget
+from guis.utils.definitions import Color
+from guis.utils.mixins import BackendDataMixin, MinMaxMixin
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KWidget
 
 import config
 

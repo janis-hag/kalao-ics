@@ -9,10 +9,10 @@ from PySide6.QtCore import QPointF, QTimer
 from PySide6.QtGui import QBrush, QFont, QPen, Qt
 from PySide6.QtWidgets import QLabel, QMessageBox, QVBoxLayout
 
-from guis.kalao.definitions import Color
-from guis.kalao.mixins import BackendDataMixin
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KGraphicsView, KLabel, KMainWindow, KMessageBox
+from guis.utils.definitions import Color
+from guis.utils.mixins import BackendDataMixin
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KGraphicsView, KLabel, KMainWindow, KMessageBox
 
 import config
 

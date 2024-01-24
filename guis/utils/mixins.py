@@ -7,8 +7,8 @@ from PySide6.QtWidgets import QCheckBox, QComboBox
 
 from kalao.utils.image import LinearScale
 
-from guis.kalao import colormaps
-from guis.kalao.string_formatter import KalAOFormatter
+from guis.utils import colormaps
+from guis.utils.string_formatter import KalAOFormatter
 
 import config
 

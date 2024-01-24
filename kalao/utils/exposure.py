@@ -2,7 +2,7 @@ import config
 
 
 def magnitude_to_exposure_time(mag, target_adu, filter, fwhm=1):
-    exptime = 10**((config.Exposure.Star.mag_ref - mag) /
+    exptime = 10**((mag - config.Exposure.Star.mag_ref) /
                    2.5) * config.Exposure.Star.exptime_ref
 
     # Adjust for target ADUs
@@ -18,7 +18,7 @@ def magnitude_to_exposure_time(mag, target_adu, filter, fwhm=1):
 
 
 def magnitude_to_adu(mag, exptime, filter, fwhm=1):
-    adu = 10**((mag - config.Exposure.Star.mag_ref) /
+    adu = 10**((config.Exposure.Star.mag_ref - mag) /
                2.5) * config.Exposure.Star.adu_ref
 
     # Adjust for exposure time

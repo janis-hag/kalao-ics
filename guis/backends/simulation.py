@@ -14,7 +14,7 @@ from kalao.interfaces import fake_data
 from kalao.utils import kmath, kstring, zernike
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
-from guis.kalao import lorem
+from guis.utils import lorem
 
 from kalao.definitions.enums import (FlipMirrorPosition, IPPowerStatus,
                                      LaserState, LogLevel, PLCStatus,

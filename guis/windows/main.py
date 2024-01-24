@@ -4,9 +4,9 @@ from datetime import datetime
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QApplication, QCheckBox, QTabWidget
 
-from guis.kalao.definitions import Color
-from guis.kalao.mixins import BackendDataMixin
-from guis.kalao.widgets import KDetachedTabWindow, KLabel, KMainWindow
+from guis.utils.definitions import Color
+from guis.utils.mixins import BackendDataMixin
+from guis.utils.widgets import KDetachedTabWindow, KLabel, KMainWindow
 from guis.widgets.engineering import EngineeringWidget
 from guis.widgets.logs import LogsWidget
 from guis.widgets.loop_controls import LoopControlsWidget

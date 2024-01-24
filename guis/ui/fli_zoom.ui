@@ -15,6 +15,39 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout" columnstretch="0,1,1">
+    <item row="1" column="2">
+     <widget class="KGraphicsView" name="zoom_view"/>
+    </item>
+    <item row="0" column="2">
+     <widget class="QLabel" name="zoom_title_label">
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Zoom - Science Camera</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="title_label">
+      <property name="font">
+       <font>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Science Camera</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="1">
      <widget class="KGraphicsView" name="fli_view">
       <property name="enabled">
@@ -34,10 +67,23 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="2">
-     <widget class="KGraphicsView" name="zoom_view"/>
+    <item row="2" column="1" colspan="2">
+     <widget class="QLabel" name="status_label">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
     </item>
-    <item row="0" column="0" rowspan="2">
+    <item row="0" column="0" rowspan="3">
      <layout class="QVBoxLayout" name="side_layout">
       <item>
        <layout class="QGridLayout" name="scale_layout" columnstretch="0,1">
@@ -402,36 +448,6 @@
        </widget>
       </item>
      </layout>
-    </item>
-    <item row="0" column="2">
-     <widget class="QLabel" name="zoom_title_label">
-      <property name="font">
-       <font>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>Zoom - Science Camera</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLabel" name="title_label">
-      <property name="font">
-       <font>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>Science Camera</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
     </item>
    </layout>
   </widget>

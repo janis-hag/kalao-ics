@@ -5,11 +5,11 @@ from PySide6.QtGui import QPen, Qt
 from kalao.utils import ktools
 from kalao.utils.image import LogScale
 
-from guis.kalao import colormaps
-from guis.kalao.definitions import Color
-from guis.kalao.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
-from guis.kalao.ui_loader import loadUi
-from guis.kalao.widgets import KWidget
+from guis.utils import colormaps
+from guis.utils.definitions import Color
+from guis.utils.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
+from guis.utils.ui_loader import loadUi
+from guis.utils.widgets import KWidget
 
 import config
 

@@ -7,7 +7,7 @@ from PySide6.QtNetwork import (QNetworkAccessManager, QNetworkReply,
                                QNetworkRequest)
 
 from guis.backends.abstract import AbstractBackend, name_to_url
-from guis.kalao.json_coder import KalAOJSONDecoder, KalAOJSONEncoder
+from guis.utils.json_coder import KalAOJSONDecoder, KalAOJSONEncoder
 
 import config
 
