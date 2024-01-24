@@ -293,7 +293,7 @@ def execute_command(command, seq_args):
     except Exception as e:
         database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
         logger.error('sequencer',
-                     f'Unknown exception occured during {command}')
+                     f'Unknown exception occurred during {command}')
 
         traceback.print_exc()
 

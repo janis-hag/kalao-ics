@@ -329,7 +329,7 @@ class SEQ:
     ip = "127.0.0.1"
     port = 5005
     gop_arg_int = []
-    gop_arg_float = ["dit", "intensity", "mv"]
+    gop_arg_float = ["texp", "intensity", "mv"]
     gop_arg_string = ["filepath", "filterposition"]
     init_duration = 120
     T4_root = Path("/disks/synology")
