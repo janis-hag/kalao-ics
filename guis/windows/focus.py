@@ -184,6 +184,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
 
             if sucess:
                 self.status_label.updateText(status='Success!')
+                self.status_label.setStyleSheet('')
             else:
                 reason = hdul[0].header['HIERARCH FOCUS REASON']
 
@@ -199,6 +200,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
                 msgbox.show()
         else:
             self.status_label.updateText(status=f'Step {len(hdul)-1}')
+            self.status_label.setStyleSheet('')
 
     def clear(self):
         self.focus_series.clear()

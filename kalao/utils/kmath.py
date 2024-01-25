@@ -32,7 +32,7 @@ def gaussian_2d_rotated(x, y, mu_x = 0, mu_y = 0, sigma_x = 1, sigma_y = 1, thet
         A = 1/(sigma_x * sigma_y * 2*np.pi)
 
     a = np.cos(theta)**2/(2 * sigma_x**2) + np.sin(theta)**2/(2 * sigma_y**2)
-    b = -np.sin(2*theta)/(4 * sigma_x**2) + np.sin(2*theta)/(4 * sigma_y**2)
+    b = np.sin(2*theta)/(4 * sigma_x**2) - np.sin(2*theta)/(4 * sigma_y**2)
     c = np.sin(theta)**2/(2 * sigma_x**2) + np.cos(theta)**2/(2 * sigma_y**2)
 
     return A * np.exp(-(a*(x - mu_x)**2 + 2*b*(x - mu_x)*(y - mu_y) + c*(y - mu_y)**2)) + C

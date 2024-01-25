@@ -71,10 +71,7 @@ def take_frame(dit=None, filepath=None, nbflushes=None, roi=None,
     if ret == ReturnCode.CAMERA_OK:
         img = fits.getdata(filepath)
 
-        if len(img.shape == 2):
-            _update_fli_stream(img, filepath)
-        else:
-            _update_fli_stream(img[-1], filepath)
+        _update_fli_stream(img, filepath)
 
         return img
     else:
@@ -83,6 +80,9 @@ def take_frame(dit=None, filepath=None, nbflushes=None, roi=None,
 
 def _update_fli_stream(img, filepath):
     filepath = Path(filepath)
+
+    if len(img.shape) == 3:
+        img = img[-1]
 
     if fli_stream.shape == img.shape:
         fli_stream.set_data(img, True)

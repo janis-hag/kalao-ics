@@ -15,17 +15,18 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 import numpy as np
+import scipy.optimize
 
 from astropy import units as u
 from astropy import wcs
 from astropy.coordinates import AltAz, SkyCoord
 from astropy.io import fits
-from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyWarning
 
 from kalao import database, euler
+from kalao.utils import kmath
 
 import skimage.feature
 import skimage.filters
@@ -99,41 +100,47 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
         while i < len(stars):
             star_y, star_x = stars[i]
 
-            model_init = models.Gaussian2D(x_mean=star_x, y_mean=star_y,
-                                           amplitude=frame_fit[star_y, star_x])
-            fitter = fitting.LevMarLSQFitter()
-            model = fitter(
-                model_init, X[star_y - hw:star_y + hw,
-                              star_x - hw:star_x + hw],
-                Y[star_y - hw:star_y + hw, star_x - hw:star_x + hw],
-                frame_fit[star_y - hw:star_y + hw, star_x - hw:star_x + hw])
+            X_fit = X[star_y - hw:star_y + hw, star_x - hw:star_x + hw].ravel()
+            Y_fit = Y[star_y - hw:star_y + hw, star_x - hw:star_x + hw].ravel()
+            Z_fit = frame_fit[star_y - hw:star_y + hw,
+                              star_x - hw:star_x + hw].ravel()
 
-            # Check that the fit is not aberrant
+            fun = lambda x: np.sqrt(
+                np.sum((kmath.gaussian_2d_rotated(X_fit, Y_fit, *x, 0) - Z_fit)
+                       **2))
 
-            if not star_x - hw <= model.x_mean.value <= star_x + hw:
-                continue
+            res = scipy.optimize.minimize(
+                fun, (star_x, star_y, 1, 1, 0, frame_fit[star_y, star_x]),
+                method='L-BFGS-B', bounds=[(star_x - hw, star_x + hw),
+                                           (star_y - hw, star_y + hw),
+                                           (1, 4 * hw), (1, 4 * hw),
+                                           (-np.pi, np.pi), (1, 131072)])
 
-            if not star_y - hw <= model.y_mean.value <= star_y + hw:
-                continue
-
-            if np.sqrt(model.x_fwhm * model.y_fwhm) > 4 * hw:
+            if not res.success:
                 continue
 
             # Exclude peaks that are within star radius
 
-            j = 0
+            x_fitted = res.x[0]
+            y_fitted = res.x[1]
+            fwhm_x_fitted = res.x[2] * kmath.SIGMA_TO_FWHM
+            fwhm_y_fitted = res.x[3] * kmath.SIGMA_TO_FWHM
+            theta_fitted = res.x[4]
+            peak_fitted = res.x[5]
+
+            j = i + 1
             while j < len(stars):
-                dx = stars[j][1] - model.x_mean.value
-                dy = stars[j][0] - model.x_mean.value
+                dx = stars[j][1] - x_fitted
+                dy = stars[j][0] - y_fitted
 
-                cos = np.cos(model.theta.value)
-                sin = np.sin(model.theta.value)
+                cos = np.cos(theta_fitted)
+                sin = np.sin(theta_fitted)
 
-                a = model.x_fwhm
-                b = model.y_fwhm
+                a = fwhm_x_fitted
+                b = fwhm_y_fitted
 
-                inside = (cos*dx + sin*dy) / a**2 + (sin*dx +
-                                                     cos*dy) / b**2 <= 1
+                inside = (cos*dx + sin*dy)**2 / a**2 + (sin*dx +
+                                                        cos*dy)**2 / b**2 <= 1
 
                 if inside:
                     stars = np.delete(stars, j, axis=0)
@@ -143,9 +150,8 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
             # Add fit to star list
 
             stars_fitted.append(
-                Star(model.x_mean.value, model.y_mean.value,
-                     model.amplitude.value, model.x_fwhm, model.y_fwhm,
-                     model.theta.value * 180 / np.pi))
+                Star(x_fitted, y_fitted, peak_fitted, fwhm_x_fitted,
+                     fwhm_y_fitted, theta_fitted * 180 / np.pi))
 
             i += 1
 
@@ -279,8 +285,6 @@ if __name__ == "__main__":
         frame = np.zeros((1024, 1024), dtype=np.float32)
         Y, X = np.mgrid[0:1024, 0:1024]
 
-        gaussian = models.Gaussian2D()
-
         # Add stars
         for i in range(5):
             x = rng.uniform(50, 1024 - 50)
@@ -288,7 +292,8 @@ if __name__ == "__main__":
             peak = rng.uniform(100, 3000)
             stddev = rng.uniform(2, 30)
 
-            frame += gaussian.evaluate(X, Y, peak, x, y, stddev, stddev, 0)
+            frame += kmath.gaussian_2d_rotated(X, Y, x, y, stddev, stddev, 0,
+                                               peak)
 
         frame = rng.poisson(frame).astype(np.float64)
 

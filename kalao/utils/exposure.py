@@ -34,8 +34,7 @@ def magnitude_to_adu(mag, exptime, filter, fwhm=1):
 
 
 def optimal_exposure_time_and_filter(
-        mag, min_exptime=config.Exposure.Star.min_exptime,
-        min_adu=config.Exposure.Star.min_adu,
+        mag, min_exptime, min_adu=config.Exposure.Star.min_adu,
         max_adu=config.Exposure.Star.max_adu,
         filter_list=config.Exposure.Star.filter_list, fwhm=1):
     return _try_filter(filter_list, mag, min_exptime, min_adu, max_adu, fwhm)

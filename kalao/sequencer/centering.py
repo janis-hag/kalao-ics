@@ -228,7 +228,8 @@ def on_fli_with_calibunit(
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
-        logger.info('centering', f'Centering step {i+1}, error = {error} px')
+        logger.info('centering',
+                    f'Centering step {i+1}, error = {error:.1f} px')
 
         offsets.fli_to_calibunit(dy)
 
@@ -236,8 +237,9 @@ def on_fli_with_calibunit(
     else:
         raise CenteringMaxIter
 
-    logger.info('centering',
-                f'Centered on FLI using calibration unit, error = {error} px')
+    logger.info(
+        'centering',
+        f'Centered on FLI using calibration unit, error = {error:.1f} px')
     return ReturnCode.CENTERING_OK
 
 
@@ -264,7 +266,8 @@ def on_fli_with_telescope(
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
-        logger.info('centering', f'Centering step {i+1}, error = {error} px')
+        logger.info('centering',
+                    f'Centering step {i+1}, error = {error:.1f} px')
 
         offsets.fli_to_telescope(dx, dy)
 
@@ -273,7 +276,7 @@ def on_fli_with_telescope(
         raise CenteringMaxIter
 
     logger.info('centering',
-                f'Centered on FLI using telescope, error = {error} px')
+                f'Centered on FLI using telescope, error = {error:.1f} px')
     return ReturnCode.CENTERING_OK
 
 
@@ -300,7 +303,8 @@ def on_fli_with_ttm(dit, xy=None,
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
-        logger.info('centering', f'Centering step {i+1}, error = {error} px')
+        logger.info('centering',
+                    f'Centering step {i+1}, error = {error:.1f} px')
 
         offsets.fli_to_ttm(dx, dy)
 
@@ -308,8 +312,9 @@ def on_fli_with_ttm(dit, xy=None,
     else:
         raise CenteringMaxIter
 
-    logger.info('centering',
-                f'Centered on FLI using Tip-Tilt Mirror, error = {error} px')
+    logger.info(
+        'centering',
+        f'Centered on FLI using Tip-Tilt Mirror, error = {error:.1f} px')
     return ReturnCode.CENTERING_OK
 
 
@@ -336,14 +341,16 @@ def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
-        logger.info('centering', f'Centering step {i+1}, error = {error} px')
+        logger.info('centering',
+                    f'Centering step {i+1}, error = {error:.3f} px')
 
         offsets.wfs_to_ttm(dx, dy)
     else:
         raise CenteringMaxIter
 
-    logger.info('centering',
-                f'Centered on WFS using Tip-Tilt Mirror, error = {error} px')
+    logger.info(
+        'centering',
+        f'Centered on WFS using Tip-Tilt Mirror, error = {error:.3f} px')
     return ReturnCode.CENTERING_OK
 
 

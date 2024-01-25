@@ -471,15 +471,19 @@ class Centering:
     wfs_with_ttm_max_iter = 5  # -
     wfs_with_ttm_precision = 0.01  # px
 
+    min_exptime = 5  # s
+
 
 class Focusing:
     steps = 8  # -
-    step_size = 15  # µm
+    step_size = 12.5  # µm
     window_size = 80  # px
 
     autofocus_f0 = 29772  # µm
     autofocus_f1 = 32  # µm/°C
     autofocus_max_age = 3600  # s
+
+    min_exptime = 20  # s
 
 
 class Exposure:
@@ -491,7 +495,6 @@ class Exposure:
         fwhm_ref = 1  # asec
 
         # For finding optimal exposure time and filter for focusing and centering
-        min_exptime = 10  # s
         min_adu = 2048  # ADU
         max_adu = 32768  # ADU
         filter_list = ['clear', 'g', 'z']

@@ -9,6 +9,7 @@ from astropy.io import fits
 from kalao import database, logger
 from kalao.fli import camera
 from kalao.interfaces import etcs
+from kalao.plc import filterwheel
 from kalao.sequencer.seq_context import with_sequencer_status
 from kalao.utils import file_handling, starfinder
 
@@ -48,7 +49,12 @@ def focus_sequence(dit, steps=config.Focusing.steps,
 
     with open(filepath, 'w+b') as file, fits.open(file, 'update') as hdul:
         try:
-            hdul.append(fits.PrimaryHDU())
+            filter = filterwheel.get_filter(type=str, from_db=True)
+
+            hdu = fits.PrimaryHDU()
+            hdu.header.set('HIERARCH FOCUS EXPTIME', dit, '[s] Exposure time')
+            hdu.header.set('HIERARCH FOCUS FILTER', filter, 'Filter name')
+            hdul.append(hdu)
             hdul.flush()
 
             logger.info('focusing', 'Starting focus sequence')
@@ -123,7 +129,7 @@ def focus_sequence(dit, steps=config.Focusing.steps,
 
                 logger.info(
                     'focusing',
-                    f'Focus sequence {step+1}/{steps}: focus={focus:.2f}µm, x={star.x:.1f}px, y={star.y:.1f}px, peak={star.peak}ADU, FWHM={star.fwhm:.2f}px'
+                    f'Focus sequence {step+1}/{steps}: focus = {focus:.2f} µm, x = {star.x:.1f} px, y = {star.y:.1f} px, peak = {star.peak:.1f} ADU, FWHM = {star.fwhm:.2f} px'
                 )
 
             # Check if we reached a minima

@@ -265,7 +265,7 @@ def target_observation(**seq_args):
         filter = 'clear'
 
     centering_exptime, centering_filter = exposure.optimal_exposure_time_and_filter(
-        mag)
+        mag, config.Centering.min_exptime)
 
     ao_running = aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON
 
@@ -317,9 +317,10 @@ def target_observation(**seq_args):
                 adaptiveoptics_mode=kao) != ReturnCode.CENTERING_OK:
             raise CenteringFailed
 
-    # Move filter to correct position for science
-    if filterwheel.set_filter(filter) != filter:
-        raise FilterWheelNotInPosition
+        if centering_filter != filter:
+            # Move filter to correct position for science
+            if filterwheel.set_filter(filter) != filter:
+                raise FilterWheelNotInPosition
 
     if kao == AdaptiveOpticsMode.ENABLED:
         logger.info('sequencer', 'Starting Adaptive Optics')
@@ -336,7 +337,7 @@ def target_observation(**seq_args):
     if image_path is None:
         raise FLITakeImageFailed
 
-    # Do not close shutter in case of successive exposures
+    # Note: do not close shutter in case of successive exposures
 
     return ReturnCode.SEQ_OK
 
@@ -365,8 +366,8 @@ def focus(**seq_args):
         filter = 'clear'
 
     if dit <= 0:
-        exptime, filter = exposure.optimal_exposure_time_and_filter(mag)
-        dit = exptime
+        dit, filter = exposure.optimal_exposure_time_and_filter(
+            mag, config.Focusing.min_exptime)
 
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
