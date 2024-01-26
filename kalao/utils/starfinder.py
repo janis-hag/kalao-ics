@@ -84,7 +84,7 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
 
     threshold = median_filtered + max(6 * stddev_filtered, min_peak)
     stars = skimage.feature.peak_local_max(img_filtered, min_distance=1,
-                                           exclude_border=hw,
+                                           exclude_border=0,
                                            threshold_abs=threshold,
                                            num_peaks=num)
 
@@ -100,10 +100,26 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
         while i < len(stars):
             star_y, star_x = stars[i]
 
-            X_fit = X[star_y - hw:star_y + hw, star_x - hw:star_x + hw].ravel()
-            Y_fit = Y[star_y - hw:star_y + hw, star_x - hw:star_x + hw].ravel()
-            Z_fit = frame_fit[star_y - hw:star_y + hw,
-                              star_x - hw:star_x + hw].ravel()
+            xs = star_x - hw
+            xe = star_x + hw
+            ys = star_y - hw
+            ye = star_y + hw
+
+            if xs < 0:
+                xs = 0
+
+            if xe > img.shape[1]:
+                xe = img.shape[1]
+
+            if ys < 0:
+                ys = 0
+
+            if ye < img.shape[0]:
+                ye = img.shape[0]
+
+            X_fit = X[ys:ye, xs:xe].ravel()
+            Y_fit = Y[ys:ye, xs:xe].ravel()
+            Z_fit = frame_fit[ys:ye, xs:xe].ravel()
 
             fun = lambda x: np.sqrt(
                 np.sum((kmath.gaussian_2d_rotated(X_fit, Y_fit, *x, 0) - Z_fit)

@@ -479,7 +479,7 @@ class MainBackend(SHMFPSBackend):
             temperature_control.heater_off()
 
     def set_fli_image(self, exposure_time, frames):
-        camera.take_frame(dit=exposure_time, nbframes=frames)
+        camera.take_frame(exptime=exposure_time, nbframes=frames)
 
     def get_fli_cancel(self):
         camera.cancel()

@@ -10,7 +10,6 @@ open_loop_ncpa.py is part of the KalAO Instrument Control Software
 """
 
 import argparse
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,14 +17,13 @@ from signal import SIGINT, signal
 from sys import exit
 
 import numpy as np
-from scipy import optimize
 
 from astropy.io import fits
 
 from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser
-from kalao.utils import kmath, ktime, zernike
+from kalao.utils import kmath, starfinder, zernike
 
 from kalao.definitions.enums import CameraServerStatus
 
@@ -49,31 +47,18 @@ def handler(signal_received, frame):
 
 
 def take_and_measure(args):
-    peak_hw = (args.peak_window - 1) // 2
+    hw = args.roi_size // 2
 
-    max = 0
-    y, x = np.mgrid[0:args.peak_window, 0:args.peak_window]
+    img_cube = camera.take_frame(
+        exptime=args.exptime, nbframes=args.img_avg,
+        roi=(config.FLI.center_x - hw, config.FLI.center_y - hw, 2 * hw,
+             2 * hw))
 
-    img_cube = camera.take_frame(dit=args.dit, nbframes=args.img_avg)
+    img = np.mean(img_cube, axis=0)
 
-    for i in range(args.img_avg):
-        img = img_cube[i]
+    star = starfinder.find_star(img)
 
-        peak_pos = np.unravel_index(np.argmax(img, axis=None), img.shape)
-
-        img_peak = img[peak_pos[0] - peak_hw:peak_pos[0] + peak_hw + 1,
-                       peak_pos[1] - peak_hw:peak_pos[1] + peak_hw + 1]
-
-        p0 = (peak_hw, peak_hw, 2, 2, 0, img_peak[peak_hw, peak_hw])
-        errorfunction = lambda p: np.ravel(
-            kmath.gaussian_2d_rotated(x, y, *p) - img_peak)
-        p, success = optimize.leastsq(errorfunction, p0)
-
-        #print(f'mu_x: {p[0]}, mu_y: {p[1]}, sigma_x: {p[2]}, sigma_y: {p[3]}, theta: {p[4]}, A: {p[5]}, peak: {img_peak[peak_hw,peak_hw]}'
-        #      )
-        max += p[5]
-
-    return max / args.img_avg
+    return star.peak
 
 
 def display_and_measure(dm_stream, zernike_coeffs, args):
@@ -85,31 +70,9 @@ def display_and_measure(dm_stream, zernike_coeffs, args):
 
 
 def run(args):
-    # Search optimal dit
-    while True:
-        peak = take_and_measure(args)
-
-        print(args.dit, peak)
-        if peak >= args.max_flux:
-            args.dit = 0.8 * args.dit
-            if args.dit <= 1e-3:
-                print(
-                    f'Max flux {peak} above max permitted value {args.max_flux}'
-                )
-                sys.exit(1)
-            continue
-        elif peak <= args.min_flux:
-            args.dit = 1.2 * args.dit
-            if args.dit >= args.max_dit:
-                print(
-                    f'Max flux {peak} below minimum permitted value {args.min_flux}'
-                )
-                sys.exit(1)
-            continue
-        else:
-            break
-
-    print(f'Setting DIT to {args.dit}')
+    peak = take_and_measure(args)
+    print(f'Exposure time: {args.exptime}')
+    print(f'Initial peak: {peak}')
 
     # Open DM stream
     dm_stream = toolbox.open_stream_once(config.Streams.DM_NCPA)
@@ -264,41 +227,32 @@ def run(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Run open-loop NCPA optimisation.')
-    parser.add_argument('-d', action="store", dest="dit", type=float,
-                        default=config.FLI.laser_calib_dit,
-                        help="Science camera integration time")
-    parser.add_argument('--orders', action="store", dest="orders_to_correct",
-                        default=10, type=int,
-                        help='Number of orders to correct (including skipped)')
-    parser.add_argument('--skip', action="store", dest="orders_to_skip",
-                        default=3, type=int, help='Number of orders to skip')
-    parser.add_argument('-s', action="store", dest="steps", default=25,
-                        type=int, help='Number of steps')
-    parser.add_argument('-i', action="store", dest="iterations", default=10,
-                        type=int, help='Number of iterations')
-    parser.add_argument('--max_flux', action="store", dest="max_flux",
-                        default=2**15, type=float,
-                        help='Maximum flux to have on the FLI')
-    parser.add_argument('--min_flux', action="store", dest="min_flux",
-                        default=2**11, type=int,
-                        help='Minimum flux to have on the FLI')
-    parser.add_argument('--max_dit', action="store", dest="max_dit",
-                        default=0.5, type=float, help='Maximum dit of the FLI')
-    parser.add_argument('--filter', action="store", dest="filter_name",
+    parser.add_argument('--exptime', action='store', dest='exptime', type=float,
+                        default=config.FLI.laser_calib_exptime,
+                        help='Science camera integration time')
+    parser.add_argument('--filter', action='store', dest='filter_name',
                         default=config.FLI.laser_calib_filter,
                         help='Filter name to use')
-    parser.add_argument('--min_incr', action="store", dest="min_incr",
-                        default=0.0001, type=float,
-                        help='Minimum increment for convergence')
-    parser.add_argument('-', action="store", dest="laser_power",
+    parser.add_argument('--laser', action='store', dest='laser_power',
                         default=config.FLI.laser_calib_power, type=float,
                         help='Laser power')
-    parser.add_argument('--img_avg', action="store", dest="img_avg", default=5,
+    parser.add_argument('--orders', action='store', dest='orders_to_correct',
+                        default=10, type=int,
+                        help='Number of orders to correct (including skipped)')
+    parser.add_argument('--skip-orders', action='store', dest='orders_to_skip',
+                        default=3, type=int, help='Number of orders to skip')
+    parser.add_argument('--steps', action='store', dest='steps', default=25,
+                        type=int, help='Number of steps')
+    parser.add_argument('--iterations', action='store', dest='iterations',
+                        default=10, type=int, help='Number of iterations')
+    parser.add_argument('--min_incr', action='store', dest='min_incr',
+                        default=0.0001, type=float,
+                        help='Minimum increment for convergence')
+    parser.add_argument('--img_avg', action='store', dest='img_avg', default=5,
                         type=int, help='Averaging over images')
-    parser.add_argument('--window', action="store", dest="peak_window",
-                        default=5, type=int,
-                        help='Size of window for peak fitting')
-    parser.add_argument('--slopes_avg', action="store", dest="slopes_avg",
+    parser.add_argument('--roi', action='store', dest='roi_size', default=40,
+                        type=int, help='ROI size')
+    parser.add_argument('--slopes_avg', action='store', dest='slopes_avg',
                         default=1000, type=int,
                         help='Number of frames to average slopes on')
 
@@ -332,7 +286,6 @@ if __name__ == '__main__':
     signal(SIGINT, handler)
 
     if filterwheel.set_filter(args.filter_name) != args.filter_name:
-        print("Error with filter selection")
-    time.sleep(2)
+        print('Error with filter selection')
 
     run(args)

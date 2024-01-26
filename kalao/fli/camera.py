@@ -8,6 +8,7 @@
 camera.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
+
 import json
 import math
 import shutil
@@ -47,7 +48,7 @@ def take_empty(filepath=None):
     return ret
 
 
-def take_frame(dit=None, filepath=None, nbflushes=None, roi=None,
+def take_frame(exptime=None, filepath=None, nbflushes=None, roi=None,
                nbframes=None):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
@@ -59,7 +60,7 @@ def take_frame(dit=None, filepath=None, nbflushes=None, roi=None,
         roi = {'x': roi[0], 'y': roi[1], 'width': roi[2], 'height': roi[3]}
 
     params = {
-        'exptime': dit,
+        'exptime': exptime,
         'nbframes': nbframes,
         'filepath': filepath,
         'nbflushes': nbflushes,
@@ -96,25 +97,25 @@ def _update_fli_stream(img, filepath):
             keywords[f'filepath_{i}'] = str(filepath.name)[i * 16:(i+1) * 16]
 
         fli_stream.set_keywords(keywords)
-    else:
-        logger.error(
-            'fli',
-            f'{config.Streams.FLI} not updated, shapes are inconsistent (stream = {fli_stream.shape}, frame = {img.shape}).'
-        )
+    # else:
+    #     logger.error(
+    #         'fli',
+    #         f'{config.Streams.FLI} not updated, shapes are inconsistent (stream = {fli_stream.shape}, frame = {img.shape}).'
+    #     )
 
 
-def take_image(obs_type, dit=None, filepath=None):
+def take_image(obs_type, exptime=None, filepath=None):
     """
     :param sequencer_arguments:
-    :param dit: Detector integration time to use
+    :param exptime: Detector integration time to use
     :param filepath: Path where the file should be stored
     :return: path to the image
     """
 
-    if dit is not None and dit < 0.001:
+    if exptime is not None and exptime < 0.001:
         logger.error(
             'fli',
-            f'Abort before exposure started. DIT={dit} below min value 0.001')
+            f'Abort before exposure started. exptime = {exptime} s below minimum value of 0.001 s')
         return None
 
     if filepath is None:
@@ -128,7 +129,7 @@ def take_image(obs_type, dit=None, filepath=None):
         'sequencer_status': SequencerStatus.EXP,
     })
 
-    img = take_frame(dit=dit, filepath=filepath)
+    img = take_frame(exptime=exptime, filepath=filepath)
 
     if img is not None:
         database.store('obs', {'fli_temporary_image_path': filepath})

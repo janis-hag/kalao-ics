@@ -35,19 +35,10 @@ import config
 
 
 def dark(**seq_args):
-    """
-    :param q: Queue object for multithreads communication
-    :param dit: float for exposition time
-    :param nbPic: number of picture taken
-    :param filepath: If filepath is not None, store the picture to this path
-    :param kwargs: supports additional arguments
-    :return: nothing
-    """
-
-    dit = seq_args.get('texp')
+    exptime = seq_args.get('texp')
     nbPic = seq_args.get('nbPic', 1)
 
-    if None in (dit, nbPic):
+    if None in (exptime, nbPic):
         raise MissingKeyword
 
     if plc_utils.lamps_off() != 0:
@@ -61,7 +52,7 @@ def dark(**seq_args):
 
     # Take darks
     for _ in range(nbPic):
-        image_path = camera.take_image(ObservationType.DARK, dit=dit)
+        image_path = camera.take_image(ObservationType.DARK, exptime=exptime)
 
         if image_path is None:
             raise FLITakeImageFailed
@@ -77,15 +68,6 @@ def dark_abort(**seq_args):
 
 
 def tungsten_flat(**seq_args):
-    """
-    :param q: Queue object for multithreads communication
-    :param beck:
-    :param dit: float for exposition time
-    :param filepath: If filepath is not None, store the picture to this path
-    :param kwargs: supports additional arguments
-    :return: nothing
-    """
-
     filter_list = seq_args.get('filter_list',
                                config.Calib.Flats.default_flat_list)
     filepath = seq_args.get('filepath')
@@ -132,9 +114,9 @@ def tungsten_flat(**seq_args):
         if filterwheel.set_filter(filter_name) != filter_name:
             raise FilterWheelNotInPosition
 
-        dit = config.Tungsten.flat_dit_list[filter_name]
+        exptime = config.Tungsten.flat_exptime_list[filter_name]
 
-        image_path = camera.take_image(ObservationType.LAMP_FLAT, dit=dit)
+        image_path = camera.take_image(ObservationType.LAMP_FLAT, exptime=exptime)
 
         if image_path is None:
             raise FLITakeImageFailed
@@ -152,18 +134,10 @@ def tungsten_flat_abort(**seq_args):
 
 
 def sky_flat(**seq_args):
-    """
-    :param q: Queue object for multithreads communication
-    :param dit: float for exposition time
-    :param filepath: If filepath is not None, store the picture to this path
-    :param kwargs: supports additional arguments
-    :return: nothing
-    """
-
     filter_list = seq_args.get('filter_list',
                                config.Calib.Flats.default_flat_list)
     filepath = seq_args.get('filepath')
-    dit = seq_args.get('texp')
+    exptime = seq_args.get('texp')
 
     if aocontrol.emgain_off() == -1:
         raise EMGainNotOff
@@ -196,21 +170,21 @@ def sky_flat(**seq_args):
 
     current_filter = filter_list[0]
 
-    dit = exposure.flat_exptime(config.Calib.Flats.target_adu, current_filter)
+    exptime = exposure.flat_exptime(config.Calib.Flats.target_adu, current_filter)
 
     img = None
 
     for filter in filter_list:
         if img is not None:
-            dit = exposure.next_flat_exptime(config.Calib.Flats.target_adu,
-                                             img, dit, current_filter, filter)
+            exptime = exposure.next_flat_exptime(config.Calib.Flats.target_adu,
+                                             img, exptime, current_filter, filter)
 
-        if dit < config.Calib.Flats.min_exptime:
+        if exptime < config.Calib.Flats.min_exptime:
             logger.error('sequencer',
                          'Sky flat sequence stopped, exposure time too short')
             break
 
-        if dit > config.Calib.Flats.max_exptime:
+        if exptime > config.Calib.Flats.max_exptime:
             logger.error('sequencer',
                          'Sky flat sequence stopped, exposure time too long')
             break
@@ -221,7 +195,7 @@ def sky_flat(**seq_args):
 
             current_filter = filter
 
-        image_path = camera.take_image(ObservationType.SKY_FLAT, dit=dit)
+        image_path = camera.take_image(ObservationType.SKY_FLAT, exptime=exptime)
 
         if image_path is None:
             raise FLITakeImageFailed
@@ -242,19 +216,9 @@ def sky_flat_abort(**seq_args):
 
 
 def target_observation(**seq_args):
-    """
-    On sky target observation sequence
-
-    :param q: Queue object for multithreads communication
-    :param dit: float for exposition time
-    :param filepath: If filepath is not None, store the picture to this path
-    :param kwargs: supports additional arguments
-    :return: nothing
-    """
-
     filter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
-    dit = seq_args.get('texp')
+    exptime = seq_args.get('texp')
     kao = seq_args.get('kao').upper()
     auto_center = seq_args.get('centering')
     mag = seq_args.get('mv')
@@ -313,7 +277,7 @@ def target_observation(**seq_args):
 
     if centering_needed:
         if centering.center_on_target(
-                dit=centering_exptime,
+                exptime=centering_exptime,
                 adaptiveoptics_mode=kao) != ReturnCode.CENTERING_OK:
             raise CenteringFailed
 
@@ -330,9 +294,9 @@ def target_observation(**seq_args):
 
         time.sleep(config.AO.settling_time)
 
-    image_path = camera.take_image(ObservationType.OBJECT, dit=dit)
+    image_path = camera.take_image(ObservationType.OBJECT, exptime=exptime)
 
-    #Monitor AO and cancel exposure if needed
+    # TODO: Monitor AO and cancel exposure if needed
 
     if image_path is None:
         raise FLITakeImageFailed
@@ -347,17 +311,9 @@ def target_observation_abort(**seq_args):
 
 
 def focus(**seq_args):
-    """
-    :param q: Queue object for multithreads communication
-    :param dit: float for exposition time
-    :param filepath: If filepath is not None, store the picture to this path
-    :param kwargs: supports additional arguments
-    :return: nothing
-    """
-
     filter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
-    dit = seq_args.get('texp')
+    exptime = seq_args.get('texp')
     mag = seq_args.get('mv')
 
     if filter is None:
@@ -365,8 +321,8 @@ def focus(**seq_args):
                     'No filter specified for focusing, using clear')
         filter = 'clear'
 
-    if dit <= 0:
-        dit, filter = exposure.optimal_exposure_time_and_filter(
+    if exptime <= 0:
+        exptime, filter = exposure.optimal_exposure_time_and_filter(
             mag, config.Focusing.min_exptime)
 
     if aocontrol.turn_dm_on() != 0:
@@ -396,7 +352,7 @@ def focus(**seq_args):
     if adc.configure() != 0:
         raise ADCConfigureFailed
 
-    if focusing.focus_sequence(dit=dit) != ReturnCode.FOCUSING_OK:
+    if focusing.focus_sequence(exptime=exptime) != ReturnCode.FOCUSING_OK:
         raise FocusSequenceFailed
 
     if shutter.close() != ShutterState.CLOSED:
@@ -413,8 +369,6 @@ def focus_abort(**seq_args):
 def lamp_on(**seq_args):
     """
     Turn lamp on
-
-    :return: nothing
     """
 
     if tungsten.on() != 0:
@@ -426,8 +380,6 @@ def lamp_on(**seq_args):
 def lamp_off(**seq_args):
     """
     Turn lamps off
-
-    :return: nothing
     """
 
     if plc_utils.lamps_off() != 0:
@@ -443,8 +395,6 @@ def abort(**seq_args):
 def instrument_change(**seq_args):
     """
     Change of instrument operation, go into standby mode.
-
-    :return: nothing
     """
 
     logger.info('sequencer', 'INSTRUMENTCHANGE received, moving into standby.')
@@ -463,8 +413,6 @@ def instrument_change(**seq_args):
 def stopao(**seq_args):
     """
     Change of target. Stopping AO
-
-    :return: nothing
     """
 
     logger.info('sequencer', 'STOPAO received, opening loop.')
@@ -481,8 +429,6 @@ def stopao(**seq_args):
 def end(**seq_args):
     """
     End of instrument operation, go into standby mode and starting morning calibrations.
-
-    :return: nothing
     """
 
     logger.info('sequencer', 'END received, moving into standby.')
@@ -552,8 +498,6 @@ def _abort_camera():
 def _wait_for_tracking():
     """
     Waits for the telescope to be on target
-
-    :return: 0 or 1 depending on success pointing
     """
     timeout = time.monotonic() + config.SEQ.pointing_timeout
 
@@ -612,15 +556,15 @@ def generate_night_darks(folder=None):
     else:
         logger.info(
             'sequencer',
-            f'Generating {len(exptimes)} darks ({", ".join(str(dit) for dit in [1,3.5,3])})'
+            f'Generating {len(exptimes)} darks ({", ".join(str(exptime) for exptime in exptimes)})'
         )
-        for dit in exptimes:
+        for exptime in exptimes:
             for i in range(config.Calib.Darks.dark_number):
                 logger.info(
                     'sequencer',
-                    f'Generating dark for {dit} s ({i}/{config.Calib.Darks.dark_number}'
+                    f'Generating dark for {exptime} s ({i}/{config.Calib.Darks.dark_number}'
                 )
-                camera.take_image(ObservationType.DARK, dit=dit)
+                camera.take_image(ObservationType.DARK, exptime=exptime)
 
     return 0
 

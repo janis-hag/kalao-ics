@@ -24,7 +24,7 @@ import config
 
 
 @with_sequencer_status(SequencerStatus.CENTERING)
-def center_on_target(dit, centering_mode=CenteringMode.AUTOMATIC,
+def center_on_target(exptime, centering_mode=CenteringMode.AUTOMATIC,
                      adaptiveoptics_mode=AdaptiveOpticsMode.DISABLED):
     """
     Start star centering sequence:
@@ -33,7 +33,7 @@ def center_on_target(dit, centering_mode=CenteringMode.AUTOMATIC,
     - Send telescope offsets based on the measured position.
     - If auto centering does not work request manual centering
 
-    :param dit:
+    :param exptime:
     :param adaptiveoptics_mode: flag to indicate if AO will be used, set to no by default.
 
     :return: 0 if centering succeded
@@ -48,9 +48,9 @@ def center_on_target(dit, centering_mode=CenteringMode.AUTOMATIC,
         logger.info('centering', f'Starting automatic centering')
 
         try:
-            xy = _get_star(dit)
-            on_fli_with_telescope(dit=dit, xy=xy, timeout=timeout)
-            on_fli_with_ttm(dit=dit, xy=xy, timeout=timeout)
+            xy = _get_star(exptime)
+            on_fli_with_telescope(exptime=exptime, xy=xy, timeout=timeout)
+            on_fli_with_ttm(exptime=exptime, xy=xy, timeout=timeout)
         except (AbortRequested, FLITakeImageFailed) as e:
             logger.error('centering',
                          f'"{e.__doc__}" happened during centering on target')
@@ -137,9 +137,9 @@ def center_on_laser():
     logger.info('centering', f'Starting centering on laser')
 
     try:
-        xy = _get_star(config.FLI.laser_calib_dit)
-        on_fli_with_calibunit(dit=config.FLI.laser_calib_dit, xy=xy)
-        on_fli_with_ttm(dit=config.FLI.laser_calib_dit, xy=xy)
+        xy = _get_star(config.FLI.laser_calib_exptime)
+        on_fli_with_calibunit(exptime=config.FLI.laser_calib_exptime, xy=xy)
+        on_fli_with_ttm(exptime=config.FLI.laser_calib_exptime, xy=xy)
     except (CenteringException, AbortRequested, FLITakeImageFailed) as e:
         logger.error('centering',
                      f'"{e.__doc__}" happened during centering on laser')
@@ -207,10 +207,10 @@ def manual_centering(x, y):
 
 
 def on_fli_with_calibunit(
-        dit, xy=None, max_iter=config.Centering.fli_with_calibunit_max_iter,
+        exptime, xy=None, max_iter=config.Centering.fli_with_calibunit_max_iter,
         timeout=np.inf):
     if xy is None:
-        x, y = _get_star(dit)
+        x, y = _get_star(exptime)
     else:
         x, y = xy
 
@@ -233,7 +233,7 @@ def on_fli_with_calibunit(
 
         offsets.fli_to_calibunit(dy)
 
-        x, y = _get_star(dit)
+        x, y = _get_star(exptime)
     else:
         raise CenteringMaxIter
 
@@ -244,10 +244,10 @@ def on_fli_with_calibunit(
 
 
 def on_fli_with_telescope(
-        dit, xy=None, max_iter=config.Centering.fli_with_telescope_max_iter,
+        exptime, xy=None, max_iter=config.Centering.fli_with_telescope_max_iter,
         timeout=np.inf):
     if xy is None:
-        x, y = _get_star(dit)
+        x, y = _get_star(exptime)
     else:
         x, y = xy
 
@@ -271,7 +271,7 @@ def on_fli_with_telescope(
 
         offsets.fli_to_telescope(dx, dy)
 
-        x, y = _get_star(dit)
+        x, y = _get_star(exptime)
     else:
         raise CenteringMaxIter
 
@@ -280,11 +280,11 @@ def on_fli_with_telescope(
     return ReturnCode.CENTERING_OK
 
 
-def on_fli_with_ttm(dit, xy=None,
+def on_fli_with_ttm(exptime, xy=None,
                     max_iter=config.Centering.fli_with_ttm_max_iter,
                     timeout=np.inf):
     if xy is None:
-        x, y = _get_star(dit)
+        x, y = _get_star(exptime)
     else:
         x, y = xy
 
@@ -308,7 +308,7 @@ def on_fli_with_ttm(dit, xy=None,
 
         offsets.fli_to_ttm(dx, dy)
 
-        x, y = _get_star(dit)
+        x, y = _get_star(exptime)
     else:
         raise CenteringMaxIter
 
@@ -360,8 +360,8 @@ def _check_abort():
         raise AbortRequested
 
 
-def _get_star(dit):
-    img_path = camera.take_image(ObservationType.CENTERING, dit=dit)
+def _get_star(exptime):
+    img_path = camera.take_image(ObservationType.CENTERING, exptime=exptime)
 
     if img_path is None:
         raise FLITakeImageFailed

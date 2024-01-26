@@ -41,14 +41,14 @@ def run(args):
         cam.set_temperature(-30)
 
         while True:
-            cam.set_exposure(int(args.dit * 1000))
+            cam.set_exposure(int(args.exptime * 1000))
             img = cam.take_photo()
             fli_stream.set_data(img, True)
     elif camera_service_status == CameraServerStatus.UP:
         print('Connecting to camera through REST API')
 
         while True:
-            camera.take_frame(args.dit)
+            camera.take_frame(args.exptime)
     else:
         print(
             'Error connecting to camera. Please try to stop or restart the kalao_fli service'
@@ -58,7 +58,7 @@ def run(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Periodically put FLI camera images into fli_stream.')
-    parser.add_argument('-d', action="store", dest="dit", type=float,
+    parser.add_argument('--exptime', action="store", dest="exptime", type=float,
                         default=0.001, help='Detector Integration Time')
 
     args = parser.parse_args()

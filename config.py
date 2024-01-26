@@ -140,7 +140,7 @@ class FLI:
     dummy_image_path = "/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits"
 
     laser_calib_power = 0.35  # mW
-    laser_calib_dit = 0.01  # s
+    laser_calib_exptime = 0.01  # s
     laser_calib_filter = 'nd'
 
 
@@ -276,7 +276,7 @@ class Tungsten:
     stabilisation_time = 300  # s
     stabilisation_poll_interval = 5  # s
 
-    flat_dit_list = {
+    flat_exptime_list = {
         "clear": 300,  # s
         "g": 360,  # s
         "r": 480,  # s
@@ -492,7 +492,7 @@ class Exposure:
         mag_ref = 5  # visual magnitude
         exptime_ref = 1  # s
         adu_ref = 32768  # ADU
-        fwhm_ref = 1  # asec
+        fwhm_ref = 1  # arcsec
 
         # For finding optimal exposure time and filter for focusing and centering
         min_adu = 2048  # ADU
