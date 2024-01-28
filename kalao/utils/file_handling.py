@@ -9,9 +9,6 @@ file_handling.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
-# TODO create functions:
-# - update_temporary_folder( current_folder, temporary_folder)
-
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path

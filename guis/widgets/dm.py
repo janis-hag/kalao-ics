@@ -2,6 +2,8 @@ import numpy as np
 
 from PySide6.QtGui import Qt
 
+from kalao.utils import zernike
+
 from guis.utils import colormaps
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
@@ -32,6 +34,7 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         super().__init__(parent)
 
         self.backend = backend
+        self.mask = zernike.generate_pattern_mask((12, 12))
 
         loadUi('dm.ui', self)
         self.resize(600, 400)
@@ -53,6 +56,8 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.max_stroke = max_stroke
 
         if img is not None:
+            img = np.ma.masked_array(img, mask=self.mask, fill_value=np.nan)
+
             img_min, img_max = self.compute_min_max(img)
 
             self.saturation = max(
@@ -98,4 +103,4 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.dm_view.updateColormap(
                 colormaps.GrayscaleSaturationTransparent())
         else:
-            self.dm_view.updateColormap(colormaps.CoolWarm())
+            self.dm_view.updateColormap(colormaps.CoolWarmTransparent())

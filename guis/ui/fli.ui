@@ -203,6 +203,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="open_button">
+       <property name="text">
+        <string>Open ...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="ds9_button">
        <property name="text">
         <string>Open last image with DS9</string>

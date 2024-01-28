@@ -2,74 +2,10 @@ import numpy as np
 
 from PySide6.QtCore import (QObject, QRunnable, QSignalBlocker, QThreadPool,
                             Signal, Slot)
-from PySide6.QtGui import QCursor, QGuiApplication, QImage, Qt
+from PySide6.QtGui import QCursor, QGuiApplication, Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox
 
-from kalao.utils.image import LinearScale
-
-from guis.utils import colormaps
 from guis.utils.string_formatter import KalAOFormatter
-
-import config
-
-
-class ArrayToImageMixin:
-    colormap = colormaps.BlackBody()
-    image = None
-
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def prepare_array_for_qimage(self, img, img_min=None, img_max=None,
-                                 scale=LinearScale):
-        if len(img.shape) < 2:
-            img = img[np.newaxis, :]
-
-        if img_min is None:
-            img_min = img.min()
-
-        if img_max is None:
-            img_max = img.max()
-
-        delta = img_max - img_min
-
-        scale_min = self.colormap.min
-        scale_max = self.colormap.max
-
-        if self.colormap.color_saturation_high is not None:
-            scale_max -= 0.4999
-
-        if self.colormap.color_saturation_low is not None:
-            scale_min += 0.4999
-
-        if np.ma.is_masked(img):
-            mask = img.mask
-            img = img.filled()
-        else:
-            mask = None
-
-        if delta > config.epsilon:
-            rescale = (scale_max-scale_min) / delta
-            offset = img_min*rescale - scale_min
-
-            img_scaled = img*rescale - offset
-            img_scaled = np.clip(img_scaled, scale_min, scale_max)
-            img_scaled = scale(scale_min, scale_max).scale(img_scaled)
-            img_scaled = np.rint(img_scaled).astype(int)
-        else:
-            img_scaled = np.ones(img.shape) * self.colormap.no_data_value
-
-        if mask is not None:
-            if self.colormap.has_transparency:
-                img_scaled[mask] = self.colormap.transparency_value
-            else:
-                img_scaled[mask] = self.colormap.no_data_value
-
-        self.img_uint8 = np.require(img_scaled, np.uint8, 'C')
-        self.image = QImage(self.img_uint8.data, self.img_uint8.shape[1],
-                            self.img_uint8.shape[0], self.img_uint8.shape[1],
-                            QImage.Format_Indexed8)
-        self.image.setColorTable(self.colormap.colormap)
 
 
 class MinMaxMixin:

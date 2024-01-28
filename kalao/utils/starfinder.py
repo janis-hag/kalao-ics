@@ -25,7 +25,7 @@ from astropy.stats import sigma_clipped_stats
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyWarning
 
-from kalao import database, euler
+from kalao import euler
 from kalao.utils import kmath
 
 import skimage.feature
@@ -172,34 +172,6 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
             i += 1
 
     return stars_fitted, bad_pixels
-
-
-def find_star_fits(image_path):
-    """
-    Finds the position of a star spot in an image taken with the FLI camera
-
-    :param image_path: path for the image to be centered (String)
-
-    :return: center of the star or (-1, -1) if an error has occurred. (float, float)
-    """
-
-    hdu_list = fits.open(image_path)
-    hdu_list.info()
-    image = hdu_list[0].data
-    hdu_list.close()
-
-    x_star, y_star, peak, fwhm = find_star(image)
-
-    database.store(
-        'obs', {
-            'psf_file': image_path.name,
-            'psf_x': x_star,
-            'psf_y': y_star,
-            'psf_peak': peak,
-            'psf_fwhm': fwhm
-        })
-
-    return x_star, y_star, peak, fwhm
 
 
 def generate_wcs():

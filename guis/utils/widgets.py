@@ -16,8 +16,8 @@ from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
 
 from kalao.utils.image import LinearScale
 
+from guis.utils.data_conversion import ndarray_to_qimage
 from guis.utils.definitions import Color, Logo
-from guis.utils.mixins import ArrayToImageMixin
 from guis.utils.string_formatter import KalAOFormatter
 
 
@@ -40,7 +40,7 @@ class OffsetedTextItem(QGraphicsSimpleTextItem):
                       b.y() - self.offset_y, b.width(), b.height())
 
 
-class KLabel(QLabel, ArrayToImageMixin):
+class KLabel(QLabel):
     _pixmap = None
     text_format = None
     formatter = KalAOFormatter()
@@ -77,7 +77,7 @@ class KLabel(QLabel, ArrayToImageMixin):
             super().setPixmap(self.scaledPixmap())
 
     def setImage(self, img):
-        self.prepare_array_for_qimage(img)
+        self.image = ndarray_to_qimage(img)
 
         self.setPixmap(QPixmap.fromImage(self.image))
 
@@ -365,8 +365,9 @@ class KHoverableGraphicsScene(QGraphicsScene):
             self.hovered.emit(self.x, self.y)
 
 
-class KGraphicsView(QGraphicsView, ArrayToImageMixin):
+class KGraphicsView(QGraphicsView):
     img = None
+    image = None
     pixmap = None
     pixmap_item = None
     view = None
@@ -403,7 +404,10 @@ class KGraphicsView(QGraphicsView, ArrayToImageMixin):
         if self.pixmap is None:
             super().heightForWidth(width)
         else:
-            return self.pixmap.height() * width / self.pixmap.width()
+            if self.pixmap.width() == 0:
+                return 0
+            else:
+                return self.pixmap.height() * width / self.pixmap.width()
 
     def sizeHint(self):
         if self.pixmap is None:
@@ -434,7 +438,8 @@ class KGraphicsView(QGraphicsView, ArrayToImageMixin):
                 self.pixmap_item.setPixmap(QPixmap())
             return
 
-        self.prepare_array_for_qimage(img, img_min, img_max, scale)
+        self.image = ndarray_to_qimage(img, img_min, img_max, self.colormap,
+                                       scale)
 
         self.pixmap = QPixmap.fromImage(self.image)
 

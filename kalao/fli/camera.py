@@ -115,7 +115,8 @@ def take_image(obs_type, exptime=None, filepath=None):
     if exptime is not None and exptime < 0.001:
         logger.error(
             'fli',
-            f'Abort before exposure started. exptime = {exptime} s below minimum value of 0.001 s')
+            f'Abort before exposure started. exptime = {exptime} s below minimum value of 0.001 s'
+        )
         return None
 
     if filepath is None:

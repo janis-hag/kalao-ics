@@ -58,9 +58,7 @@ def nuvu_frame(
     slopes_px = zernike.slopes_from_pattern_interp(
         dmdisp) * config.DM.plate_scale / config.WFS.plate_scale
 
-    #TODO: more correct
-    sigma = 1
-
+    sigma = 1.06 / kmath.SIGMA_TO_FWHM
     intensity = 2 * flux / (np.pi * 4 * sigma**2)
 
     sigma *= upsampling

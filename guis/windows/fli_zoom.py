@@ -1,6 +1,9 @@
+import math
 from datetime import datetime, timezone
 
 import numpy as np
+
+from astropy.io import fits
 
 from PySide6.QtCore import QPointF, QRectF, QSignalBlocker, Slot
 from PySide6.QtGui import QPen, Qt
@@ -40,8 +43,13 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
     axis_precision = 0
     axis_scaling = 1
 
+    img_width = np.nan
+    img_height = np.nan
+
     zoom_center_x = config.FLI.center_x
     zoom_center_y = config.FLI.center_y
+    zoom_half_width = np.nan
+    zoom_half_height = np.nan
     zoom_level = 16
     zoom_min = 2
     zoom_max = 128
@@ -66,11 +74,13 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     WFS_fov = 4 * config.WFS.plate_scale / config.FLI.plate_scale
 
-    def __init__(self, backend, img, on_sky_unit=False, parent=None):
+    def __init__(self, backend, img=None, file=None, on_sky_unit=False,
+                 parent=None):
         super().__init__(parent)
 
         self.backend = backend
         self.img = img
+        self.file = file
 
         loadUi('fli_zoom.ui', self)
         self.resize(1400, 600)
@@ -82,7 +92,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         pen = QPen(Color.YELLOW, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        self.zoom_window = self.fli_view.scene.addRect(0, 0, 1024, 1024, pen)
+        self.zoom_window = self.fli_view.scene.addRect(-1, -1, 0, 0, pen)
         self.zoom_window.setZValue(1)
 
         pen = QPen(Color.BLUE, 1.5, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
@@ -97,25 +107,25 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         pen = QPen(Color.GREEN, 1.5, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        self.vertical_line = self.fli_view.scene.addLine(
-            512, 0, 512, 1024, pen)
+        self.vertical_line = self.fli_view.scene.addLine(-1, -1, 0, 0, pen)
         self.vertical_line.setZValue(1)
         self.vertical_line.setVisible(False)
 
-        self.horizontal_line = self.fli_view.scene.addLine(
-            0, 512, 1024, 512, pen)
+        self.horizontal_line = self.fli_view.scene.addLine(-1, -1, 0, 0, pen)
         self.horizontal_line.setZValue(1)
         self.horizontal_line.setVisible(False)
 
         self.zoom_vertical_line = self.zoom_view.scene.addLine(
-            512, 0, 512, 1024, pen)
+            -1, -1, 0, 0, pen)
         self.zoom_vertical_line.setZValue(1)
         self.zoom_vertical_line.setVisible(False)
 
         self.zoom_horizontal_line = self.zoom_view.scene.addLine(
-            0, 512, 1024, 512, pen)
+            -1, -1, 0, 0, pen)
         self.zoom_horizontal_line.setZValue(1)
         self.zoom_horizontal_line.setVisible(False)
+
+        self.stars_itemgroup = self.fli_view.scene.createItemGroup([])
 
         for colormap in colormaps.get_all_colormaps(exclude_transparent=True):
             self.colormap_combobox.addItem(colormap.__name__, colormap)
@@ -144,8 +154,12 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.on_onsky_checkbox_stateChanged(self.onsky_checkbox.checkState())
 
         self.hovered.connect(self.info_to_statusbar)
-        backend.streams_fli_updated.connect(self.streams_fli_updated,
-                                            Qt.UniqueConnection)
+
+        if self.file is None:
+            backend.streams_fli_updated.connect(self.streams_fli_updated,
+                                                Qt.UniqueConnection)
+        else:
+            img = fits.getdata(self.file)
 
         if img is not None:
             self.update_fli_view(img)
@@ -157,22 +171,6 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         img = self.consume_stream(data, config.Streams.FLI)
 
         if img is not None:
-            stars, bad_pixels = starfinder.find_stars_and_bad_pixels(
-                self.img, num=1)
-
-            if len(stars) == 0:
-                self.star_x = np.nan
-                self.star_y = np.nan
-                self.star_peak = np.nan
-                self.star_fwhm = np.nan
-            else:
-                self.star_x = stars[0].x
-                self.star_y = stars[0].y
-                self.star_peak = stars[0].peak
-                self.star_fwhm = stars[0].fwhm
-
-            self.bad_pixels = bad_pixels
-
             timestamp = self.consume_stream_keyword(data, config.Streams.FLI,
                                                     'timestamp')
             if timestamp is not None:
@@ -286,8 +284,8 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 self.update_zoom_view()
 
             if self.centering:
-                self.vertical_line.setLine(x, 0, x, 1024)
-                self.horizontal_line.setLine(0, y, 1024, y)
+                self.vertical_line.setLine(x, 0, x, self.img_height)
+                self.horizontal_line.setLine(0, y, self.img_width, y)
 
                 self.vertical_line.setVisible(True)
                 self.horizontal_line.setVisible(True)
@@ -317,7 +315,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.hovered.emit('')
 
     def fli_clicked(self, x, y):
-        if not 0 <= x < 1024 or not 0 <= y < 1024:
+        if not 0 <= x < self.img_width or not 0 <= y < self.img_height:
             return
 
         if self.centering:
@@ -332,7 +330,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.update_zoom_view()
 
     def fli_dragged(self, x, y, dx, dy):
-        if not 0 <= x < 1024 or not 0 <= y < 1024:
+        if not 0 <= x < self.img_width or not 0 <= y < self.img_height:
             return
 
         self.zoom_center_x = round(x)
@@ -341,7 +339,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.update_zoom_view()
 
     def fli_scrolled(self, x, y, z):
-        if not 0 <= x < 1024 or not 0 <= y < 1024:
+        if not 0 <= x < self.img_width or not 0 <= y < self.img_height:
             return
 
         if self.window_combobox.currentData() == FollowMode.FIXED:
@@ -365,7 +363,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         if self.window_combobox.currentData() != FollowMode.FIXED:
             return
 
-        if not 0 <= x < 1024 or not 0 <= y < 1024:
+        if not 0 <= x < self.img_width or not 0 <= y < self.img_height:
             return
 
         self.zoom_center_x = round(x)
@@ -374,12 +372,13 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.update_zoom_view()
 
     def zoom_scrolled(self, x, y, z):
-        hw = 1024 // self.zoom_level // 2
+        hw = self.zoom_half_width
+        hh = self.zoom_half_height
 
         fx = (x - self.zoom_center_x) / hw
-        fy = (y - self.zoom_center_y) / hw
+        fy = (y - self.zoom_center_y) / hh
 
-        if not 0 <= x < 1024 or not 0 <= y < 1024:
+        if not 0 <= x < self.img_width or not 0 <= y < self.img_height:
             return
 
         if z > 0:
@@ -390,7 +389,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
             elif self.window_combobox.currentData() == FollowMode.FIXED:
                 self.zoom_center_x = round(x - fx*hw/2)
-                self.zoom_center_y = round(y - fy*hw/2)
+                self.zoom_center_y = round(y - fy*hh/2)
 
         else:
             self.zoom_level //= 2
@@ -400,7 +399,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
             elif self.window_combobox.currentData() == FollowMode.FIXED:
                 self.zoom_center_x = round(x - fx*hw*2)
-                self.zoom_center_y = round(y - fy*hw*2)
+                self.zoom_center_y = round(y - fy*hh*2)
 
         self.update_zoom_view()
 
@@ -409,6 +408,44 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             return
 
         self.img = img
+
+        if self.img_width != img.shape[1] or self.img_height != img.shape[0]:
+            self.img_width = img.shape[1]
+            self.img_height = img.shape[0]
+            self.zoom_center_x = self.img_width // 2
+            self.zoom_center_y = self.img_height // 2
+
+            self.zoom_max = 2**(
+                math.floor(np.log2(min(self.img_width, self.img_height))) - 2)
+
+        self.stars, self.bad_pixels = starfinder.find_stars_and_bad_pixels(
+            self.img, num=1)
+
+        if len(self.stars) == 0:
+            self.star_x = np.nan
+            self.star_y = np.nan
+            self.star_peak = np.nan
+            self.star_fwhm = np.nan
+        else:
+            self.star_x = self.stars[0].x
+            self.star_y = self.stars[0].y
+            self.star_peak = self.stars[0].peak
+            self.star_fwhm = self.stars[0].fwhm
+
+        for item in self.stars_itemgroup.childItems():
+            self.fli_view.scene.removeItem(item)
+
+        pen = QPen(Color.GREEN, 1.5, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        pen.setCosmetic(True)
+        for star in self.stars:
+            ellipse_item = self.fli_view.scene.addEllipse(
+                star.x - star.fwhm_w / 2, star.y - star.fwhm_h / 2,
+                star.fwhm_w, star.fwhm_h, pen)
+            ellipse_item.setTransformOriginPoint(QPointF(star.x, star.y))
+            ellipse_item.setRotation(star.fwhm_angle)
+
+            self.stars_itemgroup.addToGroup(ellipse_item)
+            self.stars_itemgroup.setZValue(1)
 
         if self.cuts_combobox.currentIndex == 0:
             img_nan = img.copy()
@@ -447,7 +484,8 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         x = self.zoom_center_x
         y = self.zoom_center_y
-        hw = 1024 // self.zoom_level // 2
+        hw = self.zoom_half_width = self.img_width // self.zoom_level // 2
+        hh = self.zoom_half_height = self.img_height // self.zoom_level // 2
 
         with QSignalBlocker(self.x_spinbox):
             self.x_spinbox.setValue(x - self.data_center_x)
@@ -459,14 +497,14 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.zoom_spinbox.setValue(self.zoom_level)
             self.update_zoom_spinbox_suffix()
 
-        self.zoom_window.setRect(x - hw, y - hw, 2 * hw, 2 * hw)
-        self.zoom_vertical_line.setLine(x, y - hw, x, y + hw)
+        self.zoom_window.setRect(x - hw, y - hh, 2 * hw, 2 * hh)
+        self.zoom_vertical_line.setLine(x, y - hh, x, y + hh)
         self.zoom_horizontal_line.setLine(x - hw, y, x + hw, y)
 
-        zoom = image.cut(self.img, 2 * hw, [y, x], overflow='cut')
+        zoom = image.cut(self.img, [2 * hw, 2 * hh], [x, y], overflow='cut')
 
         offset_x = max(x - hw, 0)
-        offset_y = max(y - hw, 0)
+        offset_y = max(y - hh, 0)
 
         self.zoom_view.margins = np.array(
             self.fli_view.margins) / self.zoom_level
@@ -474,7 +512,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.zoom_view.setImage(zoom, self.min_spinbox.value(),
                                 self.max_spinbox.value(),
                                 self.scale_combobox.currentData(),
-                                view=QRectF(x - hw, y - hw, 2 * hw, 2 * hw),
+                                view=QRectF(x - hw, y - hh, 2 * hw, 2 * hh),
                                 offset=QPointF(offset_x, offset_y))
 
     def update_labels(self):
@@ -516,9 +554,10 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.saturation_label.setStyleSheet('')
 
     def update_zoom_spinbox_suffix(self):
-        size = 1024 // self.zoom_level * self.axis_scaling
+        size_x = self.zoom_half_width * self.axis_scaling
+        size_y = self.zoom_half_height * self.axis_scaling
         self.zoom_spinbox.setSuffix(
-            f'x ({size:.{self.axis_precision}f}{self.axis_unit} x {size:.{self.axis_precision}f}{self.axis_unit})'
+            f'x ({size_x:.{self.axis_precision}f}{self.axis_unit} x {size_y:.{self.axis_precision}f}{self.axis_unit})'
         )
 
     @Slot(int)
@@ -558,10 +597,13 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                                      self.tick_fontsize, ticks_x, ticks_y)
 
     def closeEvent(self, event):
-        self.backend.streams_fli_updated.disconnect(self.streams_fli_updated)
-        event.accept()
+        if self.file is None:
+            self.backend.streams_fli_updated.disconnect(
+                self.streams_fli_updated)
+            event.accept()
 
     def showEvent(self, event):
-        self.backend.streams_fli_updated.connect(self.streams_fli_updated,
-                                                 Qt.UniqueConnection)
+        if self.file is None:
+            self.backend.streams_fli_updated.connect(self.streams_fli_updated,
+                                                     Qt.UniqueConnection)
         event.accept()

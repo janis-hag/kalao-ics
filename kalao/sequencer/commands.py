@@ -116,7 +116,8 @@ def tungsten_flat(**seq_args):
 
         exptime = config.Tungsten.flat_exptime_list[filter_name]
 
-        image_path = camera.take_image(ObservationType.LAMP_FLAT, exptime=exptime)
+        image_path = camera.take_image(ObservationType.LAMP_FLAT,
+                                       exptime=exptime)
 
         if image_path is None:
             raise FLITakeImageFailed
@@ -170,14 +171,16 @@ def sky_flat(**seq_args):
 
     current_filter = filter_list[0]
 
-    exptime = exposure.flat_exptime(config.Calib.Flats.target_adu, current_filter)
+    exptime = exposure.flat_exptime(config.Calib.Flats.target_adu,
+                                    current_filter)
 
     img = None
 
     for filter in filter_list:
         if img is not None:
             exptime = exposure.next_flat_exptime(config.Calib.Flats.target_adu,
-                                             img, exptime, current_filter, filter)
+                                                 img, exptime, current_filter,
+                                                 filter)
 
         if exptime < config.Calib.Flats.min_exptime:
             logger.error('sequencer',
@@ -195,7 +198,8 @@ def sky_flat(**seq_args):
 
             current_filter = filter
 
-        image_path = camera.take_image(ObservationType.SKY_FLAT, exptime=exptime)
+        image_path = camera.take_image(ObservationType.SKY_FLAT,
+                                       exptime=exptime)
 
         if image_path is None:
             raise FLITakeImageFailed

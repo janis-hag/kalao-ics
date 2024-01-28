@@ -1,9 +1,11 @@
+from pathlib import Path
 from subprocess import Popen
 
 import numpy as np
 
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QPen, Qt
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from kalao.utils.image import LogScale
 
@@ -11,13 +13,21 @@ from guis.utils import colormaps
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.utils.ui_loader import loadUi
-from guis.utils.widgets import KWidget
+from guis.utils.widgets import KMessageBox, KWidget
 from guis.windows.fli_zoom import FLIZoomWindow
 
 import config
 
 
 def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
+    if sort == 'db':
+        from kalao.utils import file_handling
+
+        return file_handling.get_last_image_path()
+
+    elif sort == 'symlink':
+        return config.FITS.last_image
+
     folders = list(filter(lambda item: item.is_dir(), path.iterdir()))
 
     if sort == 'time':
@@ -33,11 +43,6 @@ def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
         latest_file = max(files)
 
         return latest_file
-
-    elif sort == 'db':
-        from kalao.utils import file_handling
-
-        return file_handling.get_last_image_path()
 
 
 class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
@@ -206,8 +211,49 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.fli_view.updateColormap(colormaps.BlackBody())
 
     @Slot(bool)
+    def on_open_button_clicked(self, checked):
+        dialog = QFileDialog(self)
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setNameFilter('Images (*.fits)')
+        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+
+        error_dialog = KMessageBox(self)
+        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setModal(False)
+        error_dialog.setText("<b>FITS loading failed!</b>")
+
+        try:
+            if dialog.exec():
+                filenames = dialog.selectedFiles()
+
+                if len(filenames) != 1:
+                    error_dialog.setInformativeText(
+                        f'Select one and only one file (got {len(filenames)}).'
+                    )
+                    error_dialog.show()
+                    return
+
+                filename = Path(filenames[0])
+
+                if not filename.exists():
+                    error_dialog.setInformativeText('File does not exists.')
+                    error_dialog.show()
+                    return
+
+                if filename.suffix.lower() != '.fits':
+                    error_dialog.setInformativeText(
+                        f'Unsupported file extension "{filename.suffix}".')
+                    error_dialog.show()
+
+                FLIZoomWindow(self.backend, file=filename, parent=self)
+        except PermissionError:
+            error_dialog.setInformativeText(
+                'Can\'t read file, permission refused.')
+            error_dialog.show()
+
+    @Slot(bool)
     def on_ds9_button_clicked(self, checked):
-        Popen(['ds9', get_latest_image_path()])
+        Popen(['ds9', get_latest_image_path(sort='symlink')])
 
     @Slot(bool)
     def on_zoom_window_button_clicked(self, checked):

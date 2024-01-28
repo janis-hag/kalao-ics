@@ -33,31 +33,6 @@ centering_manual:
   long: Flag do indicate if manual centering is needed
   unit:
 
-psf_file:
-  short: PSF file
-  long: File used for PSF fitting
-  unit:
-
-psf_x:
-  short: PSF x center
-  long: PSF fitted x center
-  unit: pixels
-
-psf_y:
-  short: PSF y center
-  long: PSF fitted y center
-  unit: pixels
-
-psf_peak:
-  short: PSF peak
-  long: PSF peak
-  unit: pixels
-
-psf_fwhm:
-  short: PSF FWHM
-  long: PSF fitted FWHM
-  unit: pixels
-
 # FLI
 fli_last_image_path:
   short: Path to saved image

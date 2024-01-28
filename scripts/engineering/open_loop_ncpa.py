@@ -70,10 +70,6 @@ def display_and_measure(dm_stream, zernike_coeffs, args):
 
 
 def run(args):
-    peak = take_and_measure(args)
-    print(f'Exposure time: {args.exptime}')
-    print(f'Initial peak: {peak}')
-
     # Open DM stream
     dm_stream = toolbox.open_stream_once(config.Streams.DM_NCPA)
     if dm_stream is None:
@@ -85,6 +81,12 @@ def run(args):
     if slopes_stream is None:
         print(f'{config.Streams.SLOPES} missing')
         exit()
+
+    toolbox.zero_stream(config.Streams.DM_NCPA)
+
+    peak = take_and_measure(args)
+    print(f'Exposure time: {args.exptime}')
+    print(f'Initial peak: {peak}')
 
     zernike_coeffs = np.zeros(args.orders_to_correct)
     start_coeff = 0
@@ -122,15 +124,15 @@ def run(args):
             )
 
             step = 0
-            zernike_coeff_incr = 0.9 * 1.75 / 2  # DM range is between -1.75 and 1.75
+            zernike_coeff_incr = 0.1 * 1.75  # DM range is between -1.75 and 1.75
             peak_array = np.zeros((3, 2))
-
-            # Reset value to zero before starting search
-            zernike_coeffs[order] = 0
 
             start_peak = peak_array[1][PEAK_VALUE] = display_and_measure(
                 dm_stream, zernike_coeffs, args)
             start_coeff = peak_array[1][COEFF] = zernike_coeffs[order]
+
+            # Reset value to zero before starting search
+            zernike_coeffs[order] = 0
 
             print(
                 TC.CLEAR +
@@ -227,8 +229,8 @@ def run(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Run open-loop NCPA optimisation.')
-    parser.add_argument('--exptime', action='store', dest='exptime', type=float,
-                        default=config.FLI.laser_calib_exptime,
+    parser.add_argument('--exptime', action='store', dest='exptime',
+                        type=float, default=config.FLI.laser_calib_exptime,
                         help='Science camera integration time')
     parser.add_argument('--filter', action='store', dest='filter_name',
                         default=config.FLI.laser_calib_filter,

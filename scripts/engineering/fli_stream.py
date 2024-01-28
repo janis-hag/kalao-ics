@@ -58,8 +58,9 @@ def run(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Periodically put FLI camera images into fli_stream.')
-    parser.add_argument('--exptime', action="store", dest="exptime", type=float,
-                        default=0.001, help='Detector Integration Time')
+    parser.add_argument('--exptime', action="store", dest="exptime",
+                        type=float, default=0.001,
+                        help='Detector Integration Time')
 
     args = parser.parse_args()
 

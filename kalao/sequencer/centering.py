@@ -207,8 +207,8 @@ def manual_centering(x, y):
 
 
 def on_fli_with_calibunit(
-        exptime, xy=None, max_iter=config.Centering.fli_with_calibunit_max_iter,
-        timeout=np.inf):
+        exptime, xy=None,
+        max_iter=config.Centering.fli_with_calibunit_max_iter, timeout=np.inf):
     if xy is None:
         x, y = _get_star(exptime)
     else:
@@ -244,8 +244,8 @@ def on_fli_with_calibunit(
 
 
 def on_fli_with_telescope(
-        exptime, xy=None, max_iter=config.Centering.fli_with_telescope_max_iter,
-        timeout=np.inf):
+        exptime, xy=None,
+        max_iter=config.Centering.fli_with_telescope_max_iter, timeout=np.inf):
     if xy is None:
         x, y = _get_star(exptime)
     else:

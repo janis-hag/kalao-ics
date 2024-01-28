@@ -480,7 +480,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_calibunit_init_button_clicked(self, checked):
-        self.action_send(self.calibunit_initialize_button,
+        self.action_send(self.calibunit_init_button,
                          self.backend.get_plc_calibunit_init)
 
     @Slot(bool)

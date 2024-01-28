@@ -52,7 +52,8 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
             filter = filterwheel.get_filter(type=str, from_db=True)
 
             hdu = fits.PrimaryHDU()
-            hdu.header.set('HIERARCH FOCUS EXPTIME', exptime, '[s] Exposure time')
+            hdu.header.set('HIERARCH FOCUS EXPTIME', exptime,
+                           '[s] Exposure time')
             hdu.header.set('HIERARCH FOCUS FILTER', filter, 'Filter name')
             hdul.append(hdu)
             hdul.flush()
@@ -67,7 +68,8 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
 
                 etcs.set_focus(focus)
 
-                filepath = camera.take_image(ObservationType.FOCUS, exptime=exptime)
+                filepath = camera.take_image(ObservationType.FOCUS,
+                                             exptime=exptime)
 
                 if filepath is None:
                     raise FLITakeImageFailed

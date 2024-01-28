@@ -2,39 +2,44 @@ import numpy as np
 
 
 def cut(img, window, center=None, overflow='recenter'):
-    hw = window // 2
+    if isinstance(window, int):
+        hw = window // 2
+        hh = window // 2
+    else:
+        hw = window[0] // 2
+        hh = window[1] // 2
 
     if center is None:
-        cx, cy = [img.shape[0] // 2, img.shape[1] // 2]
+        cx, cy = [img.shape[1] // 2, img.shape[0] // 2]
     else:
         cx, cy = center
 
     if overflow == 'recenter':
-        if cx + hw > img.shape[0]:
-            cx = img.shape[0] - hw
+        if cx + hw > img.shape[1]:
+            cx = img.shape[1] - hw
         elif cx - hw < 0:
             cx = hw
 
-        if cy + hw > img.shape[1]:
-            cy = img.shape[1] - hw
-        elif cy - hw < 0:
-            cy = hw
+        if cy + hh > img.shape[0]:
+            cy = img.shape[0] - hh
+        elif cy - hh < 0:
+            cy = hh
 
     xs = cx - hw
     xe = cx + hw
-    ys = cy - hw
-    ye = cy + hw
+    ys = cy - hh
+    ye = cy + hh
 
     if xs < 0:
         xs = 0
-    if xe > img.shape[0]:
-        xe = img.shape[0]
+    if xe > img.shape[1]:
+        xe = img.shape[1]
     if ys < 0:
         ys = 0
-    if ye > img.shape[1]:
-        ye = img.shape[1]
+    if ye > img.shape[0]:
+        ye = img.shape[0]
 
-    return img[xs:xe, ys:ye]
+    return img[ys:ye, xs:xe]
 
 
 ### Scales

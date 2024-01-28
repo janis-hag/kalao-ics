@@ -131,8 +131,8 @@ class FLI:
     # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
     plate_scale = 0.0507  # arcsec / px
 
-    center_x = 505  # px 505
-    center_y = 545  # px 545
+    center_x = 523  # px
+    center_y = 543  # px
 
     median_bias = 1007  # ADU
 
@@ -475,8 +475,8 @@ class Centering:
 
 
 class Focusing:
-    steps = 8  # -
-    step_size = 12.5  # µm
+    steps = 7  # -
+    step_size = 50  # µm
     window_size = 80  # px
 
     autofocus_f0 = 29772  # µm
@@ -680,8 +680,7 @@ class GUI:
     plots_exclude_list = [
         'observer_name', 'observer_email', 'fli_last_image_path',
         'fli_temporary_image_path', 'tcs_header_path',
-        'filterwheel_filter_name', 'sequencer_command_received', 't120_host',
-        'psf_file'
+        'filterwheel_filter_name', 'sequencer_command_received', 't120_host'
     ]
 
     refreshrate_streams = 10  # /s
