@@ -112,10 +112,11 @@ def get_position(beck=None):
 def init(beck=None):
     logger.info('flipmirror', 'Initialising flip mirror')
 
-    # Do the flip mirror gym
-    down(beck=beck)
-    up(beck=beck)
-    down(beck=beck)
+    # Do the flip mirror gym if needed
+    state, switch_time = get_switch_time()
+    if switch_time > 86400:
+        up(beck=beck)
+        down(beck=beck)
 
     logger.info('flipmirror', 'Flip mirror initialised')
 

@@ -463,10 +463,10 @@ class Centering:
     fli_with_calibunit_precision = 5  # px
 
     fli_with_telescope_max_iter = 5  # -
-    fli_with_telescope_precision = 5  # px
+    fli_with_telescope_precision = 20  # px
 
     fli_with_ttm_max_iter = 5  # -
-    fli_with_ttm_precision = 1  # px
+    fli_with_ttm_precision = 5  # px
 
     wfs_with_ttm_max_iter = 5  # -
     wfs_with_ttm_precision = 0.01  # px

@@ -59,10 +59,11 @@ def init(beck=None):
     """
     logger.info('shutter', 'Initialising shutter')
 
-    # Do the shutter gym
-    close(beck=beck)
-    open(beck=beck)
-    close(beck=beck)
+    # Do the shutter gym if needed
+    state, switch_time = get_switch_time()
+    if switch_time > 86400:
+        open(beck=beck)
+        close(beck=beck)
 
     logger.info('shutter', 'Shutter initialised')
 

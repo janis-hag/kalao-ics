@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
 
 from kalao.utils.image import LinearScale
 
+from guis.utils import colormaps
 from guis.utils.data_conversion import ndarray_to_qimage
 from guis.utils.definitions import Color, Logo
 from guis.utils.string_formatter import KalAOFormatter
@@ -374,6 +375,8 @@ class KGraphicsView(QGraphicsView):
     margins = (0, 0, 0, 0)
     shape = (0, 0)
     offset = QPointF(0, 0)
+
+    colormap = colormaps.BlackBody()
 
     tick_lines = []
     tick_labels = []

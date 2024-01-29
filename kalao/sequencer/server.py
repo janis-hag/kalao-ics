@@ -3,21 +3,21 @@
 
 import signal
 import socket
-import time
 import traceback
+from functools import partial
 from itertools import zip_longest
-from multiprocessing import Process, Queue
 from threading import Thread
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
 from kalao import database, euler, logger, services
-from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser, shutter,
-                       tungsten)
+from kalao.plc import (adc, calibunit, core, filterwheel, flipmirror, laser,
+                       shutter, tungsten)
 from kalao.sequencer import commands
+from kalao.utils import background
 
-from kalao.definitions.enums import ReturnCode, SequencerStatus, ShutterState
+from kalao.definitions.enums import SequencerStatus, ShutterState
 from kalao.definitions.exceptions import *
 
 import config
@@ -42,82 +42,23 @@ def handler(signal_received, frame):
         exit(0)
 
 
-def init():
+@core.beckhoff_autoconnect
+def init(beck=None):
+    logger.info('sequencer', 'Server initialisation')
+
     init_list = [
-        services.init,
-        calibunit.init,
-        flipmirror.init,
-        shutter.init,
-        tungsten.init,
-        laser.init,
-        filterwheel.init,
-        lambda: adc.init(config.PLC.Node.ADC1),
-        lambda: adc.init(config.PLC.Node.ADC2),
+        partial(services.init, beck=beck),
+        partial(calibunit.init, beck=beck),
+        partial(adc.init, config.PLC.Node.ADC1, beck=beck),
+        partial(adc.init, config.PLC.Node.ADC2, beck=beck),
+        partial(shutter.init, beck=beck),
+        partial(flipmirror.init, beck=beck),
+        partial(tungsten.init, beck=beck),
+        partial(laser.init, beck=beck),
+        partial(filterwheel.init, beck=beck),
     ]
 
-    def get_name(f):
-        return f'{f.__module__}.{f.__name__}'
-
-    def wrapper(f, q):
-        ret = f()
-        q.put({get_name(f): ret})
-
-    processes = {}
-    processes_terminated = {}
-    processes_killed = {}
-    processes_error = {}
-    return_queue = Queue()
-    time_start = time.monotonic()
-
-    # Launch all processes
-    for f in init_list:
-        p = Process(target=wrapper, kwargs={'f': f, 'q': return_queue})
-        processes[get_name(f)] = p
-        p.start()
-
-    # Wait for all processes to finish
-    for p in processes.values():
-        p.join(config.SEQ.init_timeout - (time.monotonic() - time_start))
-
-    # Terminate remaining ones
-    for f, p in processes.items():
-        if p.is_alive():
-            logger.warn('sequencer', f'Terminating process for {f}')
-            processes_terminated[f] = p
-
-            p.terminate()
-
-    if processes_terminated != 0:
-        time.sleep(config.SEQ.init_terminate_grace_time)
-
-    # Kill them if necessary
-    for f, p in processes.items():
-        if p.is_alive():
-            logger.warn('sequencer', f'Killing process for {f}')
-            processes_killed[f] = p
-
-            p.kill()
-
-    if processes_killed != 0:
-        time.sleep(config.SEQ.init_wait_kill)
-
-    time_stop = time.monotonic()
-
-    # Collecting return values of processes that finished
-    returns = {}
-    while not return_queue.empty():
-        returns.update(return_queue.get_nowait())
-
-    for f, ret in returns.items():
-        if ret != ReturnCode.OK:
-            logger.error('sequencer',
-                         f'Initialisation failed for {f}, returned {ret}')
-            processes_error[f] = ret
-
-    logger.info(
-        'sequencer',
-        f'Initialisation finished in {time_stop - time_start:.1f}s. {len(processes)} launched, {len(processes_terminated)} terminated, {len(processes_killed)} killed, {len(processes_error)} returned with error'
-    )
+    background.launch('sequencer', init_list)
 
     return 0
 
@@ -308,12 +249,9 @@ def execute_command(command, seq_args):
 
 if __name__ == "__main__":
     database.store('obs', {'sequencer_status': SequencerStatus.INITIALISING})
-    logger.info('sequencer', 'Server initialisation')
-
-    if init() != 0:
-        logger.error('sequencer', 'Initialisation failed')
 
     signal.signal(signal.SIGTERM, handler)
     signal.signal(signal.SIGINT, handler)
 
+    init()
     serve()

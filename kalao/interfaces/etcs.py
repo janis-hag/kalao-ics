@@ -88,7 +88,7 @@ def get_focus():
         return np.nan
 
 
-def set_focus(position):
+def set_focus(position, wait=True):
     """
     Send focus offset to the ETCS telescope server. Values can either be interpreted as relative offsets if with a
     leading +/-, or absolute if the value is only a number.
@@ -106,6 +106,9 @@ def set_focus(position):
     params = {"position": position}
 
     ret, resp = _send_request('/m2/focus', params)
+
+    if wait:
+        time.sleep(5)
 
     return get_focus()
 

@@ -14,11 +14,7 @@ from kalao.utils import offsets, starfinder
 from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
                                      FlipMirrorPosition, ObservationType,
                                      ReturnCode, SequencerStatus, ShutterState)
-from kalao.definitions.exceptions import (
-    AbortRequested, AutomaticCenteringTimeout, CenteringException,
-    CenteringFluxWFSTooLow, CenteringMaxIter, CenteringStarNotFound, DMNotOn,
-    FilterWheelNotInPosition, FlipMirrorNotUp, FLITakeImageFailed,
-    ManualCenteringTimeout, ShutterNotClosed, WFSNotOn)
+from kalao.definitions.exceptions import *
 
 import config
 
@@ -49,8 +45,8 @@ def center_on_target(exptime, centering_mode=CenteringMode.AUTOMATIC,
 
         try:
             xy = _get_star(exptime)
-            on_fli_with_telescope(exptime=exptime, xy=xy, timeout=timeout)
-            on_fli_with_ttm(exptime=exptime, xy=xy, timeout=timeout)
+            xy = on_fli_with_telescope(exptime=exptime, xy=xy, timeout=timeout)
+            xy = on_fli_with_ttm(exptime=exptime, xy=xy, timeout=timeout)
         except (AbortRequested, FLITakeImageFailed) as e:
             logger.error('centering',
                          f'"{e.__doc__}" happened during centering on target')
@@ -138,8 +134,9 @@ def center_on_laser():
 
     try:
         xy = _get_star(config.FLI.laser_calib_exptime)
-        on_fli_with_calibunit(exptime=config.FLI.laser_calib_exptime, xy=xy)
-        on_fli_with_ttm(exptime=config.FLI.laser_calib_exptime, xy=xy)
+        xy = on_fli_with_calibunit(exptime=config.FLI.laser_calib_exptime,
+                                   xy=xy)
+        xy = on_fli_with_ttm(exptime=config.FLI.laser_calib_exptime, xy=xy)
     except (CenteringException, AbortRequested, FLITakeImageFailed) as e:
         logger.error('centering',
                      f'"{e.__doc__}" happened during centering on laser')
@@ -171,7 +168,7 @@ def request_manual_centering():
         centering = database.get_last_value('obs', 'centering_manual')
 
         if centering is False:
-            return ReturnCode.CENTERING_OK
+            break
 
         if database.get_last_value(
                 'sequencer_status') == SequencerStatus.ABORTING:
@@ -184,6 +181,17 @@ def request_manual_centering():
                      'Timeout while waiting for manual centering from user.')
         database.store('obs', {'centering_manual': False})
         raise ManualCenteringTimeout
+
+    # If the user validated the centering before exposure ended, wait
+    exposure_status = camera.get_exposure_status()
+    while exposure_status['remaining_time'] > 0:
+        time.sleep(1)
+
+        _check_abort()
+
+        exposure_status = camera.get_exposure_status()
+
+    return ReturnCode.CENTERING_OK
 
 
 def validate_manual_centering():
@@ -240,7 +248,7 @@ def on_fli_with_calibunit(
     logger.info(
         'centering',
         f'Centered on FLI using calibration unit, error = {error:.1f} px')
-    return ReturnCode.CENTERING_OK
+    return x, y
 
 
 def on_fli_with_telescope(
@@ -277,7 +285,7 @@ def on_fli_with_telescope(
 
     logger.info('centering',
                 f'Centered on FLI using telescope, error = {error:.1f} px')
-    return ReturnCode.CENTERING_OK
+    return x, y
 
 
 def on_fli_with_ttm(exptime, xy=None,
@@ -315,7 +323,7 @@ def on_fli_with_ttm(exptime, xy=None,
     logger.info(
         'centering',
         f'Centered on FLI using Tip-Tilt Mirror, error = {error:.1f} px')
-    return ReturnCode.CENTERING_OK
+    return x, y
 
 
 def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
@@ -351,7 +359,7 @@ def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
     logger.info(
         'centering',
         f'Centered on WFS using Tip-Tilt Mirror, error = {error:.3f} px')
-    return ReturnCode.CENTERING_OK
+    return -dx, -dy
 
 
 def _check_abort():

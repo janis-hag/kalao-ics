@@ -15,12 +15,7 @@ from kalao.utils import file_handling, starfinder
 
 from kalao.definitions.enums import (ObservationType, ReturnCode,
                                      SequencerStatus)
-from kalao.definitions.exceptions import (AbortRequested, FLITakeImageFailed,
-                                          FocusingException,
-                                          FocusingInvertedCurve,
-                                          FocusingMinimaOutsideRange,
-                                          FocusingNoMinima, FocusingSaturated,
-                                          FocusingStarNotFound)
+from kalao.definitions.exceptions import *
 
 import config
 
@@ -165,7 +160,7 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
             elif not focus_start <= best_focus <= focus_stop:
                 raise FocusingMinimaOutsideRange
 
-            logger.info('focusing', f'Best focus found at {best_focus} µm')
+            logger.info('focusing', f'Best focus found at {best_focus:.2f} µm')
 
             hdul[0].header.set('HIERARCH FOCUS BEST M2 POSITION', best_focus,
                                '[um] Best focus (estimated using fit)')
@@ -240,7 +235,7 @@ def autofocus():
 
     focus = f0 + f1 * (temttb-1.2+temtth) / 2
 
-    logger.info('focusing', f'Autofocus: setting focus to {focus} µm')
+    logger.info('focusing', f'Autofocus: setting focus to {focus:.2f} µm')
 
     etcs.set_focus(focus)
 

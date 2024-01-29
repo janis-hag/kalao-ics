@@ -1,10 +1,7 @@
-# From python 3.11
-#from enum import StrEnum
-
-# Emulate StrEnum for python < 3.11
 from enum import Enum, Flag, IntEnum, IntFlag, auto
 
 
+# Emulate StrEnum for python < 3.11
 class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
@@ -142,6 +139,14 @@ class PLCStatus(StrEnum):
 
 
 class ReturnCode(IntFlag):
+    # This is fixed in python 3.13
+    @staticmethod
+    def _generate_next_value_(name, start, count, last_values):
+        if not last_values:
+            return start
+        else:
+            return max(last_values) + 1
+
     OK = 0
     GENERIC_ERROR = -1
     TIMEOUT = -2

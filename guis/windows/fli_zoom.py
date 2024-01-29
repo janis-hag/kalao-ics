@@ -554,8 +554,8 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.saturation_label.setStyleSheet('')
 
     def update_zoom_spinbox_suffix(self):
-        size_x = self.zoom_half_width * self.axis_scaling
-        size_y = self.zoom_half_height * self.axis_scaling
+        size_x = 2 * self.zoom_half_width * self.axis_scaling
+        size_y = 2 * self.zoom_half_height * self.axis_scaling
         self.zoom_spinbox.setSuffix(
             f'x ({size_x:.{self.axis_precision}f}{self.axis_unit} x {size_y:.{self.axis_precision}f}{self.axis_unit})'
         )

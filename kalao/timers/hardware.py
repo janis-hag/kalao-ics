@@ -10,13 +10,15 @@ Timer to verify KalAO bench health (KalAO-ICS).
 
 import time
 from datetime import datetime, timezone
+from functools import partial
 
 import numpy as np
 
 from kalao import database, euler, ippower, logger
 from kalao.cacao import aocontrol, toolbox
-from kalao.plc import (adc, calibunit, core, flipmirror, laser, shutter,
-                       temperature_control)
+from kalao.plc import (adc, calibunit, core, filterwheel, flipmirror, laser,
+                       shutter, temperature_control, tungsten)
+from kalao.utils import background
 
 import schedule
 
@@ -201,7 +203,7 @@ def _check_pump_temp(beck=None):
     pump_status = temperature_control.pump_status(beck=beck)
 
     if pump_temp > config.Cooling.max_pump_temperature and pump_status == RelayState.ON:
-        logger.warn('hardware_timer', 'Pump overheat, shutting off')
+        logger.warn('hardware_timer', 'Pump overheating, shutting off')
         temperature_control.pump_off(beck=beck)
 
     elif pump_temp < config.Cooling.pump_restart_temp and pump_status == RelayState.OFF:
@@ -213,21 +215,18 @@ def _check_pump_temp(beck=None):
 def _check_plc(beck=None):
     logger.info('hardware_timer', 'Doing daily PLC housekeeping')
 
-    calibunit.init(force_init=True, beck=beck)
-    adc.init(config.PLC.Node.ADC1, force_init=True, beck=beck)
-    adc.init(config.PLC.Node.ADC2, force_init=True, beck=beck)
+    func_list = [
+        partial(calibunit.init, force_init=True, beck=beck),
+        partial(adc.init, config.PLC.Node.ADC1, force_init=True, beck=beck),
+        partial(adc.init, config.PLC.Node.ADC2, force_init=True, beck=beck),
+        partial(shutter.init, beck=beck),
+        partial(flipmirror.init, beck=beck),
+        partial(tungsten.init, beck=beck),
+        partial(laser.init, beck=beck),
+        partial(filterwheel.init, beck=beck),
+    ]
 
-    state, switch_time = shutter.get_switch_time()
-    if switch_time > 86400:
-        shutter.close(beck=beck)
-        shutter.open(beck=beck)
-        shutter.close(beck=beck)
-
-    state, switch_time = flipmirror.get_switch_time()
-    if switch_time > 86400:
-        flipmirror.down(beck=beck)
-        flipmirror.up(beck=beck)
-        flipmirror.down(beck=beck)
+    background.launch('hardware_timer', func_list)
 
 
 if __name__ == "__main__":
