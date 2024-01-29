@@ -12,8 +12,8 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 
 from kalao import database, euler, logger, services
-from kalao.plc import (adc, calibunit, core, filterwheel, flipmirror, laser,
-                       shutter, tungsten)
+from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser, shutter,
+                       tungsten)
 from kalao.sequencer import commands
 from kalao.utils import background
 
@@ -42,23 +42,22 @@ def handler(signal_received, frame):
         exit(0)
 
 
-@core.beckhoff_autoconnect
-def init(beck=None):
+def init():
     logger.info('sequencer', 'Server initialisation')
 
     init_list = [
-        partial(services.init, beck=beck),
-        partial(calibunit.init, beck=beck),
-        partial(adc.init, config.PLC.Node.ADC1, beck=beck),
-        partial(adc.init, config.PLC.Node.ADC2, beck=beck),
-        partial(shutter.init, beck=beck),
-        partial(flipmirror.init, beck=beck),
-        partial(tungsten.init, beck=beck),
-        partial(laser.init, beck=beck),
-        partial(filterwheel.init, beck=beck),
+        partial(services.init),
+        partial(calibunit.init),
+        partial(adc.init, config.PLC.Node.ADC1),
+        partial(adc.init, config.PLC.Node.ADC2),
+        partial(shutter.init),
+        partial(flipmirror.init),
+        partial(tungsten.init),
+        partial(laser.init),
+        partial(filterwheel.init),
     ]
 
-    background.launch('sequencer', init_list)
+    background.launch('sequencer', init_list, config.SEQ.init_timeout)
 
     return 0
 

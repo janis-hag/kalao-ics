@@ -211,19 +211,18 @@ def _check_pump_temp(beck=None):
         temperature_control.pump_on(beck=beck)
 
 
-@core.beckhoff_autoconnect
-def _check_plc(beck=None):
+def _check_plc():
     logger.info('hardware_timer', 'Doing daily PLC housekeeping')
 
     func_list = [
-        partial(calibunit.init, force_init=True, beck=beck),
-        partial(adc.init, config.PLC.Node.ADC1, force_init=True, beck=beck),
-        partial(adc.init, config.PLC.Node.ADC2, force_init=True, beck=beck),
-        partial(shutter.init, beck=beck),
-        partial(flipmirror.init, beck=beck),
-        partial(tungsten.init, beck=beck),
-        partial(laser.init, beck=beck),
-        partial(filterwheel.init, beck=beck),
+        partial(calibunit.init, force_init=True),
+        partial(adc.init, config.PLC.Node.ADC1, force_init=True),
+        partial(adc.init, config.PLC.Node.ADC2, force_init=True),
+        partial(shutter.init),
+        partial(flipmirror.init),
+        partial(tungsten.init),
+        partial(laser.init),
+        partial(filterwheel.init),
     ]
 
     background.launch('hardware_timer', func_list)

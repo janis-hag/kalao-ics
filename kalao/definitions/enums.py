@@ -1,4 +1,4 @@
-from enum import Enum, Flag, IntEnum, IntFlag, auto
+from enum import Enum, Flag, IntEnum, auto
 
 
 # Emulate StrEnum for python < 3.11
@@ -138,9 +138,8 @@ class PLCStatus(StrEnum):
     UNKNOWN = 'UNKNOWN'
 
 
-class ReturnCode(IntFlag):
+class ReturnCode(IntEnum):
     # This is fixed in python 3.13
-    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         if not last_values:
             return start

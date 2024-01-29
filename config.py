@@ -334,9 +334,7 @@ class SEQ:
     init_duration = 120
     T4_root = Path("/disks/synology")
 
-    init_timeout = 200  # s
-    init_terminate_grace_time = 5  # s
-    init_wait_kill = 1  # s
+    init_timeout = 500  # s
 
     # Pointing can be long when instrument change happens
     pointing_poll_interval = 2  # s

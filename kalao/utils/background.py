@@ -1,23 +1,26 @@
 import time
 from multiprocessing import Process, Queue
 
+import numpy as np
+
 from kalao import logger
 
 from kalao.definitions.enums import ReturnCode
 
-import config
+
+def get_name(func):
+    return f'{func.func.__module__}.{func.func.__name__}'
 
 
-def launch(log, func_list):
-    def get_name(f):
-        return f'{f.func.__module__}.{f.func.__name__}'
+def wrapper(log, func, queue):
+    logger.info(log, f'Launching {get_name(func)} in background')
+    ret = func()
+    logger.info(log, f'{get_name(func)} returned {ret}')
+    queue.put({get_name(func): ret})
 
-    def wrapper(f, q):
-        logger.info(log, f'Launching {get_name(f)} in background')
-        ret = f()
-        logger.info(log, f'{get_name(f)} returned {ret}')
-        q.put({get_name(f): ret})
 
+def launch(log, func_list, timeout=np.inf, terminate_grace_time=5,
+           kill_wait_time=1):
     processes = {}
     processes_terminated = {}
     processes_killed = {}
@@ -30,19 +33,27 @@ def launch(log, func_list):
     # Launch all processes
     logger.info(log, f'Launching {len(func_list)} processes in background')
     for f in func_list:
-        p = Process(target=wrapper, kwargs={'f': f, 'q': return_queue})
+        p = Process(target=wrapper, kwargs={
+            'log': log,
+            'func': f,
+            'queue': return_queue
+        })
         processes[get_name(f)] = p
         p.start()
 
     # Wait for all processes to finish
     logger.info(log, f'Waiting for processes in background to finish')
-    timeout = time_start + config.SEQ.init_timeout
+    timeout = time_start + timeout
     while time.monotonic() < timeout:
-        while not return_queue.empty():
-            returns.update(return_queue.get_nowait())
+        alive = 0
+        for f, p in processes.items():
+            if p.is_alive():
+                alive += 1
 
-        if len(returns) == len(func_list):
+        if alive == 0:
             break
+
+        time.sleep(1)
 
     # Terminate remaining ones
     for f, p in processes.items():
@@ -52,8 +63,9 @@ def launch(log, func_list):
 
             p.terminate()
 
-    if processes_terminated != 0:
-        time.sleep(config.SEQ.init_terminate_grace_time)
+    if len(processes_terminated) != 0:
+        logger.info(log, f'Waiting for terminated processes to finish')
+        time.sleep(terminate_grace_time)
 
     # Kill them if necessary
     for f, p in processes.items():
@@ -63,8 +75,9 @@ def launch(log, func_list):
 
             p.kill()
 
-    if processes_killed != 0:
-        time.sleep(config.SEQ.init_wait_kill)
+    if len(processes_killed) != 0:
+        logger.info(log, f'Waiting for killed processes to finish')
+        time.sleep(kill_wait_time)
 
     time_stop = time.monotonic()
 
