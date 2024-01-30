@@ -1,5 +1,7 @@
 [Unit]
 Description=KalAO - Database timer
+After=kalao_system-setup.service
+After=mongodb.service
 
 [Service]
 Type=simple
