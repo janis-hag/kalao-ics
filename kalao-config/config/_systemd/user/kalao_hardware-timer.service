@@ -1,5 +1,9 @@
 [Unit]
 Description=KalAO - Hardware timer
+
+After=network-online.target
+Wants=network-online.target
+
 After=kalao_system-setup.service
 After=mongodb.service
 
