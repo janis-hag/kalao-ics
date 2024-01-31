@@ -75,7 +75,7 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
 
                 img = fits.getdata(filepath)
 
-                star = starfinder.find_star(img)
+                star = starfinder.find_star(img, method='moments')
 
                 if star is None:
                     raise FocusingStarNotFound

@@ -105,6 +105,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             self.focus_timer.timeout.connect(self.backend.get_focus)
             self.focus_timer.start()
         else:
+            self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
             hdul = fits.open(self.file)
             self.show_sequence(hdul)
 
@@ -191,13 +192,15 @@ class FocusWindow(KMainWindow, BackendDataMixin):
                 self.status_label.updateText(status=reason)
                 self.status_label.setStyleSheet(f'color: {Color.RED.name()};')
 
-                msgbox = KMessageBox(self)
-                msgbox.setIcon(QMessageBox.Critical)
-                msgbox.setText("<b>Focusing failed!</b>")
-                msgbox.setInformativeText(
-                    f'Focusing failed with the following error:\n\n{reason}')
-                msgbox.setModal(True)
-                msgbox.show()
+                if self.file is None:
+                    msgbox = KMessageBox(self)
+                    msgbox.setIcon(QMessageBox.Critical)
+                    msgbox.setText("<b>Focusing failed!</b>")
+                    msgbox.setInformativeText(
+                        f'Focusing failed with the following error:\n\n{reason}'
+                    )
+                    msgbox.setModal(True)
+                    msgbox.show()
         else:
             self.status_label.updateText(status=f'Step {len(hdul)-1}')
             self.status_label.setStyleSheet('')

@@ -1,3 +1,5 @@
+import numpy as np
+
 from PySide6.QtCore import QTimer, Slot
 
 from guis.utils import colormaps
@@ -27,7 +29,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.backend = backend
 
         loadUi('dm_channels.ui', self)
-        self.resize(400, 800)
+        self.resize(950, 850)
 
         self.channels_timer = QTimer(parent=self)
         self.channels_timer.setInterval(
@@ -75,6 +77,10 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             reset_button.clicked.connect(lambda checked=False, i=i: self.
                                          on_reset_button_clicked(checked, i))
 
+            stroke_label = getattr(self, f'stroke_label_{i:02d}')
+            stroke_label.updateText(min=np.nan, max=np.nan,
+                                    unit=self.data_unit)
+
             self.reset_buttons[i] = reset_button
             view_list.append(view)
 
@@ -88,7 +94,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 if name == 'Ncpa':
                     name = 'NCPA'
 
-                label = getattr(self, f'label_{value}_info')
+                label = getattr(self, f'info_label_{value}')
                 label.setText(name)
 
         self.hovered.connect(self.info_to_statusbar)
@@ -113,6 +119,10 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             if img is not None:
                 view = getattr(self, f'view_{i:02d}')
                 view.setImage(img, img_min, img_max)
+
+                stroke_label = getattr(self, f'stroke_label_{i:02d}')
+                stroke_label.updateText(min=img.min(), max=img.max(),
+                                        unit=self.data_unit)
 
     def on_reset_button_clicked(self, checked, i):
         self.action_send(self.reset_buttons[i],

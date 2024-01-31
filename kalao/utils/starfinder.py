@@ -10,7 +10,6 @@ starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 
 import math
 import time
-import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -23,7 +22,6 @@ from astropy.coordinates import AltAz, SkyCoord
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
 from astropy.time import Time
-from astropy.utils.exceptions import AstropyWarning
 
 from kalao import euler
 from kalao.utils import kmath
@@ -50,8 +48,8 @@ class Star:
 
 
 def find_star(img, min_peak=config.Starfinder.min_peak,
-              hw=config.Starfinder.window // 2):
-    star = find_stars(img, min_peak=min_peak, hw=hw, num=1)
+              hw=config.Starfinder.window // 2, method='gaussian_fit'):
+    star = find_stars(img, min_peak=min_peak, hw=hw, num=1, method=method)
 
     if len(star) == 0:
         return None
@@ -60,15 +58,18 @@ def find_star(img, min_peak=config.Starfinder.min_peak,
 
 
 def find_stars(img, min_peak=config.Starfinder.min_peak,
-               hw=config.Starfinder.window // 2, num=math.inf):
+               hw=config.Starfinder.window // 2, num=math.inf,
+               method='gaussian_fit'):
     stars, bad_pixels = find_stars_and_bad_pixels(img, min_peak=min_peak,
-                                                  hw=hw, num=num)
+                                                  hw=hw, num=num,
+                                                  method=method)
 
     return stars
 
 
 def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
-                              hw=config.Starfinder.window // 2, num=math.inf):
+                              hw=config.Starfinder.window // 2, num=math.inf,
+                              method='gaussian_fit'):
     img = img.astype(np.float64)
 
     Y, X = np.mgrid[0:img.shape[0], 0:img.shape[1]]
@@ -83,7 +84,7 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
     bad_pixels = np.argwhere((np.abs(img_diff) > 6 * img_diff.std()))
 
     threshold = median_filtered + max(6 * stddev_filtered, min_peak)
-    stars = skimage.feature.peak_local_max(img_filtered, min_distance=1,
+    peaks = skimage.feature.peak_local_max(img_filtered, min_distance=1,
                                            exclude_border=0,
                                            threshold_abs=threshold,
                                            num_peaks=num)
@@ -93,14 +94,17 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
 
     stars_fitted = []
 
-    i = 0
-    while i < len(stars):
-        star_y, star_x = stars[i]
+    if method == 'moments':
+        hw = 128
 
-        xs = star_x - hw
-        xe = star_x + hw
-        ys = star_y - hw
-        ye = star_y + hw
+    i = 0
+    while i < len(peaks):
+        peak_y, peak_x = peaks[i]
+
+        xs = peak_x - hw
+        xe = peak_x + hw
+        ys = peak_y - hw
+        ye = peak_y + hw
 
         if xs < 0:
             xs = 0
@@ -114,123 +118,98 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
         if ye > img.shape[0]:
             ye = img.shape[0]
 
-        X_cut = X[ys:ye, xs:xe].ravel()
-        Y_cut = Y[ys:ye, xs:xe].ravel()
-        img_cut = frame_fit[ys:ye, xs:xe].ravel()
+        X_cut = X[ys:ye, xs:xe]
+        Y_cut = Y[ys:ye, xs:xe]
+        img_cut = frame_fit[ys:ye, xs:xe]
 
-        fun = lambda x: np.sqrt(
-            np.sum((kmath.gaussian_2d_rotated(X_cut, Y_cut, *x, 0) - img_cut)
-                   **2))
+        if method == 'gaussian_fit':
+            star = _star_gaussian_fit(X_cut, Y_cut, img_cut, peak_x, peak_y,
+                                      frame_fit[peak_y, peak_x], hw)
+        elif method == 'moments':
+            star = _star_moments(X_cut, Y_cut, img_cut)
+        else:
+            raise Exception(f'Unknown method {method}')
 
-        res = scipy.optimize.minimize(
-            fun, (star_x, star_y, 1, 1, 0, frame_fit[star_y, star_x]),
-            method='L-BFGS-B', bounds=[(star_x - hw, star_x + hw),
-                                       (star_y - hw, star_y + hw),
-                                       (1, 4 * hw), (1, 4 * hw),
-                                       (-np.pi, np.pi), (1, 131072)])
-
-        if not res.success:
+        if star is None:
             continue
 
         # Exclude peaks that are within star radius
 
-        x_fitted = res.x[0]
-        y_fitted = res.x[1]
-        fwhm_x_fitted = res.x[2] * kmath.SIGMA_TO_FWHM
-        fwhm_y_fitted = res.x[3] * kmath.SIGMA_TO_FWHM
-        theta_fitted = res.x[4]
-        peak_fitted = res.x[5]
-
         j = i + 1
-        while j < len(stars):
-            dx = stars[j][1] - x_fitted
-            dy = stars[j][0] - y_fitted
+        while j < len(peaks):
+            dx = peaks[j][1] - star.x
+            dy = peaks[j][0] - star.y
 
-            cos = np.cos(theta_fitted)
-            sin = np.sin(theta_fitted)
+            cos = np.cos(star.fwhm_angle * 180 / np.pi)
+            sin = np.sin(star.fwhm_angle * 180 / np.pi)
 
-            a = fwhm_x_fitted
-            b = fwhm_y_fitted
+            a = star.fwhm_w
+            b = star.fwhm_h
 
             inside = (cos*dx + sin*dy)**2 / a**2 + (sin*dx +
                                                     cos*dy)**2 / b**2 <= 1
 
             if inside:
-                stars = np.delete(stars, j, axis=0)
+                peaks = np.delete(peaks, j, axis=0)
             else:
                 j += 1
 
         # Add fit to star list
 
-        stars_fitted.append(
-            Star(x_fitted, y_fitted, peak_fitted, fwhm_x_fitted,
-                 fwhm_y_fitted, theta_fitted * 180 / np.pi))
+        stars_fitted.append(star)
 
         i += 1
 
     return stars_fitted, bad_pixels
 
 
-def find_stars_barycenter(img, min_peak=config.Starfinder.min_peak,
-                              hw=config.Starfinder.window // 2, num=math.inf):
-    hw = 128
+def _star_gaussian_fit(X, Y, img, peak_x, peak_y, peak_value, hw):
+    X = X.ravel()
+    Y = Y.ravel()
+    img = img.ravel()
 
-    img = img.astype(np.float64)
+    fun = lambda x: np.sqrt(
+        np.sum((kmath.gaussian_2d_rotated(X, Y, *x, 0) - img)**2))
 
-    Y, X = np.mgrid[0:img.shape[0], 0:img.shape[1]]
+    res = scipy.optimize.minimize(
+        fun, (peak_x, peak_y, 1, 1, 0, peak_value), method='L-BFGS-B',
+        bounds=[(peak_x - hw, peak_x + hw), (peak_y - hw, peak_y + hw),
+                (1, 4 * hw), (1, 4 * hw), (-np.pi, np.pi), (1, 131072)])
 
-    img_filtered = skimage.filters.median(img, skimage.morphology.square(3))
-    img_filtered = skimage.filters.gaussian(img_filtered, 2)
+    if not res.success:
+        return None
 
-    mean_filtered, median_filtered, stddev_filtered = sigma_clipped_stats(
-        img_filtered)
+    x_mean = res.x[0]
+    y_mean = res.x[1]
+    fwhm_w = res.x[2] * kmath.SIGMA_TO_FWHM
+    fwhm_y = res.x[3] * kmath.SIGMA_TO_FWHM
+    fwhm_angle = res.x[4] * 180 / np.pi
+    peak = res.x[5]
 
-    threshold = median_filtered + max(6 * stddev_filtered, min_peak)
-    stars = skimage.feature.peak_local_max(img_filtered, min_distance=1,
-                                           exclude_border=0,
-                                           threshold_abs=threshold,
-                                           num_peaks=1)
+    return Star(x_mean, y_mean, peak, fwhm_w, fwhm_y, fwhm_angle)
 
-    mean, median, stddev = sigma_clipped_stats(img)
-    frame_fit = img - median
 
-    star_y, star_x = stars[0]
+def _star_moments(X, Y, img):
+    flux = np.sum(img)
 
-    xs = star_x - hw
-    xe = star_x + hw
-    ys = star_y - hw
-    ye = star_y + hw
+    x_mean = np.sum(img * X) / flux
+    y_mean = np.sum(img * Y) / flux
 
-    if xs < 0:
-        xs = 0
+    x_var = np.sum(img * ((X - x_mean)**2)) / flux
+    y_var = np.sum(img * ((Y - y_mean)**2)) / flux
+    xy_cov = np.sum(img * ((X-x_mean) * (Y-y_mean))) / flux
 
-    if xe > img.shape[1]:
-        xe = img.shape[1]
+    eigenvalues, eigenvectors = np.linalg.eig(
+        np.array([[x_var, xy_cov], [xy_cov, y_var]]))
 
-    if ys < 0:
-        ys = 0
+    fwhm_w = np.sqrt(eigenvalues[0]) * kmath.SIGMA_TO_FWHM
+    fwhm_y = np.sqrt(eigenvalues[1]) * kmath.SIGMA_TO_FWHM
+    fwhm_angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0,
+                                                             0]) * 180 / np.pi
+    fwhm = np.sqrt(fwhm_w * fwhm_y)
+    peak = 2 * flux / (np.pi * (fwhm / 2)**2)
 
-    if ye > img.shape[0]:
-        ye = img.shape[0]
-
-    X_cut = X[ys:ye, xs:xe]
-    Y_cut = Y[ys:ye, xs:xe]
-    img_cut = frame_fit[ys:ye, xs:xe]
-
-    flux = np.sum(img_cut)
-
-    x_mean = np.sum(img_cut * X_cut) / flux
-    y_mean = np.sum(img_cut * Y_cut) / flux
-
-    x_var = np.sum(img_cut * ((X_cut - x_mean)**2)) / flux
-    y_var = np.sum(img_cut * ((Y_cut - y_mean) ** 2)) / flux
-    xy_cov = np.sum(img_cut * ((X_cut - x_mean)*(Y_cut - y_mean))) / flux
-
-    eigenvalues, eigenvectors = np.linalg.eig(np.array([[x_var, xy_cov],[xy_cov, y_var]]))
-
-    radius = np.sqrt(np.sum(img_cut * ((X_cut - x_mean)**2 + (Y_cut - y_mean)**2)) / 2 / flux)
-
-    return [Star(x_mean, y_mean, 2*flux/(np.pi*radius**2), np.sqrt(eigenvalues[0]) * kmath.SIGMA_TO_FWHM, np.sqrt(eigenvalues[1]) * kmath.SIGMA_TO_FWHM, np.arctan2(eigenvectors[1,0], eigenvectors[0,0]) * 180/np.pi)], None
+    return Star(x_mean, y_mean, peak, fwhm_w, fwhm_y, fwhm_angle)
 
 
 def generate_wcs():
@@ -339,8 +318,8 @@ if __name__ == "__main__":
             peak = rng.uniform(100, 3000)
             stddev = rng.uniform(2, 30)
 
-            frame += kmath.gaussian_2d_rotated(X, Y, x, y, stddev, stddev, 0/180*np.pi,
-                                               peak)
+            frame += kmath.gaussian_2d_rotated(X, Y, x, y, stddev, stddev,
+                                               0 / 180 * np.pi, peak)
 
         frame = rng.poisson(frame).astype(np.float64)
 
@@ -403,7 +382,7 @@ if __name__ == "__main__":
                                 facecolor='#ffffff00'))
 
         start = time.monotonic()
-        stars, bad_pixels = find_stars_barycenter(frame)
+        stars, bad_pixels = find_stars_and_bad_pixels(frame, method='moments')
         print('Time to find stars:', time.monotonic() - start)
 
         for star in stars:

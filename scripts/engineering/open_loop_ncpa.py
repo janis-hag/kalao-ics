@@ -123,8 +123,11 @@ def run(args):
                 f'Iteration {i + 1}/{args.iterations}   Optimising order ({coeff_n: 2},{coeff_m: 2}) {coeff_name}'
             )
 
+            n, m = zernike.Zernike.standard_inverse(order)
+            norm = zernike.Zernike.N(n, m, norm='RMS')
+
             step = 0
-            zernike_coeff_incr = 0.1 * 1.75  # DM range is between -1.75 and 1.75
+            zernike_coeff_incr = 0.1 * 1.75 / norm  # DM range is between -1.75 and 1.75
             peak_array = np.zeros((3, 2))
 
             start_peak = peak_array[1][PEAK_VALUE] = display_and_measure(
@@ -198,6 +201,7 @@ def run(args):
 
     laser.set_power(config.WFS.laser_calib_power, enable=True)
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
+    aocontrol.set_emgain(config.WFS.laser_calib_emgain)
 
     time.sleep(10)
 
@@ -243,13 +247,14 @@ if __name__ == '__main__':
                         help='Number of orders to correct (including skipped)')
     parser.add_argument('--skip-orders', action='store', dest='orders_to_skip',
                         default=3, type=int, help='Number of orders to skip')
-    parser.add_argument('--steps', action='store', dest='steps', default=25,
-                        type=int, help='Number of steps')
     parser.add_argument('--iterations', action='store', dest='iterations',
                         default=10, type=int, help='Number of iterations')
     parser.add_argument('--min_incr', action='store', dest='min_incr',
-                        default=0.0001, type=float,
+                        default=0.001, type=float,
                         help='Minimum increment for convergence')
+    parser.add_argument('--steps', action='store', dest='steps', default=25,
+                        type=int,
+                        help='Maximum number of steps for convergence')
     parser.add_argument('--img_avg', action='store', dest='img_avg', default=5,
                         type=int, help='Averaging over images')
     parser.add_argument('--roi', action='store', dest='roi_size', default=40,

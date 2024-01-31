@@ -142,7 +142,7 @@ def dmdisp(zernike_coeffs=None, orders=15):
         zernike_coeffs = rng.normal(0, 0.5, orders)
         zernike_coeffs[0] = 0
 
-    return zernike.generate_pattern(zernike_coeffs, (12, 12)).filled()
+    return zernike.generate_pattern(zernike_coeffs, (12, 12)).filled(0)
 
 
 def fli_frame(

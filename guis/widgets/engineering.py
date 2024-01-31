@@ -716,7 +716,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     @Slot(bool)
     def on_open_focus_sequence_button_clicked(self, checked):
         dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setFileMode(QFileDialog.ExistingFiles)
         dialog.setNameFilter('Images (*.fits)')
         dialog.setAcceptMode(QFileDialog.AcceptOpen)
 
@@ -725,34 +725,39 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         error_dialog.setModal(False)
         error_dialog.setText("<b>Focus sequence loading failed!</b>")
 
-        try:
-            if dialog.exec():
-                filenames = dialog.selectedFiles()
+        if dialog.exec():
+            filenames = dialog.selectedFiles()
 
-                if len(filenames) != 1:
-                    error_dialog.setInformativeText(
-                        f'Select one and only one file (got {len(filenames)}).'
+            if len(filenames) == 0:
+                error_dialog.setInformativeText(
+                    f'Select at least one file (got {len(filenames)}).')
+                error_dialog.show()
+                return
+
+            error_list = []
+            for filename in filenames:
+                filename = Path(filename)
+                try:
+                    if not filename.exists():
+                        error_list.append(
+                            f'{filename.name}: File does not exists.')
+                        continue
+
+                    if filename.suffix.lower() != '.fits':
+                        error_list.append(
+                            f'{filename.name}: Unsupported file extension "{filename.suffix}".'
+                        )
+                        continue
+
+                    FocusWindow(self.backend, filename, parent=self)
+                except PermissionError:
+                    error_list.append(
+                        f'{filename.name}: Can\'t read file, permission refused.'
                     )
-                    error_dialog.show()
-                    return
 
-                filename = Path(filenames[0])
-
-                if not filename.exists():
-                    error_dialog.setInformativeText('File does not exists.')
-                    error_dialog.show()
-                    return
-
-                if filename.suffix.lower() != '.fits':
-                    error_dialog.setInformativeText(
-                        f'Unsupported file extension "{filename.suffix}".')
-                    error_dialog.show()
-
-                FocusWindow(self.backend, filename, parent=self)
-        except PermissionError:
-            error_dialog.setInformativeText(
-                'Can\'t read file, permission refused.')
-            error_dialog.show()
+            if len(error_list) > 0:
+                error_dialog.setInformativeText('\n'.join(error_list))
+                error_dialog.show()
 
     @Slot(bool)
     def on_focusing_sequence_button_clicked(self, checked):

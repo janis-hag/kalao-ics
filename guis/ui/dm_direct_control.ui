@@ -98,7 +98,7 @@
       <item>
        <widget class="QGroupBox" name="zernike_groupbox">
         <property name="title">
-         <string>Zernike</string>
+         <string>Zernike (RMS)</string>
         </property>
         <layout class="QFormLayout" name="formLayout_3">
          <property name="labelAlignment">

@@ -159,6 +159,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             backend.streams_fli_updated.connect(self.streams_fli_updated,
                                                 Qt.UniqueConnection)
         else:
+            self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
             img = fits.getdata(self.file)
 
         if img is not None:

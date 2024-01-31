@@ -158,7 +158,8 @@ class WFS:
     plate_scale = 1.16  # arcsec / px
 
     laser_calib_power = 8  # mW
-    laser_calib_exptime = 1.5  # ms
+    laser_calib_exptime = 0.5  # ms
+    laser_calib_emgain = 1  # -
 
     illumination_threshold = 1000  # ADU
     illumination_fraction = 0.5  # -

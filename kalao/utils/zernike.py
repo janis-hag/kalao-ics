@@ -44,6 +44,10 @@ class Zernike:
                 return np.sqrt(2*n + 2)
 
         # Coeffs will be wavefront Peak-to-Peak
+        elif norm == 'P2P' or norm == 'P2V':
+            return 0.5
+
+        # Coeffs will be wavefront Amplitude
         else:
             return 1
 
@@ -131,7 +135,7 @@ def generate_pattern(coeffs, shape, indices_inverse=Zernike.standard_inverse):
 
     for i, coeff in enumerate(coeffs):
         n, m = indices_inverse(i)
-        pattern += coeff * Zernike.Z(n, m, R, Theta)
+        pattern += coeff * Zernike.Z(n, m, R, Theta, norm='RMS')
 
     return np.ma.masked_array(pattern, mask=generate_pattern_mask(shape),
                               fill_value=np.nan)

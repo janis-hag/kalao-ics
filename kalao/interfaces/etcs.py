@@ -39,7 +39,6 @@ def get_altaz():
     ret, resp = _send_request('/axis/status')
 
     if ret == ReturnCode.ETCS_OK:
-        # TODO: check homed?
         if resp['homing']['azi']['b_homed']:
             azimut = resp['positions']['azi']
         else:
@@ -165,7 +164,7 @@ def _send_request(request_path, params={}):
                 req = requests.post(url, json=params,
                                     timeout=config.ETCS.request_timeout,
                                     headers=headers)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.RequestException:
             return ReturnCode.ETCS_SERVER_DOWN, None
 
         try:

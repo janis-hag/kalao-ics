@@ -147,6 +147,7 @@ def center_on_laser():
 
     laser.set_power(config.WFS.laser_calib_power, enable=True)
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
+    aocontrol.set_emgain(config.WFS.laser_calib_emgain)
 
     try:
         on_wfs_with_ttm()

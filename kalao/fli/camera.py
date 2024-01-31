@@ -243,7 +243,7 @@ def _send_request(request_type, params={}):
             else:
                 req = requests.post(url, json=params,
                                     timeout=config.FLI.request_timeout)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.RequestException:
             return ReturnCode.CAMERA_SERVER_DOWN, None
 
         try:
