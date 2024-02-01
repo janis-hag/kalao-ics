@@ -306,6 +306,16 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
+    def get_calibration_reload(self):
+        data = {}
+
+        script = config.AO.cacao_workdir / f'scripts/apply_current_calib.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True,
+                             cwd=config.AO.cacao_workdir)
+
+        return data
+
     def get_latency_measure(self, conf, loop):
         data = {}
         folder = config.AO.cacao_workdir / f'KalAO-{conf}loop-rootdir'
@@ -528,9 +538,6 @@ class MainBackend(SHMFPSBackend):
     def get_ippower_dm_off(self):
         ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
 
-    def get_centering_star(self):
-        centering.center_on_target()
-
     def get_centering_laser(self):
         centering.center_on_laser()
 
@@ -561,9 +568,6 @@ class MainBackend(SHMFPSBackend):
 
     def get_focus_autofocus(self):
         focusing.autofocus()
-
-    def get_focus_sequence(self):
-        focusing.focus_sequence()
 
     ##### Logs
 

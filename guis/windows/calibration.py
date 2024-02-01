@@ -2,7 +2,7 @@ import numpy as np
 
 from PySide6.QtCharts import QScatterSeries, QValueAxis
 from PySide6.QtCore import QPointF, Slot
-from PySide6.QtGui import QBrush, QCursor, QGuiApplication, Qt
+from PySide6.QtGui import QBrush, QCursor, QGuiApplication, QPen, Qt
 
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendDataMixin, SceneHoverMixin
@@ -47,7 +47,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
         self.hovered.connect(self.info_to_statusbar)
 
-        self.on_reload_button_clicked(False)
+        self.on_refresh_button_clicked(False)
 
         ### Latency tab
 
@@ -55,31 +55,37 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         chart = self.latency_plot.chart()
 
         # Serie
+        pen = QPen(Color.TRANSPARENT, 0, Qt.SolidLine, Qt.SquareCap,
+                   Qt.MiterJoin)
         brush = QBrush(Color.BLUE, Qt.SolidPattern)
 
         series = self.latency_series = QScatterSeries()
+        series.setPen(pen)
         series.setBrush(brush)
-        series.setMarkerSize(6)
+        series.setMarkerSize(3)
         series.setName("Latency")
         series.setPointsVisible(True)
         chart.addSeries(series)
 
         # X Axis Settings
         axis_x = self.latency_axis_x = QValueAxis()
-        axis_x.setLabelFormat("%.0f")
-        axis_x.setTickCount(10)
-        axis_x.setRange(0, 1)
+        axis_x.setTickCount(7)
+        axis_x.setRange(-1, 5)
+        axis_x.setTitleText('Latency [ms]')
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
         # Y Axis Settings
         axis_y = self.latency_axis_y = QValueAxis()
-        axis_x.setTickCount(5)
+        axis_y.setTickCount(5)
         axis_y.setRange(0, 1)
+        axis_y.setTitleText('Signal [a.u.]')
         chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
 
         chart.legend().hide()
+
+        self.clear_latency()
 
         ### Common
 
@@ -88,7 +94,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     ##### Calibration tab
 
-    def max_mode_number(self):
+    def number_of_modes(self):
         s = np.inf
 
         data = self.data.get('CMmodesDM', {}).get('data')
@@ -101,26 +107,28 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
         data = self.data.get(f'aol{self.loop}_DMmodes', {}).get('data')
         if data is not None:
-            s = min(s, data.shape[2])
+            s = min(s, data.shape[len(data.shape) - 1])
 
         data = self.data.get(f'aol{self.loop}_modesWFS', {}).get('data')
         if data is not None:
-            s = min(s, data.shape[2])
+            s = min(s, data.shape[len(data.shape) - 1])
 
         if np.isinf(s):
-            return 0
+            return 1
         else:
-            return s - 1
+            return s
 
     @Slot(bool)
-    def on_reload_button_clicked(self, checked):
+    def on_refresh_button_clicked(self, checked):
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
 
         self.data = self.backend.get_calibration_data(self.conf, self.loop)
 
         QGuiApplication.restoreOverrideCursor()
 
-        self.mode_spinbox.setMaximum(self.max_mode_number())
+        modes = self.number_of_modes()
+        self.mode_spinbox.setMaximum(modes - 1)
+        self.mode_spinbox.setSuffix(f' / {modes}')
 
         self.on_mode_spinbox_valueChanged(self.mode_spinbox.value())
 
@@ -132,8 +140,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         self.update_image_fits('wfsmap', 'wfsmap')
         self.update_image_fits('dmmask', 'dmmask')
         self.update_image_fits('dmmap', 'dmmap')
-        self.update_image_fits('DMmodes', 'CMmodesDM')
-        self.update_image_fits('modesWFS', 'CMmodesWFS')
+        self.update_image_fits('DMmodes', 'CMmodesDM', cube=True)
+        self.update_image_fits('modesWFS', 'CMmodesWFS', cube=True)
 
         self.update_image_stream('wfsref', f'aol{self.loop}_wfsref')
         self.update_image_stream('wfsrefc', f'aol{self.loop}_wfsrefc')
@@ -141,42 +149,65 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         self.update_image_stream('wfsmap', f'aol{self.loop}_wfsmap')
         self.update_image_stream('dmmask', f'aol{self.loop}_dmmask')
         self.update_image_stream('dmmap', f'aol{self.loop}_dmmap')
-        self.update_image_stream('DMmodes', f'aol{self.loop}_DMmodes')
-        self.update_image_stream('modesWFS', f'aol{self.loop}_modesWFS')
+        self.update_image_stream('DMmodes', f'aol{self.loop}_DMmodes',
+                                 cube=True)
+        self.update_image_stream('modesWFS', f'aol{self.loop}_modesWFS',
+                                 cube=True)
 
-    def update_image_fits(self, view_key, data_key):
+    def update_image_fits(self, view_key, data_key, cube=False):
         view = getattr(self, f'{view_key}_fits_view')
         data = self.data.get(data_key, {}).get('data')
 
         if data is not None:
-            if len(data.shape) == 2:
+            if not cube:
                 view.setImage(data)
-            else:
+            elif len(data.shape) == 2:
+                view.setImage(data[self.mode_spinbox.value(), :])
+            elif len(data.shape) == 3:
                 view.setImage(data[self.mode_spinbox.value(), :, :])
+            else:
+                raise Exception(
+                    f'Unexpected image size {len(data.shape)} for {data_key}')
 
-    def update_image_stream(self, view_key, data_key):
+    def update_image_stream(self, view_key, data_key, cube=False):
         view = getattr(self, f'{view_key}_stream_view')
         data = self.data.get(data_key, {}).get('data')
 
-        if data is not None:
-            if len(data.shape) == 2:
-                view.setImage(data)
-            else:
-                view.setImage(data[:, :, self.mode_spinbox.value()])
+        if not cube:
+            view.setImage(data)
+        elif len(data.shape) == 2:
+            view.setImage(data[:, self.mode_spinbox.value()])
+        elif len(data.shape) == 3:
+            view.setImage(data[:, :, self.mode_spinbox.value()])
+        else:
+            raise Exception(
+                f'Unexpected image size {len(data.shape)} for {data_key}')
+
+    @Slot(bool)
+    def on_reload_button_clicked(self, checked):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+
+        self.data = self.backend.get_calibration_reload()
+
+        QGuiApplication.restoreOverrideCursor()
+
+        self.on_refresh_button_clicked(False)
 
     ##### Latency tab
 
-    @Slot(bool)
-    def on_latency_measure_button_clicked(self, checked):
-        # Clear data
-
+    def clear_latency(self):
         self.latency_framerate_lineedit.setText(f'-- Hz')
         self.latency_frames_lineedit.setText(f'-- frames')
 
         self.latency_series.clear()
 
-        self.latency_axis_x.setRange(0, 1)
         self.latency_axis_y.setRange(0, 1)
+
+    @Slot(bool)
+    def on_latency_measure_button_clicked(self, checked):
+        # Clear data
+
+        self.clear_latency()
 
         # Take measurement
 
@@ -196,14 +227,14 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         latencyfr = self.consume_param(data, f'mlat-{self.loop}',
                                        'out.latencyfr')
         if latencyfr is not None:
-            self.latency_frames_lineedit.setText(f'{latencyfr:.1f} frames')
+            self.latency_frames_lineedit.setText(f'{latencyfr:.2f} frames')
 
-        for i in data['hardwlatencypts'].shape[0]:
+        # TODO: error if all nan
+
+        for i in range(data['hardwlatencypts'].shape[0]):
             self.latency_series.append(
-                QPointF(data['hardwlatencypts'][i, 1],
+                QPointF(data['hardwlatencypts'][i, 1] * 1000,
                         data['hardwlatencypts'][i, 2]))
 
-        self.latency_axis_x.setRange(data['hardwlatencypts'][:, 1].min(),
-                                     data['hardwlatencypts'][:, 1].max())
-        self.latency_axis_y.setRange(data['hardwlatencypts'][:, 2].min(),
-                                     data['hardwlatencypts'][:, 2].max())
+        self.latency_axis_y.setRange(
+            0, data['hardwlatencypts'][:, 2].max() * 1.05)

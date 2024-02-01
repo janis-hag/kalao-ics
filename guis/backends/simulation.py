@@ -1086,9 +1086,6 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state['ippower_dm_status'] = IPPowerStatus.OFF
         print(f'Powering off DM (virtually)')
 
-    def get_centering_star(self):
-        print(f'Star centering launched (virtually)')
-
     def get_centering_laser(self):
         print(f'Laser centering launched (virtually)')
 
@@ -1143,10 +1140,6 @@ class MainBackend(FakeSHMFPSBackend):
 
     def get_focus_autofocus(self):
         print(f'Autofocus launched (virtually)')
-
-    def get_focus_sequence(self):
-        self.internal_state['focusing-step'] = 0
-        print(f'Focus sequence launched (virtually)')
 
     ##### Logs
 

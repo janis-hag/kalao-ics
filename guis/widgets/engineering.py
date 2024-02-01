@@ -704,11 +704,6 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.backend, parent=self)
 
     @Slot(bool)
-    def on_centering_star_button_clicked(self, checked):
-        self.action_send(self.centering_star_button,
-                         self.backend.get_centering_star)
-
-    @Slot(bool)
     def on_centering_laser_button_clicked(self, checked):
         self.action_send(self.centering_laser_button,
                          self.backend.get_centering_laser)
@@ -758,11 +753,6 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             if len(error_list) > 0:
                 error_dialog.setInformativeText('\n'.join(error_list))
                 error_dialog.show()
-
-    @Slot(bool)
-    def on_focusing_sequence_button_clicked(self, checked):
-        self.action_send(self.focusing_sequence_button,
-                         self.backend.get_focus_sequence)
 
     @Slot(bool)
     def on_focusing_autofocus_button_clicked(self, checked):

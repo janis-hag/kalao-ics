@@ -93,6 +93,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_x.setTickInterval(10)
         axis_x.setTickType(QValueAxis.TicksDynamic)
         axis_x.setRange(-1, 1)
+        axis_x.setTitleText('Mode [-]')
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
@@ -102,6 +103,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_y.setTickInterval(0.25)
         axis_y.setTickType(QValueAxis.TicksDynamic)
         axis_y.setRange(-0.05, 1.05)
+        axis_y.setTitleText('Gain [-]')
         chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
 

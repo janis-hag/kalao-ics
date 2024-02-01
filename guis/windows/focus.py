@@ -77,15 +77,15 @@ class FocusWindow(KMainWindow, BackendDataMixin):
         axis_x = self.axis_x = QValueAxis()
         axis_x.setLabelFormat("%.0f")
         axis_x.setTickCount(5)
-        axis_x.setRange(0, 4)
+        axis_x.setTitleText('M2 Position [µm]')
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
         series_fit.attachAxis(axis_x)
 
         # Y Axis Settings
         axis_y = self.axis_y = QValueAxis()
-        axis_x.setTickCount(5)
-        axis_y.setRange(0, 4)
+        axis_y.setTickCount(5)
+        axis_y.setTitleText('FWHM ["]')
         chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
         series_fit.attachAxis(axis_y)

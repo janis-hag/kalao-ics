@@ -806,16 +806,9 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_6">
         <item>
-         <widget class="QPushButton" name="centering_star_button">
-          <property name="text">
-           <string>Relaunch centering on star</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QPushButton" name="centering_laser_button">
           <property name="text">
-           <string>Relaunch centering on laser</string>
+           <string>Center on laser</string>
           </property>
          </widget>
         </item>
@@ -1330,16 +1323,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="focusing_sequence_button">
-          <property name="text">
-           <string>Launch Focus Sequence</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QPushButton" name="focusing_autofocus_button">
           <property name="text">
-           <string>Launch Autofocus</string>
+           <string>Autofocus</string>
           </property>
          </widget>
         </item>

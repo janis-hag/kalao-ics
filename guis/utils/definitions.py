@@ -10,6 +10,8 @@ from kalao.definitions.enums import StrEnum
 
 
 class Color():
+    TRANSPARENT = QColor(0, 0, 0, 0)
+
     BLACK = QColor('#000000')
     DARK_GREY = QColor('#666666')
     GREY = QColor('#808080')
