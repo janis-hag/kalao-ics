@@ -1,5 +1,8 @@
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+
+import numpy as np
 
 from astropy.io import fits
 
@@ -300,6 +303,23 @@ class MainBackend(SHMFPSBackend):
         self._update_stream(data, f'aol{loop}_dmmask')
         self._update_stream(data, f'aol{loop}_dmmap')
         self._update_stream(data, f'aol{loop}_DMmodes')
+
+        return data
+
+    def get_latency_measure(self, conf, loop):
+        data = {}
+        folder = config.AO.cacao_workdir / f'KalAO-{conf}loop-rootdir'
+
+        res = subprocess.run(['cacao-aorun-020-mlat', '-w'], timeout=60,
+                             capture_output=True, cwd=folder)
+
+        self._update_param(data, f'mlat-{loop}', 'out.framerateHz')
+        self._update_param(data, f'mlat-{loop}', 'out.latencyfr')
+
+        data['hardwlatencypts'] = np.loadtxt(
+            folder /
+            f'KalAO-{conf}loop-rundir/fps.mlat-{loop}.datadir/hardwlatencypts.dat'
+        )
 
         return data
 

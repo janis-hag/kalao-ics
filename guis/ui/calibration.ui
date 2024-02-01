@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>776</width>
-    <height>591</height>
+    <width>1352</width>
+    <height>918</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,184 +15,269 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="1">
-     <widget class="QLabel" name="wfsrefc_label">
-      <property name="text">
-       <string>wfsrefc</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="3">
-     <widget class="KGraphicsView" name="wfsmap_stream_view"/>
-    </item>
-    <item row="0" column="3">
-     <widget class="QLabel" name="wfsmap_label">
-      <property name="text">
-       <string>wfsmap</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="2">
-     <widget class="QLabel" name="dmmask_label">
-      <property name="text">
-       <string>dmmask</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="4">
-     <widget class="KGraphicsView" name="DMmodes_stream_view"/>
-    </item>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <property name="spacing">
+     <number>0</number>
+    </property>
     <item row="0" column="0">
-     <widget class="QLabel" name="wfsrerf_label">
-      <property name="text">
-       <string>wfsref</string>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>1</number>
       </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
+      <widget class="QWidget" name="calibration_tab">
+       <attribute name="title">
+        <string>Calibration</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="2">
+         <widget class="QLabel" name="wfsmask_label">
+          <property name="text">
+           <string>wfsmask</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="4">
+         <widget class="QLabel" name="DMmodes_label">
+          <property name="text">
+           <string>DMmodes</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="4">
+         <widget class="KGraphicsView" name="DMmodes_fits_view"/>
+        </item>
+        <item row="1" column="1">
+         <widget class="KGraphicsView" name="wfsrefc_fits_view"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="KGraphicsView" name="wfsref_stream_view"/>
+        </item>
+        <item row="2" column="2">
+         <widget class="KGraphicsView" name="wfsmask_stream_view"/>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="wfsrerf_label">
+          <property name="text">
+           <string>wfsref</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3">
+         <widget class="KGraphicsView" name="wfsmap_stream_view"/>
+        </item>
+        <item row="2" column="1">
+         <widget class="KGraphicsView" name="wfsrefc_stream_view"/>
+        </item>
+        <item row="1" column="4">
+         <widget class="KGraphicsView" name="modesWFS_fits_view"/>
+        </item>
+        <item row="0" column="3">
+         <widget class="QLabel" name="wfsmap_label">
+          <property name="text">
+           <string>wfsmap</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <widget class="KGraphicsView" name="wfsmap_fits_view"/>
+        </item>
+        <item row="2" column="4">
+         <widget class="KGraphicsView" name="modesWFS_stream_view"/>
+        </item>
+        <item row="0" column="4">
+         <widget class="QLabel" name="modesWFS_label">
+          <property name="text">
+           <string>modesWFS</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="wfsrefc_label">
+          <property name="text">
+           <string>wfsrefc</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="KGraphicsView" name="wfsmask_fits_view"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="KGraphicsView" name="wfsref_fits_view"/>
+        </item>
+        <item row="5" column="4">
+         <widget class="KGraphicsView" name="DMmodes_stream_view"/>
+        </item>
+        <item row="3" column="3">
+         <widget class="QLabel" name="dmmap_label">
+          <property name="text">
+           <string>dmmap</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="3">
+         <widget class="KGraphicsView" name="dmmap_fits_view"/>
+        </item>
+        <item row="5" column="3">
+         <widget class="KGraphicsView" name="dmmap_stream_view"/>
+        </item>
+        <item row="3" column="2">
+         <widget class="QLabel" name="dmmask_label">
+          <property name="text">
+           <string>dmmask</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2">
+         <widget class="KGraphicsView" name="dmmask_fits_view"/>
+        </item>
+        <item row="5" column="2">
+         <widget class="KGraphicsView" name="dmmask_stream_view"/>
+        </item>
+        <item row="4" column="0" rowspan="2" colspan="2">
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>Top: configuration</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>Bottom: loaded</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="mode_spinbox">
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="prefix">
+             <string>Mode </string>
+            </property>
+            <property name="maximum">
+             <number>9999</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="reload_button">
+            <property name="text">
+             <string>Reload</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="latency_tab">
+       <attribute name="title">
+        <string>Latency</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="latency_framerate_lineedit"/>
+        </item>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="latency_measure_button">
+          <property name="text">
+           <string>Measure latency</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="latency_frames_lineedit"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="latency_frames_label">
+          <property name="text">
+           <string>Latency</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="latency_framerate_label">
+          <property name="text">
+           <string>Framerate</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2" rowspan="4">
+         <widget class="KChartView" name="latency_plot"/>
+        </item>
+        <item row="3" column="0" colspan="2">
+         <spacer name="latency_verticalspacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
      </widget>
-    </item>
-    <item row="3" column="4">
-     <widget class="QLabel" name="DMmodes_label">
-      <property name="text">
-       <string>DMmodes</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="3">
-     <widget class="KGraphicsView" name="dmmap_stream_view"/>
-    </item>
-    <item row="0" column="2">
-     <widget class="QLabel" name="wfsmask_label">
-      <property name="text">
-       <string>wfsmask</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="4">
-     <widget class="KGraphicsView" name="DMmodes_fits_view"/>
-    </item>
-    <item row="2" column="2">
-     <widget class="KGraphicsView" name="wfsmask_stream_view"/>
-    </item>
-    <item row="3" column="3">
-     <widget class="QLabel" name="dmmap_label">
-      <property name="text">
-       <string>dmmap</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="4">
-     <widget class="KGraphicsView" name="modesWFS_stream_view"/>
-    </item>
-    <item row="4" column="3">
-     <widget class="KGraphicsView" name="dmmap_fits_view"/>
-    </item>
-    <item row="0" column="4">
-     <widget class="QLabel" name="modesWFS_label">
-      <property name="text">
-       <string>modesWFS</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="1">
-     <widget class="KGraphicsView" name="wfsrefc_stream_view"/>
-    </item>
-    <item row="4" column="2">
-     <widget class="KGraphicsView" name="dmmask_fits_view"/>
-    </item>
-    <item row="4" column="0" rowspan="2" colspan="2">
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QLabel" name="label_9">
-        <property name="text">
-         <string>Top: configuration</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_10">
-        <property name="text">
-         <string>Bottom: loaded</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QSpinBox" name="mode_spinbox">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="prefix">
-         <string>Mode </string>
-        </property>
-        <property name="maximum">
-         <number>9999</number>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="reload_button">
-        <property name="text">
-         <string>Reload</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="5" column="2">
-     <widget class="KGraphicsView" name="dmmask_stream_view"/>
-    </item>
-    <item row="2" column="0">
-     <widget class="KGraphicsView" name="wfsref_stream_view"/>
-    </item>
-    <item row="1" column="4">
-     <widget class="KGraphicsView" name="modesWFS_fits_view"/>
-    </item>
-    <item row="1" column="3">
-     <widget class="KGraphicsView" name="wfsmap_fits_view"/>
-    </item>
-    <item row="1" column="2">
-     <widget class="KGraphicsView" name="wfsmask_fits_view"/>
-    </item>
-    <item row="1" column="1">
-     <widget class="KGraphicsView" name="wfsrefc_fits_view"/>
-    </item>
-    <item row="1" column="0">
-     <widget class="KGraphicsView" name="wfsref_fits_view"/>
     </item>
    </layout>
   </widget>
@@ -201,7 +286,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>776</width>
+     <width>1352</width>
      <height>23</height>
     </rect>
    </property>
@@ -211,6 +296,11 @@
  <customwidgets>
   <customwidget>
    <class>KGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>kalao</header>
+  </customwidget>
+  <customwidget>
+   <class>KChartView</class>
    <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>

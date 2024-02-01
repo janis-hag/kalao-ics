@@ -214,7 +214,7 @@ def set_temperature(temperature):
     return ret
 
 
-def _send_request(request_type, params={}):
+def _send_request(endpoint, params={}):
     # Clean params
     for key, value in list(params.items()):
         if value is None:
@@ -223,7 +223,7 @@ def _send_request(request_type, params={}):
             params[key] = str(value)
 
     if config.FLI.dummy_camera:
-        if request_type == 'acquire':
+        if endpoint == 'acquire':
             time.sleep(params['exptime'])
 
             # fits.PrimaryHDU(fake_data.fake_fli_image()).writeto(params['filepath'])
@@ -232,10 +232,10 @@ def _send_request(request_type, params={}):
         return ReturnCode.CAMERA_OK, {}
 
     else:
-        if request_type == 'acquire':
+        if endpoint == 'acquire':
             increment_image_counter(params)
 
-        url = f'http://{config.FLI.ip}:{config.FLI.port}/{request_type}'
+        url = f'http://{config.FLI.ip}:{config.FLI.port}/{endpoint}'
 
         try:
             if params == {}:
@@ -267,7 +267,7 @@ def _send_request(request_type, params={}):
 
             logger.error(
                 'fli',
-                f'Camera server answered with an Error {req.status_code}.{text}'
+                f'Camera server endpoint /{endpoint} answered with an Error {req.status_code}.{text}'
             )
 
             return ReturnCode.CAMERA_ERROR, data

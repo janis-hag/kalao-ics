@@ -105,19 +105,13 @@ def center_on_laser():
     :return:
     """
 
+    logger.info('centering', f'Starting centering on laser')
+
     if aocontrol.turn_dm_on() != 0:
         raise DMNotOn
 
     if aocontrol.start_wfs_acquisition() != 0:
         raise WFSNotOn
-
-    # Move calib unit to approximately correct position if too far #TODO: make similar to others
-    if np.abs(calibunit.get_position() - config.Laser.position) > 0.5:
-        calibunit.move_to_laser_position()
-
-    if filterwheel.set_filter(
-            config.FLI.laser_calib_filter) != config.FLI.laser_calib_filter:
-        raise FilterWheelNotInPosition
 
     if shutter.close() != ShutterState.CLOSED:
         raise ShutterNotClosed
@@ -125,29 +119,36 @@ def center_on_laser():
     if flipmirror.up() != FlipMirrorPosition.UP:
         raise FlipMirrorNotUp
 
-    laser.set_power(config.FLI.laser_calib_power, enable=True)
+    if not aocontrol.check_wfs_flux():
+        # Move calib unit to approximately correct position if too far #TODO: make similar to others
+        if np.abs(calibunit.get_position() - config.Laser.position) > 0.5:
+            calibunit.move_to_laser_position()
 
-    # Reset tip tilt stream to 0
-    aocontrol.reset_dm(config.AO.TTM_loop_number)
+        if filterwheel.set_filter(config.FLI.laser_calib_filter
+                                  ) != config.FLI.laser_calib_filter:
+            raise FilterWheelNotInPosition
 
-    logger.info('centering', f'Starting centering on laser')
+        laser.set_power(config.FLI.laser_calib_power, enable=True)
 
-    try:
-        xy = _get_star(config.FLI.laser_calib_exptime)
-        xy = on_fli_with_calibunit(exptime=config.FLI.laser_calib_exptime,
-                                   xy=xy)
-        xy = on_fli_with_ttm(exptime=config.FLI.laser_calib_exptime, xy=xy)
-    except (CenteringException, AbortRequested, FLITakeImageFailed) as e:
-        logger.error('centering',
-                     f'"{e.__doc__}" happened during centering on laser')
-        return -1
+        # Reset tip tilt stream to 0
+        aocontrol.reset_dm(config.AO.TTM_loop_number)
 
-    # Precise centering with WFS
-    aocontrol.emgain_off()
+        try:
+            xy = _get_star(config.FLI.laser_calib_exptime)
+            xy = on_fli_with_calibunit(exptime=config.FLI.laser_calib_exptime,
+                                       xy=xy)
+            xy = on_fli_with_ttm(exptime=config.FLI.laser_calib_exptime, xy=xy)
+        except (CenteringException, AbortRequested, FLITakeImageFailed) as e:
+            logger.error('centering',
+                         f'"{e.__doc__}" happened during centering on laser')
+            return -1
 
-    laser.set_power(config.WFS.laser_calib_power, enable=True)
-    aocontrol.set_exptime(config.WFS.laser_calib_exptime)
-    aocontrol.set_emgain(config.WFS.laser_calib_emgain)
+        # Precise centering with WFS
+        aocontrol.emgain_off()
+
+        laser.set_power(config.WFS.laser_calib_power, enable=True)
+        aocontrol.set_exptime(config.WFS.laser_calib_exptime)
+        aocontrol.set_emgain(config.WFS.laser_calib_emgain)
 
     try:
         on_wfs_with_ttm()

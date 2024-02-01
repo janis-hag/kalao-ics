@@ -6,7 +6,6 @@
 # @AUTHOR : Janis Hagelberg
 """
 Timer to do offloading and adc update
-
 """
 
 import time
@@ -24,7 +23,7 @@ import config
 
 
 def _update_adc(beck=None):
-    if euler.telescope_tracking() and euler.telescope_on_kalao():
+    if euler.telescope_on_kalao() and euler.telescope_tracking():
         adc.configure(beck=beck, skip_tracking_check=True)
 
 

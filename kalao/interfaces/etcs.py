@@ -139,7 +139,7 @@ def set_m3_rot(position):
     return ret
 
 
-def _send_request(request_path, params={}):
+def _send_request(endpoint, params={}):
     # Clean params
     for key, value in list(params.items()):
         if value is None:
@@ -154,7 +154,7 @@ def _send_request(request_path, params={}):
             "Authorization": config.ETCS.token
         }
 
-        url = f'http://{config.ETCS.ip}:{config.ETCS.port}/{request_path}'
+        url = f'http://{config.ETCS.ip}:{config.ETCS.port}/{endpoint}'
 
         try:
             if params == {}:
@@ -175,11 +175,17 @@ def _send_request(request_path, params={}):
         if req.status_code == 200:
             return ReturnCode.ETCS_OK, data
         else:
-            text = f' {data}'
+            text = ''
+
+            if isinstance(data, dict):
+                if data.get('message') is not None:
+                    text += f' {data.get("message")}'
+            else:
+                text = f' {data}'
 
             logger.error(
                 'etcs',
-                f'Telescope server answered with an Error {req.status_code}.{text}'
+                f'Telescope server endpoint /{endpoint} answered with an Error {req.status_code}.{text}'
             )
 
             return ReturnCode.ETCS_ERROR, data

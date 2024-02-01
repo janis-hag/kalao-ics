@@ -159,7 +159,7 @@ class WFS:
 
     laser_calib_power = 8  # mW
     laser_calib_exptime = 0.5  # ms
-    laser_calib_emgain = 1  # -
+    laser_calib_emgain = 5  # -
 
     illumination_threshold = 1000  # ADU
     illumination_fraction = 0.5  # -
