@@ -197,16 +197,17 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         img = self.consume_stream(data, config.Streams.MODALGAINS)
 
         if img is not None:
+            if img.size != self.modalgains_series.count():
+                with QSignalBlocker(self.cutoff_spinbox):
+                    self.cutoff_spinbox.setMaximum(img.size)
+                    self.cutoff_spinbox.setValue(img.size)
+
+                with QSignalBlocker(self.last_spinbox):
+                    self.last_spinbox.setMinimum(img.size)
+                    self.last_spinbox.setMaximum(img.size)
+                    self.last_spinbox.setValue(img.size)
+
             self.display_modalgains(img)
-
-            with QSignalBlocker(self.cutoff_spinbox):
-                self.cutoff_spinbox.setMaximum(img.size)
-                self.cutoff_spinbox.setValue(img.size)
-
-            with QSignalBlocker(self.last_spinbox):
-                self.last_spinbox.setMinimum(img.size)
-                self.last_spinbox.setMaximum(img.size)
-                self.last_spinbox.setValue(img.size)
 
     # DM Loop
 
