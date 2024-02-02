@@ -325,6 +325,8 @@ class PLC:
         Node.ADC2: ADC.max_disp_angle_2 + 90,  # Zero dispersion
     }
 
+    init_poll_interval = 1  # s
+
 
 class SEQ:
     ip = "127.0.0.1"
@@ -446,8 +448,8 @@ class Offsets:
     nuvu_y_to_tel_alt = 1.16  # arcsec / px
 
     # Should be 0.5 * 1/(1.2*7.09899) * 1200 / 20 * 1000 * 48e-6 = 0.169 mrad / px (2x2 binning)
-    nuvu_x_to_ttm_tilt = -0.25807611836775707  # mrad / px
-    nuvu_y_to_ttm_tip = 0.28649303833986856  # mrad / px
+    nuvu_x_to_ttm_tilt = -0.169  # mrad / px
+    nuvu_y_to_ttm_tip = 0.169  # mrad / px
 
     # Should be 2 * 20 / 1200 / 1000 * 180/np.pi * 3600 = 6.88 arcsec / mrad
     ttm_tip_to_tel_alt = 6.88  # arcsec / mrad
@@ -532,6 +534,11 @@ class Calib:
     class Darks:
         # How many darks to make for every exposure time
         dark_number = 5  # -
+
+    class AO:
+        class DM:
+            min_latency = 1.8  # frames
+            max_latency = 2.5  # frames
 
 
 class Euler:

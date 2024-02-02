@@ -91,6 +91,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
         lineedit.collection = collection
         lineedit.key = key
         lineedit.timestamp = None
+        lineedit.value = np.nan
         lineedit.metadata = metadata
         lineedit.unit = kstring.get_unit_string(metadata)
         lineedit.hover_text = 'No data'
@@ -123,6 +124,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
 
                 lineedit.setText(text)
                 lineedit.timestamp = timestamp
+                lineedit.value = value
 
             if lineedit.timestamp is None:
                 continue
@@ -134,7 +136,8 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                 lineedit.setStyleSheet(f'color: {Color.GREY.name()};')
                 lineedit.hover_text = f'{since_text} (outdated)'
                 outdated += 1
-            elif isinstance(value, float) or isinstance(value, int):
+            elif isinstance(lineedit.value, float) or isinstance(
+                    lineedit.value, int):
                 error_range = lineedit.metadata.get('error_range',
                                                     [np.nan, np.nan])
                 warn_range = lineedit.metadata.get('warn_range',
@@ -145,14 +148,14 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                 warn_min = warn_range[0]
                 warn_max = warn_range[1]
 
-                if value > error_max or value < error_min:
+                if lineedit.value > error_max or lineedit.value < error_min:
                     lineedit.setStyleSheet(f'color: {Color.RED.name()};')
                     lineedit.hover_text = self.formatter.format(
                         '{since_text} | Outside of error range [{error_min}{unit}; {error_max}{unit}]',
                         since_text=since_text, error_min=error_min,
                         error_max=error_max, unit=lineedit.unit)
                     errors += 1
-                elif value > warn_max or value < warn_min:
+                elif lineedit.value > warn_max or lineedit.value < warn_min:
                     lineedit.setStyleSheet(f'color: {Color.ORANGE.name()};')
                     lineedit.hover_text = self.formatter.format(
                         '{since_text} | Outside of warning range [{warn_min}{unit}; {warn_max}{unit}]',

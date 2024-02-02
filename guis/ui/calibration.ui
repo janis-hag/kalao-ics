@@ -211,6 +211,19 @@
         <item row="4" column="0" rowspan="2" colspan="2">
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
            <widget class="QLabel" name="label_9">
             <property name="font">
              <font>
@@ -263,6 +276,9 @@
             </property>
             <property name="prefix">
              <string>Mode </string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>9999</number>
@@ -319,10 +335,18 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QLineEdit" name="latency_framerate_lineedit"/>
+         <widget class="QLineEdit" name="latency_framerate_lineedit">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QLineEdit" name="latency_frames_lineedit"/>
+         <widget class="QLineEdit" name="latency_frames_lineedit">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
         <item row="1" column="0">
          <widget class="QLabel" name="latency_framerate_label">
@@ -331,6 +355,41 @@
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="response_tab">
+       <attribute name="title">
+        <string>Response</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="0" column="0">
+         <widget class="QPushButton" name="pushButton">
+          <property name="text">
+           <string>Generate poke modes</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QPushButton" name="pushButton_2">
+          <property name="text">
+           <string>Acquire linear response</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="pushButton_3">
+          <property name="text">
+           <string>Compute Control Matrix (CM)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QPushButton" name="pushButton_4">
+          <property name="text">
+           <string>CM</string>
           </property>
          </widget>
         </item>

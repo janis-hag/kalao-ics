@@ -108,9 +108,10 @@ def motor_init(node, force_init=True, beck=None):
     if not beck.get_node(f"{node}.stat.bInitialised").get_value() or force_init:
         motor_send_init(node, beck=beck)
 
-        time.sleep(15)
+        time.sleep(config.PLC.init_poll_interval)
         wait_loop(f'Waiting for {node} initialisation',
-                  lambda: motor_is_initialising(node, beck=beck), 5)
+                  lambda: motor_is_initialising(node, beck=beck),
+                  config.PLC.init_poll_interval)
 
         if not beck.get_node(f"{node}.stat.bInitialised").get_value():
             return ReturnCode.PLC_INIT_FAILED

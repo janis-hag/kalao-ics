@@ -8,7 +8,7 @@
 laser.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
-
+import math
 import time
 from datetime import datetime, timezone
 
@@ -112,6 +112,8 @@ def set_power(power, enable=False, beck=None):
     if power > config.Laser.max_power:
         power = config.Laser.max_power
 
+    previous_power = get_power(beck=beck)
+
     # Give new intensity value
     laser_setIntensity = beck.get_node(f'{config.PLC.Node.LASER}.setIntensity')
     laser_setIntensity.set_attribute(
@@ -132,7 +134,8 @@ def set_power(power, enable=False, beck=None):
     if enable and get_state() != LaserState.ON:
         _switch('bEnable', beck=beck)
 
-    time.sleep(config.Laser.switch_wait)
+    if power != 0 and not math.isclose(previous_power, power):
+        time.sleep(config.Laser.switch_wait)
 
     return get_power(beck=beck)
 
@@ -161,13 +164,16 @@ def _switch(action_name, beck=None):
     elif action_name == 'bUnlock':
         logger.info('laser', 'Unlocking laser')
 
+    previous_state = get_state()
+
     laser_switch = beck.get_node(f'{config.PLC.Node.LASER}.{action_name}')
     laser_switch.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
             ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
 
-    time.sleep(config.Laser.switch_wait)
+    if action_name == 'bEnable' and previous_state != LaserState.ON:
+        time.sleep(config.Laser.switch_wait)
 
     return get_state(beck=beck)
 

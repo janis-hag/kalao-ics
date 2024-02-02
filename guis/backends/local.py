@@ -267,6 +267,17 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
+    def get_calibration_ready(self):
+        if not aocontrol.acquisition_running():
+            return {'ready': False, 'reason': 'WFS acquisition is not running'}
+
+        if not aocontrol.check_wfs_flux():
+            return {'ready': False, 'reason': 'Not enough flux on WFS'}
+
+        # TODO: check frequency
+
+        return {'ready': True}
+
     def get_calibration_data(self, conf, loop):
         data = {}
 
@@ -314,6 +325,9 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True,
                              cwd=config.AO.cacao_workdir)
 
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
+
         return data
 
     def get_latency_measure(self, conf, loop):
@@ -322,6 +336,12 @@ class MainBackend(SHMFPSBackend):
 
         res = subprocess.run(['cacao-aorun-020-mlat', '-w'], timeout=60,
                              capture_output=True, cwd=folder)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
+
+        if res.returncode != 0:
+            return data
 
         self._update_param(data, f'mlat-{loop}', 'out.framerateHz')
         self._update_param(data, f'mlat-{loop}', 'out.latencyfr')
@@ -413,13 +433,13 @@ class MainBackend(SHMFPSBackend):
         shutter._switch(state)
 
     def get_plc_shutter_init(self):
-        shutter.init(force_init=True)
+        shutter.init()
 
     def set_plc_flipmirror_position(self, position):
         flipmirror._switch(position)
 
     def get_plc_flipmirror_init(self):
-        flipmirror.init(force_init=True)
+        flipmirror.init()
 
     def set_plc_calibunit_position(self, position):
         calibunit.move(position)
@@ -443,7 +463,7 @@ class MainBackend(SHMFPSBackend):
             tungsten.off()
 
     def get_plc_tungsten_init(self):
-        tungsten.init(force_init=True)
+        tungsten.init()
 
     def set_plc_laser_state(self, state):
         if state:
@@ -455,7 +475,7 @@ class MainBackend(SHMFPSBackend):
         laser.set_power(power)
 
     def get_plc_laser_init(self):
-        laser.init(force_init=True)
+        laser.init()
 
     def get_plc_lamps_off(self):
         plc_utils.lamps_off()
@@ -464,7 +484,7 @@ class MainBackend(SHMFPSBackend):
         filterwheel.set_filter(filter)
 
     def get_plc_filterwheel_init(self):
-        filterwheel.init(force_init=True)
+        filterwheel.init()
 
     def set_plc_adc_1_angle(self, position):
         adc.rotate(config.PLC.Node.ADC1, position)

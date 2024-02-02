@@ -107,6 +107,18 @@ class FocusWindow(KMainWindow, BackendDataMixin):
         else:
             self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
             hdul = fits.open(self.file)
+
+            if 'HIERARCH FOCUS SUCCESS' not in hdul[0].header:
+                msgbox = KMessageBox(self)
+                msgbox.setIcon(QMessageBox.Critical)
+                msgbox.setText("<b>Invalid file!</b>")
+                msgbox.setInformativeText(
+                    f'The selected file doesn\'t seem to contain a focus sequence.'
+                )
+                msgbox.setModal(True)
+                msgbox.show()
+                self.close()
+
             self.show_sequence(hdul)
 
         self.show()

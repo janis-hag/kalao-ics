@@ -92,7 +92,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_x.setTickAnchor(0)
         axis_x.setTickInterval(10)
         axis_x.setTickType(QValueAxis.TicksDynamic)
-        axis_x.setRange(-1, 1)
+        axis_x.setRange(0, 1)
         axis_x.setTitleText('Mode [-]')
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
@@ -200,12 +200,13 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.display_modalgains(img)
 
             with QSignalBlocker(self.cutoff_spinbox):
-                self.cutoff_spinbox.setMaximum(img.size - 1)
-                self.cutoff_spinbox.setValue(img.size - 1)
+                self.cutoff_spinbox.setMaximum(img.size)
+                self.cutoff_spinbox.setValue(img.size)
 
             with QSignalBlocker(self.last_spinbox):
-                self.last_spinbox.setMaximum(img.size - 1)
-                self.last_spinbox.setValue(img.size - 1)
+                self.last_spinbox.setMinimum(img.size)
+                self.last_spinbox.setMaximum(img.size)
+                self.last_spinbox.setValue(img.size)
 
     # DM Loop
 
@@ -350,8 +351,8 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.compute_modalgains()
 
     def compute_modalgains(self):
-        cutoff = self.cutoff_spinbox.value()
-        last = self.last_spinbox.value()
+        cutoff = self.cutoff_spinbox.value() - 1
+        last = self.last_spinbox.value() - 1
         law = laws[self.law_combobox.currentText()]
 
         modalgains = np.ones(self.modalgains_series.count())
@@ -363,9 +364,9 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send([], self.backend.set_modalgains, modalgains)
 
     def display_modalgains(self, modalgains):
-        self.modalgains_series.removePoints(0, self.modalgains_series.count())
+        self.modalgains_series.clear()
 
         for i in range(modalgains.size):
-            self.modalgains_series.append(QPointF(i, modalgains[i]))
+            self.modalgains_series.append(QPointF(i + 1, modalgains[i]))
 
-        self.axis_x.setRange(-1, modalgains.size)
+        self.axis_x.setRange(0, modalgains.size + 1)

@@ -76,6 +76,8 @@ def send_command(nCommand_value, beck=None):
     tungsten_bExecute = beck.get_node(
         f'{config.PLC.Node.TUNGSTEN}.ctrl.bExecute')
 
+    previous_state = get_state()
+
     tungsten_nCommand.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
@@ -89,7 +91,8 @@ def send_command(nCommand_value, beck=None):
             ua.Variant(True,
                        tungsten_bExecute.get_data_type_as_variant_type())))
 
-    time.sleep(config.Tungsten.switch_wait)
+    if nCommand_value == TungstenCommand.ON and previous_state != nCommand_value:
+        time.sleep(config.Tungsten.switch_wait)
 
     return get_state(beck=beck)
 
@@ -109,10 +112,10 @@ def init(beck=None):
             f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():
         send_command(TungstenCommand.INIT, beck=beck)
 
-        time.sleep(15)
+        time.sleep(config.PLC.init_poll_interval)
         while (beck.get_node(f'{config.PLC.Node.TUNGSTEN}.stat.sStatus').
                get_value() == 'INITIALISING'):
-            time.sleep(15)
+            time.sleep(config.PLC.init_poll_interval)
 
         if not beck.get_node(
                 f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():

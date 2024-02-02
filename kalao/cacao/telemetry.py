@@ -8,6 +8,7 @@
 The telemetry package contains the tools to store the Adaptive Optics telemetry of KalAO.
 
 """
+import numpy as np
 
 from kalao.cacao import toolbox
 
@@ -20,18 +21,24 @@ def gather():
     # Nuvu stream
     nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
 
-    if nuvu_raw_stream is not None:  # and session:
+    if nuvu_raw_stream is not None:
         stream_keywords = nuvu_raw_stream.get_keywords()
 
-        telemetry_data['nuvu_temp_ccd'] = stream_keywords['T_CCD']
-        telemetry_data['nuvu_temp_controller'] = stream_keywords['T_CNTRLR']
-        telemetry_data['nuvu_temp_powersupply'] = stream_keywords['T_PSU']
-        telemetry_data['nuvu_temp_fpga'] = stream_keywords['T_FPGA']
-        telemetry_data['nuvu_temp_heatsink'] = stream_keywords['T_HSINK']
-        telemetry_data['nuvu_emgain'] = stream_keywords['EMGAIN']
-        telemetry_data['nuvu_detgain'] = stream_keywords['DETGAIN']
-        telemetry_data['nuvu_exposuretime'] = stream_keywords['EXPTIME']
-        telemetry_data['nuvu_mframerate'] = stream_keywords['MFRATE']
+        telemetry_data['nuvu_temp_ccd'] = stream_keywords.get('T_CCD', np.nan)
+        telemetry_data['nuvu_temp_controller'] = stream_keywords.get(
+            'T_CNTRLR', np.nan)
+        telemetry_data['nuvu_temp_powersupply'] = stream_keywords.get(
+            'T_PSU', np.nan)
+        telemetry_data['nuvu_temp_fpga'] = stream_keywords.get(
+            'T_FPGA', np.nan)
+        telemetry_data['nuvu_temp_heatsink'] = stream_keywords.get(
+            'T_HSINK', np.nan)
+        telemetry_data['nuvu_emgain'] = stream_keywords.get('EMGAIN', np.nan)
+        telemetry_data['nuvu_detgain'] = stream_keywords.get('DETGAIN', np.nan)
+        telemetry_data['nuvu_exposuretime'] = stream_keywords.get(
+            'EXPTIME', np.nan)
+        telemetry_data['nuvu_mframerate'] = stream_keywords.get(
+            'MFRATE', np.nan)
 
     # Nuvu process
     nuvu_fps = toolbox.open_fps_once(config.FPS.NUVU)

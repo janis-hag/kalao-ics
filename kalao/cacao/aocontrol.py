@@ -271,7 +271,7 @@ def ttmloop_zero():
 def set_modalgains(modalgains, stream_name=config.Streams.MODALGAINS):
     modalgains_stream = toolbox.open_stream_once(stream_name)
 
-    delta = modalgains_stream.size - modalgains.size
+    delta = modalgains_stream.shape[0] - modalgains.shape[0]
 
     if modalgains_stream is not None:
         if delta < 0:
@@ -410,6 +410,18 @@ def turn_dm_off():
         return -1
 
 
+def acquisition_running():
+    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
+
+    if nuvu_raw_stream is None:
+        return False
+
+    maqtime = datetime.fromtimestamp(
+        nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
+    return (datetime.now(timezone.utc) -
+            maqtime).total_seconds() < config.WFS.acquisition_time_timeout
+
+
 def start_wfs_acquisition():
     nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
 
@@ -417,10 +429,7 @@ def start_wfs_acquisition():
         return -1
 
     # Check if already running
-    maqtime = datetime.fromtimestamp(
-        nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
-    if (datetime.now(timezone.utc) -
-            maqtime).total_seconds() < config.WFS.acquisition_time_timeout:
+    if acquisition_running():
         return 0
 
     logger.info('nuvu', 'Starting WFS acquisition')
@@ -433,10 +442,7 @@ def start_wfs_acquisition():
 
     time.sleep(config.WFS.acquisition_start_wait)
 
-    maqtime = datetime.fromtimestamp(
-        nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
-    if (datetime.now(timezone.utc) -
-            maqtime).total_seconds() > config.WFS.acquisition_time_timeout:
+    if not acquisition_running():
         logger.info('nuvu', 'Failed to start WFS acquisition')
         return -1
 

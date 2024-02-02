@@ -715,9 +715,12 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         dialog.setNameFilter('Images (*.fits)')
         dialog.setAcceptMode(QFileDialog.AcceptOpen)
 
+        if config.FITS.focus_data_storage.exists():
+            dialog.setDirectory(str(config.FITS.focus_data_storage))
+
         error_dialog = KMessageBox(self)
         error_dialog.setIcon(QMessageBox.Critical)
-        error_dialog.setModal(False)
+        error_dialog.setModal(True)
         error_dialog.setText("<b>Focus sequence loading failed!</b>")
 
         if dialog.exec():

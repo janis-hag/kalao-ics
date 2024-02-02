@@ -3,11 +3,13 @@ import numpy as np
 from PySide6.QtCharts import QScatterSeries, QValueAxis
 from PySide6.QtCore import QPointF, Slot
 from PySide6.QtGui import QBrush, QCursor, QGuiApplication, QPen, Qt
+from PySide6.QtWidgets import QMessageBox
 
+from guis.utils import colormaps
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendDataMixin, SceneHoverMixin
 from guis.utils.ui_loader import loadUi
-from guis.utils.widgets import KGraphicsView, KMainWindow
+from guis.utils.widgets import KGraphicsView, KMainWindow, KMessageBox
 
 
 class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
@@ -44,6 +46,11 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
             if isinstance(attr, KGraphicsView):
                 attr.hovered.connect(self.hover_xyv_to_str)
+
+                if key.startswith('modesWFS') or key.startswith(
+                        'DMmodes') or key.startswith(
+                            'wfsref') or key.startswith('wfsrefc'):
+                    attr.updateColormap(colormaps.CoolWarm())
 
         self.hovered.connect(self.info_to_statusbar)
 
@@ -121,75 +128,110 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
     @Slot(bool)
     def on_refresh_button_clicked(self, checked):
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.refresh_button.setEnabled(False)
 
         self.data = self.backend.get_calibration_data(self.conf, self.loop)
 
+        self.refresh_button.setEnabled(True)
         QGuiApplication.restoreOverrideCursor()
 
         modes = self.number_of_modes()
-        self.mode_spinbox.setMaximum(modes - 1)
+        self.mode_spinbox.setMaximum(modes)
         self.mode_spinbox.setSuffix(f' / {modes}')
 
         self.on_mode_spinbox_valueChanged(self.mode_spinbox.value())
 
     @Slot(int)
     def on_mode_spinbox_valueChanged(self, i):
-        self.update_image_fits('wfsref', 'wfsref')
-        self.update_image_fits('wfsrefc', 'wfsrefc')
+        self.update_image_fits('wfsref', 'wfsref', symetric=True)
+        self.update_image_fits('wfsrefc', 'wfsrefc', symetric=True)
         self.update_image_fits('wfsmask', 'wfsmask')
         self.update_image_fits('wfsmap', 'wfsmap')
         self.update_image_fits('dmmask', 'dmmask')
         self.update_image_fits('dmmap', 'dmmap')
-        self.update_image_fits('DMmodes', 'CMmodesDM', cube=True)
-        self.update_image_fits('modesWFS', 'CMmodesWFS', cube=True)
+        self.update_image_fits('DMmodes', 'CMmodesDM', cube=True,
+                               symetric=True)
+        self.update_image_fits('modesWFS', 'CMmodesWFS', cube=True,
+                               symetric=True)
 
-        self.update_image_stream('wfsref', f'aol{self.loop}_wfsref')
-        self.update_image_stream('wfsrefc', f'aol{self.loop}_wfsrefc')
+        self.update_image_stream('wfsref', f'aol{self.loop}_wfsref',
+                                 symetric=True)
+        self.update_image_stream('wfsrefc', f'aol{self.loop}_wfsrefc',
+                                 symetric=True)
         self.update_image_stream('wfsmask', f'aol{self.loop}_wfsmask')
         self.update_image_stream('wfsmap', f'aol{self.loop}_wfsmap')
         self.update_image_stream('dmmask', f'aol{self.loop}_dmmask')
         self.update_image_stream('dmmap', f'aol{self.loop}_dmmap')
         self.update_image_stream('DMmodes', f'aol{self.loop}_DMmodes',
-                                 cube=True)
+                                 cube=True, symetric=True)
         self.update_image_stream('modesWFS', f'aol{self.loop}_modesWFS',
-                                 cube=True)
+                                 cube=True, symetric=True)
 
-    def update_image_fits(self, view_key, data_key, cube=False):
+    def update_image_fits(self, view_key, data_key, cube=False,
+                          symetric=False):
         view = getattr(self, f'{view_key}_fits_view')
         data = self.data.get(data_key, {}).get('data')
 
         if data is not None:
             if not cube:
-                view.setImage(data)
+                img = data
             elif len(data.shape) == 2:
-                view.setImage(data[self.mode_spinbox.value(), :])
+                img = data[self.mode_spinbox.value() - 1, :]
             elif len(data.shape) == 3:
-                view.setImage(data[self.mode_spinbox.value(), :, :])
+                img = data[self.mode_spinbox.value() - 1, :, :]
             else:
                 raise Exception(
                     f'Unexpected image size {len(data.shape)} for {data_key}')
 
-    def update_image_stream(self, view_key, data_key, cube=False):
+            img_min = img.min()
+            img_max = img.max()
+
+            if symetric:
+                abs_max = max(abs(img_min), abs(img_max))
+                img_min = -abs_max
+                img_max = abs_max
+
+            view.setImage(img, img_min, img_max)
+
+    def update_image_stream(self, view_key, data_key, cube=False,
+                            symetric=False):
         view = getattr(self, f'{view_key}_stream_view')
         data = self.data.get(data_key, {}).get('data')
 
         if not cube:
-            view.setImage(data)
+            img = data
         elif len(data.shape) == 2:
-            view.setImage(data[:, self.mode_spinbox.value()])
+            img = data[:, self.mode_spinbox.value() - 1]
         elif len(data.shape) == 3:
-            view.setImage(data[:, :, self.mode_spinbox.value()])
+            img = data[:, :, self.mode_spinbox.value() - 1]
         else:
             raise Exception(
                 f'Unexpected image size {len(data.shape)} for {data_key}')
 
+        if symetric:
+            img_min = img.min()
+            img_max = img.max()
+
+            abs_max = max(abs(img_min), abs(img_max))
+            img_min = -abs_max
+            img_max = abs_max
+        else:
+            img_min = 0
+            img_max = img.max()
+
+        view.setImage(img, img_min, img_max)
+
     @Slot(bool)
     def on_reload_button_clicked(self, checked):
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.reload_button.setEnabled(False)
 
-        self.data = self.backend.get_calibration_reload()
+        data = self.backend.get_calibration_reload()
 
+        self.reload_button.setEnabled(True)
         QGuiApplication.restoreOverrideCursor()
+
+        self.check_subprocess_error(data)
 
         self.on_refresh_button_clicked(False)
 
@@ -212,12 +254,28 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         # Take measurement
 
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.latency_measure_button.setEnabled(False)
 
         data = self.backend.get_latency_measure(self.conf, self.loop)
 
+        self.latency_measure_button.setEnabled(True)
         QGuiApplication.restoreOverrideCursor()
 
         # Display data
+
+        if self.check_subprocess_error(data):
+            return
+
+        if np.isnan(data['hardwlatencypts'][:, 2]).all():
+            msgbox = KMessageBox(self)
+            msgbox.setIcon(QMessageBox.Critical)
+            msgbox.setText("<b>Latency measruement failed!</b>")
+            msgbox.setInformativeText(
+                f'Even though the latency measurement succeeded, it only returned NaNs.'
+            )
+            msgbox.setModal(True)
+            msgbox.show()
+            return
 
         framerateHz = self.consume_param(data, f'mlat-{self.loop}',
                                          'out.framerateHz')
@@ -229,8 +287,6 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         if latencyfr is not None:
             self.latency_frames_lineedit.setText(f'{latencyfr:.2f} frames')
 
-        # TODO: error if all nan
-
         for i in range(data['hardwlatencypts'].shape[0]):
             self.latency_series.append(
                 QPointF(data['hardwlatencypts'][i, 1] * 1000,
@@ -238,3 +294,18 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
         self.latency_axis_y.setRange(
             0, data['hardwlatencypts'][:, 2].max() * 1.05)
+
+    def check_subprocess_error(self, data):
+        if data['returncode'] == 0:
+            return False
+
+        msgbox = KMessageBox(self)
+        msgbox.setIcon(QMessageBox.Critical)
+        msgbox.setText("<b>An error occured!</b>")
+        msgbox.setInformativeText(
+            'The underlying cacao process failed. See below for more details.')
+        msgbox.setDetailedText(data['stdout'])
+        msgbox.setModal(True)
+        msgbox.show()
+
+        return True

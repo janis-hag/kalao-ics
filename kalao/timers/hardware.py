@@ -114,17 +114,11 @@ def _check_wfs_inactive():
         aocontrol.emgain_off()
         aocontrol.set_exptime(0)
 
-    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
+    if aocontrol.acquisition_running():
+        logger.info('hardware_timer',
+                    'Stopping WFS acquisition due to inactivity timeout')
 
-    if nuvu_raw_stream is not None:
-        maqtime = datetime.fromtimestamp(
-            nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
-        if (datetime.now(timezone.utc) -
-                maqtime).total_seconds() < config.WFS.acquisition_time_timeout:
-            logger.info('hardware_timer',
-                        'Stopping WFS acquisition due to inactivity timeout')
-
-            aocontrol.stop_wfs_acquisition()
+        aocontrol.stop_wfs_acquisition()
 
     return 0
 
