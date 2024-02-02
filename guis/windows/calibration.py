@@ -15,7 +15,7 @@ from guis.utils.widgets import KGraphicsView, KMainWindow, KMessageBox
 class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
     data_unit = ''
     data_scaling = 1
-    data_precision = 0
+    data_precision = 2
     data_center_x = 0
     data_center_y = 0
 
@@ -183,13 +183,16 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
                 raise Exception(
                     f'Unexpected image size {len(data.shape)} for {data_key}')
 
-            img_min = img.min()
-            img_max = img.max()
-
             if symetric:
+                img_min = img.min()
+                img_max = img.max()
+
                 abs_max = max(abs(img_min), abs(img_max))
                 img_min = -abs_max
                 img_max = abs_max
+            else:
+                img_min = 0
+                img_max = img.max()
 
             view.setImage(img, img_min, img_max)
 
@@ -198,28 +201,29 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         view = getattr(self, f'{view_key}_stream_view')
         data = self.data.get(data_key, {}).get('data')
 
-        if not cube:
-            img = data
-        elif len(data.shape) == 2:
-            img = data[:, self.mode_spinbox.value() - 1]
-        elif len(data.shape) == 3:
-            img = data[:, :, self.mode_spinbox.value() - 1]
-        else:
-            raise Exception(
-                f'Unexpected image size {len(data.shape)} for {data_key}')
+        if data is not None:
+            if not cube:
+                img = data
+            elif len(data.shape) == 2:
+                img = data[:, self.mode_spinbox.value() - 1]
+            elif len(data.shape) == 3:
+                img = data[:, :, self.mode_spinbox.value() - 1]
+            else:
+                raise Exception(
+                    f'Unexpected image size {len(data.shape)} for {data_key}')
 
-        if symetric:
-            img_min = img.min()
-            img_max = img.max()
+            if symetric:
+                img_min = img.min()
+                img_max = img.max()
 
-            abs_max = max(abs(img_min), abs(img_max))
-            img_min = -abs_max
-            img_max = abs_max
-        else:
-            img_min = 0
-            img_max = img.max()
+                abs_max = max(abs(img_min), abs(img_max))
+                img_min = -abs_max
+                img_max = abs_max
+            else:
+                img_min = 0
+                img_max = img.max()
 
-        view.setImage(img, img_min, img_max)
+            view.setImage(img, img_min, img_max)
 
     @Slot(bool)
     def on_reload_button_clicked(self, checked):

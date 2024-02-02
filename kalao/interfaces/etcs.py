@@ -154,7 +154,7 @@ def _send_request(endpoint, params={}):
             "Authorization": config.ETCS.token
         }
 
-        url = f'http://{config.ETCS.ip}:{config.ETCS.port}/{endpoint}'
+        url = f'http://{config.ETCS.ip}:{config.ETCS.port}{endpoint}'
 
         try:
             if params == {}:
@@ -185,7 +185,7 @@ def _send_request(endpoint, params={}):
 
             logger.error(
                 'etcs',
-                f'Telescope server endpoint /{endpoint} answered with an Error {req.status_code}.{text}'
+                f'Telescope server endpoint {endpoint} answered with an Error {req.status_code}.{text}'
             )
 
             return ReturnCode.ETCS_ERROR, data

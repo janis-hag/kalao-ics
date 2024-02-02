@@ -43,7 +43,7 @@ def take_empty(filepath=None):
         filepath = '/tmp/fli_empty.fits'
 
     params = {'filepath': filepath}
-    ret, _ = _send_request('empty', params)
+    ret, _ = _send_request('/empty', params)
 
     return ret
 
@@ -67,7 +67,7 @@ def take_frame(exptime=None, filepath=None, nbflushes=None, roi=None,
         'roi': roi
     }
 
-    ret, _ = _send_request('acquire', params)
+    ret, _ = _send_request('/acquire', params)
 
     if ret == ReturnCode.CAMERA_OK:
         img = fits.getdata(filepath)
@@ -168,13 +168,13 @@ def increment_image_counter(params):
 def cancel():
     # TODO add docstring
 
-    ret, _ = _send_request('cancelExposure')
+    ret, _ = _send_request('/cancelExposure')
 
     return ret
 
 
 def get_exposure_status():
-    ret, exposure_status = _send_request('exposureStatus')
+    ret, exposure_status = _send_request('/exposureStatus')
 
     if ret == ReturnCode.CAMERA_OK:
         return exposure_status
@@ -194,7 +194,7 @@ def get_temperatures():
     :return:
     """
 
-    ret, temperatures = _send_request('temperature')
+    ret, temperatures = _send_request('/temperature')
 
     if ret == ReturnCode.CAMERA_OK:
         return temperatures
@@ -210,7 +210,7 @@ def set_temperature(temperature):
     :return:
     """
     params = {'temperature': temperature}
-    ret, _ = _send_request('temperature', params)
+    ret, _ = _send_request('/temperature', params)
     return ret
 
 
@@ -223,7 +223,7 @@ def _send_request(endpoint, params={}):
             params[key] = str(value)
 
     if config.FLI.dummy_camera:
-        if endpoint == 'acquire':
+        if endpoint == '/acquire':
             time.sleep(params['exptime'])
 
             # fits.PrimaryHDU(fake_data.fake_fli_image()).writeto(params['filepath'])
@@ -232,10 +232,10 @@ def _send_request(endpoint, params={}):
         return ReturnCode.CAMERA_OK, {}
 
     else:
-        if endpoint == 'acquire':
+        if endpoint == '/acquire':
             increment_image_counter(params)
 
-        url = f'http://{config.FLI.ip}:{config.FLI.port}/{endpoint}'
+        url = f'http://{config.FLI.ip}:{config.FLI.port}{endpoint}'
 
         try:
             if params == {}:
@@ -267,7 +267,7 @@ def _send_request(endpoint, params={}):
 
             logger.error(
                 'fli',
-                f'Camera server endpoint /{endpoint} answered with an Error {req.status_code}.{text}'
+                f'Camera server endpoint {endpoint} answered with an Error {req.status_code}.{text}'
             )
 
             return ReturnCode.CAMERA_ERROR, data
