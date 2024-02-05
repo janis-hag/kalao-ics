@@ -237,9 +237,11 @@ class LogsWidget(KWidget):
         self.logs_timer.stop()
 
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.retieve_button.setEnabled(False)
 
         entries = self.backend.get_logs_between(since, until)
 
+        self.retieve_button.setEnabled(True)
         QGuiApplication.restoreOverrideCursor()
 
         self.logs_textedit.clear()

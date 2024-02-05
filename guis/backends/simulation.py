@@ -265,6 +265,27 @@ class MainBackend(FakeSHMFPSBackend):
         self._update_param(data, config.FPS.BMC, 'max_stroke',
                            self.internal_state['bmc-max_stroke'])
 
+        self._update_stream(
+            data, config.Streams.MODE_COEFFS,
+            np.random.normal(0, 1, 90) * np.linspace(1, 0, 90)**2)
+
+        fs = 1.8e3
+        N = fs * 10
+        amp = 2 * np.sqrt(2)
+        freq = 1
+        noise_power = 0.001 * fs / 2
+        timestamps = np.arange(N) / fs
+        tip = amp * np.sin(2 * np.pi * freq * timestamps)
+        tip += np.random.normal(scale=np.sqrt(noise_power),
+                                size=timestamps.shape)
+        tilt = amp * np.sin(2 * np.pi * 2 * freq * timestamps)
+        tilt += np.random.normal(scale=np.sqrt(noise_power),
+                                 size=timestamps.shape)
+
+        self._update_stream(
+            data, config.Streams.TELEMETRY_TTM,
+            np.roll(np.vstack([timestamps, tip, tilt]), 9, axis=1))
+
         if self.internal_state['nuvu-acq']:
             self._update_stream(data, config.Streams.NUVU, nuvu_data)
 

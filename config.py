@@ -626,7 +626,7 @@ class ETCS:
     token = 'ETCS_API_TOKEN_2023'
     request_timeout = 120
 
-    temperature_file = '/disks/synology/gls/data/services/CURRENT/temperature_telescope.rdb'
+    temperature_file = '/gls/data/services/CURRENT/temperature_telescope.rdb'
     max_age = 120
 
     dummy_telescope = False
@@ -717,6 +717,7 @@ class Streams:
     DM = 'dm01disp'
     TTM = 'dm02disp'
     MODALGAINS = 'aol1_mgainfact'
+    MODE_COEFFS = 'aol1_mgain'
 
     DM_FLAT = 'dm01disp00'
     DM_LOOP = 'dm01disp03'
@@ -728,6 +729,8 @@ class Streams:
     TTM_LOOP = 'dm02disp03'
     TTM_CENTERING = 'dm02disp04'
     TTM_USER_CONTROLLED = 'dm02disp11'
+
+    TELEMETRY_TTM = 'telemetry_ttm'
 
 
 class StreamInfo:

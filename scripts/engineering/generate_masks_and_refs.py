@@ -94,6 +94,17 @@ def run(args):
     fits.PrimaryHDU(ttm_wfsrefc).writeto(
         args.output_folder / 'ttm/conf/wfsrefc.fits', overwrite=True)
 
+    ##### TTM SpokeC
+
+    ttm_SpokeC = np.array([[
+        [1., 0.],
+    ], [
+        [0., 1.],
+    ]], dtype=np.float32)
+
+    fits.PrimaryHDU(ttm_SpokeC).writeto(
+        args.output_folder / 'ttm/conf/SpokeC.fits', overwrite=True)
+
 
 if __name__ == "__main__":
     default_folder = config.AO.cacao_workdir / 'setupfiles'

@@ -1,6 +1,8 @@
 import numpy as np
+import scipy.signal
 
-from PySide6.QtCharts import QLineSeries, QValueAxis
+from PySide6.QtCharts import (QBarSeries, QBarSet, QLineSeries, QLogValueAxis,
+                              QValueAxis)
 from PySide6.QtCore import QPointF, QSignalBlocker, Signal, Slot
 from PySide6.QtGui import QPen, Qt
 
@@ -79,7 +81,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         series = self.modalgains_series = QLineSeries()
         series.setPen(pen)
-        series.setMarkerSize(3)
+        series.setMarkerSize(chart.point_size)
         series.setName("Modal gains")
         series.setPointsVisible(True)
         series.pressed.connect(self.on_modalgains_pressed)
@@ -87,7 +89,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         chart.addSeries(series)
 
         # X Axis Settings
-        axis_x = self.axis_x = QValueAxis()
+        axis_x = self.modalgains_axis_x = QValueAxis()
         axis_x.setLabelFormat("%.0f")
         axis_x.setTickAnchor(0)
         axis_x.setTickInterval(10)
@@ -98,7 +100,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         series.attachAxis(axis_x)
 
         # Y Axis Settings
-        axis_y = self.axis_y = QValueAxis()
+        axis_y = self.modalgains_axis_y = QValueAxis()
         axis_y.setTickAnchor(0)
         axis_y.setTickInterval(0.25)
         axis_y.setTickType(QValueAxis.TicksDynamic)
@@ -120,7 +122,85 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         chart.hovered.connect(self.hover_xy_to_str)
         self.modalgains_plot.dragged.connect(self.hover_xy_to_str)
 
+        # Create Chart and set General Chart setting
+        chart = self.modes_plot.chart()
+
+        # Serie
+        series = self.modes_series = QBarSeries()
+        series.setName("Mode Coefficients")
+        chart.addSeries(series)
+
+        series_line = self.modes_series_line = QLineSeries()
+        chart.addSeries(series_line)
+
+        # X Axis Settings
+        axis_x = self.modes_axis_x = QValueAxis()
+        axis_x.setLabelFormat("%.0f")
+        axis_x.setTickAnchor(0)
+        axis_x.setTickInterval(10)
+        axis_x.setTickType(QValueAxis.TicksDynamic)
+        axis_x.setRange(0, 1)
+        axis_x.setTitleText('Mode [-]')
+        chart.addAxis(axis_x, Qt.AlignBottom)
+        series.attachAxis(axis_x)
+        series_line.attachAxis(axis_x)
+
+        # Y Axis Settings
+        axis_y = self.modes_axis_y = QValueAxis()
+        axis_y.setTickCount(7)
+        axis_y.setRange(-1.05, 1.05)
+        axis_y.setTitleText('Coefficient [µm RMS]')
+        chart.addAxis(axis_y, Qt.AlignLeft)
+        series.attachAxis(axis_y)
+        series_line.attachAxis(axis_y)
+
+        chart.legend().hide()
+
+        # Create Chart and set General Chart setting
+        chart = self.tiptilt_spectrum_plot.chart()
+
+        # Serie
+        pen = QPen(Color.BLUE, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+
+        series_tip = self.tip_spectrum_series = QLineSeries()
+        series_tip.setPen(pen)
+        series_tip.setMarkerSize(chart.point_size)
+        series_tip.setName("Tilt Spectrum")
+        series_tip.setPointsVisible(True)
+        chart.addSeries(series_tip)
+
+        # Serie
+        pen = QPen(Color.RED, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+
+        series_tilt = self.tilt_spectrum_series = QLineSeries()
+        series_tilt.setPen(pen)
+        series_tilt.setMarkerSize(chart.point_size)
+        series_tilt.setName("Tilt Spectrum")
+        series_tilt.setPointsVisible(True)
+        chart.addSeries(series_tilt)
+
+        # X Axis Settings
+        axis_x = self.tiptilt_spectrum_axis_x = QLogValueAxis()
+        axis_x.setBase(10)
+        axis_x.setRange(self.tiptilt_min_freq, self.tiptilt_max_freq)
+        axis_x.setTitleText('Frequency [Hz]')
+        chart.addAxis(axis_x, Qt.AlignBottom)
+        series_tip.attachAxis(axis_x)
+        series_tilt.attachAxis(axis_x)
+
+        # Y Axis Settings
+        axis_y = self.tiptilt_spectrum_axis_y = QValueAxis()
+        axis_y.setTickCount(7)
+        axis_y.setRange(0, 1.05)
+        axis_y.setTitleText('Amplitude [a.u.]')
+        chart.addAxis(axis_y, Qt.AlignLeft)
+        series_tip.attachAxis(axis_y)
+        series_tilt.attachAxis(axis_y)
+
+        chart.legend().hide()
+
         backend.all_updated.connect(self.all_updated)
+        backend.streams_all_updated.connect(self.streams_all_updated)
 
     def all_updated(self, data):
         # DM Loop
@@ -195,7 +275,6 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         # Modal gains
 
         img = self.consume_stream(data, config.Streams.MODALGAINS)
-
         if img is not None:
             if img.size != self.modalgains_series.count():
                 with QSignalBlocker(self.cutoff_spinbox):
@@ -208,6 +287,15 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
                     self.last_spinbox.setValue(img.size)
 
             self.display_modalgains(img)
+
+    def streams_all_updated(self, data):
+        img = self.consume_stream(data, config.Streams.MODE_COEFFS)
+        if img is not None:
+            self.display_modes_coeff(img)
+
+        img = self.consume_stream(data, config.Streams.TELEMETRY_TTM)
+        if img is not None:
+            self.display_tiptilt_spectrum(img)
 
     # DM Loop
 
@@ -314,7 +402,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         chart.current_dragged_point = p
         chart.current_dragged_index = i
 
-        self.hovered.emit(f'X: {p.x():.0f}, Y: {p.y():.2f}')
+        self.hovered.emit(f'Mode: {p.x():.0f}, Gain: {p.y():.2f}')
 
     def on_modalgains_released(self, point):
         chart = self.modalgains_plot.chart()
@@ -333,7 +421,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     def hover_xy_to_str(self, x, y):
         if not np.isnan(x) and not np.isnan(y):
-            self.hovered.emit(f'X: {x:.0f}, Y: {y:.2f}')
+            self.hovered.emit(f'Mode: {x:.0f}, Gain: {y:.2f}')
         else:
             self.hovered.emit(f'')
 
@@ -365,9 +453,57 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send([], self.backend.set_modalgains, modalgains)
 
     def display_modalgains(self, modalgains):
-        self.modalgains_series.clear()
-
+        points = []
         for i in range(modalgains.size):
-            self.modalgains_series.append(QPointF(i + 1, modalgains[i]))
+            points.append(QPointF(i + 1, modalgains[i]))
 
-        self.axis_x.setRange(0, modalgains.size + 1)
+        self.modalgains_series.replace(points)
+        self.modalgains_axis_x.setRange(0, modalgains.size + 1)
+
+    def display_modes_coeff(self, modes_coeff):
+        set = QBarSet(f'Mode Coefficients')
+
+        # Add zero coeff. to shift the graph
+        set.append(0)
+
+        for i in range(modes_coeff.size):
+            set.append(modes_coeff[i])
+
+        self.modes_series.clear()
+        self.modes_series.append(set)
+
+        series_min = modes_coeff.min()
+        series_max = modes_coeff.max()
+
+        abs_max = max(abs(series_min), abs(series_max))
+        series_min = -abs_max * 1.05
+        series_max = abs_max * 1.05
+
+        self.modes_axis_x.setRange(0, modes_coeff.size + 1)
+        self.modes_axis_y.setRange(series_min, series_max)
+
+    def display_tiptilt_spectrum(self, tiptilt_data):
+        jumps = np.argwhere(np.diff(tiptilt_data[0, :]) < 0)
+        if len(jumps) > 0:
+            shift = jumps[0][0]
+            tiptilt_data = np.roll(tiptilt_data, -(shift + 1), axis=1)
+
+        dt = np.diff(tiptilt_data[0, :]).mean()
+        frequency, power = scipy.signal.periodogram(tiptilt_data[1:, :],
+                                                    1 / dt, scaling='spectrum')
+        amplitude = np.sqrt(power)
+
+        points_tip = []
+        points_tilt = []
+        for f, a_tip, a_tilt in zip(frequency[1:], amplitude[0, 1:],
+                                    amplitude[1, 1:]):
+            points_tip.append(QPointF(f, a_tip))
+            points_tilt.append(QPointF(f, a_tilt))
+
+        self.tip_spectrum_series.replace(points_tip)
+        self.tilt_spectrum_series.replace(points_tilt)
+
+        max = amplitude.max()
+
+        self.tiptilt_spectrum_axis_x.setRange(frequency[1], frequency[-1])
+        self.tiptilt_spectrum_axis_y.setRange(-0.05 * max, max * 1.05)

@@ -15,7 +15,7 @@ from kalao.sequencer import centering, focusing
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
-from kalao.definitions.enums import IPPowerStatus
+from kalao.definitions.enums import IPPowerStatus, LoopStatus
 
 import config
 
@@ -138,6 +138,9 @@ class MainBackend(SHMFPSBackend):
         self._update_stream(data, config.Streams.FLUX)
         self._update_param(data, config.FPS.SHWFS, 'flux_avg')
         self._update_param(data, config.FPS.SHWFS, 'flux_max')
+
+        self._update_stream(data, config.Streams.MODE_COEFFS)
+        self._update_stream(data, config.Streams.TELEMETRY_TTM)
 
         return data
 
@@ -267,7 +270,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def get_calibration_ready(self):
+    def get_calibration_ready(self, conf, loop):
         if not aocontrol.acquisition_running():
             return {'ready': False, 'reason': 'WFS acquisition is not running'}
 
@@ -275,6 +278,17 @@ class MainBackend(SHMFPSBackend):
             return {'ready': False, 'reason': 'Not enough flux on WFS'}
 
         # TODO: check frequency
+
+        loops_status = aocontrol.check_loops()
+        if conf == 'ttm':
+            if LoopStatus.DM_LOOP_ON not in loops_status:
+                return {'ready': False, 'reason': 'DM loop is off'}
+
+            if LoopStatus.TTM_LOOP_ON in loops_status:
+                return {'ready': False, 'reason': 'TTM loop is on'}
+        else:
+            if loops_status != LoopStatus.ALL_LOOPS_OFF:
+                return {'ready': False, 'reason': 'Both loops should be off'}
 
         return {'ready': True}
 

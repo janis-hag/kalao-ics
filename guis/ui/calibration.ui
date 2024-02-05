@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1220</width>
-    <height>813</height>
+    <width>986</width>
+    <height>590</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -40,133 +40,7 @@
         <string>Calibration</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="2">
-         <widget class="QLabel" name="wfsmask_label">
-          <property name="font">
-           <font>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>wfsmask</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="4">
-         <widget class="QLabel" name="DMmodes_label">
-          <property name="font">
-           <font>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>DMmodes</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="4">
-         <widget class="KGraphicsView" name="DMmodes_fits_view"/>
-        </item>
-        <item row="1" column="1">
-         <widget class="KGraphicsView" name="wfsrefc_fits_view"/>
-        </item>
         <item row="2" column="0">
-         <widget class="KGraphicsView" name="wfsref_stream_view"/>
-        </item>
-        <item row="2" column="2">
-         <widget class="KGraphicsView" name="wfsmask_stream_view"/>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="wfsrerf_label">
-          <property name="font">
-           <font>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>wfsref</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="3">
-         <widget class="KGraphicsView" name="wfsmap_stream_view"/>
-        </item>
-        <item row="2" column="1">
-         <widget class="KGraphicsView" name="wfsrefc_stream_view"/>
-        </item>
-        <item row="1" column="4">
-         <widget class="KGraphicsView" name="modesWFS_fits_view"/>
-        </item>
-        <item row="0" column="3">
-         <widget class="QLabel" name="wfsmap_label">
-          <property name="font">
-           <font>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>wfsmap</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="3">
-         <widget class="KGraphicsView" name="wfsmap_fits_view"/>
-        </item>
-        <item row="2" column="4">
-         <widget class="KGraphicsView" name="modesWFS_stream_view"/>
-        </item>
-        <item row="0" column="4">
-         <widget class="QLabel" name="modesWFS_label">
-          <property name="font">
-           <font>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>modesWFS</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="wfsrefc_label">
-          <property name="font">
-           <font>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>wfsrefc</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="KGraphicsView" name="wfsmask_fits_view"/>
-        </item>
-        <item row="1" column="0">
-         <widget class="KGraphicsView" name="wfsref_fits_view"/>
-        </item>
-        <item row="5" column="4">
-         <widget class="KGraphicsView" name="DMmodes_stream_view"/>
-        </item>
-        <item row="3" column="3">
          <widget class="QLabel" name="dmmap_label">
           <property name="font">
            <font>
@@ -174,20 +48,107 @@
            </font>
           </property>
           <property name="text">
-           <string>dmmap</string>
+           <string>DM Map</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
-        <item row="4" column="3">
-         <widget class="KGraphicsView" name="dmmap_fits_view"/>
+        <item row="0" column="3">
+         <widget class="QLabel" name="wfsrefc_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>WFS Reference C</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
         </item>
-        <item row="5" column="3">
-         <widget class="KGraphicsView" name="dmmap_stream_view"/>
+        <item row="1" column="0">
+         <widget class="KGraphicsView" name="wfsmap_view"/>
         </item>
-        <item row="3" column="2">
+        <item row="1" column="3">
+         <widget class="KGraphicsView" name="wfsrefc_view"/>
+        </item>
+        <item row="1" column="1">
+         <widget class="KGraphicsView" name="wfsmask_view"/>
+        </item>
+        <item row="0" column="4">
+         <widget class="QLabel" name="wfsrerf_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>WFS Reference</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="wfsmask_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>WFS Mask</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="KGraphicsView" name="modesWFS_view"/>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="modesWFS_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>WFS Modes</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="4">
+         <widget class="KGraphicsView" name="wfsref_view"/>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="wfsmap_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>WFS Map</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="KGraphicsView" name="dmmap_view"/>
+        </item>
+        <item row="2" column="1">
          <widget class="QLabel" name="dmmask_label">
           <property name="font">
            <font>
@@ -195,64 +156,36 @@
            </font>
           </property>
           <property name="text">
-           <string>dmmask</string>
+           <string>DM Mask</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
-        <item row="4" column="2">
-         <widget class="KGraphicsView" name="dmmask_fits_view"/>
+        <item row="3" column="1">
+         <widget class="KGraphicsView" name="dmmask_view"/>
         </item>
-        <item row="5" column="2">
-         <widget class="KGraphicsView" name="dmmask_stream_view"/>
+        <item row="3" column="2">
+         <widget class="KGraphicsView" name="DMmodes_view"/>
         </item>
-        <item row="4" column="0" rowspan="2" colspan="2">
+        <item row="2" column="2">
+         <widget class="QLabel" name="DMmodes_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>DM Modes</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3" rowspan="2" colspan="2">
          <layout class="QVBoxLayout" name="verticalLayout_2">
-          <item>
-           <spacer name="verticalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_9">
-            <property name="font">
-             <font>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Top: configuration</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_10">
-            <property name="font">
-             <font>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Bottom: loaded</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
           <item>
            <spacer name="verticalSpacer">
             <property name="orientation">
@@ -265,6 +198,16 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="minmax_checkbox">
+            <property name="text">
+             <string>Per mode Min/Max</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="calib_combobox"/>
           </item>
           <item>
            <widget class="QSpinBox" name="mode_spinbox">
@@ -365,33 +308,106 @@
         <string>Response</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
-        <item row="0" column="0">
-         <widget class="QPushButton" name="pushButton">
+        <item row="0" column="1">
+         <widget class="QLabel" name="zRM_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
           <property name="text">
-           <string>Generate poke modes</string>
+           <string>Zonal Response Matrix</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QPushButton" name="pushButton_2">
-          <property name="text">
-           <string>Acquire linear response</string>
+        <item row="1" column="1">
+         <widget class="KGraphicsView" name="zRM_view"/>
+        </item>
+        <item row="5" column="1">
+         <widget class="QSpinBox" name="zRM_mode_spinbox">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="suffix">
+           <string> / --</string>
+          </property>
+          <property name="prefix">
+           <string>Mode </string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>9999</number>
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
-         <widget class="QPushButton" name="pushButton_3">
-          <property name="text">
-           <string>Compute Control Matrix (CM)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QPushButton" name="pushButton_4">
-          <property name="text">
-           <string>CM</string>
-          </property>
-         </widget>
+        <item row="0" column="0" rowspan="6">
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="mkDMpokemodes_button">
+            <property name="text">
+             <string>Make DM poke modes</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="acqlinResp_button">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Measure WFS response to DM modes</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="RMHdecode_button">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Decode Hadamard Response Matrix (RM)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="compstrCM_button">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Compute Control Matrix (CM)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="compfCM_button">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Build control modes ordered according to spatial frequency</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -404,7 +420,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1220</width>
+     <width>986</width>
      <height>23</height>
     </rect>
    </property>

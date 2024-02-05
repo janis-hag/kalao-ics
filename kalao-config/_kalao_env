@@ -3,7 +3,7 @@ export PYTHONUNBUFFERED=1
 export MILK_SHM_DIR=/tmp/milk
 mkdir -p $MILK_SHM_DIR
 
-export MILKCLI_ADD_LIBS="cacaoKalAONuvu,cacaoKalAOBMC,cacaoKalAOSHWFS"
+export MILKCLI_ADD_LIBS="cacaoKalAONuvu,cacaoKalAOSHWFS,cacaoKalAOBMC,cacaoKalAOTelemetry"
 
 export MILK_ROOT=${HOME}/kalao-cacao-src/milk
 export MILK_INSTALLDIR=/usr/local/milk

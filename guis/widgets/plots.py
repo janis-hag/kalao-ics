@@ -21,7 +21,6 @@ import config
 
 class PlotsWidget(KWidget):
     hovered = Signal(str)
-    point_size = 3
 
     current_index = -1
 
@@ -248,10 +247,12 @@ class PlotsWidget(KWidget):
             tzinfo=timezone.utc)
 
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.plot_button.setEnabled(False)
 
         data = self.backend.set_plots_data(since, until, monitoring_keys,
                                            telemetry_keys, obs_keys)
 
+        self.plot_button.setEnabled(True)
         QGuiApplication.restoreOverrideCursor()
 
         chart = self.plots_view.chart()
@@ -280,7 +281,7 @@ class PlotsWidget(KWidget):
                 series.setName(
                     self.get_display_name(
                         database.definitions[name]['metadata'][key]))
-                series.setMarkerSize(self.point_size)
+                series.setMarkerSize(chart.point_size)
                 series.setPointsVisible(True)
                 series.setPen(pen)
 

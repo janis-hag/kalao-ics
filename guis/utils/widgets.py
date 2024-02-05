@@ -741,7 +741,7 @@ class KGraphicsView(QGraphicsView):
 class KChart(QChart):
     hovered = Signal(float, float)
 
-    point_size = 3
+    point_size = 2
     current_hovered_index = None
 
     def __init__(self, *args, **kwargs):

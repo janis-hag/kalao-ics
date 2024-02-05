@@ -132,17 +132,9 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.tabwidget.tabBar().setTabTextColor(tab_index, color)
 
     def on_tabwidget_currentChanged(self, i):
-        # Main tab
-        if i == self.tabwidget.indexOf(self.main):
-            self.streams_timer.start()
-
         # Logs tab
-        elif i == self.tabwidget.indexOf(self.logs):
+        if i == self.tabwidget.indexOf(self.logs):
             self.logs.reset_scrollbars()
-
-        if i != self.tabwidget.indexOf(self.main):
-            self.streams_timer.stop()
-            self.fps_label.setText('')
 
     def on_tabwidget_tabBarDoubleClicked(self, i):
         if i == 0:
