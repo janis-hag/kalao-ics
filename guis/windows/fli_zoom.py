@@ -160,7 +160,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             hdul = fits.open(self.file)
 
         if hdul is not None:
-            self.update_fli_view(hdul)
+            self.update_image(hdul)
 
         self.show()
         self.center()
@@ -169,7 +169,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         hdul = self.consume_fits_full(data, config.FITS.last_image_all)
 
         if hdul is not None:
-            self.update_fli_view(hdul)
+            self.update_image(hdul)
 
     @Slot(int)
     def on_colormap_combobox_currentIndexChanged(self, index):
@@ -186,12 +186,18 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
     @Slot(int)
     def on_cuts_combobox_currentIndexChanged(self, index):
         self.autoscale_checkbox.setChecked(True)
-        self.update_fli_view(self.hdul)
+        self.update_fli_view()
 
     @Slot(int)
     def on_window_combobox_currentIndexChanged(self, index):
         if self.window_combobox.currentData() == FollowMode.STAR:
             self.update_zoom_view()
+
+    @Slot(int)
+    def on_frame_spinbox_valueChanged(self, i):
+        self.img = self.hdul[0].data[self.frame_spinbox.value() - 1, :, :]
+
+        self.update_fli_view()
 
     @Slot(bool)
     def on_centering_button_clicked(self, checked=None):
@@ -392,7 +398,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.update_zoom_view()
 
-    def update_fli_view(self, hdul):
+    def update_image(self, hdul):
         if hdul is None:
             return
 
@@ -400,8 +406,17 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             return
         elif len(hdul[0].data.shape) == 2:
             img = hdul[0].data
+            with QSignalBlocker(self.frame_spinbox):
+                self.frame_spinbox.setMaximum(1)
+                self.frame_spinbox.setValue(1)
         elif len(hdul[0].data.shape) == 3:
-            img = hdul[0].data[-1, :, :]
+            with QSignalBlocker(self.frame_spinbox):
+                self.frame_spinbox.setMaximum(hdul[0].data.shape[0])
+
+                if self.frame_spinbox.value() == hdul[0].data.shape[0] - 1:
+                    self.frame_spinbox.setValue(hdul[0].data.shape[0])
+
+            img = hdul[0].data[self.frame_spinbox.value() - 1, :, :]
         else:
             raise Exception('Unexpected shape for FLI image')
 
@@ -417,12 +432,19 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         if 'CRPIX2' in hdul[0].header:
             self.data_center_y = hdul[0].header['CRPIX2']
 
+        #self.fli_view.setNEIndicator(parang from keywords)
+        self.on_onsky_checkbox_stateChanged(self.onsky_checkbox.checkState())
+
         self.hdul = hdul
         self.img = img
 
-        if self.img_width != img.shape[1] or self.img_height != img.shape[0]:
-            self.img_width = img.shape[1]
-            self.img_height = img.shape[0]
+        self.update_fli_view()
+
+    def update_fli_view(self):
+        if self.img_width != self.img.shape[
+                1] or self.img_height != self.img.shape[0]:
+            self.img_width = self.img.shape[1]
+            self.img_height = self.img.shape[0]
             self.zoom_center_x = self.img_width // 2
             self.zoom_center_y = self.img_height // 2
 
@@ -482,8 +504,6 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.fli_view.setImage(self.img, img_min, img_max,
                                self.scale_combobox.currentData())
-
-        #self.fli_view.setNEIndicator(parang from keywords)
 
         self.update_labels()
         self.update_zoom_view()

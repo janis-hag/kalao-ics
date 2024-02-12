@@ -1,7 +1,7 @@
 import numpy as np
 
 from PySide6.QtCharts import QScatterSeries, QValueAxis
-from PySide6.QtCore import QPointF, Slot
+from PySide6.QtCore import QPointF, QSignalBlocker, Slot
 from PySide6.QtGui import QBrush, QCursor, QGuiApplication, QPen, Qt
 from PySide6.QtWidgets import QMessageBox
 
@@ -38,6 +38,17 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         self.resize(800, 400)
 
         self.setWindowTitle(f'{conf.upper()} - {self.windowTitle()}')
+
+        self.buttons_order = [
+            self.latency_measure_button,
+            self.RMCM_mkDMpokemodes_button,
+            self.RMCM_takeref_button,
+            self.RMCM_acqlinResp_button,
+            self.RMCM_RMHdecode_button,
+            self.RMCM_RMmkmask_button,
+            self.RMCM_compCM_button,
+            self.RMCM_save_button,
+        ]
 
         ### Calibration tab
 
@@ -97,36 +108,50 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
         self.clear_latency()
 
-        ### Response tab
+        ### Response Matrix and Control Matrix tab
 
-        self.loopname_label.updateText(loop_name=f'KalAO-{conf}loop')
-        self.loopnumber_label.updateText(loop_number=self.loop)
+        self.RMCM_loopname_label.updateText(loop_name=f'KalAO-{conf}')
+        self.RMCM_loopnumber_label.updateText(loop_number=self.loop)
+
+        self.RMCM_zRM_view.updateColormap(colormaps.CoolWarm())
 
         ### Common
 
         self.center()
         self.show()
 
+    def update_buttons(self, button):
+        i = self.buttons_order.index(button)
+
+        print(i, len(self.buttons_order))
+
+        if i + 1 < len(self.buttons_order):
+            self.buttons_order[i + 1].setEnabled(True)
+
+        if i + 2 < len(self.buttons_order):
+            for button in self.buttons_order[i + 2:]:
+                button.setEnabled(False)
+
     ##### Calibration tab
 
     def update_modes_stats(self):
         self.modes_number = np.inf
-        self.modes_dm_min = np.inf
+        self.DMmodes_min = np.inf
         self.modes_dm_max = -np.inf
-        self.modes_wfs_min = np.inf
+        self.modesWFS_min = np.inf
         self.modes_wfs_max = -np.inf
 
         if self.calib_combobox.currentText() == 'Configuration':
             data = self.modes_data.get('CMmodesDM', {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number, data.shape[0])
-                self.modes_dm_min = min(self.modes_dm_min, data.min())
+                self.DMmodes_min = min(self.DMmodes_min, data.min())
                 self.modes_dm_max = max(self.modes_dm_max, data.max())
 
             data = self.modes_data.get('CMmodesWFS', {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number, data.shape[0])
-                self.modes_wfs_min = min(self.modes_wfs_min, data.min())
+                self.modesWFS_min = min(self.modesWFS_min, data.min())
                 self.modes_wfs_max = max(self.modes_wfs_max, data.max())
         else:
             data = self.modes_data.get(f'aol{self.loop}_DMmodes',
@@ -134,7 +159,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
             if data is not None:
                 self.modes_number = min(self.modes_number,
                                         data.shape[len(data.shape) - 1])
-                self.modes_dm_min = min(self.modes_dm_min, data.min())
+                self.DMmodes_min = min(self.DMmodes_min, data.min())
                 self.modes_dm_max = max(self.modes_dm_max, data.max())
 
             data = self.modes_data.get(f'aol{self.loop}_modesWFS',
@@ -142,7 +167,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
             if data is not None:
                 self.modes_number = min(self.modes_number,
                                         data.shape[len(data.shape) - 1])
-                self.modes_wfs_min = min(self.modes_wfs_min, data.min())
+                self.modesWFS_min = min(self.modesWFS_min, data.min())
                 self.modes_wfs_max = max(self.modes_wfs_max, data.max())
 
         if np.isinf(self.modes_number):
@@ -180,7 +205,6 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         self.update_calib_images()
 
     def update_calib_images(self):
-        print('update')
         if self.calib_combobox.currentText() == 'Configuration':
             self.update_image_fits('wfsref', 'wfsref', symetric=True)
             self.update_image_fits('wfsrefc', 'wfsrefc', symetric=True)
@@ -255,10 +279,10 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
             img_max = img.max()
         else:
             if view_key == 'DMmodes':
-                img_min = self.modes_dm_min
+                img_min = self.DMmodes_min
                 img_max = self.modes_dm_max
             elif view_key == 'modesWFS':
-                img_min = self.modes_wfs_min
+                img_min = self.modesWFS_min
                 img_max = self.modes_wfs_max
             else:
                 img_min = img.min()
@@ -308,7 +332,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
         self.latency_measure_button.setEnabled(False)
 
-        data = self.backend.get_latency_measure(self.conf, self.loop)
+        data = self.backend.set_latency_measure(self.conf, self.loop)
 
         self.latency_measure_button.setEnabled(True)
         QGuiApplication.restoreOverrideCursor()
@@ -346,6 +370,151 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
                     QPointF(latency_data[i, 1] * 1000, latency_data[i, 2]))
 
             self.latency_axis_y.setRange(0, latency_data[:, 2].max() * 1.05)
+
+        self.update_buttons(self.latency_measure_button)
+        self.RMCM_zRM_view.setImage(None)
+
+    ##### Response Matrix and Control Matrix tab
+
+    @Slot(bool)
+    def on_RMCM_mkDMpokemodes_button_clicked(self, checked):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.RMCM_mkDMpokemodes_button.setEnabled(False)
+
+        data = self.backend.set_RMCM_mkDMpokemodes(self.conf, self.loop)
+
+        self.RMCM_mkDMpokemodes_button.setEnabled(True)
+        QGuiApplication.restoreOverrideCursor()
+
+        if self.check_subprocess_error(data):
+            return
+
+        self.update_buttons(self.RMCM_mkDMpokemodes_button)
+        self.RMCM_zRM_view.setImage(None)
+
+    @Slot(bool)
+    def on_RMCM_takeref_button_clicked(self, checked):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.RMCM_takeref_button.setEnabled(False)
+
+        data = self.backend.set_RMCM_takeref(self.conf, self.loop)
+
+        self.RMCM_takeref_button.setEnabled(True)
+        QGuiApplication.restoreOverrideCursor()
+
+        if self.check_subprocess_error(data):
+            return
+
+        self.update_buttons(self.RMCM_takeref_button)
+        self.RMCM_zRM_view.setImage(None)
+
+    @Slot(bool)
+    def on_RMCM_acqlinResp_button_clicked(self, checked):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.RMCM_acqlinResp_button.setEnabled(False)
+
+        data = self.backend.set_RMCM_acqlinResp(self.conf, self.loop)
+
+        self.RMCM_acqlinResp_button.setEnabled(True)
+        QGuiApplication.restoreOverrideCursor()
+
+        if self.check_subprocess_error(data):
+            return
+
+        self.update_buttons(self.RMCM_acqlinResp_button)
+        self.RMCM_zRM_view.setImage(None)
+
+    @Slot(bool)
+    def on_RMCM_RMHdecode_button_clicked(self, checked):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.RMCM_RMHdecode_button.setEnabled(False)
+
+        data = self.backend.set_RMCM_RMHdecode(self.conf, self.loop)
+
+        self.RMCM_RMHdecode_button.setEnabled(True)
+        QGuiApplication.restoreOverrideCursor()
+
+        if self.check_subprocess_error(data):
+            return
+
+        img = self.consume_fits(data, 'zrespM-H')
+        if img is not None:
+            img_min = img.min()
+            img_max = img.max()
+
+            abs_max = max(abs(img_min), abs(img_max))
+
+            self.zRM_min = -abs_max
+            self.zRM_max = abs_max
+
+            self.zRM_img = img
+
+            with QSignalBlocker(self.RMCM_zRM_mode_spinbox):
+                self.RMCM_zRM_mode_spinbox.setMaximum(img.shape[0])
+                self.RMCM_zRM_mode_spinbox.setSuffix(f' / {img.shape[0]}')
+                self.RMCM_zRM_mode_spinbox.setValue(1)
+
+            self.RMCM_zRM_view.setImage(img[0, :, :], self.zRM_min,
+                                        self.zRM_max)
+        else:
+            with QSignalBlocker(self.RMCM_zRM_mode_spinbox):
+                self.RMCM_zRM_mode_spinbox.setMaximum(1)
+                self.RMCM_zRM_mode_spinbox.setSuffix(f' / --')
+                self.RMCM_zRM_mode_spinbox.setValue(1)
+
+            self.RMCM_zRM_view.setImage(None)
+
+        self.update_buttons(self.RMCM_RMHdecode_button)
+
+    @Slot(int)
+    def on_RMCM_zRM_mode_spinbox_valueChanged(self, i):
+        self.RMCM_zRM_view.setImage(self.zRM_img[i - 1, :, :], self.zRM_min,
+                                    self.zRM_max)
+
+    @Slot(bool)
+    def on_RMCM_RMmkmask_button_clicked(self, checked):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.RMCM_RMmkmask_button.setEnabled(False)
+
+        data = self.backend.set_RMCM_RMmkmask(self.conf, self.loop)
+
+        self.RMCM_RMmkmask_button.setEnabled(True)
+        QGuiApplication.restoreOverrideCursor()
+
+        if self.check_subprocess_error(data):
+            return
+
+        self.update_buttons(self.RMCM_RMmkmask_button)
+
+    @Slot(bool)
+    def on_RMCM_compCM_button_clicked(self, checked):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.RMCM_compCM_button.setEnabled(False)
+
+        data = self.backend.set_RMCM_compCM(self.conf, self.loop)
+
+        self.RMCM_compCM_button.setEnabled(True)
+        QGuiApplication.restoreOverrideCursor()
+
+        if self.check_subprocess_error(data):
+            return
+
+        self.update_buttons(self.RMCM_compCM_button)
+
+    @Slot(bool)
+    def on_RMCM_save_button_clicked(self, checked):
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.RMCM_save_button.setEnabled(False)
+
+        data = self.backend.set_RMCM_save(self.conf, self.loop)
+
+        self.RMCM_save_button.setEnabled(True)
+        QGuiApplication.restoreOverrideCursor()
+
+        if self.check_subprocess_error(data):
+            return
+
+        self.update_buttons(self.RMCM_save_button)
 
     def check_subprocess_error(self, data):
         if data['returncode'] == 0:

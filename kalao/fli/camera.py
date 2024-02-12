@@ -16,6 +16,7 @@ import time
 import numpy as np
 
 from kalao import database, logger
+from kalao.sequencer.seq_context import with_sequencer_status
 from kalao.timers import database as database_timer
 from kalao.utils import file_handling
 
@@ -70,6 +71,7 @@ def take_frame(exptime=None, filepath=None, nbflushes=None, nbframes=None,
         return None
 
 
+@with_sequencer_status(SequencerStatus.EXP)
 def take_image(obs_type, exptime=None, filepath=None, nbframes=None,
                roi_size=None, comment=None):
     """
@@ -105,10 +107,6 @@ def take_image(obs_type, exptime=None, filepath=None, nbframes=None,
     # Store monitoring status at start of exposure
     database_timer.update_monitoring_db()
 
-    database.store('obs', {
-        'sequencer_status': SequencerStatus.EXP,
-    })
-
     filepath = take_frame(exptime=exptime, filepath=filepath,
                           nbframes=nbframes, roi=roi)
 
@@ -129,12 +127,13 @@ def increment_image_counter(params):
     :return: new image counter value
     """
 
-    image_count = database.get_last_value('obs', 'fli_image_count')
-
-    if image_count is None:
+    try:
+        image_count = database.get('obs', 'fli_image_count',
+                                   days=3650)['fli_image_count'][0]['value']
+    except (KeyError, IndexError):
         image_count = 1
-    else:
-        image_count += 1
+
+    image_count += 1
 
     data = {'fli_image_count': image_count}
 

@@ -309,7 +309,7 @@
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="0" column="1">
-         <widget class="QLabel" name="zRM_label">
+         <widget class="QLabel" name="RMCM_zRM_label">
           <property name="font">
            <font>
             <bold>true</bold>
@@ -324,10 +324,10 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="KGraphicsView" name="zRM_view"/>
+         <widget class="KGraphicsView" name="RMCM_zRM_view"/>
         </item>
         <item row="5" column="1">
-         <widget class="QSpinBox" name="zRM_mode_spinbox">
+         <widget class="QSpinBox" name="RMCM_zRM_mode_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -348,14 +348,14 @@
         <item row="0" column="0" rowspan="6">
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="KLabel" name="loopname_label">
+           <widget class="KLabel" name="RMCM_loopname_label">
             <property name="text">
              <string>Loop name: {loop_name}</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="KLabel" name="loopnumber_label">
+           <widget class="KLabel" name="RMCM_loopnumber_label">
             <property name="text">
              <string>Loop number: {loop_number:02d}</string>
             </property>
@@ -375,14 +375,27 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="mkDMpokemodes_button">
+           <widget class="QPushButton" name="RMCM_mkDMpokemodes_button">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Make DM poke modes</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="acqlinResp_button">
+           <widget class="QPushButton" name="RMCM_takeref_button">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Take reference</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="RMCM_acqlinResp_button">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -392,7 +405,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="RMHdecode_button">
+           <widget class="QPushButton" name="RMCM_RMHdecode_button">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -402,7 +415,17 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="compstrCM_button">
+           <widget class="QPushButton" name="RMCM_RMmkmask_button">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Compute DM and WFS maps and masks</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="RMCM_compCM_button">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -412,17 +435,10 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="compfCM_button">
+           <widget class="QPushButton" name="RMCM_save_button">
             <property name="enabled">
              <bool>false</bool>
             </property>
-            <property name="text">
-             <string>Build control modes ordered according to spatial frequency</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="save_button">
             <property name="text">
              <string>Save</string>
             </property>
@@ -431,7 +447,7 @@
          </layout>
         </item>
         <item row="2" column="1">
-         <widget class="QCheckBox" name="minmax_checkbox_2">
+         <widget class="QCheckBox" name="RMCM_minmax_checkbox">
           <property name="text">
            <string>Per mode Min/Max</string>
           </property>

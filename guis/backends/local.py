@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -346,12 +347,18 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def get_latency_measure(self, conf, loop):
+    def set_latency_measure(self, conf, loop):
         data = {}
-        folder = config.AO.cacao_workdir / f'KalAO-{conf}loop-rootdir'
 
-        res = subprocess.run(['cacao-aorun-020-mlat', '-w'], timeout=60,
-                             capture_output=True, cwd=folder)
+        ready_data = self.get_calibration_ready(conf, loop)
+        if not ready_data['ready']:
+            data['returncode'] = -1
+            data['stdout'] = f'Calibration not ready to run: {ready_data["reason"]}'
+            return data
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/00-mlat.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
         data['stdout'] = res.stdout
@@ -363,9 +370,109 @@ class MainBackend(SHMFPSBackend):
         self._update_param(data, f'mlat-{loop}', 'out.latencyfr')
 
         data['hardwlatencypts'] = np.loadtxt(
-            folder /
-            f'KalAO-{conf}loop-rundir/fps.mlat-{loop}.datadir/hardwlatencypts.dat'
+            config.AO.cacao_workdir /
+            f'KalAO-{conf}-rootdir/rundir/fps.mlat-{loop}.datadir/hardwlatencypts.dat'
         )
+
+        return data
+
+    def set_RMCM_mkDMpokemodes(self, conf, loop):
+        data = {}
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/01-mkDMpokemodes.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
+
+        return data
+
+    def set_RMCM_takeref(self, conf, loop):
+        data = {}
+
+        ready_data = self.get_calibration_ready(conf, loop)
+        if not ready_data['ready']:
+            data['returncode'] = -1
+            data['stdout'] = f'Calibration not ready to run: {ready_data["reason"]}'
+            return data
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/02-takeref.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
+
+        return data
+
+    def set_RMCM_acqlinResp(self, conf, loop):
+        data = {}
+
+        ready_data = self.get_calibration_ready(conf, loop)
+        if not ready_data['ready']:
+            data['returncode'] = -1
+            data['stdout'] = f'Calibration not ready to run: {ready_data["reason"]}'
+            return data
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/03-acqlinResp.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
+
+        return data
+
+    def set_RMCM_RMHdecode(self, conf, loop):
+        data = {}
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/04-RMHdecode.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
+
+        self._update_fits(
+            data, config.AO.cacao_workdir /
+            f'KalAO-{conf}-rootdir/conf/zrespM-H.fits')
+
+        return data
+
+    def set_RMCM_RMmkmask(self, conf, loop):
+        data = {}
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/05-RMmkmask.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
+
+        return data
+
+    def set_RMCM_compCM(self, conf, loop):
+        data = {}
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/06-compCM.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
+
+        return data
+
+    def set_RMCM_save(self, conf, loop):
+        data = {}
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/save-calib.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
 
         return data
 

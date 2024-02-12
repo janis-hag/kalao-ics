@@ -12,7 +12,7 @@ def run(args):
     ##### DM flat
     dm_flat = np.zeros((12, 12), dtype=np.float32)
     fits.PrimaryHDU(dm_flat).writeto(
-        args.output_folder / 'hw/KalAO-hwloop-rundir/dm_flat_empty.fits',
+        args.output_folder / 'hwloop/rundir/dm_flat_empty.fits',
         overwrite=True)
 
     ##### DM wfsmask

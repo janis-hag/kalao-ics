@@ -800,6 +800,30 @@ class MainBackend(FakeSHMFPSBackend):
                 },
             }
 
+    def set_latency_measure(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
+    def set_RMCM_mkDMpokemodes(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
+    def set_RMCM_takeref(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
+    def set_RMCM_acqlinResp(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
+    def set_RMCM_RMHdecode(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
+    def set_RMCM_RMmkmask(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
+    def set_RMCM_compCM(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
+    def set_RMCM_save(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
     ##### FLI Zoom
 
     def set_centering_manual(self, x, y):

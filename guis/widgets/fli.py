@@ -256,7 +256,7 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.zoom_window.activateWindow()
 
             if self.hdul is not None:
-                self.zoom_window.update_fli_view(self.hdul.copy())
+                self.zoom_window.update_image(self.hdul.copy())
         else:
             if self.hdul is not None:
                 hdul = self.hdul.copy()

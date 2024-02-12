@@ -671,7 +671,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.dm_calibration.activateWindow()
         else:
             from guis.windows.calibration import CalibrationWindow
-            self.dm_calibration = CalibrationWindow(self.backend, 'dm',
+            self.dm_calibration = CalibrationWindow(self.backend, 'dmconf',
                                                     config.AO.DM_loop_number,
                                                     (11, 22), (12, 12),
                                                     parent=self)
@@ -683,7 +683,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.ttm_calibration.activateWindow()
         else:
             from guis.windows.calibration import CalibrationWindow
-            self.ttm_calibration = CalibrationWindow(self.backend, 'ttm',
+            self.ttm_calibration = CalibrationWindow(self.backend, 'ttmconf',
                                                      config.AO.TTM_loop_number,
                                                      (12, 12), (1, 2),
                                                      parent=self)

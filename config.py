@@ -183,8 +183,8 @@ class WFS:
         107, 108, 113, 114, 115, 116, 117
     ]
 
-    spots_file = AO.cacao_workdir / 'setupfiles/hw/KalAO-hwloop-rundir/spots_tel_pupil.txt'
-    autogain_file = AO.cacao_workdir / 'setupfiles/hw/KalAO-hwloop-rundir/autogain_params.txt'
+    spots_file = AO.cacao_workdir / 'setupfiles/hwloop/rundir/spots_tel_pupil.txt'
+    autogain_file = AO.cacao_workdir / 'setupfiles/hwloop/rundir/autogain_params.txt'
 
     # Default values, will be updated from spots_file at startup
     all_subaps = list(range(121))
@@ -626,7 +626,7 @@ class Database:
     ip = 'localhost'
     port = 27017
 
-    max_days = 3650  # days
+    max_days = 30  # days
 
     telemetry_update_interval = 10  # s
     monitoring_update_interval = 60  # s
