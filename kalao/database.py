@@ -126,9 +126,10 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None,
     if at is None:
         # Projection used for values array
         if np.isinf(nb_of_point):
-            values_projection = 1
+            values_projection_find = values_projection_aggregate = 1
         else:
-            values_projection = {'$slice': -nb_of_point}
+            values_projection_find = {'$slice': -nb_of_point}
+            values_projection_aggregate = {'$slice': ['$values', -nb_of_point]}
     else:
         # Filtering used on values array
         values_filter = {
@@ -142,9 +143,11 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None,
 
         # Projection used on values array
         if np.isinf(nb_of_point):
-            values_projection = values_filter
+            values_projection_find = values_projection_aggregate = values_filter
         else:
-            values_projection = {'$slice': [values_filter, -nb_of_point]}
+            values_projection_find = values_projection_aggregate = {
+                '$slice': [values_filter, -nb_of_point]
+            }
 
     while day <= days:
         db = _get_db(dt - timedelta(days=day))
@@ -155,11 +158,11 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None,
             if at is None:
                 # We want the nb_of_point last value(s)
                 filter = {}
-                projection = {'_id': 0, 'key': 1, 'values': values_projection}
+                projection = {'_id': 0, 'key': 1, 'values': values_projection_find}
             else:
                 # We want the nb_of_point last value(s) before timestamp
                 filter = {'values.timestamp': {'$lte': at}}
-                projection = {'_id': 0, 'key': 1, 'values': values_projection}
+                projection = {'_id': 0, 'key': 1, 'values': values_projection_find}
 
             cursor = collection.find(filter, projection,
                                      sort=[('last_timestamp', DESCENDING)])
@@ -168,11 +171,11 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None,
             if at is None:
                 # We want the nb_of_point last value(s)
                 filter = {'key': keys}
-                projection = {'_id': 0, 'key': 1, 'values': values_projection}
+                projection = {'_id': 0, 'key': 1, 'values': values_projection_find}
             else:
                 # We want the nb_of_point last value(s) before timestamp
                 filter = {'key': keys, 'values.timestamp': {'$lte': at}}
-                projection = {'_id': 0, 'key': 1, 'values': values_projection}
+                projection = {'_id': 0, 'key': 1, 'values': values_projection_find}
 
             cursor = collection.find(filter, projection, limit=1)
 
@@ -185,13 +188,13 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None,
                 # We want the nb_of_point last value(s)
                 pipeline = [
                     {'$match': {'$or': match_list}},
-                    {'$project': {'_id': 0, 'key': 1, 'values': values_projection}},
+                    {'$project': {'_id': 0, 'key': 1, 'values': values_projection_aggregate}},
                 ]
             else:
                 # We want the nb_of_point last value(s) before timestamp
                 pipeline = [
                     {'$match': {'$and': [{'$or': match_list}, {'values.timestamp': {'$lte': at}}]}},
-                    {'$project':  {'_id': 0, 'key': 1, 'values': values_projection}},
+                    {'$project':  {'_id': 0, 'key': 1, 'values': values_projection_aggregate}},
                 ]
 
             cursor = collection.aggregate(pipeline)
