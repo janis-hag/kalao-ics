@@ -204,33 +204,3 @@ def generate_flux_mask_from_subaps(masked_subaps, shape=(11, 11)):
         mask[x, y] = True
 
     return mask
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    print('Subapertures idempotence')
-    for i in range(121):
-        x, y = get_subaperture_2d(i)
-        i_ = get_subaperture_1d(x, y)
-        print(f'Subaperture {i:>3d} = ({x:>2d}, {y:>2d}) = {i_:>3d}')
-
-    print()
-
-    print('Actuators idempotence')
-    for i in range(140):
-        x, y = get_actuator_2d(i)
-        i_ = get_actuator_1d(x, y)
-        print(f'Actuator {i:>3d} = ({x:>2d}, {y:>2d}) = {i_:>3d}')
-
-    plt.figure()
-    plt.imshow(get_wfs_flux_map(upsampling=16))
-    plt.title("WFS flux map")
-    plt.colorbar()
-
-    plt.figure()
-    plt.imshow(get_dm_flux_map(upsampling=16))
-    plt.title("DM flux map")
-    plt.colorbar()
-
-    plt.show()

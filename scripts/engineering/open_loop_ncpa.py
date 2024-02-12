@@ -11,7 +11,6 @@ open_loop_ncpa.py is part of the KalAO Instrument Control Software
 
 import argparse
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 from signal import SIGINT, signal
 from sys import exit
@@ -23,7 +22,7 @@ from astropy.io import fits
 from kalao.cacao import aocontrol, toolbox
 from kalao.fli import camera
 from kalao.plc import filterwheel, laser
-from kalao.utils import kmath, starfinder, zernike
+from kalao.utils import kmath, ktime, starfinder, zernike
 
 from kalao.definitions.enums import CameraServerStatus
 
@@ -49,10 +48,12 @@ def handler(signal_received, frame):
 def take_and_measure(args):
     hw = args.roi_size // 2
 
-    img_cube = camera.take_frame(
+    filepath = camera.take_frame(
         exptime=args.exptime, nbframes=args.img_avg,
         roi=(config.FLI.center_x - hw, config.FLI.center_y - hw, 2 * hw,
              2 * hw))
+
+    img_cube = fits.getdata(filepath)
 
     img = np.mean(img_cube, axis=0)
 
@@ -205,9 +206,7 @@ def run(args):
 
     time.sleep(10)
 
-    folder = Path(
-        f'ncpa_{datetime.now(timezone.utc).isoformat(timespec="milliseconds")}'
-    )
+    folder = Path(f'ncpa_{ktime.utc_millis_str()}')
     folder.mkdir(parents=True)
 
     np.savetxt(folder / 'dm_zernike_coeffs.txt', zernike_coeffs)

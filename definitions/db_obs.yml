@@ -7,8 +7,8 @@ target_name:
   fits_keyword: HIERARCH ESO OBS TARGET NAME
 
 target_magnitude:
-  short: Target magnitude
-  long: Magnitude of the current target
+  short: Target visual magnitude
+  long: Visual magnitude of the current target
   unit: I
 
 target_dec:
@@ -103,14 +103,14 @@ filterwheel_filter_position:
   long: Filterwheel filter position
   unit:
   group: FLI, Motors
-  fits_keyword: HIERARCH ESO INS1 FILT NO
+  fits_keyword: HIERARCH ESO INS FILT NO
 
 filterwheel_filter_name:
   short: Filter name
   long: Filterwheel filter name
   unit:
   group:
-  fits_keyword: HIERARCH ESO INS1 FILT ID
+  fits_keyword: HIERARCH ESO INS FILT ID
 
 # ADC
 adc_angle:

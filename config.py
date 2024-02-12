@@ -27,7 +27,7 @@ from numpy.polynomial import Polynomial
 
 from kalao.utils import ktools
 
-from kalao.definitions.enums import PLCStatus
+from kalao.definitions.enums import ObservationType, PLCStatus
 
 kalao_ics_path = Path(__file__).absolute().parent
 epsilon = 1e-12
@@ -331,11 +331,10 @@ class PLC:
 class SEQ:
     ip = "127.0.0.1"
     port = 5005
-    gop_arg_int = []
-    gop_arg_float = ["texp", "intensity", "mv"]
-    gop_arg_string = ["filepath", "filterposition"]
+    gop_arg_int = ['nbframes']
+    gop_arg_float = ['texp', 'intensity', 'mv']
+    gop_arg_string = ['filepath', 'filterposition']
     init_duration = 120
-    T4_root = Path("/disks/synology")
 
     init_timeout = 500  # s
 
@@ -354,51 +353,61 @@ class SEQ:
 
 
 class FITS:
+    temporary_data_storage = Path('/home/kalao/data/tmp/')
     science_data_storage = Path('/gls/data/raw/kalao')
     focus_data_storage = science_data_storage / 'focus_sequences'
-    temporary_data_storage = Path('/home/kalao/data/tmp/')
+    engineering_data_storage = science_data_storage / 'engineering'
 
     last_image = science_data_storage / 'last_image.fits'
     last_focus_sequence = science_data_storage / 'last_focus_sequence.fits'
+    last_image_all = Path('/tmp/last_image.fits')
 
     file_mask = 0o440
 
     fits_default_header_file = kalao_ics_path / "definitions/fits_default_header.yaml"
-    tcs_header_validity = 3600
+    tcs_header_validity = 8 * 3600  # s
 
     max_comment_length = 40
     max_length_without_HIERARCH = 8
 
-    on_sky_types = ['K_SKYFLT', 'K_TRGOBS', 'K_FOCUS']
+    on_sky_types = [
+        ObservationType.SKY_FLAT, ObservationType.OBJECT, ObservationType.FOCUS
+    ]
 
     base_header = {
-        'K_DARK': {
+        ObservationType.DARK: {
             'DPR CATG': 'CALIB',
             'DPR TYPE': 'DARK',
             'PROG ID': '199',
             'OBS TARGET NAME': 'DARK'
         },
-        'K_SKYFLT': {
+        ObservationType.SKY_FLAT: {
             'DPR CATG': 'CALIB',
             'DPR TYPE': 'FLAT,SKY',
             'PROG ID': '199',
         },
-        'K_LMPFLT': {
+        ObservationType.LAMP_FLAT: {
             'DPR CATG': 'CALIB',
             'DPR TYPE': 'FLAT,LAMP',
             'PROG ID': '199',
             'OBS TARGET NAME': 'LAMP'
         },
-        'K_TRGOBS': {
+        ObservationType.OBJECT: {
             'DPR CATG': 'SCIENCE',
             'DPR TYPE': 'OBJECT',
         },
-        'K_FOCUS': {
+        ObservationType.FOCUS: {
             'DPR CATG': 'CALIB',
             'DPR TYPE': 'FOCUS,OBJECT',
             'PROG ID': '199',
         },
-        'K_TECH': {
+        ObservationType.TECHNICAL: {
+            'DPR CATG': 'TECHNICAL',
+        },
+        ObservationType.CENTERING: {
+            'DPR CATG': 'TECHNICAL',
+        },
+        ObservationType.ENGINEERING: {
             'DPR CATG': 'TECHNICAL',
         },
     }
@@ -484,7 +493,7 @@ class Focusing:
     autofocus_f1 = 32  # µm/°C
     autofocus_max_age = 3600  # s
 
-    min_exptime = 20  # s
+    min_exptime = 10  # s
 
 
 class Exposure:
@@ -545,9 +554,13 @@ class Euler:
     latitude = -29.2594  # °
     longitude = -70.7331  # °
     altitude = 2375  # m
+
     default_pressure = 77200  # Pa
     default_temperature = 278.15  # K
     default_hygrometry = 0  # -
+
+    frame = 'fk5'
+    equinox = 'j2000.0'
 
 
 class GOP:
@@ -733,9 +746,9 @@ class Streams:
     TELEMETRY_TTM = 'telemetry_ttm'
 
 
-class StreamInfo:
+class Images:
+    fli = {'shape': (1024, 1024), 'min': 0, 'max': 2**16 - 1}
     nuvu_stream = {'shape': (64, 64), 'min': 0, 'max': 2**16 - 1}
-    fli_stream = {'shape': (1024, 1024), 'min': 0, 'max': 2**16 - 1}
     shwfs_slopes = {'shape': (11, 22), 'min': -2, 'max': 2}
     shwfs_flux = {'shape': (11, 11), 'min': 0, 'max': 2**16 - 1}
     dm01disp = {'shape': (12, 12), 'min': -1.75, 'max': 1.75}

@@ -16,7 +16,7 @@ import config
 
 class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.NUVU
-    stream_info = config.StreamInfo.nuvu_stream
+    image_info = config.Images.nuvu_stream
 
     data_unit = ' ADU'
     data_precision = 0
@@ -41,11 +41,11 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.change_colormap(Qt.Unchecked)
 
-        if self.stream_info['shape'] == (128, 128):
+        if self.image_info['shape'] == (128, 128):
             self.subaps_size = 10
             self.subaps_offset = 10
             self.subaps_pitch = 10
-        elif self.stream_info['shape'] == (64, 64):
+        elif self.image_info['shape'] == (64, 64):
             self.subaps_size = 4
             self.subaps_offset = 5
             self.subaps_pitch = 5
@@ -84,7 +84,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             roi.setZValue(1)
             self.actuators[i] = roi
 
-        self.wfs_view.setView(self.stream_info['shape'])
+        self.wfs_view.setView(self.image_info['shape'])
 
         self.wfs_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_all_updated.connect(self.streams_all_updated)
@@ -96,7 +96,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             img_min, img_max = self.compute_min_max(img)
 
             # Do not check min due to bias subtraction
-            self.saturation = img.max() / self.stream_info['max']
+            self.saturation = img.max() / self.image_info['max']
 
             self.wfs_view.setImage(img, img_min, img_max, scale=LogScale)
 

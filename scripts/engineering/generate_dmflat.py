@@ -32,8 +32,8 @@ def run(args):
     return 0
 
 
-if __name__ == "__main__":
-    default_output = config.AO.cacao_workdir / 'setupfiles/hw/KalAO-hwloop-rundir/dm_flat_bmc.fits'
+if __name__ == '__main__':
+    default_output = config.AO.cacao_workdir / 'setupfiles/hw/KalAO-hwloop-rundir/dmflat_bmc.fits'
 
     parser = argparse.ArgumentParser(
         description=

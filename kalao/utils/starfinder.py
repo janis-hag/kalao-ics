@@ -9,42 +9,20 @@ starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
 
 import math
-import time
-from dataclasses import dataclass, field
-from datetime import datetime
 
 import numpy as np
 import scipy.optimize
 
-from astropy import units as u
-from astropy import wcs
-from astropy.coordinates import AltAz, SkyCoord
-from astropy.io import fits
 from astropy.stats import sigma_clipped_stats
-from astropy.time import Time
 
-from kalao import euler
 from kalao.utils import kmath
 
 import skimage.feature
 import skimage.filters
 
+from kalao.definitions.dataclasses import Star
+
 import config
-
-
-@dataclass
-class Star:
-    x: float
-    y: float
-    peak: float
-    fwhm_w: float
-    fwhm_h: float
-    fwhm_angle: float
-
-    fwhm: float = field(init=False)
-
-    def __post_init__(self):
-        self.fwhm = np.sqrt(self.fwhm_w * self.fwhm_h)
 
 
 def find_star(img, min_peak=config.Starfinder.min_peak,
@@ -210,191 +188,3 @@ def _star_moments(X, Y, img):
     peak = 2 * flux / (np.pi * (fwhm / 2)**2)
 
     return Star(x_mean, y_mean, peak, fwhm_w, fwhm_y, fwhm_angle)
-
-
-def generate_wcs():
-    """
-    Queries the current telescope coordinates to generate a WCS object.
-
-    :return: WCS object with current telescope coordinates
-    """
-
-    # Create a new WCS object.  The number of axes must be set
-    # from the start
-    w = wcs.WCS(naxis=2)
-
-    # Reference pixel value
-    w.wcs.crpix = [config.FLI.center_x, config.FLI.center_y]
-
-    # Pixel scale in degrees
-    w.wcs.cdelt = np.array([
-        config.FLI.plate_scale / 3600, config.FLI.plate_scale / 3600
-    ])
-
-    # RA, DEC at reference
-    coord = euler.star_coord()
-    w.wcs.crval = [coord.ra.degree, coord.dec.degree]
-
-    # Gnomonic (TAN) projection
-    w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-
-    # Pixel coordinates transformation matrix
-    # parang = parallactic_angle() * np.pi/180
-    # w.wcs.pc = np.array([[np.cos(parang), -np.sin(parang)],
-    #                      [np.sin(parang), np.cos(parang)]])
-    # TODO: check if mirroring needed
-
-    # w.wcs.radesys = '???'
-    # w.wcs.equinox = 2000.0
-
-    return w
-
-
-def parallactic_angle(dt=None, coord=None):
-    location = euler.observing_location()
-
-    if isinstance(dt, datetime):
-        astro_time = Time(dt, scale='utc', location=location)
-        print(f'Using custom date: {astro_time}')
-
-    else:
-        astro_time = Time(datetime.utcnow(), scale='utc', location=location)
-
-    if isinstance(coord, SkyCoord):
-        print(f'Using custom coord: {coord}')
-    else:
-        coord = euler.star_coord()
-
-    r2d = 180 / np.pi
-    d2r = np.pi / 180
-
-    geolat_rad = config.Euler.latitude * d2r
-
-    lst_ra = astro_time.sidereal_time('mean').hour * 15 * d2r  #(15./3600)*d2r
-
-    ha_rad = lst_ra - coord.ra.rad
-    dec_rad = coord.dec.rad
-
-    # ha_deg=(float(hdr['LST'])*15./3600)-ra_deg
-
-    # VLT TCS formula
-    f1 = float(np.cos(geolat_rad) * np.sin(ha_rad))
-    f2 = float(
-        np.sin(geolat_rad) * np.cos(dec_rad) -
-        np.cos(geolat_rad) * np.sin(dec_rad) * np.cos(ha_rad))
-    parang = -r2d * np.arctan2(-f1, f2)  # Sign depends on focus
-
-    print('parang - VLT TCS formula', parang)
-
-    # Using astropy
-
-    altaz_frame = AltAz(location=location, obstime=astro_time)
-    coord_alt_az = coord.transform_to(altaz_frame)
-    probe = coord_alt_az.spherical_offsets_by(0 * u.arcsec, 0.1 *
-                                              u.arcsec).transform_to('icrs')
-    pa = coord_alt_az.position_angle(probe)
-
-    print('parang - Astropy', pa.deg)
-
-    return parang
-
-
-if __name__ == "__main__":
-    import sys
-
-    import matplotlib.patches as patches
-    import matplotlib.pyplot as plt
-
-    if len(sys.argv) == 1:
-        rng = np.random.default_rng()
-
-        frame = np.zeros((1024, 1024), dtype=np.float32)
-        Y, X = np.mgrid[0:1024, 0:1024]
-
-        # Add stars
-        for i in range(5):
-            x = rng.uniform(50, 1024 - 50)
-            y = rng.uniform(50, 1024 - 50)
-            peak = rng.uniform(100, 3000)
-            stddev = rng.uniform(2, 30)
-
-            frame += kmath.gaussian_2d_rotated(X, Y, x, y, stddev, stddev,
-                                               0 / 180 * np.pi, peak)
-
-        frame = rng.poisson(frame).astype(np.float64)
-
-        # Add dead pixels
-        for i in range(10):
-            x = round(rng.uniform(50, 1024 - 50))
-            y = round(rng.uniform(50, 1024 - 50))
-
-            frame[y, x] = 0
-
-        # Add stuck pixels
-        for i in range(10):
-            x = round(rng.uniform(50, 1024 - 50))
-            y = round(rng.uniform(50, 1024 - 50))
-
-            frame[y, x] = 65535
-
-        # Add hot pixels
-        for i in range(10):
-            x = round(rng.uniform(50, 1024 - 50))
-            y = round(rng.uniform(50, 1024 - 50))
-            v = round(rng.uniform(10, 4000))
-
-            frame[y, x] += v
-
-        frame += rng.normal(1000, 20, size=frame.shape)
-
-        frame = np.clip(np.rint(frame), 0, 2**16 - 1).astype(np.uint16)
-        frames = [frame]
-    else:
-        frames = []
-        for i in range(1, len(sys.argv)):
-            frames.append(fits.getdata(sys.argv[i]))
-
-    for i, frame in enumerate(frames):
-        if i + 1 < len(sys.argv):
-            title = f'Frame {i} - {sys.argv[i+1]}'
-        else:
-            title = f'Frame {i}'
-
-        print(title)
-
-        plt.figure()
-        plt.title(title)
-        fig = plt.gcf()
-        ax = fig.gca()
-
-        plt.imshow(frame, norm='log'
-                   )  # , vmin=np.nanmin(frame_nan), vmax=np.nanmax(frame_nan))
-
-        start = time.monotonic()
-        stars, bad_pixels = find_stars_and_bad_pixels(frame)
-        print('Time to find stars:', time.monotonic() - start)
-
-        for star in stars:
-            plt.plot(star.x, star.y, 'r+')
-            ax.add_patch(
-                patches.Ellipse((star.x, star.y), star.fwhm_w, star.fwhm_h,
-                                angle=star.fwhm_angle, edgecolor='r',
-                                facecolor='#ffffff00'))
-
-        start = time.monotonic()
-        stars, bad_pixels = find_stars_and_bad_pixels(frame, method='moments')
-        print('Time to find stars:', time.monotonic() - start)
-
-        for star in stars:
-            plt.plot(star.x, star.y, 'b+')
-            ax.add_patch(
-                patches.Ellipse((star.x, star.y), star.fwhm_w, star.fwhm_h,
-                                angle=star.fwhm_angle, edgecolor='b',
-                                facecolor='#ffffff00'))
-
-        # frame_nan = frame.astype(np.float64)
-        # frame_nan[bad_pixels] = np.nan
-
-        # plt.plot(bad_pixels[:, 1], bad_pixels[:, 0], 'g+')
-
-    plt.show()

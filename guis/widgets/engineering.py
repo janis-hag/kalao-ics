@@ -405,10 +405,12 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.fli_new_image_button.setEnabled(True)
                 self.fli_exposure_time_spinbox.setEnabled(True)
                 self.fli_frames_spinbox.setEnabled(True)
+                self.fli_roi_spinbox.setEnabled(True)
             else:
                 self.fli_new_image_button.setEnabled(False)
                 self.fli_exposure_time_spinbox.setEnabled(False)
                 self.fli_frames_spinbox.setEnabled(False)
+                self.fli_roi_spinbox.setEnabled(False)
 
         maqtime = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
                                               '_MAQTIME', force=True)
@@ -595,7 +597,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_fli_new_image_button_clicked(self, checked):
         self.action_send(self.fli_new_image_button, self.backend.set_fli_image,
                          self.fli_exposure_time_spinbox.value(),
-                         self.fli_frames_spinbox.value())
+                         self.fli_frames_spinbox.value(),
+                         self.fli_roi_spinbox.value())
 
     @Slot(bool)
     def on_fli_cancel_button_clicked(self, checked):

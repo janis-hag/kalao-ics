@@ -12,17 +12,9 @@ import argparse
 from signal import SIGINT, signal
 from sys import exit
 
-import numpy as np
-
-from kalao.cacao import toolbox
-from kalao.fli import FLI, camera
+from kalao.fli import camera
 
 from kalao.definitions.enums import CameraServerStatus
-
-import config
-
-fli_stream = toolbox.open_or_create_stream(config.Streams.FLI, (1024, 1024),
-                                           np.uint16)
 
 
 def handler(signal_received, frame):
@@ -32,32 +24,18 @@ def handler(signal_received, frame):
 
 
 def run(args):
-    camera_service_status = camera.check_server_status()
-
-    if camera_service_status == CameraServerStatus.DOWN:
-        print('Connecting to camera directly')
-
-        cam = FLI.USBCamera.find_devices()[0]
-        cam.set_temperature(-30)
-
-        while True:
-            cam.set_exposure(int(args.exptime * 1000))
-            img = cam.take_photo()
-            fli_stream.set_data(img, True)
-    elif camera_service_status == CameraServerStatus.UP:
+    if camera.check_server_status() == CameraServerStatus.UP:
         print('Connecting to camera through REST API')
 
         while True:
             camera.take_frame(args.exptime)
     else:
-        print(
-            'Error connecting to camera. Please try to stop or restart the kalao_fli service'
-        )
+        print('Error connecting to camera. Please check the kalao_fli service')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Periodically put FLI camera images into fli_stream.')
+        description='Periodically take FLI camera images.')
     parser.add_argument('--exptime', action="store", dest="exptime",
                         type=float, default=0.001,
                         help='Detector Integration Time')

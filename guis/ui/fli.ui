@@ -163,46 +163,6 @@
       </widget>
      </item>
      <item>
-      <widget class="KLabel" name="star_x_label">
-       <property name="text">
-        <string>X: {x:.{axis_precision}f}{axis_unit}</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="KLabel" name="star_y_label">
-       <property name="text">
-        <string>Y: {y:.{axis_precision}f}{axis_unit}</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="KLabel" name="star_fwhm_label">
-       <property name="text">
-        <string>FWHM: {fwhm:.{axis_precision}f}{axis_unit}</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="KLabel" name="star_peak_label">
-       <property name="text">
-        <string>Peak: {peak:.{data_precision}f}{data_unit}</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="open_button">
        <property name="text">
         <string>Open ...</string>

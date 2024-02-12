@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1406</width>
-    <height>926</height>
+    <height>927</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -902,21 +902,21 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="0" colspan="2">
+        <item row="5" column="0" colspan="2">
          <widget class="QPushButton" name="fli_new_image_button">
           <property name="text">
            <string>Take a new image</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="0" colspan="2">
+        <item row="6" column="0" colspan="2">
          <widget class="QPushButton" name="fli_cancel_button">
           <property name="text">
            <string>Cancel exposure</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="0" colspan="2">
+        <item row="7" column="0" colspan="2">
          <spacer name="verticalSpacer_3">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -966,6 +966,32 @@
          <widget class="QLabel" name="fli_remaining_frames_label">
           <property name="text">
            <string>Remaining frames</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="fli_roi_label">
+          <property name="text">
+           <string>Window size</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QSpinBox" name="fli_roi_spinbox">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>1024</number>
+          </property>
+          <property name="singleStep">
+           <number>2</number>
+          </property>
+          <property name="value">
+           <number>1024</number>
           </property>
          </widget>
         </item>

@@ -17,7 +17,7 @@ import config
 
 class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
     associated_stream = config.Streams.TTM
-    stream_info = config.StreamInfo.dm02disp
+    image_info = config.Images.dm02disp
 
     data_unit = ' mrad'
     data_precision = 2
@@ -85,10 +85,10 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
                                   QTimeZone.utc()).toMSecsSinceEpoch()
             self.tip, self.tilt = img
 
-            saturation_tip = max(self.tip / self.stream_info['max'],
-                                 self.tip / self.stream_info['min'])
-            saturation_tilt = max(self.tip / self.stream_info['max'],
-                                  self.tilt / self.stream_info['min'])
+            saturation_tip = max(self.tip / self.image_info['max'],
+                                 self.tip / self.image_info['min'])
+            saturation_tilt = max(self.tip / self.image_info['max'],
+                                  self.tilt / self.image_info['min'])
             self.saturation = max(saturation_tip, saturation_tilt)
 
             self.tip_series.append(
@@ -150,11 +150,10 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         if self.tip_series.count() == 0:
             return
 
-        x_max = self.tip_series.at(self.tip_series.count() - 1).x()
+        x_max = QDateTime.currentDateTime()
+        x_min = x_max.addSecs(-config.GUI.ttm_plot_length)
 
-        self.axis_x.setRange(
-            QDateTime.fromMSecsSinceEpoch(int(x_max) - self.plot_length),
-            QDateTime.fromMSecsSinceEpoch(int(x_max)))
+        self.axis_x.setRange(x_min, x_max)
         self.axis_y.setRange(y_min, y_max)
 
     def change_units(self, state):

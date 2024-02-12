@@ -5,7 +5,7 @@ import numpy as np
 
 from astropy.io import fits
 
-from PySide6.QtCore import QPointF, QRectF, QSignalBlocker, Slot
+from PySide6.QtCore import QMarginsF, QPointF, QRectF, QSignalBlocker, Slot
 from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import QMessageBox
 
@@ -32,7 +32,7 @@ class FollowMode(StrEnum):
 class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                     SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.FLI
-    stream_info = config.StreamInfo.fli_stream
+    image_info = config.Images.fli
 
     data_unit = ' ADU'
     data_precision = 0
@@ -56,12 +56,6 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     last_img = None
 
-    tick_fontsize = 10
-    tick_spacing = 10
-    tick_tick_length = 10
-    tick_text_spacing = 5
-    ticks_pos = [-400, -300, -200, -100, 0, 100, 200, 300, 400]
-
     saturation = np.nan
     timestamp = None
     star_x = np.nan
@@ -74,12 +68,12 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     WFS_fov = 4 * config.WFS.plate_scale / config.FLI.plate_scale
 
-    def __init__(self, backend, img=None, file=None, on_sky_unit=False,
+    def __init__(self, backend, hdul=None, file=None, on_sky_unit=False,
                  parent=None):
         super().__init__(parent)
 
         self.backend = backend
-        self.img = img
+        self.hdul = hdul
         self.file = file
 
         loadUi('fli_zoom.ui', self)
@@ -87,7 +81,10 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.init_minmax([self.fli_view, self.zoom_view])
 
-        self.fli_view.setView(self.stream_info['shape'])
+        self.fli_view.setView(self.image_info['shape'])
+
+        self.zoom_view.margins = self.fli_view.margins = QMarginsF(
+            40, 30, 40, 30)
 
         pen = QPen(Color.YELLOW, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
@@ -156,32 +153,23 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.hovered.connect(self.info_to_statusbar)
 
         if self.file is None:
-            backend.streams_fli_updated.connect(self.streams_fli_updated,
-                                                Qt.UniqueConnection)
+            backend.fli_image_updated.connect(self.fli_image_updated,
+                                              Qt.UniqueConnection)
         else:
             self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
-            img = fits.getdata(self.file)
+            hdul = fits.open(self.file)
 
-        if img is not None:
-            self.update_fli_view(img)
+        if hdul is not None:
+            self.update_fli_view(hdul)
 
         self.show()
         self.center()
 
-    def streams_fli_updated(self, data):
-        img = self.consume_stream(data, config.Streams.FLI)
+    def fli_image_updated(self, data):
+        hdul = self.consume_fits_full(data, config.FITS.last_image_all)
 
-        if img is not None:
-            timestamp = self.consume_stream_keyword(data, config.Streams.FLI,
-                                                    'timestamp')
-            if timestamp is not None:
-                self.timestamp = datetime.fromtimestamp(
-                    timestamp, tz=timezone.utc)
-            else:
-                # To avoid not up-to-date timestamp
-                self.timestamp = None
-
-            self.update_fli_view(img)
+        if hdul is not None:
+            self.update_fli_view(hdul)
 
     @Slot(int)
     def on_colormap_combobox_currentIndexChanged(self, index):
@@ -198,7 +186,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
     @Slot(int)
     def on_cuts_combobox_currentIndexChanged(self, index):
         self.autoscale_checkbox.setChecked(True)
-        self.update_fli_view(self.img)
+        self.update_fli_view(self.hdul)
 
     @Slot(int)
     def on_window_combobox_currentIndexChanged(self, index):
@@ -404,10 +392,32 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.update_zoom_view()
 
-    def update_fli_view(self, img):
-        if img is None:
+    def update_fli_view(self, hdul):
+        if hdul is None:
             return
 
+        if hdul[0].data is None:
+            return
+        elif len(hdul[0].data.shape) == 2:
+            img = hdul[0].data
+        elif len(hdul[0].data.shape) == 3:
+            img = hdul[0].data[-1, :, :]
+        else:
+            raise Exception('Unexpected shape for FLI image')
+
+        if 'DATE' in hdul[0].header:
+            self.timestamp = datetime.fromisoformat(
+                hdul[0].header['DATE']).replace(tzinfo=timezone.utc)
+        else:
+            self.timestamp = None
+
+        if 'CRPIX1' in hdul[0].header:
+            self.data_center_x = hdul[0].header['CRPIX1']
+
+        if 'CRPIX2' in hdul[0].header:
+            self.data_center_y = hdul[0].header['CRPIX2']
+
+        self.hdul = hdul
         self.img = img
 
         if self.img_width != img.shape[1] or self.img_height != img.shape[0]:
@@ -415,6 +425,8 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.img_height = img.shape[0]
             self.zoom_center_x = self.img_width // 2
             self.zoom_center_y = self.img_height // 2
+
+            self.zoom_level = self.zoom_min
 
             self.zoom_max = 2**(
                 math.floor(np.log2(min(self.img_width, self.img_height))) - 2)
@@ -449,7 +461,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.stars_itemgroup.setZValue(1)
 
         if self.cuts_combobox.currentIndex == 0:
-            img_nan = img.copy()
+            img_nan = self.img.copy()
             img_nan[self.bad_pixels] = np.nan
             img_min = np.nanmin(img_nan)
             img_max = np.nanmax(img_nan)
@@ -466,12 +478,12 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             img_min, img_max = self.compute_min_max(
                 self.img, self.cuts_combobox.currentData())
 
-        self.saturation = img.max() / self.stream_info['max']
+        self.saturation = self.img.max() / self.image_info['max']
 
         self.fli_view.setImage(self.img, img_min, img_max,
                                self.scale_combobox.currentData())
 
-        #self.fli_view.addNEIndicator(parang from keywords)
+        #self.fli_view.setNEIndicator(parang from keywords)
 
         self.update_labels()
         self.update_zoom_view()
@@ -506,9 +518,6 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         offset_x = max(x - hw, 0)
         offset_y = max(y - hh, 0)
-
-        self.zoom_view.margins = np.array(
-            self.fli_view.margins) / self.zoom_level
 
         self.zoom_view.setImage(zoom, self.min_spinbox.value(),
                                 self.max_spinbox.value(),
@@ -590,21 +599,15 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             ticks_x.append((tick_pos_x, tick_label))
             ticks_y.append((tick_pos_y, tick_label))
 
-        self.fli_view.addTicks(self.tick_spacing, self.tick_tick_length,
-                               self.tick_text_spacing, self.tick_fontsize,
-                               ticks_x, ticks_y)
-        self.fli_view.addTicksLabels(self.tick_spacing, self.tick_tick_length,
-                                     self.tick_text_spacing,
-                                     self.tick_fontsize, ticks_x, ticks_y)
+        self.fli_view.setTickParams(5, 5, 5, 10, ticks_x, ticks_y)
 
     def closeEvent(self, event):
         if self.file is None:
-            self.backend.streams_fli_updated.disconnect(
-                self.streams_fli_updated)
+            self.backend.fli_image_updated.disconnect(self.fli_image_updated)
             event.accept()
 
     def showEvent(self, event):
         if self.file is None:
-            self.backend.streams_fli_updated.connect(self.streams_fli_updated,
-                                                     Qt.UniqueConnection)
+            self.backend.fli_image_updated.connect(self.fli_image_updated,
+                                                   Qt.UniqueConnection)
         event.accept()

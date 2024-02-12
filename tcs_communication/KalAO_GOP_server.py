@@ -84,9 +84,9 @@ def gop_server():
 
         # Check if it's a KalAO command and send it
         if command.startswith('K_') or command in [
-                'INSTRUMENTCHANGE', 'THE_END', 'ABORT', 'STOPAO'
+                'INSTRUMENTCHANGE', 'THE_END', 'ABORT', 'OBCHANGE'
         ]:
-            if command in ['INSTRUMENTCHANGE', 'THE_END', 'STOPAO']:
+            if command in ['INSTRUMENTCHANGE', 'THE_END', 'OBCHANGE']:
                 database.store('obs', {'sequencer_on_target': False})
 
             hostSeq, portSeq = (config.SEQ.ip, config.SEQ.port)
@@ -152,5 +152,5 @@ def gop_server():
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     gop_server()

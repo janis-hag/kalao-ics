@@ -32,7 +32,7 @@ def _offload_ttm():
         offsets.offload_ttm_to_telescope()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     schedule.every(config.ADC.update_interval).seconds.do(_update_adc)
     schedule.every(config.TTM.offload_interval).seconds.do(_offload_ttm)
 

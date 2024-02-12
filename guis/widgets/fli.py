@@ -1,9 +1,10 @@
+from datetime import datetime, timezone
 from pathlib import Path
 from subprocess import Popen
 
 import numpy as np
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QMarginsF, QPointF, QRectF, Slot
 from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
@@ -47,7 +48,7 @@ def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
 
 class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.FLI
-    stream_info = config.StreamInfo.fli_stream
+    image_info = config.Images.fli
 
     data_unit = ' ADU'
     data_precision = 0
@@ -58,21 +59,12 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     axis_precision = 0
     axis_scaling = 1
 
-    tick_fontsize = 10
-    tick_spacing = 10
-    tick_tick_length = 10
-    tick_text_spacing = 5
-
     WFS_fov = 4 * config.WFS.plate_scale / config.FLI.plate_scale
 
     zoom_window = None
 
     saturation = np.nan
     timestamp = None
-    star_x = np.nan
-    star_y = np.nan
-    star_peak = np.nan
-    star_fwhm = np.nan
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
@@ -84,7 +76,9 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.init_minmax(self.fli_view)
 
-        self.fli_view.setView(self.stream_info['shape'])
+        self.fli_view.setView(self.image_info['shape'])
+
+        self.fli_view.margins = QMarginsF(40, 30, 40, 30)
 
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
@@ -101,12 +95,12 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.fli_view.hovered.connect(self.hover_xyv_to_str)
         backend.all_updated.connect(self.all_updated)
-        backend.streams_fli_updated.connect(self.streams_fli_updated)
+        backend.fli_image_updated.connect(self.fli_image_updated)
 
     def all_updated(self, data):
-        cnt = self.consume_stream_cnt(data, config.Streams.FLI)
-        if cnt != None:
-            self.backend.get_streams_fli()
+        mtime = self.consume_fits_mtime(data, config.FITS.last_image_all)
+        if mtime != None:
+            self.backend.get_fli_image()
 
         centering_manual_v, centering_manual_t = self.consume_db(
             data, 'obs', 'centering_manual')
@@ -119,20 +113,38 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 if self.zoom_window is not None:
                     self.zoom_window.exit_manual_centering()
 
-    def streams_fli_updated(self, data):
-        img = self.consume_stream(data, config.Streams.FLI)
+    def fli_image_updated(self, data):
+        hdul = self.consume_fits_full(data, config.FITS.last_image_all)
 
-        if img is not None:
-            #self.fli_view.addNEIndicator(parang from keywords)
+        if hdul is not None:
+            self.hdul = hdul
+
+            if hdul[0].data is None:
+                return
+            elif len(hdul[0].data.shape) == 2:
+                img = hdul[0].data
+            elif len(hdul[0].data.shape) == 3:
+                img = hdul[0].data[-1, :, :]
+            else:
+                raise Exception('Unexpected shape for FLI image')
+
+            self.timestamp = datetime.fromisoformat(
+                hdul[0].header['DATE']).replace(tzinfo=timezone.utc)
+
+            # self.fli_view.setNEIndicator(parang from keywords)
 
             img_min, img_max = self.compute_min_max(img)
 
-            self.saturation = img.max() / self.stream_info['max']
+            self.saturation = img.max() / self.image_info['max']
 
-            self.fli_view.setImage(img, img_min, img_max, scale=LogScale)
+            # View is full image size
+            view = QRectF(0, 0, self.image_info['shape'][1],
+                          self.image_info['shape'][0])
+            offset = QPointF(hdul[0].header['HIERARCH ESO DET WIN STARTX'],
+                             hdul[0].header['HIERARCH ESO DET WIN STARTY'])
 
-            # self.star_x, self.star_y, self.star_peak, self.star_fwhm = find_star_fast(
-            #     img)
+            self.fli_view.setImage(img, img_min, img_max, scale=LogScale,
+                                   view=view, offset=offset)
 
             self.update_labels()
 
@@ -142,30 +154,6 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         else:
             self.timestamp_label.updateText(
                 timestamp=self.timestamp.strftime('%H:%M:%S %d-%m-%Y'))
-
-        self.star_x_label.updateText(
-            x=(self.star_x - self.data_center_x) * self.axis_scaling,
-            axis_unit=self.axis_unit,
-            axis_precision=self.axis_precision + 1,
-        )
-
-        self.star_y_label.updateText(
-            y=(self.star_y - self.data_center_y) * self.axis_scaling,
-            axis_unit=self.axis_unit,
-            axis_precision=self.axis_precision + 1,
-        )
-
-        self.star_fwhm_label.updateText(
-            fwhm=self.star_fwhm * self.axis_scaling,
-            axis_unit=self.axis_unit,
-            axis_precision=self.axis_precision + 1,
-        )
-
-        self.star_peak_label.updateText(
-            peak=self.star_peak * self.data_scaling,
-            data_unit=self.data_unit,
-            data_precision=self.data_precision,
-        )
 
         if self.saturation >= 1:
             self.saturation_label.setText('Saturated !')
@@ -196,12 +184,7 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             ticks_x.append((tick_pos_x, tick_label))
             ticks_y.append((tick_pos_y, tick_label))
 
-        self.fli_view.addTicks(self.tick_spacing, self.tick_tick_length,
-                               self.tick_text_spacing, self.tick_fontsize,
-                               ticks_x, ticks_y)
-        self.fli_view.addTicksLabels(self.tick_spacing, self.tick_tick_length,
-                                     self.tick_text_spacing,
-                                     self.tick_fontsize, ticks_x, ticks_y)
+        self.fli_view.setTickParams(5, 5, 5, 10, ticks_x, ticks_y)
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
@@ -272,14 +255,14 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.zoom_window.show()
             self.zoom_window.activateWindow()
 
-            if self.fli_view.img is not None:
-                self.zoom_window.update_fli_view(self.fli_view.img.copy())
+            if self.hdul is not None:
+                self.zoom_window.update_fli_view(self.hdul.copy())
         else:
-            if self.fli_view.img is not None:
-                img = self.fli_view.img.copy()
+            if self.hdul is not None:
+                hdul = self.hdul.copy()
             else:
-                img = None
+                hdul = None
 
             self.zoom_window = FLIZoomWindow(
-                self.backend, img, on_sky_unit=(self.axis_unit == '"'),
+                self.backend, hdul, on_sky_unit=(self.axis_unit == '"'),
                 parent=self)

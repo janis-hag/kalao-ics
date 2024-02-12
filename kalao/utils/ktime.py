@@ -10,8 +10,6 @@ import pytz
 
 
 def datetime_is_naive(d):
-    # TODO add docstring
-
     # From: https://docs.python.org/3/library/datetime.html#determining-if-an-object-is-aware-or-naive
     return d.tzinfo is None or d.tzinfo.utcoffset(d) is None
 
@@ -48,6 +46,14 @@ def get_night_str(dt=None):
     """
 
     return get_start_of_night(dt).strftime('%Y-%m-%d')
+
+
+def utc_millis_str(dt=None):
+    if dt is None:
+        dt = datetime.now(timezone.utc)
+
+    return dt.astimezone(timezone.utc).replace(tzinfo=None).isoformat(
+        timespec="milliseconds")
 
 
 def check_time_format(dt):

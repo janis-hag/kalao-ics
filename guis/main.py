@@ -20,7 +20,7 @@ def cleanup():
     backend_thread.quit()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='KalAO - Main GUI.')
     parser.add_argument('--engineering', action="store_false", dest="onsky",
                         help='Engineering units')

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>986</width>
-    <height>590</height>
+    <width>929</width>
+    <height>599</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,7 +33,7 @@
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="calibration_tab">
        <attribute name="title">
@@ -303,9 +303,9 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="response_tab">
+      <widget class="QWidget" name="response__and_control_tab">
        <attribute name="title">
-        <string>Response</string>
+        <string>Response Matrix and Control Matrix</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="0" column="1">
@@ -347,6 +347,20 @@
         </item>
         <item row="0" column="0" rowspan="6">
          <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="KLabel" name="loopname_label">
+            <property name="text">
+             <string>Loop name: {loop_name}</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="KLabel" name="loopnumber_label">
+            <property name="text">
+             <string>Loop number: {loop_number:02d}</string>
+            </property>
+           </widget>
+          </item>
           <item>
            <spacer name="verticalSpacer_2">
             <property name="orientation">
@@ -407,7 +421,21 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="save_button">
+            <property name="text">
+             <string>Save</string>
+            </property>
+           </widget>
+          </item>
          </layout>
+        </item>
+        <item row="2" column="1">
+         <widget class="QCheckBox" name="minmax_checkbox_2">
+          <property name="text">
+           <string>Per mode Min/Max</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -420,7 +448,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>986</width>
+     <width>929</width>
      <height>23</height>
     </rect>
    </property>
@@ -436,6 +464,11 @@
   <customwidget>
    <class>KChartView</class>
    <extends>QGraphicsView</extends>
+   <header>kalao</header>
+  </customwidget>
+  <customwidget>
+   <class>KLabel</class>
+   <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

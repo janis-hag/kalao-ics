@@ -57,6 +57,6 @@ def ndarray_to_qimage(img, img_min=None, img_max=None,
     img_uint8 = np.require(img_scaled, np.uint8, 'C')
     image = QImage(img_uint8.data, img_uint8.shape[1], img_uint8.shape[0],
                    img_uint8.shape[1], QImage.Format_Indexed8)
-    image.setColorTable(colormap.colormap)
+    image.setColorTable(colormap.table)
 
     return image

@@ -14,7 +14,7 @@ import config
 class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                        SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.DM
-    stream_info = config.StreamInfo.dm01disp
+    image_info = config.Images.dm01disp
 
     data_unit = ' µm'
     data_precision = 3
@@ -45,7 +45,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 self.backend.get_streams_channels_dm)
         elif dm_number == config.AO.TTM_loop_number:
             self.associated_stream = config.Streams.TTM
-            self.stream_info = config.StreamInfo.dm02disp
+            self.image_info = config.Images.dm02disp
             self.data_unit = ' mrad'
             self.data_precision = 2
             self.title_label.setText(self.title_label.text().replace(

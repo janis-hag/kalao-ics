@@ -63,15 +63,12 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
 
                 etcs.set_focus(focus)
 
-                filepath = camera.take_image(ObservationType.FOCUS,
-                                             exptime=exptime)
+                filepath = camera.take_image(
+                    ObservationType.FOCUS, exptime=exptime, comment=
+                    f'Focus sequence {step+1}/{steps}, focus={focus:.2f}um')
 
                 if filepath is None:
                     raise FLITakeImageFailed
-
-                file_handling.add_comment(
-                    filepath,
-                    f'Focus sequence {step+1}/{steps}: focus={focus:.2f}um')
 
                 img = fits.getdata(filepath)
 

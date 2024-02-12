@@ -225,12 +225,17 @@ def target_observation(**seq_args):
     exptime = seq_args.get('texp')
     kao = seq_args.get('kao').upper()
     auto_center = seq_args.get('centering')
+    nbframes = seq_args.get('nbframes')
+    roi_size = seq_args.get('windowsiz')
     mag = seq_args.get('mv')
 
     if filter is None:
         logger.warn('sequencer',
                     'No filter specified for observation, using clear')
         filter = 'clear'
+
+    if roi_size is not None:
+        roi_size = int(roi_size.split('x')[0])
 
     centering_exptime, centering_filter = exposure.optimal_exposure_time_and_filter(
         mag, config.Centering.min_exptime)
@@ -298,7 +303,8 @@ def target_observation(**seq_args):
 
         time.sleep(config.AO.settling_time)
 
-    image_path = camera.take_image(ObservationType.OBJECT, exptime=exptime)
+    image_path = camera.take_image(ObservationType.OBJECT, exptime=exptime,
+                                   nbframes=nbframes, roi_size=roi_size)
 
     # TODO: Monitor AO and cancel exposure if needed
 
@@ -396,6 +402,22 @@ def abort(**seq_args):
     return _abort_camera()
 
 
+def ob_change(**seq_args):
+    """
+    Change of target. Stopping AO
+    """
+
+    logger.info('sequencer', 'OBCHANGE received, opening loop.')
+
+    _open_loops()
+
+    database.store('obs', {
+        'centering_manual': False,
+    })
+
+    return ReturnCode.SEQ_OK
+
+
 def instrument_change(**seq_args):
     """
     Change of instrument operation, go into standby mode.
@@ -406,22 +428,6 @@ def instrument_change(**seq_args):
     # Note: do NOT turn DM off (only at the end of the night)
     _open_loops()
     _shut_off_plc()
-
-    database.store('obs', {
-        'centering_manual': False,
-    })
-
-    return ReturnCode.SEQ_OK
-
-
-def stopao(**seq_args):
-    """
-    Change of target. Stopping AO
-    """
-
-    logger.info('sequencer', 'STOPAO received, opening loop.')
-
-    _open_loops()
 
     database.store('obs', {
         'centering_manual': False,
@@ -613,8 +619,8 @@ commands = {
     "K_FOCUS_ABORT": focus_abort,
     "K_CONFIG": edp_config,
     "ABORT": abort,
+    "OBCHANGE": ob_change,
     "INSTRUMENTCHANGE": instrument_change,
     "THE_END": end,
     "K_ENDCAL": end,
-    "STOPAO": stopao,
 }

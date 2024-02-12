@@ -17,18 +17,20 @@ import numpy as np
 import pandas as pd
 
 from astropy import units as u
-from astropy.coordinates import Angle
+from astropy.coordinates import Angle, SkyCoord
 from astropy.io import fits
 from astropy.time import Time
+from astropy.wcs import wcs
 
 from kalao import database, euler, logger
-from kalao.utils import kstring, ktime, starfinder
+from kalao.utils import kstring, ktime
 
 import yaml
 from unidecode import unidecode
 
-from kalao.definitions.enums import (ObservationType, SequencerStatus,
-                                     ShutterState)
+from kalao.definitions.dataclasses import ROI
+from kalao.definitions.enums import (FlipMirrorPosition, ObservationType,
+                                     SequencerStatus, ShutterState)
 
 import config
 
@@ -48,13 +50,11 @@ def get_tmp_image_filepath():
 
     # Remove empty folder in tmp except for current night folder
     for folder in config.FITS.temporary_data_storage.iterdir():
-        folder = config.FITS.temporary_data_storage / folder
-
         # Check is folder is empty
         if folder != tmp_night_folder and not any(folder.iterdir()):
             folder.rmdir()
 
-    filename = f'tmp_KALAO.{datetime.now(timezone.utc).isoformat(timespec="milliseconds")}.fits'
+    filename = f'tmp_KALAO.{ktime.utc_millis_str()}.fits'
     filepath = tmp_night_folder / filename
 
     return filepath
@@ -72,13 +72,13 @@ def get_focus_sequence_filepath():
     if not focus_folder.exists():
         focus_folder.mkdir(parents=True)
 
-    filename = f'KALAO.FOCUS.{datetime.now(timezone.utc).isoformat(timespec="milliseconds")}.fits'
+    filename = f'KALAO.FOCUS.{ktime.utc_millis_str()}.fits'
     filepath = focus_folder / filename
 
     return filepath
 
 
-def save_tmp_image(image_path, obs_type):
+def save_tmp_image(image_path, obs_type, comment=None):
     '''
     Updates the temporary image header and saves into the archive.
 
@@ -87,37 +87,39 @@ def save_tmp_image(image_path, obs_type):
     :return:
     '''
 
-    science_night_folder = config.FITS.science_data_storage / ktime.get_night_str(
-    )
+    if obs_type == ObservationType.ENGINEERING:
+        folder = config.FITS.engineering_data_storage / ktime.get_night_str()
+    else:
+        folder = config.FITS.science_data_storage / ktime.get_night_str()
 
-    if not science_night_folder.exists():
-        science_night_folder.mkdir(parents=True)
-
-    # Remove tmp_ from filename
-    target_path_name = science_night_folder / image_path.name.replace(
-        'tmp_', '')
+    if not folder.exists():
+        folder.mkdir(parents=True)
 
     if image_path.exists():
-        update_header(image_path, obs_type)
-        shutil.move(image_path, target_path_name)
-        # TODO Remove write permission
-        # target_path_name.chmod(file_mask)
+        final_filename = prepare_final_fits(image_path, obs_type,
+                                            comment=comment)
+        final_filepath = folder / final_filename
 
+        shutil.move(image_path, final_filepath)
+        final_filepath.chmod(config.FITS.file_mask)
         # TODO possibly add the right UID and GID
-        database.store('obs', {'fli_last_image_path': target_path_name})
-        logger.info('sequencer', f'Saving {image_path} to {target_path_name}')
+
+        database.store('obs', {'fli_last_image_path': final_filepath})
+        logger.info('sequencer', f'Saved {image_path} to {final_filepath}')
 
         symlink = config.FITS.last_image
         symlink.unlink(missing_ok=True)
-        symlink.symlink_to(target_path_name)
+        symlink.symlink_to(final_filepath)
 
-        return target_path_name
+        symlink = config.FITS.last_image_all
+        symlink.unlink(missing_ok=True)
+        symlink.symlink_to(final_filepath)
+
+        return final_filepath
     else:
-        database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
-        logger.error('sequencer',
-                     f'Unable to save {image_path} to {target_path_name}')
+        logger.error('sequencer', f'Unable to save {image_path}.')
 
-        return -1
+        return None
 
 
 def update_db_from_telheader():
@@ -144,7 +146,7 @@ def update_db_from_telheader():
         return -1
 
 
-def update_header(image_path, obs_type):
+def prepare_final_fits(image_path, obs_type, comment=None):
     """
     Updates the image header with values from the observing, monitoring, and telemetry logs.
 
@@ -161,18 +163,32 @@ def update_header(image_path, obs_type):
             header_base.loc[f'HIERARCH ESO {key}', 'value'] = value
 
     with fits.open(image_path, mode='update') as hdul:
-        # Change something in hdul.
         fits_header = hdul[0].header
 
         if 'DATE-OBS' in fits_header.keys():
-            dt = datetime.fromisoformat(fits_header['DATE-OBS']).replace(
+            dt_obs = datetime.fromisoformat(fits_header['DATE-OBS']).replace(
                 tzinfo=timezone.utc)
         else:
-            dt = datetime.fromisoformat(fits_header['DATE']).replace(
+            dt_obs = datetime.fromisoformat(fits_header['DATE']).replace(
                 tzinfo=timezone.utc)
 
-        if obs_type in config.FITS.on_sky_types:
-            header_obs = _header_from_db('obs', dt)
+        dt = datetime.fromisoformat(fits_header['DATE']).replace(
+            tzinfo=timezone.utc)
+        filename = f'KALAO.{ktime.utc_millis_str(dt)}.fits'
+
+        header_monitoring = _header_from_db('monitoring', dt_obs)
+        header_telemetry = _header_from_db('telemetry', dt_obs)
+
+        flipmirror_position = header_monitoring.loc[
+            'HIERARCH ESO INS FLIP MIR', 'value']
+        shutter_state = header_monitoring.loc['HIERARCH ESO INS SHUT ST',
+                                              'value']
+
+        if obs_type in config.FITS.on_sky_types or (
+                obs_type == ObservationType.ENGINEERING and
+                flipmirror_position == FlipMirrorPosition.DOWN and
+                shutter_state == ShutterState.OPEN):
+            header_obs = _header_from_db('obs', dt_obs)
             header_telescope = _clean_header(
                 _header_from_last_telescope_header())
         else:
@@ -180,37 +196,27 @@ def update_header(image_path, obs_type):
             header_telescope = None
 
         header_df = pd.concat([
-            _header_from_fits(image_path, fits_header),
+            _header_from_fits_header(fits_header, f'fits:{image_path.name}'),
             header_base,
             header_obs,
-            _header_from_db('monitoring', dt),
-            _header_from_db('telemetry', dt),
+            header_monitoring,
+            header_telemetry,
             header_telescope,
         ]).query('~index.duplicated(keep="last")')
 
-        header_df = _dynamic_cards_update(header_df, obs_type)
+        header_df = _dynamic_cards_update(header_df, obs_type, filename)
         header_df = _sort_header(header_df)
         _header_to_fits_header(header_df, fits_header)
 
-        if obs_type in config.FITS.on_sky_types:
-            wcs = starfinder.generate_wcs()
-            fits_header.update(wcs.to_header())
+        if comment is not None:
+            fits_header.add_comment(comment)
 
         hdul.verify('silentfix+warn')
 
-        # Write changes back to original.fits
+        # Write changes back to original fits
         hdul.flush()
 
-    return 0
-
-
-def add_comment(image_path, comment_string):
-    with fits.open(image_path, mode='update') as hdul:
-        # Change something in hdul.
-        hdul[0].header.add_comment(comment_string)
-        hdul.flush()
-
-    return 0
+    return filename
 
 
 def get_last_image_path():
@@ -249,19 +255,22 @@ def _header_empty():
     return header_df
 
 
-def _header_from_fits(file, fits_header=None):
+def _header_from_fits_file(file):
+    if not isinstance(file, Path):
+        file = Path(file)
+
+    fits_header = fits.getheader(file)
+
+    return _header_from_fits_header(fits_header, f'fits:{file.name}')
+
+
+def _header_from_fits_header(fits_header, source):
     '''
     Reads a fits header and reformats it into a dataframe
 
     :param header:
     :return: header dataframe
     '''
-
-    if not isinstance(file, Path):
-        file = Path(file)
-
-    if fits_header is None:
-        fits_header = fits.getheader(file)
 
     header_dict = {}
 
@@ -275,7 +284,7 @@ def _header_from_fits(file, fits_header=None):
         header_dict[keyword] = {
             'value': fits_header[keyword],
             'comment': fits_header.comments[keyword],
-            'source': f'fits:{file.name}'
+            'source': f'{source}'
         }
 
     header_df = pd.DataFrame.from_dict(header_dict, orient='index')
@@ -339,7 +348,7 @@ def _header_from_db(collection_name, dt):
 
     # Note: dt=None is mainly for debugging purposes
     if dt is not None:
-        data = database.get(collection_name, query_list.keys(), dt=dt)
+        data = database.get(collection_name, query_list.keys(), at=dt)
 
         for key, keyword in query_list.items():
             header_dict[keyword]['value'] = data[key][0]['value']
@@ -354,8 +363,8 @@ def _sort_header(header_df):
     HIERARCH_lines = np.array(
         header_df.index.str.len() > config.FITS.max_length_without_HIERARCH)
 
-    header_head_df = header_df[HIERARCH_lines]
-    header_tail_df = header_df[~HIERARCH_lines]
+    header_head_df = header_df[~HIERARCH_lines]
+    header_tail_df = header_df[HIERARCH_lines]
 
     header_df = pd.concat([
         header_head_df.sort_index(),
@@ -385,11 +394,7 @@ def _header_from_last_telescope_header():
     header_age = (datetime.now(timezone.utc) -
                   tcs_header_path_record['timestamp']).total_seconds()
 
-    if 'home' in tcs_header_path_record['value']:
-        tcs_header_path = config.SEQ.T4_root / tcs_header_path_record['value'][
-            1:]
-    else:
-        tcs_header_path = Path(tcs_header_path_record['value'])
+    tcs_header_path = Path(tcs_header_path_record['value'])
 
     if header_age > config.FITS.tcs_header_validity:
         logger.warn(
@@ -399,7 +404,7 @@ def _header_from_last_telescope_header():
         return _header_empty()
 
     elif tcs_header_path.is_file():
-        return _header_from_fits(tcs_header_path)
+        return _header_from_fits_file(tcs_header_path)
 
     else:
         logger.error('sequencer', f'Header file not found: {tcs_header_path}')
@@ -429,7 +434,7 @@ def _clean_header(header_df):
     return header_df.rename(index=rename_dict)
 
 
-def _dynamic_cards_update(header_df, obs_type):
+def _dynamic_cards_update(header_df, obs_type, filename):
     date_obs = header_df.loc['DATE-OBS', 'value']
     date_end = header_df.loc['DATE-END', 'value']
 
@@ -439,6 +444,10 @@ def _dynamic_cards_update(header_df, obs_type):
 
     astro_time_obs = Time(date_obs, scale='utc', location=location)
     astro_time_end = Time(date_end, scale='utc', location=location)
+
+    # Update ARCFILE
+    header_df.loc['ARCFILE', 'value'] = filename
+    header_df.loc['ARCFILE', 'source'] += '+dynamic'
 
     # Update HIERARCH ESO INS SHUT ST
     header_df.loc[
@@ -498,6 +507,24 @@ def _dynamic_cards_update(header_df, obs_type):
             'comment'] = f'[deg] {dec.to_string(unit=u.deg, sep=":", precision=1, pad=True)} DEC (J2000) pointing'
         header_df.loc['DEC', 'source'] += '+dynamic'
 
+        coord = SkyCoord(ra=ra, dec=dec, frame=config.Euler.frame,
+                         equinox=config.Euler.equinox)
+    else:
+        coord = None
+
+    roi = ROI(header_df.loc['HIERARCH ESO DET WIN STARTX', 'value'],
+              header_df.loc['HIERARCH ESO DET WIN STARTY', 'value'],
+              header_df.loc['HIERARCH ESO DET WIN NX',
+                            'value'], header_df.loc['HIERARCH ESO DET WIN NY',
+                                                    'value'])
+
+    wcs = generate_wcs(coord, astro_time_obs, roi=roi)
+
+    header_df = pd.concat([
+        header_df,
+        _header_from_fits_header(wcs.to_header(), 'wcs+dynamic')
+    ])
+
     header_df.loc['HIERARCH ESO TPL ID', 'value'] = str(obs_type)
 
     return header_df
@@ -525,6 +552,72 @@ def _header_to_string(header_df, max_length=45, float_length=20):
     return header_df.fillna(
         value='<empty>').to_string(formatters=formatters,
                                    float_format=float_format)
+
+
+def generate_wcs(coord, time, roi=None):
+    """
+    Queries the current telescope coordinates to generate a WCS object.
+
+    :return: WCS object with current telescope coordinates
+    """
+
+    # Create a new WCS object.  The number of axes must be set
+    # from the start
+    w = wcs.WCS(naxis=2, relax=False)
+
+    if roi is None:
+        center_x = config.FLI.center_x
+        center_y = config.FLI.center_y
+    else:
+        center_x = config.FLI.center_x - roi.x
+        center_y = config.FLI.center_y - roi.y
+
+    # Reference pixel value
+    w.wcs.crpix = [center_x, center_y]
+
+    # Pixel scale in degrees
+    w.wcs.cdelt = np.array([
+        config.FLI.plate_scale / 3600, config.FLI.plate_scale / 3600
+    ])
+
+    if coord is not None:
+        # RA, DEC at reference
+        w.wcs.crval = [coord.ra.degree, coord.dec.degree]
+
+        # Gnomonic (TAN) projection
+        w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+
+        # Pixel coordinates transformation matrix
+        # parang = parallactic_angle(ra, dec, time) * np.pi/180
+        # w.wcs.pc = np.array([[np.cos(parang), -np.sin(parang)],
+        #                      [np.sin(parang), np.cos(parang)]])
+        # TODO: check if mirroring needed
+
+        w.wcs.radesys = coord.frame.name.upper()
+        w.wcs.equinox = coord.equinox.jyear
+
+    return w
+
+
+def parallactic_angle(ra, dec, time):
+    r2d = 180 / np.pi
+    d2r = np.pi / 180
+
+    geolat_rad = config.Euler.latitude * d2r
+
+    lst_ra = time.sidereal_time('mean').hour * 15 * d2r  #(15./3600)*d2r
+
+    ha_rad = lst_ra - ra.rad
+    dec_rad = dec.rad
+
+    # VLT TCS formula
+    f1 = float(np.cos(geolat_rad) * np.sin(ha_rad))
+    f2 = float(
+        np.sin(geolat_rad) * np.cos(dec_rad) -
+        np.cos(geolat_rad) * np.sin(dec_rad) * np.cos(ha_rad))
+    parang = -r2d * np.arctan2(-f1, f2)  # Sign depends on focus
+
+    return parang
 
 
 def directory_summary_df(folder):

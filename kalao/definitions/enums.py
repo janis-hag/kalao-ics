@@ -14,7 +14,8 @@ class ObservationType(StrEnum):
     OBJECT = 'K_TRGOBS'
     FOCUS = 'K_FOCUS'
     TECHNICAL = 'K_TECH'
-    CENTERING = 'K_TECH'
+    CENTERING = 'K_CENTER'
+    ENGINEERING = 'K_ENGIN'
 
 
 class CenteringMode(StrEnum):

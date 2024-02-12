@@ -15,7 +15,7 @@ from kalao.sequencer import centering, focusing
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
-from kalao.definitions.enums import IPPowerStatus, LoopStatus
+from kalao.definitions.enums import IPPowerStatus, LoopStatus, ObservationType
 
 import config
 
@@ -49,17 +49,6 @@ class SHMFPSBackend(AbstractBackend):
 
         data[stream_name]['keywords'] = stream.get_keywords()
 
-    def _update_stream_cnt(self, data, stream_name):
-        stream = toolbox.open_stream_once(stream_name)
-
-        if stream is None:
-            return
-
-        if data.get(stream_name) is None:
-            data[stream_name] = {}
-
-        data[stream_name]['cnt0'] = stream.IMAGE.md.cnt0,
-
     def _update_param(self, data, fps_name, param_name):
         if fps_name not in data:
             data[fps_name] = {}
@@ -87,31 +76,44 @@ class SHMFPSBackend(AbstractBackend):
         fits_file = Path(fits_file)
         key = fits_file.stem
 
-        if not fits_file.exists():
-            return
-
-        data[key] = {
-            'mtime':
-                datetime.fromtimestamp(fits_file.stat().st_mtime,
-                                       tz=timezone.utc),
-            'data':
-                fits.getdata(fits_file),
-        }
+        try:
+            data[key] = {
+                'mtime':
+                    datetime.fromtimestamp(fits_file.stat().st_mtime,
+                                           tz=timezone.utc),
+                'data':
+                    fits.getdata(fits_file),
+            }
+        except (FileNotFoundError, OSError):
+            pass
 
     def _update_fits_full(self, data, fits_file):
         fits_file = Path(fits_file)
         key = fits_file.stem
 
-        if not fits_file.exists():
-            return
+        try:
+            data[key] = {
+                'mtime':
+                    datetime.fromtimestamp(fits_file.stat().st_mtime,
+                                           tz=timezone.utc),
+                'hdul':
+                    fits.open(fits_file)
+            }
+        except (FileNotFoundError, OSError):
+            pass
 
-        data[key] = {
-            'mtime':
-                datetime.fromtimestamp(fits_file.stat().st_mtime,
-                                       tz=timezone.utc),
-            'hdul':
-                fits.open(fits_file)
-        }
+    def _update_fits_mtime(self, data, fits_file):
+        fits_file = Path(fits_file)
+        key = fits_file.stem
+
+        try:
+            if data.get(key) is None:
+                data[key] = {}
+
+            data[key]['mtime'] = datetime.fromtimestamp(
+                fits_file.stat().st_mtime, tz=timezone.utc)
+        except (FileNotFoundError, OSError):
+            pass
 
 
 class MainBackend(SHMFPSBackend):
@@ -140,17 +142,15 @@ class MainBackend(SHMFPSBackend):
         self._update_param(data, config.FPS.SHWFS, 'flux_max')
 
         self._update_stream(data, config.Streams.MODE_COEFFS)
-        self._update_stream(data, config.Streams.TELEMETRY_TTM)
 
         return data
 
-    @emit('streams_fli_updated')
+    @emit('fli_image_updated')
     @timeit
-    def get_streams_fli(self):
+    def get_fli_image(self):
         data = {}
 
-        self._update_stream(data, config.Streams.FLI)
-        self._update_stream_keywords(data, config.Streams.FLI)
+        self._update_fits_full(data, config.FITS.last_image_all)
 
         return data
 
@@ -159,7 +159,7 @@ class MainBackend(SHMFPSBackend):
     def get_all(self):
         data = {}
 
-        self._update_stream_cnt(data, config.Streams.FLI)
+        self._update_fits_mtime(data, config.FITS.last_image_all)
 
         self._update_stream(data, config.Streams.TTM)
         self._update_stream(data, config.Streams.MODALGAINS)
@@ -193,6 +193,8 @@ class MainBackend(SHMFPSBackend):
         self._update_db(
             data, 'obs',
             database.get('obs', ['sequencer_status', 'centering_manual']))
+
+        self._update_stream(data, config.Streams.TELEMETRY_TTM)
 
         # Last so it is the closest to timestamp computation
         self._update_stream_keywords(data, config.Streams.NUVU_RAW)
@@ -242,9 +244,9 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    @emit('focus_updated')
+    @emit('focus_sequence_updated')
     @timeit
-    def get_focus(self):
+    def get_focus_sequence(self):
         data = {}
 
         self._update_fits_full(data, config.FITS.last_focus_sequence)
@@ -542,8 +544,9 @@ class MainBackend(SHMFPSBackend):
         else:
             temperature_control.heater_off()
 
-    def set_fli_image(self, exposure_time, frames):
-        camera.take_frame(exptime=exposure_time, nbframes=frames)
+    def set_fli_image(self, exposure_time, frames, roi_size):
+        camera.take_image(ObservationType.ENGINEERING, exptime=exposure_time,
+                          nbframes=frames, roi_size=roi_size)
 
     def get_fli_cancel(self):
         camera.cancel()

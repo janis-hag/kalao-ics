@@ -371,7 +371,8 @@ def _check_abort():
 
 
 def _get_star(exptime):
-    img_path = camera.take_image(ObservationType.CENTERING, exptime=exptime)
+    img_path = camera.take_image(ObservationType.CENTERING, exptime=exptime,
+                                 comment="Centering sequence")
 
     if img_path is None:
         raise FLITakeImageFailed

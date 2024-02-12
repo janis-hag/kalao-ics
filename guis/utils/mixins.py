@@ -89,16 +89,16 @@ class MinMaxMixin:
         self.autoscale_checkbox.setChecked(False)
 
         with QSignalBlocker(self.min_spinbox):
-            self.min_spinbox.setMaximum(self.stream_info['max'])
-            self.min_spinbox.setValue(self.stream_info['min'])
+            self.min_spinbox.setMaximum(self.image_info['max'])
+            self.min_spinbox.setValue(self.image_info['min'])
 
         with QSignalBlocker(self.max_spinbox):
-            self.max_spinbox.setMinimum(self.stream_info['min'])
-            self.max_spinbox.setValue(self.stream_info['max'])
+            self.max_spinbox.setMinimum(self.image_info['min'])
+            self.max_spinbox.setValue(self.image_info['max'])
 
         for view in self.views:
-            view.updateMinMax(self.stream_info['min'] * self.data_scaling,
-                              self.stream_info['max'] * self.data_scaling)
+            view.updateMinMax(self.image_info['min'] * self.data_scaling,
+                              self.image_info['max'] * self.data_scaling)
 
     def update_spinboxes_unit(self, unit, scaling, precision):
         self.min_spinbox.setScale(scaling, precision)
@@ -256,21 +256,6 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_stream_cnt(self, data, stream_name, default=None, force=False):
-        try:
-            if stream_name not in self.data_cache:
-                self.data_cache[stream_name] = {}
-
-            value = data[stream_name]['cnt0']
-            prev = self.data_cache[stream_name].get('cnt0', None)
-
-            if value != prev or force:
-                return value
-            else:
-                return default
-        except KeyError:
-            return default
-
     def consume_param(self, data, fps_name, param_name, default=None,
                       force=False):
         try:
@@ -323,8 +308,10 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_fits(self, data, key, default=None, force=False):
+    def consume_fits(self, data, fits_file, default=None, force=False):
         try:
+            key = fits_file.stem
+
             if key not in self.data_cache:
                 self.data_cache[key] = {}
 
@@ -339,8 +326,10 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_fits_full(self, data, key, default=None, force=False):
+    def consume_fits_full(self, data, fits_file, default=None, force=False):
         try:
+            key = fits_file.stem
+
             if key not in self.data_cache:
                 self.data_cache[key] = {}
 
@@ -350,6 +339,23 @@ class BackendDataMixin:
             if mtime != prev or force:
                 self.data_cache[key]['mtime'] = mtime
                 return data[key]['hdul']
+            else:
+                return default
+        except KeyError:
+            return default
+
+    def consume_fits_mtime(self, data, fits_file, default=None, force=False):
+        try:
+            key = fits_file.stem
+
+            if key not in self.data_cache:
+                self.data_cache[key] = {}
+
+            value = data[key]['mtime']
+            prev = self.data_cache[key].get('mtime', None)
+
+            if value != prev or force:
+                return value
             else:
                 return default
         except KeyError:

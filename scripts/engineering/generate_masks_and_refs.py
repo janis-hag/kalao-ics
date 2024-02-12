@@ -106,7 +106,7 @@ def run(args):
         args.output_folder / 'ttm/conf/SpokeC.fits', overwrite=True)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     default_folder = config.AO.cacao_workdir / 'setupfiles'
 
     parser = argparse.ArgumentParser(

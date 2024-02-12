@@ -42,7 +42,7 @@ def star_coord():
     # TODO verify star_ra and star_dec validity
 
     coord = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree,
-                     frame='icrs')
+                     frame=config.Euler.frame, equinox=config.Euler.equinox)
 
     return coord
 

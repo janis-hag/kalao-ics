@@ -20,7 +20,7 @@ def handler(signal_received, frame):
     app.quit()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='KalAO - Alignment Tools.')
     parser.add_argument('--simulation', action="store_true", dest="simulation",
                         help='Simulation mode')

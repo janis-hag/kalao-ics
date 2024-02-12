@@ -66,7 +66,7 @@ def serve(fun):
         return 'Internal Server Error', 500
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='KalAO - Server backend.')
     parser.add_argument('--debug', action="store_true", dest="debug",
                         help='Start Flask in debug mode')

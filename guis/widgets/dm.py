@@ -15,7 +15,7 @@ import config
 
 class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.DM
-    stream_info = config.StreamInfo.dm01disp
+    image_info = config.Images.dm01disp
 
     data_unit = ' µm'
     data_precision = 2
@@ -28,7 +28,7 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     stroke_effective = np.nan
     saturation = np.nan
 
-    #TODO: modify stream_info with stroke_max?
+    #TODO: modify image_info with stroke_max?
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
@@ -61,8 +61,8 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             img_min, img_max = self.compute_min_max(img)
 
             self.saturation = max(
-                img.max() / self.stream_info['max'],
-                img.min() / self.stream_info['min']) / self.max_stroke
+                img.max() / self.image_info['max'],
+                img.min() / self.image_info['min']) / self.max_stroke
 
             self.dm_view.setImage(img, img_min, img_max)
 

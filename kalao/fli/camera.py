@@ -8,34 +8,25 @@
 camera.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
-
+import dataclasses
 import json
-import math
 import shutil
 import time
-from datetime import datetime, timezone
-from pathlib import Path
 
 import numpy as np
 
-from astropy.io import fits
-
 from kalao import database, logger
-from kalao.cacao import toolbox
-from kalao.plc import flipmirror
 from kalao.timers import database as database_timer
 from kalao.utils import file_handling
 
 import requests
 import requests.exceptions
 
-from kalao.definitions.enums import (CameraServerStatus, FlipMirrorPosition,
-                                     ReturnCode, SequencerStatus)
+from kalao.definitions.dataclasses import ROI
+from kalao.definitions.enums import (CameraServerStatus, ReturnCode,
+                                     SequencerStatus)
 
 import config
-
-fli_stream = toolbox.open_or_create_stream(config.Streams.FLI, (1024, 1024),
-                                           np.uint16)
 
 
 def take_empty(filepath=None):
@@ -48,8 +39,8 @@ def take_empty(filepath=None):
     return ret
 
 
-def take_frame(exptime=None, filepath=None, nbflushes=None, roi=None,
-               nbframes=None):
+def take_frame(exptime=None, filepath=None, nbflushes=None, nbframes=None,
+               roi=None):
     if filepath is None:
         filepath = '/tmp/fli_frame.fits'
 
@@ -57,7 +48,7 @@ def take_frame(exptime=None, filepath=None, nbflushes=None, roi=None,
         nbframes = None
 
     if roi is not None:
-        roi = {'x': roi[0], 'y': roi[1], 'width': roi[2], 'height': roi[3]}
+        roi = dataclasses.asdict(roi)
 
     params = {
         'exptime': exptime,
@@ -67,44 +58,20 @@ def take_frame(exptime=None, filepath=None, nbflushes=None, roi=None,
         'roi': roi
     }
 
+    symlink = config.FITS.last_image_all
+    symlink.unlink(missing_ok=True)
+    symlink.symlink_to(filepath)
+
     ret, _ = _send_request('/acquire', params)
 
     if ret == ReturnCode.CAMERA_OK:
-        img = fits.getdata(filepath)
-
-        _update_fli_stream(img, filepath)
-
-        return img
+        return filepath
     else:
         return None
 
 
-def _update_fli_stream(img, filepath):
-    filepath = Path(filepath)
-
-    if len(img.shape) == 3:
-        img = img[-1]
-
-    if fli_stream.shape == img.shape:
-        fli_stream.set_data(img, True)
-
-        keywords = {
-            'laser': flipmirror.get_position() == FlipMirrorPosition.UP,
-            'timestamp': datetime.now(timezone.utc).timestamp(),
-        }
-
-        for i in range(math.ceil(len(filepath.name) / 16)):
-            keywords[f'filepath_{i}'] = str(filepath.name)[i * 16:(i+1) * 16]
-
-        fli_stream.set_keywords(keywords)
-    # else:
-    #     logger.error(
-    #         'fli',
-    #         f'{config.Streams.FLI} not updated, shapes are inconsistent (stream = {fli_stream.shape}, frame = {img.shape}).'
-    #     )
-
-
-def take_image(obs_type, exptime=None, filepath=None):
+def take_image(obs_type, exptime=None, filepath=None, nbframes=None,
+               roi_size=None, comment=None):
     """
     :param sequencer_arguments:
     :param exptime: Detector integration time to use
@@ -115,9 +82,21 @@ def take_image(obs_type, exptime=None, filepath=None):
     if exptime is not None and exptime < 0.001:
         logger.error(
             'fli',
-            f'Abort before exposure started. exptime = {exptime} s below minimum value of 0.001 s'
+            f'Abort before exposure started. exptime = {exptime} s is below minimum value of 0.001 s'
         )
         return None
+    elif exptime is not None and exptime > config.FLI.request_timeout:
+        logger.error(
+            'fli',
+            f'Abort before exposure started. exptime = {exptime} s is above maximum value of {config.FLI.request_timeout} s'
+        )
+        return None
+
+    if roi_size is None or roi_size == 1024:
+        roi = None
+    else:
+        roi = ROI(config.FLI.center_x - roi_size//2,
+                  config.FLI.center_y - roi_size//2, roi_size, roi_size)
 
     if filepath is None:
         # Generate filename including path
@@ -130,13 +109,15 @@ def take_image(obs_type, exptime=None, filepath=None):
         'sequencer_status': SequencerStatus.EXP,
     })
 
-    img = take_frame(exptime=exptime, filepath=filepath)
+    filepath = take_frame(exptime=exptime, filepath=filepath,
+                          nbframes=nbframes, roi=roi)
 
-    if img is not None:
+    if filepath is not None:
         database.store('obs', {'fli_temporary_image_path': filepath})
-        target_path_name = file_handling.save_tmp_image(filepath, obs_type)
+        final_filepath = file_handling.save_tmp_image(filepath, obs_type,
+                                                      comment=comment)
 
-        return target_path_name
+        return final_filepath
     else:
         return None
 

@@ -39,7 +39,7 @@ class DMSpinBox(QDoubleSpinBox):
         d = 255 * (d - self.minimum()) / (self.maximum() - self.minimum())
         d = np.clip(d, 0, 255)
 
-        color = self.colormap.colormap[round(d)]
+        color = self.colormap.table[round(d)]
         color = QColor(color).name()
 
         self.setStyleSheet(f"background-color: {color};")

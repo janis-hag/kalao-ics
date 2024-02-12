@@ -15,7 +15,7 @@ import config
 
 class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.SLOPES
-    stream_info = config.StreamInfo.shwfs_slopes
+    image_info = config.Images.shwfs_slopes
 
     data_unit = ' px'
     data_precision = 2
@@ -52,8 +52,8 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         if img is not None:
             img = np.ma.masked_array(img, mask=self.mask, fill_value=np.nan)
 
-            self.saturation = max(img.max() / self.stream_info['max'],
-                                  img.min() / self.stream_info['min'])
+            self.saturation = max(img.max() / self.image_info['max'],
+                                  img.min() / self.image_info['min'])
 
             img_min, img_max = self.compute_min_max(img)
 

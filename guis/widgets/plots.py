@@ -7,14 +7,15 @@ from PySide6.QtCharts import (QChartView, QDateTimeAxis, QLineSeries,
 from PySide6.QtCore import (QDateTime, QEvent, QObject, QPointF,
                             QSignalBlocker, QTimer, QTimeZone, Signal, Slot)
 from PySide6.QtGui import QCursor, QGuiApplication, QPen, Qt
-from PySide6.QtWidgets import QListWidget, QListWidgetItem, QPushButton
+from PySide6.QtWidgets import (QListWidget, QListWidgetItem, QMessageBox,
+                               QPushButton)
 
 from kalao import database
 from kalao.utils import kstring, ktime
 
 from guis.utils.definitions import ColorPalette
 from guis.utils.ui_loader import loadUi
-from guis.utils.widgets import KListWidgetItem, KWidget
+from guis.utils.widgets import KListWidgetItem, KMessageBox, KWidget
 
 import config
 
@@ -265,9 +266,13 @@ class PlotsWidget(KWidget):
         plot_min = np.inf
         plot_max = -np.inf
 
+        no_data = True
+
         for name, collection in data.items():
             if collection.empty:
                 continue
+
+            no_data = False
 
             self.value_before_conversion[name] = {}
 
@@ -362,6 +367,16 @@ class PlotsWidget(KWidget):
         with QSignalBlocker(self.max_spinbox):
             self.max_spinbox.setMinimum(self.axis_y.min())
             self.max_spinbox.setValue(self.axis_y.max())
+
+        if no_data:
+            msgbox = KMessageBox(self)
+            msgbox.setIcon(QMessageBox.Critical)
+            msgbox.setText("<b>No data!</b>")
+            msgbox.setInformativeText(
+                f'No data was found for the requested period of time and the requested series.'
+            )
+            msgbox.setModal(True)
+            msgbox.show()
 
     def hover_xy_to_str(self, x, y):
         if not np.isnan(x) and not np.isnan(y):

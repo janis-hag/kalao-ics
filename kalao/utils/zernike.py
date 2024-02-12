@@ -263,21 +263,3 @@ def print_coeffs(coeffs, unit='', indices_inverse=Zernike.standard_inverse):
         name, (n, m) = get_coeff_name(coeff, indices_inverse)
 
         print(f'({n: 2},{m: 2}) {value: f}{unit} {name}')
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    coeffs = [1, 0.5, 4, 0.2, -0.4, -2]
-
-    fig, axs = plt.subplots(1, 3)
-
-    pattern = generate_pattern(coeffs, (12, 12))
-    slopes = generate_slopes(coeffs, (11, 22))
-    slopes_from_pattern = slopes_from_pattern_interp(pattern)
-
-    axs[0].imshow(pattern, cmap='gray')
-    axs[1].imshow(slopes, cmap='gray')
-    axs[2].imshow(slopes_from_pattern, cmap='gray')
-
-    plt.show()

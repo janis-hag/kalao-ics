@@ -90,14 +90,3 @@ def next_flat_exptime(target_adu, prev_img, prev_exptime, prev_filter,
         prev_filter] / config.Exposure.filters_relative_flux[next_filter]
 
     return exptime
-
-
-if __name__ == "__main__":
-    mag = 2
-    target_adu = 16384
-    filter = 'g'
-
-    exptime = magnitude_to_exposure_time(mag, target_adu, filter)
-    adu = magnitude_to_adu(mag, exptime, filter)
-
-    print('Check idempotence:', target_adu, adu)

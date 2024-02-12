@@ -3,10 +3,12 @@ import math
 import numpy as np
 
 from PySide6.QtCharts import QChart, QChartView, QDateTimeAxis, QXYSeries
-from PySide6.QtCore import (QEvent, QLineF, QMargins, QPoint, QPointF, QRect,
-                            QRectF, QSignalBlocker, QSize, Signal)
+from PySide6.QtCore import (QEvent, QLineF, QMargins, QMarginsF, QPoint,
+                            QPointF, QRect, QRectF, QSignalBlocker, QSize,
+                            Signal)
 from PySide6.QtGui import (QBrush, QFont, QGuiApplication, QIcon, QPainter,
-                           QPainterPath, QPen, QPixmap, QPolygonF, Qt)
+                           QPainterPath, QPen, QPixmap, QPolygonF, Qt,
+                           QTransform)
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
                                QGraphicsScene, QGraphicsSimpleTextItem,
@@ -372,14 +374,22 @@ class KGraphicsView(QGraphicsView):
     pixmap = None
     pixmap_item = None
     view = None
-    margins = (0, 0, 0, 0)
+    margins = QMarginsF(0, 0, 0, 0)
     shape = (0, 0)
     offset = QPointF(0, 0)
 
     colormap = colormaps.BlackBody()
 
-    tick_lines = []
-    tick_labels = []
+    tick_visible = False
+    tick_spacing = None
+    tick_length = None
+    tick_text_spacing = None
+    tick_fontsize = None
+    tick_ticks_x = None
+    tick_ticks_y = None
+
+    neindicator_visible = False
+    neindicator_parallactic_angle = None
 
     hovered = Signal(int, int, float)
 
@@ -397,11 +407,11 @@ class KGraphicsView(QGraphicsView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.parang_group = self.scene.createItemGroup([])
+        self.neindicator_group = self.scene.createItemGroup([])
+        self.axes_group = self.scene.createItemGroup([])
 
     def viewSize(self):
-        return self.view.adjusted(-self.margins[0], -self.margins[1],
-                                  self.margins[2], self.margins[3])
+        return self.view
 
     def heightForWidth(self, width):
         if self.pixmap is None:
@@ -418,6 +428,26 @@ class KGraphicsView(QGraphicsView):
         else:
             w = self.width()
             return QSize(w, self.heightForWidth(w))
+
+    def fitInView(self, rect, aspectRadioMode=None):
+        viewRect = self.viewport().rect().adjusted(self.margins.left(),
+                                                   self.margins.top(),
+                                                   -self.margins.right(),
+                                                   -self.margins.bottom())
+
+        xratio = viewRect.width() / rect.width()
+        yratio = viewRect.height() / rect.height()
+
+        self.scaling = xratio = yratio = min(xratio, yratio)
+
+        self.setTransform(QTransform(xratio, 0, 0, yratio, 0, 0))
+        self.centerOn(rect.center())
+
+        if self.tick_visible:
+            self._draw_axes()
+
+        if self.neindicator_visible:
+            self._draw_neindicator()
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
@@ -461,10 +491,10 @@ class KGraphicsView(QGraphicsView):
 
         self.pixmap_item.setOffset(self.offset)
 
-        if self.shape != img.shape and view is None:
+        if view is None:
             view = self.pixmap.rect()
 
-        if view is not None:
+        if self.view != view:
             self.view = view
             self.scene.setSceneRect(self.viewSize())
             self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
@@ -521,80 +551,81 @@ class KGraphicsView(QGraphicsView):
             self.unsetCursor()
             self.hovered.emit(-1, -1, np.nan)
 
-    def addTicks(self, spacing, length, text_spacing, fontsize, ticks_x,
-                 ticks_y):
-        self.margins = (spacing + length + text_spacing + 4*fontsize + 50,
-                        spacing + length + text_spacing + 4*fontsize,
-                        spacing + length + text_spacing + 4*fontsize + 50,
-                        spacing + length + text_spacing + 4*fontsize)
+    def setTickParams(self, spacing, length, text_spacing, fontsize, ticks_x,
+                      ticks_y):
+        self.tick_spacing = spacing
+        self.tick_length = length
+        self.tick_text_spacing = text_spacing
+        self.tick_fontsize = fontsize
+        self.tick_ticks_x = ticks_x
+        self.tick_ticks_y = ticks_y
+        self.tick_visible = True
 
-        for line_item in self.tick_lines:
-            self.scene.removeItem(line_item)
+        self._draw_axes()
 
-        self.tick_lines = []
+    def _draw_axes(self):
+        for item in self.axes_group.childItems():
+            self.scene.removeItem(item)
+            self.axes_group.removeFromGroup(item)
 
         width = self.view.width()
         height = self.view.height()
 
-        pen = QPen(Color.GREY, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        spacing = self.tick_spacing / self.scaling
+        length = self.tick_length / self.scaling
+
+        pen = QPen(Color.GREY, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        self.addVerticalTicks(0, height, -(spacing), -(spacing + length), pen,
-                              ticks_y)
-        self.addVerticalTicks(0, height, width + spacing,
-                              width + spacing + length, pen, ticks_y)
+        self._draw_vertical_axis(0, height, -(spacing), -(spacing + length),
+                                 pen, self.tick_ticks_y)
+        self._draw_vertical_axis(0, height, width + spacing, width + spacing +
+                                 length, pen, self.tick_ticks_y)
 
-        self.addHorizontalTicks(0, width, -(spacing), -(spacing + length), pen,
-                                ticks_x)
-        self.addHorizontalTicks(0, width, height + spacing,
-                                height + spacing + length, pen, ticks_x)
+        self._draw_horizontal_axis(0, width, -(spacing), -(spacing + length),
+                                   pen, self.tick_ticks_x)
+        self._draw_horizontal_axis(0, width, height + spacing, height +
+                                   spacing + length, pen, self.tick_ticks_x)
 
-    def addVerticalTicks(self, start, end, tick_start, tick_end, pen, ticks_y):
-        self.tick_lines.append(
+        font = QFont()
+        font.setPixelSize(self.tick_fontsize)
+
+        self._draw_vertical_tick_labels(
+            width + spacing + length + self.tick_text_spacing, font,
+            self.tick_ticks_y)
+        self._draw_horizontal_tick_labels(
+            height + spacing + length + self.tick_text_spacing, font,
+            self.tick_ticks_x)
+
+    def _draw_vertical_axis(self, start, end, tick_start, tick_end, pen,
+                            ticks_y):
+        self.axes_group.addToGroup(
             self.scene.addLine(tick_start, start, tick_start, end, pen))
 
-        self.tick_lines.append(
+        self.axes_group.addToGroup(
             self.scene.addLine(tick_start, start, tick_end, start, pen))
-        self.tick_lines.append(
+        self.axes_group.addToGroup(
             self.scene.addLine(tick_start, end, tick_end, end, pen))
 
         for y, label in ticks_y:
-            self.tick_lines.append(
+            self.axes_group.addToGroup(
                 self.scene.addLine(tick_start, y, tick_end, y, pen))
 
-    def addHorizontalTicks(self, start, end, tick_start, tick_end, pen,
-                           ticks_x):
-        self.tick_lines.append(
+    def _draw_horizontal_axis(self, start, end, tick_start, tick_end, pen,
+                              ticks_x):
+        self.axes_group.addToGroup(
             self.scene.addLine(start, tick_start, end, tick_start, pen))
 
-        self.tick_lines.append(
+        self.axes_group.addToGroup(
             self.scene.addLine(start, tick_start, start, tick_end, pen))
-        self.tick_lines.append(
+        self.axes_group.addToGroup(
             self.scene.addLine(end, tick_start, end, tick_end, pen))
 
         for x, label in ticks_x:
-            self.tick_lines.append(
+            self.axes_group.addToGroup(
                 self.scene.addLine(x, tick_start, x, tick_end, pen))
 
-    def addTicksLabels(self, spacing, length, text_spacing, fontsize, ticks_x,
-                       ticks_y):
-        for text_item in self.tick_labels:
-            self.scene.removeItem(text_item)
-
-        self.tick_labels = []
-
-        width = self.view.width()
-        height = self.view.height()
-
-        font = QFont()
-        font.setPixelSize(fontsize)
-
-        self.addVerticalTickLabels(width + spacing + length + text_spacing,
-                                   font, ticks_y)
-        self.addHorizontalTickLabels(height + spacing + length + text_spacing,
-                                     font, ticks_x)
-
-    def addVerticalTickLabels(self, text_start, font, ticks_y):
+    def _draw_vertical_tick_labels(self, text_start, font, ticks_y):
         for y, label in ticks_y:
             text_item = OffsetedTextItem(label)
             text_item.setFont(font)
@@ -616,9 +647,9 @@ class KGraphicsView(QGraphicsView):
                 text_item.boundingRect().height() / 2)
             self.scene.removeItem(probe)
 
-            self.tick_labels.append(text_item)
+            self.axes_group.addToGroup(text_item)
 
-    def addHorizontalTickLabels(self, text_start, font, ticks_x):
+    def _draw_horizontal_tick_labels(self, text_start, font, ticks_x):
         for x, label in ticks_x:
             text_item = OffsetedTextItem(label)
             text_item.setFont(font)
@@ -638,24 +669,35 @@ class KGraphicsView(QGraphicsView):
                 probe.boundingRect().width() / 2, 0)
             self.scene.removeItem(probe)
 
-            self.tick_labels.append(text_item)
+            self.axes_group.addToGroup(text_item)
 
-    def addNEIndicator(self, parallactic_angle):
-        for item in self.parang_group.childItems():
+    def setNEIndicator(self, parallactic_angle):
+        self.neindicator_visible = True
+        self.neindicator_parallactic_angle = parallactic_angle
+
+        self._draw_neindicator()
+
+    def _draw_neindicator(self):
+        for item in self.neindicator_group.childItems():
             self.scene.removeItem(item)
+            self.neindicator_group.removeFromGroup(item)
 
-        pen = QPen(Color.GREY, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        # Reset group position to avoid drifting
+        self.neindicator_group.setPos(0, 0)
+
+        pen = QPen(Color.GREEN, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        brush = QBrush(Color.GREY, Qt.SolidPattern)
+        brush = QBrush(Color.GREEN, Qt.SolidPattern)
 
         font = QFont()
         font.setPixelSize(10)
         font.setBold(True)
 
-        length = 75
-        angle = parallactic_angle * np.pi / 180
-        arrow_size = 30
+        angle = self.neindicator_parallactic_angle * np.pi / 180
+        length = 15 / self.scaling
+        arrow_size = 5 / self.scaling
+        margin = 5 / self.scaling
 
         center_point = QPointF(0, 0)
 
@@ -693,7 +735,8 @@ class KGraphicsView(QGraphicsView):
 
         north_east = self.scene.addPath(north_east_path, pen)
 
-        pen = QPen(Color.GREY, 0.01, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen = QPen(Color.TRANSPARENT, 0, Qt.SolidLine, Qt.SquareCap,
+                   Qt.MiterJoin)
         pen.setCosmetic(True)
 
         north_arrow = self.scene.addPolygon(
@@ -727,15 +770,16 @@ class KGraphicsView(QGraphicsView):
         east_textitem.setOffset(east_textitem.boundingRect().width() / 2,
                                 east_textitem.boundingRect().height() / 2)
 
-        self.parang_group.addToGroup(north_east)
-        self.parang_group.addToGroup(north_arrow)
-        self.parang_group.addToGroup(east_arrow)
-        self.parang_group.addToGroup(north_textitem)
-        self.parang_group.addToGroup(east_textitem)
-        self.parang_group.setZValue(1)
+        self.neindicator_group.addToGroup(north_east)
+        self.neindicator_group.addToGroup(north_arrow)
+        self.neindicator_group.addToGroup(east_arrow)
+        self.neindicator_group.addToGroup(north_textitem)
+        self.neindicator_group.addToGroup(east_textitem)
+        self.neindicator_group.setZValue(1)
 
-        self.parang_group.setPos(-self.parang_group.boundingRect().x() + 50,
-                                 -self.parang_group.boundingRect().y() + 50)
+        rect = self.neindicator_group.childrenBoundingRect()
+        self.neindicator_group.setPos(-rect.x() + margin, -rect.y() + margin)
+        print(self.neindicator_group.boundingRect())
 
 
 class KChart(QChart):

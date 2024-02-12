@@ -139,7 +139,7 @@ def check_range(key, value, metadata):
         )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Get monitoring and cacao
     schedule.every(config.Database.telemetry_update_interval).seconds.do(
         update_telemetry_db)

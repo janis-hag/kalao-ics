@@ -105,62 +105,96 @@ def get_collection_last_update(collection_name):
     return datetime.fromtimestamp(0, tz=timezone.utc)
 
 
-def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
+def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None,
+        at=None):
     day = 0
     data = {}
 
     if dt is None:
-        dt = datetime.now(timezone.utc)
+        if at is None:
+            dt = datetime.now(timezone.utc)
+        else:
+            dt = at
 
-    if days is not None:
-        max_days = days
-    else:
-        max_days = config.Database.max_days
+    if days is None:
+        days = config.Database.max_days
 
+    # Convert dict of key to list
     if isinstance(keys, KeysView):
         keys = list(keys)
 
-    while day <= max_days:
+    if at is None:
+        # Projection used for values array
+        if np.isinf(nb_of_point):
+            values_projection = 1
+        else:
+            values_projection = {'$slice': -nb_of_point}
+    else:
+        # Filtering used on values array
+        values_filter = {
+            '$filter': {
+                'input': '$values',
+                'cond': {
+                    '$lte': ['$$this.timestamp', at]
+                }
+            }
+        }
+
+        # Projection used on values array
+        if np.isinf(nb_of_point):
+            values_projection = values_filter
+        else:
+            values_projection = {'$slice': [values_filter, -nb_of_point]}
+
+    while day <= days:
         db = _get_db(dt - timedelta(days=day))
         collection = _get_collection(db, collection_name)
 
         # yapf: disable
         if keys is None:
-            if np.isinf(nb_of_point):
-                values_to_keep = 1 # Keep all
+            if at is None:
+                # We want the nb_of_point last value(s)
+                filter = {}
+                projection = {'_id': 0, 'key': 1, 'values': values_projection}
             else:
-                values_to_keep = {'$slice': -nb_of_point}
+                # We want the nb_of_point last value(s) before timestamp
+                filter = {'values.timestamp': {'$lte': at}}
+                projection = {'_id': 0, 'key': 1, 'values': values_projection}
 
-            cursor = collection.find(
-                {},
-                {'_id': 0, 'key': 1, 'values': values_to_keep},
-                sort=[('last_timestamp', DESCENDING)])
+            cursor = collection.find(filter, projection,
+                                     sort=[('last_timestamp', DESCENDING)])
 
         elif isinstance(keys, str):
-            if np.isinf(nb_of_point):
-                values_to_keep = 1 # Keep all
+            if at is None:
+                # We want the nb_of_point last value(s)
+                filter = {'key': keys}
+                projection = {'_id': 0, 'key': 1, 'values': values_projection}
             else:
-                values_to_keep = {'$slice': -nb_of_point}
+                # We want the nb_of_point last value(s) before timestamp
+                filter = {'key': keys, 'values.timestamp': {'$lte': at}}
+                projection = {'_id': 0, 'key': 1, 'values': values_projection}
 
-            cursor = collection.find(
-                {'key': keys},
-                {'_id': 0, 'key': 1, 'values': values_to_keep},
-                limit=1)
+            cursor = collection.find(filter, projection, limit=1)
 
         elif isinstance(keys, list):
-            if np.isinf(nb_of_point):
-                values_to_keep = 1 # Keep all
-            else:
-                values_to_keep = {'$slice': ['$values', -nb_of_point]}
-
             match_list = []
             for key in list(keys):
                 match_list.append({'key': key})
 
-            cursor = collection.aggregate([
-                {'$match': {'$or': match_list}},
-                {'$project': {'_id': 0, 'key': 1, 'values': values_to_keep}},
-            ])
+            if at is None:
+                # We want the nb_of_point last value(s)
+                pipeline = [
+                    {'$match': {'$or': match_list}},
+                    {'$project': {'_id': 0, 'key': 1, 'values': values_projection}},
+                ]
+            else:
+                # We want the nb_of_point last value(s) before timestamp
+                pipeline = [
+                    {'$match': {'$and': [{'$or': match_list}, {'values.timestamp': {'$lte': at}}]}},
+                    {'$project':  {'_id': 0, 'key': 1, 'values': values_projection}},
+                ]
+
+            cursor = collection.aggregate(pipeline)
 
         else:
             raise TypeError(f'Unsupported type {type(keys)} for keys')
@@ -182,6 +216,7 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None):
 
                     keys.remove(key)
 
+        # Check if we gathered the correct number of points
         if keys is None and data != {}:
             return data
         elif isinstance(keys, str) and len(data.get(keys, [])) >= nb_of_point:
@@ -205,11 +240,11 @@ def get_time_since_state(collection_name, key, condition='==', value=None):
         value = '$current.value'
 
     if condition in condition_mapping:
-        cond = {condition_mapping[condition]: ['$$previous.value', value]}
+        cond = {condition_mapping[condition]: ['$$this.value', value]}
     else:
         return {}
 
-    while data.get('previous') is None and day <= config.Database.max_days:
+    while 'previous' not in data and day <= config.Database.max_days:
         current = data.get('current', {'$arrayElemAt': ['$values', -1]})
 
         db = _get_db(dt - timedelta(days=day))
@@ -220,19 +255,25 @@ def get_time_since_state(collection_name, key, condition='==', value=None):
             {'$match': {'key': key}},
             {'$project': {'_id': 0, 'key': 1, 'values': 1}},
             {'$addFields': {'current': current}},
-            {'$addFields': {'previous': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': cond, 'as': "previous"}}, -1]}}},
-            {'$addFields': {'since': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': {'$gt': ['$$since.timestamp', '$previous.timestamp']}, 'as': "since"}}, 1]}}},
+            {'$addFields': {'previous': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': cond}}, -1]}}},
+            {'$addFields': {'since': {'$arrayElemAt': [{'$filter': {'input': '$values', 'cond': {'$gt': ['$$this.timestamp', '$previous.timestamp']}}}, 0]}}},
             {'$project': {'values': 0}},
         ])
         # yapf: enable
 
         try:
+            # Note: document will only contain current and since if no previous is found for this night (previous in another night, since will the first record of the night)
+            # Note: document will only contain current and previous if no since is found for this night (since in another night, previous will the last record of the night)
             document = cursor.next()
-            data = {
-                'current': document.get('current'),
-                'previous': document.get('previous'),
-                'since': document.get('since')
-            }
+
+            if 'current' in document:
+                data['current'] = document['current']
+
+            if 'previous' in document:
+                data['previous'] = document['previous']
+
+            if 'since' in document:
+                data['since'] = document['since']
         except StopIteration:
             pass
 

@@ -222,7 +222,7 @@ def _check_plc():
     background.launch('hardware_timer', func_list)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     schedule.every(
         config.Timers.cooling_check_interval).seconds.do(_check_cooling_status)
     schedule.every(

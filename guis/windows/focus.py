@@ -96,13 +96,13 @@ class FocusWindow(KMainWindow, BackendDataMixin):
         self.status_label.updateText(status='--')
 
         if self.file is None:
-            backend.focus_updated.connect(self.focus_updated,
-                                          Qt.UniqueConnection)
+            backend.focus_sequence_updated.connect(self.focus_sequence_updated,
+                                                   Qt.UniqueConnection)
 
             self.focus_timer = QTimer(parent=self)
             self.focus_timer.setInterval(
                 int(1000 / config.GUI.refreshrate_focus))
-            self.focus_timer.timeout.connect(self.backend.get_focus)
+            self.focus_timer.timeout.connect(self.backend.get_focus_sequence)
             self.focus_timer.start()
         else:
             self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
@@ -125,8 +125,8 @@ class FocusWindow(KMainWindow, BackendDataMixin):
         self.center()
         self.setFixedSize(self.size())
 
-    def focus_updated(self, data):
-        hdul = self.consume_fits_full(data, 'last_focus_sequence')
+    def focus_sequence_updated(self, data):
+        hdul = self.consume_fits_full(data, config.FITS.last_focus_sequence)
 
         if hdul is not None:
             self.show_sequence(hdul)
@@ -192,7 +192,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             sucess = hdul[0].header['HIERARCH FOCUS SUCCESS']
 
             if self.file is None:
-                # Stop timer to spare ressources
+                # Stop timer to spare resources
                 self.focus_timer.stop()
 
             if sucess:
@@ -231,13 +231,14 @@ class FocusWindow(KMainWindow, BackendDataMixin):
     def closeEvent(self, event):
         if self.file is None:
             self.focus_timer.stop()
-            self.backend.focus_updated.disconnect(self.focus_updated)
+            self.backend.focus_sequence_updated.disconnect(
+                self.focus_sequence_updated)
 
         event.accept()
 
     def showEvent(self, event):
         if self.file is None:
             self.focus_timer.start()
-            self.backend.focus_updated.connect(self.focus_updated,
-                                               Qt.UniqueConnection)
+            self.backend.focus_sequence_updated.connect(
+                self.focus_sequence_updated, Qt.UniqueConnection)
         event.accept()

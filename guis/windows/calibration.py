@@ -97,6 +97,11 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
         self.clear_latency()
 
+        ### Response tab
+
+        self.loopname_label.updateText(loop_name=f'KalAO-{conf}loop')
+        self.loopnumber_label.updateText(loop_number=self.loop)
+
         ### Common
 
         self.center()
@@ -104,7 +109,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     ##### Calibration tab
 
-    def number_of_modes(self):
+    def update_modes_stats(self):
         self.modes_number = np.inf
         self.modes_dm_min = np.inf
         self.modes_dm_max = -np.inf
@@ -115,33 +120,36 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
             data = self.modes_data.get('CMmodesDM', {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number, data.shape[0])
-                self.modes_min = min(self.modes_dm_min, data.min())
-                self.modes_max = min(self.modes_dm_max, data.max())
+                self.modes_dm_min = min(self.modes_dm_min, data.min())
+                self.modes_dm_max = max(self.modes_dm_max, data.max())
 
             data = self.modes_data.get('CMmodesWFS', {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number, data.shape[0])
-                self.modes_min = min(self.modes_wfs_min, data.min())
-                self.modes_max = min(self.modes_wfs_max, data.max())
+                self.modes_wfs_min = min(self.modes_wfs_min, data.min())
+                self.modes_wfs_max = max(self.modes_wfs_max, data.max())
         else:
             data = self.modes_data.get(f'aol{self.loop}_DMmodes',
                                        {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number,
                                         data.shape[len(data.shape) - 1])
-                self.modes_min = min(self.modes_dm_min, data.min())
-                self.modes_max = min(self.modes_dm_max, data.max())
+                self.modes_dm_min = min(self.modes_dm_min, data.min())
+                self.modes_dm_max = max(self.modes_dm_max, data.max())
 
             data = self.modes_data.get(f'aol{self.loop}_modesWFS',
                                        {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number,
                                         data.shape[len(data.shape) - 1])
-                self.modes_min = min(self.modes_wfs_min, data.min())
-                self.modes_max = min(self.modes_wfs_max, data.max())
+                self.modes_wfs_min = min(self.modes_wfs_min, data.min())
+                self.modes_wfs_max = max(self.modes_wfs_max, data.max())
 
         if np.isinf(self.modes_number):
             self.modes_number = 1
+
+        self.mode_spinbox.setMaximum(self.modes_number)
+        self.mode_spinbox.setSuffix(f' / {self.modes_number}')
 
     @Slot(bool)
     def on_refresh_button_clicked(self, checked):
@@ -154,26 +162,17 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         self.refresh_button.setEnabled(True)
         QGuiApplication.restoreOverrideCursor()
 
-        self.number_of_modes()
-        self.mode_spinbox.setMaximum(self.modes_number)
-        self.mode_spinbox.setSuffix(f' / {self.modes_number}')
-
+        self.update_modes_stats()
         self.update_calib_images()
 
     @Slot(int)
-    def on_minmax_checkbox_valueChanged(self, i):
-        self.number_of_modes()
-        self.mode_spinbox.setMaximum(self.modes_number)
-        self.mode_spinbox.setSuffix(f' / {self.modes_number}')
-
+    def on_minmax_checkbox_stateChanged(self, state):
+        self.update_modes_stats()
         self.update_calib_images()
 
     @Slot(int)
     def on_calib_combobox_currentIndexChanged(self, index):
-        self.number_of_modes()
-        self.mode_spinbox.setMaximum(self.modes_number)
-        self.mode_spinbox.setSuffix(f' / {self.modes_number}')
-
+        self.update_modes_stats()
         self.update_calib_images()
 
     @Slot(int)
@@ -181,6 +180,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         self.update_calib_images()
 
     def update_calib_images(self):
+        print('update')
         if self.calib_combobox.currentText() == 'Configuration':
             self.update_image_fits('wfsref', 'wfsref', symetric=True)
             self.update_image_fits('wfsrefc', 'wfsrefc', symetric=True)
@@ -250,16 +250,19 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
             view.setImage(None)
 
     def compute_minmax(self, img, view_key, symetric):
-        if self.minmax_checkbox.isEnabled():
+        if self.minmax_checkbox.isChecked():
             img_min = img.min()
             img_max = img.max()
         else:
             if view_key == 'DMmodes':
                 img_min = self.modes_dm_min
                 img_max = self.modes_dm_max
-            else:
+            elif view_key == 'modesWFS':
                 img_min = self.modes_wfs_min
                 img_max = self.modes_wfs_max
+            else:
+                img_min = img.min()
+                img_max = img.max()
 
         if symetric:
             abs_max = max(abs(img_min), abs(img_max))

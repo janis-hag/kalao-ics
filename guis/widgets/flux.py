@@ -15,7 +15,7 @@ import config
 
 class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.FLUX
-    stream_info = config.StreamInfo.shwfs_flux
+    image_info = config.Images.shwfs_flux
 
     data_unit = ' ADU'
     data_precision = 0
@@ -53,7 +53,7 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             img_min, img_max = self.compute_min_max(img)
 
-            self.saturation = img.max() / self.stream_info['max']
+            self.saturation = img.max() / self.image_info['max']
 
             self.flux_view.setImage(img, img_min, img_max)
 

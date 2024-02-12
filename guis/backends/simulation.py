@@ -1,6 +1,7 @@
 import random
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -46,20 +47,11 @@ class FakeSHMFPSBackend(AbstractBackend):
 
         self.internal_state[f'{stream_name}-cnt0'] = cnt0
 
-        if stream_name == 'fli_stream':
-            data[key]['cnt0'] = self.internal_state.get('fli-cnt0', -1)
-
     def _update_stream_keywords(self, data, stream_name, keywords):
         if stream_name not in data:
             data[stream_name] = {}
 
         data[stream_name]['keywords'] = keywords
-
-    def _update_stream_cnt(self, data, stream_name, cnt0):
-        if stream_name not in data:
-            data[stream_name] = {}
-
-        data[stream_name]['cnt0'] = cnt0
 
     def _update_param(self, data, fps_name, param_name, param):
         if fps_name not in data:
@@ -78,6 +70,22 @@ class FakeSHMFPSBackend(AbstractBackend):
             data[collection] = {}
 
         data[collection].update(db_data)
+
+    def _update_fits_full(self, data, fits_file, hdul):
+        key = fits_file.stem
+
+        data[key] = {'mtime': datetime.now(timezone.utc), 'hdul': hdul}
+
+        if fits_file == config.FITS.last_image_all:
+            data[key]['mtime'] = self.internal_state.get('fli-mtime')
+
+    def _update_fits_mtime(self, data, fits_file, mtime):
+        key = fits_file.stem
+
+        if key not in data:
+            data[key] = {}
+
+        data[key]['mtime'] = mtime
 
 
 class MainBackend(FakeSHMFPSBackend):
@@ -159,7 +167,7 @@ class MainBackend(FakeSHMFPSBackend):
                 RelayState.OFF,
             'fan_status':
                 RelayState.ON,
-            'fli-cnt0':
+            'fli-mtime':
                 0,
             'fli-exposure_time':
                 60,
@@ -214,7 +222,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     def _internal_update(self):
         if time.monotonic() - self.last_fli_update > 5:
-            self.internal_state['fli-cnt0'] += 1
+            self.internal_state['fli-mtime'] = datetime.now(timezone.utc)
             self.last_fli_update = time.monotonic()
 
         if self.internal_state['dm-loopON']:
@@ -269,23 +277,6 @@ class MainBackend(FakeSHMFPSBackend):
             data, config.Streams.MODE_COEFFS,
             np.random.normal(0, 1, 90) * np.linspace(1, 0, 90)**2)
 
-        fs = 1.8e3
-        N = fs * 10
-        amp = 2 * np.sqrt(2)
-        freq = 1
-        noise_power = 0.001 * fs / 2
-        timestamps = np.arange(N) / fs
-        tip = amp * np.sin(2 * np.pi * freq * timestamps)
-        tip += np.random.normal(scale=np.sqrt(noise_power),
-                                size=timestamps.shape)
-        tilt = amp * np.sin(2 * np.pi * 2 * freq * timestamps)
-        tilt += np.random.normal(scale=np.sqrt(noise_power),
-                                 size=timestamps.shape)
-
-        self._update_stream(
-            data, config.Streams.TELEMETRY_TTM,
-            np.roll(np.vstack([timestamps, tip, tilt]), 9, axis=1))
-
         if self.internal_state['nuvu-acq']:
             self._update_stream(data, config.Streams.NUVU, nuvu_data)
 
@@ -305,9 +296,9 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    @emit('streams_fli_updated')
+    @emit('fli_image_updated')
     @timeit
-    def get_streams_fli(self):
+    def get_fli_image(self):
         data = {}
 
         if self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP:
@@ -327,15 +318,26 @@ class MainBackend(FakeSHMFPSBackend):
                                        tiptilt=self._get_dm02disp(),
                                        illumination=illumination)
 
-        self._update_stream(data, config.Streams.FLI, fli_data)
-        self._update_stream_keywords(
-            data, config.Streams.FLI, {
-                'laser':
-                    self.internal_state['flipmirror_position'] ==
-                    FlipMirrorPosition.UP,
-                'timestamp':
-                    datetime.now(timezone.utc).timestamp(),
-            })
+        hw = 128
+        hdu = fits.PrimaryHDU(fli_data[config.FLI.center_y -
+                                       hw:config.FLI.center_y + hw,
+                                       config.FLI.center_x -
+                                       hw:config.FLI.center_x + hw])
+        hdu.header.set(
+            'DATE',
+            datetime.now(timezone.utc).replace(tzinfo=None).isoformat(
+                timespec="milliseconds"))
+        hdu.header.set('HIERARCH ESO DET WIN STARTX', config.FLI.center_x - hw)
+        hdu.header.set('HIERARCH ESO DET WIN STARTY', config.FLI.center_y - hw)
+        hdu.header.set('HIERARCH ESO DET WIN NX', 2 * hw)
+        hdu.header.set('HIERARCH ESO DET WIN NY', 2 * hw)
+        hdu.header.set('CRPIX1', hw)
+        hdu.header.set('CRPIX2', hw)
+
+        hdul = fits.HDUList()
+        hdul.append(hdu)
+
+        self._update_fits_full(data, config.FITS.last_image_all, hdul)
 
         return data
 
@@ -344,8 +346,8 @@ class MainBackend(FakeSHMFPSBackend):
     def get_all(self):
         data = {}
 
-        self._update_stream_cnt(data, config.Streams.FLI,
-                                self.internal_state['fli-cnt0'])
+        self._update_fits_mtime(data, config.FITS.last_image_all,
+                                self.internal_state['fli-mtime'])
 
         self._update_stream(data, config.Streams.TTM, self._get_dm02disp())
 
@@ -514,6 +516,21 @@ class MainBackend(FakeSHMFPSBackend):
                 }]
             })
 
+        fs = 1.8e3
+        noise_power = 0.001 * fs / 2
+        timestamps = datetime.now(
+            timezone.utc).timestamp() + np.arange(10 * fs) / fs
+        tip = 2 * np.sqrt(2) * np.sin(2 * np.pi * 10 * timestamps)
+        tip += np.random.normal(scale=np.sqrt(noise_power),
+                                size=timestamps.shape)
+        tilt = np.sqrt(2) * np.sin(2 * np.pi * 20 * timestamps)
+        tilt += np.random.normal(scale=np.sqrt(noise_power),
+                                 size=timestamps.shape)
+
+        self._update_stream(
+            data, config.Streams.TELEMETRY_TTM,
+            np.roll(np.vstack([timestamps, tip, tilt]), 9, axis=1))
+
         return data
 
     @emit('monitoringandtelemetry_updated')
@@ -568,11 +585,13 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    @emit('focus_updated')
+    @emit('focus_sequence_updated')
     @timeit
-    def get_focus(self):
+    def get_focus_sequence(self):
+        data = {}
+
         if self.internal_state['focusing-step'] == config.Focusing.steps:
-            return {}
+            return data
 
         self.internal_state['focusing-step'] %= config.Focusing.steps
         self.internal_state['focusing-step'] += 1
@@ -634,12 +653,7 @@ class MainBackend(FakeSHMFPSBackend):
             hdul[0].header.set('HIERARCH FOCUS BEST STAR FWHM', best_fwhm)
             hdul[0].header.set('HIERARCH FOCUS SUCCESS', True)
 
-        data = {
-            'focus_sequence': {
-                'mtime': datetime.now(timezone.utc),
-                'hdul': hdul
-            }
-        }
+        self._update_fits_full(data, config.FITS.last_focus_sequence, hdul)
 
         return data
 
@@ -1049,9 +1063,9 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state[state_key] = PLCStatus.STANDING
         self.internal_state[position_key] = position
 
-    def set_fli_image(self, exposure_time, frames):
+    def set_fli_image(self, exposure_time, frames, roi_size):
         print(
-            f'Started FLI {frames} exposure(s) of {exposure_time} s (virtually)'
+            f'Started FLI {frames} {roi_size}x{roi_size} exposure(s) of {exposure_time} s (virtually)'
         )
 
         self.internal_state['fli-frames'] = frames

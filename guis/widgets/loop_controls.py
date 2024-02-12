@@ -182,7 +182,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         # X Axis Settings
         axis_x = self.tiptilt_spectrum_axis_x = QLogValueAxis()
         axis_x.setBase(10)
-        axis_x.setRange(self.tiptilt_min_freq, self.tiptilt_max_freq)
+        axis_x.setRange(0.1, 1000)
         axis_x.setTitleText('Frequency [Hz]')
         chart.addAxis(axis_x, Qt.AlignBottom)
         series_tip.attachAxis(axis_x)
@@ -192,7 +192,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_y = self.tiptilt_spectrum_axis_y = QValueAxis()
         axis_y.setTickCount(7)
         axis_y.setRange(0, 1.05)
-        axis_y.setTitleText('Amplitude [a.u.]')
+        axis_y.setTitleText('Amplitude RMS [mrad]')
         chart.addAxis(axis_y, Qt.AlignLeft)
         series_tip.attachAxis(axis_y)
         series_tilt.attachAxis(axis_y)
@@ -288,14 +288,16 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
             self.display_modalgains(img)
 
-    def streams_all_updated(self, data):
-        img = self.consume_stream(data, config.Streams.MODE_COEFFS)
-        if img is not None:
-            self.display_modes_coeff(img)
+        # Tip-Tilt spectrum
 
         img = self.consume_stream(data, config.Streams.TELEMETRY_TTM)
         if img is not None:
             self.display_tiptilt_spectrum(img)
+
+    def streams_all_updated(self, data):
+        img = self.consume_stream(data, config.Streams.MODE_COEFFS)
+        if img is not None:
+            self.display_modes_coeff(img)
 
     # DM Loop
 
@@ -476,8 +478,13 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         series_max = modes_coeff.max()
 
         abs_max = max(abs(series_min), abs(series_max))
-        series_min = -abs_max * 1.05
-        series_max = abs_max * 1.05
+
+        if abs_max < config.epsilon:
+            series_min = -0.01
+            series_max = 0.01
+        else:
+            series_min = -abs_max * 1.05
+            series_max = abs_max * 1.05
 
         self.modes_axis_x.setRange(0, modes_coeff.size + 1)
         self.modes_axis_y.setRange(series_min, series_max)
@@ -505,5 +512,12 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         max = amplitude.max()
 
+        if max < config.epsilon:
+            series_min = -0.01
+            series_max = 0.01
+        else:
+            series_min = -0.05 * max
+            series_max = max * 1.05
+
         self.tiptilt_spectrum_axis_x.setRange(frequency[1], frequency[-1])
-        self.tiptilt_spectrum_axis_y.setRange(-0.05 * max, max * 1.05)
+        self.tiptilt_spectrum_axis_y.setRange(series_min, series_max)

@@ -14,7 +14,7 @@ colormap_path = Path(__file__).absolute().parent.parent / 'colormaps'
 
 
 class Colormap:
-    colormap = None
+    table = None
 
     color_saturation_low = None
     color_saturation_high = None
@@ -47,11 +47,11 @@ class ColormapExtrapolated(Colormap):
         for i in range(length):
             limits.append(start + i * (end-start) / (length-1))
 
-        self.colormap = []
+        self.table = []
         j = 0
 
         if self.color_saturation_low is not None:
-            self.colormap.append(
+            self.table.append(
                 QColor(self.color_saturation_low[0] * color_max,
                        self.color_saturation_low[1] * color_max,
                        self.color_saturation_low[2] * color_max).rgba())
@@ -66,18 +66,18 @@ class ColormapExtrapolated(Colormap):
                                                                         1][1]
             blue = (1-coeff) * self.colors[j][2] + coeff * self.colors[j + 1][2]
 
-            self.colormap.append(
+            self.table.append(
                 QColor(red * color_max, green * color_max,
                        blue * color_max).rgba())
 
         if self.color_saturation_high is not None:
-            self.colormap.append(
+            self.table.append(
                 QColor(self.color_saturation_high[0] * color_max,
                        self.color_saturation_high[1] * color_max,
                        self.color_saturation_high[2] * color_max).rgba())
 
-        if self.has_transparency is not None:
-            self.colormap.append(QColor(0, 0, 0, 0).rgba())
+        if self.has_transparency:
+            self.table.append(QColor(0, 0, 0, 0).rgba())
 
 
 class ColormapCSV(Colormap):
@@ -87,11 +87,15 @@ class ColormapCSV(Colormap):
     def __init__(self):
         cmap = pd.read_csv(self.file)
 
-        self.colormap = []
+        self.table = []
         for i, row in cmap.iterrows():
-            self.colormap.append(
+            self.table.append(
                 QColor(row['RGB_r'] * self.scale, row['RGB_g'] * self.scale,
                        row['RGB_b'] * self.scale).rgba())
+
+        if self.has_transparency:
+            self.table[-1]
+            self.table[-1] = QColor(0, 0, 0, 0).rgba()
 
 
 class Grayscale(ColormapExtrapolated):
@@ -141,27 +145,11 @@ class CoolWarmTransparent(ColormapCSV):
 
     has_transparency = True
 
-    min = 1
-    max = 254
-
-    def __init__(self):
-        super().__init__()
-
-        self.colormap[-1] = (QColor(0, 0, 0, 0).rgba())
-
 
 class BlackBodyTransparent(ColormapCSV):
     file = colormap_path / 'black-body-table-byte-0256.csv'
 
     has_transparency = True
-
-    min = 0
-    max = 254
-
-    def __init__(self):
-        super().__init__()
-
-        self.colormap[-1] = (QColor(0, 0, 0, 0).rgba())
 
 
 class ColormapLabel(QLabel):
@@ -185,7 +173,7 @@ def show_colormap(colormap):
     img_uint8 = np.require(array, np.uint8, 'C')
     image = QImage(img_uint8.data, img_uint8.shape[1], img_uint8.shape[0],
                    img_uint8.shape[1], QImage.Format_Indexed8)
-    image.setColorTable(colormap.colormap)
+    image.setColorTable(colormap.table)
 
     pixmap = QPixmap.fromImage(image)
     label.setPixmap(pixmap)
@@ -221,7 +209,7 @@ def get_all_colormaps(exclude_transparent=False):
     return colormaps
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = QApplication(['KalAO - Colormaps'])
     app.setQuitOnLastWindowClosed(True)
 

@@ -246,7 +246,7 @@ def execute_command(command, seq_args):
         logger.info('sequencer', f'{command} ended')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     database.store('obs', {'sequencer_status': SequencerStatus.INITIALISING})
 
     signal.signal(signal.SIGTERM, handler)
