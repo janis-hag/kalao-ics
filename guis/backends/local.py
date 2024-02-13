@@ -349,7 +349,7 @@ class MainBackend(SHMFPSBackend):
                              cwd=config.AO.cacao_workdir)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         return data
 
@@ -370,7 +370,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         if res.returncode != 0:
             return data
@@ -392,11 +392,11 @@ class MainBackend(SHMFPSBackend):
 
         elif conf == 'ttmloop':
             if LoopStatus.TTM_LOOP_ON in aocontrol.open_loop(
-                    config.AO.TTM_loop_number):
+                    config.AO.TTM_loop_number, with_autogain=False):
                 return {'returncode': -1, 'stdout': 'Failed to open TTM loop'}
 
             if LoopStatus.DM_LOOP_ON not in aocontrol.close_loop(
-                    config.AO.DM_loop_number):
+                    config.AO.DM_loop_number, with_autogain=False):
                 return {'returncode': -1, 'stdout': 'Failed to close DM loop'}
 
             if aocontrol.set_modalgains(np.array([1, 1])) != 0:
@@ -407,6 +407,8 @@ class MainBackend(SHMFPSBackend):
         else:
             return {'returncode': -1, 'stdout': 'Unknown loop'}
 
+        return {'returncode': 0, 'stdout': 'Success!'}
+
     def set_RMCM_mkDMpokemodes(self, conf, loop):
         data = {}
 
@@ -415,7 +417,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         return data
 
@@ -436,7 +438,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         return data
 
@@ -457,7 +459,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         return data
 
@@ -469,7 +471,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         self._update_fits(
             data, config.AO.cacao_workdir /
@@ -485,7 +487,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         return data
 
@@ -497,7 +499,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         return data
 
@@ -509,7 +511,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         return data
 
@@ -521,7 +523,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout
+        data['stdout'] = res.stdout.decode()
 
         return data
 

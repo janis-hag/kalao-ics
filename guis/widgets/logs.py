@@ -3,8 +3,7 @@ from datetime import datetime, timezone
 import numpy as np
 
 from PySide6.QtCore import QDateTime, QSignalBlocker, QTimer, Signal, Slot
-from PySide6.QtGui import (QCursor, QFontDatabase, QGuiApplication, Qt,
-                           QTextBlockUserData, QTextCursor)
+from PySide6.QtGui import QFontDatabase, Qt, QTextBlockUserData, QTextCursor
 from PySide6.QtWidgets import QTreeWidgetItem
 
 from kalao import database

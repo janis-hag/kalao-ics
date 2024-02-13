@@ -730,7 +730,7 @@ class Streams:
     DM = 'dm01disp'
     TTM = 'dm02disp'
     MODALGAINS = 'aol1_mgainfact'
-    MODE_COEFFS = 'aol1_mgain'
+    MODE_COEFFS = 'aol1_modevalDM'
 
     DM_FLAT = 'dm01disp00'
     DM_LOOP = 'dm01disp03'

@@ -113,6 +113,7 @@ def set_power(power, enable=False, beck=None):
         power = config.Laser.max_power
 
     previous_power = get_power(beck=beck)
+    previous_state = get_state(beck=beck)
 
     # Give new intensity value
     laser_setIntensity = beck.get_node(f'{config.PLC.Node.LASER}.setIntensity')
@@ -131,10 +132,11 @@ def set_power(power, enable=False, beck=None):
             ua.Variant(True,
                        laser_bSetIntensity.get_data_type_as_variant_type())))
 
-    if enable and get_state() != LaserState.ON:
+    if enable and previous_state != LaserState.ON:
         _switch('bEnable', beck=beck)
 
-    if power != 0 and not math.isclose(previous_power, power):
+    if power != 0 and not math.isclose(
+            previous_power, power) and previous_state == LaserState.ON:
         time.sleep(config.Laser.switch_wait)
 
     return get_power(beck=beck)

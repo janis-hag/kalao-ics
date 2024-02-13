@@ -27,24 +27,24 @@ from kalao.definitions.enums import IPPowerStatus, LoopStatus, ReturnCode
 import config
 
 
-def close_loops():
+def close_loops(with_autogain=True):
     """
     Close the primary DM AO loop followed by the secondary TTM loop.
 
     :return:
     """
 
-    return switch_loops(close=True)
+    return switch_loops(close=True, with_autogain=with_autogain)
 
 
-def open_loops():
+def open_loops(with_autogain=True):
     """
     Open the primary DM AO loop followed by the secondary TTM loop.
 
     :return:
     """
 
-    return switch_loops(close=False)
+    return switch_loops(close=False, with_autogain=with_autogain)
 
 
 def check_loops():
@@ -63,7 +63,7 @@ def check_loops():
     return status
 
 
-def switch_loops(close=True):
+def switch_loops(close=True, with_autogain=True):
     """
     Toggle the loop value of the primary DM AO loop and the secondary TTM loop.
 
@@ -78,20 +78,20 @@ def switch_loops(close=True):
         loop_order = [config.AO.TTM_loop_number, config.AO.DM_loop_number]
 
     for i in loop_order:
-        switch_loop(i, close)
+        switch_loop(i, close, with_autogain=with_autogain)
 
     return check_loops()
 
 
-def close_loop(loop_number):
-    return switch_loop(loop_number, close=True)
+def close_loop(loop_number, with_autogain=True):
+    return switch_loop(loop_number, close=True, with_autogain=with_autogain)
 
 
-def open_loop(loop_number):
-    return switch_loop(loop_number, close=False)
+def open_loop(loop_number, with_autogain=True):
+    return switch_loop(loop_number, close=False, with_autogain=with_autogain)
 
 
-def switch_loop(loop_number, close=True):
+def switch_loop(loop_number, close=True, with_autogain=True):
     """
     Toggle the loop value of one loop
 
@@ -117,11 +117,8 @@ def switch_loop(loop_number, close=True):
 
     time.sleep(1)
 
-    if loop_number == 1:
-        ret = switch_autogain(on=close)
-
-        if ret != 0:
-            return ret  #TODO
+    if loop_number == 1 and with_autogain:
+        switch_autogain(on=close)
 
     return check_loops()
 
@@ -165,13 +162,12 @@ def set_emgain(emgain=1, method='fps'):
         emgain = config.WFS.max_emgain
 
     if method == 'fps':
-        _set_fps_value(config.FPS.NUVU, 'emgain', emgain)
+        return _set_fps_value(config.FPS.NUVU, 'emgain', emgain)
     elif method == 'tmux':
-        _set_tmux_value('kalaocam_ctrl', 'SetEMCalibratedGain', emgain)
+        return _set_tmux_value('kalaocam_ctrl', 'SetEMCalibratedGain', emgain)
     else:
         logger.error('ao', f'Unknown method {method} in set_emgain')
-
-    return 0
+        return -1
 
 
 def set_exptime(exptime=0, method='fps'):
@@ -188,13 +184,12 @@ def set_exptime(exptime=0, method='fps'):
         exptime = config.WFS.max_exposuretime
 
     if method == 'fps':
-        _set_fps_value(config.FPS.NUVU, 'exposuretime', exptime)
+        return _set_fps_value(config.FPS.NUVU, 'exposuretime', exptime)
     elif method == 'tmux':
-        _set_tmux_value('kalaocam_ctrl', 'SetExposureTime', exptime)
+        return _set_tmux_value('kalaocam_ctrl', 'SetExposureTime', exptime)
     else:
         logger.error('ao', f'Unknown method {method} in set_exptime')
-
-    return 0
+        return -1
 
 
 def emgain_off():
@@ -612,7 +607,9 @@ def _set_fps_value(fps_name, key, value):
         logger.error('ao', f'Can\'t set {key}, {fps_name} is missing')
         return -1
 
-    return fps.set_param(key, value)
+    fps.set_param(key, value)
+
+    return fps.get_param(key)
 
 
 def _set_tmux_value(session, key, value=''):
@@ -624,6 +621,8 @@ def _set_tmux_value(session, key, value=''):
     except libtmux.exc.TmuxObjectDoesNotExist:
         logger.error('ao', f'Can\'t set {key}, {session} is missing')
         return -1
+
+    return value
 
 
 def _wait_file(file, timeout=30, wait_time=1):

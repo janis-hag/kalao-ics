@@ -6,7 +6,7 @@ from PySide6.QtCharts import (QChartView, QDateTimeAxis, QLineSeries,
                               QValueAxis, QXYSeries)
 from PySide6.QtCore import (QDateTime, QEvent, QObject, QPointF,
                             QSignalBlocker, QTimer, QTimeZone, Signal, Slot)
-from PySide6.QtGui import QCursor, QGuiApplication, QPen, Qt
+from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import (QListWidget, QListWidgetItem, QMessageBox,
                                QPushButton)
 

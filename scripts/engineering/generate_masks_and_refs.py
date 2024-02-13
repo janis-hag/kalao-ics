@@ -12,8 +12,7 @@ def run(args):
     ##### DM flat
     dm_flat = np.zeros((12, 12), dtype=np.float32)
     fits.PrimaryHDU(dm_flat).writeto(
-        args.output_folder / 'hwloop/rundir/dm_flat_empty.fits',
-        overwrite=True)
+        args.output_folder / 'hwloop/rundir/dmflat_empty.fits', overwrite=True)
 
     ##### DM wfsmask
 
@@ -34,7 +33,7 @@ def run(args):
     # yapf: enable
 
     fits.PrimaryHDU(dm_wfsmask).writeto(
-        args.output_folder / 'dm/conf/wfsmask.fits', overwrite=True)
+        args.output_folder / 'dmloop/conf/wfsmask.fits', overwrite=True)
 
     ##### DM dmmask
 
@@ -56,7 +55,7 @@ def run(args):
     # yapf: enable
 
     fits.PrimaryHDU(dm_dmmask).writeto(
-        args.output_folder / 'dm/conf/dmmask.fits', overwrite=True)
+        args.output_folder / 'dmloop/conf/dmmask.fits', overwrite=True)
 
     ##### TTM wfsmask
 
@@ -78,21 +77,21 @@ def run(args):
     # yapf: enable
 
     fits.PrimaryHDU(ttm_wfsmask).writeto(
-        args.output_folder / 'ttm/conf/wfsmask.fits', overwrite=True)
+        args.output_folder / 'ttmloop/conf/wfsmask.fits', overwrite=True)
 
     ##### TTM dmmask
 
     ttm_dmmask = np.array([[1., 1.]], dtype=np.float32)
 
     fits.PrimaryHDU(ttm_dmmask).writeto(
-        args.output_folder / 'ttm/conf/dmmask.fits', overwrite=True)
+        args.output_folder / 'ttmloop/conf/dmmask.fits', overwrite=True)
 
     ##### TTM wfsrefc
 
     ttm_wfsrefc = np.zeros((12, 12), dtype=np.float32)
 
     fits.PrimaryHDU(ttm_wfsrefc).writeto(
-        args.output_folder / 'ttm/conf/wfsrefc.fits', overwrite=True)
+        args.output_folder / 'ttmloop/conf/wfsrefc.fits', overwrite=True)
 
     ##### TTM SpokeC
 
@@ -103,7 +102,8 @@ def run(args):
     ]], dtype=np.float32)
 
     fits.PrimaryHDU(ttm_SpokeC).writeto(
-        args.output_folder / 'ttm/conf/SpokeC.fits', overwrite=True)
+        args.output_folder / 'ttmloop/conf/RMmodesDM/SpokeC.fits',
+        overwrite=True)
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@ import numpy as np
 
 from PySide6.QtCharts import QScatterSeries, QValueAxis
 from PySide6.QtCore import QPointF, QSignalBlocker, Slot
-from PySide6.QtGui import QBrush, QCursor, QGuiApplication, QPen, Qt
+from PySide6.QtGui import QBrush, QPen, Qt
 from PySide6.QtWidgets import QMessageBox
 
 from guis.utils import colormaps
@@ -52,7 +52,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
                 self.RMCM_save_button,
             ]
 
-            self.latency_max = 10
+            self.latency_max = 20
         else:
             self.buttons_order = [
                 self.latency_measure_button,
@@ -203,7 +203,6 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
     @Slot(int)
     def on_minmax_checkbox_stateChanged(self, state):
-        self.update_modes_stats()
         self.update_calib_images()
 
     @Slot(int)
@@ -368,10 +367,12 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
                 msgbox.show()
                 return
 
+            points = []
             for i in range(latency_data.shape[0]):
-                self.latency_series.append(
+                points.append(
                     QPointF(latency_data[i, 1] * 1000, latency_data[i, 2]))
 
+            self.latency_series.replace(points)
             self.latency_axis_y.setRange(0, latency_data[:, 2].max() * 1.05)
 
         self.update_buttons(self.latency_measure_button)
