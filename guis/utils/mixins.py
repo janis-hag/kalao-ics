@@ -1,11 +1,15 @@
+import traceback
+from pathlib import Path
+
 import numpy as np
 
-from PySide6.QtCore import (QObject, QRunnable, QSignalBlocker, QThreadPool,
-                            Signal, Slot)
+from PySide6.QtCore import (QEventLoop, QObject, QRunnable, QSignalBlocker,
+                            QThreadPool, Signal, Slot)
 from PySide6.QtGui import QCursor, QGuiApplication, Qt
-from PySide6.QtWidgets import QCheckBox, QComboBox
+from PySide6.QtWidgets import QCheckBox, QComboBox, QMessageBox
 
 from guis.utils.string_formatter import KalAOFormatter
+from guis.utils.widgets import KMessageBox
 
 
 class MinMaxMixin:
@@ -175,7 +179,14 @@ class BackendWorker(QObject, QRunnable):
         self.kwargs = kwargs
 
     def run(self):
-        self.fun(*self.args, **self.kwargs)
+        try:
+            self.ret = self.fun(*self.args, **self.kwargs)
+            self.exception = None
+        except Exception as e:
+            traceback.print_exc()
+            self.ret = None
+            self.exception = e
+
         self.done.emit()
 
 
@@ -197,15 +208,27 @@ class BackendActionMixin:
         for widget in widget_list:
             widget.setEnabled(False)
 
+        loop = QEventLoop()
         worker = BackendWorker(fun, *args)
-        worker.done.connect(lambda: self.action_clean(widget_list))
-        self.threadpool.start(worker)
+        worker.done.connect(loop.quit)
 
-    def action_clean(self, widget_list):
+        self.threadpool.start(worker)
+        loop.exec()
+
         QGuiApplication.restoreOverrideCursor()
 
         for widget in widget_list:
             widget.setEnabled(True)
+
+        if worker.exception is not None:
+            msgbox = KMessageBox(self)
+            msgbox.setIcon(QMessageBox.Critical)
+            msgbox.setText("<b>An error occured!</b>")
+            msgbox.setInformativeText(f'An error occured during action.')
+            msgbox.setModal(True)
+            msgbox.show()
+
+        return worker.ret
 
 
 class BackendDataMixin:
@@ -310,6 +333,9 @@ class BackendDataMixin:
 
     def consume_fits(self, data, fits_file, default=None, force=False):
         try:
+            if not isinstance(fits_file, Path):
+                fits_file = Path(fits_file)
+
             key = fits_file.stem
 
             if key not in self.data_cache:
@@ -328,6 +354,9 @@ class BackendDataMixin:
 
     def consume_fits_full(self, data, fits_file, default=None, force=False):
         try:
+            if not isinstance(fits_file, Path):
+                fits_file = Path(fits_file)
+
             key = fits_file.stem
 
             if key not in self.data_cache:
@@ -346,6 +375,9 @@ class BackendDataMixin:
 
     def consume_fits_mtime(self, data, fits_file, default=None, force=False):
         try:
+            if not isinstance(fits_file, Path):
+                fits_file = Path(fits_file)
+
             key = fits_file.stem
 
             if key not in self.data_cache:

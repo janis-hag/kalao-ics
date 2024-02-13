@@ -50,7 +50,7 @@ def run(args):
 
     # Save
     np.savetxt(args.ncpa_folder / 'slopes_fitted_coeffs.txt', slopes_coeffs)
-    fits.PrimaryHDU(resulting_slopes_no_tt).writeto(
+    fits.PrimaryHDU(resulting_slopes_no_tt.astype(np.float32)).writeto(
         args.ncpa_folder / 'slopes_fitted.fits', overwrite=True)
 
     print(f'Results written')

@@ -800,7 +800,13 @@ class MainBackend(FakeSHMFPSBackend):
                 },
             }
 
+    def set_calibration_reload(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
     def set_latency_measure(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
+    def set_RMCM_prepare(self, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
     def set_RMCM_mkDMpokemodes(self, conf, loop):
@@ -819,6 +825,9 @@ class MainBackend(FakeSHMFPSBackend):
         return {'returncode': 0, 'stdout': ''}
 
     def set_RMCM_compCM(self, conf, loop):
+        return {'returncode': 0, 'stdout': ''}
+
+    def set_RMCM_load(self, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
     def set_RMCM_save(self, conf, loop):

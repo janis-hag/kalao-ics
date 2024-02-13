@@ -11,6 +11,7 @@ from kalao import database
 from kalao.utils import kstring, ktime
 
 from guis.utils.definitions import Color
+from guis.utils.mixins import BackendActionMixin
 from guis.utils.ui_loader import loadUi
 from guis.utils.widgets import KWidget
 
@@ -26,7 +27,7 @@ class LogsData(QTextBlockUserData):
         self.data = data.copy()
 
 
-class LogsWidget(KWidget):
+class LogsWidget(KWidget, BackendActionMixin):
     logged = Signal(int, int)
 
     max_entries = config.GUI.logs_max_entries
@@ -236,13 +237,8 @@ class LogsWidget(KWidget):
 
         self.logs_timer.stop()
 
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.retieve_button.setEnabled(False)
-
-        entries = self.backend.get_logs_between(since, until)
-
-        self.retieve_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        entries = self.action_send(self.retieve_button,
+                                   self.backend.get_logs_between, since, until)
 
         self.logs_textedit.clear()
 

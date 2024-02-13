@@ -221,10 +221,12 @@ def run(args):
         slopes.append(slopes_stream.get_data(True))
 
     slopes = np.array(slopes)
-    fits.PrimaryHDU(slopes).writeto(folder / 'slopes_cube.fits')
+    fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /
+                                                       'slopes_cube.fits')
 
     slopes = np.median(slopes, axis=0)
-    fits.PrimaryHDU(slopes).writeto(folder / 'slopes_median.fits')
+    fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /
+                                                       'slopes_median.fits')
 
     print(f'Results written')
 

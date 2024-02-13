@@ -74,7 +74,9 @@ class SHMFPSBackend(AbstractBackend):
         data[collection].update(db_data)
 
     def _update_fits(self, data, fits_file):
-        fits_file = Path(fits_file)
+        if not isinstance(fits_file, Path):
+            fits_file = Path(fits_file)
+
         key = fits_file.stem
 
         try:
@@ -89,7 +91,9 @@ class SHMFPSBackend(AbstractBackend):
             pass
 
     def _update_fits_full(self, data, fits_file):
-        fits_file = Path(fits_file)
+        if not isinstance(fits_file, Path):
+            fits_file = Path(fits_file)
+
         key = fits_file.stem
 
         try:
@@ -104,7 +108,9 @@ class SHMFPSBackend(AbstractBackend):
             pass
 
     def _update_fits_mtime(self, data, fits_file):
-        fits_file = Path(fits_file)
+        if not isinstance(fits_file, Path):
+            fits_file = Path(fits_file)
+
         key = fits_file.stem
 
         try:
@@ -283,7 +289,7 @@ class MainBackend(SHMFPSBackend):
         # TODO: check frequency
 
         loops_status = aocontrol.check_loops()
-        if conf == 'ttm':
+        if conf == 'ttmloop':
             if LoopStatus.DM_LOOP_ON not in loops_status:
                 return {'ready': False, 'reason': 'DM loop is off'}
 
@@ -334,10 +340,10 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def get_calibration_reload(self):
+    def set_calibration_reload(self, conf, loop):
         data = {}
 
-        script = config.AO.cacao_workdir / f'scripts/apply_current_calib.sh'
+        script = config.AO.cacao_workdir / f'scripts/{conf}/apply-calib-saved.sh'
 
         res = subprocess.run([script], timeout=60, capture_output=True,
                              cwd=config.AO.cacao_workdir)
@@ -352,9 +358,12 @@ class MainBackend(SHMFPSBackend):
 
         ready_data = self.get_calibration_ready(conf, loop)
         if not ready_data['ready']:
-            data['returncode'] = -1
-            data['stdout'] = f'Calibration not ready to run: {ready_data["reason"]}'
-            return data
+            return {
+                'returncode':
+                    -1,
+                'stdout':
+                    f'Calibration not ready to run: {ready_data["reason"]}'
+            }
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/00-mlat.sh'
 
@@ -376,6 +385,28 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
+    def set_RMCM_prepare(self, conf, loop):
+        if conf == 'dmloop':
+            if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
+                return {'returncode': -1, 'stdout': 'Failed to open loops'}
+
+        elif conf == 'ttmloop':
+            if LoopStatus.TTM_LOOP_ON in aocontrol.open_loop(
+                    config.AO.TTM_loop_number):
+                return {'returncode': -1, 'stdout': 'Failed to open TTM loop'}
+
+            if LoopStatus.DM_LOOP_ON not in aocontrol.close_loop(
+                    config.AO.DM_loop_number):
+                return {'returncode': -1, 'stdout': 'Failed to close DM loop'}
+
+            if aocontrol.set_modalgains(np.array([1, 1])) != 0:
+                return {
+                    'returncode': -1,
+                    'stdout': 'Failed to set modal gains'
+                }
+        else:
+            return {'returncode': -1, 'stdout': 'Unknown loop'}
+
     def set_RMCM_mkDMpokemodes(self, conf, loop):
         data = {}
 
@@ -393,9 +424,12 @@ class MainBackend(SHMFPSBackend):
 
         ready_data = self.get_calibration_ready(conf, loop)
         if not ready_data['ready']:
-            data['returncode'] = -1
-            data['stdout'] = f'Calibration not ready to run: {ready_data["reason"]}'
-            return data
+            return {
+                'returncode':
+                    -1,
+                'stdout':
+                    f'Calibration not ready to run: {ready_data["reason"]}'
+            }
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/02-takeref.sh'
 
@@ -411,9 +445,12 @@ class MainBackend(SHMFPSBackend):
 
         ready_data = self.get_calibration_ready(conf, loop)
         if not ready_data['ready']:
-            data['returncode'] = -1
-            data['stdout'] = f'Calibration not ready to run: {ready_data["reason"]}'
-            return data
+            return {
+                'returncode':
+                    -1,
+                'stdout':
+                    f'Calibration not ready to run: {ready_data["reason"]}'
+            }
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/03-acqlinResp.sh'
 
@@ -456,6 +493,18 @@ class MainBackend(SHMFPSBackend):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/06-compCM.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout
+
+        return data
+
+    def set_RMCM_load(self, conf, loop):
+        data = {}
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/apply-calib-rootdir.sh'
 
         res = subprocess.run([script], timeout=60, capture_output=True)
 

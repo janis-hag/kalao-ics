@@ -94,7 +94,7 @@ class ColormapCSV(Colormap):
                        row['RGB_b'] * self.scale).rgba())
 
         if self.has_transparency:
-            self.table[-1]
+            self.max -= 1
             self.table[-1] = QColor(0, 0, 0, 0).rgba()
 
 

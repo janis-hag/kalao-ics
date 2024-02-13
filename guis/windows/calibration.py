@@ -7,12 +7,14 @@ from PySide6.QtWidgets import QMessageBox
 
 from guis.utils import colormaps
 from guis.utils.definitions import Color
-from guis.utils.mixins import BackendDataMixin, SceneHoverMixin
+from guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
+                               SceneHoverMixin)
 from guis.utils.ui_loader import loadUi
 from guis.utils.widgets import KGraphicsView, KMainWindow, KMessageBox
 
 
-class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
+class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
+                        BackendActionMixin):
     data_unit = ''
     data_scaling = 1
     data_precision = 2
@@ -39,16 +41,32 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
         self.setWindowTitle(f'{conf.upper()} - {self.windowTitle()}')
 
-        self.buttons_order = [
-            self.latency_measure_button,
-            self.RMCM_mkDMpokemodes_button,
-            self.RMCM_takeref_button,
-            self.RMCM_acqlinResp_button,
-            self.RMCM_RMHdecode_button,
-            self.RMCM_RMmkmask_button,
-            self.RMCM_compCM_button,
-            self.RMCM_save_button,
-        ]
+        if conf == 'ttmloop':
+            self.buttons_order = [
+                self.latency_measure_button,
+                self.RMCM_takeref_button,
+                self.RMCM_acqlinResp_button,
+                self.RMCM_RMmkmask_button,
+                self.RMCM_compCM_button,
+                self.RMCM_load_button,
+                self.RMCM_save_button,
+            ]
+
+            self.latency_max = 10
+        else:
+            self.buttons_order = [
+                self.latency_measure_button,
+                self.RMCM_mkDMpokemodes_button,
+                self.RMCM_takeref_button,
+                self.RMCM_acqlinResp_button,
+                self.RMCM_RMHdecode_button,
+                self.RMCM_RMmkmask_button,
+                self.RMCM_compCM_button,
+                self.RMCM_load_button,
+                self.RMCM_save_button,
+            ]
+
+            self.latency_max = 5
 
         ### Calibration tab
 
@@ -91,7 +109,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         # X Axis Settings
         axis_x = self.latency_axis_x = QValueAxis()
         axis_x.setTickCount(7)
-        axis_x.setRange(-1, 5)
+        axis_x.setRange(-1, self.latency_max)
         axis_x.setTitleText('Latency [ms]')
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
@@ -122,8 +140,6 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     def update_buttons(self, button):
         i = self.buttons_order.index(button)
-
-        print(i, len(self.buttons_order))
 
         if i + 1 < len(self.buttons_order):
             self.buttons_order[i + 1].setEnabled(True)
@@ -178,14 +194,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_refresh_button_clicked(self, checked):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.refresh_button.setEnabled(False)
-
-        self.modes_data = self.backend.get_calibration_data(
-            self.conf, self.loop)
-
-        self.refresh_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        self.modes_data = self.action_send(self.refresh_button,
+                                           self.backend.get_calibration_data,
+                                           self.conf, self.loop)
 
         self.update_modes_stats()
         self.update_calib_images()
@@ -299,13 +310,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_reload_button_clicked(self, checked):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.reload_button.setEnabled(False)
-
-        data = self.backend.get_calibration_reload()
-
-        self.reload_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        data = self.action_send(self.reload_button,
+                                self.backend.set_calibration_reload, self.conf,
+                                self.loop)
 
         self.check_subprocess_error(data)
 
@@ -329,13 +336,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
         # Take measurement
 
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.latency_measure_button.setEnabled(False)
-
-        data = self.backend.set_latency_measure(self.conf, self.loop)
-
-        self.latency_measure_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        data = self.action_send(self.latency_measure_button,
+                                self.backend.set_latency_measure, self.conf,
+                                self.loop)
 
         # Display data
 
@@ -377,14 +380,19 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
     ##### Response Matrix and Control Matrix tab
 
     @Slot(bool)
+    def on_RMCM_prepare_button_clicked(self, checked):
+        data = self.action_send(self.RMCM_prepare_button,
+                                self.backend.set_RMCM_prepare, self.conf,
+                                self.loop)
+
+        if self.check_subprocess_error(data):
+            return
+
+    @Slot(bool)
     def on_RMCM_mkDMpokemodes_button_clicked(self, checked):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.RMCM_mkDMpokemodes_button.setEnabled(False)
-
-        data = self.backend.set_RMCM_mkDMpokemodes(self.conf, self.loop)
-
-        self.RMCM_mkDMpokemodes_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        data = self.action_send(self.RMCM_mkDMpokemodes_button,
+                                self.backend.set_RMCM_mkDMpokemodes, self.conf,
+                                self.loop)
 
         if self.check_subprocess_error(data):
             return
@@ -394,13 +402,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_RMCM_takeref_button_clicked(self, checked):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.RMCM_takeref_button.setEnabled(False)
-
-        data = self.backend.set_RMCM_takeref(self.conf, self.loop)
-
-        self.RMCM_takeref_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        data = self.action_send(self.RMCM_takeref_button,
+                                self.backend.set_RMCM_takeref, self.conf,
+                                self.loop)
 
         if self.check_subprocess_error(data):
             return
@@ -410,13 +414,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_RMCM_acqlinResp_button_clicked(self, checked):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.RMCM_acqlinResp_button.setEnabled(False)
-
-        data = self.backend.set_RMCM_acqlinResp(self.conf, self.loop)
-
-        self.RMCM_acqlinResp_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        data = self.action_send(self.RMCM_acqlinResp_button,
+                                self.backend.set_RMCM_acqlinResp, self.conf,
+                                self.loop)
 
         if self.check_subprocess_error(data):
             return
@@ -426,13 +426,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_RMCM_RMHdecode_button_clicked(self, checked):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.RMCM_RMHdecode_button.setEnabled(False)
-
-        data = self.backend.set_RMCM_RMHdecode(self.conf, self.loop)
-
-        self.RMCM_RMHdecode_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        data = self.action_send(self.RMCM_RMHdecode_button,
+                                self.backend.set_RMCM_RMHdecode, self.conf,
+                                self.loop)
 
         if self.check_subprocess_error(data):
             return
@@ -473,13 +469,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_RMCM_RMmkmask_button_clicked(self, checked):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.RMCM_RMmkmask_button.setEnabled(False)
-
-        data = self.backend.set_RMCM_RMmkmask(self.conf, self.loop)
-
-        self.RMCM_RMmkmask_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        data = self.action_send(self.RMCM_RMmkmask_button,
+                                self.backend.set_RMCM_RMmkmask, self.conf,
+                                self.loop)
 
         if self.check_subprocess_error(data):
             return
@@ -488,13 +480,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_RMCM_compCM_button_clicked(self, checked):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.RMCM_compCM_button.setEnabled(False)
-
-        data = self.backend.set_RMCM_compCM(self.conf, self.loop)
-
-        self.RMCM_compCM_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        data = self.action_send(self.RMCM_compCM_button,
+                                self.backend.set_RMCM_compCM, self.conf,
+                                self.loop)
 
         if self.check_subprocess_error(data):
             return
@@ -502,14 +490,23 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin):
         self.update_buttons(self.RMCM_compCM_button)
 
     @Slot(bool)
+    def on_RMCM_load_button_clicked(self, checked):
+        data = self.action_send(self.RMCM_load_button,
+                                self.backend.set_RMCM_load, self.conf,
+                                self.loop)
+
+        if self.check_subprocess_error(data):
+            return
+
+        self.update_buttons(self.RMCM_load_button)
+
+        self.on_refresh_button_clicked(False)
+
+    @Slot(bool)
     def on_RMCM_save_button_clicked(self, checked):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.RMCM_save_button.setEnabled(False)
-
-        data = self.backend.set_RMCM_save(self.conf, self.loop)
-
-        self.RMCM_save_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        data = self.action_send(self.RMCM_save_button,
+                                self.backend.set_RMCM_save, self.conf,
+                                self.loop)
 
         if self.check_subprocess_error(data):
             return

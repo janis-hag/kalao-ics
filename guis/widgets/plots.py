@@ -247,14 +247,13 @@ class PlotsWidget(KWidget):
         until = self.until_datetimeedit.dateTime().toUTC().toPython().replace(
             tzinfo=timezone.utc)
 
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-        self.plot_button.setEnabled(False)
+        # Gather plots data
 
-        data = self.backend.set_plots_data(since, until, monitoring_keys,
-                                           telemetry_keys, obs_keys)
+        data = self.action_send(self.plot_button, self.backend.set_plots_data,
+                                since, until, monitoring_keys, telemetry_keys,
+                                obs_keys)
 
-        self.plot_button.setEnabled(True)
-        QGuiApplication.restoreOverrideCursor()
+        # Display plots
 
         chart = self.plots_view.chart()
 

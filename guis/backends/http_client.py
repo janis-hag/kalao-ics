@@ -38,7 +38,9 @@ class MainBackend(AbstractBackend):
             'kwargs': kwargs,
         }
 
+        loop = QEventLoop()
         manager = QNetworkAccessManager()
+        manager.finished.connect(loop.quit)
 
         if path.startswith('get_'):
             reply = manager.get(request)
@@ -46,8 +48,6 @@ class MainBackend(AbstractBackend):
             reply = manager.post(request,
                                  QByteArray(self.encoder.encode(data)))
 
-        loop = QEventLoop()
-        reply.finished.connect(loop.quit)
         loop.exec()
 
         if reply.error() != QNetworkReply.NoError:
