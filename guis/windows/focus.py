@@ -42,7 +42,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             view = KGraphicsView()
             vlayout.addWidget(view)
 
-            desc_label = KLabel('FWHM {fwhm:.2f}"')
+            desc_label = KLabel('Score {fwhm:.2f}')
             desc_label.updateText(fwhm=np.nan)
             desc_label.setAlignment(Qt.AlignHCenter)
             vlayout.addWidget(desc_label)
@@ -85,7 +85,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
         # Y Axis Settings
         axis_y = self.axis_y = QValueAxis()
         axis_y.setTickCount(5)
-        axis_y.setTitleText('FWHM ["]')
+        axis_y.setTitleText('Score [a.u.]')
         chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
         series_fit.attachAxis(axis_y)

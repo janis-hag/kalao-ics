@@ -830,7 +830,7 @@ class MainBackend(FakeSHMFPSBackend):
     def set_RMCM_load(self, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_save(self, conf, loop):
+    def set_RMCM_save(self, conf, loop, comment):
         return {'returncode': 0, 'stdout': ''}
 
     ##### FLI Zoom

@@ -515,7 +515,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_RMCM_save(self, conf, loop):
+    def set_RMCM_save(self, conf, loop, comment):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/save-calib.sh'

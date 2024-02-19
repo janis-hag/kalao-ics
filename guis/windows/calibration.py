@@ -41,31 +41,21 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         self.setWindowTitle(f'{conf.upper()} - {self.windowTitle()}')
 
-        if conf == 'ttmloop':
-            self.buttons_order = [
-                self.latency_measure_button,
-                self.RMCM_takeref_button,
-                self.RMCM_acqlinResp_button,
-                self.RMCM_RMmkmask_button,
-                self.RMCM_compCM_button,
-                self.RMCM_load_button,
-                self.RMCM_save_button,
-            ]
+        self.buttons_order = [
+            self.latency_measure_button,
+            self.RMCM_mkDMpokemodes_button,
+            self.RMCM_takeref_button,
+            self.RMCM_acqlinResp_button,
+            self.RMCM_RMHdecode_button,
+            self.RMCM_RMmkmask_button,
+            self.RMCM_compCM_button,
+            self.RMCM_load_button,
+            self.RMCM_save_frame,
+        ]
 
+        if conf == 'ttmloop':
             self.latency_max = 20
         else:
-            self.buttons_order = [
-                self.latency_measure_button,
-                self.RMCM_mkDMpokemodes_button,
-                self.RMCM_takeref_button,
-                self.RMCM_acqlinResp_button,
-                self.RMCM_RMHdecode_button,
-                self.RMCM_RMmkmask_button,
-                self.RMCM_compCM_button,
-                self.RMCM_load_button,
-                self.RMCM_save_button,
-            ]
-
             self.latency_max = 5
 
         ### Calibration tab
@@ -135,11 +125,16 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         ### Common
 
+        self.update_buttons(None)
+
         self.center()
         self.show()
 
     def update_buttons(self, button):
-        i = self.buttons_order.index(button)
+        if button is None:
+            i = -1
+        else:
+            i = self.buttons_order.index(button)
 
         if i + 1 < len(self.buttons_order):
             self.buttons_order[i + 1].setEnabled(True)
@@ -436,37 +431,56 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         img = self.consume_fits(data, 'zrespM-H')
         if img is not None:
-            img_min = img.min()
-            img_max = img.max()
-
-            abs_max = max(abs(img_min), abs(img_max))
-
-            self.zRM_min = -abs_max
-            self.zRM_max = abs_max
-
             self.zRM_img = img
+            self.zRM_min = img.min()
+            self.zRM_max = img.max()
 
-            with QSignalBlocker(self.RMCM_zRM_mode_spinbox):
-                self.RMCM_zRM_mode_spinbox.setMaximum(img.shape[0])
-                self.RMCM_zRM_mode_spinbox.setSuffix(f' / {img.shape[0]}')
-                self.RMCM_zRM_mode_spinbox.setValue(1)
+            with QSignalBlocker(self.RMCM_zRM_poke_spinbox):
+                self.RMCM_zRM_poke_spinbox.setMaximum(img.shape[0])
+                self.RMCM_zRM_poke_spinbox.setSuffix(f' / {img.shape[0]}')
+                self.RMCM_zRM_poke_spinbox.setValue(1)
 
-            self.RMCM_zRM_view.setImage(img[0, :, :], self.zRM_min,
-                                        self.zRM_max)
+            self.update_zRM_view()
         else:
-            with QSignalBlocker(self.RMCM_zRM_mode_spinbox):
-                self.RMCM_zRM_mode_spinbox.setMaximum(1)
-                self.RMCM_zRM_mode_spinbox.setSuffix(f' / --')
-                self.RMCM_zRM_mode_spinbox.setValue(1)
+            self.zRM_img = None
+            self.zRM_min = np.nan
+            self.zRM_max = np.nan
+
+            with QSignalBlocker(self.RMCM_zRM_poke_spinbox):
+                self.RMCM_zRM_poke_spinbox.setMaximum(1)
+                self.RMCM_zRM_poke_spinbox.setSuffix(f' / --')
+                self.RMCM_zRM_poke_spinbox.setValue(1)
 
             self.RMCM_zRM_view.setImage(None)
 
         self.update_buttons(self.RMCM_RMHdecode_button)
 
     @Slot(int)
-    def on_RMCM_zRM_mode_spinbox_valueChanged(self, i):
-        self.RMCM_zRM_view.setImage(self.zRM_img[i - 1, :, :], self.zRM_min,
-                                    self.zRM_max)
+    def on_RMCM_minmax_checkbox_stateChanged(self, state):
+        self.update_zRM_view()
+
+    @Slot(int)
+    def on_RMCM_zRM_poke_spinbox_valueChanged(self, i):
+        self.update_zRM_view()
+
+    def update_zRM_view(self):
+        if self.zRM_img is None:
+            return
+
+        img = self.zRM_img[self.zRM_poke_spinbox.value() - 1, :, :]
+
+        if self.RMCM_minmax_checkbox.isChecked():
+            img_min = img.min()
+            img_max = img.max()
+        else:
+            img_min = self.zRM_min
+            img_max = self.zRM_max
+
+        abs_max = max(abs(img_min), abs(img_max))
+        img_min = -abs_max
+        img_max = abs_max
+
+        self.RMCM_zRM_view.setImage(img, img_min, img_max)
 
     @Slot(bool)
     def on_RMCM_RMmkmask_button_clicked(self, checked):
@@ -507,12 +521,23 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_RMCM_save_button_clicked(self, checked):
         data = self.action_send(self.RMCM_save_button,
                                 self.backend.set_RMCM_save, self.conf,
+                                self.loop, self.RMCM_comment_lineedit.text())
+
+        if self.check_subprocess_error(data):
+            return
+
+        self.on_refresh_button_clicked(False)
+
+    @Slot(bool)
+    def on_RMCM_restore_button_clicked(self, checked):
+        data = self.action_send(self.RMCM_restore_button,
+                                self.backend.set_calibration_reload, self.conf,
                                 self.loop)
 
         if self.check_subprocess_error(data):
             return
 
-        self.update_buttons(self.RMCM_save_button)
+        self.on_refresh_button_clicked(False)
 
     def check_subprocess_error(self, data):
         if data['returncode'] == 0:

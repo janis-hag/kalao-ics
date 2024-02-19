@@ -25,6 +25,7 @@ coeff_names = {
 
 
 class Zernike:
+    @staticmethod
     def Z(n, m, rho, phi, norm=None):
         if m == 0:
             return Zernike.N(n, m, norm) * Zernike.R(n, m, rho)
@@ -35,6 +36,7 @@ class Zernike:
             return Zernike.N(n, -m, norm) * Zernike.R(n, -m, rho) * np.sin(
                 -m * phi)
 
+    @staticmethod
     def N(n, m, norm=None):
         # Coeffs will be wavefront RMS
         if norm == 'orthonormal' or norm == 'RMS':
@@ -51,6 +53,7 @@ class Zernike:
         else:
             return 1
 
+    @staticmethod
     def R(n, m, rho):
         if (n-m) % 2 == 1:
             return np.zeros_like(rho)
@@ -64,6 +67,7 @@ class Zernike:
 
         return R
 
+    @staticmethod
     def noll_complement(n, l):
         if l > 0 and (n % 4 == 0 or n % 4 == 1):
             return 0
@@ -74,9 +78,11 @@ class Zernike:
         elif l <= 0 and (n % 4 == 0 or n % 4 == 1):
             return 1
 
+    @staticmethod
     def noll(n, l):
         return (n * (n+1)) // 2 + np.abs(l) + Zernike.noll_complement(n, l)
 
+    @staticmethod
     def noll_inverse(j):
         n = math.ceil((-3 + np.sqrt(8*j + 1)) / 2)
 
@@ -85,9 +91,11 @@ class Zernike:
 
         return n, l
 
+    @staticmethod
     def standard(n, l):
         return (n * (n+2) + l) // 2
 
+    @staticmethod
     def standard_inverse(j):
         n = math.ceil((-3 + np.sqrt(8*j + 9)) / 2)
         l = 2*j - n * (n+2)

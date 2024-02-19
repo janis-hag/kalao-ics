@@ -15,8 +15,8 @@ import config
 additional_masked_subaps = [
     3, 4, 5, 6, 7, # Top line
     33, 44, 55, 66, 77, # Left column
-    43, 54, 65, 76, 87,
-    113, 114, 115, 116, 117,
+    43, 54, 65, 76, 87, # Right column
+    113, 114, 115, 116, 117, # Bottom line
     13, 23,
     19, 31,
     89, 101,
@@ -50,7 +50,7 @@ def run(args):
 
     # Save
     np.savetxt(args.ncpa_folder / 'slopes_fitted_coeffs.txt', slopes_coeffs)
-    fits.PrimaryHDU(resulting_slopes_no_tt.astype(np.float32)).writeto(
+    fits.PrimaryHDU(resulting_slopes_no_tt.data.astype(np.float32)).writeto(
         args.ncpa_folder / 'slopes_fitted.fits', overwrite=True)
 
     print(f'Results written')
