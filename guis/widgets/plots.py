@@ -10,6 +10,7 @@ from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import (QListWidget, QListWidgetItem, QMessageBox,
                                QPushButton)
 
+from guis.utils.mixins import BackendActionMixin
 from kalao import database
 from kalao.utils import kstring, ktime
 
@@ -20,7 +21,7 @@ from guis.utils.widgets import KListWidgetItem, KMessageBox, KWidget
 import config
 
 
-class PlotsWidget(KWidget):
+class PlotsWidget(KWidget, BackendActionMixin):
     hovered = Signal(str)
 
     current_index = -1
@@ -250,8 +251,10 @@ class PlotsWidget(KWidget):
         # Gather plots data
 
         data = self.action_send(self.plot_button, self.backend.set_plots_data,
-                                since, until, monitoring_keys, telemetry_keys,
-                                obs_keys)
+                                since=since, until=until,
+                                monitoring_keys=monitoring_keys,
+                                telemetry_keys=telemetry_keys,
+                                obs_keys=obs_keys)
 
         # Display plots
 

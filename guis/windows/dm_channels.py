@@ -126,12 +126,14 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     def on_reset_button_clicked(self, checked, i):
         self.action_send(self.reset_buttons[i],
-                         self.backend.set_channels_reset, self.dm_number, i)
+                         self.backend.set_channels_reset,
+                         dm_number=self.dm_number, channel=i)
 
     @Slot(bool)
     def on_reset_all_button_clicked(self, checked):
         self.action_send(self.reset_all_button,
-                         self.backend.set_channels_resetall, self.dm_number)
+                         self.backend.set_channels_resetall,
+                         dm_number=self.dm_number)
 
     def closeEvent(self, event):
         self.channels_timer.stop()

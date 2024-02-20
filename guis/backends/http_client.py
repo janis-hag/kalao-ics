@@ -1,3 +1,4 @@
+import inspect
 import pickle
 import traceback
 from functools import partial
@@ -22,21 +23,14 @@ class MainBackend(AbstractBackend):
     def __getattr__(self, path):
         return partial(self.forward, path)
 
-    def forward(self, path, *args, **kwargs):
+    def forward(self, path, **kwargs):
         url = name_to_url(path)
 
         request = QNetworkRequest()
         request.setUrl(
             QUrl(
-                f'http://localhost:{config.GUI.http_port}{url}?response_type={config.GUI.http_dataformat}'
+                f'http://{config.GUI.http_host}:{config.GUI.http_port}{url}?response_type={config.GUI.http_dataformat}'
             ))
-        request.setHeader(QNetworkRequest.ContentTypeHeader,
-                          'application/json')
-
-        data = {
-            'args': list(args),
-            'kwargs': kwargs,
-        }
 
         loop = QEventLoop()
         manager = QNetworkAccessManager()
@@ -45,8 +39,10 @@ class MainBackend(AbstractBackend):
         if path.startswith('get_'):
             reply = manager.get(request)
         elif path.startswith('set_'):
+            request.setHeader(QNetworkRequest.ContentTypeHeader,
+                              'application/json')
             reply = manager.post(request,
-                                 QByteArray(self.encoder.encode(data)))
+                                 QByteArray(self.encoder.encode(kwargs)))
 
         loop.exec()
 

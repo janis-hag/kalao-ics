@@ -1,7 +1,6 @@
 import random
 import time
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -202,6 +201,15 @@ class MainBackend(FakeSHMFPSBackend):
             'focusing-step':
                 0,
         })
+
+        self.logs_logs = ['']
+        for key in sorted(database.definitions['logs']['metadata'].keys()):
+            self.logs_logs.append(kstring.get_log_name(key))
+
+        self.logs_services = ['systemd']
+        for service in config.Systemd.services.values():
+            self.logs_services.append(kstring.get_service_name(
+                service['unit']))
 
         self.internal_timer = QTimer(parent=self)
         self.internal_timer.setInterval(100)
@@ -657,7 +665,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    def set_plots_data(self, since, until, monitoring_keys, telemetry_keys,
+    def set_plots_data(self, *, since, until, monitoring_keys, telemetry_keys,
                        obs_keys):
         now = datetime.now(timezone.utc)
         if until > now:
@@ -696,7 +704,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return df
 
-    def get_calibration_data(self, conf, loop):
+    def get_calibration_data(self, *, conf, loop):
         if loop == 1:
             return {
                 'wfsref': {
@@ -800,42 +808,42 @@ class MainBackend(FakeSHMFPSBackend):
                 },
             }
 
-    def set_calibration_reload(self, conf, loop):
+    def set_calibration_reload(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_latency_measure(self, conf, loop):
+    def set_latency_measure(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_prepare(self, conf, loop):
+    def set_RMCM_prepare(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_mkDMpokemodes(self, conf, loop):
+    def set_RMCM_mkDMpokemodes(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_takeref(self, conf, loop):
+    def set_RMCM_takeref(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_acqlinResp(self, conf, loop):
+    def set_RMCM_acqlinResp(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_RMHdecode(self, conf, loop):
+    def set_RMCM_RMHdecode(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_RMmkmask(self, conf, loop):
+    def set_RMCM_RMmkmask(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_compCM(self, conf, loop):
+    def set_RMCM_compCM(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_load(self, conf, loop):
+    def set_RMCM_load(self, *, conf, loop):
         return {'returncode': 0, 'stdout': ''}
 
-    def set_RMCM_save(self, conf, loop, comment):
+    def set_RMCM_save(self, *, conf, loop, comment):
         return {'returncode': 0, 'stdout': ''}
 
     ##### FLI Zoom
 
-    def set_centering_manual(self, x, y):
+    def set_centering_manual(self, *, x, y):
         print(f'Centering manually on ({x}, {y}) (virtually)')
 
     def get_centering_validate(self):
@@ -845,18 +853,18 @@ class MainBackend(FakeSHMFPSBackend):
 
     # DM Loop
 
-    def set_dmloop_on(self, state):
+    def set_dmloop_on(self, *, state):
         self.internal_state['dm-loopON'] = state
         print(f'Set DM loop to {state} (virtually)')
 
-    def set_dmloop_gain(self, gain):
+    def set_dmloop_gain(self, *, gain):
         self.internal_state['dm-loopgain'] = gain
         print(f'Set DM gain to {gain} (virtually)')
 
-    def set_dmloop_mult(self, mult):
+    def set_dmloop_mult(self, *, mult):
         print(f'Set DM mult to {mult} (virtually)')
 
-    def set_dmloop_limit(self, limit):
+    def set_dmloop_limit(self, *, limit):
         print(f'Set DM limit to {limit} (virtually)')
 
     def get_dmloop_zero(self):
@@ -864,18 +872,18 @@ class MainBackend(FakeSHMFPSBackend):
 
     # TTM Loop
 
-    def set_ttmloop_on(self, state):
+    def set_ttmloop_on(self, *, state):
         self.internal_state['ttm-loopON'] = state
         print(f'Set TTM loop to {state} (virtually)')
 
-    def set_ttmloop_gain(self, gain):
+    def set_ttmloop_gain(self, *, gain):
         self.internal_state['ttm-loopgain'] = gain
         print(f'Set TTM gain to {gain} (virtually)')
 
-    def set_ttmloop_mult(self, mult):
+    def set_ttmloop_mult(self, *, mult):
         print(f'Set TTM mult to {mult} (virtually)')
 
-    def set_ttmloop_limit(self, limit):
+    def set_ttmloop_limit(self, *, limit):
         print(f'Set TTM limit to {limit} (virtually)')
 
     def get_ttmloop_zero(self):
@@ -883,15 +891,15 @@ class MainBackend(FakeSHMFPSBackend):
 
     # Wavefront Sensor
 
-    def set_nuvu_emgain(self, emgain):
+    def set_nuvu_emgain(self, *, emgain):
         self.internal_state['nuvu-emgain'] = emgain
         print(f'Set Nüvü EM Gain to {emgain} (virtually)')
 
-    def set_nuvu_exposuretime(self, exposuretime):
+    def set_nuvu_exposuretime(self, *, exposuretime):
         self.internal_state['nuvu-exptime'] = exposuretime
         print(f'Set Nüvü Exposure Time to {exposuretime} (virtually)')
 
-    def set_nuvu_autogain_on(self, state):
+    def set_nuvu_autogain_on(self, *, state):
         self.internal_state['nuvu-autogain_on'] = state
 
         if state:
@@ -903,7 +911,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         print(f'Set Nüvü Auto-gain to {state} (virtually)')
 
-    def set_nuvu_autogain_setting(self, setting):
+    def set_nuvu_autogain_setting(self, *, setting):
         self.internal_state['nuvu-autogain_setting'] = setting
 
         if self.internal_state['nuvu-autogain_on']:
@@ -916,34 +924,34 @@ class MainBackend(FakeSHMFPSBackend):
 
     # Deformable Mirror
 
-    def set_bmc_maxstroke(self, stroke):
+    def set_bmc_maxstroke(self, *, stroke):
         self.internal_state['bmc-max_stroke'] = stroke
         print(f'Set BMC Max Stroke to {stroke} (virtually)')
 
-    def set_bmc_strokemode(self, mode):
+    def set_bmc_strokemode(self, *, mode):
         self.internal_state['bmc-stroke_mode'] = mode
         print(f'Set BMC Stroke Mode to {mode} (virtually)')
 
-    def set_bmc_targetstroke(self, target):
+    def set_bmc_targetstroke(self, *, target):
         self.internal_state['bmc-target_stroke'] = target
         print(f'Set BMC Target Stroke to {target} (virtually)')
 
     # Modal gains
 
-    def set_modalgains(self, modalgains):
+    def set_modalgains(self, *, modalgains):
         self.internal_state[config.Streams.MODALGAINS] = modalgains
         print(f'Set Modal Gains to {modalgains} (virtually)')
 
     ##### Engineering
 
-    def set_plc_shutter_state(self, state):
+    def set_plc_shutter_state(self, *, state):
         self.internal_state['shutter_state'] = ShutterState(state)
         print(f'Set Shutter state to {state} (virtually)')
 
     def get_plc_shutter_init(self):
         print(f'Init Shutter (virtually)')
 
-    def set_plc_flipmirror_position(self, position):
+    def set_plc_flipmirror_position(self, *, position):
         self.internal_state['flipmirror_position'] = FlipMirrorPosition(
             position)
         print(f'Set Flip Mirror position to {position} (virtually)')
@@ -951,7 +959,7 @@ class MainBackend(FakeSHMFPSBackend):
     def get_plc_flipmirror_init(self):
         print(f'Init Flip Mirror (virtually)')
 
-    def set_plc_calibunit_position(self, position):
+    def set_plc_calibunit_position(self, *, position):
         self._fake_motor_move(position, 'calibunit_position',
                               'calibunit_state', config.CalibUnit.velocity)
         print(f'Set Calibration Unit position to {position} (virtually)')
@@ -977,7 +985,7 @@ class MainBackend(FakeSHMFPSBackend):
                               'calibunit_state', config.CalibUnit.velocity)
         print(f'Moved Calibration Unit to Tungsten position (virtually)')
 
-    def set_plc_tungsten_state(self, state):
+    def set_plc_tungsten_state(self, *, state):
         if state:
             self.internal_state['tungsten_state'] = TungstenState.ON
         else:
@@ -988,7 +996,7 @@ class MainBackend(FakeSHMFPSBackend):
     def get_plc_tungsten_init(self):
         print(f'Init Tungsten (virtually)')
 
-    def set_plc_laser_state(self, state):
+    def set_plc_laser_state(self, *, state):
         if state:
             self.internal_state['laser_state'] = LaserState.ON
         else:
@@ -996,7 +1004,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         print(f'Set Laser state to {state} (virtually)')
 
-    def set_plc_laser_power(self, power):
+    def set_plc_laser_power(self, *, power):
         self.internal_state['laser_power'] = power
         print(f'Set Laser power to {power} (virtually)')
 
@@ -1008,7 +1016,7 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state['laser_state'] = LaserState.OFF
         print(f'Lamps off (virtually)')
 
-    def set_plc_filterwheel_filter(self, filter):
+    def set_plc_filterwheel_filter(self, *, filter):
         self.internal_state[
             'filterwheel_filter_position'] = config.FilterWheel.position_list.index(
                 filter)
@@ -1018,7 +1026,7 @@ class MainBackend(FakeSHMFPSBackend):
     def get_plc_filterwheel_init(self):
         print(f'Init Filter Wheel (virtually)')
 
-    def set_plc_adc_1_angle(self, position):
+    def set_plc_adc_1_angle(self, *, position):
         self._fake_motor_move(position, 'adc1_angle', 'adc1_state',
                               config.ADC.velocity)
         print(f'Set ADC1 position to {position} (virtually)')
@@ -1033,7 +1041,7 @@ class MainBackend(FakeSHMFPSBackend):
     def get_plc_adc1_stop(self):
         print(f'Stopped ADC1 (virtually)')
 
-    def set_plc_adc_2_angle(self, position):
+    def set_plc_adc_2_angle(self, *, position):
         self._fake_motor_move(position, 'adc2_angle', 'adc2_state',
                               config.ADC.velocity)
         print(f'Set ADC2 position to {position} (virtually)')
@@ -1056,7 +1064,7 @@ class MainBackend(FakeSHMFPSBackend):
         # TODO
         print(f'Set ADC to maximum dispersion (virtually)')
 
-    def set_plc_pump_state(self, state):
+    def set_plc_pump_state(self, *, state):
         if state:
             self.internal_state['pump_status'] = RelayState.ON
         else:
@@ -1064,7 +1072,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         print(f'Set Pump to {state} (virtually)')
 
-    def set_plc_fan_state(self, state):
+    def set_plc_fan_state(self, *, state):
         if state:
             self.internal_state['fan_status'] = RelayState.ON
         else:
@@ -1072,7 +1080,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         print(f'Set Fan to {state} (virtually)')
 
-    def set_plc_heater_state(self, state):
+    def set_plc_heater_state(self, *, state):
         if state:
             self.internal_state['heater_status'] = RelayState.ON
         else:
@@ -1096,9 +1104,9 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state[state_key] = PLCStatus.STANDING
         self.internal_state[position_key] = position
 
-    def set_fli_image(self, exposure_time, frames, roi_size):
+    def set_fli_take(self, *, exposure_time, frames, roi_size):
         print(
-            f'Started FLI {frames} {roi_size}x{roi_size} exposure(s) of {exposure_time} s (virtually)'
+            f'Started FLI with {frames} exposure(s) of size {roi_size}x{roi_size} and of exposure time {exposure_time} s (virtually)'
         )
 
         self.internal_state['fli-frames'] = frames
@@ -1157,7 +1165,7 @@ class MainBackend(FakeSHMFPSBackend):
     def get_centering_laser(self):
         print(f'Laser centering launched (virtually)')
 
-    def set_services_action(self, unit, action):
+    def set_services_action(self, *, unit, action):
         if action in [ServiceAction.STOP, ServiceAction.KILL]:
             state = ('inactive', '', datetime.now(timezone.utc))
         else:
@@ -1168,7 +1176,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### DM channels
 
-    def set_channels_resetall(self, dm_number):
+    def set_channels_resetall(self, *, dm_number):
         if dm_number == config.AO.DM_loop_number:
             for i in range(12):
                 self.internal_state[
@@ -1182,7 +1190,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         print(f'Resetted DM {dm_number} (virtually)')
 
-    def set_channels_reset(self, dm_number, channel):
+    def set_channels_reset(self, *, dm_number, channel):
         if dm_number == config.AO.DM_loop_number:
             self.internal_state[
                 f'dm01disp{channel:02d}'] = zernike.generate_pattern([0],
@@ -1196,11 +1204,11 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### DM & TTM control
 
-    def set_dm_pattern(self, array):
+    def set_dm_pattern(self, *, array):
         self.internal_state[config.Streams.DM_USER_CONTROLLED] = array
         print(f'Set DM to {array} (virtually)')
 
-    def set_ttm_pattern(self, array):
+    def set_ttm_position(self, *, array):
         self.internal_state[config.Streams.TTM_USER_CONTROLLED] = array
         print(f'Set TTM to {array} (virtually)')
 
@@ -1212,15 +1220,6 @@ class MainBackend(FakeSHMFPSBackend):
     ##### Logs
 
     def get_logs_init(self):
-        self.logs_logs = ['']
-        for key in sorted(database.definitions['logs']['metadata'].keys()):
-            self.logs_logs.append(kstring.get_log_name(key))
-
-        self.logs_services = ['systemd']
-        for service in config.Systemd.services.values():
-            self.logs_services.append(kstring.get_service_name(
-                service['unit']))
-
         logs = []
 
         for _ in range(config.GUI.logs_initial_entries):
@@ -1236,7 +1235,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return logs
 
-    def get_logs_between(self, since, until):
+    def get_logs_between(self, *, since, until):
         logs = []
 
         timestamps = pd.date_range(since, until, freq=f'60s')

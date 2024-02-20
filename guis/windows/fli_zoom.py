@@ -314,7 +314,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             return
 
         if self.centering:
-            self.action_send([], self.backend.set_centering_manual, x, y)
+            self.action_send([], self.backend.set_centering_manual, x=x, y=y)
 
         if self.window_combobox.currentData() != FollowMode.FIXED:
             return

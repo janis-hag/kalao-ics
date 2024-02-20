@@ -37,15 +37,14 @@ class TTMDirectControlWindow(KMainWindow, BackendActionMixin):
             self.tilt_spinbox.value()
         ])
 
-        self.action_send([], self.backend.set_ttm_pattern, tiptilt)
+        self.action_send([], self.backend.set_ttm_position,
+                         tip=self.tip_spinbox.value(),
+                         tilt=self.tilt_spinbox.value())
 
     @Slot(float)
     def on_tilt_spinbox_valueChanged(self, d):
         self.tilt_slider.setValue(round(d * 1000))
 
-        tiptilt = np.array([
-            self.tip_spinbox.value(),
-            self.tilt_spinbox.value()
-        ])
-
-        self.action_send([], self.backend.set_ttm_pattern, tiptilt)
+        self.action_send([], self.backend.set_ttm_position,
+                         tip=self.tip_spinbox.value(),
+                         tilt=self.tilt_spinbox.value())

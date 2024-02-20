@@ -237,7 +237,8 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.logs_timer.stop()
 
         entries = self.action_send(self.retieve_button,
-                                   self.backend.get_logs_between, since, until)
+                                   self.backend.get_logs_between, since=since,
+                                   until=until)
 
         self.logs_textedit.clear()
 

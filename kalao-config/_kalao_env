@@ -1,4 +1,5 @@
 export PYTHONUNBUFFERED=1
+export PYTHONPATH=/home/kalao/kalao-ics
 
 export MILK_SHM_DIR=/tmp/milk
 mkdir -p $MILK_SHM_DIR

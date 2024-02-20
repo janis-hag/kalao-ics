@@ -457,7 +457,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_shutter_combobox_currentIndexChanged(self, index):
         self.action_send(self.shutter_combobox,
                          self.backend.set_plc_shutter_state,
-                         self.shutter_combobox.currentData())
+                         state=self.shutter_combobox.currentData())
 
     @Slot(bool)
     def on_shutter_init_button_clicked(self, checked):
@@ -468,7 +468,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_flipmirror_combobox_currentIndexChanged(self, index):
         self.action_send(self.flipmirror_combobox,
                          self.backend.set_plc_flipmirror_position,
-                         self.flipmirror_combobox.currentData())
+                         position=self.flipmirror_combobox.currentData())
 
     @Slot(bool)
     def on_flipmirror_init_button_clicked(self, checked):
@@ -478,7 +478,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     @Slot(float)
     def on_calibunit_spinbox_valueChanged(self, d):
         self.action_send(self.calibunit_spinbox,
-                         self.backend.set_plc_calibunit_position, d)
+                         self.backend.set_plc_calibunit_position, position=d)
 
     @Slot(bool)
     def on_calibunit_init_button_clicked(self, checked):
@@ -504,7 +504,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_tungsten_state_checkbox_stateChanged(self, state):
         self.action_send(self.tungsten_state_checkbox,
                          self.backend.set_plc_tungsten_state,
-                         Qt.CheckState(state) == Qt.Checked)
+                         state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(bool)
     def on_tungsten_init_button_clicked(self, checked):
@@ -515,12 +515,12 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_laser_state_checkbox_stateChanged(self, state):
         self.action_send(self.laser_state_checkbox,
                          self.backend.set_plc_laser_state,
-                         Qt.CheckState(state) == Qt.Checked)
+                         state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
     def on_laser_power_spinbox_valueChanged(self, d):
         self.action_send(self.laser_power_spinbox,
-                         self.backend.set_plc_laser_power, d)
+                         self.backend.set_plc_laser_power, power=d)
 
     @Slot(bool)
     def on_laser_init_button_clicked(self, checked):
@@ -535,7 +535,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_filterwheel_combobox_currentIndexChanged(self, index):
         self.action_send(self.filterwheel_combobox,
                          self.backend.set_plc_filterwheel_filter,
-                         self.filterwheel_combobox.currentData())
+                         filter=self.filterwheel_combobox.currentData())
 
     @Slot(bool)
     def on_filterwheel_init_button_clicked(self, checked):
@@ -545,7 +545,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     @Slot(float)
     def on_adc1_spinbox_valueChanged(self, d):
         self.action_send(self.adc1_spinbox, self.backend.set_plc_adc_1_angle,
-                         d)
+                         position=d)
 
     @Slot(bool)
     def on_adc1_init_button_clicked(self, checked):
@@ -558,7 +558,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     @Slot(float)
     def on_adc2_spinbox_valueChanged(self, d):
         self.action_send(self.adc2_spinbox, self.backend.set_plc_adc_2_angle,
-                         d)
+                         position=d)
 
     @Slot(bool)
     def on_adc2_init_button_clicked(self, checked):
@@ -581,24 +581,24 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     @Slot(int)
     def on_pump_checkbox_stateChanged(self, state):
         self.action_send(self.pump_checkbox, self.backend.set_plc_pump_state,
-                         Qt.CheckState(state) == Qt.Checked)
+                         state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
     def on_fan_checkbox_stateChanged(self, state):
         self.action_send(self.fan_checkbox, self.backend.set_plc_fan_state,
-                         Qt.CheckState(state) == Qt.Checked)
+                         state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
     def on_heater_checkbox_stateChanged(self, state):
         self.action_send(self.pump_checkbox, self.backend.set_plc_heater_state,
-                         Qt.CheckState(state) == Qt.Checked)
+                         state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(bool)
     def on_fli_new_image_button_clicked(self, checked):
-        self.action_send(self.fli_new_image_button, self.backend.set_fli_image,
-                         self.fli_exposure_time_spinbox.value(),
-                         self.fli_frames_spinbox.value(),
-                         self.fli_roi_spinbox.value())
+        self.action_send(self.fli_new_image_button, self.backend.set_fli_take,
+                         exposure_time=self.fli_exposure_time_spinbox.value(),
+                         frames=self.fli_frames_spinbox.value(),
+                         roi_size=self.fli_roi_spinbox.value())
 
     @Slot(bool)
     def on_fli_cancel_button_clicked(self, checked):
@@ -766,7 +766,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          self.backend.get_focus_autofocus)
 
     def on_service_action_button_clicked(self, checked, unit, action):
-        self.action_send([], self.backend.set_services_action, unit, action)
+        self.action_send([], self.backend.set_services_action, unit=unit,
+                         action=action)
 
     def open_focus_window(self):
         if self.focus_window is not None:

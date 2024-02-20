@@ -169,22 +169,21 @@ class SceneHoverMixin:
 
 class BackendWorker(QObject, QRunnable):
     done = Signal()
+    exception = None
+    ret = None
 
-    def __init__(self, fun, *args, **kwargs):
+    def __init__(self, fun, **kwargs):
         super().__init__()
         QRunnable.__init__(self)
 
         self.fun = fun
-        self.args = args
         self.kwargs = kwargs
 
     def run(self):
         try:
-            self.ret = self.fun(*self.args, **self.kwargs)
-            self.exception = None
+            self.ret = self.fun(**self.kwargs)
         except Exception as e:
             traceback.print_exc()
-            self.ret = None
             self.exception = e
 
         self.done.emit()
@@ -196,7 +195,7 @@ class BackendActionMixin:
 
         self.threadpool = QThreadPool()
 
-    def action_send(self, widget_list, fun, *args):
+    def action_send(self, widget_list, fun, **kwargs):
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
 
         if not isinstance(widget_list, list):
@@ -209,7 +208,7 @@ class BackendActionMixin:
             widget.setEnabled(False)
 
         loop = QEventLoop()
-        worker = BackendWorker(fun, *args)
+        worker = BackendWorker(fun, **kwargs)
         worker.done.connect(loop.quit)
 
         self.threadpool.start(worker)
@@ -224,7 +223,7 @@ class BackendActionMixin:
             msgbox = KMessageBox(self)
             msgbox.setIcon(QMessageBox.Critical)
             msgbox.setText("<b>An error occured!</b>")
-            msgbox.setInformativeText(f'An error occured during action.')
+            msgbox.setInformativeText(f'An error occurred during action, please check the logs.')
             msgbox.setModal(True)
             msgbox.show()
 

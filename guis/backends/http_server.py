@@ -43,8 +43,7 @@ def serve(fun):
         if request.method == 'GET':
             ret = fun(backend)
         elif request.method == 'POST':
-            ret = fun(backend, *tuple(request.json['args']),
-                      **request.json['kwargs'])
+            ret = fun(backend, **request.json)
 
         response_type = request.args.get('response_type', 'application/json')
 
@@ -61,7 +60,12 @@ def serve(fun):
 
         return response
     except Exception:
+        string = f'URL: {request.url_rule}\nArguments: {dict(request.args)}'
+        if request.is_json:
+            string += f'\nJSON: {dict(request.args)}'
+
         traceback.print_exc()
+        print(string)
 
         return 'Internal Server Error', 500
 

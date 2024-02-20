@@ -616,7 +616,7 @@ class Systemd:
         },
         'GUI Backend': {
             'unit': 'kalao_gui-backend.service',
-            'enabled': False,
+            'enabled': True,
             'restart': True
         },
     }
@@ -709,6 +709,7 @@ class GUI:
     refreshrate_dbs = 1 / min(Database.monitoring_update_interval,
                               Database.telemetry_update_interval)  # /s
 
+    http_host = 'kalaortc01'
     http_port = 6666
     http_dataformat = 'application/octet-stream'
 

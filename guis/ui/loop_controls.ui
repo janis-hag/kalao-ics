@@ -88,6 +88,9 @@
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
+          <property name="maximum">
+           <double>999.990000000000009</double>
+          </property>
           <property name="singleStep">
            <double>0.010000000000000</double>
           </property>
@@ -174,6 +177,9 @@
          <widget class="QDoubleSpinBox" name="ttmloop_limit_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
+          </property>
+          <property name="maximum">
+           <double>999.990000000000009</double>
           </property>
           <property name="singleStep">
            <double>0.010000000000000</double>
