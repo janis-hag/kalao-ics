@@ -1,5 +1,6 @@
 import time
 from multiprocessing import Process, Queue
+from typing import Callable
 
 import numpy as np
 
@@ -8,19 +9,22 @@ from kalao import logger
 from kalao.definitions.enums import ReturnCode
 
 
-def get_name(func):
-    return f'{func.func.__module__}.{func.func.__name__}'
+def get_name(func: Callable) -> str:
+    if hasattr(func, '__name__'):
+        return f'{func.__module__}.{func.__name__}'
+    else:
+        return get_name(func.func)
 
 
-def wrapper(log, func, queue):
+def wrapper(log: str, func: Callable, queue: Queue) -> None:
     logger.info(log, f'Launching {get_name(func)} in background')
     ret = func()
     logger.info(log, f'{get_name(func)} returned {ret}')
     queue.put({get_name(func): ret})
 
 
-def launch(log, func_list, timeout=np.inf, terminate_grace_time=5,
-           kill_wait_time=1):
+def launch(log: str, func_list: list[Callable], timeout: float = np.inf,
+           terminate_grace_time: float = 5, kill_wait_time: float = 1) -> None:
     processes = {}
     processes_terminated = {}
     processes_killed = {}

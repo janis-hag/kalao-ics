@@ -121,6 +121,10 @@ class CenteringFluxWFSTooLow(CenteringException):
     """Flux on WFS is too low"""
 
 
+class CenteringOffsetingFailed(CenteringException):
+    """Offsetting to telescope failed"""
+
+
 ##### Focusing
 
 

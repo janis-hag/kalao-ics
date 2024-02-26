@@ -12,6 +12,8 @@ import dataclasses
 import json
 import shutil
 import time
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -24,39 +26,50 @@ import requests
 import requests.exceptions
 
 from kalao.definitions.dataclasses import ROI
-from kalao.definitions.enums import (CameraServerStatus, ReturnCode,
-                                     SequencerStatus)
+from kalao.definitions.enums import (CameraServerStatus, ObservationType,
+                                     ReturnCode, SequencerStatus)
 
 import config
 
 
-def take_empty(filepath=None):
+def take_empty(filepath: str | Path | None = None) -> Path | None:
     if filepath is None:
-        filepath = '/tmp/fli_empty.fits'
+        filepath = Path('/tmp/fli_empty.fits')
+    elif not isinstance(filepath, Path):
+        filepath = Path(filepath)
 
     params = {'filepath': filepath}
     ret, _ = _send_request('/empty', params)
 
-    return ret
+    if ret == ReturnCode.CAMERA_OK:
+        return filepath
+    else:
+        return None
 
 
-def take_frame(exptime=None, filepath=None, nbflushes=None, nbframes=None,
-               roi=None):
+def take_frame(exptime: float | None = None,
+               filepath: str | Path | None = None,
+               nbflushes: int | None = None, nbframes: int | None = None,
+               roi: ROI | None = None) -> Path | None:
     if filepath is None:
-        filepath = '/tmp/fli_frame.fits'
+        filepath = Path('/tmp/fli_frame.fits')
+    elif not isinstance(filepath, Path):
+        filepath = Path(filepath)
 
     if nbframes == 1:
         nbframes = None
 
-    if roi is not None:
-        roi = dataclasses.asdict(roi)
+    if roi is None:
+        roi_dict = None
+    else:
+        roi_dict = dataclasses.asdict(roi)
 
     params = {
         'exptime': exptime,
         'nbframes': nbframes,
         'filepath': filepath,
         'nbflushes': nbflushes,
-        'roi': roi
+        'roi': roi_dict
     }
 
     symlink = config.FITS.last_image_all
@@ -72,8 +85,10 @@ def take_frame(exptime=None, filepath=None, nbflushes=None, nbframes=None,
 
 
 @with_sequencer_status(SequencerStatus.EXP)
-def take_image(obs_type, exptime=None, filepath=None, nbframes=None,
-               roi_size=None, comment=None):
+def take_image(obs_type: ObservationType, exptime: float | None = None,
+               filepath: str | Path | None = None, nbframes: int | None = None,
+               roi_size: int | None = None,
+               comment: str | None = None) -> Path | None:
     """
     :param sequencer_arguments:
     :param exptime: Detector integration time to use
@@ -120,7 +135,7 @@ def take_image(obs_type, exptime=None, filepath=None, nbframes=None,
         return None
 
 
-def increment_image_counter(params):
+def increment_image_counter(params: dict[str, Any]) -> int:
     """
     Increments the image counter by one
 
@@ -145,15 +160,13 @@ def increment_image_counter(params):
     return image_count
 
 
-def cancel():
-    # TODO add docstring
-
+def cancel() -> ReturnCode:
     ret, _ = _send_request('/cancelExposure')
 
     return ret
 
 
-def get_exposure_status():
+def get_exposure_status() -> dict[str, float]:
     ret, exposure_status = _send_request('/exposureStatus')
 
     if ret == ReturnCode.CAMERA_OK:
@@ -167,7 +180,7 @@ def get_exposure_status():
         }
 
 
-def get_temperatures():
+def get_temperatures() -> dict[str, float]:
     """
     Gets CCD and heatsink temperatures from the camera.
 
@@ -182,7 +195,7 @@ def get_temperatures():
         return {'heatsink': np.inf, 'ccd': np.inf}
 
 
-def set_temperature(temperature):
+def set_temperature(temperature: float) -> ReturnCode:
     """
     Sets the CCD temperature.
 
@@ -194,7 +207,8 @@ def set_temperature(temperature):
     return ret
 
 
-def _send_request(endpoint, params={}):
+def _send_request(endpoint: str,
+                  params: dict[str, Any] = {}) -> tuple[ReturnCode, Any]:
     # Clean params
     for key, value in list(params.items()):
         if value is None:
@@ -224,6 +238,9 @@ def _send_request(endpoint, params={}):
                 req = requests.post(url, json=params,
                                     timeout=config.FLI.request_timeout)
         except requests.exceptions.RequestException:
+            logger.error(
+                'fli',
+                f'Camera server endpoint {endpoint} answered with a error.')
             return ReturnCode.CAMERA_SERVER_DOWN, None
 
         try:
@@ -253,7 +270,7 @@ def _send_request(endpoint, params={}):
             return ReturnCode.CAMERA_ERROR, data
 
 
-def check_server_status():
+def check_server_status() -> CameraServerStatus:
     """
     Verify if the camera server is up and running and check if the camera can be queried.
 

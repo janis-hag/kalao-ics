@@ -1,3 +1,4 @@
+import math
 import time
 
 import numpy as np
@@ -7,29 +8,34 @@ from kalao.cacao import toolbox
 from kalao.interfaces import etcs
 from kalao.plc import calibunit
 
+from kalao.definitions.enums import ReturnCode
+
 import config
 
 
-def fli_to_calibunit(dy):
+def fli_to_calibunit(dy: float) -> ReturnCode:
     position = calibunit.get_position()
 
     new_position = position + config.Offsets.fli_y_to_calibunit_mm * dy
 
-    calibunit.move(new_position)
+    if math.isclose(calibunit.move(new_position), new_position, abs_tol=0.1):
+        return ReturnCode.OK
+    else:
+        return ReturnCode.GENERIC_ERROR
 
-    return 0
 
-
-def fli_to_telescope(dx, dy, gain=1):
+def fli_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
     alt_offset = dx * config.Offsets.fli_x_to_tel_alt * gain
     az_offset = dy * config.Offsets.fli_y_to_tel_az * gain
 
-    etcs.send_altaz_offset(alt_offset, az_offset, wait=True)
+    if etcs.send_altaz_offset(alt_offset, az_offset,
+                              wait=True) == ReturnCode.OK:
+        return ReturnCode.OK
+    else:
+        return ReturnCode.GENERIC_ERROR
 
-    return 0
 
-
-def wfs_to_telescope(dx, dy, gain=1):
+def wfs_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
     alt_offset = dy * config.Offsets.nuvu_y_to_tel_alt * gain
     az_offset = dx * config.Offsets.nuvu_x_to_tel_az * gain
 
@@ -38,17 +44,21 @@ def wfs_to_telescope(dx, dy, gain=1):
     #     f'Offloading WFS tip-tilt to telescope. On WFS: dx={dx}px, dy={dy}px. Offloaded: alt={alt_offset}asec, az={az_offset}asec'
     # )
 
-    etcs.send_altaz_offset(alt_offset, az_offset, wait=True)
+    if etcs.send_altaz_offset(alt_offset, az_offset,
+                              wait=True) == ReturnCode.OK:
+        return ReturnCode.OK
+    else:
+        return ReturnCode.GENERIC_ERROR
 
-    return 0
 
-
-def fli_to_ttm(dx, dy, gain=1, output_stream=config.Streams.TTM_CENTERING):
+def fli_to_ttm(dx: float, dy: float, gain: float = 1,
+               output_stream: str = config.Streams.TTM_CENTERING
+               ) -> ReturnCode:
     ttm_stream = toolbox.open_stream_once(output_stream)
 
     if ttm_stream is None:
         logger.error('ttm', f'{output_stream} is missing')
-        return -1
+        return ReturnCode.GENERIC_ERROR
 
     tip, tilt = ttm_stream.get_data(check=False)
 
@@ -66,15 +76,17 @@ def fli_to_ttm(dx, dy, gain=1, output_stream=config.Streams.TTM_CENTERING):
 
     time.sleep(1)
 
-    return 0
+    return ReturnCode.OK
 
 
-def wfs_to_ttm(dx, dy, gain=1, output_stream=config.Streams.TTM_CENTERING):
+def wfs_to_ttm(dx: float, dy: float, gain: float = 1,
+               output_stream: str = config.Streams.TTM_CENTERING
+               ) -> ReturnCode:
     ttm_stream = toolbox.open_stream_once(output_stream)
 
     if ttm_stream is None:
         logger.error('ttm', f'{output_stream} is missing')
-        return -1
+        return ReturnCode.GENERIC_ERROR
 
     tip, tilt = ttm_stream.get_data(check=False)
 
@@ -92,10 +104,10 @@ def wfs_to_ttm(dx, dy, gain=1, output_stream=config.Streams.TTM_CENTERING):
 
     time.sleep(1)
 
-    return 0
+    return ReturnCode.OK
 
 
-def check_ttm_saturation(tip, tilt):
+def check_ttm_saturation(tip: float, tilt: float) -> tuple[float, float]:
     if tip > 2.45:
         logger.warn('ttm', 'TTM saturated, limiting tip to 2.45')
         tip = 2.45
@@ -113,10 +125,11 @@ def check_ttm_saturation(tip, tilt):
     return tip, tilt
 
 
-def offload_ttm_to_telescope(gain=config.TTM.offload_gain,
-                             threshold=config.TTM.offload_threshold,
-                             override_threshold=False,
-                             input_stream=config.Streams.TTM):
+def offload_ttm_to_telescope(gain: float = config.TTM.offload_gain,
+                             threshold: float = config.TTM.offload_threshold,
+                             override_threshold: bool = False,
+                             input_stream: str = config.Streams.TTM
+                             ) -> ReturnCode:
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
@@ -128,7 +141,7 @@ def offload_ttm_to_telescope(gain=config.TTM.offload_gain,
 
     if ttm_stream is None:
         logger.error('ttm', f'{input_stream} is missing')
-        return -1
+        return ReturnCode.GENERIC_ERROR
 
     tip, tilt = ttm_stream.get_data(check=False)
 
@@ -151,4 +164,4 @@ def offload_ttm_to_telescope(gain=config.TTM.offload_gain,
 
         etcs.send_altaz_offset(alt_offload, az_offload)
 
-    return 0
+    return ReturnCode.OK

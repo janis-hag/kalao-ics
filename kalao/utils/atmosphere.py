@@ -1,3 +1,5 @@
+from typing import Callable
+
 import numpy as np
 
 # Conventions:
@@ -7,7 +9,8 @@ import numpy as np
 
 
 # Owens 1967 formula
-def air_refractive_index_OWENS(lambda0_, T, P, H):
+def air_refractive_index_OWENS(lambda0_: float, T: float, P: float,
+                               H: float) -> float:
     sig = 1. / (lambda0_*1e6)
     P = P / 100
     t = T - 273.15
@@ -29,7 +32,8 @@ def air_refractive_index_OWENS(lambda0_, T, P, H):
 
 
 # Edlen 1966 formula
-def air_refractive_index_EDLEN(lambda0_, T, P, _):
+def air_refractive_index_EDLEN(lambda0_: float, T: float, P: float,
+                               _) -> float:
     sig = 1. / (lambda0_*1e6)
     p = P / 101325 * 760
     t = T - 273.15
@@ -40,7 +44,10 @@ def air_refractive_index_EDLEN(lambda0_, T, P, _):
     return 1 + n*1e-8
 
 
-def air_dispersion(zenith_angle, wavelength, T, P, H,
-                   air_refractive_index=air_refractive_index_EDLEN):
+def air_dispersion(
+    zenith_angle: float, wavelength: float, T: float, P: float, H: float,
+    air_refractive_index: Callable[[float, float, float, float],
+                                   float] = air_refractive_index_EDLEN
+) -> float:
     return np.tan(zenith_angle * np.pi / 180) * air_refractive_index(
         wavelength, T, P, H) * 180 / np.pi * 3600

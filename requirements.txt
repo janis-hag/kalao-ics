@@ -1,4 +1,4 @@
-# Install ImageStreamIO, CacaoProcessTools and pyMilk from sources ("pip install ." in ImageStreamIO, milk and pyMilk sources dirs)
+# Install ImageStreamIO, CacaoProcessTools and pyMilk from sources (see wiki)
 
 # Basics
 numpy
@@ -42,3 +42,11 @@ Flask
 
 # To avoid some errors (about cryptography being missing)
 cryptography
+
+# Code style
+isort
+yapf
+mypy
+
+# Performances
+pyarrow

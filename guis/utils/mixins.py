@@ -8,6 +8,8 @@ from PySide6.QtCore import (QEventLoop, QObject, QRunnable, QSignalBlocker,
 from PySide6.QtGui import QCursor, QGuiApplication, Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox, QMessageBox
 
+from kalao.utils.rprint import rprint
+
 from guis.utils.string_formatter import KalAOFormatter
 from guis.utils.widgets import KMessageBox
 
@@ -183,7 +185,7 @@ class BackendWorker(QObject, QRunnable):
         try:
             self.ret = self.fun(**self.kwargs)
         except Exception as e:
-            traceback.print_exc()
+            rprint(''.join(traceback.format_exception(e)))
             self.exception = e
 
         self.done.emit()
@@ -223,7 +225,8 @@ class BackendActionMixin:
             msgbox = KMessageBox(self)
             msgbox.setIcon(QMessageBox.Critical)
             msgbox.setText("<b>An error occured!</b>")
-            msgbox.setInformativeText(f'An error occurred during action, please check the logs.')
+            msgbox.setInformativeText(
+                f'An error occurred during action, please check the logs.')
             msgbox.setModal(True)
             msgbox.show()
 
@@ -392,7 +395,7 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def data_to_widget(self, data, widget, true_value=[]):
+    def data_to_widget(self, data, widget, true_value=[True]):
         if data is None:
             return
 

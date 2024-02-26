@@ -1,7 +1,10 @@
+import numpy as np
+
 import config
 
 
-def magnitude_to_exposure_time(mag, target_adu, filter, fwhm=1):
+def magnitude_to_exposure_time(mag: float, target_adu: float, filter: str,
+                               fwhm: float = 1) -> float:
     exptime = 10**((mag - config.Exposure.Star.mag_ref) /
                    2.5) * config.Exposure.Star.exptime_ref
 
@@ -17,7 +20,8 @@ def magnitude_to_exposure_time(mag, target_adu, filter, fwhm=1):
     return exptime
 
 
-def magnitude_to_adu(mag, exptime, filter, fwhm=1):
+def magnitude_to_adu(mag: float, exptime: float, filter: str,
+                     fwhm: float = 1) -> float:
     adu = 10**((config.Exposure.Star.mag_ref - mag) /
                2.5) * config.Exposure.Star.adu_ref
 
@@ -34,13 +38,17 @@ def magnitude_to_adu(mag, exptime, filter, fwhm=1):
 
 
 def optimal_exposure_time_and_filter(
-        mag, min_exptime, min_adu=config.Exposure.Star.min_adu,
-        max_adu=config.Exposure.Star.max_adu,
-        filter_list=config.Exposure.Star.filter_list, fwhm=1):
+        mag: float, min_exptime: float,
+        min_adu: float = config.Exposure.Star.min_adu,
+        max_adu: float = config.Exposure.Star.max_adu,
+        filter_list: list[str] = config.Exposure.Star.filter_list,
+        fwhm: float = 1) -> tuple[float, str]:
     return _try_filter(filter_list, mag, min_exptime, min_adu, max_adu, fwhm)
 
 
-def _try_filter(filter_list, mag, min_exptime, min_adu, max_adu, fwhm):
+def _try_filter(filter_list: list[str], mag: float, min_exptime: float,
+                min_adu: float, max_adu: float,
+                fwhm: float) -> tuple[float, str]:
     # Note: this function assume filters are ordered by decreasing transmission
 
     filter = filter_list[0]
@@ -62,7 +70,7 @@ def _try_filter(filter_list, mag, min_exptime, min_adu, max_adu, fwhm):
                                max_adu, fwhm)
 
 
-def flat_exptime(target_adu, filter):
+def flat_exptime(target_adu: float, filter: str) -> float:
     exptime = config.Exposure.SkyFlat.exptime_ref
 
     # Adjust for target ADUs
@@ -74,8 +82,9 @@ def flat_exptime(target_adu, filter):
     return exptime
 
 
-def next_flat_exptime(target_adu, prev_img, prev_exptime, prev_filter,
-                      next_filter):
+def next_flat_exptime(target_adu: float, prev_img: np.ndarray,
+                      prev_exptime: float, prev_filter: str,
+                      next_filter: str) -> float:
     prev_adu = prev_img.median()
 
     # Start with previous exposure time

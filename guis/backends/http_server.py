@@ -4,6 +4,8 @@ import pickle
 import traceback
 from functools import partial
 
+from kalao.utils.rprint import rprint
+
 from flask import Flask, jsonify, make_response, request
 from flask.json.provider import JSONProvider
 
@@ -59,13 +61,13 @@ def serve(fun):
             raise Exception(f'Unsupported MIME type {response_type}')
 
         return response
-    except Exception:
+    except Exception as e:
         string = f'URL: {request.url_rule}\nArguments: {dict(request.args)}'
         if request.is_json:
             string += f'\nJSON: {dict(request.args)}'
 
-        traceback.print_exc()
-        print(string)
+        rprint(''.join(traceback.format_exception(e)))
+        rprint(string)
 
         return 'Internal Server Error', 500
 
@@ -104,7 +106,7 @@ if __name__ == '__main__':
             app.add_url_rule(url, view_func=fun, methods=methods)
 
             if args.debug:
-                print(
+                rprint(
                     f'Created route {url} with method(s) {", ".join(methods)}')
 
     global backend

@@ -11,6 +11,7 @@ beck.py is part of the KalAO Instrument Control Software
 
 import time
 from functools import wraps
+from typing import Callable
 
 import numpy as np
 
@@ -21,7 +22,7 @@ from kalao.definitions.enums import PLCStatus, ReturnCode
 import config
 
 
-def connect(addr=config.PLC.ip, port=config.PLC.port):
+def connect(addr: str = config.PLC.ip, port: int = config.PLC.port) -> Client:
     beck = Client(f'opc.tcp://{addr}:{port}')
     beck.connect()
     # root = beck.get_root_node()
@@ -32,7 +33,7 @@ def connect(addr=config.PLC.ip, port=config.PLC.port):
 
 def beckhoff_autoconnect(fun):
     @wraps(fun)
-    def wrapper(*args, beck=None, **kwargs):
+    def wrapper(*args, beck: Client = None, **kwargs):
         ret = None
         exception = None
 
@@ -58,7 +59,7 @@ def beckhoff_autoconnect(fun):
     return wrapper
 
 
-def motor_send_execute(node, beck):
+def motor_send_execute(node: str, beck: Client) -> None:
     motor_bExecute = beck.get_node(f"{node}.ctrl.bExecute")
 
     motor_bExecute.set_attribute(
@@ -67,7 +68,7 @@ def motor_send_execute(node, beck):
             ua.Variant(True, motor_bExecute.get_data_type_as_variant_type())))
 
 
-def motor_send_init(node, beck):
+def motor_send_init(node: str, beck: Client) -> None:
     motor_nCommand = beck.get_node(f"{node}.ctrl.nCommand")
 
     motor_nCommand.set_attribute(
@@ -80,7 +81,7 @@ def motor_send_init(node, beck):
     motor_send_execute(node, beck=beck)
 
 
-def motor_send_stop(node, beck):
+def motor_send_stop(node: str, beck: Client) -> None:
     motor_bStop = beck.get_node(f"{node}.ctrl.bStop")
 
     motor_bStop.set_attribute(
@@ -90,7 +91,8 @@ def motor_send_stop(node, beck):
 
 
 @beckhoff_autoconnect
-def motor_init(node, force_init=True, beck=None):
+def motor_init(node: str, force_init: bool = True,
+               beck: Client = None) -> ReturnCode:
     # Check if enabled, if not do enable
     if not beck.get_node(f"{node}.stat.bEnabled").get_value() or force_init:
         motor_bEnable = beck.get_node(f"{node}.ctrl.bEnable")
@@ -120,7 +122,8 @@ def motor_init(node, force_init=True, beck=None):
 
 
 @beckhoff_autoconnect
-def motor_move(node, position, velocity, blocking, beck=None):
+def motor_move(node: str, position: float, velocity: float, blocking: bool,
+               beck: Client = None) -> float:
     motor_nCommand = beck.get_node(f"{node}.ctrl.nCommand")
 
     # Check if initialised
@@ -169,7 +172,7 @@ def motor_move(node, position, velocity, blocking, beck=None):
 
 
 @beckhoff_autoconnect
-def motor_get_position(node, beck=None):
+def motor_get_position(node: str, beck: Client = None) -> float:
     error_code, error_text = get_error(node, beck=beck)
 
     if error_code != 0:
@@ -179,19 +182,19 @@ def motor_get_position(node, beck=None):
 
 
 @beckhoff_autoconnect
-def motor_is_moving(node, beck=None):
+def motor_is_moving(node: str, beck: Client = None) -> bool:
     return beck.get_node(f'{node}.stat.sStatus').get_value().startswith(
         'MOVING')
 
 
 @beckhoff_autoconnect
-def motor_is_initialising(node, beck=None):
+def motor_is_initialising(node: str, beck: Client = None) -> bool:
     return beck.get_node(f'{node}.stat.sStatus').get_value().startswith(
         'INITIALISING')
 
 
 @beckhoff_autoconnect
-def motor_get_status(node, beck=None):
+def motor_get_status(node: str, beck: Client = None) -> PLCStatus:
     enabled = beck.get_node(f'{node}.stat.bEnabled').get_value()
     initialised = beck.get_node(f'{node}.stat.bInitialised').get_value()
     status = beck.get_node(f'{node}.stat.sStatus').get_value()
@@ -213,7 +216,7 @@ def motor_get_status(node, beck=None):
 
 
 @beckhoff_autoconnect
-def get_error(node, beck=None):
+def get_error(node: str, beck: Client = None) -> tuple[int, str]:
     error_code = beck.get_node(f'{node}.stat.nErrorCode').get_value()
 
     if error_code != 0:
@@ -224,9 +227,10 @@ def get_error(node, beck=None):
         return 0, ''
 
 
-def wait_loop(message, test, wait_time):
-    #print(f"{message} ", end='', flush=True)
+def wait_loop(message: str, test: Callable[[], bool],
+              wait_time: float) -> None:
+    #rprint(f"{message} ", end='', flush=True)
     while test():
-        #print(".", end='', flush=True)
+        #rprint(".", end='', flush=True)
         time.sleep(wait_time)
-    #print(" DONE", flush=True)
+    #rprint(" DONE", flush=True)

@@ -216,9 +216,8 @@ def run(args):
     slopes = []
 
     for i in range(args.slopes_avg):
-        time.sleep(0.01)
         print(TC.UP + TC.CLEAR + f'Averaging slopes {i+1}/{args.slopes_avg}')
-        slopes.append(slopes_stream.get_data(True))
+        slopes.append(slopes_stream.get_data(check=True))
 
     slopes = np.array(slopes)
     fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /

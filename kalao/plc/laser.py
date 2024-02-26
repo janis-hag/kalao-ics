@@ -11,20 +11,28 @@ laser.py is part of the KalAO Instrument Control Software
 import math
 import time
 from datetime import datetime, timezone
+from enum import StrEnum
 
 from kalao import database, logger
 from kalao.cacao import aocontrol
 from kalao.plc import core
 
-from opcua import ua
+from opcua import Client, ua
 
 from kalao.definitions.enums import LaserState, ReturnCode
 
 import config
 
 
+class LaserCommand(StrEnum):
+    DISABLE = 'bDisable'
+    ENABLE = 'bEnable'
+    LOCK = 'bLock'
+    UNLOCK = 'bUnlock'
+
+
 @core.beckhoff_autoconnect
-def get_state(beck=None):
+def get_state(beck: Client = None) -> LaserState:
     if beck.get_node(f'{config.PLC.Node.LASER}.Status').get_value():
         return LaserState.ON
     else:
@@ -32,21 +40,21 @@ def get_state(beck=None):
 
 
 @core.beckhoff_autoconnect
-def get_power(beck=None):
+def get_power(beck: Client = None) -> float:
     return beck.get_node(f'{config.PLC.Node.LASER}.Current').get_value()
 
 
-def disable(beck=None):
+def disable(beck: Client = None) -> LaserState:
     """
     Power off laser source
 
     :return: status of the laser
     """
 
-    return _switch('bDisable', beck=beck)
+    return _switch(LaserCommand.DISABLE, beck=beck)
 
 
-def enable(beck=None):
+def enable(beck: Client = None) -> LaserState:
     """
     Power on laser source and set to default intensity.
     Disables EM gain on WFS camera.
@@ -54,30 +62,30 @@ def enable(beck=None):
     :return: status of the laser
     """
 
-    return _switch('bEnable', beck=beck)
+    return _switch(LaserCommand.ENABLE, beck=beck)
 
 
-def lock(beck=None):
+def lock(beck: Client = None) -> LaserState:
     """
     Lock laser into software only control
 
     :return: status of the laser lock
     """
 
-    return _switch('bLock', beck=beck)
+    return _switch(LaserCommand.LOCK, beck=beck)
 
 
-def unlock(beck=None):
+def unlock(beck: Client = None) -> LaserState:
     """
     Lock laser into software only control
 
     :return: status of the laser lock
     """
 
-    return _switch('bUnlock', beck=beck)
+    return _switch(LaserCommand.UNLOCK, beck=beck)
 
 
-def get_switch_time():
+def get_switch_time() -> tuple[str, float]:
     """
     Looks up the time when the tungsten lamp as last been put into current state (ON/OFF/ERROR)
 
@@ -85,7 +93,7 @@ def get_switch_time():
     """
 
     data = database.get_time_since_state('monitoring', 'laser_state', '==',
-                                         get_state().value)
+                                         get_state())
 
     if data.get('since') is None:
         return data['current']['value'], 0
@@ -95,7 +103,8 @@ def get_switch_time():
 
 
 @core.beckhoff_autoconnect
-def set_power(power, enable=False, beck=None):
+def set_power(power: float, enable: bool = False,
+              beck: Client = None) -> float:
     """
     Set light intensity of the laser source
 
@@ -133,7 +142,7 @@ def set_power(power, enable=False, beck=None):
                        laser_bSetIntensity.get_data_type_as_variant_type())))
 
     if enable and previous_state != LaserState.ON:
-        _switch('bEnable', beck=beck)
+        _switch(LaserCommand.ENABLE, beck=beck)
 
     if power != 0 and not math.isclose(
             previous_power, power) and previous_state == LaserState.ON:
@@ -143,7 +152,8 @@ def set_power(power, enable=False, beck=None):
 
 
 @core.beckhoff_autoconnect
-def _switch(action_name, beck=None):
+def _switch(action_name: LaserCommand | LaserState,
+            beck: Client = None) -> LaserState:
     """
      Enable or Disable the laser depending on action_name
 
@@ -152,18 +162,18 @@ def _switch(action_name, beck=None):
     """
 
     if action_name == LaserState.ON:
-        action_name = 'bEnable'
+        action_name = LaserCommand.ENABLE
     elif action_name == LaserState.OFF:
-        action_name = 'bDisable'
+        action_name = LaserCommand.DISABLE
 
-    if action_name == 'bEnable':
+    if action_name == LaserCommand.ENABLE:
         logger.info('laser', 'Enabling laser')
         aocontrol.emgain_off()
-    elif action_name == 'bDisable':
+    elif action_name == LaserCommand.DISABLE:
         logger.info('laser', 'Disabling laser')
-    elif action_name == 'bLock':
+    elif action_name == LaserCommand.LOCK:
         logger.info('laser', 'Locking laser')
-    elif action_name == 'bUnlock':
+    elif action_name == LaserCommand.UNLOCK:
         logger.info('laser', 'Unlocking laser')
 
     previous_state = get_state()
@@ -174,13 +184,13 @@ def _switch(action_name, beck=None):
         ua.DataValue(
             ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
 
-    if action_name == 'bEnable' and previous_state != LaserState.ON:
+    if action_name == LaserCommand.ENABLE and previous_state != LaserState.ON:
         time.sleep(config.Laser.switch_wait)
 
     return get_state(beck=beck)
 
 
-def init():
+def init() -> ReturnCode:
     logger.info('laser', 'Initialising laser')
     logger.info('laser', 'Laser initialised')
 

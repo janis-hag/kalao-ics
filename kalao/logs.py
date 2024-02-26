@@ -1,16 +1,16 @@
-import pprint
 from datetime import datetime, timedelta
 
 from kalao.utils import kstring
 
 from systemd import journal
 
-from kalao.definitions.enums import LogLevel, LogsOutputType
+from kalao.definitions.dataclasses import LogEntry
+from kalao.definitions.enums import LogLevel
 
 import config
 
 
-def get_reader(filter=True):
+def get_reader(filter: bool = True) -> journal.Reader:
     reader = journal.Reader()
 
     if filter:
@@ -23,8 +23,8 @@ def get_reader(filter=True):
     return reader
 
 
-def seek(reader, output_type=LogsOutputType.JSON, entries_number=50,
-         entries_since_minutes=None):
+def seek(reader: journal.Reader, entries_number: int = 50,
+         entries_since_minutes: int | None = None) -> list[LogEntry]:
     if entries_since_minutes is not None:
         reader.seek_realtime(datetime.now() -
                              timedelta(minutes=entries_since_minutes))
@@ -34,23 +34,29 @@ def seek(reader, output_type=LogsOutputType.JSON, entries_number=50,
 
     entries = []
     for entry in reader:
-        entries.append(process_entry(entry, output_type))
+        entry_processed = process_entry(entry)
+
+        if entry is not None:
+            entries.append(entry_processed)
 
     return entries
 
 
-def get_last_entries(reader, output_type=LogsOutputType.JSON):
+def get_last_entries(reader: journal.Reader) -> list[LogEntry]:
     reader.process()
 
     entries = []
     for entry in reader:
-        entries.append(process_entry(entry, output_type))
+        entry_processed = process_entry(entry)
+
+        if entry is not None:
+            entries.append(entry_processed)
 
     return entries
 
 
-def get_entries_between(since, until, filter=True,
-                        output_type=LogsOutputType.JSON):
+def get_entries_between(since: datetime, until: datetime,
+                        filter: bool = True) -> list[LogEntry]:
     reader = get_reader(filter=filter)
     reader.seek_realtime(since)
 
@@ -59,48 +65,41 @@ def get_entries_between(since, until, filter=True,
         if entry['__REALTIME_TIMESTAMP'] > until:
             break
 
-        entries.append(process_entry(entry, output_type))
+        entry_processed = process_entry(entry)
+
+        if entry is not None:
+            entries.append(entry_processed)
 
     return entries
 
 
-def process_entry(entry, output_type=LogsOutputType.JSON):
-    if output_type == LogsOutputType.RAW:
-        return pprint.pformat(entry, indent=4)
-    else:
-        message = entry['MESSAGE']
-        if message != '':
-            level = LogLevel.INFO
+def process_entry(entry: dict) -> LogEntry | None:
+    message = entry['MESSAGE']
+    if message != '':
+        level = LogLevel.INFO
 
-            timestamp = entry['__REALTIME_TIMESTAMP'].strftime(
-                '%y-%m-%d %H:%M:%S')
+        timestamp = entry['__REALTIME_TIMESTAMP'].strftime('%y-%m-%d %H:%M:%S')
 
-            if 'USER_UNIT' in entry:
-                if '_COMM' in entry:
-                    origin = entry['_COMM']
-                else:
-                    origin = entry['SYSLOG_IDENTIFIER']
-
-                if entry.get('EXIT_STATUS', 0) != 0 or entry.get(
-                        'UNIT_RESULT', '') == 'exit-code':
-                    level = LogLevel.ERROR
+        if 'USER_UNIT' in entry:
+            if '_COMM' in entry:
+                origin = entry['_COMM']
             else:
-                if '_SYSTEMD_USER_UNIT' in entry:
-                    origin = kstring.get_service_name(
-                        entry['_SYSTEMD_USER_UNIT'])
-                elif '_COMM' in entry:
-                    origin = entry['_COMM']
-                else:
-                    return None
+                origin = entry['SYSLOG_IDENTIFIER']
 
-            if 'ERROR' in message or 'Failed' in message or 'Traceback' in message:
+            if entry.get('EXIT_STATUS', 0) != 0 or entry.get(
+                    'UNIT_RESULT', '') == 'exit-code':
                 level = LogLevel.ERROR
-            elif 'WARNING' in message:
-                level = LogLevel.WARNING
+        else:
+            if '_SYSTEMD_USER_UNIT' in entry:
+                origin = kstring.get_service_name(entry['_SYSTEMD_USER_UNIT'])
+            elif '_COMM' in entry:
+                origin = entry['_COMM']
+            else:
+                return None
 
-            return {
-                'level': level,
-                'timestamp': timestamp,
-                'origin': origin,
-                'message': message,
-            }
+        if 'ERROR' in message or 'Failed' in message or 'Traceback' in message:
+            level = LogLevel.ERROR
+        elif 'WARNING' in message:
+            level = LogLevel.WARNING
+
+        return LogEntry(level, timestamp, origin, message)

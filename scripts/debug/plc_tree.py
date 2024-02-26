@@ -1,10 +1,11 @@
 from kalao.plc import core
+from kalao.utils.rprint import rprint
 
-from opcua import ua
+from opcua import Client, ua
 
 
 @core.beckhoff_autoconnect
-def print_node_tree(node, short=True, beck=None):
+def print_node_tree(node, short=True, beck: Client = None):
     node = beck.get_node(node)
 
     def print_children(node, prefix):
@@ -30,10 +31,10 @@ def print_node_tree(node, short=True, beck=None):
             else:
                 node_name = str(c)
 
-            print(prefix_current + node_name + value)
+            rprint(prefix_current + node_name + value)
             print_children(c, prefix_next)
 
-    print(' ' + str(node))
+    rprint(' ' + str(node))
     print_children(node, '')
 
 

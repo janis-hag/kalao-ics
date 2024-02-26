@@ -11,6 +11,7 @@ database.py is part of the KalAO Instrument Control Software
 
 import time
 from datetime import datetime, timezone
+from typing import Any
 
 import numpy as np
 
@@ -28,7 +29,7 @@ from kalao.definitions.enums import CameraServerStatus
 import config
 
 
-def _gather_for_monitoring():
+def _gather_for_monitoring() -> dict[str, Any]:
     monitoring_data = {}
 
     # get monitoring from plc and store
@@ -72,7 +73,7 @@ def _gather_for_monitoring():
     return monitoring_data
 
 
-def update_monitoring_db():
+def update_monitoring_db() -> None:
     last_update = database.get_collection_last_update('monitoring')
     if (datetime.now(timezone.utc) - last_update
         ).total_seconds() < config.Database.monitoring_min_update_interval:
@@ -90,7 +91,7 @@ def update_monitoring_db():
         database.store('monitoring', monitoring_data)
 
 
-def update_telemetry_db():
+def update_telemetry_db() -> None:
     # logger.info('database_timer', 'Updating telemetry database')
 
     telemetry_data = telemetry.gather()
@@ -103,7 +104,8 @@ def update_telemetry_db():
         database.store('telemetry', telemetry_data)
 
 
-def check_range(key, value, metadata):
+def check_range(key: str, value: int | float, metadata: dict[str,
+                                                             Any]) -> None:
     if not isinstance(value, float) and not isinstance(value, int):
         return
 

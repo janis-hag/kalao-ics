@@ -1,5 +1,6 @@
 import math
 from datetime import datetime, timezone
+from enum import StrEnum
 
 import numpy as np
 
@@ -17,8 +18,6 @@ from guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
                                MinMaxMixin, SceneHoverMixin)
 from guis.utils.ui_loader import loadUi
 from guis.utils.widgets import KMainWindow, KMessageBox
-
-from kalao.definitions.enums import StrEnum
 
 import config
 

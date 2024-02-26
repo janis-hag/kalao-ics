@@ -11,39 +11,46 @@ flipmirror.py is part of the KalAO Instrument Control Software
 
 import time
 from datetime import datetime, timezone
+from enum import StrEnum
 
 from kalao import database, logger
 from kalao.plc import core
 
-from opcua import ua
+from opcua import Client, ua
 
 from kalao.definitions.enums import FlipMirrorPosition, ReturnCode
 
 import config
 
 
-def down(beck=None):
+class FlipMirrorCommand(StrEnum):
+    DOWN = 'bDown_Flip'
+    UP = 'bUp_Flip'
+
+
+def down(beck: Client = None) -> FlipMirrorPosition:
     """
     Move the flip mirror down
 
     :return: status of the flipmirror
     """
 
-    return _switch('bDown_Flip', beck=beck)
+    return _switch(FlipMirrorCommand.DOWN, beck=beck)
 
 
-def up(beck=None):
+def up(beck: Client = None) -> FlipMirrorPosition:
     """
     Move the flip mirror up
 
     :return: status of the flipmirror
     """
 
-    return _switch('bUp_Flip', beck=beck)
+    return _switch(FlipMirrorCommand.UP, beck=beck)
 
 
 @core.beckhoff_autoconnect
-def _switch(action_name, beck=None):
+def _switch(action_name: FlipMirrorCommand | FlipMirrorPosition,
+            beck: Client = None) -> FlipMirrorPosition:
     """
      Open or Close the shutter depending on action_name
 
@@ -52,13 +59,13 @@ def _switch(action_name, beck=None):
     """
 
     if action_name == FlipMirrorPosition.UP:
-        action_name = 'bUp_Flip'
+        action_name = FlipMirrorCommand.UP
     elif action_name == FlipMirrorPosition.DOWN:
-        action_name = 'bDown_Flip'
+        action_name = FlipMirrorCommand.DOWN
 
-    if action_name == 'bUp_Flip':
+    if action_name == FlipMirrorCommand.UP:
         logger.info('flipmirror', 'Flipping mirror up')
-    elif action_name == 'bDown_Flip':
+    elif action_name == FlipMirrorCommand.DOWN:
         logger.info('flipmirror', 'Flipping mirror down')
 
     shutter_switch = beck.get_node(
@@ -76,7 +83,7 @@ def _switch(action_name, beck=None):
 
 
 @core.beckhoff_autoconnect
-def get_position(beck=None):
+def get_position(beck: Client = None) -> FlipMirrorPosition:
     """
     Query the single string status of the shutter.
 
@@ -109,7 +116,7 @@ def get_position(beck=None):
 
 
 @core.beckhoff_autoconnect
-def init(beck=None):
+def init(beck: Client = None) -> ReturnCode:
     logger.info('flipmirror', 'Initialising flip mirror')
 
     # Do the flip mirror gym if needed
@@ -123,7 +130,7 @@ def init(beck=None):
     return ReturnCode.PLC_INIT_SUCCESS
 
 
-def get_switch_time():
+def get_switch_time() -> tuple[str, float]:
     """
     Looks up the time when the tungsten lamp has last been put into current state (ON/OFF/ERROR)
 
@@ -131,8 +138,7 @@ def get_switch_time():
     """
 
     data = database.get_time_since_state('monitoring', 'flipmirror_position',
-                                         '==',
-                                         get_position().value)
+                                         '==', get_position())
 
     if data.get('since') is None:
         return data['current']['value'], 0

@@ -203,13 +203,13 @@ adc2_state:
 
 filterwheel_filter_position:
   short: Filter number
-  long: Filterwheel filter position
+  long: Filter wheel filter position
   unit:
   group: Motors
 
 filterwheel_filter_name:
   short: Filter name
-  long: Filterwheel filter name
+  long: Filter wheel filter name
   unit:
   group: Motors
 

@@ -10,6 +10,7 @@ commands.py is part of the KalAO Instrument Control Software
 """
 
 import time
+from typing import Any
 
 import numpy as np
 
@@ -34,14 +35,14 @@ from kalao.definitions.exceptions import *
 import config
 
 
-def dark(**seq_args):
+def dark(**seq_args: dict[str, Any]) -> ReturnCode:
     exptime = seq_args.get('texp')
     nbPic = seq_args.get('nbPic', 1)
 
     if None in (exptime, nbPic):
         raise MissingKeyword
 
-    if plc_utils.lamps_off() != 0:
+    if plc_utils.lamps_off() != ReturnCode.OK:
         raise LampsNotOff
 
     if shutter.close() != ShutterState.CLOSED:
@@ -63,11 +64,11 @@ def dark(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def dark_abort(**seq_args):
+def dark_abort(**seq_args: dict[str, Any]) -> ReturnCode:
     return _abort_camera()
 
 
-def tungsten_flat(**seq_args):
+def tungsten_flat(**seq_args: dict[str, Any]) -> ReturnCode:
     filter_list = seq_args.get('filter_list',
                                config.Calib.Flats.default_flat_list)
     filepath = seq_args.get('filepath')
@@ -76,16 +77,16 @@ def tungsten_flat(**seq_args):
     # if None in (q):
     #     return ReturnCode.MissingKeyword
 
-    if aocontrol.emgain_off() == -1:
+    if aocontrol.emgain_off() != ReturnCode.OK:
         raise EMGainNotOff
 
-    if aocontrol.turn_dm_on() != 0:
+    if aocontrol.turn_dm_on() != ReturnCode.OK:
         raise DMNotOn
 
     if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
         raise LoopsNotOpen
 
-    if aocontrol.reset_all_dms() != 0:
+    if aocontrol.reset_all_dms() != ReturnCode.OK:
         raise DMResetFailed
 
     if tungsten.on() != TungstenState.ON:
@@ -130,29 +131,29 @@ def tungsten_flat(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def tungsten_flat_abort(**seq_args):
+def tungsten_flat_abort(**seq_args: dict[str, Any]) -> ReturnCode:
     return _abort_camera()
 
 
-def sky_flat(**seq_args):
+def sky_flat(**seq_args: dict[str, Any]) -> ReturnCode:
     filter_list = seq_args.get('filter_list',
                                config.Calib.Flats.default_flat_list)
     filepath = seq_args.get('filepath')
     exptime = seq_args.get('texp')
 
-    if aocontrol.emgain_off() == -1:
+    if aocontrol.emgain_off() != ReturnCode.OK:
         raise EMGainNotOff
 
-    if aocontrol.turn_dm_on() != 0:
+    if aocontrol.turn_dm_on() != ReturnCode.OK:
         raise DMNotOn
 
     if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
         raise LoopsNotOpen
 
-    if aocontrol.reset_all_dms() != 0:
+    if aocontrol.reset_all_dms() != ReturnCode.OK:
         raise DMResetFailed
 
-    if plc_utils.lamps_off() != 0:
+    if plc_utils.lamps_off() != ReturnCode.OK:
         raise LampsNotOff
 
     if flipmirror.down() != FlipMirrorPosition.DOWN:
@@ -215,11 +216,11 @@ def sky_flat(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def sky_flat_abort(**seq_args):
+def sky_flat_abort(**seq_args: dict[str, Any]) -> ReturnCode:
     return _abort_camera()
 
 
-def target_observation(**seq_args):
+def target_observation(**seq_args: dict[str, Any]) -> ReturnCode:
     filter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
     exptime = seq_args.get('texp')
@@ -249,20 +250,20 @@ def target_observation(**seq_args):
     if not ao_running:
         focusing.autofocus()
 
-    if aocontrol.turn_dm_on() != 0:
+    if aocontrol.turn_dm_on() != ReturnCode.OK:
         raise DMNotOn
 
     if kao == AdaptiveOpticsMode.ENABLED:
-        if aocontrol.start_wfs_acquisition() != 0:
+        if aocontrol.start_wfs_acquisition() != ReturnCode.OK:
             raise WFSNotOn
     else:
         if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
             raise LoopsNotOpen
 
-        if aocontrol.reset_all_dms() != 0:
+        if aocontrol.reset_all_dms() != ReturnCode.OK:
             raise DMResetFailed
 
-    if plc_utils.lamps_off() != 0:
+    if plc_utils.lamps_off() != ReturnCode.OK:
         raise LampsNotOff
 
     if flipmirror.down() != FlipMirrorPosition.DOWN:
@@ -281,7 +282,7 @@ def target_observation(**seq_args):
     _wait_for_tracking()
 
     # Configure ADC once on target
-    if adc.configure() != 0:
+    if adc.configure() != ReturnCode.OK:
         raise ADCConfigureFailed
 
     if centering_needed:
@@ -295,13 +296,13 @@ def target_observation(**seq_args):
             if filterwheel.set_filter(filter) != filter:
                 raise FilterWheelNotInPosition
 
-    if kao == AdaptiveOpticsMode.ENABLED:
+    if kao == AdaptiveOpticsMode.ENABLED and not ao_running:
         logger.info('sequencer', 'Starting Adaptive Optics')
 
         if aocontrol.close_loops() != LoopStatus.ALL_LOOPS_ON:
             raise LoopNotClosed
 
-        time.sleep(config.AO.settling_time)
+        time.sleep(config.AO.loop_stabilization_time)
 
     image_path = camera.take_image(ObservationType.OBJECT, exptime=exptime,
                                    nbframes=nbframes, roi_size=roi_size)
@@ -316,11 +317,11 @@ def target_observation(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def target_observation_abort(**seq_args):
+def target_observation_abort(**seq_args: dict[str, Any]) -> ReturnCode:
     return _abort_camera()
 
 
-def focus(**seq_args):
+def focus(**seq_args: dict[str, Any]) -> ReturnCode:
     filter = seq_args.get('kalfilter')
     filepath = seq_args.get('filepath')
     exptime = seq_args.get('texp')
@@ -335,16 +336,16 @@ def focus(**seq_args):
         exptime, filter = exposure.optimal_exposure_time_and_filter(
             mag, config.Focusing.min_exptime)
 
-    if aocontrol.turn_dm_on() != 0:
+    if aocontrol.turn_dm_on() != ReturnCode.OK:
         raise DMNotOn
 
     if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
         raise LoopsNotOpen
 
-    if aocontrol.reset_all_dms() != 0:
+    if aocontrol.reset_all_dms() != ReturnCode.OK:
         raise DMResetFailed
 
-    if plc_utils.lamps_off() != 0:
+    if plc_utils.lamps_off() != ReturnCode.OK:
         raise LampsNotOff
 
     if flipmirror.down() != FlipMirrorPosition.DOWN:
@@ -359,7 +360,7 @@ def focus(**seq_args):
     _wait_for_tracking()
 
     # Configure ADC once on target
-    if adc.configure() != 0:
+    if adc.configure() != ReturnCode.OK:
         raise ADCConfigureFailed
 
     if focusing.focus_sequence(exptime=exptime) != ReturnCode.FOCUSING_OK:
@@ -372,37 +373,37 @@ def focus(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def focus_abort(**seq_args):
+def focus_abort(**seq_args: dict[str, Any]) -> ReturnCode:
     return _abort_camera()
 
 
-def lamp_on(**seq_args):
+def lamp_on(**seq_args: dict[str, Any]) -> ReturnCode:
     """
     Turn lamp on
     """
 
-    if tungsten.on() != 0:
+    if tungsten.on() != TungstenState.ON:
         raise TungstenNotOn
 
     return ReturnCode.SEQ_OK
 
 
-def lamp_off(**seq_args):
+def lamp_off(**seq_args: dict[str, Any]) -> ReturnCode:
     """
     Turn lamps off
     """
 
-    if plc_utils.lamps_off() != 0:
+    if plc_utils.lamps_off() != ReturnCode.OK:
         raise LampsNotOff
 
     return ReturnCode.SEQ_OK
 
 
-def abort(**seq_args):
+def abort(**seq_args: dict[str, Any]) -> ReturnCode:
     return _abort_camera()
 
 
-def ob_change(**seq_args):
+def ob_change(**seq_args: dict[str, Any]) -> ReturnCode:
     """
     Change of target. Stopping AO
     """
@@ -418,7 +419,7 @@ def ob_change(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def instrument_change(**seq_args):
+def instrument_change(**seq_args: dict[str, Any]) -> ReturnCode:
     """
     Change of instrument operation, go into standby mode.
     """
@@ -436,7 +437,7 @@ def instrument_change(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def end(**seq_args):
+def end(**seq_args: dict[str, Any]) -> ReturnCode:
     """
     End of instrument operation, go into standby mode and starting morning calibrations.
     """
@@ -469,7 +470,7 @@ def end(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def edp_config(**seq_args):
+def edp_config(**seq_args: dict[str, Any]) -> ReturnCode:
     """
     Updates database with configuration parameters received from EDP.
 
@@ -489,7 +490,7 @@ def edp_config(**seq_args):
     return ReturnCode.SEQ_OK
 
 
-def _check_abort():
+def _check_abort() -> ReturnCode:
     if database.get_last_value('obs',
                                'sequencer_status') == SequencerStatus.ABORTING:
         raise AbortRequested
@@ -497,15 +498,14 @@ def _check_abort():
     return ReturnCode.SEQ_OK
 
 
-def _abort_camera():
-    ret = camera.cancel()
-    if ret != 0:
+def _abort_camera() -> ReturnCode:
+    if camera.cancel() != ReturnCode.OK:
         raise FLICancelFailed
 
     return ReturnCode.SEQ_OK
 
 
-def _wait_for_tracking():
+def _wait_for_tracking() -> ReturnCode:
     """
     Waits for the telescope to be on target
     """
@@ -531,7 +531,7 @@ def _wait_for_tracking():
 
 
 @with_sequencer_status(SequencerStatus.WAITLAMP)
-def _wait_for_tungsten():
+def _wait_for_tungsten() -> ReturnCode:
     # Wait for tungsten to warm up
     state, switch_time = tungsten.get_switch_time()
 
@@ -553,7 +553,7 @@ def _wait_for_tungsten():
 
 
 @with_sequencer_status(SequencerStatus.DARKS)
-def generate_night_darks(folder=None):
+def generate_night_darks(folder=None) -> ReturnCode:
     """
     Generate the darks needed for the calibration of the night which is assumed to have ended.
     """
@@ -579,7 +579,7 @@ def generate_night_darks(folder=None):
     return 0
 
 
-def _open_loops():
+def _open_loops() -> None:
     if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
         logger.warn('sequencer', 'Failed to open loops.')
 
@@ -589,11 +589,11 @@ def _open_loops():
     if aocontrol.set_exptime(0) != ReturnCode.OK:
         logger.warn('sequencer', 'Failed to reset WFS exposure time.')
 
-    if aocontrol.reset_all_dms() != 0:
+    if aocontrol.reset_all_dms() != ReturnCode.OK:
         logger.warn('sequencer', 'Failed to reset DM and TTM.')
 
 
-def _shut_off_plc():
+def _shut_off_plc() -> None:
     if tungsten.off() != TungstenState.OFF:
         logger.warn('sequencer', 'Failed to turn off tungsten lamp.')
 

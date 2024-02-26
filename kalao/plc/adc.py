@@ -19,17 +19,20 @@ from kalao import database, euler, logger
 from kalao.plc import core, filterwheel
 from kalao.utils import atmosphere
 
-from kalao.definitions.enums import ReturnCode
+from opcua import Client
+
+from kalao.definitions.enums import PLCStatus, ReturnCode
 
 import config
 
 
-class ADCCommand(IntEnum):
+class ADCCommand():
     MAX_DISP = 0
     ZERO_DISP = 180
 
 
-def get_optimal_adc_angle(zenith_angle, wavelength, T, P, H):
+def get_optimal_adc_angle(zenith_angle: float, wavelength: float, T: float,
+                          P: float, H: float) -> float:
     target_dispersion = atmosphere.air_dispersion(
         zenith_angle, wavelength, T, P, H) - atmosphere.air_dispersion(
             zenith_angle, config.ADC.dispersion_reference_wavelength, T, P, H)
@@ -44,8 +47,10 @@ def get_optimal_adc_angle(zenith_angle, wavelength, T, P, H):
         return 0
 
 
-def configure(zenith_angle=None, override_threshold=False,
-              skip_tracking_check=False, blocking=True, beck=None):
+def configure(zenith_angle: float | None = None,
+              override_threshold: bool = False,
+              skip_tracking_check: bool = False, blocking: bool = True,
+              beck: Client = None) -> int:
     if not skip_tracking_check and not euler.telescope_tracking():
         logger.warn('adc', 'Configuring ADC while telescope is not tracking')
 
@@ -62,15 +67,17 @@ def configure(zenith_angle=None, override_threshold=False,
 
     # TODO: in case if filter_name is not in filter_to_wavelength
 
-    if type(wavelength) == list:
-        angle = 0
+    if isinstance(wavelength, list):
+        angle = 0.
 
         for w in wavelength:
             angle += get_optimal_adc_angle(zenith_angle, w, T, P, H)
 
         angle /= len(wavelength)
-    else:
+    elif isinstance(wavelength, float):
         angle = get_optimal_adc_angle(zenith_angle, wavelength, T, P, H)
+    else:
+        raise Exception(f'Unexpected type {type(wavelength)} for wavelength')
 
     if override_threshold or np.abs(angle -
                                     get_angle()) > config.ADC.angle_threshold:
@@ -79,15 +86,16 @@ def configure(zenith_angle=None, override_threshold=False,
     return 0
 
 
-def set_max_disp(beck=None):
+def set_max_disp(beck: Client = None) -> float:
     return set_angle(ADCCommand.MAX_DISP, beck=beck)
 
 
-def set_zero_disp(beck=None):
+def set_zero_disp(beck: Client = None) -> float:
     return set_angle(ADCCommand.ZERO_DISP, beck=beck)
 
 
-def set_angle(angle, blocking=True, beck=None):
+def set_angle(angle: float, blocking: bool = True,
+              beck: Client = None) -> float:
     logger.info('adc', f'Setting angle between ADC prisms to {angle}°')
 
     database.store('obs', {'adc_angle': angle})
@@ -107,7 +115,7 @@ def set_angle(angle, blocking=True, beck=None):
     return angle
 
 
-def get_angle():
+def get_angle() -> float:
     angle = database.get_last_value('obs', 'adc_angle')
 
     if angle is None:
@@ -116,8 +124,8 @@ def get_angle():
         return angle
 
 
-def rotate(node, position, velocity=config.ADC.velocity, blocking=True,
-           beck=None):
+def rotate(node: str, position: float, velocity: float = config.ADC.velocity,
+           blocking: bool = True, beck: Client = None) -> float:
     logger.info('adc',
                 f'Moving ADC {node} to position {position}° at {velocity}°/s')
 
@@ -131,27 +139,27 @@ def rotate(node, position, velocity=config.ADC.velocity, blocking=True,
 
 
 @core.beckhoff_autoconnect
-def stop(node, beck=None):
+def stop(node: str, beck: Client = None) -> None:
     logger.info('adc', f'Stopping ADC {node}')
     core.motor_send_stop(node, beck=beck)
 
 
 @core.beckhoff_autoconnect
-def wait_rotate(node, beck=None):
+def wait_rotate(node: str, beck: Client = None) -> int:
     core.wait_loop(f'Waiting for ADC {node} rotation',
                    lambda: is_moving(node, beck=beck), 5)
 
     return 0
 
 
-def wait_rotate_both(beck=None):
+def wait_rotate_both(beck: Client = None) -> int:
     wait_rotate(config.PLC.Node.ADC1, beck=beck)
     wait_rotate(config.PLC.Node.ADC2, beck=beck)
 
     return 0
 
 
-def get_position(node, beck=None):
+def get_position(node: str, beck: Client = None) -> float:
     position = core.motor_get_position(node, beck=beck)
 
     if np.isnan(position):
@@ -161,12 +169,13 @@ def get_position(node, beck=None):
     return position
 
 
-def is_moving(node, beck=None):
+def is_moving(node: str, beck: Client = None) -> bool:
     return core.motor_is_moving(node, beck=beck)
 
 
 @core.beckhoff_autoconnect
-def init(node, force_init=False, beck=None):
+def init(node: str, force_init: bool = False,
+         beck: Client = None) -> ReturnCode:
     """
     Initialise the ADC motor.
     """
@@ -185,5 +194,5 @@ def init(node, force_init=False, beck=None):
     return ret_init
 
 
-def get_state(node, beck=None):
+def get_state(node, beck: Client = None) -> PLCStatus:
     return core.motor_get_status(node, beck=beck)

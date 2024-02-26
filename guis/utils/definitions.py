@@ -1,12 +1,10 @@
-from enum import Enum
+from enum import Enum, StrEnum
 from pathlib import Path
 
 from PySide6.QtGui import QColor
 
 from kalao.utils.image import (LinearScale, LogScale, MinMaxCut, PercentileCut,
                                SigmaCut, SquaredScale, SquareRootScale)
-
-from kalao.definitions.enums import StrEnum
 
 
 class Color():

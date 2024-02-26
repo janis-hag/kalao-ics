@@ -17,7 +17,7 @@ from kalao import logger
 
 import dbus
 
-from kalao.definitions.enums import ServiceAction
+from kalao.definitions.enums import ReturnCode, ServiceAction
 
 import config
 
@@ -25,7 +25,9 @@ import config
 # For documentation on the API
 
 
-def connect_dbus(system=False):
+def connect_dbus(
+    system: bool = False
+) -> tuple[dbus.SystemBus | dbus.SessionBus, dbus.Interface]:
     if system:
         bus = dbus.SystemBus()
     else:
@@ -36,11 +38,11 @@ def connect_dbus(system=False):
 
     manager = dbus.Interface(systemd, 'org.freedesktop.systemd1.Manager')
 
-    return bus, systemd, manager
+    return bus, manager
 
 
-def get_status(unit, system=False):
-    bus, systemd, manager = connect_dbus(system)
+def get_status(unit: str, system: bool = False) -> tuple[str, str, datetime]:
+    bus, manager = connect_dbus(system)
 
     service = bus.get_object('org.freedesktop.systemd1',
                              object_path=manager.LoadUnit(unit))
@@ -62,8 +64,8 @@ def get_status(unit, system=False):
     return state, substate, timestamp
 
 
-def is_enabled(unit, system=False):
-    bus, systemd, manager = connect_dbus(system)
+def is_enabled(unit: str, system: bool = False) -> bool | None:
+    bus, manager = connect_dbus(system)
 
     enabled = str(manager.GetUnitFileState(unit))
 
@@ -77,7 +79,7 @@ def is_enabled(unit, system=False):
         return None
 
 
-def is_active(unit, system=False):
+def is_active(unit: str, system: bool = False) -> bool:
     state, substate, timestamp = get_status(unit, system)
 
     if state == 'active':
@@ -86,7 +88,7 @@ def is_active(unit, system=False):
         return False
 
 
-def get_all_status():
+def get_all_status() -> dict[str, tuple[str, str, datetime]]:
     status_dict = {}
     for service in config.Systemd.services.values():
         unit = service['unit']
@@ -96,7 +98,7 @@ def get_all_status():
     return status_dict
 
 
-def check_all_active():
+def check_all_active() -> dict[str, bool]:
     status_dict = {}
 
     for service in config.Systemd.services.values():
@@ -113,8 +115,10 @@ def check_all_active():
     return status_dict
 
 
-def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
-                 whom="all", signal=signal.SIGKILL, system=False):
+def unit_control(unit: str, action: ServiceAction, system: bool = False,
+                 runtime_only: bool = False, force: bool = True,
+                 mode: str = 'replace', whom: str = "all",
+                 signal: int = signal.SIGKILL) -> tuple[str, str, datetime]:
     """
     Function to control systemd unit services.
 
@@ -126,7 +130,7 @@ def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
     if action != ServiceAction.STATUS:
         logger.info('services', f'Sending {action} command to {unit}.')
 
-    bus, systemd, manager = connect_dbus(system)
+    bus, manager = connect_dbus(system)
 
     if action == ServiceAction.STATUS:
         # Status is always returned as long as the action keyword is correct
@@ -149,14 +153,14 @@ def unit_control(unit, action, runtime_only=False, force=True, mode='replace',
         changes = manager.DisableUnitFiles([unit], runtime_only)
     else:
         logger.error('services', f'Unknown action: {action}')
-        return -1
+        return 'unknown', 'unknown', datetime.fromtimestamp(0, tz=timezone.utc)
 
     bus.close()
 
     return get_status(unit)
 
 
-def init():
+def init() -> ReturnCode:
     '''
     Initialise all system services and run sanity checks
 
@@ -192,6 +196,6 @@ def init():
 
     if not all(all_statuses.values()):
         logger.error('services', 'One or more services are not running!')
-        return -1
+        return ReturnCode.SERVICES_ERROR
 
-    return 0
+    return ReturnCode.SERVICES_OK

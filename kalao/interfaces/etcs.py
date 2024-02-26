@@ -1,5 +1,6 @@
 import json
 import time
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ import config
 # curl --header "Content-Type: application/json" --header "Authorization: ETCS_API_TOKEN_2023" http://10.10.132.102:10002/axis/status | jq
 
 
-def get_tracking():
+def get_tracking() -> bool:
     ret, resp = _send_request('/tracking/status')
 
     if ret == ReturnCode.ETCS_OK:
@@ -26,7 +27,7 @@ def get_tracking():
         return False
 
 
-def get_instrument():
+def get_instrument() -> int:
     ret, resp = _send_request('/m3/status')
 
     if ret == ReturnCode.ETCS_OK:
@@ -35,7 +36,7 @@ def get_instrument():
         return -1
 
 
-def get_altaz():
+def get_altaz() -> tuple[float, float]:
     ret, resp = _send_request('/axis/status')
 
     if ret == ReturnCode.ETCS_OK:
@@ -54,7 +55,8 @@ def get_altaz():
         return np.nan, np.nan
 
 
-def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec, wait=True):
+def send_altaz_offset(delta_alt_arcsec: float, delta_az_arcsec: float,
+                      wait: bool = True) -> ReturnCode:
     """
     Send altitude azimuth offset to ETCS telescope server.
 
@@ -70,7 +72,7 @@ def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec, wait=True):
 
     params = {'az_arcsec': delta_az_arcsec, 'el_arcsec': delta_alt_arcsec}
 
-    ret, resp = _send_request('tracking/offset', params)
+    ret, resp = _send_request('/tracking/offset', params)
 
     if wait:
         time.sleep(2)
@@ -78,7 +80,7 @@ def send_altaz_offset(delta_alt_arcsec, delta_az_arcsec, wait=True):
     return ret
 
 
-def get_focus():
+def get_focus() -> float:
     ret, resp = _send_request('/m2/status')
 
     if ret == ReturnCode.ETCS_OK:
@@ -87,7 +89,7 @@ def get_focus():
         return np.nan
 
 
-def set_focus(position, wait=True):
+def set_focus(position: float, wait: bool = True) -> float:
     """
     Send focus offset to the ETCS telescope server. Values can either be interpreted as relative offsets if with a
     leading +/-, or absolute if the value is only a number.
@@ -102,7 +104,7 @@ def set_focus(position, wait=True):
 
     logger.info('etcs', f'Moving focus position to {position} µm')
 
-    params = {"position": position}
+    params = {'position': position}
 
     ret, resp = _send_request('/m2/focus', params)
 
@@ -112,7 +114,7 @@ def set_focus(position, wait=True):
     return get_focus()
 
 
-def get_tube_temps():
+def get_tube_temps() -> dict[str, int | float]:
     temps = pd.read_csv(config.ETCS.temperature_file, sep='\t',
                         header=0).iloc[-1]
 
@@ -123,23 +125,24 @@ def get_tube_temps():
     }
 
 
-def set_m3_lin(position):
+def set_m3_lin(position: float) -> ReturnCode:
     params = {"position": position}
 
     ret, resp = _send_request('/m3/position/lin', params)
 
-    return ret
+    return ret  # TODO: return lin pos
 
 
-def set_m3_rot(position):
+def set_m3_rot(position: float) -> ReturnCode:
     params = {"position": position}
 
     ret, resp = _send_request('/m3/position/rot', params)
 
-    return ret
+    return ret  # TODO: return rot pos
 
 
-def _send_request(endpoint, params={}):
+def _send_request(endpoint: str,
+                  params: dict[str, Any] = {}) -> tuple[ReturnCode, Any]:
     # Clean params
     for key, value in list(params.items()):
         if value is None:
@@ -165,6 +168,10 @@ def _send_request(endpoint, params={}):
                                     timeout=config.ETCS.request_timeout,
                                     headers=headers)
         except requests.exceptions.RequestException:
+            logger.error(
+                'etcs',
+                f'Telescope server endpoint {endpoint} answered with a error.')
+
             return ReturnCode.ETCS_SERVER_DOWN, None
 
         try:
@@ -191,7 +198,7 @@ def _send_request(endpoint, params={}):
             return ReturnCode.ETCS_ERROR, data
 
 
-def check_server_status():
+def check_server_status() -> ETCSServerStatus:
     """
     Verify if the ETCS server is up and running and check if the camera can be queried.
 

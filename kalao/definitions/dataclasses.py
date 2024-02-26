@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 
 import numpy as np
+
+from kalao.definitions.enums import LogLevel
 
 
 @dataclass
@@ -24,3 +27,11 @@ class Star:
 
     def __post_init__(self):
         self.fwhm = np.sqrt(self.fwhm_w * self.fwhm_h)
+
+
+@dataclass
+class LogEntry:
+    level: LogLevel
+    timestamp: datetime
+    origin: str
+    message: str

@@ -17,7 +17,7 @@ from guis.windows.dm_direct_control import DMDirectControlWindow
 from guis.windows.focus import FocusWindow
 from guis.windows.ttm_direct_control import TTMDirectControlWindow
 
-from kalao.definitions.enums import (FilterwheelStatus, FlipMirrorPosition,
+from kalao.definitions.enums import (FilterWheelStatus, FlipMirrorPosition,
                                      IPPowerStatus, LaserState, PLCStatus,
                                      RelayState, SequencerStatus,
                                      ServiceAction, ShutterState,
@@ -255,7 +255,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                     self.filterwheel_combobox.findData(
                         filterwheel_filter_name))
 
-            if filterwheel_filter_name != FilterwheelStatus.ERROR_NAME:
+            if filterwheel_filter_name != FilterWheelStatus.ERROR_NAME:
                 self.filterwheel_indicator.setStatus(Color.GREEN,
                                                      filterwheel_filter_name)
             else:  # ERROR

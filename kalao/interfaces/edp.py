@@ -11,6 +11,7 @@ datasets specific for the KalAO flask graphic user interface (GUI).
 """
 
 from datetime import datetime, timezone
+from typing import Any
 
 from kalao import database
 from kalao.plc import tungsten
@@ -20,7 +21,7 @@ from kalao.definitions.enums import SequencerStatus
 import config
 
 
-def kalao_status():
+def kalao_status() -> str:
     """
     Generate the string sequence to return to the Euler telescope software on status request.
     TODO return sequencer_status, alt/az offset, focus offset, remaining_exposure_time 0 if not yet started
@@ -49,7 +50,7 @@ def kalao_status():
     return status_string
 
 
-def elapsed_time(sequencer_status):
+def elapsed_time(sequencer_status: dict[str, Any]) -> float:
     """
     Get the elapsed time since the current operation has started.
 
@@ -85,7 +86,7 @@ def elapsed_time(sequencer_status):
     return elapsed_time
 
 
-def elapsed_exposure_seconds():
+def elapsed_exposure_seconds() -> float:
     """
     Calculates the elapsed time since the current operation has started.
 
@@ -106,7 +107,7 @@ def elapsed_exposure_seconds():
     return elapsed_time
 
 
-def _last_exposure_start():
+def _last_exposure_start() -> datetime:
     """
     Query the time of the last exposure start in the KalAO-ICS mongo database.
 
@@ -121,7 +122,7 @@ def _last_exposure_start():
         return timestamp
 
 
-def _last_exposure_end():
+def _last_exposure_end() -> datetime:
     """
     Query the time of the last exposure end in the KalAO-ICS mongo database.
 
@@ -136,7 +137,7 @@ def _last_exposure_end():
         return timestamp
 
 
-def _last_filepath_archived():
+def _last_filepath_archived() -> str:
     """
     Query the file path of the last saved image in the KalAO-ICS mongo database.
 

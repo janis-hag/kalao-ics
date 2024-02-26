@@ -6,7 +6,8 @@ from astropy.nddata import block_reduce
 # The convention is x = row, y = column
 
 
-def get_roi_and_subapertures(data):
+def get_roi_and_subapertures(data: np.ndarray
+                             ) -> tuple[np.ndarray | None, np.ndarray | None]:
     roi = None
     subapertures = None
 
@@ -28,18 +29,20 @@ def get_roi_and_subapertures(data):
     return roi, subapertures
 
 
-def get_actuator_2d(i):
+def get_actuator_2d(i: int | None) -> tuple[int | None, int | None]:
     if i is None or i < 0 or i >= 140:
-        return (None, None)
+        return None, None
     elif i < 10:
-        return ((i+1) // 12, (i+1) % 12)
+        return (i+1) // 12, (i+1) % 12
     elif i < 130:
-        return ((i+2) // 12, (i+2) % 12)
+        return (i+2) // 12, (i+2) % 12
     elif i < 140:
-        return ((i+3) // 12, (i+3) % 12)
+        return (i+3) // 12, (i+3) % 12
+    else:
+        raise Exception(f'Unexpected input i={i}')
 
 
-def get_actuator_1d(x, y):
+def get_actuator_1d(x: int | None, y: int | None) -> int | None:
     if x is None or y is None or \
             x < 0 or x >= 12 or \
             y < 0 or y >= 12 or \
@@ -54,16 +57,18 @@ def get_actuator_1d(x, y):
         return x*12 + y - 2
     elif x < 12:
         return x*12 + y - 3
-
-
-def get_subaperture_2d(i):
-    if i is None or i < 0 or i >= 121:
-        return (None, None)
     else:
-        return (i // 11, i % 11)
+        raise Exception(f'Unexpected input x={x}, y={y}')
 
 
-def get_subaperture_1d(x, y):
+def get_subaperture_2d(i: int | None) -> tuple[int | None, int | None]:
+    if i is None or i < 0 or i >= 121:
+        return None, None
+    else:
+        return i // 11, i % 11
+
+
+def get_subaperture_1d(x: int | None, y: int | None) -> int | None:
     if x is None or y is None or \
             x < 0 or x >= 11 or \
             y < 0 or y >= 11:
@@ -72,24 +77,33 @@ def get_subaperture_1d(x, y):
         return x*11 + y
 
 
-def get_subapertures_around_actuator(i):
+def get_subapertures_around_actuator(
+        i: int | None
+) -> tuple[int | None, int | None, int | None, int | None]:
     if i is None:
         return (None, None, None, None)
 
     x, y = get_actuator_2d(i)
 
-    return (get_subaperture_1d(x - 1, y - 1), get_subaperture_1d(x - 1, y),
-            get_subaperture_1d(x, y - 1), get_subaperture_1d(x, y))
+    if x is None or y is None:
+        return None, None, None, None
+
+    return get_subaperture_1d(x - 1, y - 1), get_subaperture_1d(
+        x - 1, y), get_subaperture_1d(x, y - 1), get_subaperture_1d(x, y)
 
 
-def subaperture_to_slopes_2d(i):
+def subaperture_to_slopes_2d(i: int | None
+                             ) -> list[tuple[int | None, int | None]]:
+    if i is None:
+        return [(None, None), (None, None)]
+
     row = i // 11
     col = i % 11
 
     return [(row, col), (row, col + 11)]
 
 
-def read_spots_file(file):
+def read_spots_file(file: str) -> tuple[list[int], list[int], list[int]]:
     spots_df = pd.read_csv(file, delim_whitespace=True, header=None,
                            comment='#')
 
@@ -103,13 +117,16 @@ def read_spots_file(file):
 
         i = get_subaperture_1d(row[3], row[4])
 
+        if i is None:
+            continue
+
         active_subaps.append(i)
         masked_subaps.remove(i)
 
     return all_subaps, active_subaps, masked_subaps
 
 
-def read_autogain_file(file):
+def read_autogain_file(file: str) -> list[tuple[int, float]]:
     spots_df = pd.read_csv(file, delim_whitespace=True, header=None,
                            comment='#')
 
@@ -124,8 +141,9 @@ def read_autogain_file(file):
     return autogain_params
 
 
-def get_dm_flux_map(upsampled=1, upsampling=4, radius_out_factor=1,
-                    radius_in_factor=1):
+def get_dm_flux_map(upsampled: int = 1, upsampling: int = 4,
+                    radius_out_factor: float = 1,
+                    radius_in_factor: float = 1) -> np.ndarray:
     size = 12 * upsampled * upsampling
 
     radius_out = 0.5 * size * 4.4 / 4.8 * radius_out_factor  # Pupil radius in px on DM
@@ -139,7 +157,8 @@ def get_dm_flux_map(upsampled=1, upsampling=4, radius_out_factor=1,
     return flux
 
 
-def get_wfs_flux_map(upsampling=4, radius_out_factor=1, radius_in_factor=1):
+def get_wfs_flux_map(upsampling: int = 4, radius_out_factor: float = 1,
+                     radius_in_factor: float = 1) -> np.ndarray:
     size = 128 * upsampling
 
     radius_out = 0.5 * size * 55 / 64 * radius_out_factor  # Pupil radius in px on WFS
@@ -160,7 +179,8 @@ def get_wfs_flux_map(upsampling=4, radius_out_factor=1, radius_in_factor=1):
     return flux
 
 
-def wfs_illumination_fraction(slopes_flux, threshold, subaps_list):
+def wfs_illumination_fraction(slopes_flux: np.ndarray, threshold: float,
+                              subaps_list: list[int]):
     slopes_flux_flat = slopes_flux.flatten()
 
     illuminated_subaps = 0
@@ -172,21 +192,23 @@ def wfs_illumination_fraction(slopes_flux, threshold, subaps_list):
     return illuminated_subaps / len(subaps_list)
 
 
-def subaperture_at_px(x, y):
+def subaperture_at_px(x: int, y: int) -> int | None:
     if (x+1) % 5 == 0 or (y+1) % 5 == 0:
         return None
     else:
         return get_subaperture_1d((y-5) // 5, (x-5) // 5)
 
 
-def actuator_at_px(x, y):
+def actuator_at_px(x: int, y: int) -> int | None:
     if (x-4) % 5 == 0 and (y-4) % 5 == 0:
         return get_actuator_1d((y-4) // 5, (x-4) // 5)
     else:
         return None
 
 
-def generate_slopes_mask_from_subaps(masked_subaps, shape=(11, 22)):
+def generate_slopes_mask_from_subaps(masked_subaps: list[int],
+                                     shape: tuple[int, int] = (11, 22)
+                                     ) -> np.ndarray:
     mask = np.zeros(shape, dtype=bool)
 
     for i in masked_subaps:
@@ -196,7 +218,9 @@ def generate_slopes_mask_from_subaps(masked_subaps, shape=(11, 22)):
     return mask
 
 
-def generate_flux_mask_from_subaps(masked_subaps, shape=(11, 11)):
+def generate_flux_mask_from_subaps(masked_subaps: list[int],
+                                   shape: tuple[int,
+                                                int] = (11, 11)) -> np.ndarray:
     mask = np.zeros(shape, dtype=bool)
 
     for i in masked_subaps:

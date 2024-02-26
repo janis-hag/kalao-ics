@@ -779,7 +779,6 @@ class KGraphicsView(QGraphicsView):
 
         rect = self.neindicator_group.childrenBoundingRect()
         self.neindicator_group.setPos(-rect.x() + margin, -rect.y() + margin)
-        print(self.neindicator_group.boundingRect())
 
 
 class KChart(QChart):

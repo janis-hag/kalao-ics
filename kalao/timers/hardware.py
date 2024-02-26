@@ -21,6 +21,7 @@ from kalao.plc import (adc, calibunit, core, filterwheel, flipmirror, laser,
 from kalao.utils import background
 
 import schedule
+from opcua import Client
 
 from kalao.definitions.enums import (IPPowerStatus, LaserState, LoopStatus,
                                      RelayState, ShutterState)
@@ -28,7 +29,7 @@ from kalao.definitions.enums import (IPPowerStatus, LaserState, LoopStatus,
 import config
 
 
-def _get_elapsed_time_since_activity():
+def _get_elapsed_time_since_activity() -> float:
     latest_obs_entry_time = database.get_last_time('obs')
 
     if latest_obs_entry_time is not None:
@@ -38,7 +39,7 @@ def _get_elapsed_time_since_activity():
         return np.inf
 
 
-def _check_shutteropen_inactive():
+def _check_shutteropen_inactive() -> None:
     """
     Verify for how long the shutter is open and there is not observing activity.
     Close the shutter if inactivity is longer than the value set in kalao.config file.
@@ -54,10 +55,8 @@ def _check_shutteropen_inactive():
                     'Closing shutter due to inactivity timeout')
         shutter.close()
 
-    return 0
 
-
-def _check_laseron_inactive():
+def _check_laseron_inactive() -> None:
     """
     Verify for how long the laser is on and there is not observing activity.
     Turn off laser if inactivity is longer than the value set in kalao.config file.
@@ -70,10 +69,8 @@ def _check_laseron_inactive():
                     'Turning off laser due to inactivity timeout')
         laser.disable()
 
-    return 0
 
-
-def _check_dm_inactive():
+def _check_dm_inactive() -> None:
     """
     Verify for how long there is not observing activity.
     Turn off DM if inactivity is longer than the value set in kalao.config file.
@@ -91,10 +88,8 @@ def _check_dm_inactive():
 
         aocontrol.turn_dm_off()
 
-    return 0
 
-
-def _check_wfs_inactive():
+def _check_wfs_inactive() -> None:
     """
     Verify for how long there is not observing activity.
     Set EM gain to 1 if inactivity is longer than the value set in kalao.config file.
@@ -120,10 +115,8 @@ def _check_wfs_inactive():
 
         aocontrol.stop_wfs_acquisition()
 
-    return 0
 
-
-def _check_loops_inactive():
+def _check_loops_inactive() -> None:
     """
     Verify for how long there is not observing activity.
     Open loops in case of inactivity
@@ -136,10 +129,8 @@ def _check_loops_inactive():
                     'Opening loops due to inactivity timeout')
         aocontrol.open_loops()
 
-    return 0
 
-
-def _check_inactivity():
+def _check_inactivity() -> None:
     """
     Checks the status of multiple bench components.
 
@@ -155,10 +146,8 @@ def _check_inactivity():
         _check_wfs_inactive()
         _check_loops_inactive()
 
-    return 0
 
-
-def _check_cooling_status():
+def _check_cooling_status() -> None:
     """
     Verify cooling health status. Namely, the cooling water flow, and the main temperatures.
     If any value is below threshold either issue a warning or shutdown bench depending on level.
@@ -188,11 +177,9 @@ def _check_cooling_status():
             )
             temperature_control.heater_off()
 
-    return 0
-
 
 @core.beckhoff_autoconnect
-def _check_pump_temp(beck=None):
+def _check_pump_temp(beck: Client = None) -> None:
     pump_temp = temperature_control.pump_temperature(beck=beck)
     pump_status = temperature_control.pump_status(beck=beck)
 
@@ -205,18 +192,18 @@ def _check_pump_temp(beck=None):
         temperature_control.pump_on(beck=beck)
 
 
-def _check_plc():
+def _check_plc() -> None:
     logger.info('hardware_timer', 'Doing daily PLC housekeeping')
 
     func_list = [
         partial(calibunit.init, force_init=True),
         partial(adc.init, config.PLC.Node.ADC1, force_init=True),
         partial(adc.init, config.PLC.Node.ADC2, force_init=True),
-        partial(shutter.init),
-        partial(flipmirror.init),
-        partial(tungsten.init),
-        partial(laser.init),
-        partial(filterwheel.init),
+        shutter.init,
+        flipmirror.init,
+        tungsten.init,
+        laser.init,
+        filterwheel.init,
     ]
 
     background.launch('hardware_timer', func_list)

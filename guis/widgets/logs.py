@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import timezone
 
 import numpy as np
 
@@ -7,7 +7,7 @@ from PySide6.QtGui import QFontDatabase, Qt, QTextBlockUserData, QTextCursor
 from PySide6.QtWidgets import QTreeWidgetItem
 
 from kalao import database
-from kalao.utils import kstring, ktime
+from kalao.utils import kstring
 
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendActionMixin
@@ -23,7 +23,7 @@ class LogsData(QTextBlockUserData):
     def __init__(self, data):
         super().__init__()
 
-        self.data = data.copy()
+        self.data = data
 
 
 class LogsWidget(KWidget, BackendActionMixin):
@@ -180,7 +180,7 @@ class LogsWidget(KWidget, BackendActionMixin):
         style_message = '<span>'
         style_end = '</span>'
 
-        if entry['level'] == LogLevel.ERROR:
+        if entry.level == LogLevel.ERROR:
             self.errors_spinbox.setValue(self.errors_spinbox.value() + 1)
 
             self.logged.emit(self.warnings_spinbox.value(),
@@ -188,7 +188,7 @@ class LogsWidget(KWidget, BackendActionMixin):
 
             style_origin = '<span class="bold red blink">'
             style_message = '<span class="bold red">'
-        elif entry['level'] == LogLevel.WARNING:
+        elif entry.level == LogLevel.WARNING:
             self.warnings_spinbox.setValue(self.warnings_spinbox.value() + 1)
 
             self.logged.emit(self.warnings_spinbox.value(),
@@ -196,8 +196,8 @@ class LogsWidget(KWidget, BackendActionMixin):
 
             style_message = '<span class="bold yellow">'
 
-        message = entry["message"]
-        message_splitted = entry['message'].split(' | ')
+        message = entry.message
+        message_splitted = entry.message.split(' | ')
         if len(message_splitted) > 1:
             message = ' | '.join([f'{message_splitted[0]:>17s}'] +
                                  message_splitted[1:])
@@ -205,7 +205,7 @@ class LogsWidget(KWidget, BackendActionMixin):
             message = ' '*17 + ' | ' + message
 
         self.logs_textedit.appendHtml(
-            f'{style_timestamp}{entry["timestamp"]}{style_end} {style_origin}{entry["origin"]:>17s}{style_end}: {style_message}{message}{style_end}'
+            f'{style_timestamp}{entry.timestamp}{style_end} {style_origin}{entry.origin:>17s}{style_end}: {style_message}{message}{style_end}'
         )
 
         block = self.logs_textedit.document().lastBlock()
@@ -304,7 +304,7 @@ class LogsWidget(KWidget, BackendActionMixin):
 
     def entry_visible(self, entry):
         try:
-            if self.levels_items[entry['level']].checkState(0) != Qt.Checked:
+            if self.levels_items[entry.level].checkState(0) != Qt.Checked:
                 return False
         except KeyError:
             pass
@@ -312,15 +312,14 @@ class LogsWidget(KWidget, BackendActionMixin):
             #     return False
 
         try:
-            if self.services_items[entry['origin']].checkState(
-                    0) != Qt.Checked:
+            if self.services_items[entry.origin].checkState(0) != Qt.Checked:
                 return False
         except KeyError:
             pass
             # if self.services_items['toplevel'].checkState(0) != Qt.Checked:
             #     return False
 
-        message_splitted = entry['message'].split('|')
+        message_splitted = entry.message.split('|')
 
         if len(message_splitted) == 1:
             if self.logs_items['<none>'].checkState(0) != Qt.Checked:

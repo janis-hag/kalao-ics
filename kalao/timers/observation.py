@@ -11,24 +11,37 @@ Timer to do offloading and adc update
 import time
 
 from kalao import euler
-from kalao.cacao import aocontrol
+from kalao.cacao import aocontrol, toolbox
 from kalao.plc import adc
 from kalao.utils import offsets
 
 import schedule
+from opcua import Client
 
 from kalao.definitions.enums import LoopStatus
 
 import config
 
 
-def _update_adc(beck=None):
-    if euler.telescope_on_kalao() and euler.telescope_tracking():
+def _update_adc(beck: Client = None) -> None:
+    dynconfig_fps = toolbox.open_fps_once(config.FPS.CONFIG)
+
+    if dynconfig_fps is None:
+        return
+
+    if dynconfig_fps.get_param('adc_update') and euler.telescope_on_kalao(
+    ) and euler.telescope_tracking():
         adc.configure(beck=beck, skip_tracking_check=True)
 
 
-def _offload_ttm():
-    if aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON:
+def _offload_ttm() -> None:
+    dynconfig_fps = toolbox.open_fps_once(config.FPS.CONFIG)
+
+    if dynconfig_fps is None:
+        return
+
+    if dynconfig_fps.get_param('ttm_offload') and aocontrol.check_loops(
+    ) == LoopStatus.ALL_LOOPS_ON:
         offsets.offload_ttm_to_telescope()
 
 

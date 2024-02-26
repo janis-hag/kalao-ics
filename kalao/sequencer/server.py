@@ -7,6 +7,8 @@ import traceback
 from functools import partial
 from itertools import zip_longest
 from threading import Thread
+from types import FrameType
+from typing import Any
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -16,8 +18,9 @@ from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser, shutter,
                        tungsten)
 from kalao.sequencer import commands
 from kalao.utils import background
+from kalao.utils.rprint import rprint
 
-from kalao.definitions.enums import SequencerStatus, ShutterState
+from kalao.definitions.enums import ReturnCode, SequencerStatus, ShutterState
 from kalao.definitions.exceptions import *
 
 import config
@@ -26,9 +29,9 @@ conn = None
 socketSeq = None
 
 
-def handler(signal_received, frame):
+def handler(signal_received: int, frame: FrameType | None) -> None:
     if signal_received == signal.SIGINT or signal_received == signal.SIGTERM:
-        print('\nSIGTERM or SIGINT or CTRL-C detected. Exiting.')
+        rprint('\nSIGTERM or SIGINT or CTRL-C detected. Exiting.')
 
         if conn is not None:
             conn.close()
@@ -42,27 +45,27 @@ def handler(signal_received, frame):
         exit(0)
 
 
-def init():
+def init() -> ReturnCode:
     logger.info('sequencer', 'Server initialisation')
 
     init_list = [
-        partial(services.init),
-        partial(calibunit.init),
+        services.init,
+        calibunit.init,
         partial(adc.init, config.PLC.Node.ADC1),
         partial(adc.init, config.PLC.Node.ADC2),
-        partial(shutter.init),
-        partial(flipmirror.init),
-        partial(tungsten.init),
-        partial(laser.init),
-        partial(filterwheel.init),
+        shutter.init,
+        flipmirror.init,
+        tungsten.init,
+        laser.init,
+        filterwheel.init,
     ]
 
     background.launch('sequencer', init_list, config.SEQ.init_timeout)
 
-    return 0
+    return ReturnCode.SEQ_OK
 
 
-def serve():
+def serve() -> ReturnCode:
     """
     receive commands in string form through a socket.
     format them into a dictionary.
@@ -88,13 +91,13 @@ def serve():
 
         conn, address = socketSeq.accept()
 
-        commandRaw = (conn.recv(4096)).decode("utf8")
+        command_raw = (conn.recv(4096)).decode("utf8")
 
-        separator = commandRaw[0]
-        commandList = commandRaw[1:].split(separator)
+        separator = command_raw[0]
+        command_list = command_raw[1:].split(separator)
 
-        command = commandList[0]
-        arguments = commandList[1:]
+        command = command_list[0]
+        arguments = command_list[1:]
 
         database.store('obs', {'sequencer_status': SequencerStatus.BUSY})
         logger.info('sequencer',
@@ -170,8 +173,10 @@ def serve():
     database.store('obs', {'sequencer_status': SequencerStatus.OFF})
     logger.info('sequencer', 'Sequencer server off')
 
+    return ReturnCode.SEQ_OK
 
-def cast_args(args):
+
+def cast_args(args: dict[str, Any]) -> ReturnCode:
     """
     Modifies the dictionary received in parameter by trying to cast the values in the required type.
     The required types are stored in the configuration file.
@@ -199,7 +204,7 @@ def cast_args(args):
             # Get the int id from the dict Id_filter
             # If filterposition arg is a digit, cast it in int
             if k == 'filterposition' and not v.isdigit():
-                args[k] = filterwheel.translate_to_filter_position(filter)
+                args[k] = filterwheel.translate_to_filter_position(v)
             elif k == 'filterposition' and v.isdigit():
                 args[k] = int(v)
         # else:
@@ -210,18 +215,20 @@ def cast_args(args):
         if k == 'kalfilter' and isinstance(v, str):
             args[k] = v.lower()
 
-    return 0
+    return ReturnCode.SEQ_OK
 
 
-def execute_command(command, seq_args):
+def execute_command(command: str, seq_args: dict[str, Any]) -> ReturnCode:
     try:
         commands.commands[command](**seq_args)
     except AbortRequested:
         database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
         logger.info('sequencer', f'{command} aborted on request')
+        return ReturnCode.SEQ_OK
     except FLICancelFailed:
         database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
         logger.info('sequencer', f'FLI cancel failed in {command}')
+        return ReturnCode.SEQ_ERROR
     except SequencerException as e:
         database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
         logger.error('sequencer', f'"{e.__doc__}" happened during {command}')
@@ -230,20 +237,26 @@ def execute_command(command, seq_args):
         if shutter.close() != ShutterState.CLOSED:
             logger.error('sequencer',
                          'Failed to close the shutter after error')
+
+        return ReturnCode.SEQ_ERROR
     except Exception as e:
         database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
         logger.error('sequencer',
                      f'Unknown exception occurred during {command}')
 
-        traceback.print_exc()
+        rprint(''.join(traceback.format_exception(e)))
 
         # Close shutter after exception
         if shutter.close() != ShutterState.CLOSED:
             logger.error('sequencer',
                          'Failed to close the shutter after error')
+
+        return ReturnCode.SEQ_ERROR
     else:
         database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
         logger.info('sequencer', f'{command} ended')
+
+        return ReturnCode.SEQ_OK
 
 
 if __name__ == '__main__':

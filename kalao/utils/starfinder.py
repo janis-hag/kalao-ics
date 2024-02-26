@@ -25,8 +25,9 @@ from kalao.definitions.dataclasses import Star
 import config
 
 
-def find_star(img, min_peak=config.Starfinder.min_peak,
-              hw=config.Starfinder.window // 2, method='gaussian_fit'):
+def find_star(img: np.ndarray, min_peak: float = config.Starfinder.min_peak,
+              hw: int = config.Starfinder.window // 2,
+              method: str = 'gaussian_fit') -> Star | None:
     star = find_stars(img, min_peak=min_peak, hw=hw, num=1, method=method)
 
     if len(star) == 0:
@@ -35,9 +36,9 @@ def find_star(img, min_peak=config.Starfinder.min_peak,
         return star[0]
 
 
-def find_stars(img, min_peak=config.Starfinder.min_peak,
-               hw=config.Starfinder.window // 2, num=math.inf,
-               method='gaussian_fit'):
+def find_stars(img: np.ndarray, min_peak: float = config.Starfinder.min_peak,
+               hw: int = config.Starfinder.window // 2, num: int = 9999,
+               method: str = 'gaussian_fit') -> list[Star]:
     stars, bad_pixels = find_stars_and_bad_pixels(img, min_peak=min_peak,
                                                   hw=hw, num=num,
                                                   method=method)
@@ -45,9 +46,11 @@ def find_stars(img, min_peak=config.Starfinder.min_peak,
     return stars
 
 
-def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
-                              hw=config.Starfinder.window // 2, num=math.inf,
-                              method='gaussian_fit'):
+def find_stars_and_bad_pixels(img: np.ndarray,
+                              min_peak: float = config.Starfinder.min_peak,
+                              hw: int = config.Starfinder.window // 2,
+                              num: int = 9999, method: str = 'gaussian_fit'
+                              ) -> tuple[list[Star], np.ndarray]:
     img = img.astype(np.float64)
 
     Y, X = np.mgrid[0:img.shape[0], 0:img.shape[1]]
@@ -141,7 +144,9 @@ def find_stars_and_bad_pixels(img, min_peak=config.Starfinder.min_peak,
     return stars_fitted, bad_pixels
 
 
-def _star_gaussian_fit(X, Y, img, peak_x, peak_y, peak_value, hw):
+def _star_gaussian_fit(X: np.ndarray, Y: np.ndarray, img: np.ndarray,
+                       peak_x: float, peak_y: float, peak_value: float,
+                       hw: int) -> Star | None:
     X = X.ravel()
     Y = Y.ravel()
     img = img.ravel()
@@ -167,7 +172,7 @@ def _star_gaussian_fit(X, Y, img, peak_x, peak_y, peak_value, hw):
     return Star(x_mean, y_mean, peak, fwhm_w, fwhm_y, fwhm_angle)
 
 
-def _star_moments(X, Y, img):
+def _star_moments(X: np.ndarray, Y: np.ndarray, img: np.ndarray) -> Star:
     flux = np.sum(img)
 
     x_mean = np.sum(img * X) / flux

@@ -24,18 +24,19 @@ from astropy.wcs import wcs
 
 from kalao import database, euler, logger
 from kalao.utils import kstring, ktime
+from kalao.utils.rprint import rprint
 
 import yaml
 from unidecode import unidecode
 
 from kalao.definitions.dataclasses import ROI
 from kalao.definitions.enums import (FlipMirrorPosition, ObservationType,
-                                     SequencerStatus, ShutterState)
+                                     ReturnCode, ShutterState)
 
 import config
 
 
-def get_tmp_image_filepath():
+def get_tmp_image_filepath() -> Path:
     """
     Creates a full filepath including filename. If the destination folder does not exist it is created.
 
@@ -60,7 +61,7 @@ def get_tmp_image_filepath():
     return filepath
 
 
-def get_focus_sequence_filepath():
+def get_focus_sequence_filepath() -> Path:
     """
     Creates a full filepath including filename. If the destination folder does not exist it is created.
 
@@ -78,7 +79,8 @@ def get_focus_sequence_filepath():
     return filepath
 
 
-def save_tmp_image(image_path, obs_type, comment=None):
+def save_tmp_image(image_path: Path, obs_type: ObservationType,
+                   comment: str | None = None) -> Path | None:
     '''
     Updates the temporary image header and saves into the archive.
 
@@ -122,7 +124,7 @@ def save_tmp_image(image_path, obs_type, comment=None):
         return None
 
 
-def update_db_from_telheader():
+def update_db_from_telheader() -> ReturnCode:
     """
     Updates the obs database with the values from the telescope header.
 
@@ -140,13 +142,14 @@ def update_db_from_telheader():
         # Store values in db
         database.store('obs', data)
 
-        return 0
+        return ReturnCode.OK
 
     else:
-        return -1
+        return ReturnCode.GENERIC_ERROR
 
 
-def prepare_final_fits(image_path, obs_type, comment=None):
+def prepare_final_fits(image_path: Path, obs_type: ObservationType,
+                       comment: str | None = None) -> str:
     """
     Updates the image header with values from the observing, monitoring, and telemetry logs.
 
@@ -192,8 +195,8 @@ def prepare_final_fits(image_path, obs_type, comment=None):
             header_telescope = _clean_header(
                 _header_from_last_telescope_header())
         else:
-            header_obs = None
-            header_telescope = None
+            header_obs = _header_empty()
+            header_telescope = _header_empty()
 
         header_df = pd.concat([
             _header_from_fits_header(fits_header, f'fits:{image_path.name}'),
@@ -219,43 +222,14 @@ def prepare_final_fits(image_path, obs_type, comment=None):
     return filename
 
 
-def get_last_image_path():
-    """
-    Retrieve the file path of the latest image
-
-    :return: file_path and file_Date
-    """
-    return _get_image_path('last')
-
-
-def get_temporary_image_path():
-    """
-    Retrieve the file path of the latest temporary image
-
-    :return: file_path and file_Date
-    """
-
-    return _get_image_path('temporary')
-
-
-def _get_image_path(image_type):
-    if image_type in ['last', 'temporary']:
-        last_image = database.get_last('obs', f'fli_{image_type}_image_path')
-
-        if last_image is not None:
-            return Path(last_image.get('value')), last_image.get('timestamp')
-
-    return None, None
-
-
-def _header_empty():
+def _header_empty() -> pd.DataFrame:
     header_df = pd.DataFrame(columns=['value', 'comment', 'source'])
     header_df.index.name = 'keyword'
 
     return header_df
 
 
-def _header_from_fits_file(file):
+def _header_from_fits_file(file: str | Path) -> pd.DataFrame:
     if not isinstance(file, Path):
         file = Path(file)
 
@@ -264,7 +238,8 @@ def _header_from_fits_file(file):
     return _header_from_fits_header(fits_header, f'fits:{file.name}')
 
 
-def _header_from_fits_header(fits_header, source):
+def _header_from_fits_header(fits_header: fits.Header,
+                             source: str) -> pd.DataFrame:
     '''
     Reads a fits header and reformats it into a dataframe
 
@@ -292,7 +267,7 @@ def _header_from_fits_header(fits_header, source):
     return header_df
 
 
-def _header_from_yml(file):
+def _header_from_yml(file: str | Path) -> pd.DataFrame:
     '''
     Reads the fits header file definition YAML file and returns a pandas dataframe with
     the following keys: keyword, value, comment
@@ -312,7 +287,7 @@ def _header_from_yml(file):
     return header_df
 
 
-def _header_from_db(collection_name, dt):
+def _header_from_db(collection_name: str, dt: datetime | None) -> pd.DataFrame:
     header_dict = {}
     query_list = {}
 
@@ -358,7 +333,7 @@ def _header_from_db(collection_name, dt):
     return header_df
 
 
-def _sort_header(header_df):
+def _sort_header(header_df: pd.DataFrame) -> pd.DataFrame:
     # Search for first HIERARCH keyword (i.e. longer than 8) and split in two header dataframes
     HIERARCH_lines = np.array(
         header_df.index.str.len() > config.FITS.max_length_without_HIERARCH)
@@ -374,7 +349,8 @@ def _sort_header(header_df):
     return header_df
 
 
-def _header_to_fits_header(header_df, fits_header):
+def _header_to_fits_header(header_df: pd.DataFrame,
+                           fits_header: fits.Header) -> None:
     # Remove all cards before updating
     # fits_header.clear()
 
@@ -382,7 +358,7 @@ def _header_to_fits_header(header_df, fits_header):
         fits_header.set(keyword, row.value, row.comment.strip())
 
 
-def _header_from_last_telescope_header():
+def _header_from_last_telescope_header() -> pd.DataFrame:
     """
     Reads header file path from database base and returns the header content along with the path
 
@@ -411,7 +387,7 @@ def _header_from_last_telescope_header():
         return _header_empty()
 
 
-def _clean_header(header_df):
+def _clean_header(header_df: pd.DataFrame) -> pd.DataFrame:
     # Remove first part of header
     # TODO set the cutoff keyword in kalao.config
     if 'OBSERVER' in header_df.index:
@@ -434,7 +410,8 @@ def _clean_header(header_df):
     return header_df.rename(index=rename_dict)
 
 
-def _dynamic_cards_update(header_df, obs_type, filename):
+def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
+                          filename: str) -> pd.DataFrame:
     date_obs = header_df.loc['DATE-OBS', 'value']
     date_end = header_df.loc['DATE-END', 'value']
 
@@ -530,7 +507,8 @@ def _dynamic_cards_update(header_df, obs_type, filename):
     return header_df
 
 
-def _header_to_string(header_df, max_length=45, float_length=20):
+def _header_to_string(header_df: pd.DataFrame, max_length: int = 45,
+                      float_length: int = 20) -> str:
     formatters = {}
     length = {}
     for col in header_df.columns:
@@ -554,7 +532,8 @@ def _header_to_string(header_df, max_length=45, float_length=20):
                                    float_format=float_format)
 
 
-def generate_wcs(coord, time, roi=None):
+def generate_wcs(coord: SkyCoord, time: Time,
+                 roi: ROI | None = None) -> wcs.WCS:
     """
     Queries the current telescope coordinates to generate a WCS object.
 
@@ -599,7 +578,7 @@ def generate_wcs(coord, time, roi=None):
     return w
 
 
-def parallactic_angle(ra, dec, time):
+def parallactic_angle(coord: SkyCoord, time: Time) -> float:
     r2d = 180 / np.pi
     d2r = np.pi / 180
 
@@ -607,8 +586,8 @@ def parallactic_angle(ra, dec, time):
 
     lst_ra = time.sidereal_time('mean').hour * 15 * d2r  #(15./3600)*d2r
 
-    ha_rad = lst_ra - ra.rad
-    dec_rad = dec.rad
+    ha_rad = lst_ra - coord.ra.rad
+    dec_rad = coord.dec.rad
 
     # VLT TCS formula
     f1 = float(np.cos(geolat_rad) * np.sin(ha_rad))
@@ -620,7 +599,7 @@ def parallactic_angle(ra, dec, time):
     return parang
 
 
-def directory_summary_df(folder):
+def directory_summary_df(folder: Path) -> pd.DataFrame:
     """
     Creates a dataframe summarising the header content of all the fits files in a folder.
 
@@ -632,7 +611,7 @@ def directory_summary_df(folder):
 
     for image_filename in folder.rglob("*.fits"):
 
-        print(f'Opening {image_filename}')
+        rprint(f'Opening {image_filename}')
 
         with fits.open(image_filename) as hdul:
             dic = {'filename': image_filename}
@@ -649,7 +628,10 @@ def directory_summary_df(folder):
     return df
 
 
-def get_exposure_times(folder=None, exclude_types=[ObservationType.DARK]):
+def get_exposure_times(
+    folder: Path | None = None,
+    exclude_types: list[ObservationType] = [ObservationType.DARK
+                                            ]) -> list[float]:
     """
     Get the list of exposure times in the folder pointed at by filepath. By default, DARK exposure times are ignored.
 

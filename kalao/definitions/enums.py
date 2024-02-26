@@ -1,10 +1,4 @@
-from enum import Enum, Flag, IntEnum, auto
-
-
-# Emulate StrEnum for python < 3.11
-class StrEnum(str, Enum):
-    def __str__(self) -> str:
-        return self.value
+from enum import Enum, Flag, IntEnum, StrEnum, auto
 
 
 class ObservationType(StrEnum):
@@ -27,11 +21,6 @@ class CenteringMode(StrEnum):
 class AdaptiveOpticsMode(StrEnum):
     ENABLED = 'AO'
     DISABLED = 'NO_AO'
-
-
-class LogsOutputType(StrEnum):
-    RAW = 'RAW'
-    JSON = 'JSON'
 
 
 class LogLevel(StrEnum):
@@ -106,7 +95,7 @@ class ShutterState(StrEnum):
     ERROR = 'ERROR'
 
 
-class FilterwheelStatus(Enum):
+class FilterWheelStatus():
     ERROR_POSITION = -1
     ERROR_NAME = 'error'
 
@@ -152,11 +141,14 @@ class ReturnCode(IntEnum):
     TIMEOUT = -2
 
     SEQ_OK = OK
+    SEQ_ERROR = auto()
 
     FOCUSING_OK = OK
+    FOCUSING_ERROR = auto()
 
     CENTERING_OK = OK
     CENTERING_TIMEOUT = auto()
+    CENTERING_ERROR = auto()
 
     CAMERA_OK = OK
     CAMERA_SERVER_DOWN = auto()
@@ -168,3 +160,9 @@ class ReturnCode(IntEnum):
 
     PLC_INIT_SUCCESS = OK
     PLC_INIT_FAILED = auto()
+
+    DATABASE_OK = OK
+    DATABASE_ERROR = auto()
+
+    SERVICES_OK = OK
+    SERVICES_ERROR = auto()

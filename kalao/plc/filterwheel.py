@@ -10,61 +10,64 @@ camera.py is part of the KalAO Instrument Control Software
 """
 
 import time
+from typing import TypeVar
 
 from kalao import database, logger
 
 from microscope.filterwheels import thorlabs
 
-from kalao.definitions.enums import FilterwheelStatus, ReturnCode
+from kalao.definitions.enums import FilterWheelStatus, ReturnCode
 
 import config
 
+Filter = TypeVar('Filter', int, str)
 
-def get_names_to_positions():
+
+def get_names_to_positions() -> dict[str, int]:
     return {n: p for p, n in enumerate(config.FilterWheel.position_list)}
 
 
-def translate_to_filter_position(filter):
-    if type(filter) == int:
+def translate_to_filter_position(filter: Filter) -> int:
+    if isinstance(filter, int):
         if filter not in range(0, 6):
             logger.error('filterwheel',
                          f'Wrong filter position, (got {filter})')
-            return FilterwheelStatus.ERROR_POSITION
+            return FilterWheelStatus.ERROR_POSITION
         else:
             return filter
-    elif type(filter) == str:
+    elif isinstance(filter, str):
         filter = filter.lower()
 
         if filter not in config.FilterWheel.position_list:
             logger.error('filterwheel', f'Wrong filter name (got {filter})')
-            return FilterwheelStatus.ERROR_POSITION
+            return FilterWheelStatus.ERROR_POSITION
         else:
             return config.FilterWheel.position_list.index(filter)
     else:
-        return FilterwheelStatus.ERROR_POSITION
+        return FilterWheelStatus.ERROR_POSITION
 
 
-def translate_to_filter_name(filter):
-    if type(filter) == int:
+def translate_to_filter_name(filter: Filter) -> str:
+    if isinstance(filter, int):
         if filter not in range(0, 6):
             logger.error('filterwheel',
                          f'Wrong filter position, (got {filter})')
-            return FilterwheelStatus.ERROR_NAME
+            return FilterWheelStatus.ERROR_NAME
         else:
             return config.FilterWheel.position_list[filter]
-    elif type(filter) == str:
+    elif isinstance(filter, str):
         filter = filter.lower()
 
         if filter not in config.FilterWheel.position_list:
             logger.error('filterwheel', f'Wrong filter name (got {filter})')
-            return FilterwheelStatus.ERROR_NAME
+            return FilterWheelStatus.ERROR_NAME
         else:
             return filter
     else:
-        return FilterwheelStatus.ERROR_NAME
+        return FilterWheelStatus.ERROR_NAME
 
 
-def set_filter(filter):
+def set_filter(filter: Filter) -> Filter:
     position = translate_to_filter_position(filter)
     name = translate_to_filter_name(filter)
 
@@ -73,8 +76,8 @@ def set_filter(filter):
 
     for retry in range(config.FilterWheel.retries):
         try:
-            if position == FilterwheelStatus.ERROR_POSITION:
-                return _return_filter(FilterwheelStatus.ERROR_POSITION, filter)
+            if position == FilterWheelStatus.ERROR_POSITION:
+                return _return_filter(FilterWheelStatus.ERROR_POSITION, filter)
 
             fw = thorlabs.ThorlabsFilterWheel(
                 com=config.FilterWheel.device_port)
@@ -119,10 +122,10 @@ def set_filter(filter):
             time.sleep(config.FilterWheel.retry_wait)
 
     logger.error('filterwheel', 'Filter wheel failed too many time.')
-    return _return_filter(FilterwheelStatus.ERROR_POSITION, filter)
+    return _return_filter(FilterWheelStatus.ERROR_POSITION, filter)
 
 
-def get_filter(type=str, from_db=False):
+def get_filter(type: Filter | type = str, from_db: bool = False) -> Filter:
     if from_db:
         name = database.get_last_value('obs', 'filterwheel_filter_name')
         return _return_filter(name, type)
@@ -150,10 +153,10 @@ def get_filter(type=str, from_db=False):
                 time.sleep(config.FilterWheel.retry_wait)
 
     logger.error('filterwheel', 'Filter wheel failed too many time.')
-    return _return_filter(FilterwheelStatus.ERROR_POSITION, type)
+    return _return_filter(FilterWheelStatus.ERROR_POSITION, type)
 
 
-def _return_filter(filter, return_type):
+def _return_filter(filter: Filter, return_type: str | int | type) -> str | int:
     if type(return_type) != type:
         return_type = type(return_type)
 
@@ -166,7 +169,7 @@ def _return_filter(filter, return_type):
         return None
 
 
-def init():
+def init() -> ReturnCode:
     logger.info('filterwheel', 'Initialising filter wheel')
 
     for retry in range(config.FilterWheel.retries):

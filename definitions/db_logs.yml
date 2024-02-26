@@ -55,8 +55,8 @@ calibunit_log:
   unit:
 
 filterwheel_log:
-  short: Filterwheel log
-  long: Filterwheel log
+  short: Filter wheel log
+  long: Filter wheel log
   unit:
 
 temperature_log:

@@ -199,6 +199,9 @@ class MainBackend(SHMFPSBackend):
         self._update_param(data, config.FPS.TTMLOOP, 'loopmult')
         self._update_param(data, config.FPS.TTMLOOP, 'looplimit')
 
+        self._update_param(data, config.FPS.CONFIG, 'adc_update')
+        self._update_param(data, config.FPS.CONFIG, 'ttm_offload')
+
         self._update_dict(data, 'plc',
                           plc_utils.get_all_status(filter_from_db=True))
         self._update_dict(data, 'services', services.get_all_status())
@@ -554,7 +557,8 @@ class MainBackend(SHMFPSBackend):
     # DM Loop
 
     def set_dmloop_on(self, *, state):
-        aocontrol.switch_loop(config.AO.DM_loop_number, state)
+        aocontrol.switch_loop(config.AO.DM_loop_number, state,
+                              with_autogain=False, autozero=False)
 
     def set_dmloop_gain(selfself, gain):
         aocontrol.set_dmloop_gain(gain)
@@ -571,7 +575,8 @@ class MainBackend(SHMFPSBackend):
     # TTM Loop
 
     def set_ttmloop_on(self, *, state):
-        aocontrol.switch_loop(config.AO.TTM_loop_number, state)
+        aocontrol.switch_loop(config.AO.TTM_loop_number, state,
+                              with_autogain=False, autozero=False)
 
     def set_ttmloop_gain(selfself, gain):
         aocontrol.set_ttmloop_gain(gain)
@@ -609,6 +614,14 @@ class MainBackend(SHMFPSBackend):
 
     def set_bmc_targetstroke(self, *, target):
         aocontrol.set_bmc_target_stroke(target)
+
+    # Observation
+
+    def set_adc_update(self, *, state):
+        aocontrol._set_fps_value(config.FPS.CONFIG, 'adc_update', state)
+
+    def set_ttm_offload(self, *, state):
+        aocontrol._set_fps_value(config.FPS.CONFIG, 'ttm_offload', state)
 
     # Modal gains
 

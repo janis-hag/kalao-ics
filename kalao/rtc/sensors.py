@@ -8,11 +8,12 @@
 sensors.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
+from typing import Any
 
 import sensors
 
 
-def status():
+def status() -> dict[str, Any]:
     rtc_sensors = {}
 
     sensors.init()

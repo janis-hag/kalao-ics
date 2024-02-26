@@ -10,11 +10,11 @@ from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import (QListWidget, QListWidgetItem, QMessageBox,
                                QPushButton)
 
-from guis.utils.mixins import BackendActionMixin
 from kalao import database
 from kalao.utils import kstring, ktime
 
 from guis.utils.definitions import ColorPalette
+from guis.utils.mixins import BackendActionMixin
 from guis.utils.ui_loader import loadUi
 from guis.utils.widgets import KListWidgetItem, KMessageBox, KWidget
 

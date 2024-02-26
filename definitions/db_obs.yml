@@ -100,14 +100,14 @@ observer_email:
 # FilterWheel
 filterwheel_filter_position:
   short: Filter number
-  long: Filterwheel filter position
+  long: Filter wheel filter position
   unit:
   group: FLI, Motors
   fits_keyword: HIERARCH ESO INS FILT NO
 
 filterwheel_filter_name:
   short: Filter name
-  long: Filterwheel filter name
+  long: Filter wheel filter name
   unit:
   group:
   fits_keyword: HIERARCH ESO INS FILT ID

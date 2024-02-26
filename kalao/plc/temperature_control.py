@@ -11,19 +11,25 @@ temperature_control.py is part of the KalAO Instrument Control Software
 
 import time
 from datetime import datetime, timezone
+from typing import Any
 
 from kalao import database, logger
 from kalao.plc import core
 
-from opcua import ua
+from opcua import Client, ua
 
 from kalao.definitions.enums import RelayState
 
 import config
 
 
+class RelayCommand():
+    OFF = False
+    ON = True
+
+
 @core.beckhoff_autoconnect
-def get_temperatures(beck=None):
+def get_temperatures(beck: Client = None) -> dict[str, float]:
     """
     Query all the temperature sensors.
 
@@ -50,7 +56,7 @@ def get_temperatures(beck=None):
 
 
 @core.beckhoff_autoconnect
-def get_cooling_status(beck=None):
+def get_cooling_status(beck: Client = None) -> dict[str, Any]:
     """
     Query status of the cooling system.
 
@@ -70,7 +76,7 @@ def get_cooling_status(beck=None):
 
 
 @core.beckhoff_autoconnect
-def get_state(node, beck=None):
+def get_state(node: str, beck: Client = None) -> RelayState:
     """
     Open or Close the shutter depending on action_name
 
@@ -79,15 +85,14 @@ def get_state(node, beck=None):
     """
 
     if beck.get_node(node).get_value():
-        relay_status = RelayState.ON
+        return RelayState.ON
     else:
-        relay_status = RelayState.OFF
-
-    return relay_status
+        return RelayState.OFF
 
 
 @core.beckhoff_autoconnect
-def switch(node, on, beck=None):
+def switch(node: str, action_name: RelayCommand | RelayState,
+           beck: Client = None) -> RelayState:
     """
      Open or Close the shutter depending on action_name
 
@@ -95,16 +100,22 @@ def switch(node, on, beck=None):
     :return: position of flipmirror
     """
 
-    if on:
+    if action_name == RelayState.ON:
+        action_name = RelayCommand.ON
+    elif action_name == RelayState.OFF:
+        action_name = RelayCommand.OFF
+
+    if action_name == RelayCommand.ON:
         logger.info('temperature', f'Switching on {node}')
-    else:
+    elif action_name == RelayCommand.OFF:
         logger.info('temperature', f'Switching off {node}')
 
     relay_switch = beck.get_node(node)
     relay_switch.set_attribute(
         ua.AttributeIds.Value,
         ua.DataValue(
-            ua.Variant(on, relay_switch.get_data_type_as_variant_type())))
+            ua.Variant(action_name,
+                       relay_switch.get_data_type_as_variant_type())))
 
     time.sleep(1)
 
@@ -113,7 +124,7 @@ def switch(node, on, beck=None):
     return relay_status
 
 
-def pump_on(beck=None):
+def pump_on(beck: Client = None) -> RelayState:
     """
     Convenience function to turn on the water pump
 
@@ -121,10 +132,10 @@ def pump_on(beck=None):
     :return: status of the pump
     """
 
-    return switch(config.PLC.Node.PUMP, True, beck=beck)
+    return switch(config.PLC.Node.PUMP, RelayState.ON, beck=beck)
 
 
-def pump_off(beck=None):
+def pump_off(beck: Client = None) -> RelayState:
     """
     Convenience function to turn off the water pump
 
@@ -132,10 +143,10 @@ def pump_off(beck=None):
     :return: status of the pump
     """
 
-    return switch(config.PLC.Node.PUMP, False, beck=beck)
+    return switch(config.PLC.Node.PUMP, RelayState.OFF, beck=beck)
 
 
-def pump_status(beck=None):
+def pump_status(beck: Client = None) -> RelayState:
     """
     Convenience function to query the status of the water pump
 
@@ -147,7 +158,7 @@ def pump_status(beck=None):
 
 
 @core.beckhoff_autoconnect
-def pump_temperature(beck=None):
+def pump_temperature(beck: Client = None) -> float:
     """
     Convenience function to query the temperature of the pump
 
@@ -160,7 +171,7 @@ def pump_temperature(beck=None):
     return pump_temp
 
 
-def heater_on(beck=None):
+def heater_on(beck: Client = None) -> RelayState:
     """
     Convenience function to turn on the water heater
 
@@ -168,10 +179,10 @@ def heater_on(beck=None):
     :return: status of the heater
     """
 
-    return switch(config.PLC.Node.HEATER, True, beck=beck)
+    return switch(config.PLC.Node.HEATER, RelayState.ON, beck=beck)
 
 
-def heater_off(beck=None):
+def heater_off(beck: Client = None) -> RelayState:
     """
     Convenience function to turn off the water heater
 
@@ -179,10 +190,10 @@ def heater_off(beck=None):
     :return: status of the heater
     """
 
-    return switch(config.PLC.Node.HEATER, False, beck=beck)
+    return switch(config.PLC.Node.HEATER, RelayState.OFF, beck=beck)
 
 
-def heater_status(beck=None):
+def heater_status(beck: Client = None) -> RelayState:
     """
     Convenience function to query the status of the water heater
 
@@ -193,7 +204,7 @@ def heater_status(beck=None):
     return get_state(config.PLC.Node.HEATER, beck=beck)
 
 
-def fan_on(beck=None):
+def fan_on(beck: Client = None) -> RelayState:
     """
     Convenience function to turn on the water fan
 
@@ -201,10 +212,10 @@ def fan_on(beck=None):
     :return: status of the fan
     """
 
-    return switch(config.PLC.Node.FAN, True, beck=beck)
+    return switch(config.PLC.Node.FAN, RelayState.ON, beck=beck)
 
 
-def fan_off(beck=None):
+def fan_off(beck: Client = None) -> RelayState:
     """
     Convenience function to turn off the water fan
 
@@ -212,10 +223,10 @@ def fan_off(beck=None):
     :return: status of the fan
     """
 
-    return switch(config.PLC.Node.FAN, False, beck=beck)
+    return switch(config.PLC.Node.FAN, RelayState.OFF, beck=beck)
 
 
-def fan_status(beck=None):
+def fan_status(beck: Client = None) -> RelayState:
     """
     Convenience function to query the status of the water fan
 
@@ -226,7 +237,7 @@ def fan_status(beck=None):
     return get_state(config.PLC.Node.FAN, beck=beck)
 
 
-def get_flow_threshold_time(flow_threshold, beck=None):
+def get_flow_threshold_time(flow_threshold: float) -> float:
     """
     Looks up the time when the flow was under a given threshold
 
@@ -244,7 +255,7 @@ def get_flow_threshold_time(flow_threshold, beck=None):
 
 
 @core.beckhoff_autoconnect
-def get_flow(beck=None):
+def get_flow(beck: Client = None) -> float:
     """
     Convenience function to query the value of the water flow from the flowmeter
 

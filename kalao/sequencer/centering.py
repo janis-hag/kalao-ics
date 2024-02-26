@@ -20,8 +20,10 @@ import config
 
 
 @with_sequencer_status(SequencerStatus.CENTERING)
-def center_on_target(exptime, centering_mode=CenteringMode.AUTOMATIC,
-                     adaptiveoptics_mode=AdaptiveOpticsMode.DISABLED):
+def center_on_target(
+    exptime: float, centering_mode: CenteringMode = CenteringMode.AUTOMATIC,
+    adaptiveoptics_mode: AdaptiveOpticsMode = AdaptiveOpticsMode.DISABLED
+) -> ReturnCode:
     """
     Start star centering sequence:
     - Sets this filter based on filter_arg request.
@@ -36,7 +38,7 @@ def center_on_target(exptime, centering_mode=CenteringMode.AUTOMATIC,
     """
 
     if centering_mode == CenteringMode.NONE:
-        return
+        return ReturnCode.CENTERING_OK
 
     timeout = time.monotonic() + config.Centering.automatic_timeout
 
@@ -74,7 +76,7 @@ def center_on_target(exptime, centering_mode=CenteringMode.AUTOMATIC,
 
     if adaptiveoptics_mode == AdaptiveOpticsMode.ENABLED:
         # Check if enough light is on the WFS for precise centering
-        if aocontrol.optimize_wfs_flux() != 0:
+        if aocontrol.optimize_wfs_flux() != ReturnCode.OK:
             raise CenteringFluxWFSTooLow
 
         try:
@@ -91,7 +93,7 @@ def center_on_target(exptime, centering_mode=CenteringMode.AUTOMATIC,
 
 
 @with_sequencer_status(SequencerStatus.CENTERING)
-def center_on_laser():
+def center_on_laser() -> ReturnCode:
     """
     Center the calibration unit the laser on the WFS.
 
@@ -120,7 +122,7 @@ def center_on_laser():
         raise FlipMirrorNotUp
 
     if not aocontrol.check_wfs_flux():
-        # Move calib unit to approximately correct position if too far #TODO: make similar to others
+        # Move calib unit to approximately correct position if too far
         if np.abs(calibunit.get_position() - config.Laser.position) > 0.5:
             calibunit.move_to_laser_position()
 
@@ -141,7 +143,7 @@ def center_on_laser():
         except (CenteringException, AbortRequested, FLITakeImageFailed) as e:
             logger.error('centering',
                          f'"{e.__doc__}" happened during centering on laser')
-            return -1
+            return ReturnCode.CENTERING_ERROR
 
         # Precise centering with WFS
         aocontrol.emgain_off()
@@ -155,12 +157,12 @@ def center_on_laser():
     except (CenteringException, AbortRequested, FLITakeImageFailed) as e:
         logger.error('centering',
                      f'"{e.__doc__}" happened during centering on laser')
-        return -1
+        return ReturnCode.CENTERING_ERROR
 
     return ReturnCode.CENTERING_OK
 
 
-def request_manual_centering():
+def request_manual_centering() -> ReturnCode:
     logger.info('centering', 'Starting manual centering.')
     database.store('obs', {'centering_manual': True})
 
@@ -196,18 +198,20 @@ def request_manual_centering():
     return ReturnCode.CENTERING_OK
 
 
-def validate_manual_centering():
+def validate_manual_centering() -> ReturnCode:
     logger.info('centering', 'Manual centering done.')
     database.store('obs', {'centering_manual': False})
 
     return ReturnCode.CENTERING_OK
 
 
-def manual_centering(x, y):
+def manual_centering(x: float, y: float) -> ReturnCode:
     dx = config.FLI.center_x - x
     dy = config.FLI.center_y - y
 
-    offsets.fli_to_telescope(dx, dy)
+    if offsets.fli_to_telescope(dx, dy) != ReturnCode.OK:
+        raise CenteringOffsetingFailed
+
     img_path = camera.take_image(ObservationType.CENTERING)
 
     if img_path is None:
@@ -216,9 +220,10 @@ def manual_centering(x, y):
     return ReturnCode.CENTERING_OK
 
 
-def on_fli_with_calibunit(
-        exptime, xy=None,
-        max_iter=config.Centering.fli_with_calibunit_max_iter, timeout=np.inf):
+def on_fli_with_calibunit(exptime: float, xy: tuple[float, float] |
+                          None = None, max_iter: int = config.Centering.
+                          fli_with_calibunit_max_iter,
+                          timeout: float = np.inf) -> tuple[float, float]:
     if xy is None:
         x, y = _get_star(exptime)
     else:
@@ -253,9 +258,10 @@ def on_fli_with_calibunit(
     return x, y
 
 
-def on_fli_with_telescope(
-        exptime, xy=None,
-        max_iter=config.Centering.fli_with_telescope_max_iter, timeout=np.inf):
+def on_fli_with_telescope(exptime: float, xy: tuple[float, float] |
+                          None = None, max_iter: int = config.Centering.
+                          fli_with_calibunit_max_iter,
+                          timeout: float = np.inf) -> tuple[float, float]:
     if xy is None:
         x, y = _get_star(exptime)
     else:
@@ -279,7 +285,8 @@ def on_fli_with_telescope(
         logger.info('centering',
                     f'Centering step {i+1}, error = {error:.1f} px')
 
-        offsets.fli_to_telescope(dx, dy)
+        if offsets.fli_to_telescope(dx, dy) != ReturnCode.OK:
+            raise CenteringOffsetingFailed
 
         x, y = _get_star(exptime)
     else:
@@ -290,9 +297,10 @@ def on_fli_with_telescope(
     return x, y
 
 
-def on_fli_with_ttm(exptime, xy=None,
-                    max_iter=config.Centering.fli_with_ttm_max_iter,
-                    timeout=np.inf):
+def on_fli_with_ttm(exptime: float, xy: tuple[float, float] | None = None,
+                    max_iter: int = config.Centering.
+                    fli_with_calibunit_max_iter,
+                    timeout: float = np.inf) -> tuple[float, float]:
     if xy is None:
         x, y = _get_star(exptime)
     else:
@@ -328,15 +336,16 @@ def on_fli_with_ttm(exptime, xy=None,
     return x, y
 
 
-def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
-                    timeout=np.inf):
+def on_wfs_with_ttm(max_iter: int = config.Centering.
+                    fli_with_calibunit_max_iter,
+                    timeout: float = np.inf) -> tuple[float, float]:
     logger.info('centering', 'Centering on WFS using Tip-Tilt Mirror')
 
     slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS)
 
     if slopes_fps is None:
         logger.error('centering', f'{config.FPS.SHWFS} is missing')
-        return -1
+        return np.nan, np.nan
 
     for i in range(max_iter):
         dx = -slopes_fps.get_param('slope_x_avg')
@@ -364,13 +373,15 @@ def on_wfs_with_ttm(max_iter=config.Centering.wfs_with_ttm_max_iter,
     return -dx, -dy
 
 
-def _check_abort():
+def _check_abort() -> ReturnCode:
     if database.get_last_value('obs',
                                'sequencer_status') == SequencerStatus.ABORTING:
         raise AbortRequested
 
+    return ReturnCode.CENTERING_OK
 
-def _get_star(exptime):
+
+def _get_star(exptime: float) -> tuple[float, float]:
     img_path = camera.take_image(ObservationType.CENTERING, exptime=exptime,
                                  comment="Centering sequence")
 

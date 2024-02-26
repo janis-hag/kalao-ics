@@ -10,7 +10,7 @@ except ImportError:
 
 from kalao.utils import file_handling
 
-from kalao.definitions.enums import ReturnCode
+from kalao.definitions.enums import ObservationType
 
 import config
 
@@ -20,7 +20,7 @@ def run(args):
         if camera_imported:
             ret = camera.take_empty('/tmp/fli_empty.fits')
 
-            if ret == ReturnCode.CAMERA_OK:
+            if ret != None:
                 fli_header = file_handling._header_from_fits_file(
                     '/tmp/fli_empty.fits')
             else:
@@ -45,7 +45,7 @@ def run(args):
     df.loc['HIERARCH ESO INS SHUT ST', 'value'] = 'OPEN'
 
     df = file_handling._dynamic_cards_update(
-        df, 'K_TRGOBS', 'KALAO.1970-01-01T00:00:00.000.fits')
+        df, ObservationType.OBJECT, 'KALAO.1970-01-01T00:00:00.000.fits')
     df = file_handling._sort_header(df)
 
     print(file_handling._header_to_string(df))

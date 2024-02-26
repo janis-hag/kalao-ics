@@ -3,24 +3,29 @@
 """
 @author: Nathanaël Restori
 """
-
 import math
 import os
+import pprint
 from collections.abc import KeysView
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
-from pprint import pprint
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from kalao.utils import ktime
+from kalao.utils.rprint import rprint
 
 import yaml
 from bson.codec_options import CodecOptions
 from pymongo import DESCENDING, TEXT, MongoClient, UpdateOne
+from pymongo.collection import Collection
+from pymongo.database import Database
 from pymongo.errors import BulkWriteError
+
+from kalao.definitions.enums import LogLevel, ReturnCode
 
 import config
 
@@ -50,14 +55,16 @@ condition_mapping = {
 
 codec_options = CodecOptions(tz_aware=True, tzinfo=timezone.utc)
 
+client: MongoClient | None = None
 
-def forked():
+
+def forked() -> None:
     global client
 
     client = None
 
 
-def _get_db(dt=None):
+def _get_db(dt: datetime | None = None) -> Database:
     global client
 
     if client is None:
@@ -71,7 +78,7 @@ def _get_db(dt=None):
     return client[ktime.get_night_str(dt=dt)]
 
 
-def _get_collection(db, collection_name):
+def _get_collection(db: Database, collection_name: str) -> Collection:
     collection = db.get_collection(collection_name,
                                    codec_options=codec_options)
     collection.create_index([('key', TEXT)], background=True)
@@ -79,7 +86,7 @@ def _get_collection(db, collection_name):
     return collection
 
 
-def get_collection_last_update(collection_name):
+def get_collection_last_update(collection_name: str) -> datetime:
     dt = datetime.now(timezone.utc)
     day = 0
 
@@ -105,8 +112,9 @@ def get_collection_last_update(collection_name):
     return datetime.fromtimestamp(0, tz=timezone.utc)
 
 
-def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None,
-        at=None):
+def get(collection_name: str, keys: str | list[str] | None = None,
+        nb_of_point: int = 1, dt: datetime | None = None, days: int |
+        None = None, at: datetime | None = None) -> dict[str, list[Any]]:
     day = 0
     data = {}
 
@@ -232,7 +240,9 @@ def get(collection_name, keys=None, nb_of_point=1, dt=None, days=None,
     return data
 
 
-def get_time_since_state(collection_name, key, condition='==', value=None):
+def get_time_since_state(collection_name: str, key: str, condition: str = '==',
+                         value: str | int | float | None = None
+                         ) -> dict[str, Any]:
     dt = datetime.now(timezone.utc)
     day = 0
     data = {}
@@ -283,7 +293,7 @@ def get_time_since_state(collection_name, key, condition='==', value=None):
     return data
 
 
-def store(collection_name, data):
+def store(collection_name: str, data: dict[str, Any]) -> ReturnCode:
     if len(data) == 0:
         return 0
 
@@ -328,14 +338,14 @@ def store(collection_name, data):
         # (only keys with a failure will be skipped)
         collection.bulk_write(update_list, ordered=False)
     except BulkWriteError as bwe:
-        print('[ERROR] Write to database failed')
-        pprint(bwe.details)
-        return -1
+        rprint('[ERROR] Write to database failed')
+        rprint(pprint.pformat(bwe.details))
+        return ReturnCode.DATABASE_ERROR
 
-    return 0
+    return ReturnCode.DATABASE_OK
 
 
-def store_log(name, level, message):
+def store_log(name: str, level: LogLevel, message: str) -> ReturnCode:
     timestamp = datetime.now(timezone.utc)
 
     db = _get_db(timestamp)
@@ -358,15 +368,15 @@ def store_log(name, level, message):
     )
     # yapf: enable
 
-    return 0
+    return ReturnCode.DATABASE_OK
 
 
-def get_all_last(collection_name):
+def get_all_last(collection_name: str) -> dict[str, list[Any]]:
     return get(collection_name,
                definitions[collection_name]['metadata'].keys())
 
 
-def get_last(collection_name, key=None):
+def get_last(collection_name: str, key: str | None = None) -> dict[str, Any]:
     """
     Searches for the last record in the database for a certain collection
 
@@ -389,16 +399,18 @@ def get_last(collection_name, key=None):
         return {}
 
 
-def get_last_value(collection_name, key=None):
+def get_last_value(collection_name: str, key: str | None = None) -> Any:
     return get_last(collection_name, key).get('value')
 
 
-def get_last_time(collection_name, key=None):
+def get_last_time(collection_name: str, key: str | None = None) -> Any:
     return get_last(collection_name, key).get('timestamp')
 
 
-def read_mongo_to_pandas_by_timestamp(collection_name, dt_start, dt_end,
-                                      keys=None, sampling=None):
+def read_mongo_to_pandas_by_timestamp(collection_name: str, dt_start: datetime,
+                                      dt_end: datetime,
+                                      keys: list | None = None, sampling: int |
+                                      None = None) -> pd.DataFrame:
     """
     Read from Mongo and Store into DataFrame by timestamp
 
@@ -417,8 +429,9 @@ def read_mongo_to_pandas_by_timestamp(collection_name, dt_start, dt_end,
     return df[(df.index >= dt_start) & (df.index <= dt_end)]
 
 
-def read_mongo_to_pandas(collection_name, keys=None, dt=None, days=1,
-                         sampling=None):
+def read_mongo_to_pandas(collection_name: str, keys: list | None = None,
+                         dt: datetime | None = None, days: int = 1,
+                         sampling: int | None = None) -> pd.DataFrame:
     """
     Read from Mongo and Store into DataFrame by date
 
@@ -435,7 +448,7 @@ def read_mongo_to_pandas(collection_name, keys=None, dt=None, days=1,
     if dt is None:
         dt = datetime.now(timezone.utc)
 
-    data_db = get(collection_name, keys, nb_of_point=np.inf, dt=dt, days=days)
+    data_db = get(collection_name, keys, nb_of_point=9999, dt=dt, days=days)
 
     data_df = {}
     for key in data_db.keys():
@@ -457,5 +470,4 @@ for name in definitions:
     with open(definitions[name]['path']) as file:
         definitions[name]['metadata'] = yaml.safe_load(file)
 
-client = None
 os.register_at_fork(after_in_child=forked)

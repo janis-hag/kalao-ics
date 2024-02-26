@@ -21,9 +21,10 @@ import config
 
 
 @with_sequencer_status(SequencerStatus.FOCUSING)
-def focus_sequence(exptime, steps=config.Focusing.steps,
-                   step_size=config.Focusing.step_size,
-                   window_size=config.Focusing.window_size):
+def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
+                   step_size: float = config.Focusing.step_size,
+                   window_size: int = config.Focusing.window_size
+                   ) -> ReturnCode:
     """
     Starts a sequence to find best telescope M2 focus position.
     """
@@ -34,7 +35,7 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
     focus_start = initial_focus - steps/2*step_size
     focus_stop = initial_focus + steps/2*step_size
 
-    focus_sequence = np.linspace(focus_start, focus_stop, steps)
+    m2_positions = np.linspace(focus_start, focus_stop, steps)
 
     data = pd.DataFrame(columns=['focus', 'x', 'y', 'peak', 'fwhm'])
 
@@ -55,17 +56,18 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
 
             logger.info('focusing', 'Starting focus sequence')
 
-            for step, focus in enumerate(focus_sequence):
+            for step, m2_position in enumerate(m2_positions):
                 # Check if an abort was requested
                 if database.get_last_value(
                         'sequencer_status') == SequencerStatus.ABORTING:
                     raise AbortRequested
 
-                etcs.set_focus(focus)
+                etcs.set_focus(m2_position)
 
                 filepath = camera.take_image(
                     ObservationType.FOCUS, exptime=exptime, comment=
-                    f'Focus sequence {step+1}/{steps}, focus={focus:.2f}um')
+                    f'Focus sequence {step+1}/{steps}, focus={m2_position:.2f}um'
+                )
 
                 if filepath is None:
                     raise FLITakeImageFailed
@@ -82,7 +84,7 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
 
                 # Store star info for fitting
                 data.loc[step] = {
-                    'focus': focus,
+                    'focus': m2_position,
                     'x': star.x,
                     'y': star.y,
                     'peak': star.peak,
@@ -96,7 +98,8 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
                               window_size//2]
 
                 hdu = fits.ImageHDU(img_cut, name=f'FOCUS{step+1}')
-                hdu.header.set('HIERARCH FOCUS M2 POSITION', focus, '[um]')
+                hdu.header.set('HIERARCH FOCUS M2 POSITION', m2_position,
+                               '[um]')
                 hdu.header.set('HIERARCH FOCUS STAR X', star.x, '[px]')
                 hdu.header.set('HIERARCH FOCUS STAR Y', star.y, '[px]')
                 hdu.header.set('HIERARCH FOCUS STAR PEAK', star.peak, '[ADU]')
@@ -123,7 +126,7 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
 
                 logger.info(
                     'focusing',
-                    f'Focus sequence {step+1}/{steps}: focus = {focus:.2f} µm, x = {star.x:.1f} px, y = {star.y:.1f} px, peak = {star.peak:.1f} ADU, FWHM = {star.fwhm:.2f} px'
+                    f'Focus sequence {step+1}/{steps}: focus = {m2_position:.2f} µm, x = {star.x:.1f} px, y = {star.y:.1f} px, peak = {star.peak:.1f} ADU, FWHM = {star.fwhm:.2f} px'
                 )
 
             # Check if we reached a minima
@@ -136,7 +139,7 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
             if a <= 0:
                 raise FocusingInvertedCurve
 
-            elif idxmin == 0 or idxmin == len(focus_sequence) - 1:
+            elif idxmin == 0 or idxmin == len(m2_positions) - 1:
                 best_focus = data['focus'][idxmin]
                 best_fwhm = fit(best_focus)
 
@@ -182,7 +185,7 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
                 logger.info('focusing', f'Restoring focus using autofocus')
                 autofocus()
 
-            return -1
+            return ReturnCode.FOCUSING_ERROR
 
     # Update autofocus
     temps = etcs.get_tube_temps()
@@ -209,26 +212,26 @@ def focus_sequence(exptime, steps=config.Focusing.steps,
     return ReturnCode.FOCUSING_OK
 
 
-def autofocus():
+def autofocus() -> ReturnCode:
     temps = etcs.get_tube_temps()
 
     temttb = temps['temttb']
     temtth = temps['temtth']
 
-    f0 = database.get_last('obs', 'focusing_f0')
-    f1 = database.get_last('obs', 'focusing_f1')
+    f0_db = database.get_last('obs', 'focusing_f0')
+    f1_db = database.get_last('obs', 'focusing_f1')
 
-    if f0 == {} or (datetime.now(timezone.utc) - f0['timestamp']
-                    ).total_seconds() > config.Focusing.autofocus_max_age:
+    if f0_db == {} or (datetime.now(timezone.utc) - f0_db['timestamp']
+                       ).total_seconds() > config.Focusing.autofocus_max_age:
         f0 = config.Focusing.autofocus_f0
     else:
-        f0 = f0['value']
+        f0 = f0_db['value']
 
-    if f1 == {} or (datetime.now(timezone.utc) - f1['timestamp']
-                    ).total_seconds() > config.Focusing.autofocus_max_age:
+    if f1_db == {} or (datetime.now(timezone.utc) - f1_db['timestamp']
+                       ).total_seconds() > config.Focusing.autofocus_max_age:
         f1 = config.Focusing.autofocus_f1
     else:
-        f1 = f1['value']
+        f1 = f1_db['value']
 
     focus = f0 + f1 * (temttb-1.2+temtth) / 2
 
@@ -239,7 +242,8 @@ def autofocus():
     return ReturnCode.FOCUSING_OK
 
 
-def update_autofocus_model(focus, temttb, temtth):
+def update_autofocus_model(focus: float, temttb: float,
+                           temtth: float) -> tuple[float, float]:
     f1 = config.Focusing.autofocus_f1
     f0 = focus - f1 * (temttb-1.2+temtth) / 2
 

@@ -157,7 +157,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         chart.legend().hide()
 
         # Create Chart and set General Chart setting
-        chart = self.tiptilt_spectrum_plot.chart()
+        chart = self.tip_spectrum_plot.chart()
 
         # Serie
         pen = QPen(Color.BLUE, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
@@ -165,9 +165,30 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         series_tip = self.tip_spectrum_series = QLineSeries()
         series_tip.setPen(pen)
         series_tip.setMarkerSize(chart.point_size)
-        series_tip.setName("Tilt Spectrum")
+        series_tip.setName("Tip Spectrum")
         series_tip.setPointsVisible(True)
         chart.addSeries(series_tip)
+
+        # X Axis Settings
+        axis_x = self.tip_spectrum_axis_x = QLogValueAxis()
+        axis_x.setBase(10)
+        axis_x.setRange(0.1, 1000)
+        axis_x.setTitleText('Frequency [Hz]')
+        chart.addAxis(axis_x, Qt.AlignBottom)
+        series_tip.attachAxis(axis_x)
+
+        # Y Axis Settings
+        axis_y = self.tip_spectrum_axis_y = QValueAxis()
+        axis_y.setTickCount(7)
+        axis_y.setRange(0, 1.05)
+        axis_y.setTitleText('Amplitude RMS [mrad]')
+        chart.addAxis(axis_y, Qt.AlignLeft)
+        series_tip.attachAxis(axis_y)
+
+        chart.legend().hide()
+
+        # Create Chart and set General Chart setting
+        chart = self.tilt_spectrum_plot.chart()
 
         # Serie
         pen = QPen(Color.RED, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
@@ -180,21 +201,19 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         chart.addSeries(series_tilt)
 
         # X Axis Settings
-        axis_x = self.tiptilt_spectrum_axis_x = QLogValueAxis()
+        axis_x = self.tilt_spectrum_axis_x = QLogValueAxis()
         axis_x.setBase(10)
         axis_x.setRange(0.1, 1000)
         axis_x.setTitleText('Frequency [Hz]')
         chart.addAxis(axis_x, Qt.AlignBottom)
-        series_tip.attachAxis(axis_x)
         series_tilt.attachAxis(axis_x)
 
         # Y Axis Settings
-        axis_y = self.tiptilt_spectrum_axis_y = QValueAxis()
+        axis_y = self.tilt_spectrum_axis_y = QValueAxis()
         axis_y.setTickCount(7)
         axis_y.setRange(0, 1.05)
         axis_y.setTitleText('Amplitude RMS [mrad]')
         chart.addAxis(axis_y, Qt.AlignLeft)
-        series_tip.attachAxis(axis_y)
         series_tilt.attachAxis(axis_y)
 
         chart.legend().hide()
@@ -207,7 +226,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         self.data_to_widget(
             self.consume_dict(data, config.FPS.DMLOOP, 'loopON'),
-            self.dmloop_on_checkbox, true_value=True)
+            self.dmloop_on_checkbox)
         self.data_to_widget(
             self.consume_dict(data, config.FPS.DMLOOP, 'loopgain'),
             self.dmloop_gain_spinbox)
@@ -222,7 +241,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         self.data_to_widget(
             self.consume_dict(data, config.FPS.TTMLOOP, 'loopON'),
-            self.ttmloop_on_checkbox, true_value=True)
+            self.ttmloop_on_checkbox)
         self.data_to_widget(
             self.consume_dict(data, config.FPS.TTMLOOP, 'loopgain'),
             self.ttmloop_gain_spinbox)
@@ -244,7 +263,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.nuvu_exposuretime_spinbox)
         self.data_to_widget(
             self.consume_param(data, config.FPS.NUVU, 'autogain_on'),
-            self.nuvu_autogain_checkbox, true_value=True)
+            self.nuvu_autogain_checkbox)
         self.data_to_widget(
             self.consume_param(data, config.FPS.NUVU, 'autogain_setting'),
             self.nuvu_autogain_setting_combobox)
@@ -265,6 +284,15 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         if target_stroke is not None:
             with QSignalBlocker(self.bmc_targetstroke_spinbox):
                 self.bmc_targetstroke_spinbox.setValue(target_stroke * 100)
+
+        # Observation
+
+        self.data_to_widget(
+            self.consume_param(data, config.FPS.CONFIG, 'adc_update'),
+            self.adc_update_checkbox)
+        self.data_to_widget(
+            self.consume_param(data, config.FPS.CONFIG, 'ttm_offload'),
+            self.ttm_offload_checkbox)
 
         # Slopes
 
@@ -391,6 +419,19 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_bmc_targetstroke_spinbox_valueChanged(self, d):
         self.action_send(self.bmc_targetstroke_spinbox,
                          self.backend.set_bmc_targetstroke, target=d / 100)
+
+    # Observation
+
+    @Slot(int)
+    def on_adc_update_checkbox_stateChanged(self, state):
+        self.action_send(self.adc_update_checkbox, self.backend.set_adc_update,
+                         state=Qt.CheckState(state) == Qt.Checked)
+
+    @Slot(int)
+    def on_ttm_offload_checkbox_stateChanged(self, state):
+        self.action_send(self.ttm_offload_checkbox,
+                         self.backend.set_ttm_offload,
+                         state=Qt.CheckState(state) == Qt.Checked)
 
     # Modal gains
 
@@ -521,5 +562,8 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             series_min = -0.05 * max
             series_max = max * 1.05
 
-        self.tiptilt_spectrum_axis_x.setRange(frequency[1], frequency[-1])
-        self.tiptilt_spectrum_axis_y.setRange(series_min, series_max)
+        self.tip_spectrum_axis_x.setRange(frequency[1], frequency[-1])
+        self.tip_spectrum_axis_y.setRange(series_min, series_max)
+
+        self.tilt_spectrum_axis_x.setRange(frequency[1], frequency[-1])
+        self.tilt_spectrum_axis_y.setRange(series_min, series_max)

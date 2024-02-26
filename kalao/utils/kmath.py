@@ -4,13 +4,13 @@ SIGMA_TO_HWHM = np.sqrt(2 * np.log(2))
 SIGMA_TO_FWHM = 2 * np.sqrt(2 * np.log(2))
 
 
-def is_triangular(T):
+def is_triangular(T: int) -> bool:
     n = round((np.sqrt(8*T + 1) - 1) / 2)
 
     return T == n * (n+1) // 2
 
 
-def triangular_up_to(T):
+def triangular_up_to(T: int) -> list[int]:
     list = []
     n = 1
 
@@ -27,7 +27,7 @@ def triangular_up_to(T):
 
 
 # yapf: disable
-def gaussian_2d_rotated(x, y, mu_x = 0, mu_y = 0, sigma_x = 1, sigma_y = 1, theta = 0, A = None, C = 0):
+def gaussian_2d_rotated(x:float|np.ndarray, y:float|np.ndarray, mu_x:float = 0, mu_y:float = 0, sigma_x:float = 1, sigma_y:float = 1, theta:float = 0, A:float|None = None, C:float = 0) -> float|np.ndarray:
     if A is None:
         A = 1/(sigma_x * sigma_y * 2*np.pi)
 

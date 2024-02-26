@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source /home/kalao/.kalao_env
-source /home/kalao/kalao-venv/bin/activate
+source /home/kalao/kalao-venv-3.11/bin/activate
 
 cd /home/kalao/kalao-ics
 

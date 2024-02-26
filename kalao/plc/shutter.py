@@ -11,19 +11,25 @@ shutter.py is part of the KalAO Instrument Control Software
 
 import time
 from datetime import datetime, timezone
+from enum import StrEnum
 
 from kalao import database, logger
 from kalao.plc import core
 
-from opcua import ua
+from opcua import Client, ua
 
 from kalao.definitions.enums import ReturnCode, ShutterState
 
 import config
 
 
+class ShutterCommand(StrEnum):
+    OPEN = 'bOpen_Shutter'
+    CLOSE = 'bClose_Shutter'
+
+
 @core.beckhoff_autoconnect
-def get_state(beck=None):
+def get_state(beck: Client = None) -> ShutterState:
     """
     Query the single string status of the shutter.
 
@@ -51,7 +57,7 @@ def get_state(beck=None):
 
 
 @core.beckhoff_autoconnect
-def init(beck=None):
+def init(beck: Client = None) -> ReturnCode:
     """
     Initialise the shutter.
 
@@ -70,28 +76,29 @@ def init(beck=None):
     return ReturnCode.PLC_INIT_SUCCESS
 
 
-def open(beck=None):
+def open(beck: Client = None) -> ShutterState:
     """
     Open the shutter.
 
     :return: status of shutter
     """
 
-    return _switch('bOpen_Shutter', beck=beck)
+    return _switch(ShutterCommand.OPEN, beck=beck)
 
 
-def close(beck=None):
+def close(beck: Client = None) -> ShutterState:
     """
     Close the shutter.
 
     :return: status of shutter
     """
 
-    return _switch('bClose_Shutter', beck=beck)
+    return _switch(ShutterCommand.CLOSE, beck=beck)
 
 
 @core.beckhoff_autoconnect
-def _switch(action_name, beck=None):
+def _switch(action_name: ShutterCommand | ShutterState,
+            beck: Client = None) -> ShutterState:
     """
      Open or Close the shutter depending on action_name
 
@@ -100,13 +107,13 @@ def _switch(action_name, beck=None):
     """
 
     if action_name == ShutterState.OPEN:
-        action_name = 'bOpen_Shutter'
+        action_name = ShutterCommand.OPEN
     elif action_name == ShutterState.CLOSED:
-        action_name = 'bClose_Shutter'
+        action_name = ShutterCommand.CLOSE
 
-    if action_name == 'bOpen_Shutter':
+    if action_name == ShutterCommand.OPEN:
         logger.info('shutter', 'Opening shutter')
-    elif action_name == 'bClose_Shutter':
+    elif action_name == ShutterCommand.CLOSE:
         logger.info('shutter', 'Closing shutter')
 
     shutter_switch = beck.get_node(f'{config.PLC.Node.SHUTTER}.{action_name}')
@@ -122,7 +129,7 @@ def _switch(action_name, beck=None):
     return state
 
 
-def get_switch_time():
+def get_switch_time() -> tuple[str, float]:
     """
     Looks up the time when the tungsten lamp has last been put into current state (ON/OFF/ERROR)
 
@@ -130,7 +137,7 @@ def get_switch_time():
     """
 
     data = database.get_time_since_state('monitoring', 'shutter_state', '==',
-                                         get_state().value)
+                                         get_state())
 
     if data.get('since') is None:
         return data['current']['value'], 0

@@ -8,6 +8,8 @@
 The telemetry package contains the tools to store the Adaptive Optics telemetry of KalAO.
 
 """
+from typing import Any
+
 import numpy as np
 
 from kalao.cacao import toolbox
@@ -15,7 +17,7 @@ from kalao.cacao import toolbox
 import config
 
 
-def gather():
+def gather() -> dict[str, Any]:
     telemetry_data = {}
 
     # Nuvu stream

@@ -1,13 +1,17 @@
+from typing import Any
+
 from kalao import logger
 from kalao.plc import (adc, calibunit, core, filterwheel, flipmirror, laser,
                        shutter, temperature_control, tungsten)
 
-from kalao.definitions.enums import LaserState, TungstenState
+from opcua import Client
+
+from kalao.definitions.enums import LaserState, ReturnCode, TungstenState
 
 import config
 
 
-def lamps_off():
+def lamps_off() -> ReturnCode:
     """
     Turns the tungsten and laser lamp off.
 
@@ -18,7 +22,7 @@ def lamps_off():
     tungsten_status = tungsten.off()
 
     if tungsten_status == TungstenState.OFF and laser_status == LaserState.OFF:
-        return 0
+        return ReturnCode.OK
 
     if tungsten_status != TungstenState.OFF:
         logger.warn('tungsten', 'Tungsten lamp did not turn off')
@@ -26,11 +30,12 @@ def lamps_off():
     if laser_status != LaserState.OFF:
         logger.warn('laser', 'Laser lamp did not turn off')
 
-    return -1
+    return ReturnCode.GENERIC_ERROR
 
 
 @core.beckhoff_autoconnect
-def get_all_status(beck=None, filter_from_db=False):
+def get_all_status(filter_from_db: bool = False,
+                   beck: Client = None) -> dict[str, Any]:
     """
     Query status of all PLC connected devices
     :return: device status dictionary

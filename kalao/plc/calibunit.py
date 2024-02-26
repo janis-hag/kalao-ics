@@ -8,18 +8,21 @@
 calibunit.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
+import math
 
 import numpy as np
 
 from kalao import logger
 from kalao.plc import core
 
-from kalao.definitions.enums import ReturnCode
+from opcua import Client
+
+from kalao.definitions.enums import PLCStatus, ReturnCode
 
 import config
 
 
-def move_to_tungsten_position():
+def move_to_tungsten_position() -> float:
     """
     Move calibration unit to the position where the tungsten lamp is
 
@@ -28,7 +31,7 @@ def move_to_tungsten_position():
 
     new_position = move(config.Tungsten.position)
 
-    if abs(new_position - config.Tungsten.position) < 0.1:
+    if math.isclose(new_position, config.Tungsten.position, abs_tol=0.1):
         return new_position
     else:
         logger.error(
@@ -38,7 +41,7 @@ def move_to_tungsten_position():
         return np.nan
 
 
-def move_to_laser_position():
+def move_to_laser_position() -> float:
     """
     Move calibration unit to the position where the laser lamp is
 
@@ -47,7 +50,7 @@ def move_to_laser_position():
 
     new_position = move(config.Laser.position)
 
-    if abs(new_position - config.Laser.position) < 0.1:
+    if math.isclose(new_position, config.Laser.position, abs_tol=0.1):
         return new_position
     else:
         logger.error(
@@ -57,8 +60,8 @@ def move_to_laser_position():
         return np.nan
 
 
-def move(position, velocity=config.CalibUnit.velocity, blocking=True,
-         beck=None):
+def move(position: float, velocity: float = config.CalibUnit.velocity,
+         blocking: bool = True, beck: Client = None) -> float:
     """
     Move the calibration unit to position
     """
@@ -93,20 +96,20 @@ def move(position, velocity=config.CalibUnit.velocity, blocking=True,
 
 
 @core.beckhoff_autoconnect
-def stop(beck=None):
+def stop(beck: Client = None) -> None:
     logger.info('calibunit', f'Stopping calibration unit')
     core.motor_send_stop(config.PLC.Node.CALIB_UNIT, beck=beck)
 
 
 @core.beckhoff_autoconnect
-def wait_move(beck=None):
+def wait_move(beck: Client = None) -> int:
     core.wait_loop(f'Waiting for calibration unit movement',
                    lambda: is_moving(beck=beck), 5)
 
     return 0
 
 
-def get_position(beck=None):
+def get_position(beck: Client = None) -> float:
     position = core.motor_get_position(config.PLC.Node.CALIB_UNIT, beck=beck)
 
     if np.isnan(position):
@@ -117,12 +120,12 @@ def get_position(beck=None):
     return position
 
 
-def is_moving(beck=None):
+def is_moving(beck: Client = None) -> bool:
     return core.motor_is_moving(config.PLC.Node.CALIB_UNIT, beck=beck)
 
 
 @core.beckhoff_autoconnect
-def init(force_init=True, beck=None):
+def init(force_init: bool = True, beck: Client = None) -> ReturnCode:
     '''
     Initialise the calibration unit.
     '''
@@ -143,5 +146,5 @@ def init(force_init=True, beck=None):
     return ret_init
 
 
-def get_state(beck=None):
+def get_state(beck: Client = None) -> PLCStatus:
     return core.motor_get_status(config.PLC.Node.CALIB_UNIT, beck=beck)

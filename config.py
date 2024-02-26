@@ -26,6 +26,7 @@ import numpy as np
 from numpy.polynomial import Polynomial
 
 from kalao.utils import ktools
+from kalao.utils.rprint import rprint
 
 from kalao.definitions.enums import ObservationType, PLCStatus
 
@@ -93,12 +94,17 @@ class AO:
     TTM_loop_number = 2
 
     # How long to wait after starting AO
-    settling_time = 2
+    loop_stabilization_time = 2  # s
+
+    flux_stabilization_timeout = 10  # s
+    flux_stabilization_time = 1.5  # s
 
     wait_fps_run = 3  # s
 
     shwfs_algorithms = ['Quad-cell', 'Center of mass']
     bmc_stroke_modes = ['Mid-stroke', 'Minimize stroke']
+
+    flux_avg = 10  # frames
 
 
 class DM:
@@ -499,10 +505,10 @@ class Focusing:
 class Exposure:
     class Star:
         # TODO: to be refined
-        mag_ref = 5  # visual magnitude
-        exptime_ref = 1  # s
+        mag_ref = 5.  # visual magnitude
+        exptime_ref = 1.  # s
         adu_ref = 32768  # ADU
-        fwhm_ref = 1  # arcsec
+        fwhm_ref = 1.  # arcsec
 
         # For finding optimal exposure time and filter for focusing and centering
         min_adu = 2048  # ADU
@@ -720,6 +726,7 @@ class FPS:
     BMC = 'bmc_display-1'
     DMLOOP = 'mfilt-1'
     TTMLOOP = 'mfilt-2'
+    CONFIG = 'kalao_config-1'
 
 
 class Streams:
@@ -760,7 +767,7 @@ if WFS.spots_file.exists():
     WFS.all_subaps, WFS.active_subaps, WFS.masked_subaps = ktools.read_spots_file(
         WFS.spots_file)
 else:
-    print(
+    rprint(
         f'CONFIG | [WARNING] {WFS.spots_file} does not exists, using default value in config (may not be up-to-date)'
     )
 
@@ -768,6 +775,6 @@ if WFS.autogain_file.exists():
     WFS.autogain_params = ktools.read_autogain_file(WFS.autogain_file)
     WFS.max_autogain_setting = len(WFS.autogain_params) - 1
 else:
-    print(
+    rprint(
         f'CONFIG | [WARNING] {WFS.autogain_file} does not exists, using default value in config (may not be up-to-date)'
     )

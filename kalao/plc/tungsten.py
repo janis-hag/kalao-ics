@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from kalao import database, logger
 from kalao.plc import core
 
-from opcua import ua
+from opcua import Client, ua
 
 from kalao.definitions.enums import IntEnum, ReturnCode, TungstenState
 
@@ -29,7 +29,7 @@ class TungstenCommand(IntEnum):
     ON = 3
 
 
-def on(beck=None):
+def on(beck: Client = None) -> TungstenState:
     """
     Turn off tungsten lamp
 
@@ -37,10 +37,10 @@ def on(beck=None):
     :return: status of the lamp
     """
 
-    return send_command(TungstenCommand.ON, beck=beck)
+    return _switch(TungstenCommand.ON, beck=beck)
 
 
-def off(beck=None):
+def off(beck: Client = None) -> TungstenState:
     """
     Turn off tungsten lamp
 
@@ -48,11 +48,12 @@ def off(beck=None):
     :return: status of the lamp
     """
 
-    return send_command(TungstenCommand.OFF, beck=beck)
+    return _switch(TungstenCommand.OFF, beck=beck)
 
 
 @core.beckhoff_autoconnect
-def send_command(nCommand_value, beck=None):
+def _switch(nCommand_value: TungstenCommand | TungstenState,
+            beck: Client = None) -> TungstenState:
     """
     Send a command to the tungsten lamp
 
@@ -98,7 +99,7 @@ def send_command(nCommand_value, beck=None):
 
 
 @core.beckhoff_autoconnect
-def init(beck=None):
+def init(beck: Client = None) -> ReturnCode:
     """
     Initialise the calibration unit.
 
@@ -110,7 +111,7 @@ def init(beck=None):
     # Check if init, if not do init
     if not beck.get_node(
             f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():
-        send_command(TungstenCommand.INIT, beck=beck)
+        _switch(TungstenCommand.INIT, beck=beck)
 
         time.sleep(config.PLC.init_poll_interval)
         while (beck.get_node(f'{config.PLC.Node.TUNGSTEN}.stat.sStatus').
@@ -127,7 +128,7 @@ def init(beck=None):
 
 
 @core.beckhoff_autoconnect
-def get_state(beck=None):
+def get_state(beck: Client = None) -> TungstenState:
     """
     Get the current state of the tungsten lamp.
     """
@@ -158,7 +159,7 @@ def get_state(beck=None):
             return TungstenState.ERROR
 
 
-def get_switch_time():
+def get_switch_time() -> tuple[str, float]:
     """
     Looks up the time when the tungsten lamp as last been put into current state (ON/OFF/ERROR)
 
@@ -166,7 +167,7 @@ def get_switch_time():
     """
 
     data = database.get_time_since_state('monitoring', 'tungsten_state', '==',
-                                         get_state().value)
+                                         get_state())
 
     if data.get('since') is None:
         return data['current']['value'], 0

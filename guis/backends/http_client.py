@@ -7,6 +7,8 @@ from PySide6.QtCore import QByteArray, QEventLoop, QUrl
 from PySide6.QtNetwork import (QNetworkAccessManager, QNetworkReply,
                                QNetworkRequest)
 
+from kalao.utils.rprint import rprint
+
 from guis.backends.abstract import AbstractBackend, name_to_url
 from guis.utils.json_coder import KalAOJSONDecoder, KalAOJSONEncoder
 
@@ -47,7 +49,7 @@ class MainBackend(AbstractBackend):
         loop.exec()
 
         if reply.error() != QNetworkReply.NoError:
-            print(f'[ERROR] {reply.errorString()}.')
+            rprint(f'[ERROR] {reply.errorString()}.')
             return None
 
         try:
@@ -59,9 +61,9 @@ class MainBackend(AbstractBackend):
                 ret = self.decoder.decode(data.data().decode("utf-8"))
             else:
                 raise Exception(f'Unsupported MIME type {reply_type}')
-        except Exception:
-            print(f'[ERROR] An error occurred during data loading of {url}.')
-            traceback.print_exc()
+        except Exception as e:
+            rprint(f'[ERROR] An error occurred during data loading of {url}.')
+            rprint(''.join(traceback.format_exception(e)))
             return None
 
         signal = path.removeprefix('set_').removeprefix('get_')
