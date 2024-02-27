@@ -368,7 +368,7 @@ class MainBackend(SHMFPSBackend):
     def latency_measure(self, *, conf, loop):
         data = {}
 
-        ready_data = self.set_calibration_ready(conf=conf, loop=loop)
+        ready_data = self.calibration_ready(conf=conf, loop=loop)
         if not ready_data['ready']:
             return {
                 'returncode':
@@ -436,7 +436,7 @@ class MainBackend(SHMFPSBackend):
     def RMCM_takeref(self, *, conf, loop):
         data = {}
 
-        ready_data = self.set_calibration_ready(conf=conf, loop=loop)
+        ready_data = self.calibration_ready(conf=conf, loop=loop)
         if not ready_data['ready']:
             return {
                 'returncode':
@@ -457,7 +457,7 @@ class MainBackend(SHMFPSBackend):
     def RMCM_acqlinResp(self, *, conf, loop):
         data = {}
 
-        ready_data = self.set_calibration_ready(conf=conf, loop=loop)
+        ready_data = self.calibration_ready(conf=conf, loop=loop)
         if not ready_data['ready']:
             return {
                 'returncode':
@@ -556,38 +556,38 @@ class MainBackend(SHMFPSBackend):
 
     # DM Loop
 
-    def dmloop_on(self, *, state):
+    def loops_dm_on(self, *, state):
         aocontrol.switch_loop(config.AO.DM_loop_number, state,
                               with_autogain=False, autozero=False)
 
-    def dmloop_gain(selfself, gain):
+    def loops_dm_gain(self, *, gain):
         aocontrol.set_dmloop_gain(gain)
 
-    def dmloop_mult(selfself, mult):
+    def loops_dm_mult(self, *, mult):
         aocontrol.set_dmloop_mult(mult)
 
-    def dmloop_limit(selfself, limit):
+    def loops_dm_limit(self, *, limit):
         aocontrol.set_dmloop_limit(limit)
 
-    def dmloop_zero(self):
+    def loops_dm_zero(self):
         aocontrol.dmloop_zero()
 
     # TTM Loop
 
-    def ttmloop_on(self, *, state):
+    def loops_ttm_on(self, *, state):
         aocontrol.switch_loop(config.AO.TTM_loop_number, state,
                               with_autogain=False, autozero=False)
 
-    def ttmloop_gain(selfself, gain):
+    def loops_ttm_gain(self, *, gain):
         aocontrol.set_ttmloop_gain(gain)
 
-    def ttmloop_mult(selfself, mult):
+    def loops_ttm_mult(self, *, mult):
         aocontrol.set_ttmloop_mult(mult)
 
-    def ttmloop_limit(selfself, limit):
+    def loops_ttm_limit(self, *, limit):
         aocontrol.set_ttmloop_limit(limit)
 
-    def ttmloop_zero(self):
+    def loops_ttm_zero(self):
         aocontrol.ttmloop_zero()
 
     # Wavefront Sensor
@@ -625,7 +625,7 @@ class MainBackend(SHMFPSBackend):
 
     # Modal gains
 
-    def modalgains(self, *, modalgains):
+    def loops_dm_modalgains(self, *, modalgains):
         aocontrol.set_modalgains(modalgains)
 
     ##### Engineering

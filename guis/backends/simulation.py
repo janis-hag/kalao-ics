@@ -858,40 +858,40 @@ class MainBackend(FakeSHMFPSBackend):
 
     # DM Loop
 
-    def dmloop_on(self, *, state):
+    def loops_dm_on(self, *, state):
         self.internal_state['dm-loopON'] = state
         rprint(f'Set DM loop to {state} (virtually)')
 
-    def dmloop_gain(self, *, gain):
+    def loops_dm_gain(self, *, gain):
         self.internal_state['dm-loopgain'] = gain
         rprint(f'Set DM gain to {gain} (virtually)')
 
-    def dmloop_mult(self, *, mult):
+    def loops_dm_mult(self, *, mult):
         rprint(f'Set DM mult to {mult} (virtually)')
 
-    def dmloop_limit(self, *, limit):
+    def loops_dm_limit(self, *, limit):
         rprint(f'Set DM limit to {limit} (virtually)')
 
-    def dmloop_zero(self):
+    def loops_dm_zero(self):
         rprint(f'DM loop zeroed (virtually)')
 
     # TTM Loop
 
-    def ttmloop_on(self, *, state):
+    def loops_ttm_on(self, *, state):
         self.internal_state['ttm-loopON'] = state
         rprint(f'Set TTM loop to {state} (virtually)')
 
-    def ttmloop_gain(self, *, gain):
+    def loops_ttm_gain(self, *, gain):
         self.internal_state['ttm-loopgain'] = gain
         rprint(f'Set TTM gain to {gain} (virtually)')
 
-    def ttmloop_mult(self, *, mult):
+    def loops_ttm_mult(self, *, mult):
         rprint(f'Set TTM mult to {mult} (virtually)')
 
-    def ttmloop_limit(self, *, limit):
+    def loops_ttm_limit(self, *, limit):
         rprint(f'Set TTM limit to {limit} (virtually)')
 
-    def ttmloop_zero(self):
+    def loops_ttm_zero(self):
         rprint(f'TTM loop zeroed (virtually)')
 
     # Wavefront Sensor
@@ -951,7 +951,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     # Modal gains
 
-    def modalgains(self, *, modalgains):
+    def loops_dm_modalgains(self, *, modalgains):
         self.internal_state[config.Streams.MODALGAINS] = modalgains
         rprint(f'Set Modal Gains to {modalgains} (virtually)')
 

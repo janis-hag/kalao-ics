@@ -87,6 +87,8 @@ if __name__ == '__main__':
     else:
         import guis.backends.local as backends
 
+    errors = 0
+
     for key, item in sorted(backends.MainBackend.__dict__.items()):
         if callable(item) and not key.startswith('_'):
             fun = partial(serve, item)
@@ -94,7 +96,17 @@ if __name__ == '__main__':
 
             url = name_to_url(key)
 
-            if len(inspect.getfullargspec(item).kwonlyargs) == 0:
+            sig = inspect.signature(item)
+
+            for i, param in enumerate(sig.parameters.values()):
+                if i == 0 and param.name == 'self':
+                    continue
+
+                if param.kind != inspect.Parameter.KEYWORD_ONLY:
+                    rprint(f'[ERROR] Parameter {param.name} of function {key} is not keyword-only')
+                    errors += 1
+
+            if len(sig.parameters) == 1:
                 methods = ['GET']
             else:
                 methods = ['POST']
@@ -104,6 +116,10 @@ if __name__ == '__main__':
             if args.debug:
                 rprint(
                     f'Created route {url} with method(s) {", ".join(methods)}')
+
+    if errors != 0:
+        rprint(f'[ERROR] {errors} errors found')
+        exit()
 
     global backend
     backend = backends.MainBackend()
