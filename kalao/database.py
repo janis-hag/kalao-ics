@@ -320,6 +320,10 @@ def store(collection_name: str, data: dict[str, Any]) -> ReturnCode:
             data[key] = data[key].value
         elif isinstance(data[key], Path):
             data[key] = str(data[key])
+        elif isinstance(data[key], np.int64):
+            data[key] = int(data[key])
+        elif isinstance(data[key], np.float64):
+            data[key] = float(data[key])
 
         # yapf: disable
         update_list.append(UpdateOne(

@@ -30,8 +30,9 @@ class MainWidget(KWidget, BackendDataMixin):
         self.logo_label.load(str(Logo.svg))
         self.logo_label.renderer().setAspectRatioMode(Qt.KeepAspectRatio)
 
-        self.fli_remaining_time_lineedit.updateText(remaining_time=np.nan)
         self.fli_exposure_time_lineedit.updateText(exposure_time=np.nan)
+        self.fli_remaining_time_lineedit.updateText(remaining_time=np.nan)
+        self.fli_remaining_frames_lineedit.updateText(remaining_frames=np.nan)
         self.fli_ccd_temperature_lineedit.updateText(ccd_temperature=np.nan)
         self.nuvu_emgain_lineedit.updateText(emgain=np.nan)
         self.nuvu_exposuretime_lineedit.updateText(exposuretime=np.nan)
@@ -109,18 +110,23 @@ class MainWidget(KWidget, BackendDataMixin):
 
         remaining_time = self.consume_dict(data, 'fli', 'remaining_time')
         if remaining_time is not None:
-            if remaining_time > 0:
-                self.fli_exposure_indicator.setStatus(Color.GREEN,
-                                                      remaining_time)
-            elif remaining_time == 0:
-                self.fli_exposure_indicator.setStatus(Color.BLACK,
-                                                      remaining_time)
-            else:
-                self.fli_exposure_indicator.setStatus(Color.RED,
-                                                      remaining_time)
-
             self.fli_remaining_time_lineedit.updateText(
                 remaining_time=remaining_time)
+
+        remaining_frames = self.consume_dict(data, 'fli', 'remaining_frames')
+        if remaining_frames is not None:
+            self.fli_remaining_frames_lineedit.updateText(
+                remaining_frames=remaining_frames)
+
+            if remaining_frames > 0:
+                self.fli_exposure_indicator.setStatus(Color.GREEN,
+                                                      remaining_frames)
+            elif remaining_frames == 0:
+                self.fli_exposure_indicator.setStatus(Color.BLACK,
+                                                      remaining_frames)
+            else:
+                self.fli_exposure_indicator.setStatus(Color.RED,
+                                                      remaining_frames)
 
         ccd = self.consume_dict(data, 'fli', 'ccd')
         if ccd is not None:

@@ -92,7 +92,9 @@ def _switch(nCommand_value: TungstenCommand | TungstenState,
             ua.Variant(True,
                        tungsten_bExecute.get_data_type_as_variant_type())))
 
-    if nCommand_value == TungstenCommand.ON and previous_state != nCommand_value:
+    if (nCommand_value == TungstenCommand.ON and previous_state
+            != TungstenState.ON) or (nCommand_value == TungstenCommand.OFF and
+                                     previous_state != TungstenState.OFF):
         time.sleep(config.Tungsten.switch_wait)
 
     return get_state(beck=beck)

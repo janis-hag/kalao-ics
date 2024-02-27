@@ -184,7 +184,9 @@ def _switch(action_name: LaserCommand | LaserState,
         ua.DataValue(
             ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
 
-    if action_name == LaserCommand.ENABLE and previous_state != LaserState.ON:
+    if (action_name == LaserCommand.ENABLE and previous_state
+            != LaserState.ON) or (action_name == LaserCommand.DISABLE and
+                                  previous_state != LaserState.OFF):
         time.sleep(config.Laser.switch_wait)
 
     return get_state(beck=beck)

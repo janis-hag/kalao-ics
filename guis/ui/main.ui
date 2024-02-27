@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1136</width>
+    <width>1297</width>
     <height>889</height>
    </rect>
   </property>
@@ -243,6 +243,54 @@
         <string>Science Camera</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_9">
+        <item row="1" column="1">
+         <widget class="KLineEdit" name="fli_exposure_time_lineedit">
+          <property name="text">
+           <string>{exposure_time:.3f} s</string>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="KStatusIndicator" name="fli_exposure_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>30</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>30</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="fli_exposure_label">
+          <property name="minimumSize">
+           <size>
+            <width>120</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Exposure</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="fli_exposure_time_label">
           <property name="minimumSize">
@@ -285,55 +333,17 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="KStatusIndicator" name="fli_exposure_indicator">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>30</width>
-            <height>30</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>30</width>
-            <height>30</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="fli_exposure_label">
-          <property name="minimumSize">
-           <size>
-            <width>120</width>
-            <height>0</height>
-           </size>
-          </property>
+        <item row="4" column="1">
+         <widget class="KLineEdit" name="fli_ccd_temperature_lineedit">
           <property name="text">
-           <string>Exposure</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="KLineEdit" name="fli_exposure_time_lineedit">
-          <property name="text">
-           <string>{exposure_time:.3f} s</string>
+           <string>{ccd_temperature:.1f} °C</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item row="4" column="0">
          <widget class="QLabel" name="fli_ccd_temperature_label">
           <property name="minimumSize">
            <size>
@@ -349,10 +359,26 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
-         <widget class="KLineEdit" name="fli_ccd_temperature_lineedit">
+        <item row="3" column="0">
+         <widget class="QLabel" name="fli_remaining_frames_label">
+          <property name="minimumSize">
+           <size>
+            <width>120</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="text">
-           <string>{ccd_temperature:.1f} °C</string>
+           <string>Frames remaining</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="KLineEdit" name="fli_remaining_frames_lineedit">
+          <property name="text">
+           <string>{remaining_frames:d} frames</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>

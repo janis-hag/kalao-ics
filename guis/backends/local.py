@@ -313,7 +313,7 @@ class MainBackend(SHMFPSBackend):
 
         return {'ready': True}
 
-    def get_calibration_data(self, *, conf, loop):
+    def set_calibration_data(self, *, conf, loop):
         data = {}
 
         self._update_fits(

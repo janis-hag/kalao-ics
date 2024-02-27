@@ -28,8 +28,6 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     stroke_effective = np.nan
     saturation = np.nan
 
-    #TODO: modify image_info with stroke_max?
-
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 

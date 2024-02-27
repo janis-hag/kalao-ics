@@ -28,7 +28,7 @@ def status() -> dict[str, Any]:
         '--format=csv,nounits'
     ], capture_output=True).stdout.decode()
 
-    status_frame = pd.read_csv(io.StringIO(out_str))
+    status_frame = pd.read_csv(io.StringIO(out_str), skipinitialspace=True)
 
     status_dict = {}
 

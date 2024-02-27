@@ -709,7 +709,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return df
 
-    def get_calibration_data(self, *, conf, loop):
+    def set_calibration_data(self, *, conf, loop):
         if loop == 1:
             return {
                 'wfsref': {
@@ -1217,9 +1217,9 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### DM & TTM control
 
-    def set_dm_pattern(self, *, array):
-        self.internal_state[config.Streams.DM_USER_CONTROLLED] = array
-        rprint(f'Set DM to {array} (virtually)')
+    def set_dm_pattern(self, *, pattern):
+        self.internal_state[config.Streams.DM_USER_CONTROLLED] = pattern
+        rprint(f'Set DM to {pattern} (virtually)')
 
     def set_ttm_position(self, *, array):
         self.internal_state[config.Streams.TTM_USER_CONTROLLED] = array

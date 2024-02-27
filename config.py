@@ -143,7 +143,7 @@ class FLI:
     median_bias = 1007  # ADU
 
     dummy_camera = False
-    dummy_image_path = "/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits"
+    dummy_image_path = '/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits'
 
     laser_calib_power = 0.35  # mW
     laser_calib_exptime = 0.01  # s
@@ -284,12 +284,12 @@ class Tungsten:
     stabilisation_poll_interval = 5  # s
 
     flat_exptime_list = {
-        "clear": 300,  # s
-        "g": 360,  # s
-        "r": 480,  # s
-        "i": 420,  # s
-        "z": 420,  # s
-        "nd": 300,  # s
+        'clear': 300,  # s
+        'g': 360,  # s
+        'r': 480,  # s
+        'i': 420,  # s
+        'z': 420,  # s
+        'nd': 300,  # s
     }
 
 
@@ -335,7 +335,7 @@ class PLC:
 
 
 class SEQ:
-    ip = "127.0.0.1"
+    ip = '127.0.0.1'
     port = 5005
     gop_arg_int = ['nbframes']
     gop_arg_float = ['texp', 'intensity', 'mv']
@@ -370,7 +370,7 @@ class FITS:
 
     file_mask = 0o440
 
-    fits_default_header_file = kalao_ics_path / "definitions/fits_default_header.yaml"
+    fits_default_header_file = kalao_ics_path / 'definitions/fits_default_header.yaml'
     tcs_header_validity = 8 * 3600  # s
 
     max_comment_length = 40
@@ -533,12 +533,12 @@ class Calib:
     class Flats:
         # yapf: disable
         default_flat_list = [
-                "g", "g", "g", "g", "g",
-                "r", "r", "r", "r", "r",
-                "i", "i", "i", "i", "i",
-                "z", "z", "z", "z", "z",
-                "clear", "clear", "clear", "clear", "clear",
-                "nd", "nd", "nd", "nd", "nd"
+                'g', 'g', 'g', 'g', 'g',
+                'r', 'r', 'r', 'r', 'r',
+                'i', 'i', 'i', 'i', 'i',
+                'z', 'z', 'z', 'z', 'z',
+                'clear', 'clear', 'clear', 'clear', 'clear',
+                'nd', 'nd', 'nd', 'nd', 'nd'
         ]
         # yapf: enable
 
@@ -643,7 +643,7 @@ class ETCS:
     ip = '10.10.132.102'
     port = 10002
     token = 'ETCS_API_TOKEN_2023'
-    request_timeout = 120
+    request_timeout = 120  # s
 
     temperature_file = '/gls/data/services/CURRENT/temperature_telescope.rdb'
     max_age = 120
@@ -715,7 +715,8 @@ class GUI:
     refreshrate_dbs = 1 / min(Database.monitoring_update_interval,
                               Database.telemetry_update_interval)  # /s
 
-    http_host = 'kalaortc01'
+    # http_host = '10.10.132.120'  # kalaortc01
+    http_host = '127.0.0.1'  # localhost
     http_port = 6666
     http_dataformat = 'application/octet-stream'
 

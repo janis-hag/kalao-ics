@@ -8,6 +8,8 @@ from PySide6.QtGui import Qt
 from PySide6.QtWidgets import (QFileDialog, QLabel, QLineEdit, QMessageBox,
                                QPushButton)
 
+from kalao.plc import adc
+
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendActionMixin, BackendDataMixin
 from guis.utils.ui_loader import loadUi
@@ -36,6 +38,9 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     dm_direct_control = None
     ttm_direct_control = None
     focus_window = None
+
+    adc1_angle = np.nan
+    adc2_angle = np.nan
 
     def __init__(self, backend, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -267,6 +272,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             with QSignalBlocker(self.adc1_spinbox):
                 self.adc1_spinbox.setValue(adc1_angle)
 
+            self.adc1_angle = adc1_angle
+
         adc1_state = self.consume_dict(data, 'plc', 'adc1_state')
         if adc1_state is not None:
             if adc1_state == PLCStatus.STANDING:
@@ -288,6 +295,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             with QSignalBlocker(self.adc2_spinbox):
                 self.adc2_spinbox.setValue(adc2_angle)
 
+            self.adc2_angle = adc2_angle
+
         adc2_state = self.consume_dict(data, 'plc', 'adc2_state')
         if adc2_state is not None:
             if adc2_state == PLCStatus.STANDING:
@@ -303,6 +312,16 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.adc2_spinbox.setEnabled(False)
             else:
                 self.adc2_spinbox.setEnabled(True)
+
+        if adc1_angle is not None or adc2_angle is not None:
+            adc_angle, adc_offset = adc.compute_angle_and_offset(
+                self.adc1_angle, self.adc2_angle)
+
+            with QSignalBlocker(self.adc_angle_spinbox):
+                self.adc_angle_spinbox.setValue(adc_angle)
+
+            with QSignalBlocker(self.adc_angle_spinbox):
+                self.adc_offset_spinbox.setValue(adc_offset)
 
         pump_status = self.consume_dict(data, 'plc', 'pump_status')
         if pump_status is not None:

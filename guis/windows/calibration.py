@@ -190,8 +190,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_refresh_button_clicked(self, checked):
         self.modes_data = self.action_send(self.refresh_button,
-                                           self.backend.get_calibration_data,
-                                           self.conf, self.loop)
+                                           self.backend.set_calibration_data,
+                                           conf=self.conf, loop=self.loop)
 
         self.update_modes_stats()
         self.update_calib_images()

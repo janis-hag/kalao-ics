@@ -10,7 +10,6 @@ adc.py is part of the KalAO Instrument Control Software
 """
 
 import time
-from enum import IntEnum
 
 import numpy as np
 from scipy.optimize import minimize_scalar
@@ -94,17 +93,17 @@ def set_zero_disp(beck: Client = None) -> float:
     return set_angle(ADCCommand.ZERO_DISP, beck=beck)
 
 
-def set_angle(angle: float, blocking: bool = True,
+def set_angle(angle: float, offset: float = 0., blocking: bool = True,
               beck: Client = None) -> float:
     logger.info('adc', f'Setting angle between ADC prisms to {angle}°')
 
     database.store('obs', {'adc_angle': angle})
 
     # Motors are face to face, offset by same angle so they are counter-rotating
-    rotate(config.PLC.Node.ADC1, config.ADC.max_disp_angle_1 + angle/2,
-           blocking=False, beck=beck)
-    rotate(config.PLC.Node.ADC2, config.ADC.max_disp_angle_2 + angle/2,
-           blocking=False, beck=beck)
+    rotate(config.PLC.Node.ADC1, config.ADC.max_disp_angle_1 + angle/2 +
+           offset, blocking=False, beck=beck)
+    rotate(config.PLC.Node.ADC2, config.ADC.max_disp_angle_2 + angle/2 -
+           offset, blocking=False, beck=beck)
 
     if blocking:
         time.sleep(2)
@@ -122,6 +121,17 @@ def get_angle() -> float:
         return np.inf
     else:
         return angle
+
+
+def compute_angle_and_offset(angle_adc1: float,
+                             angle_adc2: float) -> tuple[float, float]:
+    angle1 = angle_adc1 - config.ADC.max_disp_angle_1
+    angle2 = angle_adc2 - config.ADC.max_disp_angle_2
+
+    angle = angle1 + angle2
+    offset = (angle1-angle2) / 2
+
+    return angle, offset
 
 
 def rotate(node: str, position: float, velocity: float = config.ADC.velocity,
