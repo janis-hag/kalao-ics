@@ -140,7 +140,7 @@ class MainBackend(SHMFPSBackend):
 
     @emit('streams_all_updated')
     @timeit
-    def get_streams_all(self):
+    def streams_all(self):
         data = {}
 
         self._update_stream(data, config.Streams.DM)
@@ -163,7 +163,7 @@ class MainBackend(SHMFPSBackend):
 
     @emit('fli_image_updated')
     @timeit
-    def get_fli_image(self):
+    def fli_image(self):
         data = {}
 
         self._update_fits_full(data, config.FITS.last_image_all)
@@ -172,7 +172,7 @@ class MainBackend(SHMFPSBackend):
 
     @emit('all_updated')
     @timeit
-    def get_all(self):
+    def all(self):
         data = {}
 
         self._update_fits_mtime(data, config.FITS.last_image_all)
@@ -222,7 +222,7 @@ class MainBackend(SHMFPSBackend):
 
     @emit('monitoringandtelemetry_updated')
     @timeit
-    def get_monitoringandtelemetry(self):
+    def monitoringandtelemetry(self):
         data = {}
 
         self._update_db(data, 'monitoring',
@@ -241,7 +241,7 @@ class MainBackend(SHMFPSBackend):
 
     @emit('streams_channels_dm_updated')
     @timeit
-    def get_streams_channels_dm(self):
+    def streams_channels_dm(self):
         data = {}
 
         self._update_stream(data, config.Streams.DM)
@@ -253,7 +253,7 @@ class MainBackend(SHMFPSBackend):
 
     @emit('streams_channels_ttm_updated')
     @timeit
-    def get_streams_channels_ttm(self):
+    def streams_channels_ttm(self):
         data = {}
 
         self._update_stream(data, config.Streams.TTM)
@@ -265,15 +265,15 @@ class MainBackend(SHMFPSBackend):
 
     @emit('focus_sequence_updated')
     @timeit
-    def get_focus_sequence(self):
+    def focus_sequence(self):
         data = {}
 
         self._update_fits_full(data, config.FITS.last_focus_sequence)
 
         return data
 
-    def set_plots_data(self, *, since, until, monitoring_keys, telemetry_keys,
-                       obs_keys):
+    def plots_data(self, *, since, until, monitoring_keys, telemetry_keys,
+                   obs_keys):
 
         data = {}
 
@@ -291,7 +291,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def get_calibration_ready(self, *, conf, loop):
+    def calibration_ready(self, *, conf, loop):
         if not aocontrol.acquisition_running():
             return {'ready': False, 'reason': 'WFS acquisition is not running'}
 
@@ -313,7 +313,7 @@ class MainBackend(SHMFPSBackend):
 
         return {'ready': True}
 
-    def set_calibration_data(self, *, conf, loop):
+    def calibration_data(self, *, conf, loop):
         data = {}
 
         self._update_fits(
@@ -352,7 +352,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_calibration_reload(self, *, conf, loop):
+    def calibration_reload(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/apply-calib-saved.sh'
@@ -365,10 +365,10 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_latency_measure(self, *, conf, loop):
+    def latency_measure(self, *, conf, loop):
         data = {}
 
-        ready_data = self.get_calibration_ready(conf, loop)
+        ready_data = self.set_calibration_ready(conf=conf, loop=loop)
         if not ready_data['ready']:
             return {
                 'returncode':
@@ -397,7 +397,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_RMCM_prepare(self, *, conf, loop):
+    def RMCM_prepare(self, *, conf, loop):
         if conf == 'dmloop':
             if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
                 return {'returncode': -1, 'stdout': 'Failed to open loops'}
@@ -421,7 +421,7 @@ class MainBackend(SHMFPSBackend):
 
         return {'returncode': 0, 'stdout': 'Success!'}
 
-    def set_RMCM_mkDMpokemodes(self, *, conf, loop):
+    def RMCM_mkDMpokemodes(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/01-mkDMpokemodes.sh'
@@ -433,10 +433,10 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_RMCM_takeref(self, *, conf, loop):
+    def RMCM_takeref(self, *, conf, loop):
         data = {}
 
-        ready_data = self.get_calibration_ready(conf, loop)
+        ready_data = self.set_calibration_ready(conf=conf, loop=loop)
         if not ready_data['ready']:
             return {
                 'returncode':
@@ -454,10 +454,10 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_RMCM_acqlinResp(self, *, conf, loop):
+    def RMCM_acqlinResp(self, *, conf, loop):
         data = {}
 
-        ready_data = self.get_calibration_ready(conf, loop)
+        ready_data = self.set_calibration_ready(conf=conf, loop=loop)
         if not ready_data['ready']:
             return {
                 'returncode':
@@ -475,7 +475,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_RMCM_RMHdecode(self, *, conf, loop):
+    def RMCM_RMHdecode(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/04-RMHdecode.sh'
@@ -491,7 +491,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_RMCM_RMmkmask(self, *, conf, loop):
+    def RMCM_RMmkmask(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/05-RMmkmask.sh'
@@ -503,7 +503,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_RMCM_compCM(self, *, conf, loop):
+    def RMCM_compCM(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/06-compCM.sh'
@@ -515,7 +515,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_RMCM_load(self, *, conf, loop):
+    def RMCM_load(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/apply-calib-rootdir.sh'
@@ -527,7 +527,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def set_RMCM_save(self, *, conf, loop, comment):
+    def RMCM_save(self, *, conf, loop, comment):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/save-calib.sh'
@@ -546,259 +546,259 @@ class MainBackend(SHMFPSBackend):
 
     ##### FLI Zoom
 
-    def set_centering_manual(self, *, x, y):
+    def centering_manual(self, *, x, y):
         centering.manual_centering(x, y)
 
-    def get_centering_validate(self):
+    def centering_validate(self):
         centering.validate_manual_centering()
 
     ##### Loop controls
 
     # DM Loop
 
-    def set_dmloop_on(self, *, state):
+    def dmloop_on(self, *, state):
         aocontrol.switch_loop(config.AO.DM_loop_number, state,
                               with_autogain=False, autozero=False)
 
-    def set_dmloop_gain(selfself, gain):
+    def dmloop_gain(selfself, gain):
         aocontrol.set_dmloop_gain(gain)
 
-    def set_dmloop_mult(selfself, mult):
+    def dmloop_mult(selfself, mult):
         aocontrol.set_dmloop_mult(mult)
 
-    def set_dmloop_limit(selfself, limit):
+    def dmloop_limit(selfself, limit):
         aocontrol.set_dmloop_limit(limit)
 
-    def get_dmloop_zero(self):
+    def dmloop_zero(self):
         aocontrol.dmloop_zero()
 
     # TTM Loop
 
-    def set_ttmloop_on(self, *, state):
+    def ttmloop_on(self, *, state):
         aocontrol.switch_loop(config.AO.TTM_loop_number, state,
                               with_autogain=False, autozero=False)
 
-    def set_ttmloop_gain(selfself, gain):
+    def ttmloop_gain(selfself, gain):
         aocontrol.set_ttmloop_gain(gain)
 
-    def set_ttmloop_mult(selfself, mult):
+    def ttmloop_mult(selfself, mult):
         aocontrol.set_ttmloop_mult(mult)
 
-    def set_ttmloop_limit(selfself, limit):
+    def ttmloop_limit(selfself, limit):
         aocontrol.set_ttmloop_limit(limit)
 
-    def get_ttmloop_zero(self):
+    def ttmloop_zero(self):
         aocontrol.ttmloop_zero()
 
     # Wavefront Sensor
 
-    def set_nuvu_emgain(self, *, emgain):
+    def nuvu_emgain(self, *, emgain):
         aocontrol.set_emgain(emgain)
 
-    def set_nuvu_exposuretime(self, *, exposuretime):
+    def nuvu_exposuretime(self, *, exposuretime):
         aocontrol.set_exptime(exposuretime)
 
-    def set_nuvu_autogain_on(self, *, state):
+    def nuvu_autogain_on(self, *, state):
         aocontrol.switch_autogain(state)
 
-    def set_nuvu_autogain_setting(self, *, setting):
+    def nuvu_autogain_setting(self, *, setting):
         aocontrol.set_autogain_setting(setting)
 
     # Deformable Mirror
 
-    def set_bmc_maxstroke(self, *, stroke):
+    def bmc_maxstroke(self, *, stroke):
         aocontrol.set_bmc_max_stroke(stroke)
 
-    def set_bmc_strokemode(self, *, mode):
+    def bmc_strokemode(self, *, mode):
         aocontrol.set_bmc_stroke_mode(mode)
 
-    def set_bmc_targetstroke(self, *, target):
+    def bmc_targetstroke(self, *, target):
         aocontrol.set_bmc_target_stroke(target)
 
     # Observation
 
-    def set_adc_update(self, *, state):
+    def adc_update(self, *, state):
         aocontrol._set_fps_value(config.FPS.CONFIG, 'adc_update', state)
 
-    def set_ttm_offload(self, *, state):
+    def ttm_offload(self, *, state):
         aocontrol._set_fps_value(config.FPS.CONFIG, 'ttm_offload', state)
 
     # Modal gains
 
-    def set_modalgains(self, *, modalgains):
+    def modalgains(self, *, modalgains):
         aocontrol.set_modalgains(modalgains)
 
     ##### Engineering
 
-    def set_plc_shutter_state(self, *, state):
+    def plc_shutter_state(self, *, state):
         shutter._switch(state)
 
-    def get_plc_shutter_init(self):
+    def plc_shutter_init(self):
         shutter.init()
 
-    def set_plc_flipmirror_position(self, *, position):
+    def plc_flipmirror_position(self, *, position):
         flipmirror._switch(position)
 
-    def get_plc_flipmirror_init(self):
+    def plc_flipmirror_init(self):
         flipmirror.init()
 
-    def set_plc_calibunit_position(self, *, position):
+    def plc_calibunit_position(self, *, position):
         calibunit.move(position)
 
-    def get_plc_calibunit_init(self):
+    def plc_calibunit_init(self):
         calibunit.init(force_init=True)
 
-    def get_plc_calibunit_stop(self):
+    def plc_calibunit_stop(self):
         calibunit.stop()
 
-    def get_plc_calibunit_laser(self):
+    def plc_calibunit_laser(self):
         calibunit.move_to_laser_position()
 
-    def get_plc_calibunit_tungsten(self):
+    def plc_calibunit_tungsten(self):
         calibunit.move_to_tungsten_position()
 
-    def set_plc_tungsten_state(self, *, state):
+    def plc_tungsten_state(self, *, state):
         if state:
             tungsten.on()
         else:
             tungsten.off()
 
-    def get_plc_tungsten_init(self):
+    def plc_tungsten_init(self):
         tungsten.init()
 
-    def set_plc_laser_state(self, *, state):
+    def plc_laser_state(self, *, state):
         if state:
             laser.enable()
         else:
             laser.disable()
 
-    def set_plc_laser_power(self, *, power):
+    def plc_laser_power(self, *, power):
         laser.set_power(power)
 
-    def get_plc_laser_init(self):
+    def plc_laser_init(self):
         laser.init()
 
-    def get_plc_lamps_off(self):
+    def plc_lamps_off(self):
         plc_utils.lamps_off()
 
-    def set_plc_filterwheel_filter(self, *, filter):
+    def plc_filterwheel_filter(self, *, filter):
         filterwheel.set_filter(filter)
 
-    def get_plc_filterwheel_init(self):
+    def plc_filterwheel_init(self):
         filterwheel.init()
 
-    def set_plc_adc_1_angle(self, *, position):
+    def plc_adc1_angle(self, *, position):
         adc.rotate(config.PLC.Node.ADC1, position)
 
-    def get_plc_adc1_init(self):
+    def plc_adc1_init(self):
         adc.init(config.PLC.Node.ADC1, force_init=True)
 
-    def get_plc_adc1_stop(self):
+    def plc_adc1_stop(self):
         adc.stop(config.PLC.Node.ADC1)
 
-    def set_plc_adc_2_angle(self, *, position):
+    def plc_adc2_angle(self, *, position):
         adc.rotate(config.PLC.Node.ADC2, position)
 
-    def get_plc_adc2_init(self):
+    def plc_adc2_init(self):
         adc.init(config.PLC.Node.ADC2, force_init=True)
 
-    def get_plc_adc2_stop(self):
+    def plc_adc2_stop(self):
         adc.stop(config.PLC.Node.ADC2)
 
-    def get_plc_adc_zerodisp(self):
+    def plc_adc_zerodisp(self):
         adc.set_zero_disp()
 
-    def get_plc_adc_maxdisp(self):
+    def plc_adc_maxdisp(self):
         adc.set_max_disp()
 
-    def set_plc_pump_state(self, *, state):
+    def plc_pump_state(self, *, state):
         if state:
             temperature_control.pump_on()
         else:
             temperature_control.pump_off()
 
-    def set_plc_fan_state(self, *, state):
+    def plc_fan_state(self, *, state):
         if state:
             temperature_control.fan_on()
         else:
             temperature_control.fan_off()
 
-    def set_plc_heater_state(self, *, state):
+    def plc_heater_state(self, *, state):
         if state:
             temperature_control.heater_on()
         else:
             temperature_control.heater_off()
 
-    def set_fli_take(self, *, exposure_time, frames, roi_size):
+    def fli_take(self, *, exposure_time, frames, roi_size):
         camera.take_image(ObservationType.ENGINEERING, exptime=exposure_time,
                           nbframes=frames, roi_size=roi_size)
 
-    def get_fli_cancel(self):
+    def fli_cancel(self):
         camera.cancel()
 
-    def get_nuvu_acquisition_start(self):
+    def nuvu_acquisition_start(self):
         aocontrol.start_wfs_acquisition()
 
-    def get_nuvu_acquisition_stop(self):
+    def nuvu_acquisition_stop(self):
         aocontrol.stop_wfs_acquisition()
 
-    def get_ippower_rtc_on(self):
+    def ippower_rtc_on(self):
         ippower.switch(config.IPPower.Port.RTC, IPPowerStatus.ON)
 
-    def get_ippower_rtc_off(self):
+    def ippower_rtc_off(self):
         ippower.switch(config.IPPower.Port.RTC, IPPowerStatus.OFF)
 
-    def get_ippower_bench_on(self):
+    def ippower_bench_on(self):
         ippower.switch(config.IPPower.Port.Bench, IPPowerStatus.ON)
 
-    def get_ippower_bench_off(self):
+    def ippower_bench_off(self):
         ippower.switch(config.IPPower.Port.Bench, IPPowerStatus.OFF)
 
-    def get_ippower_dm_on(self):
+    def ippower_dm_on(self):
         ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
 
-    def get_ippower_dm_off(self):
+    def ippower_dm_off(self):
         ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
 
-    def get_centering_laser(self):
+    def centering_laser(self):
         centering.center_on_laser()
 
-    def set_services_action(self, *, unit, action):
+    def services_action(self, *, unit, action):
         services.unit_control(unit, action)
 
     ##### DM channels
 
-    def set_channels_resetall(self, *, dm_number):
+    def channels_resetall(self, *, dm_number):
         aocontrol.reset_dm(dm_number)
 
-    def set_channels_reset(self, *, dm_number, channel):
+    def channels_reset(self, *, dm_number, channel):
         aocontrol.reset_channel(dm_number, channel)
 
     ##### DM & TTM control
 
-    def set_dm_pattern(self, *, pattern):
+    def dm_pattern(self, *, pattern):
         stream = toolbox.open_stream_once(config.Streams.DM_USER_CONTROLLED)
         if stream is not None:
             stream.set_data(pattern, True)
 
-    def set_ttm_position(self, *, tip, tilt):
+    def ttm_position(self, *, tip, tilt):
         stream = toolbox.open_stream_once(config.Streams.TTM_USER_CONTROLLED)
         if stream is not None:
             stream.set_data(np.array([tip, tilt]), True)
 
     ##### Focusing
 
-    def get_focus_autofocus(self):
+    def focus_autofocus(self):
         focusing.autofocus()
 
     ##### Logs
 
-    def get_logs_init(self):
+    def logs_init(self):
         return logs.seek(self.reader,
                          entries_number=config.GUI.logs_initial_entries)
 
-    def get_logs_new(self):
+    def logs_new(self):
         return logs.get_last_entries(self.reader)
 
-    def get_logs_between(self, *, since, until):
+    def logs_between(self, *, since, until):
         return logs.get_entries_between(since, until)

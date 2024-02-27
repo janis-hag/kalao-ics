@@ -106,7 +106,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
             j, k = ktools.get_actuator_2d(i)
             pattern[j, k] = spinbox.value()
 
-        self.action_send([], self.backend.set_dm_pattern, pattern=pattern)
+        self.action_send([], self.backend.dm_pattern, pattern=pattern)
 
     @Slot(bool)
     def on_reset_button_clicked(self, checked):
@@ -119,7 +119,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
 
         self.reset_all_sides_boxes()
 
-        self.action_send([], self.backend.set_dm_pattern, pattern=np.zeros(
+        self.action_send([], self.backend.dm_pattern, pattern=np.zeros(
             (12, 12)))
 
     @Slot(bool)
@@ -162,8 +162,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
                         return
 
                     self.set_spinboxes_to_pattern(img)
-                    self.action_send([], self.backend.set_dm_pattern,
-                                     pattern=img)
+                    self.action_send([], self.backend.dm_pattern, pattern=img)
 
                 elif filename.suffix.lower() == '.csv':
                     data = np.loadtxt(filename)
@@ -181,7 +180,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
                         pattern[j, k] = data[i]
 
                     self.set_spinboxes_to_pattern(pattern)
-                    self.action_send([], self.backend.set_dm_pattern,
+                    self.action_send([], self.backend.dm_pattern,
                                      pattern=pattern)
 
                 else:
@@ -256,7 +255,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
         pattern = np.ones((12, 12)) * value / 100
 
         self.set_spinboxes_to_pattern(pattern)
-        self.action_send([], self.backend.set_dm_pattern, pattern=pattern)
+        self.action_send([], self.backend.dm_pattern, pattern=pattern)
 
     def on_zernike_spinbox_valueChanged(self, d):
         self.compute_all()
@@ -309,7 +308,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
         pattern += self.compute_grating()
 
         self.set_spinboxes_to_pattern(pattern)
-        self.action_send([], self.backend.set_dm_pattern, pattern=pattern)
+        self.action_send([], self.backend.dm_pattern, pattern=pattern)
 
     def compute_zernike(self):
         coeffs = np.zeros(max(self.zernike_indices) + 1)

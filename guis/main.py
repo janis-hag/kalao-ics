@@ -76,19 +76,19 @@ if __name__ == '__main__':
 
     streams_timer = QTimer()
     streams_timer.setInterval(int(1000 / config.GUI.refreshrate_streams))
-    streams_timer.timeout.connect(backend.get_streams_all)
+    streams_timer.timeout.connect(backend.streams_all)
     # streams_timer.moveToThread(backend_thread)
 
     data_timer = QTimer()
     data_timer.setInterval(int(1000 / config.GUI.refreshrate_data))
-    data_timer.timeout.connect(backend.get_all)
+    data_timer.timeout.connect(backend.all)
     # data_timer.moveToThread(backend_thread)
 
     monitoringandtelemetry_timer = QTimer()
     monitoringandtelemetry_timer.setInterval(
         int(1000 / config.GUI.refreshrate_dbs))
     monitoringandtelemetry_timer.timeout.connect(
-        backend.get_monitoringandtelemetry)
+        backend.monitoringandtelemetry)
     # monitoringandtelemetry_timer.moveToThread(backend_thread)
 
     # Windows

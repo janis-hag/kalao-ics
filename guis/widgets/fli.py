@@ -100,7 +100,7 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     def all_updated(self, data):
         mtime = self.consume_fits_mtime(data, config.FITS.last_image_all)
         if mtime != None:
-            self.backend.get_fli_image()
+            self.backend.fli_image()
 
         centering_manual_v, centering_manual_t = self.consume_db(
             data, 'obs', 'centering_manual')

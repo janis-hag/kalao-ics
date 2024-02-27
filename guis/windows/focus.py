@@ -102,7 +102,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             self.focus_timer = QTimer(parent=self)
             self.focus_timer.setInterval(
                 int(1000 / config.GUI.refreshrate_focus))
-            self.focus_timer.timeout.connect(self.backend.get_focus_sequence)
+            self.focus_timer.timeout.connect(self.backend.focus_sequence)
             self.focus_timer.start()
         else:
             self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')

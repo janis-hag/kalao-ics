@@ -1,4 +1,5 @@
 import argparse
+import inspect
 import logging
 import pickle
 import traceback
@@ -86,21 +87,16 @@ if __name__ == '__main__':
     else:
         import guis.backends.local as backends
 
-    for key in sorted(dir(backends.MainBackend)):
-        item = getattr(backends.MainBackend, key)
-
-        if (key.startswith('get_') or
-                key.startswith('set_')) and callable(item):
+    for key, item in sorted(backends.MainBackend.__dict__.items()):
+        if callable(item) and not key.startswith('_'):
             fun = partial(serve, item)
             fun.__name__ = key
 
             url = name_to_url(key)
 
-            methods = ['GET', 'POST']
-
-            if key.startswith('get_'):
+            if len(inspect.getfullargspec(item).kwonlyargs) == 0:
                 methods = ['GET']
-            elif key.startswith('set_'):
+            else:
                 methods = ['POST']
 
             app.add_url_rule(url, view_func=fun, methods=methods)

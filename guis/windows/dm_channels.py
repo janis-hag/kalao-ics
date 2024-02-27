@@ -42,7 +42,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.backend.streams_channels_dm_updated.connect(
                 self.streams_channels_updated)
             self.channels_timer.timeout.connect(
-                self.backend.get_streams_channels_dm)
+                self.backend.streams_channels_dm)
         elif dm_number == config.AO.TTM_loop_number:
             self.associated_stream = config.Streams.TTM
             self.image_info = config.Images.dm02disp
@@ -59,7 +59,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.backend.streams_channels_ttm_updated.connect(
                 self.streams_channels_updated)
             self.channels_timer.timeout.connect(
-                self.backend.get_streams_channels_ttm)
+                self.backend.streams_channels_ttm)
         else:
             raise Exception(f'Unknown DM number {dm_number}')
 
@@ -125,14 +125,12 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                                         unit=self.data_unit)
 
     def on_reset_button_clicked(self, checked, i):
-        self.action_send(self.reset_buttons[i],
-                         self.backend.set_channels_reset,
+        self.action_send(self.reset_buttons[i], self.backend.channels_reset,
                          dm_number=self.dm_number, channel=i)
 
     @Slot(bool)
     def on_reset_all_button_clicked(self, checked):
-        self.action_send(self.reset_all_button,
-                         self.backend.set_channels_resetall,
+        self.action_send(self.reset_all_button, self.backend.channels_resetall,
                          dm_number=self.dm_number)
 
     def closeEvent(self, event):

@@ -20,7 +20,7 @@ class AlignmentBackend(FakeSHMFPSBackend):
 
     @emit('streams_all_updated')
     @timeit
-    def get_streams_all(self):
+    def streams_all(self):
         data_dm_down = zernike.generate_pattern([0], (12, 12))
         for act in self.alignment_window.actuators_to_poke:
             data_dm_down[ktools.get_actuator_2d(

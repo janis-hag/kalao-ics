@@ -38,9 +38,9 @@ class MainBackend(AbstractBackend):
         manager = QNetworkAccessManager()
         manager.finished.connect(loop.quit)
 
-        if path.startswith('get_'):
+        if len(kwargs) == 0:
             reply = manager.get(request)
-        elif path.startswith('set_'):
+        else:
             request.setHeader(QNetworkRequest.ContentTypeHeader,
                               'application/json')
             reply = manager.post(request,
@@ -66,8 +66,7 @@ class MainBackend(AbstractBackend):
             rprint(''.join(traceback.format_exception(e)))
             return None
 
-        signal = path.removeprefix('set_').removeprefix('get_')
-        signal = signal + '_updated'
+        signal = path + '_updated'
 
         if signal in self.__dict__:
             self.__dict__[signal].emit(ret)

@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     timer = QTimer()
     timer.setInterval(int(1000 / config.GUI.refreshrate_streams))
-    timer.timeout.connect(backend.get_streams_all)
+    timer.timeout.connect(backend.streams_all)
     timer.start()
 
     app.exec()

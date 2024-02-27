@@ -250,7 +250,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
         # Gather plots data
 
-        data = self.action_send(self.plot_button, self.backend.set_plots_data,
+        data = self.action_send(self.plot_button, self.backend.plots_data,
                                 since=since, until=until,
                                 monitoring_keys=monitoring_keys,
                                 telemetry_keys=telemetry_keys,

@@ -190,7 +190,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_refresh_button_clicked(self, checked):
         self.modes_data = self.action_send(self.refresh_button,
-                                           self.backend.set_calibration_data,
+                                           self.backend.calibration_data,
                                            conf=self.conf, loop=self.loop)
 
         self.update_modes_stats()
@@ -305,7 +305,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_reload_button_clicked(self, checked):
         data = self.action_send(self.reload_button,
-                                self.backend.set_calibration_reload,
+                                self.backend.calibration_reload,
                                 conf=self.conf, loop=self.loop)
 
         self.check_subprocess_error(data)
@@ -331,8 +331,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         # Take measurement
 
         data = self.action_send(self.latency_measure_button,
-                                self.backend.set_latency_measure,
-                                conf=self.conf, loop=self.loop)
+                                self.backend.latency_measure, conf=self.conf,
+                                loop=self.loop)
 
         # Display data
 
@@ -378,7 +378,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_RMCM_prepare_button_clicked(self, checked):
         data = self.action_send(self.RMCM_prepare_button,
-                                self.backend.set_RMCM_prepare, conf=self.conf,
+                                self.backend.RMCM_prepare, conf=self.conf,
                                 loop=self.loop)
 
         if self.check_subprocess_error(data):
@@ -387,7 +387,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_RMCM_mkDMpokemodes_button_clicked(self, checked):
         data = self.action_send(self.RMCM_mkDMpokemodes_button,
-                                self.backend.set_RMCM_mkDMpokemodes,
+                                self.backend.RMCM_mkDMpokemodes,
                                 conf=self.conf, loop=self.loop)
 
         if self.check_subprocess_error(data):
@@ -399,7 +399,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_RMCM_takeref_button_clicked(self, checked):
         data = self.action_send(self.RMCM_takeref_button,
-                                self.backend.set_RMCM_takeref, conf=self.conf,
+                                self.backend.RMCM_takeref, conf=self.conf,
                                 loop=self.loop)
 
         if self.check_subprocess_error(data):
@@ -411,8 +411,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_RMCM_acqlinResp_button_clicked(self, checked):
         data = self.action_send(self.RMCM_acqlinResp_button,
-                                self.backend.set_RMCM_acqlinResp,
-                                conf=self.conf, loop=self.loop)
+                                self.backend.RMCM_acqlinResp, conf=self.conf,
+                                loop=self.loop)
 
         if self.check_subprocess_error(data):
             return
@@ -423,8 +423,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_RMCM_RMHdecode_button_clicked(self, checked):
         data = self.action_send(self.RMCM_RMHdecode_button,
-                                self.backend.set_RMCM_RMHdecode,
-                                conf=self.conf, loop=self.loop)
+                                self.backend.RMCM_RMHdecode, conf=self.conf,
+                                loop=self.loop)
 
         if self.check_subprocess_error(data):
             return
@@ -485,7 +485,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_RMCM_RMmkmask_button_clicked(self, checked):
         data = self.action_send(self.RMCM_RMmkmask_button,
-                                self.backend.set_RMCM_RMmkmask, conf=self.conf,
+                                self.backend.RMCM_RMmkmask, conf=self.conf,
                                 loop=self.loop)
 
         if self.check_subprocess_error(data):
@@ -496,7 +496,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_RMCM_compCM_button_clicked(self, checked):
         data = self.action_send(self.RMCM_compCM_button,
-                                self.backend.set_RMCM_compCM, conf=self.conf,
+                                self.backend.RMCM_compCM, conf=self.conf,
                                 loop=self.loop)
 
         if self.check_subprocess_error(data):
@@ -506,9 +506,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
     @Slot(bool)
     def on_RMCM_load_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_load_button,
-                                self.backend.set_RMCM_load, conf=self.conf,
-                                loop=self.loop)
+        data = self.action_send(self.RMCM_load_button, self.backend.RMCM_load,
+                                conf=self.conf, loop=self.loop)
 
         if self.check_subprocess_error(data):
             return
@@ -519,9 +518,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
     @Slot(bool)
     def on_RMCM_save_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_save_button,
-                                self.backend.set_RMCM_save, conf=self.conf,
-                                loop=self.loop,
+        data = self.action_send(self.RMCM_save_button, self.backend.RMCM_save,
+                                conf=self.conf, loop=self.loop,
                                 comment=self.RMCM_comment_lineedit.text())
 
         if self.check_subprocess_error(data):
@@ -532,7 +530,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_RMCM_restore_button_clicked(self, checked):
         data = self.action_send(self.RMCM_restore_button,
-                                self.backend.set_calibration_reload,
+                                self.backend.calibration_reload,
                                 conf=self.conf, loop=self.loop)
 
         if self.check_subprocess_error(data):

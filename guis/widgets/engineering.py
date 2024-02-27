@@ -474,194 +474,191 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(int)
     def on_shutter_combobox_currentIndexChanged(self, index):
-        self.action_send(self.shutter_combobox,
-                         self.backend.set_plc_shutter_state,
+        self.action_send(self.shutter_combobox, self.backend.plc_shutter_state,
                          state=self.shutter_combobox.currentData())
 
     @Slot(bool)
     def on_shutter_init_button_clicked(self, checked):
         self.action_send(self.shutter_init_button,
-                         self.backend.get_plc_shutter_init)
+                         self.backend.plc_shutter_init)
 
     @Slot(int)
     def on_flipmirror_combobox_currentIndexChanged(self, index):
         self.action_send(self.flipmirror_combobox,
-                         self.backend.set_plc_flipmirror_position,
+                         self.backend.plc_flipmirror_position,
                          position=self.flipmirror_combobox.currentData())
 
     @Slot(bool)
     def on_flipmirror_init_button_clicked(self, checked):
         self.action_send(self.flipmirror_init_button,
-                         self.backend.get_plc_flipmirror_init)
+                         self.backend.plc_flipmirror_init)
 
     @Slot(float)
     def on_calibunit_spinbox_valueChanged(self, d):
         self.action_send(self.calibunit_spinbox,
-                         self.backend.set_plc_calibunit_position, position=d)
+                         self.backend.plc_calibunit_position, position=d)
 
     @Slot(bool)
     def on_calibunit_init_button_clicked(self, checked):
         self.action_send(self.calibunit_init_button,
-                         self.backend.get_plc_calibunit_init)
+                         self.backend.plc_calibunit_init)
 
     @Slot(bool)
     def on_calibunit_stop_button_clicked(self, checked):
         self.action_send(self.calibunit_stop_button,
-                         self.backend.get_plc_calibunit_stop)
+                         self.backend.plc_calibunit_stop)
 
     @Slot(bool)
     def on_calibunit_laser_button_clicked(self, checked):
         self.action_send(self.calibunit_laser_button,
-                         self.backend.get_plc_calibunit_laser)
+                         self.backend.plc_calibunit_laser)
 
     @Slot(bool)
     def on_calibunit_tungsten_button_clicked(self, checked):
         self.action_send(self.calibunit_tungsten_button,
-                         self.backend.get_plc_calibunit_tungsten)
+                         self.backend.plc_calibunit_tungsten)
 
     @Slot(int)
     def on_tungsten_state_checkbox_stateChanged(self, state):
         self.action_send(self.tungsten_state_checkbox,
-                         self.backend.set_plc_tungsten_state,
+                         self.backend.plc_tungsten_state,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(bool)
     def on_tungsten_init_button_clicked(self, checked):
         self.action_send(self.tungsten_init_button,
-                         self.backend.get_plc_tungsten_init)
+                         self.backend.plc_tungsten_init)
 
     @Slot(int)
     def on_laser_state_checkbox_stateChanged(self, state):
         self.action_send(self.laser_state_checkbox,
-                         self.backend.set_plc_laser_state,
+                         self.backend.plc_laser_state,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
     def on_laser_power_spinbox_valueChanged(self, d):
         self.action_send(self.laser_power_spinbox,
-                         self.backend.set_plc_laser_power, power=d)
+                         self.backend.plc_laser_power, power=d)
 
     @Slot(bool)
     def on_laser_init_button_clicked(self, checked):
-        self.action_send(self.laser_init_button,
-                         self.backend.get_plc_laser_init)
+        self.action_send(self.laser_init_button, self.backend.plc_laser_init)
 
     @Slot(bool)
     def on_lamps_off_button_clicked(self, checked):
-        self.action_send(self.lamps_off_button, self.backend.get_plc_lamps_off)
+        self.action_send(self.lamps_off_button, self.backend.plc_lamps_off)
 
     @Slot(int)
     def on_filterwheel_combobox_currentIndexChanged(self, index):
         self.action_send(self.filterwheel_combobox,
-                         self.backend.set_plc_filterwheel_filter,
+                         self.backend.plc_filterwheel_filter,
                          filter=self.filterwheel_combobox.currentData())
 
     @Slot(bool)
     def on_filterwheel_init_button_clicked(self, checked):
         self.action_send(self.filterwheel_init_button,
-                         self.backend.get_plc_filterwheel_init)
+                         self.backend.plc_filterwheel_init)
 
     @Slot(float)
     def on_adc1_spinbox_valueChanged(self, d):
-        self.action_send(self.adc1_spinbox, self.backend.set_plc_adc_1_angle,
+        self.action_send(self.adc1_spinbox, self.backend.plc_adc1_angle,
                          position=d)
 
     @Slot(bool)
     def on_adc1_init_button_clicked(self, checked):
-        self.action_send(self.adc1_init_button, self.backend.get_plc_adc1_init)
+        self.action_send(self.adc1_init_button, self.backend.plc_adc1_init)
 
     @Slot(bool)
     def on_adc1_stop_button_clicked(self, checked):
-        self.action_send(self.adc1_stop_button, self.backend.get_plc_adc1_stop)
+        self.action_send(self.adc1_stop_button, self.backend.plc_adc1_stop)
 
     @Slot(float)
     def on_adc2_spinbox_valueChanged(self, d):
-        self.action_send(self.adc2_spinbox, self.backend.set_plc_adc_2_angle,
+        self.action_send(self.adc2_spinbox, self.backend.plc_adc2_angle,
                          position=d)
 
     @Slot(bool)
     def on_adc2_init_button_clicked(self, checked):
-        self.action_send(self.adc2_init_button, self.backend.get_plc_adc2_init)
+        self.action_send(self.adc2_init_button, self.backend.plc_adc2_init)
 
     @Slot(bool)
     def on_adc2_stop_button_clicked(self, checked):
-        self.action_send(self.adc2_stop_button, self.backend.get_plc_adc2_stop)
+        self.action_send(self.adc2_stop_button, self.backend.plc_adc2_stop)
 
     @Slot(bool)
     def on_adc_zero_disp_button_clicked(self, checked):
         self.action_send(self.adc_zero_disp_button,
-                         self.backend.get_plc_adc_zerodisp)
+                         self.backend.plc_adc_zerodisp)
 
     @Slot(bool)
     def on_adc_max_disp_button_clicked(self, checked):
         self.action_send(self.adc_max_disp_button,
-                         self.backend.get_plc_adc_maxdisp)
+                         self.backend.plc_adc_maxdisp)
 
     @Slot(int)
     def on_pump_checkbox_stateChanged(self, state):
-        self.action_send(self.pump_checkbox, self.backend.set_plc_pump_state,
+        self.action_send(self.pump_checkbox, self.backend.plc_pump_state,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
     def on_fan_checkbox_stateChanged(self, state):
-        self.action_send(self.fan_checkbox, self.backend.set_plc_fan_state,
+        self.action_send(self.fan_checkbox, self.backend.plc_fan_state,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
     def on_heater_checkbox_stateChanged(self, state):
-        self.action_send(self.pump_checkbox, self.backend.set_plc_heater_state,
+        self.action_send(self.pump_checkbox, self.backend.plc_heater_state,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(bool)
     def on_fli_new_image_button_clicked(self, checked):
-        self.action_send(self.fli_new_image_button, self.backend.set_fli_take,
+        self.action_send(self.fli_new_image_button, self.backend.fli_take,
                          exposure_time=self.fli_exposure_time_spinbox.value(),
                          frames=self.fli_frames_spinbox.value(),
                          roi_size=self.fli_roi_spinbox.value())
 
     @Slot(bool)
     def on_fli_cancel_button_clicked(self, checked):
-        self.action_send(self.fli_cancel_button, self.backend.get_fli_cancel)
+        self.action_send(self.fli_cancel_button, self.backend.fli_cancel)
 
     @Slot(bool)
     def on_wfs_acquisition_start_button_clicked(self, checked):
         self.action_send(self.wfs_acquisition_start_button,
-                         self.backend.get_nuvu_acquisition_start)
+                         self.backend.nuvu_acquisition_start)
 
     @Slot(bool)
     def on_wfs_acquisition_stop_button_clicked(self, checked):
         self.action_send(self.wfs_acquisition_start_button,
-                         self.backend.get_nuvu_acquisition_stop)
+                         self.backend.nuvu_acquisition_stop)
 
     @Slot(bool)
     def on_ippower_rtc_on_button_clicked(self, checked):
         self.action_send(self.ippower_rtc_on_button,
-                         self.backend.get_ippower_rtc_on)
+                         self.backend.ippower_rtc_on)
 
     @Slot(bool)
     def on_ippower_rtc_off_button_clicked(self, checked):
         self.action_send(self.ippower_rtc_off_button,
-                         self.backend.get_ippower_rtc_off)
+                         self.backend.ippower_rtc_off)
 
     @Slot(bool)
     def on_ippower_bench_on_button_clicked(self, checked):
         self.action_send(self.ippower_bench_on_button,
-                         self.backend.get_ippower_bench_on)
+                         self.backend.ippower_bench_on)
 
     @Slot(bool)
     def on_ippower_bench_off_button_clicked(self, checked):
         self.action_send(self.ippower_bench_off_button,
-                         self.backend.get_ippower_bench_off)
+                         self.backend.ippower_bench_off)
 
     @Slot(bool)
     def on_ippower_dm_on_button_clicked(self, checked):
-        self.action_send(self.ippower_dm_on_button,
-                         self.backend.get_ippower_dm_on)
+        self.action_send(self.ippower_dm_on_button, self.backend.ippower_dm_on)
 
     @Slot(bool)
     def on_ippower_dm_off_button_clicked(self, checked):
         self.action_send(self.ippower_dm_off_button,
-                         self.backend.get_ippower_dm_off)
+                         self.backend.ippower_dm_off)
 
     @Slot(bool)
     def on_dm_channels_button_clicked(self, checked):
@@ -728,7 +725,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     @Slot(bool)
     def on_centering_laser_button_clicked(self, checked):
         self.action_send(self.centering_laser_button,
-                         self.backend.get_centering_laser)
+                         self.backend.centering_laser)
 
     @Slot(bool)
     def on_open_focus_sequence_button_clicked(self, checked):
@@ -782,10 +779,10 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     @Slot(bool)
     def on_focusing_autofocus_button_clicked(self, checked):
         self.action_send(self.focusing_autofocus_button,
-                         self.backend.get_focus_autofocus)
+                         self.backend.focus_autofocus)
 
     def on_service_action_button_clicked(self, checked, unit, action):
-        self.action_send([], self.backend.set_services_action, unit=unit,
+        self.action_send([], self.backend.services_action, unit=unit,
                          action=action)
 
     def open_focus_window(self):

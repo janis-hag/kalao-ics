@@ -267,7 +267,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             # Send offsets only if centering requested KalAO ICS and validation was by user
             if not self.centering_requested_by_user and requested_by_user:
                 self.action_send(self.centering_button,
-                                 self.backend.get_centering_validate)
+                                 self.backend.centering_validate)
 
     def hover_xyv_to_str_fli(self, x, y, v):
         if x != -1 and y != -1:
@@ -313,7 +313,7 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             return
 
         if self.centering:
-            self.action_send([], self.backend.set_centering_manual, x=x, y=y)
+            self.action_send([], self.backend.centering_manual, x=x, y=y)
 
         if self.window_combobox.currentData() != FollowMode.FIXED:
             return

@@ -145,7 +145,7 @@ class LogsWidget(KWidget, BackendActionMixin):
 
         #####
 
-        entries = self.backend.get_logs_init()
+        entries = self.backend.logs_init()
         if entries is not None:
             for entry in entries:
                 self.add_log_entry(entry)
@@ -166,7 +166,7 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.logs_timer.start()
 
     def get_logs_new(self):
-        entries = self.backend.get_logs_new()
+        entries = self.backend.logs_new()
         if entries is not None:
             for entry in entries:
                 self.add_log_entry(entry)
@@ -237,7 +237,7 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.logs_timer.stop()
 
         entries = self.action_send(self.retieve_button,
-                                   self.backend.get_logs_between, since=since,
+                                   self.backend.logs_between, since=since,
                                    until=until)
 
         self.logs_textedit.clear()

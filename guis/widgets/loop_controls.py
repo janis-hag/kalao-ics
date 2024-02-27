@@ -331,106 +331,104 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(int)
     def on_dmloop_on_checkbox_stateChanged(self, state):
-        self.action_send(self.dmloop_on_checkbox, self.backend.set_dmloop_on,
+        self.action_send(self.dmloop_on_checkbox, self.backend.dmloop_on,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
     def on_dmloop_gain_spinbox_valueChanged(self, d):
-        self.action_send(self.dmloop_gain_spinbox,
-                         self.backend.set_dmloop_gain, gain=d)
+        self.action_send(self.dmloop_gain_spinbox, self.backend.dmloop_gain,
+                         gain=d)
 
     @Slot(float)
     def on_dmloop_mult_spinbox_valueChanged(self, d):
-        self.action_send(self.dmloop_mult_spinbox,
-                         self.backend.set_dmloop_mult, mult=d)
+        self.action_send(self.dmloop_mult_spinbox, self.backend.dmloop_mult,
+                         mult=d)
 
     @Slot(float)
     def on_dmloop_limit_spinbox_valueChanged(self, d):
-        self.action_send(self.dmloop_limit_spinbox,
-                         self.backend.set_dmloop_limit, limit=d)
+        self.action_send(self.dmloop_limit_spinbox, self.backend.dmloop_limit,
+                         limit=d)
 
     @Slot(bool)
     def on_dmloop_zero_button_clicked(self, checked):
-        self.action_send(self.dmloop_zero_button, self.backend.get_dmloop_zero)
+        self.action_send(self.dmloop_zero_button, self.backend.dmloop_zero)
 
     # TTM Loop
 
     @Slot(int)
     def on_ttmloop_on_checkbox_stateChanged(self, state):
-        self.action_send(self.ttmloop_on_checkbox, self.backend.set_ttmloop_on,
+        self.action_send(self.ttmloop_on_checkbox, self.backend.ttmloop_on,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
     def on_ttmloop_gain_spinbox_valueChanged(self, d):
-        self.action_send(self.ttmloop_gain_spinbox,
-                         self.backend.set_ttmloop_gain, gain=d)
+        self.action_send(self.ttmloop_gain_spinbox, self.backend.ttmloop_gain,
+                         gain=d)
 
     @Slot(float)
     def on_ttmloop_mult_spinbox_valueChanged(self, d):
-        self.action_send(self.ttmloop_mult_spinbox,
-                         self.backend.set_ttmloop_mult, mult=d)
+        self.action_send(self.ttmloop_mult_spinbox, self.backend.ttmloop_mult,
+                         mult=d)
 
     @Slot(float)
     def on_ttmloop_limit_spinbox_valueChanged(self, d):
         self.action_send(self.ttmloop_limit_spinbox,
-                         self.backend.set_ttmloop_limit, limit=d)
+                         self.backend.ttmloop_limit, limit=d)
 
     @Slot(bool)
     def on_ttmloop_zero_button_clicked(self, checked):
-        self.action_send(self.ttmloop_zero_button,
-                         self.backend.get_ttmloop_zero)
+        self.action_send(self.ttmloop_zero_button, self.backend.ttmloop_zero)
 
     # Wavefront Sensor
 
     @Slot(int)
     def on_nuvu_emgain_spinbox_valueChanged(self, i):
-        self.action_send(self.nuvu_emgain_spinbox,
-                         self.backend.set_nuvu_emgain, emgain=i)
+        self.action_send(self.nuvu_emgain_spinbox, self.backend.nuvu_emgain,
+                         emgain=i)
 
     @Slot(float)
     def on_nuvu_exposuretime_spinbox_valueChanged(self, d):
         self.action_send(self.nuvu_exposuretime_spinbox,
-                         self.backend.set_nuvu_exposuretime, exposuretime=d)
+                         self.backend.nuvu_exposuretime, exposuretime=d)
 
     @Slot(int)
     def on_nuvu_autogain_checkbox_stateChanged(self, state):
         self.action_send(self.nuvu_autogain_checkbox,
-                         self.backend.set_nuvu_autogain_on,
+                         self.backend.nuvu_autogain_on,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
     def on_nuvu_autogain_setting_combobox_currentIndexChanged(self, index):
         self.action_send(self.nuvu_autogain_setting_combobox,
-                         self.backend.set_nuvu_autogain_setting, setting=index)
+                         self.backend.nuvu_autogain_setting, setting=index)
 
     # Deformable Mirror
 
     @Slot(float)
     def on_bmc_maxstroke_spinbox_valueChanged(self, d):
         self.action_send(self.bmc_maxstroke_spinbox,
-                         self.backend.set_bmc_maxstroke, stroke=d / 100)
+                         self.backend.bmc_maxstroke, stroke=d / 100)
 
     @Slot(int)
     def on_bmc_strokemode_combobox_currentIndexChanged(self, index):
         self.action_send(self.bmc_strokemode_combobox,
-                         self.backend.set_bmc_strokemode, mode=index)
+                         self.backend.bmc_strokemode, mode=index)
 
     @Slot(float)
     def on_bmc_targetstroke_spinbox_valueChanged(self, d):
         self.action_send(self.bmc_targetstroke_spinbox,
-                         self.backend.set_bmc_targetstroke, target=d / 100)
+                         self.backend.bmc_targetstroke, target=d / 100)
 
     # Observation
 
     @Slot(int)
     def on_adc_update_checkbox_stateChanged(self, state):
-        self.action_send(self.adc_update_checkbox, self.backend.set_adc_update,
+        self.action_send(self.adc_update_checkbox, self.backend.adc_update,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
     def on_ttm_offload_checkbox_stateChanged(self, state):
-        self.action_send(self.ttm_offload_checkbox,
-                         self.backend.set_ttm_offload,
+        self.action_send(self.ttm_offload_checkbox, self.backend.ttm_offload,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     # Modal gains
@@ -460,7 +458,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         for point in self.modalgains_series.points():
             modalgains.append(point.y())
 
-        self.action_send([], self.backend.set_modalgains,
+        self.action_send([], self.backend.modalgains,
                          modalgains=np.array(modalgains))
 
     def hover_xy_to_str(self, x, y):
@@ -494,8 +492,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         self.display_modalgains(modalgains)
 
-        self.action_send([], self.backend.set_modalgains,
-                         modalgains=modalgains)
+        self.action_send([], self.backend.modalgains, modalgains=modalgains)
 
     def display_modalgains(self, modalgains):
         points = []
