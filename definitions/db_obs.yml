@@ -9,7 +9,7 @@ target_name:
 target_magnitude:
   short: Target visual magnitude
   long: Visual magnitude of the current target
-  unit: I
+  unit:
 
 target_dec:
   short: Target DEC
@@ -28,6 +28,7 @@ target_spt:
   long: Target spectral type
   unit:
 
+# Centering
 centering_manual:
   short: Manual centering flag
   long: Flag do indicate if manual centering is needed
@@ -53,7 +54,7 @@ fli_image_count:
 fli_exposure_time:
   short: Exposure time
   long: Requested exposure time
-  unit:
+  unit: s
 
 tcs_header_path:
   short: Path to TCS fits header
@@ -179,7 +180,7 @@ tel_led_status:
   long: Tube led
   unit:
 
-focusing_best:
+focusing_m2_position:
   short: Optimal M2 focus
   long: Optimal M2 position in Z found by focusing sequence
   unit: µm

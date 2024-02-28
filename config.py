@@ -368,7 +368,7 @@ class FITS:
     last_focus_sequence = science_data_storage / 'last_focus_sequence.fits'
     last_image_all = Path('/tmp/last_image.fits')
 
-    file_mask = 0o440
+    file_mask = 0o444
 
     fits_default_header_file = kalao_ics_path / 'definitions/fits_default_header.yaml'
     tcs_header_validity = 8 * 3600  # s

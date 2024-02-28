@@ -35,25 +35,28 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     data_unit = ' ADU'
     data_precision = 0
-    data_center_x = config.FLI.center_x
-    data_center_y = config.FLI.center_y
+    data_center_x = 0
+    data_center_y = 0
 
     axis_unit = ' px'
     axis_precision = 0
     axis_scaling = 1
 
+    axis_scaling_x_fits = config.FLI.plate_scale
+    axis_scaling_y_fits = config.FLI.plate_scale
+
     img_width = np.nan
     img_height = np.nan
 
-    zoom_center_x = config.FLI.center_x
-    zoom_center_y = config.FLI.center_y
+    zoom_center_x = 0
+    zoom_center_y = 0
     zoom_half_width = np.nan
     zoom_half_height = np.nan
     zoom_level = 16
     zoom_min = 2
     zoom_max = 128
 
-    last_img = None
+    img = None
 
     saturation = np.nan
     timestamp = None
@@ -123,18 +126,22 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.stars_itemgroup = self.fli_view.scene.createItemGroup([])
 
-        for colormap in colormaps.get_all_colormaps(exclude_transparent=True):
-            self.colormap_combobox.addItem(colormap.__name__, colormap)
+        with QSignalBlocker(self.colormap_combobox):
+            for colormap in colormaps.get_all_colormaps(
+                    exclude_transparent=True):
+                self.colormap_combobox.addItem(colormap.__name__, colormap)
 
-        for scale in Scale:
-            self.scale_combobox.addItem(str(scale.value()), scale.value)
+        with QSignalBlocker(self.scale_combobox):
+            for scale in Scale:
+                self.scale_combobox.addItem(str(scale.value()), scale.value)
 
-        self.cuts_combobox.addItem('Min – Max w/o hot pixels', None)
-        for cuts in Cuts:
-            self.cuts_combobox.addItem(str(cuts.value), cuts.value)
+        with QSignalBlocker(self.cuts_combobox):
+            for cuts in Cuts:
+                self.cuts_combobox.addItem(str(cuts.value), cuts.value)
 
-        for mode in FollowMode:
-            self.window_combobox.addItem(mode.value, mode.value)
+        with QSignalBlocker(self.window_combobox):
+            for mode in FollowMode:
+                self.window_combobox.addItem(mode.value, mode.value)
 
         self.fli_view.hovered.connect(self.hover_xyv_to_str_fli)
         self.zoom_view.hovered.connect(self.hover_xyv_to_str_zoom)
@@ -431,6 +438,12 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         if 'CRPIX2' in hdul[0].header:
             self.data_center_y = hdul[0].header['CRPIX2']
 
+        if 'CDELT1' in hdul[0].header:
+            self.axis_scaling_x_fits = hdul[0].header['CDELT1'] * 3600
+
+        if 'CDELT2' in hdul[0].header:
+            self.axis_scaling_y_fits = hdul[0].header['CDELT2'] * 3600
+
         #self.fli_view.setNEIndicator(parang from keywords)
         self.on_onsky_checkbox_stateChanged(self.onsky_checkbox.checkState())
 
@@ -481,23 +494,8 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.stars_itemgroup.addToGroup(ellipse_item)
             self.stars_itemgroup.setZValue(1)
 
-        if self.cuts_combobox.currentIndex == 0:
-            img_nan = self.img.copy()
-            img_nan[self.bad_pixels] = np.nan
-            img_min = np.nanmin(img_nan)
-            img_max = np.nanmax(img_nan)
-
-            if self.autoscale_checkbox.isChecked():
-                with QSignalBlocker(self.min_spinbox):
-                    self.min_spinbox.setMaximum(img_max)
-                    self.min_spinbox.setValue(img_min)
-
-                with QSignalBlocker(self.max_spinbox):
-                    self.max_spinbox.setMinimum(img_min)
-                    self.max_spinbox.setValue(img_max)
-        else:
-            img_min, img_max = self.compute_min_max(
-                self.img, self.cuts_combobox.currentData())
+        img_min, img_max = self.compute_min_max(
+            self.img, self.cuts_combobox.currentData())
 
         self.saturation = self.img.max() / self.image_info['max']
 
@@ -592,7 +590,8 @@ class FLIZoomWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
     @Slot(int)
     def on_onsky_checkbox_stateChanged(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.axis_scaling = config.FLI.plate_scale
+            self.axis_scaling = (self.axis_scaling_x_fits +
+                                 self.axis_scaling_y_fits) / 2
             self.axis_unit = '"'
             self.axis_precision = 1
         else:

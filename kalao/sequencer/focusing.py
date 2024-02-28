@@ -152,7 +152,7 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
                 etcs.set_focus(best_focus)
 
                 database.store('obs', {
-                    'focusing_best': best_focus,
+                    'focusing_m2_position': best_focus,
                 })
 
                 raise FocusingNoMinima
@@ -185,7 +185,13 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
                 logger.info('focusing', f'Restoring focus using autofocus')
                 autofocus()
 
+            # Seal focus sequence file
+            filepath.chmod(config.FITS.file_mask)
+
             return ReturnCode.FOCUSING_ERROR
+
+    # Seal focus sequence file
+    filepath.chmod(config.FITS.file_mask)
 
     # Update autofocus
     temps = etcs.get_tube_temps()
@@ -198,7 +204,7 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
 
         database.store(
             'obs', {
-                'focusing_best': best_focus,
+                'focusing_m2_position': best_focus,
                 'focusing_temttb': temps['temttb'],
                 'focusing_temtth': temps['temtth'],
                 'focusing_f0': f0,
@@ -206,7 +212,7 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
             })
     else:
         database.store('obs', {
-            'focusing_best': best_focus,
+            'focusing_m2_position': best_focus,
         })
 
     return ReturnCode.FOCUSING_OK

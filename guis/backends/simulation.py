@@ -343,6 +343,8 @@ class MainBackend(FakeSHMFPSBackend):
         hdu.header.set('HIERARCH ESO DET WIN NY', 2 * hw)
         hdu.header.set('CRPIX1', hw)
         hdu.header.set('CRPIX2', hw)
+        hdu.header.set('CDELT1', config.FLI.plate_scale / 3600)
+        hdu.header.set('CDELT2', config.FLI.plate_scale / 3600)
 
         hdul = fits.HDUList()
         hdul.append(hdu)

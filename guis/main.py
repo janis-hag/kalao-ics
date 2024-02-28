@@ -98,8 +98,8 @@ if __name__ == '__main__':
 
     backend_thread.start()
 
-    QMetaObject.invokeMethod(backend, "get_all", Qt.QueuedConnection)
-    QMetaObject.invokeMethod(backend, "get_monitoringandtelemetry",
+    QMetaObject.invokeMethod(backend, "all", Qt.QueuedConnection)
+    QMetaObject.invokeMethod(backend, "monitoringandtelemetry",
                              Qt.QueuedConnection)
 
     streams_timer.start()

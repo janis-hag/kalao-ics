@@ -103,7 +103,9 @@ if __name__ == '__main__':
                     continue
 
                 if param.kind != inspect.Parameter.KEYWORD_ONLY:
-                    rprint(f'[ERROR] Parameter {param.name} of function {key} is not keyword-only')
+                    rprint(
+                        f'[ERROR] Parameter {param.name} of function {key} is not keyword-only'
+                    )
                     errors += 1
 
             if len(sig.parameters) == 1:
