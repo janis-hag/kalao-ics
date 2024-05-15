@@ -15,7 +15,7 @@ from enum import StrEnum
 
 from kalao import database, logger
 from kalao.cacao import aocontrol
-from kalao.plc import core
+from kalao.hardware import plc
 
 from opcua import Client, ua
 
@@ -31,7 +31,7 @@ class LaserCommand(StrEnum):
     UNLOCK = 'bUnlock'
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def get_state(beck: Client = None) -> LaserState:
     if beck.get_node(f'{config.PLC.Node.LASER}.Status').get_value():
         return LaserState.ON
@@ -39,7 +39,7 @@ def get_state(beck: Client = None) -> LaserState:
         return LaserState.OFF
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def get_power(beck: Client = None) -> float:
     return beck.get_node(f'{config.PLC.Node.LASER}.Current').get_value()
 
@@ -102,7 +102,7 @@ def get_switch_time() -> tuple[str, float]:
         timezone.utc) - data['since']['timestamp']).total_seconds()
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def set_power(power: float, enable: bool = False,
               beck: Client = None) -> float:
     """
@@ -151,7 +151,7 @@ def set_power(power: float, enable: bool = False,
     return get_power(beck=beck)
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def _switch(action_name: LaserCommand | LaserState,
             beck: Client = None) -> LaserState:
     """

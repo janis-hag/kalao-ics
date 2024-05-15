@@ -16,8 +16,8 @@ import numpy as np
 
 from kalao import database, euler, ippower, logger
 from kalao.cacao import aocontrol, toolbox
-from kalao.plc import (adc, calibunit, core, filterwheel, flipmirror, laser,
-                       shutter, temperature_control, tungsten)
+from kalao.hardware import (adc, calibunit, cooling, dm, filterwheel,
+                            flipmirror, laser, plc, shutter, tungsten, wfs)
 from kalao.utils import background
 
 import schedule
@@ -82,11 +82,11 @@ def _check_dm_inactive() -> None:
 
     if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
         (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
-            ippower.status(config.IPPower.Port.BMC_DM) == IPPowerStatus.ON):
+            ippower.status(config.IPPower.Port.DM) == IPPowerStatus.ON):
         logger.info('hardware_timer',
                     'Turning off DM due to inactivity timeout')
 
-        aocontrol.turn_dm_off()
+        dm.off()
 
 
 def _check_wfs_inactive() -> None:
@@ -109,11 +109,11 @@ def _check_wfs_inactive() -> None:
         aocontrol.emgain_off()
         aocontrol.set_exptime(0)
 
-    if aocontrol.acquisition_running():
+    if wfs.acquisition_running():
         logger.info('hardware_timer',
                     'Stopping WFS acquisition due to inactivity timeout')
 
-        aocontrol.stop_wfs_acquisition()
+        wfs.stop_acquisition()
 
 
 def _check_loops_inactive() -> None:
@@ -149,47 +149,47 @@ def _check_inactivity() -> None:
 
 def _check_cooling_status() -> None:
     """
-    Verify cooling health status. Namely, the cooling water flow, and the main temperatures.
+    Verify cooling health status. Namely, the cooling coolant flow, and the main temperatures.
     If any value is below threshold either issue a warning or shutdown bench depending on level.
 
     :return: 0
     """
 
-    min_water_temp = database.definitions['monitoring']['metadata'][
-        'temp_water_in']['warn_range'][0]
-    unit = database.definitions['monitoring']['metadata']['temp_water_in'][
+    min_coolant_temp = database.definitions['monitoring']['metadata'][
+        'coolant_temp_in']['warn_range'][0]
+    unit = database.definitions['monitoring']['metadata']['coolant_temp_in'][
         'unit']
-    water_temp = temperature_control.get_temperatures()['temp_water_in']
+    coolant_temp = cooling.get_status()['coolant_temp_in']
 
-    if water_temp < min_water_temp:
-        if temperature_control.heater_status() != RelayState.ON:
+    if coolant_temp < min_coolant_temp:
+        if cooling.heater_status() != RelayState.ON:
             logger.info(
                 'hardware_timer',
-                f'Water temperature too low ({water_temp} {unit}), starting heater'
+                f'Coolant temperature too low ({coolant_temp} {unit}), starting heater'
             )
-            temperature_control.heater_on()
+            cooling.heater_on()
 
-    elif water_temp > min_water_temp + config.Cooling.heater_hysteresis_temp:
-        if temperature_control.heater_status() != RelayState.OFF:
+    elif coolant_temp > min_coolant_temp + config.Cooling.heater_hysteresis_temp:
+        if cooling.heater_status() != RelayState.OFF:
             logger.info(
                 'hardware_timer',
-                f'Water temperature high enough ({water_temp} {unit}), stopping heater'
+                f'Coolant temperature high enough ({coolant_temp} {unit}), stopping heater'
             )
-            temperature_control.heater_off()
+            cooling.heater_off()
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def _check_pump_temp(beck: Client = None) -> None:
-    pump_temp = temperature_control.pump_temperature(beck=beck)
-    pump_status = temperature_control.pump_status(beck=beck)
+    pump_temp = cooling.pump_temperature(beck=beck)
+    pump_status = cooling.pump_status(beck=beck)
 
     if pump_temp > config.Cooling.max_pump_temperature and pump_status == RelayState.ON:
         logger.warn('hardware_timer', 'Pump overheating, shutting off')
-        temperature_control.pump_off(beck=beck)
+        cooling.pump_off(beck=beck)
 
     elif pump_temp < config.Cooling.pump_restart_temp and pump_status == RelayState.OFF:
         logger.warn('hardware_timer', 'Pump cooled down, powering up')
-        temperature_control.pump_on(beck=beck)
+        cooling.pump_on(beck=beck)
 
 
 def _check_plc() -> None:

@@ -1,4 +1,9 @@
 ---
+rtc_log:
+  short: RTC log
+  long: Real-time Computer log
+  unit:
+
 ao_log:
   short: AO log
   long: Adaptive Optics log
@@ -14,14 +19,14 @@ ttm_log:
   long: Tip-Tilt Mirror log
   unit:
 
-nuvu_log:
-  short: Nüvü log
-  long: Nüvü camera log
+wfs_log:
+  short: WFS log
+  long: Wavefront Sensor (Nüvü) log
   unit:
 
-fli_log:
-  short: FLI log
-  long: FLI camera log
+camera_log:
+  short: Camera log
+  long: Science Camera (FLI) log
   unit:
 
 services_log:

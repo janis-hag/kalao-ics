@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from enum import StrEnum
 
 from kalao import database, logger
-from kalao.plc import core
+from kalao.hardware import plc
 
 from opcua import Client, ua
 
@@ -28,7 +28,7 @@ class ShutterCommand(StrEnum):
     CLOSE = 'bClose_Shutter'
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def get_state(beck: Client = None) -> ShutterState:
     """
     Query the single string status of the shutter.
@@ -56,7 +56,7 @@ def get_state(beck: Client = None) -> ShutterState:
             return ShutterState.OPEN
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def init(beck: Client = None) -> ReturnCode:
     """
     Initialise the shutter.
@@ -96,7 +96,7 @@ def close(beck: Client = None) -> ShutterState:
     return _switch(ShutterCommand.CLOSE, beck=beck)
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def _switch(action_name: ShutterCommand | ShutterState,
             beck: Client = None) -> ShutterState:
     """

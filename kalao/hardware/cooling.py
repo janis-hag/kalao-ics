@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : temperature_control.py
+# @Filename : cooling.py
 # @Date : 2021-12-07-15-20
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-temperature_control.py is part of the KalAO Instrument Control Software
+cooling.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
@@ -14,11 +14,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 from kalao import database, logger
-from kalao.plc import core
+from kalao.hardware import plc
 
 from opcua import Client, ua
 
-from kalao.definitions.enums import RelayState
+from kalao.definitions.enums import RelayState, ReturnCode
 
 import config
 
@@ -28,35 +28,8 @@ class RelayCommand():
     ON = True
 
 
-@core.beckhoff_autoconnect
-def get_temperatures(beck: Client = None) -> dict[str, float]:
-    """
-    Query all the temperature sensors.
-
-    :param beck: handle of the beckhoff connection
-    :return: dictionary of temperatures
-    """
-
-    return {
-        'temp_bench_air':
-            config.PLC.temp_bench_air_offset +
-            beck.get_node(config.PLC.Node.TEMP_BENCH_AIR).get_value(),
-        'temp_bench_board':
-            config.PLC.temp_bench_board_offset +
-            beck.get_node(config.PLC.Node.TEMP_BENCH_BOARD).get_value(),
-        'temp_water_in':
-            config.PLC.temp_water_in_offset +
-            beck.get_node(config.PLC.Node.TEMP_WATER_IN).get_value(),
-        'temp_water_out':
-            config.PLC.temp_water_out_offset +
-            beck.get_node(config.PLC.Node.TEMP_WATER_OUT).get_value(),
-        'hygro_bench_air':
-            beck.get_node(config.PLC.Node.HYGROMETER).get_value(),
-    }
-
-
-@core.beckhoff_autoconnect
-def get_cooling_status(beck: Client = None) -> dict[str, Any]:
+@plc.autoconnect
+def get_status(beck: Client = None) -> dict[str, Any]:
     """
     Query status of the cooling system.
 
@@ -65,17 +38,28 @@ def get_cooling_status(beck: Client = None) -> dict[str, Any]:
     """
 
     cooling_status = {
-        'pump_status': pump_status(beck=beck),
-        'pump_temp': pump_temperature(beck=beck),
-        'heater_status': heater_status(beck=beck),
-        'fan_status': fan_status(beck=beck),
-        'coolant_flow_rate': get_flow(beck=beck),
+        'pump_status':
+            pump_status(beck=beck),
+        'pump_temp':
+            pump_temperature(beck=beck),
+        'heater_status':
+            heater_status(beck=beck),
+        'fan_status':
+            fan_status(beck=beck),
+        'coolant_flow_rate':
+            get_flow(beck=beck),
+        'coolant_temp_in':
+            config.PLC.coolant_temp_in_offset +
+            beck.get_node(config.PLC.Node.COOLANT_TEMP_IN).get_value(),
+        'coolant_temp_out':
+            config.PLC.coolant_temp_out_offset +
+            beck.get_node(config.PLC.Node.COOLANT_TEMP_OUT).get_value(),
     }
 
     return cooling_status
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def get_state(node: str, beck: Client = None) -> RelayState:
     """
     Open or Close the shutter depending on action_name
@@ -90,7 +74,7 @@ def get_state(node: str, beck: Client = None) -> RelayState:
         return RelayState.OFF
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def switch(node: str, action_name: RelayCommand | RelayState,
            beck: Client = None) -> RelayState:
     """
@@ -126,7 +110,7 @@ def switch(node: str, action_name: RelayCommand | RelayState,
 
 def pump_on(beck: Client = None) -> RelayState:
     """
-    Convenience function to turn on the water pump
+    Convenience function to turn on the coolant pump
 
     :param beck: handle to the beckhoff connection
     :return: status of the pump
@@ -137,7 +121,7 @@ def pump_on(beck: Client = None) -> RelayState:
 
 def pump_off(beck: Client = None) -> RelayState:
     """
-    Convenience function to turn off the water pump
+    Convenience function to turn off the coolant pump
 
     :param beck: handle to the beckhoff connection
     :return: status of the pump
@@ -148,7 +132,7 @@ def pump_off(beck: Client = None) -> RelayState:
 
 def pump_status(beck: Client = None) -> RelayState:
     """
-    Convenience function to query the status of the water pump
+    Convenience function to query the status of the coolant pump
 
     :param beck: handle to the beckhoff connection
     :return: status of the pump
@@ -157,7 +141,7 @@ def pump_status(beck: Client = None) -> RelayState:
     return get_state(config.PLC.Node.PUMP, beck=beck)
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def pump_temperature(beck: Client = None) -> float:
     """
     Convenience function to query the temperature of the pump
@@ -166,14 +150,14 @@ def pump_temperature(beck: Client = None) -> float:
     :return: temperature of the pump in degrees
     """
 
-    pump_temp = beck.get_node(config.PLC.Node.TEMP_PUMP).get_value()
+    pump_temp = beck.get_node(config.PLC.Node.PUMP_TEMP).get_value()
 
     return pump_temp
 
 
 def heater_on(beck: Client = None) -> RelayState:
     """
-    Convenience function to turn on the water heater
+    Convenience function to turn on the coolant heater
 
     :param beck: handle to the beckhoff connection
     :return: status of the heater
@@ -184,7 +168,7 @@ def heater_on(beck: Client = None) -> RelayState:
 
 def heater_off(beck: Client = None) -> RelayState:
     """
-    Convenience function to turn off the water heater
+    Convenience function to turn off the coolant heater
 
     :param beck: handle to the beckhoff connection
     :return: status of the heater
@@ -195,7 +179,7 @@ def heater_off(beck: Client = None) -> RelayState:
 
 def heater_status(beck: Client = None) -> RelayState:
     """
-    Convenience function to query the status of the water heater
+    Convenience function to query the status of the coolant heater
 
     :param beck: handle to the beckhoff connection
     :return: status of the heater
@@ -206,7 +190,7 @@ def heater_status(beck: Client = None) -> RelayState:
 
 def fan_on(beck: Client = None) -> RelayState:
     """
-    Convenience function to turn on the water fan
+    Convenience function to turn on the coolant fan
 
     :param beck: handle to the beckhoff connection
     :return: status of the fan
@@ -217,7 +201,7 @@ def fan_on(beck: Client = None) -> RelayState:
 
 def fan_off(beck: Client = None) -> RelayState:
     """
-    Convenience function to turn off the water fan
+    Convenience function to turn off the coolant fan
 
     :param beck: handle to the beckhoff connection
     :return: status of the fan
@@ -228,7 +212,7 @@ def fan_off(beck: Client = None) -> RelayState:
 
 def fan_status(beck: Client = None) -> RelayState:
     """
-    Convenience function to query the status of the water fan
+    Convenience function to query the status of the coolant fan
 
     :param beck: handle to the beckhoff connection
     :return: status of the fan
@@ -237,27 +221,10 @@ def fan_status(beck: Client = None) -> RelayState:
     return get_state(config.PLC.Node.FAN, beck=beck)
 
 
-def get_flow_threshold_time(flow_threshold: float) -> float:
-    """
-    Looks up the time when the flow was under a given threshold
-
-    :return:  switch_time a datetime object
-    """
-
-    data = database.get_time_since_state('monitoring', 'coolant_flow_rate',
-                                         '>=', flow_threshold)
-
-    if data.get('since') is None:
-        return 0
-
-    return (datetime.now(timezone.utc) -
-            data['since']['timestamp']).total_seconds()
-
-
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def get_flow(beck: Client = None) -> float:
     """
-    Convenience function to query the value of the water flow from the flowmeter
+    Convenience function to query the value of the coolant flow from the flowmeter
 
     TODO: add rounding of returned value
 
@@ -266,3 +233,27 @@ def get_flow(beck: Client = None) -> float:
     """
 
     return beck.get_node(config.PLC.Node.FLOWMETER).get_value()
+
+
+@plc.autoconnect
+def init(beck: Client = None) -> ReturnCode:
+    error = False
+
+    if config.PLC.Node.FAN in config.PLC.initial_state:
+        state = config.PLC.initial_state[config.PLC.Node.FAN]
+        if switch(state, beck=beck) != state:
+            error = True
+
+    if config.PLC.Node.PUMP in config.PLC.initial_state:
+        state = config.PLC.initial_state[config.PLC.Node.PUMP]
+        if switch(state, beck=beck) != state:
+            error = True
+
+    if config.PLC.Node.HEATER in config.PLC.initial_state:
+        state = config.PLC.initial_state[config.PLC.Node.HEATER]
+        if switch(state, beck=beck) != state:
+            error = True
+    if error:
+        return ReturnCode.PLC_INIT_FAILED
+    else:
+        return ReturnCode.PLC_INIT_SUCCESS

@@ -14,7 +14,7 @@ import time
 from datetime import datetime, timezone
 
 from kalao import database, logger
-from kalao.plc import core
+from kalao.hardware import plc
 
 from opcua import Client, ua
 
@@ -51,7 +51,7 @@ def off(beck: Client = None) -> TungstenState:
     return _switch(TungstenCommand.OFF, beck=beck)
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def _switch(nCommand_value: TungstenCommand | TungstenState,
             beck: Client = None) -> TungstenState:
     """
@@ -100,7 +100,7 @@ def _switch(nCommand_value: TungstenCommand | TungstenState,
     return get_state(beck=beck)
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def init(beck: Client = None) -> ReturnCode:
     """
     Initialise the calibration unit.
@@ -129,7 +129,7 @@ def init(beck: Client = None) -> ReturnCode:
     return ReturnCode.PLC_INIT_SUCCESS
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def get_state(beck: Client = None) -> TungstenState:
     """
     Get the current state of the tungsten lamp.

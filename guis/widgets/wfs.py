@@ -121,7 +121,10 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         pen = QPen(Color.GREEN, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        if x != -1 and y != -1:
+        if not np.isnan(x) and not np.isnan(y):
+            x = int(x)
+            y = int(y)
+
             string = self.formatter.format(
                 'X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, V: {v:.{data_precision}f}{data_unit}',
                 x=(x - self.data_center_x) * self.axis_scaling,

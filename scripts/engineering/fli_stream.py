@@ -12,7 +12,7 @@ import argparse
 from signal import SIGINT, signal
 from sys import exit
 
-from kalao.fli import camera
+from kalao.hardware import camera
 
 from kalao.definitions.enums import CameraServerStatus
 
@@ -28,7 +28,7 @@ def run(args):
         print('Connecting to camera through REST API')
 
         while True:
-            camera.take_frame(args.exptime)
+            camera.take_frame(exptime=args.exptime)
     else:
         print('Error connecting to camera. Please check the kalao_fli service')
 

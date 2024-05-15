@@ -34,7 +34,7 @@ def tiptilt(nb_points=1, seed=np.zeros((2, )), sigma=0.01, leak=0.01):
         return tiptilt
 
 
-def nuvu_frame(
+def wfs_frame(
     bias=2000,
     readoutnoise=20,
     flux=5000,
@@ -102,8 +102,8 @@ def nuvu_frame(
     return np.clip(np.rint(frame), 0, 2**16 - 1) - bias
 
 
-def slopes(nuvu_frame):
-    _, subapertures = ktools.get_roi_and_subapertures(nuvu_frame)
+def slopes(wfs_frame):
+    _, subapertures = ktools.get_roi_and_subapertures(wfs_frame)
 
     slopes = np.zeros((11, 22))
 
@@ -121,8 +121,8 @@ def slopes(nuvu_frame):
     return np.ma.masked_array(slopes, mask=mask, fill_value=0).filled()
 
 
-def flux(nuvu_frame):
-    _, subapertures = ktools.get_roi_and_subapertures(nuvu_frame)
+def flux(wfs_frame):
+    _, subapertures = ktools.get_roi_and_subapertures(wfs_frame)
 
     flux = np.zeros((11, 11))
 
@@ -144,11 +144,11 @@ def dmdisp(zernike_coeffs=None, orders=15):
     return zernike.generate_pattern(zernike_coeffs, (12, 12)).filled(0)
 
 
-def fli_frame(
+def camera_frame(
     bias=1070,
     readoutnoise=7,
-    psf_x=config.FLI.center_x,
-    psf_y=config.FLI.center_y,
+    psf_x=config.Camera.center_x,
+    psf_y=config.Camera.center_y,
     flux=2**15,
     tiptilt=np.zeros((2, )),
     dmdisp=zernike.generate_pattern([0], (12, 12)),
@@ -156,11 +156,11 @@ def fli_frame(
 ):
     frame = np.zeros((1024, 1024), dtype=np.float64)
 
-    ttm_tip_px = tiptilt[0] * config.TTM.plate_scale / config.FLI.plate_scale
-    ttm_tilt_px = tiptilt[1] * config.TTM.plate_scale / config.FLI.plate_scale
+    ttm_tip_px = tiptilt[0] * config.TTM.plate_scale / config.Camera.plate_scale
+    ttm_tilt_px = tiptilt[1] * config.TTM.plate_scale / config.Camera.plate_scale
 
     slopes_px = zernike.slopes_from_pattern_interp(
-        dmdisp) * config.DM.plate_scale / config.FLI.plate_scale
+        dmdisp) * config.DM.plate_scale / config.Camera.plate_scale
 
     dm_tilt_px = slopes_px[0:11, 0:11].mean()
     dm_tip_px = slopes_px[0:11, 11:22].mean()
@@ -175,9 +175,10 @@ def fli_frame(
     psf_x_i = int(psf_x_i)
 
     dmdisp += zernike.generate_pattern([
-        0, (-dm_tip_px + psf_x_f) * config.FLI.plate_scale /
-        config.DM.plate_scale, (-dm_tilt_px + psf_y_f) *
-        config.FLI.plate_scale / config.DM.plate_scale
+        0, (-dm_tip_px + psf_x_f) *
+        config.Camera.plate_scale / config.DM.plate_scale,
+        (-dm_tilt_px + psf_y_f) * config.Camera.plate_scale /
+        config.DM.plate_scale
     ], (12, 12))
 
     upsampling = 3

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -103,7 +105,8 @@ def subaperture_to_slopes_2d(i: int | None
     return [(row, col), (row, col + 11)]
 
 
-def read_spots_file(file: str) -> tuple[list[int], list[int], list[int]]:
+def read_spots_file(file: str | Path
+                    ) -> tuple[list[int], list[int], list[int]]:
     spots_df = pd.read_csv(file, delim_whitespace=True, header=None,
                            comment='#')
 
@@ -126,7 +129,7 @@ def read_spots_file(file: str) -> tuple[list[int], list[int], list[int]]:
     return all_subaps, active_subaps, masked_subaps
 
 
-def read_autogain_file(file: str) -> list[tuple[int, float]]:
+def read_autogain_file(file: str | Path) -> list[tuple[int, float]]:
     spots_df = pd.read_csv(file, delim_whitespace=True, header=None,
                            comment='#')
 

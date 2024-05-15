@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from kalao import database
-from kalao.plc import tungsten
+from kalao.hardware import tungsten
 
 from kalao.definitions.enums import SequencerStatus
 
@@ -42,7 +42,7 @@ def kalao_status() -> str:
     elif sequencer_status_value == SequencerStatus.WAITLAMP:
         status_string = f'|status|BUSY|{elapsed_time(sequencer_status):.0f}'
     elif sequencer_status_value == SequencerStatus.EXP:
-        texp = database.get_last_value('obs', 'fli_exposure_time')
+        texp = database.get_last_value('obs', 'camera_exposure_time')
         status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{texp:.0f}'
     else:
         status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{sequencer_status_value}'
@@ -114,7 +114,7 @@ def _last_exposure_start() -> datetime:
     :return: Time of exposure start (datetime)
     """
 
-    timestamp = database.get_last_time('obs', 'fli_image_count')
+    timestamp = database.get_last_time('obs', 'camera_image_count')
 
     if timestamp is None:
         return datetime.fromtimestamp(0, tz=timezone.utc)
@@ -129,7 +129,7 @@ def _last_exposure_end() -> datetime:
     :return: Time of exposure end (datetime)
     """
 
-    timestamp = database.get_last_time('obs', 'fli_temporary_image_path')
+    timestamp = database.get_last_time('obs', 'camera_temporary_image_path')
 
     if timestamp is None:
         return datetime.fromtimestamp(0, tz=timezone.utc)
@@ -144,4 +144,4 @@ def _last_filepath_archived() -> str:
     :return: Image file path (str)
     """
 
-    return database.get_last_value('obs', 'fli_last_image_path')
+    return database.get_last_value('obs', 'camera_last_image_path')

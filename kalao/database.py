@@ -6,6 +6,7 @@
 import math
 import os
 import pprint
+import sys
 from collections.abc import KeysView
 from datetime import datetime, timedelta, timezone
 from enum import Enum
@@ -127,7 +128,7 @@ def get(collection_name: str, keys: str | list[str] | None = None,
     if days is None:
         days = config.Database.max_days
 
-    # Convert dict of key to list
+    # Convert dict's keys to list
     if isinstance(keys, KeysView):
         keys = list(keys)
 
@@ -161,6 +162,10 @@ def get(collection_name: str, keys: str | list[str] | None = None,
             values_projection_aggregate = {
                 '$slice': [values_filter, -nb_of_point]
             }
+
+    if isinstance(keys, list):
+        # Since keys will be removed as enough data points have been collected, create a copy
+        keys = keys.copy()
 
     while day <= days:
         db = _get_db(dt - timedelta(days=day))
@@ -295,7 +300,7 @@ def get_time_since_state(collection_name: str, key: str, condition: str = '==',
 
 def store(collection_name: str, data: dict[str, Any]) -> ReturnCode:
     if len(data) == 0:
-        return 0
+        return ReturnCode.DATABASE_OK
 
     timestamp = datetime.now(timezone.utc)
 
@@ -452,7 +457,8 @@ def read_mongo_to_pandas(collection_name: str, keys: list | None = None,
     if dt is None:
         dt = datetime.now(timezone.utc)
 
-    data_db = get(collection_name, keys, nb_of_point=9999, dt=dt, days=days)
+    data_db = get(collection_name, keys, nb_of_point=sys.maxsize, dt=dt,
+                  days=days)
 
     data_df = {}
     for key in data_db.keys():

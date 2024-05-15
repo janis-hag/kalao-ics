@@ -1,59 +1,55 @@
 ---
-- keyword: INSTRUME
-  value: KalAO
-  comment: Instrument used
-
 - keyword: TELESCOP
-  value: Euler
-  comment: Telescope name
+  value: EULER
+  comment: Name of the telescope
 
-- keyword: SITE
-  value: ESO La Silla, Chile
-  comment: Observing site
+- keyword: INSTRUME
+  value: KALAO
+  comment: Name of the instrument
 
 - keyword: ORIGIN
   value: ESO-LASILLA
   comment: Observatory
 
+- keyword: HIERARCH ESO INS ID
+  value: KALAO
+  comment: Instrument ID
+
+- keyword: HIERARCH ESO INS DATE
+  value: '2022-11-17'
+  comment: Instrument release date (yyyy-mm-dd)
+
+- keyword: HIERARCH ESO INS SOFW ID
+  value:
+  comment: Instrument software ID
+
 - keyword: ARCFILE
   value:
   comment: Archive file name
 
-- keyword: BUNIT
-  value: adu
-  comment: Physical unit of array values
+- keyword: OBJECT
+  value:
+  comment: Target description
 
 - keyword: HIERARCH ESO TPL ID
   value:
   comment: Template ID
 
-- keyword: HIERARCH ESO DPR TECH
-  value: IMAGE
-  comment: Observation technique
-
 - keyword: HIERARCH ESO DPR CATG
-  value: TECHNICAL
+  value:
   comment: Observation category
 
 - keyword: HIERARCH ESO DPR TYPE
   value:
   comment: Observation type
 
-- keyword: HIERARCH ESO PROG ID
+- keyword: HIERARCH ESO DPR TECH
+  value:
+  comment: Observation technique
+
+- keyword: HIERARCH ESO OBS PROG ID
   value:
   comment: Euler program identification
-
-- keyword: HIERARCH ESO INS DATE
-  value: '2022-11-17'
-  comment: Instrument release date (yyyy-mm-dd).
-
-- keyword: HIERARCH ESO DET ID
-  value: KalAO-FLI
-  comment: Detector system ID
-
-- keyword: HIERARCH ESO DET NAME
-  value: KalAO-FLI
-  comment: Detector system NAME
 
 - keyword: MJD-OBS
   value:

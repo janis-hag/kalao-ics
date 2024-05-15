@@ -155,7 +155,10 @@ class SceneHoverMixin:
         super().__init__(*args, **kwargs)
 
     def hover_xyv_to_str(self, x, y, v):
-        if x != -1 and y != -1:
+        if not np.isnan(x) and not np.isnan(y):
+            x = int(x)
+            y = int(y)
+
             string = self.formatter.format(
                 'X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, V: {v:.{data_precision}f}{data_unit}',
                 x=(x - self.data_center_x) * self.axis_scaling,

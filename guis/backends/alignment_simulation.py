@@ -33,11 +33,11 @@ class AlignmentBackend(FakeSHMFPSBackend):
 
         data_nuvu = {
             PokeState.FLAT:
-                fake_data.nuvu_frame(tiptilt=[0, 0]),
+                fake_data.wfs_frame(tiptilt=[0, 0]),
             PokeState.DOWN:
-                fake_data.nuvu_frame(tiptilt=[0, 0], dmdisp=data_dm_down),
+                fake_data.wfs_frame(tiptilt=[0, 0], dmdisp=data_dm_down),
             PokeState.UP:
-                fake_data.nuvu_frame(tiptilt=[0, 0], dmdisp=data_dm_up),
+                fake_data.wfs_frame(tiptilt=[0, 0], dmdisp=data_dm_up),
         }
 
         data_slopes = {

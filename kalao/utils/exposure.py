@@ -91,8 +91,8 @@ def next_flat_exptime(target_adu: float, prev_img: np.ndarray,
     exptime = prev_exptime
 
     # Adjust for ADUs
-    exptime *= (target_adu - config.FLI.median_bias) / (prev_adu -
-                                                        config.FLI.median_bias)
+    exptime *= (target_adu - config.Camera.median_bias) / (
+        prev_adu - config.Camera.median_bias)
 
     # Adjust for filters transmission, camera QE
     exptime *= config.Exposure.filters_relative_flux[

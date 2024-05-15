@@ -44,34 +44,34 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         loadUi('loop_controls.ui', self)
         self.resize(600, 400)
 
-        with QSignalBlocker(self.nuvu_emgain_spinbox):
-            self.nuvu_emgain_spinbox.setMinimum(config.WFS.min_emgain)
-            self.nuvu_emgain_spinbox.setMaximum(config.WFS.max_emgain)
+        with QSignalBlocker(self.wfs_emgain_spinbox):
+            self.wfs_emgain_spinbox.setMinimum(config.WFS.min_emgain)
+            self.wfs_emgain_spinbox.setMaximum(config.WFS.max_emgain)
 
-        with QSignalBlocker(self.nuvu_exposuretime_spinbox):
-            self.nuvu_exposuretime_spinbox.setMinimum(
+        with QSignalBlocker(self.wfs_exposuretime_spinbox):
+            self.wfs_exposuretime_spinbox.setMinimum(
                 config.WFS.min_exposuretime)
-            self.nuvu_exposuretime_spinbox.setMaximum(
+            self.wfs_exposuretime_spinbox.setMaximum(
                 config.WFS.max_exposuretime)
 
-        with QSignalBlocker(self.nuvu_autogain_setting_combobox):
+        with QSignalBlocker(self.wfs_autogain_setting_combobox):
             for emgain, exptime in config.WFS.autogain_params:
-                self.nuvu_autogain_setting_combobox.addItem(
+                self.wfs_autogain_setting_combobox.addItem(
                     f'EM Gain: {emgain:d}, Exp. time: {exptime:.1f} ms')
 
-            self.nuvu_autogain_setting_combobox.setCurrentIndex(-1)
+            self.wfs_autogain_setting_combobox.setCurrentIndex(-1)
 
-        with QSignalBlocker(self.bmc_strokemode_combobox):
-            for mode in config.AO.bmc_stroke_modes:
-                self.bmc_strokemode_combobox.addItem(mode)
+        with QSignalBlocker(self.dm_strokemode_combobox):
+            for mode in config.AO.dm_stroke_modes:
+                self.dm_strokemode_combobox.addItem(mode)
 
-            self.bmc_strokemode_combobox.setCurrentIndex(-1)
+            self.dm_strokemode_combobox.setCurrentIndex(-1)
 
-        with QSignalBlocker(self.shwfs_algorithm_combobox):
-            for alogrithm in config.AO.shwfs_algorithms:
-                self.shwfs_algorithm_combobox.addItem(alogrithm)
+        with QSignalBlocker(self.wfs_algorithm_combobox):
+            for alogrithm in config.AO.wfs_algorithms:
+                self.wfs_algorithm_combobox.addItem(alogrithm)
 
-            self.shwfs_algorithm_combobox.setCurrentIndex(-1)
+            self.wfs_algorithm_combobox.setCurrentIndex(-1)
 
         # Create Chart and set General Chart setting
         chart = self.modalgains_plot.chart()
@@ -173,6 +173,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_x = self.tip_spectrum_axis_x = QLogValueAxis()
         axis_x.setBase(10)
         axis_x.setRange(0.1, 1000)
+        axis_x.setMinorTickCount(8)
         axis_x.setTitleText('Frequency [Hz]')
         chart.addAxis(axis_x, Qt.AlignBottom)
         series_tip.attachAxis(axis_x)
@@ -204,6 +205,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_x = self.tilt_spectrum_axis_x = QLogValueAxis()
         axis_x.setBase(10)
         axis_x.setRange(0.1, 1000)
+        axis_x.setMinorTickCount(8)
         axis_x.setTitleText('Frequency [Hz]')
         chart.addAxis(axis_x, Qt.AlignBottom)
         series_tilt.attachAxis(axis_x)
@@ -256,34 +258,34 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         self.data_to_widget(
             self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
-                                        'EMGAIN'), self.nuvu_emgain_spinbox)
+                                        'EMGAIN'), self.wfs_emgain_spinbox)
         self.data_to_widget(
             self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
                                         'EXPTIME'),
-            self.nuvu_exposuretime_spinbox)
+            self.wfs_exposuretime_spinbox)
         self.data_to_widget(
             self.consume_param(data, config.FPS.NUVU, 'autogain_on'),
-            self.nuvu_autogain_checkbox)
+            self.wfs_autogain_checkbox)
         self.data_to_widget(
             self.consume_param(data, config.FPS.NUVU, 'autogain_setting'),
-            self.nuvu_autogain_setting_combobox)
+            self.wfs_autogain_setting_combobox)
 
         # Deformable Mirror
 
         max_stroke = self.consume_param(data, config.FPS.BMC, 'max_stroke')
         if max_stroke is not None:
-            with QSignalBlocker(self.bmc_maxstroke_spinbox):
-                self.bmc_maxstroke_spinbox.setValue(max_stroke * 100)
+            with QSignalBlocker(self.dm_maxstroke_spinbox):
+                self.dm_maxstroke_spinbox.setValue(max_stroke * 100)
 
         self.data_to_widget(
             self.consume_param(data, config.FPS.BMC, 'stroke_mode'),
-            self.bmc_strokemode_combobox)
+            self.dm_strokemode_combobox)
 
         target_stroke = self.consume_param(data, config.FPS.BMC,
                                            'target_stroke')
         if target_stroke is not None:
-            with QSignalBlocker(self.bmc_targetstroke_spinbox):
-                self.bmc_targetstroke_spinbox.setValue(target_stroke * 100)
+            with QSignalBlocker(self.dm_targetstroke_spinbox):
+                self.dm_targetstroke_spinbox.setValue(target_stroke * 100)
 
         # Observation
 
@@ -298,7 +300,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         self.data_to_widget(
             self.consume_param(data, config.FPS.SHWFS, 'algorithm'),
-            self.shwfs_algorithm_combobox)
+            self.wfs_algorithm_combobox)
 
         # Modal gains
 
@@ -382,42 +384,42 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
     # Wavefront Sensor
 
     @Slot(int)
-    def on_nuvu_emgain_spinbox_valueChanged(self, i):
-        self.action_send(self.nuvu_emgain_spinbox, self.backend.nuvu_emgain,
+    def on_wfs_emgain_spinbox_valueChanged(self, i):
+        self.action_send(self.wfs_emgain_spinbox, self.backend.wfs_emgain,
                          emgain=i)
 
     @Slot(float)
-    def on_nuvu_exposuretime_spinbox_valueChanged(self, d):
-        self.action_send(self.nuvu_exposuretime_spinbox,
-                         self.backend.nuvu_exposuretime, exposuretime=d)
+    def on_wfs_exposuretime_spinbox_valueChanged(self, d):
+        self.action_send(self.wfs_exposuretime_spinbox,
+                         self.backend.wfs_exposuretime, exposuretime=d)
 
     @Slot(int)
-    def on_nuvu_autogain_checkbox_stateChanged(self, state):
-        self.action_send(self.nuvu_autogain_checkbox,
-                         self.backend.nuvu_autogain_on,
+    def on_wfs_autogain_checkbox_stateChanged(self, state):
+        self.action_send(self.wfs_autogain_checkbox,
+                         self.backend.wfs_autogain_on,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
-    def on_nuvu_autogain_setting_combobox_currentIndexChanged(self, index):
-        self.action_send(self.nuvu_autogain_setting_combobox,
-                         self.backend.nuvu_autogain_setting, setting=index)
+    def on_wfs_autogain_setting_combobox_currentIndexChanged(self, index):
+        self.action_send(self.wfs_autogain_setting_combobox,
+                         self.backend.wfs_autogain_setting, setting=index)
 
     # Deformable Mirror
 
     @Slot(float)
-    def on_bmc_maxstroke_spinbox_valueChanged(self, d):
-        self.action_send(self.bmc_maxstroke_spinbox,
-                         self.backend.bmc_maxstroke, stroke=d / 100)
+    def on_dm_maxstroke_spinbox_valueChanged(self, d):
+        self.action_send(self.dm_maxstroke_spinbox, self.backend.dm_maxstroke,
+                         stroke=d / 100)
 
     @Slot(int)
-    def on_bmc_strokemode_combobox_currentIndexChanged(self, index):
-        self.action_send(self.bmc_strokemode_combobox,
-                         self.backend.bmc_strokemode, mode=index)
+    def on_dm_strokemode_combobox_currentIndexChanged(self, index):
+        self.action_send(self.dm_strokemode_combobox,
+                         self.backend.dm_strokemode, mode=index)
 
     @Slot(float)
-    def on_bmc_targetstroke_spinbox_valueChanged(self, d):
-        self.action_send(self.bmc_targetstroke_spinbox,
-                         self.backend.bmc_targetstroke, target=d / 100)
+    def on_dm_targetstroke_spinbox_valueChanged(self, d):
+        self.action_send(self.dm_targetstroke_spinbox,
+                         self.backend.dm_targetstroke, target=d / 100)
 
     # Observation
 

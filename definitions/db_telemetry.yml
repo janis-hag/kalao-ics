@@ -1,137 +1,135 @@
 ---
-# PI Tip/Tilt
-pi_tip:
-  short: Tip
-  long: Tip on Tip-Tilt platform
+# Tip-Tilt Mirror
+ttm_tip:
+  short: TTM Tip
+  long: Tip on Tip-Tilt Mirror
   unit: mrad
-  group: Tip-Tilt
+  group: Tip-Tilt Mirror
 
-pi_tilt:
-  short: Tilt
-  long: Tilt on Tip-Tilt platform
+ttm_tilt:
+  short: TTM Tilt
+  long: Tilt on Tip-Tilt Mirror
   unit: mrad
-  group: Tip-Tilt
+  group: Tip-Tilt Mirror
 
-# Nüvü camera (temperatures)
-nuvu_temp_ccd:
-  short: Nüvü EMCCD Temp.
-  long: Temperature of the Nüvü EMCCD
+# Wavefront Sensor
+wfs_temp_ccd:
+  short: WFS EMCCD Temp.
+  long: Temperature of the Wavefront Sensor EMCCD
   unit: °C
-  group: Nüvü
+  group: Wavefront Sensor
   error_range: [ -60.1, -59.9 ]
 
-nuvu_temp_controller:
-  short: Nüvü CNTRLR Temp.
-  long: Temperature of the Nüvü controller
+wfs_temp_controller:
+  short: WFS CNTRLR Temp.
+  long: Temperature of the Wavefront Sensor controller
   unit: °C
-  group: Nüvü
+  group: Wavefront Sensor
 
-nuvu_temp_powersupply:
-  short: Nüvü PSU Temp.
-  long: Temperature of the Nüvü power supply
+wfs_temp_powersupply:
+  short: WFS PSU Temp.
+  long: Temperature of the Wavefront Sensor power supply
   unit: °C
-  group: Nüvü
+  group: Wavefront Sensor
 
-nuvu_temp_fpga:
-  short: Nüvü FPGA Temp.
-  long: Temperature of the Nüvü FPGA
+wfs_temp_fpga:
+  short: WFS FPGA Temp.
+  long: Temperature of the Wavefront Sensor FPGA
   unit: °C
-  group: Nüvü
+  group: Wavefront Sensor
 
-nuvu_temp_heatsink:
-  short: Nüvü HS Temp.
-  long: Temperature of the Nüvü heatsink
+wfs_temp_heatsink:
+  short: WFS HS Temp.
+  long: Temperature of the Wavefront Sensor heatsink
   unit: °C
-  group: Nüvü
+  group: Wavefront Sensor
 
-# Nüvü camera (exposure)
-nuvu_emgain:
-  short: Nüvü EM Gain
-  long: EM gain of the Nüvü EMCCD
+wfs_emgain:
+  short: WFS EM Gain
+  long: EM gain of the Wavefront Sensor
   unit:
-  group: Nüvü
+  group: Wavefront Sensor
   fits_keyword: HIERARCH ESO AOS WFS EMGAIN
 
-nuvu_detgain:
-  short: Nüvü Detector gain
-  long: Nüvü analogic detector gain
+wfs_detgain:
+  short: WFS Detector gain
+  long: Wavefront Sensor analogic detector gain
   unit:
-  group: Nüvü
+  group: Wavefront Sensor
 
-nuvu_exposuretime:
-  short: Nüvü Exp. time
-  long: Exposure time of the Nüvü EMCCD
+wfs_exposuretime:
+  short: WFS Exp. time
+  long: Exposure time of the Wavefront Sensor EMCCD
   unit: ms
-  group: Nüvü
+  group: Wavefront Sensor
   fits_keyword: HIERARCH ESO AOS WFS DIT
 
-nuvu_mframerate:
-  short: Nüvü Framerate
-  long: Measured frame rate of the Nüvü
+wfs_framerate:
+  short: WFS Framerate
+  long: Measured frame rate of the Wavefront Sensor
   unit: Hz
-  group: Nüvü
+  group: Wavefront Sensor
   fits_keyword: HIERARCH ESO AOS WFS FRATE
 
-nuvu_autogain_on:
-  short: Nüvü Auto-gain state
-  long: State of the autogain for the Nüvü
+wfs_autogain_on:
+  short: WFS Auto-gain state
+  long: State of the autogain for the Wavefront Sensor
   unit:
-  group: Nüvü
+  group: Wavefront Sensor
 
-nuvu_autogain_setting:
-  short: Nüvü Auto-gain setting
-  long: Setting of the autogain for the Nüvü
+wfs_autogain_setting:
+  short: WFS Auto-gain setting
+  long: Setting of the autogain for the Wavefront Sensor
   unit:
-  group: Nüvü
+  group: Wavefront Sensor
 
-# BMC deformable mirror
-bmc_max_stroke:
-  short: BMC Max stroke
-  long: Maximum stroke of the BMC DM
-  unit:
-  group: BMC
-
-bmc_stroke_mode:
-  short: BMC Stroke mode
-  long: Stroke mode of the BMC DM
-  unit:
-  group: BMC
-
-bmc_target_stroke:
-  short: BMC Target stroke
-  long: Target stroke of the BMC DM
-  unit:
-  group: BMC
-
-# Shack-Hartmann WFS
-shwfs_algorithm:
+wfs_algorithm:
   short: WFS Algorithm
   long: Algorithm used to compute slopes
   unit:
-  group: Shack-Hartmann WFS
+  group: Wavefront Sensor
 
-shwfs_flux_avg:
+wfs_flux_avg:
   short: WFS Avg. flux
   long: Average flux of active subapertures
   unit: ADU
-  group: Shack-Hartmann WFS
+  group: Wavefront Sensor
 
-shwfs_flux_max:
+wfs_flux_max:
   short: WFS Max. flux
   long: Maximum flux of active subapertures
   unit: ADU
-  group: Shack-Hartmann WFS
+  group: Wavefront Sensor
 
-shwfs_residual_rms:
+wfs_residual_rms:
   short: WFS RMS error
   long: RMS residual of active subapertures
   unit: px
-  group: Shack-Hartmann WFS
+  group: Wavefront Sensor
+
+# Deformable mirror
+dm_max_stroke:
+  short: DM Max stroke
+  long: Maximum stroke of the DM
+  unit:
+  group: Deformable Mirror
+
+dm_stroke_mode:
+  short: DM Stroke mode
+  long: Stroke mode of the DM
+  unit:
+  group: Deformable Mirror
+
+dm_target_stroke:
+  short: DM Target stroke
+  long: Target stroke of the DM
+  unit:
+  group: Deformable Mirror
 
 # AO loops status
 dmloop_on:
-  short: DM Loop ON/OFF
-  long: DM Loop ON/OFF
+  short: DM Loop state
+  long: DM Loop state
   unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP ST
@@ -151,8 +149,8 @@ dmloop_mult:
   fits_keyword: HIERARCH ESO AOS LOOP MULT
 
 ttmloop_on:
-  short: TTM Loop ON/OFF
-  long: TTM Loop ON/OFF
+  short: TTM Loop state
+  long: TTM Loop state
   unit:
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP ST

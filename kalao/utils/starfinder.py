@@ -7,8 +7,8 @@
 """
 starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
-
 import math
+import sys
 
 import numpy as np
 import scipy.optimize
@@ -37,7 +37,7 @@ def find_star(img: np.ndarray, min_peak: float = config.Starfinder.min_peak,
 
 
 def find_stars(img: np.ndarray, min_peak: float = config.Starfinder.min_peak,
-               hw: int = config.Starfinder.window // 2, num: int = 9999,
+               hw: int = config.Starfinder.window // 2, num: int = sys.maxsize,
                method: str = 'gaussian_fit') -> list[Star]:
     stars, bad_pixels = find_stars_and_bad_pixels(img, min_peak=min_peak,
                                                   hw=hw, num=num,
@@ -49,7 +49,8 @@ def find_stars(img: np.ndarray, min_peak: float = config.Starfinder.min_peak,
 def find_stars_and_bad_pixels(img: np.ndarray,
                               min_peak: float = config.Starfinder.min_peak,
                               hw: int = config.Starfinder.window // 2,
-                              num: int = 9999, method: str = 'gaussian_fit'
+                              num: int = sys.maxsize,
+                              method: str = 'gaussian_fit'
                               ) -> tuple[list[Star], np.ndarray]:
     img = img.astype(np.float64)
 

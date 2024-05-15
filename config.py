@@ -20,6 +20,7 @@
 # WFS Plate scale = 1.16 arcsec / px
 # FlI Plate scale = 0.0507 arcsec / px
 
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -28,19 +29,23 @@ from numpy.polynomial import Polynomial
 from kalao.utils import ktools
 from kalao.utils.rprint import rprint
 
-from kalao.definitions.enums import ObservationType, PLCStatus
+from kalao.definitions.enums import ObservationType, PLCStatus, RelayState
 
 kalao_ics_path = Path(__file__).absolute().parent
 epsilon = 1e-12
+
+version = subprocess.check_output([
+    'git', 'describe', '--abbrev=7', '--dirty', '--always', '--tags'
+], cwd=kalao_ics_path).decode().strip()
 
 
 class IPPower:
     url = 'http://10.10.132.94/statusjsn.js'
 
     class Port:
-        RTC = 5
-        Bench = 6
-        BMC_DM = 7
+        RTC = 'KalAO-RTC'
+        Bench = 'KalAO-Bench'
+        DM = 'KalAO-DM'
 
 
 class CalibUnit:
@@ -57,8 +62,8 @@ class ADC:
     max_disp_offset = 0  # °
 
     # Angles on the ADC to have max vertical dispersion
-    max_disp_angle_1 = -45.4437409 + max_disp_offset  # °
-    max_disp_angle_2 = 45.4437409 - max_disp_offset  # °
+    max_disp_angle_1 = 44.56 + max_disp_offset  # °
+    max_disp_angle_2 = -44.56 - max_disp_offset  # °
 
     angle_threshold = 0.1  # °
     update_interval = 10  # s
@@ -101,8 +106,8 @@ class AO:
 
     wait_fps_run = 3  # s
 
-    shwfs_algorithms = ['Quad-cell', 'Center of mass']
-    bmc_stroke_modes = ['Mid-stroke', 'Minimize stroke']
+    wfs_algorithms = ['Quad-cell', 'Center of mass']
+    dm_stroke_modes = ['Mid-stroke', 'Minimize stroke']
 
     flux_avg = 10  # frames
 
@@ -127,7 +132,7 @@ class TTM:
     max_tel_offload = 0.05  # arcsec
 
 
-class FLI:
+class Camera:
     ip = '127.0.0.1'
     port = 9080
 
@@ -147,7 +152,7 @@ class FLI:
 
     laser_calib_power = 0.35  # mW
     laser_calib_exptime = 0.01  # s
-    laser_calib_filter = 'nd'
+    laser_calib_filter = 'ND1.5'
 
 
 class WFS:
@@ -213,46 +218,18 @@ class FilterWheel:
     retries = 3  # -
     retry_wait = 2  # s
 
-    position_list = ['clear', 'g', 'r', 'i', 'z', 'nd']
+    position_list = ['clear', 'SDSS-g', 'SDSS-r', 'SDSS-i', 'SDSS-z', 'ND1.5']
 
     filter_to_wavelength = {
-        'g': 475e-9,  # m
-        'r': 622e-9,  # m
-        'i': 763e-9,  # m
-        'z': 905e-9,  # m
         'clear': [450e-9, 1018e-9],  # m
-        'nd': [450e-9, 1018e-9],  # m
+        'SDSS-g': 475e-9,  # m
+        'SDSS-r': 622e-9,  # m
+        'SDSS-i': 763e-9,  # m
+        'SDSS-z': 905e-9,  # m
+        'ND1.5': [450e-9, 1018e-9],  # m
     }
 
     filter_infos = {
-        'g': {
-            'name': 'SDSS g',
-            'center': 465.47e-9,
-            'fwhm': 131.71e-9,
-            'start': 399.62e-9,
-            'end': 531.33e-9,
-        },
-        'r': {
-            'name': 'SDSS r',
-            'center': 610.83e-9,
-            'fwhm': 122.85e-9,
-            'start': 549.41e-9,
-            'end': 672.26e-9,
-        },
-        'i': {
-            'name': 'SDSS i',
-            'center': 758.10e-9,
-            'fwhm': 123.69e-9,
-            'start': 696.26e-9,
-            'end': 819.95e-9,
-        },
-        'z': {
-            'name': 'SDSS z',
-            'center': np.nan,
-            'fwhm': np.inf,
-            'start': 822.80e-9,
-            'end': np.inf,
-        },
         'clear': {
             'name': 'Clear',
             'center': np.nan,
@@ -260,8 +237,36 @@ class FilterWheel:
             'start': 400e-9,
             'end': 1000e-9,
         },
-        'nd': {
-            'name': 'Neutral Density',
+        'SDSS-g': {
+            'name': 'SDSS g',
+            'center': 465.47e-9,
+            'fwhm': 131.71e-9,
+            'start': 399.62e-9,
+            'end': 531.33e-9,
+        },
+        'SDSS-r': {
+            'name': 'SDSS r',
+            'center': 610.83e-9,
+            'fwhm': 122.85e-9,
+            'start': 549.41e-9,
+            'end': 672.26e-9,
+        },
+        'SDSS-i': {
+            'name': 'SDSS i',
+            'center': 758.10e-9,
+            'fwhm': 123.69e-9,
+            'start': 696.26e-9,
+            'end': 819.95e-9,
+        },
+        'SDSS-z': {
+            'name': 'SDSS z',
+            'center': np.nan,
+            'fwhm': np.inf,
+            'start': 822.80e-9,
+            'end': np.inf,
+        },
+        'ND1.5': {
+            'name': 'Neutral Density, OD: 1.5',
             'center': np.nan,
             'fwhm': np.nan,
             'start': np.nan,
@@ -285,11 +290,11 @@ class Tungsten:
 
     flat_exptime_list = {
         'clear': 300,  # s
-        'g': 360,  # s
-        'r': 480,  # s
-        'i': 420,  # s
-        'z': 420,  # s
-        'nd': 300,  # s
+        'SDSS-g': 360,  # s
+        'SDSS-r': 480,  # s
+        'SDSS-i': 420,  # s
+        'SDSS-z': 420,  # s
+        'ND1.5': 300,  # s
     }
 
 
@@ -299,10 +304,10 @@ class PLC:
     disabled = []
 
     # Calibration of the temperature sensors
-    temp_bench_air_offset = -4.5  # °C, 19 - 23.5
-    temp_bench_board_offset = -6.1  # °C, 19 - 25.1
-    temp_water_in_offset = -3.6  # °C, 19 - 22.7
-    temp_water_out_offset = -1.7  # °C, 19 - 20.3
+    bench_air_temp_offset = -4.5  # °C, 19 - 23.5
+    bench_board_temp_offset = -6.1  # °C, 19 - 25.1
+    coolant_temp_in_offset = -3.6  # °C, 19 - 22.7
+    coolant_temp_out_offset = -1.7  # °C, 19 - 20.3
 
     class Node:
         ADC1 = 'ns=4;s=MAIN.ADC1_Newport_PR50PP.motor'
@@ -316,19 +321,22 @@ class PLC:
         PUMP = 'ns=4;s=MAIN.bRelayPump'
         FAN = 'ns=4;s=MAIN.bRelayFan'
         HEATER = 'ns=4;s=MAIN.bWaterHeater'
+        PUMP_TEMP = 'ns=4;s=MAIN.Temp_Pump'
+        COOLANT_TEMP_IN = 'ns=4;s=MAIN.Temp_Water_In'
+        COOLANT_TEMP_OUT = 'ns=4;s=MAIN.Temp_Water_Out'
         FLOWMETER = 'ns=4;s=MAIN.iFlowmeter'
-        HYGROMETER = 'ns=4;s=MAIN.iHygrometer'
 
-        TEMP_BENCH_AIR = 'ns=4;s=MAIN.Temp_Bench_Air'
-        TEMP_BENCH_BOARD = 'ns=4;s=MAIN.Temp_Bench_Board'
-        TEMP_WATER_IN = 'ns=4;s=MAIN.Temp_Water_In'
-        TEMP_WATER_OUT = 'ns=4;s=MAIN.Temp_Water_Out'
-        TEMP_PUMP = 'ns=4;s=MAIN.Temp_Pump'
+        BENCH_AIR_TEMP = 'ns=4;s=MAIN.Temp_Bench_Air'
+        BENCH_AIR_HYGRO = 'ns=4;s=MAIN.iHygrometer'
+        BENCH_BOARD_TEMP = 'ns=4;s=MAIN.Temp_Bench_Board'
 
-    initial_pos = {
+    initial_state = {
         Node.CALIB_UNIT: Laser.position,
         Node.ADC1: ADC.max_disp_angle_1 + 90,  # Zero dispersion
         Node.ADC2: ADC.max_disp_angle_2 + 90,  # Zero dispersion
+        Node.PUMP: RelayState.ON,
+        Node.FAN: RelayState.ON,
+        Node.HEATER: RelayState.OFF,
     }
 
     init_poll_interval = 1  # s
@@ -377,41 +385,41 @@ class FITS:
     max_length_without_HIERARCH = 8
 
     on_sky_types = [
-        ObservationType.SKY_FLAT, ObservationType.OBJECT, ObservationType.FOCUS
+        ObservationType.TARGET, ObservationType.SKY_FLAT, ObservationType.FOCUS
     ]
 
     base_header = {
+        ObservationType.TARGET: {
+            'DPR CATG': 'SCIENCE',
+            'DPR TYPE': 'OBJECT',
+        },
         ObservationType.DARK: {
             'DPR CATG': 'CALIB',
             'DPR TYPE': 'DARK',
-            'PROG ID': '199',
-            'OBS TARGET NAME': 'DARK'
+            'OBS PROG ID': '199',
         },
         ObservationType.SKY_FLAT: {
             'DPR CATG': 'CALIB',
             'DPR TYPE': 'FLAT,SKY',
-            'PROG ID': '199',
+            'OBS PROG ID': '199',
         },
         ObservationType.LAMP_FLAT: {
             'DPR CATG': 'CALIB',
             'DPR TYPE': 'FLAT,LAMP',
-            'PROG ID': '199',
-            'OBS TARGET NAME': 'LAMP'
-        },
-        ObservationType.OBJECT: {
-            'DPR CATG': 'SCIENCE',
-            'DPR TYPE': 'OBJECT',
+            'OBS PROG ID': '199',
         },
         ObservationType.FOCUS: {
-            'DPR CATG': 'CALIB',
-            'DPR TYPE': 'FOCUS,OBJECT',
-            'PROG ID': '199',
-        },
-        ObservationType.TECHNICAL: {
             'DPR CATG': 'TECHNICAL',
+            'DPR TYPE': 'OBJECT,FOCUS',
+            'OBS PROG ID': '199',
         },
-        ObservationType.CENTERING: {
-            'DPR CATG': 'TECHNICAL',
+        ObservationType.TARGET_CENTERING: {
+            'DPR CATG': 'ACQUISITION',
+            'DPR TYPE': 'OBJECT',
+        },
+        ObservationType.LASER_CENTERING: {
+            'DPR CATG': 'ACQUISITION',
+            'DPR TYPE': 'STD,FIBER',
         },
         ObservationType.ENGINEERING: {
             'DPR CATG': 'TECHNICAL',
@@ -448,23 +456,23 @@ class Starfinder:
 
 class Offsets:
     # Should be 13e-3 * 11.9849 / 44.1023 = 0.00353 mm / px
-    fli_y_to_calibunit_mm = 0.00353  # mm / px
+    camera_y_to_calibunit_mm = 0.00353  # mm / px
 
     # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
-    fli_x_to_tel_alt = -0.0507  # arcsec / px
-    fli_y_to_tel_az = 0.0507  # arcsec / px
+    camera_x_to_tel_alt = -0.0507  # arcsec / px
+    camera_y_to_tel_az = 0.0507  # arcsec / px
 
     # Should be 0.5 * 1/(1.2*44.1023) * 1200 / 20 * 1000 * 13e-6 = 0.00737 mrad / px
-    fli_x_to_ttm_tip = -0.00737  # mrad / px
-    fli_y_to_ttm_tilt = 0.00737  # mrad / px
+    camera_x_to_ttm_tip = -0.00737  # mrad / px
+    camera_y_to_ttm_tilt = 0.00737  # mrad / px
 
     # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
-    nuvu_x_to_tel_az = -1.16  # arcsec / px
-    nuvu_y_to_tel_alt = 1.16  # arcsec / px
+    wfs_x_to_tel_az = -1.16  # arcsec / px
+    wfs_y_to_tel_alt = 1.16  # arcsec / px
 
     # Should be 0.5 * 1/(1.2*7.09899) * 1200 / 20 * 1000 * 48e-6 = 0.169 mrad / px (2x2 binning)
-    nuvu_x_to_ttm_tilt = -0.169  # mrad / px
-    nuvu_y_to_ttm_tip = 0.169  # mrad / px
+    wfs_x_to_ttm_tilt = -0.169  # mrad / px
+    wfs_y_to_ttm_tip = 0.169  # mrad / px
 
     # Should be 2 * 20 / 1200 / 1000 * 180/np.pi * 3600 = 6.88 arcsec / mrad
     ttm_tip_to_tel_alt = 6.88  # arcsec / mrad
@@ -475,17 +483,17 @@ class Centering:
     automatic_timeout = 300  # s
     manual_timeout = 600  # s
 
-    fli_with_calibunit_max_iter = 5  # -
-    fli_with_calibunit_precision = 5  # px
+    camera_with_calibunit_max_iter = 5  # -
+    camera_with_calibunit_precision = 5  # px
 
-    fli_with_telescope_max_iter = 5  # -
-    fli_with_telescope_precision = 20  # px
+    camera_with_telescope_max_iter = 5  # -
+    camera_with_telescope_precision = 20  # px
 
-    fli_with_ttm_max_iter = 5  # -
-    fli_with_ttm_precision = 5  # px
+    camera_with_ttm_max_iter = 5  # -
+    camera_with_ttm_precision = 5  # px
 
     wfs_with_ttm_max_iter = 5  # -
-    wfs_with_ttm_precision = 0.01  # px
+    wfs_with_ttm_precision = 0.2  # px
 
     min_exptime = 5  # s
 
@@ -513,7 +521,7 @@ class Exposure:
         # For finding optimal exposure time and filter for focusing and centering
         min_adu = 2048  # ADU
         max_adu = 32768  # ADU
-        filter_list = ['clear', 'g', 'z']
+        filter_list = ['clear', 'SDSS-g', 'SDSS-z']
 
     class SkyFlat:
         # TODO: to be refined
@@ -522,10 +530,10 @@ class Exposure:
 
     filters_relative_flux = {
         'clear': 1,
-        'g': 0.236,
-        'r': 0.260,
-        'i': 0.224,
-        'z': 0.155,
+        'SDSS-g': 0.236,
+        'SDSS-r': 0.260,
+        'SDSS-i': 0.224,
+        'SDSS-z': 0.155,
     }
 
 
@@ -533,12 +541,12 @@ class Calib:
     class Flats:
         # yapf: disable
         default_flat_list = [
-                'g', 'g', 'g', 'g', 'g',
-                'r', 'r', 'r', 'r', 'r',
-                'i', 'i', 'i', 'i', 'i',
-                'z', 'z', 'z', 'z', 'z',
+                'SDSS-g', 'SDSS-g', 'SDSS-g', 'SDSS-g', 'SDSS-g',
+                'SDSS-r', 'SDSS-r', 'SDSS-r', 'SDSS-r', 'SDSS-r',
+                'SDSS-i', 'SDSS-i', 'SDSS-i', 'SDSS-i', 'SDSS-i',
+                'SDSS-z', 'SDSS-z', 'SDSS-z', 'SDSS-z', 'SDSS-z',
                 'clear', 'clear', 'clear', 'clear', 'clear',
-                'nd', 'nd', 'nd', 'nd', 'nd'
+                'ND1.5', 'ND1.5', 'ND1.5', 'ND1.5', 'ND1.5'
         ]
         # yapf: enable
 
@@ -703,8 +711,8 @@ class GUI:
     }
 
     plots_exclude_list = [
-        'observer_name', 'observer_email', 'fli_last_image_path',
-        'fli_temporary_image_path', 'tcs_header_path',
+        'observer_name', 'observer_email', 'camera_last_image_path',
+        'camera_temporary_image_path', 'tcs_header_path',
         'filterwheel_filter_name', 'sequencer_command_received', 't120_host'
     ]
 
@@ -715,8 +723,8 @@ class GUI:
     refreshrate_dbs = 1 / min(Database.monitoring_update_interval,
                               Database.telemetry_update_interval)  # /s
 
-    # http_host = '10.10.132.120'  # kalaortc01
-    http_host = '127.0.0.1'  # localhost
+    http_host = '10.10.132.120'  # kalaortc01
+    # http_host = '127.0.0.1'  # localhost
     http_port = 6666
     http_dataformat = 'application/octet-stream'
 

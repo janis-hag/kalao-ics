@@ -74,7 +74,7 @@ class TrackingTimeout(SequencerException):
     """Tracking timeout"""
 
 
-class FLITakeImageFailed(SequencerException):
+class CameraTakeImageFailed(SequencerException):
     """Failed to take image"""
 
 

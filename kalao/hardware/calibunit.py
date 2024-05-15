@@ -13,7 +13,7 @@ import math
 import numpy as np
 
 from kalao import logger
-from kalao.plc import core
+from kalao.hardware import plc
 
 from opcua import Client
 
@@ -85,8 +85,8 @@ def move(position: float, velocity: float = config.CalibUnit.velocity,
         f'Moving calibration unit to position {position} mm at {velocity} mm/s'
     )
 
-    new_position = core.motor_move(config.PLC.Node.CALIB_UNIT, position,
-                                   velocity, blocking, beck=beck)
+    new_position = plc.motor_move(config.PLC.Node.CALIB_UNIT, position,
+                                  velocity, blocking, beck=beck)
 
     if blocking:
         logger.info('calibunit',
@@ -95,36 +95,37 @@ def move(position: float, velocity: float = config.CalibUnit.velocity,
     return new_position
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def stop(beck: Client = None) -> None:
     logger.info('calibunit', f'Stopping calibration unit')
-    core.motor_send_stop(config.PLC.Node.CALIB_UNIT, beck=beck)
+    plc.motor_send_stop(config.PLC.Node.CALIB_UNIT, beck=beck)
 
 
-@core.beckhoff_autoconnect
-def wait_move(beck: Client = None) -> int:
-    core.wait_loop(f'Waiting for calibration unit movement',
-                   lambda: is_moving(beck=beck), 5)
+@plc.autoconnect
+def wait(beck: Client = None) -> int:
+    plc.wait_loop(f'Waiting for calibration unit movement',
+                  lambda: is_moving(beck=beck), 5)
 
     return 0
 
 
 def get_position(beck: Client = None) -> float:
-    position = core.motor_get_position(config.PLC.Node.CALIB_UNIT, beck=beck)
+    position = plc.motor_get_position(config.PLC.Node.CALIB_UNIT, beck=beck)
 
     if np.isnan(position):
-        error_code, error_text = core.get_error(config.PLC.Node.CALIB_UNIT,
-                                                beck=beck)
+        error_code, error_text = plc.get_error(config.PLC.Node.CALIB_UNIT,
+                                               beck=beck)
         logger.error('calibunit', f'{error_text} ({error_code})')
 
     return position
 
 
 def is_moving(beck: Client = None) -> bool:
-    return core.motor_is_moving(config.PLC.Node.CALIB_UNIT, beck=beck)
+    return plc.motor_get_status(config.PLC.Node.CALIB_UNIT,
+                                beck=beck) == PLCStatus.MOVING
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def init(force_init: bool = True, beck: Client = None) -> ReturnCode:
     '''
     Initialise the calibration unit.
@@ -132,19 +133,20 @@ def init(force_init: bool = True, beck: Client = None) -> ReturnCode:
 
     logger.info('calibunit', 'Initialising calibration unit')
 
-    ret_init = core.motor_init(config.PLC.Node.CALIB_UNIT, force_init,
-                               beck=beck)
+    ret_init = plc.motor_init(config.PLC.Node.CALIB_UNIT, force_init,
+                              beck=beck)
 
     if ret_init != ReturnCode.PLC_INIT_SUCCESS:
         logger.error('calibunit', f'Calibration unit initialisation failed')
     else:
         logger.info('calibunit', 'Calibration unit initialised')
 
-        if config.PLC.Node.CALIB_UNIT in config.PLC.initial_pos:
-            move(config.PLC.initial_pos[config.PLC.Node.CALIB_UNIT], beck=beck)
+        if config.PLC.Node.CALIB_UNIT in config.PLC.initial_state:
+            move(config.PLC.initial_state[config.PLC.Node.CALIB_UNIT],
+                 beck=beck)
 
     return ret_init
 
 
 def get_state(beck: Client = None) -> PLCStatus:
-    return core.motor_get_status(config.PLC.Node.CALIB_UNIT, beck=beck)
+    return plc.motor_get_status(config.PLC.Node.CALIB_UNIT, beck=beck)

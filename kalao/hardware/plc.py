@@ -31,7 +31,7 @@ def connect(addr: str = config.PLC.ip, port: int = config.PLC.port) -> Client:
     return beck
 
 
-def beckhoff_autoconnect(fun):
+def autoconnect(fun):
     @wraps(fun)
     def wrapper(*args, beck: Client = None, **kwargs):
         ret = None
@@ -90,7 +90,7 @@ def motor_send_stop(node: str, beck: Client) -> None:
             ua.Variant(True, motor_bStop.get_data_type_as_variant_type())))
 
 
-@beckhoff_autoconnect
+@autoconnect
 def motor_init(node: str, force_init: bool = True,
                beck: Client = None) -> ReturnCode:
     # Check if enabled, if not do enable
@@ -111,9 +111,10 @@ def motor_init(node: str, force_init: bool = True,
         motor_send_init(node, beck=beck)
 
         time.sleep(config.PLC.init_poll_interval)
-        wait_loop(f'Waiting for {node} initialisation',
-                  lambda: motor_is_initialising(node, beck=beck),
-                  config.PLC.init_poll_interval)
+        wait_loop(
+            f'Waiting for {node} initialisation', lambda: motor_get_status(
+                node, beck=beck) == PLCStatus.INITIALISING,
+            config.PLC.init_poll_interval)
 
         if not beck.get_node(f"{node}.stat.bInitialised").get_value():
             return ReturnCode.PLC_INIT_FAILED
@@ -121,7 +122,7 @@ def motor_init(node: str, force_init: bool = True,
     return ReturnCode.PLC_INIT_SUCCESS
 
 
-@beckhoff_autoconnect
+@autoconnect
 def motor_move(node: str, position: float, velocity: float, blocking: bool,
                beck: Client = None) -> float:
     motor_nCommand = beck.get_node(f"{node}.ctrl.nCommand")
@@ -162,8 +163,9 @@ def motor_move(node: str, position: float, velocity: float, blocking: bool,
     if blocking:
         # Wait for movement
         time.sleep(2)
-        wait_loop(f'Waiting for {node} movement',
-                  lambda: motor_is_moving(node, beck=beck), 5)
+        wait_loop(
+            f'Waiting for {node} movement',
+            lambda: motor_get_status(node, beck=beck) == PLCStatus.MOVING, 5)
 
         # Get new position
         return motor_get_position(node, beck=beck)
@@ -171,7 +173,7 @@ def motor_move(node: str, position: float, velocity: float, blocking: bool,
         return np.nan
 
 
-@beckhoff_autoconnect
+@autoconnect
 def motor_get_position(node: str, beck: Client = None) -> float:
     error_code, error_text = get_error(node, beck=beck)
 
@@ -181,19 +183,7 @@ def motor_get_position(node: str, beck: Client = None) -> float:
         return beck.get_node(f'{node}.stat.lrPosActual').get_value()
 
 
-@beckhoff_autoconnect
-def motor_is_moving(node: str, beck: Client = None) -> bool:
-    return beck.get_node(f'{node}.stat.sStatus').get_value().startswith(
-        'MOVING')
-
-
-@beckhoff_autoconnect
-def motor_is_initialising(node: str, beck: Client = None) -> bool:
-    return beck.get_node(f'{node}.stat.sStatus').get_value().startswith(
-        'INITIALISING')
-
-
-@beckhoff_autoconnect
+@autoconnect
 def motor_get_status(node: str, beck: Client = None) -> PLCStatus:
     enabled = beck.get_node(f'{node}.stat.bEnabled').get_value()
     initialised = beck.get_node(f'{node}.stat.bInitialised').get_value()
@@ -215,7 +205,7 @@ def motor_get_status(node: str, beck: Client = None) -> PLCStatus:
         return PLCStatus.UNKNOWN
 
 
-@beckhoff_autoconnect
+@autoconnect
 def get_error(node: str, beck: Client = None) -> tuple[int, str]:
     error_code = beck.get_node(f'{node}.stat.nErrorCode').get_value()
 

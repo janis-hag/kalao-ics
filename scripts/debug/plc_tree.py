@@ -1,10 +1,10 @@
-from kalao.plc import core
+from kalao.hardware import plc
 from kalao.utils.rprint import rprint
 
 from opcua import Client, ua
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def print_node_tree(node, short=True, beck: Client = None):
     node = beck.get_node(node)
 

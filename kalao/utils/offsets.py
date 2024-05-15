@@ -5,18 +5,18 @@ import numpy as np
 
 from kalao import logger
 from kalao.cacao import toolbox
+from kalao.hardware import calibunit
 from kalao.interfaces import etcs
-from kalao.plc import calibunit
 
 from kalao.definitions.enums import ReturnCode
 
 import config
 
 
-def fli_to_calibunit(dy: float) -> ReturnCode:
+def camera_to_calibunit(dy: float) -> ReturnCode:
     position = calibunit.get_position()
 
-    new_position = position + config.Offsets.fli_y_to_calibunit_mm * dy
+    new_position = position + config.Offsets.camera_y_to_calibunit_mm * dy
 
     if math.isclose(calibunit.move(new_position), new_position, abs_tol=0.1):
         return ReturnCode.OK
@@ -24,9 +24,9 @@ def fli_to_calibunit(dy: float) -> ReturnCode:
         return ReturnCode.GENERIC_ERROR
 
 
-def fli_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
-    alt_offset = dx * config.Offsets.fli_x_to_tel_alt * gain
-    az_offset = dy * config.Offsets.fli_y_to_tel_az * gain
+def camera_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
+    alt_offset = dx * config.Offsets.camera_x_to_tel_alt * gain
+    az_offset = dy * config.Offsets.camera_y_to_tel_az * gain
 
     if etcs.send_altaz_offset(alt_offset, az_offset,
                               wait=True) == ReturnCode.OK:
@@ -36,8 +36,8 @@ def fli_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
 
 
 def wfs_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
-    alt_offset = dy * config.Offsets.nuvu_y_to_tel_alt * gain
-    az_offset = dx * config.Offsets.nuvu_x_to_tel_az * gain
+    alt_offset = dy * config.Offsets.wfs_y_to_tel_alt * gain
+    az_offset = dx * config.Offsets.wfs_x_to_tel_az * gain
 
     # logger.info(
     #     'ttm',
@@ -51,9 +51,9 @@ def wfs_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
         return ReturnCode.GENERIC_ERROR
 
 
-def fli_to_ttm(dx: float, dy: float, gain: float = 1,
-               output_stream: str = config.Streams.TTM_CENTERING
-               ) -> ReturnCode:
+def camera_to_ttm(dx: float, dy: float, gain: float = 1,
+                  output_stream: str = config.Streams.TTM_CENTERING
+                  ) -> ReturnCode:
     ttm_stream = toolbox.open_stream_once(output_stream)
 
     if ttm_stream is None:
@@ -62,8 +62,8 @@ def fli_to_ttm(dx: float, dy: float, gain: float = 1,
 
     tip, tilt = ttm_stream.get_data(check=False)
 
-    new_tip = tip + dx * config.Offsets.fli_x_to_ttm_tip * gain
-    new_tilt = tilt + dy * config.Offsets.fli_y_to_ttm_tilt * gain
+    new_tip = tip + dx * config.Offsets.camera_x_to_ttm_tip * gain
+    new_tilt = tilt + dy * config.Offsets.camera_y_to_ttm_tilt * gain
 
     new_tip, new_tilt = check_ttm_saturation(new_tip, new_tilt)
 
@@ -90,8 +90,8 @@ def wfs_to_ttm(dx: float, dy: float, gain: float = 1,
 
     tip, tilt = ttm_stream.get_data(check=False)
 
-    new_tip = tip + dy * config.Offsets.nuvu_y_to_ttm_tip * gain
-    new_tilt = tilt + dx * config.Offsets.nuvu_x_to_ttm_tilt * gain
+    new_tip = tip + dy * config.Offsets.wfs_y_to_ttm_tip * gain
+    new_tilt = tilt + dx * config.Offsets.wfs_x_to_ttm_tilt * gain
 
     new_tip, new_tilt = check_ttm_saturation(new_tip, new_tilt)
 
@@ -136,6 +136,11 @@ def offload_ttm_to_telescope(gain: float = config.TTM.offload_gain,
 
     :return:
     """
+
+    config_fps = toolbox.open_fps_once(config.FPS.CONFIG)
+
+    if config_fps is None or not config_fps.get_param('ttm_offload'):
+        return ReturnCode.GENERIC_ERROR
 
     ttm_stream = toolbox.open_stream_once(input_stream)
 

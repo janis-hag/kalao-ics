@@ -215,7 +215,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="nuvu_groupbox">
+      <widget class="QGroupBox" name="wfs_groupbox">
        <property name="title">
         <string>Wavefront Sensor (Nüvü)</string>
        </property>
@@ -224,14 +224,14 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <item row="0" column="0">
-         <widget class="QLabel" name="nuvu_emgain_label">
+         <widget class="QLabel" name="wfs_emgain_label">
           <property name="text">
            <string>EM Gain</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QSpinBox" name="nuvu_emgain_spinbox">
+         <widget class="QSpinBox" name="wfs_emgain_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -244,14 +244,14 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="nuvu_exposuretime_label">
+         <widget class="QLabel" name="wfs_exposuretime_label">
           <property name="text">
            <string>Exposure time</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QDoubleSpinBox" name="nuvu_exposuretime_spinbox">
+         <widget class="QDoubleSpinBox" name="wfs_exposuretime_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -270,50 +270,38 @@
          </widget>
         </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="nuvu_autogain_label">
+         <widget class="QLabel" name="wfs_autogain_label">
           <property name="text">
            <string>Auto-gain</string>
           </property>
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QCheckBox" name="nuvu_autogain_checkbox">
+         <widget class="QCheckBox" name="wfs_autogain_checkbox">
           <property name="text">
            <string/>
           </property>
          </widget>
         </item>
         <item row="3" column="0">
-         <widget class="QLabel" name="nuvu_autogain_setting_label">
+         <widget class="QLabel" name="wfs_autogain_setting_label">
           <property name="text">
            <string>Auto-gain setting</string>
           </property>
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QComboBox" name="nuvu_autogain_setting_combobox"/>
+         <widget class="QComboBox" name="wfs_autogain_setting_combobox"/>
         </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QGroupBox" name="shwfs_groupbox">
-       <property name="title">
-        <string>Slopes (Shack-Hartmann WFS)</string>
-       </property>
-       <layout class="QFormLayout" name="formLayout">
-        <property name="labelAlignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-        <item row="0" column="0">
-         <widget class="QLabel" name="shwfs_algorithm_label">
+        <item row="4" column="0">
+         <widget class="QLabel" name="wfs_algorithm_label">
           <property name="text">
            <string>Algorithm</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="shwfs_algorithm_combobox">
+        <item row="4" column="1">
+         <widget class="QComboBox" name="wfs_algorithm_combobox">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -323,7 +311,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="bmc_groupbox">
+      <widget class="QGroupBox" name="dm_groupbox">
        <property name="title">
         <string>Deformable Mirror (Boston Micromachines Corporation)</string>
        </property>
@@ -332,14 +320,14 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <item row="0" column="0">
-         <widget class="QLabel" name="bmc_maxstroke_label">
+         <widget class="QLabel" name="dm_maxstroke_label">
           <property name="text">
            <string>Max stroke</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QDoubleSpinBox" name="bmc_maxstroke_spinbox">
+         <widget class="QDoubleSpinBox" name="dm_maxstroke_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -361,24 +349,24 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="bmc_strokemode_label">
+         <widget class="QLabel" name="dm_strokemode_label">
           <property name="text">
            <string>Stroke mode</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QComboBox" name="bmc_strokemode_combobox"/>
+         <widget class="QComboBox" name="dm_strokemode_combobox"/>
         </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="bmc_targetstroke_label">
+         <widget class="QLabel" name="dm_targetstroke_label">
           <property name="text">
            <string>Target stroke</string>
           </property>
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QDoubleSpinBox" name="bmc_targetstroke_spinbox">
+         <widget class="QDoubleSpinBox" name="dm_targetstroke_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>

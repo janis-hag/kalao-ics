@@ -20,8 +20,7 @@ import numpy as np
 from astropy.io import fits
 
 from kalao.cacao import aocontrol, toolbox
-from kalao.fli import camera
-from kalao.plc import filterwheel, laser
+from kalao.hardware import camera, filterwheel, laser
 from kalao.utils import kmath, ktime, starfinder, zernike
 
 from kalao.definitions.enums import CameraServerStatus
@@ -50,7 +49,7 @@ def take_and_measure(args):
 
     filepath = camera.take_frame(
         exptime=args.exptime, nbframes=args.img_avg,
-        roi=(config.FLI.center_x - hw, config.FLI.center_y - hw, 2 * hw,
+        roi=(config.Camera.center_x - hw, config.Camera.center_y - hw, 2 * hw,
              2 * hw))
 
     img_cube = fits.getdata(filepath)
@@ -234,13 +233,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Run open-loop NCPA optimisation.')
     parser.add_argument('--exptime', action='store', dest='exptime',
-                        type=float, default=config.FLI.laser_calib_exptime,
+                        type=float, default=config.Camera.laser_calib_exptime,
                         help='Science camera integration time')
     parser.add_argument('--filter', action='store', dest='filter_name',
-                        default=config.FLI.laser_calib_filter,
+                        default=config.Camera.laser_calib_filter,
                         help='Filter name to use')
     parser.add_argument('--laser', action='store', dest='laser_power',
-                        default=config.FLI.laser_calib_power, type=float,
+                        default=config.Camera.laser_calib_power, type=float,
                         help='Laser power')
     parser.add_argument('--orders', action='store', dest='orders_to_correct',
                         default=10, type=int,

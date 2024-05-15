@@ -238,13 +238,13 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="fli_groupbox">
+      <widget class="QGroupBox" name="camera_groupbox">
        <property name="title">
         <string>Science Camera</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_9">
         <item row="1" column="1">
-         <widget class="KLineEdit" name="fli_exposure_time_lineedit">
+         <widget class="KLineEdit" name="camera_exposure_time_lineedit">
           <property name="text">
            <string>{exposure_time:.3f} s</string>
           </property>
@@ -254,7 +254,7 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="KStatusIndicator" name="fli_exposure_indicator">
+         <widget class="KStatusIndicator" name="camera_exposure_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -276,7 +276,7 @@
          </widget>
         </item>
         <item row="0" column="0">
-         <widget class="QLabel" name="fli_exposure_label">
+         <widget class="QLabel" name="camera_exposure_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -292,7 +292,7 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="fli_exposure_time_label">
+         <widget class="QLabel" name="camera_exposure_time_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -308,7 +308,7 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="KLineEdit" name="fli_remaining_time_lineedit">
+         <widget class="KLineEdit" name="camera_remaining_time_lineedit">
           <property name="text">
            <string>{remaining_time:.3f} s</string>
           </property>
@@ -318,7 +318,7 @@
          </widget>
         </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="fli_remaining_time_label">
+         <widget class="QLabel" name="camera_remaining_time_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -334,7 +334,7 @@
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="KLineEdit" name="fli_ccd_temperature_lineedit">
+         <widget class="KLineEdit" name="camera_ccd_temperature_lineedit">
           <property name="text">
            <string>{ccd_temperature:.1f} °C</string>
           </property>
@@ -344,7 +344,7 @@
          </widget>
         </item>
         <item row="4" column="0">
-         <widget class="QLabel" name="fli_ccd_temperature_label">
+         <widget class="QLabel" name="camera_ccd_temperature_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -360,7 +360,7 @@
          </widget>
         </item>
         <item row="3" column="0">
-         <widget class="QLabel" name="fli_remaining_frames_label">
+         <widget class="QLabel" name="camera_remaining_frames_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -376,7 +376,7 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="KLineEdit" name="fli_remaining_frames_lineedit">
+         <widget class="KLineEdit" name="camera_remaining_frames_lineedit">
           <property name="text">
            <string>{remaining_frames:d} frames</string>
           </property>
@@ -389,13 +389,13 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="nuvu_groupbox">
+      <widget class="QGroupBox" name="wfs_groupbox">
        <property name="title">
         <string>Wavefront Sensor</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_10">
         <item row="2" column="1">
-         <widget class="KLineEdit" name="nuvu_exposuretime_lineedit">
+         <widget class="KLineEdit" name="wfs_exposuretime_lineedit">
           <property name="text">
            <string>{exposuretime:.2f} ms</string>
           </property>
@@ -405,7 +405,7 @@
          </widget>
         </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="nuvu_exposuretime_label">
+         <widget class="QLabel" name="wfs_exposuretime_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -421,7 +421,7 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="KLineEdit" name="nuvu_emgain_lineedit">
+         <widget class="KLineEdit" name="wfs_emgain_lineedit">
           <property name="text">
            <string>{emgain:.0f}</string>
           </property>
@@ -431,7 +431,7 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="nuvu_emgain_label">
+         <widget class="QLabel" name="wfs_emgain_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -447,7 +447,7 @@
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="KLineEdit" name="nuvu_ccd_temperature_lineedit">
+         <widget class="KLineEdit" name="wfs_ccd_temperature_lineedit">
           <property name="text">
            <string>{ccd_temperature:.1f} °C</string>
           </property>
@@ -457,7 +457,7 @@
          </widget>
         </item>
         <item row="3" column="0">
-         <widget class="QLabel" name="nuvu_framerate_label">
+         <widget class="QLabel" name="wfs_framerate_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -473,7 +473,7 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="KLineEdit" name="nuvu_framerate_lineedit">
+         <widget class="KLineEdit" name="wfs_framerate_lineedit">
           <property name="text">
            <string>{framerate:.2f} Hz</string>
           </property>
@@ -483,7 +483,7 @@
          </widget>
         </item>
         <item row="4" column="0">
-         <widget class="QLabel" name="nuvu_ccd_temperature_label">
+         <widget class="QLabel" name="wfs_ccd_temperature_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -499,7 +499,7 @@
          </widget>
         </item>
         <item row="0" column="0">
-         <widget class="QLabel" name="nuvu_autogain_label">
+         <widget class="QLabel" name="wfs_autogain_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -515,7 +515,7 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="KStatusIndicator" name="nuvu_autogain_indicator">
+         <widget class="KStatusIndicator" name="wfs_autogain_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -585,7 +585,7 @@
     </layout>
    </item>
    <item row="0" column="1">
-    <widget class="QFrame" name="fli_frame">
+    <widget class="QFrame" name="camera_frame">
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
      </property>

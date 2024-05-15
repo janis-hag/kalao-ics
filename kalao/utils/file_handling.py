@@ -20,7 +20,6 @@ from astropy import units as u
 from astropy.coordinates import Angle, SkyCoord
 from astropy.io import fits
 from astropy.time import Time
-from astropy.wcs import wcs
 
 from kalao import database, euler, logger
 from kalao.utils import kstring, ktime
@@ -30,8 +29,9 @@ import yaml
 from unidecode import unidecode
 
 from kalao.definitions.dataclasses import ROI
-from kalao.definitions.enums import (FlipMirrorPosition, ObservationType,
-                                     ReturnCode, ShutterState)
+from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
+                                     ObservationType, ReturnCode, ShutterState,
+                                     TungstenState)
 
 import config
 
@@ -106,7 +106,7 @@ def save_tmp_image(image_path: Path, obs_type: ObservationType,
         final_filepath.chmod(config.FITS.file_mask)
         # TODO possibly add the right UID and GID
 
-        database.store('obs', {'fli_last_image_path': final_filepath})
+        database.store('obs', {'camera_last_image_path': final_filepath})
         logger.info('sequencer', f'Saved {image_path} to {final_filepath}')
 
         symlink = config.FITS.last_image
@@ -161,41 +161,33 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
     # Reading the fits definitions
     header_base = _header_from_yml(config.FITS.fits_default_header_file)
 
-    if obs_type in config.FITS.base_header:
-        for key, value in config.FITS.base_header[obs_type].items():
-            header_base.loc[f'HIERARCH ESO {key}', 'value'] = value
+    for key, value in config.FITS.base_header[obs_type].items():
+        header_base.loc[f'HIERARCH ESO {key}', 'value'] = value
 
     with fits.open(image_path, mode='update') as hdul:
         fits_header = hdul[0].header
 
-        if 'DATE-OBS' in fits_header.keys():
-            dt_obs = datetime.fromisoformat(fits_header['DATE-OBS']).replace(
-                tzinfo=timezone.utc)
-        else:
-            dt_obs = datetime.fromisoformat(fits_header['DATE']).replace(
-                tzinfo=timezone.utc)
-
-        dt = datetime.fromisoformat(fits_header['DATE']).replace(
+        dt_obs = datetime.fromisoformat(fits_header['DATE-OBS']).replace(
             tzinfo=timezone.utc)
-        filename = f'KALAO.{ktime.utc_millis_str(dt)}.fits'
+        filename = f'KALAO.{ktime.utc_millis_str(dt_obs)}.fits'
 
+        header_obs = _header_from_db('obs', dt_obs)
         header_monitoring = _header_from_db('monitoring', dt_obs)
         header_telemetry = _header_from_db('telemetry', dt_obs)
 
         flipmirror_position = header_monitoring.loc[
-            'HIERARCH ESO INS FLIP MIR', 'value']
-        shutter_state = header_monitoring.loc['HIERARCH ESO INS SHUT ST',
+            'HIERARCH ESO INS FLIP STATUS', 'value']
+        shutter_state = header_monitoring.loc['HIERARCH ESO INS SHUT STATUS',
                                               'value']
 
-        if obs_type in config.FITS.on_sky_types or (
-                obs_type == ObservationType.ENGINEERING and
-                flipmirror_position == FlipMirrorPosition.DOWN and
-                shutter_state == ShutterState.OPEN):
-            header_obs = _header_from_db('obs', dt_obs)
+        on_sky = obs_type in config.FITS.on_sky_types or (
+            obs_type == ObservationType.ENGINEERING and flipmirror_position
+            == FlipMirrorPosition.DOWN and shutter_state == ShutterState.OPEN)
+
+        if on_sky:
             header_telescope = _clean_header(
                 _header_from_last_telescope_header())
         else:
-            header_obs = _header_empty()
             header_telescope = _header_empty()
 
         header_df = pd.concat([
@@ -207,7 +199,8 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
             header_telescope,
         ]).query('~index.duplicated(keep="last")')
 
-        header_df = _dynamic_cards_update(header_df, obs_type, filename)
+        header_df = _dynamic_cards_update(header_df, obs_type, on_sky,
+                                          filename)
         header_df = _sort_header(header_df)
         _header_to_fits_header(header_df, fits_header)
 
@@ -278,7 +271,7 @@ def _header_from_yml(file: str | Path) -> pd.DataFrame:
     if not isinstance(file, Path):
         file = Path(file)
 
-    with open(file, 'r') as f:
+    with open(file, 'SDSS-r') as f:
         header_df = pd.json_normalize(yaml.safe_load(f))
 
     header_df.set_index('keyword', inplace=True)
@@ -388,15 +381,15 @@ def _header_from_last_telescope_header() -> pd.DataFrame:
 
 
 def _clean_header(header_df: pd.DataFrame) -> pd.DataFrame:
-    # Remove first part of header
-    # TODO set the cutoff keyword in kalao.config
-    if 'OBSERVER' in header_df.index:
-        max_i = header_df.index.get_loc('OBSERVER')
-        drop_list = []
-        for i in range(max_i + 1):
-            drop_list.append(header_df.index[i])
-
-        header_df = header_df.drop(index=drop_list)
+    # # Remove first part of header
+    # # TODO set the cutoff keyword in kalao.config
+    # if 'OBSERVER' in header_df.index:
+    #     max_i = header_df.index.get_loc('OBSERVER')
+    #     drop_list = []
+    #     for i in range(max_i + 1):
+    #         drop_list.append(header_df.index[i])
+    #
+    #     header_df = header_df.drop(index=drop_list)
 
     rename_dict = {}
     for index, row in header_df.iterrows():
@@ -411,7 +404,7 @@ def _clean_header(header_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
-                          filename: str) -> pd.DataFrame:
+                          on_sky: bool, filename: str) -> pd.DataFrame:
     date_obs = header_df.loc['DATE-OBS', 'value']
     date_end = header_df.loc['DATE-END', 'value']
 
@@ -426,47 +419,64 @@ def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
     header_df.loc['ARCFILE', 'value'] = filename
     header_df.loc['ARCFILE', 'source'] += '+dynamic'
 
-    # Update HIERARCH ESO INS SHUT ST
-    header_df.loc[
-        'HIERARCH ESO INS SHUT ST',
-        'comment'] = f'{header_df.loc["HIERARCH ESO INS SHUT ST", "comment"]} ({header_df.loc["HIERARCH ESO INS SHUT ST", "value"].lower()})'
-    if header_df.loc['HIERARCH ESO INS SHUT ST', 'value'] == ShutterState.OPEN:
-        header_df.loc['HIERARCH ESO INS SHUT ST', 'value'] = True
-    elif header_df.loc['HIERARCH ESO INS SHUT ST',
-                       'value'] == ShutterState.CLOSED:
-        header_df.loc['HIERARCH ESO INS SHUT ST', 'value'] = False
-    else:
-        header_df.loc['HIERARCH ESO INS SHUT ST', 'value'] = 'ERROR'
-    header_df.loc['HIERARCH ESO INS SHUT ST', 'source'] += '+dynamic'
+    # Update HIERARCH ESO INS SOFW ID
+    header_df.loc['HIERARCH ESO INS SOFW ID',
+                  'value'] = f'KALAO-ICS/{config.version}'
+    header_df.loc['HIERARCH ESO INS SOFW ID', 'source'] += '+dynamic'
+
+    # Update HIERARCH ESO TPL ID
+    header_df.loc['HIERARCH ESO TPL ID', 'value'] = str(obs_type)
+    header_df.loc['HIERARCH ESO TPL ID', 'source'] += '+dynamic'
+
+    # Create HIERARCH ESO INS SHUT ST
+    shutter = header_df.loc['HIERARCH ESO INS SHUT STATUS']
+    header_df.loc['HIERARCH ESO INS SHUT ST'] = (
+        shutter.value == ShutterState.OPEN, shutter.comment, 'dynamic')
+
+    # Create HIERARCH ESO INS SHUT ST
+    flipmirror = header_df.loc['HIERARCH ESO INS FLIP STATUS']
+    header_df.loc['HIERARCH ESO INS FLIP ST'] = (
+        flipmirror.value == FlipMirrorPosition.UP, flipmirror.comment,
+        'dynamic')
+
+    # Create HIERARCH ESO INS LASER ST
+    laser = header_df.loc['HIERARCH ESO INS LASER STATUS']
+    header_df.loc['HIERARCH ESO INS LASER ST'] = (laser.value == LaserState.ON,
+                                                  laser.comment, 'dynamic')
+
+    # Create HIERARCH ESO INS TUNGSTEN ST
+    tungsten = header_df.loc['HIERARCH ESO INS TUNGSTEN STATUS']
+    header_df.loc['HIERARCH ESO INS TUNGSTEN ST'] = (
+        tungsten.value == TungstenState.ON, tungsten.comment, 'dynamic')
 
     # Update MJD-OBS
-    header_df.loc['MJD-OBS', 'value'] = astro_time_obs.mjd
+    header_df.loc['MJD-OBS', 'value'] = round(astro_time_obs.mjd, 8)
     header_df.loc['MJD-OBS', 'comment'] = date_obs
     header_df.loc['MJD-OBS', 'source'] += '+dynamic'
 
     # Update MJD-END
-    header_df.loc['MJD-END', 'value'] = astro_time_end.mjd
+    header_df.loc['MJD-END', 'value'] = round(astro_time_end.mjd, 8)
     header_df.loc['MJD-END', 'comment'] = date_end
     header_df.loc['MJD-END', 'source'] += '+dynamic'
 
     # Update UTC
-    header_df.loc[
-        'UTC',
-        'value'] = dt_obs.hour * 3600 + dt_obs.minute * 60 + dt_obs.second + dt_obs.microsecond * 10**-6
+    header_df.loc['UTC', 'value'] = round(
+        dt_obs.hour * 3600 + dt_obs.minute * 60 + dt_obs.second +
+        dt_obs.microsecond * 10**-6, 3)
     header_df.loc[
         'UTC',
         'comment'] = f'[s] {dt_obs.time().isoformat(timespec="milliseconds")} UTC'
     header_df.loc['UTC', 'source'] += '+dynamic'
 
     # Update LST
-    header_df.loc['LST',
-                  'value'] = astro_time_obs.sidereal_time('mean').hour * 3600
+    header_df.loc['LST', 'value'] = round(
+        astro_time_obs.sidereal_time('mean').hour * 3600, 3)
     header_df.loc[
         'LST',
-        'comment'] = f"[s] {astro_time_obs.sidereal_time('mean').to_string(u.hour, sep=':', precision=7, pad=True)} LST"
+        'comment'] = f"[s] {astro_time_obs.sidereal_time('mean').to_string(u.hour, sep=':', precision=3, pad=True)} LST"
     header_df.loc['LST', 'source'] += '+dynamic'
 
-    if obs_type in config.FITS.on_sky_types:
+    if on_sky:
         ra = Angle(header_df.loc['RA', 'value'], unit=u.deg)
         dec = Angle(header_df.loc['DEC', 'value'], unit=u.deg)
 
@@ -486,25 +496,30 @@ def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
 
         coord = SkyCoord(ra=ra, dec=dec, frame=config.Euler.frame,
                          equinox=config.Euler.equinox)
+
+        header_df.loc['OBJECT',
+                      'value'] = header_df.loc['HIERARCH ESO OBS TARG NAME',
+                                               'value']
+        header_df.loc['OBJECT', 'source'] += '+dynamic'
     else:
+        header_df.loc['OBJECT',
+                      'value'] = header_df.loc['HIERARCH ESO DPR TYPE',
+                                               'value']
+        header_df.loc['OBJECT', 'source'] += '+dynamic'
+
         coord = None
 
-    roi = ROI(header_df.loc['HIERARCH ESO DET WIN STARTX', 'value'],
-              header_df.loc['HIERARCH ESO DET WIN STARTY', 'value'],
-              header_df.loc['HIERARCH ESO DET WIN NX',
-                            'value'], header_df.loc['HIERARCH ESO DET WIN NY',
-                                                    'value'])
+    roi = ROI(header_df.loc['HIERARCH ESO DET WIN1 STRX', 'value'] - 1 -
+              header_df.loc['HIERARCH ESO DET OUT1 PRSCX', 'value'],
+              header_df.loc['HIERARCH ESO DET WIN1 STRY', 'value'] - 1 -
+              header_df.loc['HIERARCH ESO DET OUT1 PRSCY', 'value'],
+              header_df.loc['HIERARCH ESO DET WIN1 NX', 'value'],
+              header_df.loc['HIERARCH ESO DET WIN1 NY',
+                            'value'])  # Note: FITS indexing starts at 1
 
-    wcs = generate_wcs(coord, astro_time_obs, roi=roi)
+    header_wcs = generate_wcs(coord, astro_time_obs, roi=roi)
 
-    header_df = pd.concat([
-        header_df,
-        _header_from_fits_header(wcs.to_header(), 'wcs+dynamic')
-    ])
-
-    header_df.loc['HIERARCH ESO TPL ID', 'value'] = str(obs_type)
-
-    return header_df
+    return pd.concat([header_wcs, header_df])
 
 
 def _header_to_string(header_df: pd.DataFrame, max_length: int = 45,
@@ -533,49 +548,87 @@ def _header_to_string(header_df: pd.DataFrame, max_length: int = 45,
 
 
 def generate_wcs(coord: SkyCoord, time: Time,
-                 roi: ROI | None = None) -> wcs.WCS:
+                 roi: ROI | None = None) -> pd.DataFrame:
     """
     Queries the current telescope coordinates to generate a WCS object.
 
     :return: WCS object with current telescope coordinates
     """
 
-    # Create a new WCS object.  The number of axes must be set
-    # from the start
-    w = wcs.WCS(naxis=2, relax=False)
-
     if roi is None:
-        center_x = config.FLI.center_x
-        center_y = config.FLI.center_y
+        center_x = config.Camera.center_x
+        center_y = config.Camera.center_y
     else:
-        center_x = config.FLI.center_x - roi.x
-        center_y = config.FLI.center_y - roi.y
+        center_x = config.Camera.center_x - roi.x
+        center_y = config.Camera.center_y - roi.y
 
-    # Reference pixel value
-    w.wcs.crpix = [center_x, center_y]
+    parang = parallactic_angle(coord, time) * np.pi / 180
+    parang = 0
 
-    # Pixel scale in degrees
-    w.wcs.cdelt = np.array([
-        config.FLI.plate_scale / 3600, config.FLI.plate_scale / 3600
-    ])
+    sx = config.Camera.plate_scale / 3600
+    sy = config.Camera.plate_scale / 3600
+    cos = np.cos(parang)
+    sin = np.sin(parang)
+
+    transformation_matrix = np.array([[sx * cos, -sy * sin],
+                                      [sx * sin, sy * cos]])
+
+    wcs_header = _header_empty()
+
+    wcs_header.loc['WCSAXES'] = (2, 'Number of coordinate axes', 'wcs')
+
+    wcs_header.loc['CRPIX1'] = (center_x + 1,
+                                'Pixel coordinate of reference point', 'wcs'
+                                )  # Note: FITS indexing starts at 1
+    wcs_header.loc['CRPIX2'] = (center_y + 1,
+                                'Pixel coordinate of reference point', 'wcs'
+                                )  # Note: FITS indexing starts at 1
 
     if coord is not None:
-        # RA, DEC at reference
-        w.wcs.crval = [coord.ra.degree, coord.dec.degree]
+        wcs_header.loc['CTYPE1'] = ('RA---TAN',
+                                    'Right ascension, gnomonic projection',
+                                    'wcs')
+        wcs_header.loc['CTYPE2'] = ('DEC--TAN',
+                                    'Declination, gnomonic projection', 'wcs')
 
-        # Gnomonic (TAN) projection
-        w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        wcs_header.loc['CRVAL1'] = (
+            coord.ra.degree, '[deg] Coordinate value at reference point',
+            'wcs')
+        wcs_header.loc['CRVAL2'] = (
+            coord.dec.degree, '[deg] Coordinate value at reference point',
+            'wcs')
 
-        # Pixel coordinates transformation matrix
-        # parang = parallactic_angle(ra, dec, time) * np.pi/180
-        # w.wcs.pc = np.array([[np.cos(parang), -np.sin(parang)],
-        #                      [np.sin(parang), np.cos(parang)]])
-        # TODO: check if mirroring needed
+        wcs_header.loc['CUNIT1'] = ('deg',
+                                    'Units of coordinate increment and value',
+                                    'wcs')
+        wcs_header.loc['CUNIT2'] = ('deg',
+                                    'Units of coordinate increment and value',
+                                    'wcs')
 
-        w.wcs.radesys = coord.frame.name.upper()
-        w.wcs.equinox = coord.equinox.jyear
+        wcs_header.loc['CD1_1'] = (transformation_matrix[0, 0],
+                                   'Coordinate transformation matrix element',
+                                   'wcs')
+        wcs_header.loc['CD1_2'] = (transformation_matrix[0, 1],
+                                   'Coordinate transformation matrix element',
+                                   'wcs')
+        wcs_header.loc['CD2_1'] = (transformation_matrix[1, 0],
+                                   'Coordinate transformation matrix element',
+                                   'wcs')
+        wcs_header.loc['CD2_2'] = (transformation_matrix[1, 1],
+                                   'Coordinate transformation matrix element',
+                                   'wcs')
 
-    return w
+        radesys = coord.frame.name.upper()
+
+        wcs_header.loc['RADESYS'] = (radesys, 'Equatorial coordinate system',
+                                     'wcs')
+
+        if radesys != 'ICRS':
+            wcs_header.loc['EQUINOX'] = (
+                coord.equinox.jyear, '[yr] Equinox of equatorial coordinates',
+                'wcs')
+
+    return wcs_header
 
 
 def parallactic_angle(coord: SkyCoord, time: Time) -> float:

@@ -767,9 +767,6 @@
         </item>
         <item row="8" column="2">
          <widget class="QDoubleSpinBox" name="adc_angle_spinbox">
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -789,9 +786,6 @@
         </item>
         <item row="9" column="2">
          <widget class="QDoubleSpinBox" name="adc_offset_spinbox">
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -897,7 +891,7 @@
    <item row="0" column="1">
     <layout class="QVBoxLayout" name="right_pane_layout">
      <item>
-      <widget class="QGroupBox" name="fli_groupbox">
+      <widget class="QGroupBox" name="camera_groupbox">
        <property name="title">
         <string>Science Camera (First Light Imaging)</string>
        </property>
@@ -906,14 +900,14 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <item row="0" column="0">
-         <widget class="QLabel" name="fli_exposure_time_label">
+         <widget class="QLabel" name="camera_exposure_time_label">
           <property name="text">
            <string>Exposure time</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QDoubleSpinBox" name="fli_exposure_time_spinbox">
+         <widget class="QDoubleSpinBox" name="camera_exposure_time_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -935,14 +929,14 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="fli_remaining_time_label">
+         <widget class="QLabel" name="camera_remaining_time_label">
           <property name="text">
            <string>Remaining time</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QDoubleSpinBox" name="fli_remaining_time_spinbox">
+         <widget class="QDoubleSpinBox" name="camera_remaining_time_spinbox">
           <property name="readOnly">
            <bool>true</bool>
           </property>
@@ -967,14 +961,14 @@
          </widget>
         </item>
         <item row="5" column="0" colspan="2">
-         <widget class="QPushButton" name="fli_new_image_button">
+         <widget class="QPushButton" name="camera_new_image_button">
           <property name="text">
            <string>Take a new image</string>
           </property>
          </widget>
         </item>
         <item row="6" column="0" colspan="2">
-         <widget class="QPushButton" name="fli_cancel_button">
+         <widget class="QPushButton" name="camera_cancel_button">
           <property name="text">
            <string>Cancel exposure</string>
           </property>
@@ -994,7 +988,7 @@
          </spacer>
         </item>
         <item row="2" column="1">
-         <widget class="QSpinBox" name="fli_frames_spinbox">
+         <widget class="QSpinBox" name="camera_frames_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -1004,7 +998,7 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QSpinBox" name="fli_remaining_frames_spinbox">
+         <widget class="QSpinBox" name="camera_remaining_frames_spinbox">
           <property name="readOnly">
            <bool>true</bool>
           </property>
@@ -1020,28 +1014,28 @@
          </widget>
         </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="fli_frames_label">
+         <widget class="QLabel" name="camera_frames_label">
           <property name="text">
            <string>Frames</string>
           </property>
          </widget>
         </item>
         <item row="3" column="0">
-         <widget class="QLabel" name="fli_remaining_frames_label">
+         <widget class="QLabel" name="camera_remaining_frames_label">
           <property name="text">
            <string>Remaining frames</string>
           </property>
          </widget>
         </item>
         <item row="4" column="0">
-         <widget class="QLabel" name="fli_roi_label">
+         <widget class="QLabel" name="camera_roi_label">
           <property name="text">
            <string>Window size</string>
           </property>
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="QSpinBox" name="fli_roi_spinbox">
+         <widget class="QSpinBox" name="camera_roi_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>

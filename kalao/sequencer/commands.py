@@ -18,9 +18,9 @@ from astropy.io import fits
 
 from kalao import database, logger
 from kalao.cacao import aocontrol
-from kalao.fli import camera
-from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
-                       plc_utils, shutter, tungsten)
+from kalao.hardware import (adc, calibunit, camera, dm, filterwheel,
+                            flipmirror, laser, plc_utils, shutter, tungsten,
+                            wfs)
 from kalao.sequencer import centering, focusing
 from kalao.sequencer.seq_context import with_sequencer_status
 from kalao.utils import exposure, file_handling
@@ -56,7 +56,7 @@ def dark(**seq_args: dict[str, Any]) -> ReturnCode:
         image_path = camera.take_image(ObservationType.DARK, exptime=exptime)
 
         if image_path is None:
-            raise FLITakeImageFailed
+            raise CameraTakeImageFailed
 
         # Check if an abort was requested
         _check_abort()
@@ -65,7 +65,7 @@ def dark(**seq_args: dict[str, Any]) -> ReturnCode:
 
 
 def dark_abort(**seq_args: dict[str, Any]) -> ReturnCode:
-    return _abort_camera()
+    return _abort()
 
 
 def tungsten_flat(**seq_args: dict[str, Any]) -> ReturnCode:
@@ -80,7 +80,7 @@ def tungsten_flat(**seq_args: dict[str, Any]) -> ReturnCode:
     if aocontrol.emgain_off() != ReturnCode.OK:
         raise EMGainNotOff
 
-    if aocontrol.turn_dm_on() != ReturnCode.OK:
+    if dm.on() != ReturnCode.OK:
         raise DMNotOn
 
     if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
@@ -121,7 +121,7 @@ def tungsten_flat(**seq_args: dict[str, Any]) -> ReturnCode:
                                        exptime=exptime)
 
         if image_path is None:
-            raise FLITakeImageFailed
+            raise CameraTakeImageFailed
 
         # Check if an abort was requested
         _check_abort()
@@ -132,7 +132,7 @@ def tungsten_flat(**seq_args: dict[str, Any]) -> ReturnCode:
 
 
 def tungsten_flat_abort(**seq_args: dict[str, Any]) -> ReturnCode:
-    return _abort_camera()
+    return _abort()
 
 
 def sky_flat(**seq_args: dict[str, Any]) -> ReturnCode:
@@ -144,7 +144,7 @@ def sky_flat(**seq_args: dict[str, Any]) -> ReturnCode:
     if aocontrol.emgain_off() != ReturnCode.OK:
         raise EMGainNotOff
 
-    if aocontrol.turn_dm_on() != ReturnCode.OK:
+    if dm.on() != ReturnCode.OK:
         raise DMNotOn
 
     if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
@@ -203,7 +203,7 @@ def sky_flat(**seq_args: dict[str, Any]) -> ReturnCode:
                                        exptime=exptime)
 
         if image_path is None:
-            raise FLITakeImageFailed
+            raise CameraTakeImageFailed
 
         img = fits.getdata(image_path)
 
@@ -217,7 +217,7 @@ def sky_flat(**seq_args: dict[str, Any]) -> ReturnCode:
 
 
 def sky_flat_abort(**seq_args: dict[str, Any]) -> ReturnCode:
-    return _abort_camera()
+    return _abort()
 
 
 def target_observation(**seq_args: dict[str, Any]) -> ReturnCode:
@@ -250,11 +250,11 @@ def target_observation(**seq_args: dict[str, Any]) -> ReturnCode:
     if not ao_running:
         focusing.autofocus()
 
-    if aocontrol.turn_dm_on() != ReturnCode.OK:
+    if dm.on() != ReturnCode.OK:
         raise DMNotOn
 
     if kao == AdaptiveOpticsMode.ENABLED:
-        if aocontrol.start_wfs_acquisition() != ReturnCode.OK:
+        if wfs.start_acquisition() != ReturnCode.OK:
             raise WFSNotOn
     else:
         if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
@@ -304,13 +304,13 @@ def target_observation(**seq_args: dict[str, Any]) -> ReturnCode:
 
         time.sleep(config.AO.loop_stabilization_time)
 
-    image_path = camera.take_image(ObservationType.OBJECT, exptime=exptime,
+    image_path = camera.take_image(ObservationType.TARGET, exptime=exptime,
                                    nbframes=nbframes, roi_size=roi_size)
 
     # TODO: Monitor AO and cancel exposure if needed
 
     if image_path is None:
-        raise FLITakeImageFailed
+        raise CameraTakeImageFailed
 
     # Note: do not close shutter in case of successive exposures
 
@@ -318,7 +318,7 @@ def target_observation(**seq_args: dict[str, Any]) -> ReturnCode:
 
 
 def target_observation_abort(**seq_args: dict[str, Any]) -> ReturnCode:
-    return _abort_camera()
+    return _abort()
 
 
 def focus(**seq_args: dict[str, Any]) -> ReturnCode:
@@ -336,7 +336,7 @@ def focus(**seq_args: dict[str, Any]) -> ReturnCode:
         exptime, filter = exposure.optimal_exposure_time_and_filter(
             mag, config.Focusing.min_exptime)
 
-    if aocontrol.turn_dm_on() != ReturnCode.OK:
+    if dm.on() != ReturnCode.OK:
         raise DMNotOn
 
     if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
@@ -374,7 +374,7 @@ def focus(**seq_args: dict[str, Any]) -> ReturnCode:
 
 
 def focus_abort(**seq_args: dict[str, Any]) -> ReturnCode:
-    return _abort_camera()
+    return _abort()
 
 
 def lamp_on(**seq_args: dict[str, Any]) -> ReturnCode:
@@ -400,7 +400,7 @@ def lamp_off(**seq_args: dict[str, Any]) -> ReturnCode:
 
 
 def abort(**seq_args: dict[str, Any]) -> ReturnCode:
-    return _abort_camera()
+    return _abort()
 
 
 def ob_change(**seq_args: dict[str, Any]) -> ReturnCode:
@@ -412,9 +412,7 @@ def ob_change(**seq_args: dict[str, Any]) -> ReturnCode:
 
     _open_loops()
 
-    database.store('obs', {
-        'centering_manual': False,
-    })
+    database.store('obs', {'centering_manual': False})
 
     return ReturnCode.SEQ_OK
 
@@ -430,9 +428,7 @@ def instrument_change(**seq_args: dict[str, Any]) -> ReturnCode:
     _open_loops()
     _shut_off_plc()
 
-    database.store('obs', {
-        'centering_manual': False,
-    })
+    database.store('obs', {'centering_manual': False})
 
     return ReturnCode.SEQ_OK
 
@@ -447,14 +443,12 @@ def end(**seq_args: dict[str, Any]) -> ReturnCode:
     _open_loops()
     _shut_off_plc()
 
-    database.store('obs', {
-        'centering_manual': False,
-    })
+    database.store('obs', {'centering_manual': False})
 
-    if aocontrol.turn_dm_off() != ReturnCode.OK:
+    if dm.off() != ReturnCode.OK:
         logger.warn('sequencer', 'Unable to turn off DM')
 
-    if aocontrol.stop_wfs_acquisition() != ReturnCode.OK:
+    if wfs.stop_acquisition() != ReturnCode.OK:
         logger.warn('sequencer', 'Unable to stop WFS acquisition')
 
     # Release Euler synchro
@@ -498,7 +492,9 @@ def _check_abort() -> ReturnCode:
     return ReturnCode.SEQ_OK
 
 
-def _abort_camera() -> ReturnCode:
+def _abort() -> ReturnCode:
+    database.store('obs', {'centering_manual': False})
+
     if camera.cancel() != ReturnCode.OK:
         raise FLICancelFailed
 

@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from enum import StrEnum
 
 from kalao import database, logger
-from kalao.plc import core
+from kalao.hardware import plc
 
 from opcua import Client, ua
 
@@ -48,7 +48,7 @@ def up(beck: Client = None) -> FlipMirrorPosition:
     return _switch(FlipMirrorCommand.UP, beck=beck)
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def _switch(action_name: FlipMirrorCommand | FlipMirrorPosition,
             beck: Client = None) -> FlipMirrorPosition:
     """
@@ -82,7 +82,7 @@ def _switch(action_name: FlipMirrorCommand | FlipMirrorPosition,
     return position
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def get_position(beck: Client = None) -> FlipMirrorPosition:
     """
     Query the single string status of the shutter.
@@ -115,7 +115,7 @@ def get_position(beck: Client = None) -> FlipMirrorPosition:
             return FlipMirrorPosition.UNKNOWN
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def init(beck: Client = None) -> ReturnCode:
     logger.info('flipmirror', 'Initialising flip mirror')
 

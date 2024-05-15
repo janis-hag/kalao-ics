@@ -17,8 +17,7 @@ import numpy as np
 
 from kalao import database, euler, ippower, logger
 from kalao.cacao import telemetry
-from kalao.fli import camera
-from kalao.plc import plc_utils
+from kalao.hardware import camera, plc_utils
 from kalao.rtc import gpu, sensors
 from kalao.utils import kstring
 
@@ -52,15 +51,15 @@ def _gather_for_monitoring() -> dict[str, Any]:
     monitoring_data.update(ippower_status)
 
     # FLI science camera status
-    fli_server_status = camera.check_server_status()
-    monitoring_data.update({'fli_server_status': fli_server_status})
+    camera_server_status = camera.check_server_status()
+    monitoring_data.update({'camera_server_status': camera_server_status})
 
-    if fli_server_status == CameraServerStatus.UP:
-        fli_temperatures = camera.get_temperatures()
-        fli_temperatures['fli_temp_ccd'] = fli_temperatures.pop('ccd')
-        fli_temperatures['fli_temp_heatsink'] = fli_temperatures.pop(
+    if camera_server_status == CameraServerStatus.UP:
+        camera_temperatures = camera.get_temperatures()
+        camera_temperatures['camera_temp_ccd'] = camera_temperatures.pop('ccd')
+        camera_temperatures['camera_temp_heatsink'] = camera_temperatures.pop(
             'heatsink')
-        monitoring_data.update(fli_temperatures)
+        monitoring_data.update(camera_temperatures)
 
     # Telescope
     telescope = euler.telescope_coord_altaz()
@@ -84,7 +83,7 @@ def update_monitoring_db() -> None:
     monitoring_data = _gather_for_monitoring()
 
     for key, value in monitoring_data.items():
-        check_range(key, value,
+        check_range('monitoring', key, value,
                     database.definitions['monitoring']['metadata'][key])
 
     if monitoring_data != {}:
@@ -97,15 +96,15 @@ def update_telemetry_db() -> None:
     telemetry_data = telemetry.gather()
 
     for key, value in telemetry_data.items():
-        check_range(key, value,
+        check_range('telemetry', key, value,
                     database.definitions['telemetry']['metadata'][key])
 
     if telemetry_data != {}:
         database.store('telemetry', telemetry_data)
 
 
-def check_range(key: str, value: int | float, metadata: dict[str,
-                                                             Any]) -> None:
+def check_range(collection_name: str, key: str, value: int | float,
+                metadata: dict[str, Any]) -> None:
     if not isinstance(value, float) and not isinstance(value, int):
         return
 
@@ -120,24 +119,49 @@ def check_range(key: str, value: int | float, metadata: dict[str,
     unit = kstring.get_unit_string(metadata)
 
     if value > error_max:
-        logger.error(
-            'database_timer',
-            f'{key} = {value}{unit} above error threshold of {error_max}{unit}'
-        )
+        logger_func = logger.error
+        threshold = error_max
+        operator = '>'
     elif value < error_min:
-        logger.error(
-            'database_timer',
-            f'{key} = {value}{unit} under error threshold of {error_min}{unit}'
-        )
+        logger_func = logger.error
+        threshold = error_min
+        operator = '<'
     elif value > warn_max:
-        logger.warn(
-            'database_timer',
-            f'{key} = {value}{unit} above warning threshold of {warn_max}{unit}'
-        )
+        logger_func = logger.warn
+        threshold = warn_max
+        operator = '>'
     elif value < warn_min:
-        logger.warn(
+        logger_func = logger.warn
+        threshold = warn_min
+        operator = '<'
+    else:
+        logger_func = None
+        threshold = None
+        operator = None
+
+    if logger_func is not None:
+        if logger_func == logger.error:
+            level = 'error'
+        elif logger_func == logger.warn:
+            level = 'warning'
+
+        if operator == '>':
+            verb = 'over'
+        elif operator == '<':
+            verb = 'under'
+
+        data = database.get_time_since_state(collection_name, key, operator,
+                                             threshold)
+
+        if data.get('since') is None:
+            since = 0
+        else:
+            since = (datetime.now(timezone.utc) -
+                     data['since']['timestamp']).total_seconds()
+
+        logger_func(
             'database_timer',
-            f'{key} = {value}{unit} under warning threshold of {warn_min}{unit}'
+            f'{key} = {value}{unit} {verb} {level} threshold of {threshold}{unit} (since {since} s)'
         )
 
 

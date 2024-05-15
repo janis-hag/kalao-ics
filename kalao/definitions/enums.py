@@ -2,13 +2,13 @@ from enum import Enum, Flag, IntEnum, StrEnum, auto
 
 
 class ObservationType(StrEnum):
+    TARGET = 'K_TRGOBS'
     DARK = 'K_DARK'
     SKY_FLAT = 'K_SKYFLT'
     LAMP_FLAT = 'K_LMPFLT'
-    OBJECT = 'K_TRGOBS'
     FOCUS = 'K_FOCUS'
-    TECHNICAL = 'K_TECH'
-    CENTERING = 'K_CENTER'
+    TARGET_CENTERING = 'K_TRGCEN'
+    LASER_CENTERING = 'K_LSRCEN'
     ENGINEERING = 'K_ENGIN'
 
 
@@ -163,6 +163,9 @@ class ReturnCode(IntEnum):
 
     DATABASE_OK = OK
     DATABASE_ERROR = auto()
+
+    IPPOWER_OK = OK
+    IPPOWER_ERROR = auto()
 
     SERVICES_OK = OK
     SERVICES_ERROR = auto()

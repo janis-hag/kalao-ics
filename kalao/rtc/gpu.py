@@ -30,12 +30,10 @@ def status() -> dict[str, Any]:
 
     status_frame = pd.read_csv(io.StringIO(out_str), skipinitialspace=True)
 
-    status_dict = {}
-
-    status_dict['gpu_current_temp'] = status_frame['temperature.gpu'][0]
-    status_dict['gpu_power_draw'] = status_frame['power.draw [W]'][0]
-    status_dict['gpu_used_memory'] = status_frame['memory.used [MiB]'][0]
-    status_dict['gpu_free_memory'] = status_frame['memory.free [MiB]'][0]
-    status_dict['gpu_load'] = status_frame['utilization.gpu [%]'][0]
-
-    return status_dict
+    return {
+        'gpu_current_temp': status_frame['temperature.gpu'][0],
+        'gpu_power_draw': status_frame['power.draw [W]'][0],
+        'gpu_used_memory': status_frame['memory.used [MiB]'][0],
+        'gpu_free_memory': status_frame['memory.free [MiB]'][0],
+        'gpu_load': status_frame['utilization.gpu [%]'][0]
+    }

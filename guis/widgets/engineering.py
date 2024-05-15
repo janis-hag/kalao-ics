@@ -8,7 +8,7 @@ from PySide6.QtGui import Qt
 from PySide6.QtWidgets import (QFileDialog, QLabel, QLineEdit, QMessageBox,
                                QPushButton)
 
-from kalao.plc import adc
+from kalao.hardware import adc
 
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendActionMixin, BackendDataMixin
@@ -400,36 +400,37 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.ippower_dm_indicator.setStatus(Color.RED,
                                                     ippower_dm_status.name)
 
-        exposure_time = self.consume_dict(data, 'fli', 'exposure_time')
+        exposure_time = self.consume_dict(data, 'camera', 'exposure_time')
         if exposure_time is not None:
-            with QSignalBlocker(self.fli_exposure_time_spinbox):
-                self.fli_exposure_time_spinbox.setValue(exposure_time)
+            with QSignalBlocker(self.camera_exposure_time_spinbox):
+                self.camera_exposure_time_spinbox.setValue(exposure_time)
 
-        remaining_time = self.consume_dict(data, 'fli', 'remaining_time')
+        remaining_time = self.consume_dict(data, 'camera', 'remaining_time')
         if remaining_time is not None:
-            with QSignalBlocker(self.fli_remaining_time_spinbox):
-                self.fli_remaining_time_spinbox.setValue(remaining_time)
+            with QSignalBlocker(self.camera_remaining_time_spinbox):
+                self.camera_remaining_time_spinbox.setValue(remaining_time)
 
-        frames = self.consume_dict(data, 'fli', 'frames')
+        frames = self.consume_dict(data, 'camera', 'frames')
         if frames is not None:
-            with QSignalBlocker(self.fli_frames_spinbox):
-                self.fli_frames_spinbox.setValue(frames)
+            with QSignalBlocker(self.camera_frames_spinbox):
+                self.camera_frames_spinbox.setValue(frames)
 
-        remaining_frames = self.consume_dict(data, 'fli', 'remaining_frames')
+        remaining_frames = self.consume_dict(data, 'camera',
+                                             'remaining_frames')
         if remaining_frames is not None:
-            with QSignalBlocker(self.fli_remaining_frames_spinbox):
-                self.fli_remaining_frames_spinbox.setValue(remaining_frames)
+            with QSignalBlocker(self.camera_remaining_frames_spinbox):
+                self.camera_remaining_frames_spinbox.setValue(remaining_frames)
 
             if remaining_frames == 0:
-                self.fli_new_image_button.setEnabled(True)
-                self.fli_exposure_time_spinbox.setEnabled(True)
-                self.fli_frames_spinbox.setEnabled(True)
-                self.fli_roi_spinbox.setEnabled(True)
+                self.camera_new_image_button.setEnabled(True)
+                self.camera_exposure_time_spinbox.setEnabled(True)
+                self.camera_frames_spinbox.setEnabled(True)
+                self.camera_roi_spinbox.setEnabled(True)
             else:
-                self.fli_new_image_button.setEnabled(False)
-                self.fli_exposure_time_spinbox.setEnabled(False)
-                self.fli_frames_spinbox.setEnabled(False)
-                self.fli_roi_spinbox.setEnabled(False)
+                self.camera_new_image_button.setEnabled(False)
+                self.camera_exposure_time_spinbox.setEnabled(False)
+                self.camera_frames_spinbox.setEnabled(False)
+                self.camera_roi_spinbox.setEnabled(False)
 
         maqtime = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
                                               '_MAQTIME', force=True)
@@ -595,6 +596,18 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send(self.adc_max_disp_button,
                          self.backend.plc_adc_maxdisp)
 
+    @Slot(float)
+    def on_adc_angle_spinbox_valueChanged(self, d):
+        self.action_send([self.adc_angle_spinbox, self.adc_offset_spinbox],
+                         self.backend.plc_adc_angleoffset, angle=d,
+                         offset=self.adc_offset_spinbox.value())
+
+    @Slot(float)
+    def on_adc_offset_spinbox_valueChanged(self, d):
+        self.action_send([self.adc_offset_spinbox, self.adc_angle_spinbox],
+                         self.backend.plc_adc_angleoffset, offset=d,
+                         angle=self.adc_angle_spinbox.value())
+
     @Slot(int)
     def on_pump_checkbox_stateChanged(self, state):
         self.action_send(self.pump_checkbox, self.backend.plc_pump_state,
@@ -611,25 +624,26 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(bool)
-    def on_fli_new_image_button_clicked(self, checked):
-        self.action_send(self.fli_new_image_button, self.backend.fli_take,
-                         exposure_time=self.fli_exposure_time_spinbox.value(),
-                         frames=self.fli_frames_spinbox.value(),
-                         roi_size=self.fli_roi_spinbox.value())
+    def on_camera_new_image_button_clicked(self, checked):
+        self.action_send(
+            self.camera_new_image_button, self.backend.camera_take,
+            exposure_time=self.camera_exposure_time_spinbox.value(),
+            frames=self.camera_frames_spinbox.value(),
+            roi_size=self.camera_roi_spinbox.value())
 
     @Slot(bool)
-    def on_fli_cancel_button_clicked(self, checked):
-        self.action_send(self.fli_cancel_button, self.backend.fli_cancel)
+    def on_camera_cancel_button_clicked(self, checked):
+        self.action_send(self.camera_cancel_button, self.backend.camera_cancel)
 
     @Slot(bool)
     def on_wfs_acquisition_start_button_clicked(self, checked):
         self.action_send(self.wfs_acquisition_start_button,
-                         self.backend.nuvu_acquisition_start)
+                         self.backend.wfs_acquisition_start)
 
     @Slot(bool)
     def on_wfs_acquisition_stop_button_clicked(self, checked):
         self.action_send(self.wfs_acquisition_start_button,
-                         self.backend.nuvu_acquisition_stop)
+                         self.backend.wfs_acquisition_stop)
 
     @Slot(bool)
     def on_ippower_rtc_on_button_clicked(self, checked):

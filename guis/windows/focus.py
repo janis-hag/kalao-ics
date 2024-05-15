@@ -108,7 +108,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
             hdul = fits.open(self.file)
 
-            if 'HIERARCH FOCUS SUCCESS' not in hdul[0].header:
+            if 'HIERARCH KAL FOC SUCCESS' not in hdul[0].header:
                 msgbox = KMessageBox(self)
                 msgbox.setIcon(QMessageBox.Critical)
                 msgbox.setText("<b>Invalid file!</b>")
@@ -139,8 +139,8 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             view.setImage(hdul[i].data)
 
             fwhm = hdul[i].header[
-                "HIERARCH FOCUS STAR FWHM"] * config.FLI.plate_scale
-            focus = hdul[i].header["HIERARCH FOCUS M2 POSITION"]
+                "HIERARCH KAL FOC STAR FWHM"] * config.Camera.plate_scale
+            focus = hdul[i].header["HIERARCH KAL FOC M2 POS"]
 
             desc_label.updateText(fwhm=fwhm)
 
@@ -165,31 +165,31 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             self.axis_x.setRange(x_min, x_max)
             self.axis_y.setRange(y_min * 0.8, y_max * 1.2)
 
-        if 'HIERARCH FOCUS FIT QUAD' in hdul[0].header:
-            a = hdul[0].header['HIERARCH FOCUS FIT QUAD']
-            b = hdul[0].header['HIERARCH FOCUS FIT LIN']
-            c = hdul[0].header['HIERARCH FOCUS FIT CONST']
+        if 'HIERARCH KAL FOC FIT QUAD' in hdul[0].header:
+            a = hdul[0].header['HIERARCH KAL FOC FIT QUAD']
+            b = hdul[0].header['HIERARCH KAL FOC FIT LIN']
+            c = hdul[0].header['HIERARCH KAL FOC FIT CONST']
 
             fit = Polynomial([c, b, a])
 
             focus_s = np.linspace(x_min, x_max, 25)
-            fwhms = fit(focus_s) * config.FLI.plate_scale
+            fwhms = fit(focus_s) * config.Camera.plate_scale
 
             for x, y in zip(focus_s, fwhms):
                 self.focus_fit_series.append(QPointF(x, y))
 
-        if 'HIERARCH FOCUS BEST M2 POSITION' in hdul[0].header:
-            best_focus = hdul[0].header['HIERARCH FOCUS BEST M2 POSITION']
+        if 'HIERARCH KAL FOC BEST M2 POS' in hdul[0].header:
+            best_focus = hdul[0].header['HIERARCH KAL FOC BEST M2 POS']
             best_fwhm = hdul[0].header[
-                'HIERARCH FOCUS BEST STAR FWHM'] * config.FLI.plate_scale
+                'HIERARCH KAL FOC BEST STAR FWHM'] * config.Camera.plate_scale
 
             self.focus_series.append(QPointF(best_focus, best_fwhm))
             self.focus_series.setPointConfiguration(
                 self.focus_series.count() - 1,
                 {QXYSeries.PointConfiguration.Color: Color.GREEN})
 
-        if 'HIERARCH FOCUS SUCCESS' in hdul[0].header:
-            sucess = hdul[0].header['HIERARCH FOCUS SUCCESS']
+        if 'HIERARCH KAL FOC SUCCESS' in hdul[0].header:
+            sucess = hdul[0].header['HIERARCH KAL FOC SUCCESS']
 
             if self.file is None:
                 # Stop timer to spare resources
@@ -199,7 +199,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
                 self.status_label.updateText(status='Success!')
                 self.status_label.setStyleSheet('')
             else:
-                reason = hdul[0].header['HIERARCH FOCUS REASON']
+                reason = hdul[0].header['HIERARCH KAL FOC REASON']
 
                 self.status_label.updateText(status=reason)
                 self.status_label.setStyleSheet(f'color: {Color.RED.name()};')

@@ -90,7 +90,7 @@ class FakeSHMFPSBackend(AbstractBackend):
 
 
 class MainBackend(FakeSHMFPSBackend):
-    last_fli_update = 0
+    last_camera_update = 0
     first = True
 
     def __init__(self):
@@ -134,14 +134,14 @@ class MainBackend(FakeSHMFPSBackend):
                 1,
             'bmc-target_stroke':
                 0.2,
-            'shwfs-algorithm':
+            'wfs-algorithm':
                 1,
             'shutter_state':
                 ShutterState.OPEN,
             'flipmirror_position':
                 FlipMirrorPosition.DOWN,
             'calibunit_position':
-                config.PLC.initial_pos[config.PLC.Node.CALIB_UNIT],
+                config.PLC.initial_state[config.PLC.Node.CALIB_UNIT],
             'calibunit_state':
                 PLCStatus.STANDING,
             'laser_state':
@@ -151,17 +151,17 @@ class MainBackend(FakeSHMFPSBackend):
             'tungsten_state':
                 TungstenState.OFF,
             'adc1_angle':
-                config.PLC.initial_pos[config.PLC.Node.ADC1],
+                config.PLC.initial_state[config.PLC.Node.ADC1],
             'adc1_state':
                 PLCStatus.STANDING,
             'adc2_angle':
-                config.PLC.initial_pos[config.PLC.Node.ADC2],
+                config.PLC.initial_state[config.PLC.Node.ADC2],
             'adc2_state':
                 PLCStatus.STANDING,
             'filterwheel_filter_position':
                 4,
             'filterwheel_filter_name':
-                'z',
+                'SDSS-z',
             'pump_status':
                 RelayState.ON,
             'heater_status':
@@ -231,9 +231,9 @@ class MainBackend(FakeSHMFPSBackend):
         return dm02disp
 
     def _internal_update(self):
-        if time.monotonic() - self.last_fli_update > 5:
+        if time.monotonic() - self.last_camera_update > 5:
             self.internal_state['fli-mtime'] = datetime.now(timezone.utc)
-            self.last_fli_update = time.monotonic()
+            self.last_camera_update = time.monotonic()
 
         if self.internal_state['dm-loopON']:
             self.internal_state[
@@ -269,12 +269,11 @@ class MainBackend(FakeSHMFPSBackend):
             else:
                 flux = 0
 
-        nuvu_data = fake_data.nuvu_frame(flux=flux,
-                                         dmdisp=self._get_dm01disp(),
-                                         tiptilt=self._get_dm02disp(),
-                                         illumination=illumination)
-        slopes_data = fake_data.slopes(nuvu_data)
-        flux_data = fake_data.flux(nuvu_data)
+        wfs_data = fake_data.wfs_frame(flux=flux, dmdisp=self._get_dm01disp(),
+                                       tiptilt=self._get_dm02disp(),
+                                       illumination=illumination)
+        slopes_data = fake_data.slopes(wfs_data)
+        flux_data = fake_data.flux(wfs_data)
 
         slopes_params = fake_data.slopes_params(slopes_data)
         flux_params = fake_data.flux_params(flux_data)
@@ -288,7 +287,7 @@ class MainBackend(FakeSHMFPSBackend):
             np.random.normal(0, 1, 90) * np.linspace(1, 0, 90)**2)
 
         if self.internal_state['nuvu-acq']:
-            self._update_stream(data, config.Streams.NUVU, nuvu_data)
+            self._update_stream(data, config.Streams.NUVU, wfs_data)
 
             self._update_stream(data, config.Streams.SLOPES, slopes_data)
             self._update_param(data, config.FPS.SHWFS, 'slope_x_avg',
@@ -306,9 +305,9 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    @emit('fli_image_updated')
+    @emit('camera_image_updated')
     @timeit
-    def fli_image(self):
+    def camera_image(self):
         data = {}
 
         if self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP:
@@ -324,27 +323,30 @@ class MainBackend(FakeSHMFPSBackend):
             else:
                 flux = 0
 
-        fli_data = fake_data.fli_frame(flux=flux, dmdisp=self._get_dm01disp(),
-                                       tiptilt=self._get_dm02disp(),
-                                       illumination=illumination)
+        camera_data = fake_data.camera_frame(flux=flux,
+                                             dmdisp=self._get_dm01disp(),
+                                             tiptilt=self._get_dm02disp(),
+                                             illumination=illumination)
 
         hw = 128
-        hdu = fits.PrimaryHDU(fli_data[config.FLI.center_y -
-                                       hw:config.FLI.center_y + hw,
-                                       config.FLI.center_x -
-                                       hw:config.FLI.center_x + hw])
+        hdu = fits.PrimaryHDU(camera_data[config.Camera.center_y -
+                                          hw:config.Camera.center_y + hw,
+                                          config.Camera.center_x -
+                                          hw:config.Camera.center_x + hw])
         hdu.header.set(
             'DATE',
             datetime.now(timezone.utc).replace(tzinfo=None).isoformat(
                 timespec="milliseconds"))
-        hdu.header.set('HIERARCH ESO DET WIN STARTX', config.FLI.center_x - hw)
-        hdu.header.set('HIERARCH ESO DET WIN STARTY', config.FLI.center_y - hw)
-        hdu.header.set('HIERARCH ESO DET WIN NX', 2 * hw)
-        hdu.header.set('HIERARCH ESO DET WIN NY', 2 * hw)
-        hdu.header.set('CRPIX1', hw)
-        hdu.header.set('CRPIX2', hw)
-        hdu.header.set('CDELT1', config.FLI.plate_scale / 3600)
-        hdu.header.set('CDELT2', config.FLI.plate_scale / 3600)
+        hdu.header.set('HIERARCH ESO DET OUT1 PRSCX', 0)
+        hdu.header.set('HIERARCH ESO DET OUT1 PRSCY', 0)
+        hdu.header.set('HIERARCH ESO DET WIN1 STRX', config.Camera.center_x -
+                       hw + 1)  # Note: FITS indexing starts at 1
+        hdu.header.set('HIERARCH ESO DET WIN1 STRY', config.Camera.center_y -
+                       hw + 1)  # Note: FITS indexing starts at 1
+        hdu.header.set('HIERARCH ESO DET WIN1 NX', 2 * hw)
+        hdu.header.set('HIERARCH ESO DET WIN1 NY', 2 * hw)
+        hdu.header.set('CRPIX1', hw + 1)  # Note: FITS indexing starts at 1
+        hdu.header.set('CRPIX2', hw + 1)  # Note: FITS indexing starts at 1
 
         hdul = fits.HDUList()
         hdul.append(hdu)
@@ -406,7 +408,7 @@ class MainBackend(FakeSHMFPSBackend):
                            self.internal_state['bmc-target_stroke'])
 
         self._update_param(data, config.FPS.SHWFS, 'algorithm',
-                           self.internal_state['shwfs-algorithm'])
+                           self.internal_state['wfs-algorithm'])
 
         self._update_param(data, config.FPS.DMLOOP, 'loopON',
                            self.internal_state['dm-loopON'])
@@ -453,13 +455,13 @@ class MainBackend(FakeSHMFPSBackend):
                     self.internal_state['filterwheel_filter_position'],
                 'filterwheel_filter_name':
                     self.internal_state['filterwheel_filter_name'],
-                'temp_bench_air':
+                'bench_air_temp':
                     18.2,
-                'temp_bench_board':
+                'bench_board_temp':
                     18.1,
-                'temp_water_in':
+                'coolant_temp_in':
                     13,
-                'temp_water_out':
+                'coolant_temp_out':
                     15,
                 'pump_status':
                     self.internal_state['pump_status'],
@@ -494,7 +496,7 @@ class MainBackend(FakeSHMFPSBackend):
             })
 
         self._update_dict(
-            data, 'fli', {
+            data, 'camera', {
                 'exposure_time':
                     self.internal_state['fli-exposure_time'],
                 'remaining_time':
@@ -638,11 +640,11 @@ class MainBackend(FakeSHMFPSBackend):
                                             kmath.SIGMA_TO_FWHM, 0, peak)
 
         hdu = fits.ImageHDU(img_cut, name=f'FOCUS{i + 1}')
-        hdu.header.set('HIERARCH FOCUS M2 POSITION', focus)
-        hdu.header.set('HIERARCH FOCUS STAR X', x_star)
-        hdu.header.set('HIERARCH FOCUS STAR Y', y_star)
-        hdu.header.set('HIERARCH FOCUS STAR PEAK', peak)
-        hdu.header.set('HIERARCH FOCUS STAR FWHM', fwhm)
+        hdu.header.set('HIERARCH KAL FOC M2 POS', focus)
+        hdu.header.set('HIERARCH KAL FOC STAR X', x_star)
+        hdu.header.set('HIERARCH KAL FOC STAR Y', y_star)
+        hdu.header.set('HIERARCH KAL FOC STAR PEAK', peak)
+        hdu.header.set('HIERARCH KAL FOC STAR FWHM', fwhm)
         hdul.append(hdu)
 
         if i >= 2:
@@ -650,8 +652,8 @@ class MainBackend(FakeSHMFPSBackend):
             ys = []
 
             for j in range(1, len(hdul)):
-                xs.append(hdul[j].header['HIERARCH FOCUS M2 POSITION'])
-                ys.append(hdul[j].header['HIERARCH FOCUS STAR FWHM'])
+                xs.append(hdul[j].header['HIERARCH KAL FOC M2 POS'])
+                ys.append(hdul[j].header['HIERARCH KAL FOC STAR FWHM'])
 
             fit = np.polynomial.polynomial.Polynomial.fit(xs, ys, 2)
             c, b, a = fit.convert().coef
@@ -659,14 +661,14 @@ class MainBackend(FakeSHMFPSBackend):
             best_focus = -b / (2*a)
             best_fwhm = fit(best_focus)
 
-            hdul[0].header.set('HIERARCH FOCUS FIT QUAD', a)
-            hdul[0].header.set('HIERARCH FOCUS FIT LIN', b)
-            hdul[0].header.set('HIERARCH FOCUS FIT CONST', c)
+            hdul[0].header.set('HIERARCH KAL FOC FIT QUAD', a)
+            hdul[0].header.set('HIERARCH KAL FOC FIT LIN', b)
+            hdul[0].header.set('HIERARCH KAL FOC FIT CONST', c)
 
         if i == config.Focusing.steps - 1:
-            hdul[0].header.set('HIERARCH FOCUS BEST M2 POSITION', best_focus)
-            hdul[0].header.set('HIERARCH FOCUS BEST STAR FWHM', best_fwhm)
-            hdul[0].header.set('HIERARCH FOCUS SUCCESS', True)
+            hdul[0].header.set('HIERARCH KAL FOC BEST M2 POS', best_focus)
+            hdul[0].header.set('HIERARCH KAL FOC BEST STAR FWHM', best_fwhm)
+            hdul[0].header.set('HIERARCH KAL FOC SUCCESS', True)
 
         self._update_fits_full(data, config.FITS.last_focus_sequence, hdul)
 
@@ -850,8 +852,8 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### FLI Zoom
 
-    def centering_manual(self, *, x, y):
-        rprint(f'Centering manually on ({x}, {y}) (virtually)')
+    def centering_manual(self, *, dx, dy):
+        rprint(f'Centering manually ({dx}, {dy}) (virtually)')
 
     def centering_validate(self):
         rprint(f'Validated manual centering (virtually)')
@@ -898,15 +900,15 @@ class MainBackend(FakeSHMFPSBackend):
 
     # Wavefront Sensor
 
-    def nuvu_emgain(self, *, emgain):
+    def wfs_emgain(self, *, emgain):
         self.internal_state['nuvu-emgain'] = emgain
         rprint(f'Set Nüvü EM Gain to {emgain} (virtually)')
 
-    def nuvu_exposuretime(self, *, exposuretime):
+    def wfs_exposuretime(self, *, exposuretime):
         self.internal_state['nuvu-exptime'] = exposuretime
         rprint(f'Set Nüvü Exposure Time to {exposuretime} (virtually)')
 
-    def nuvu_autogain_on(self, *, state):
+    def wfs_autogain_on(self, *, state):
         self.internal_state['nuvu-autogain_on'] = state
 
         if state:
@@ -918,7 +920,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Set Nüvü Auto-gain to {state} (virtually)')
 
-    def nuvu_autogain_setting(self, *, setting):
+    def wfs_autogain_setting(self, *, setting):
         self.internal_state['nuvu-autogain_setting'] = setting
 
         if self.internal_state['nuvu-autogain_on']:
@@ -931,15 +933,15 @@ class MainBackend(FakeSHMFPSBackend):
 
     # Deformable Mirror
 
-    def bmc_maxstroke(self, *, stroke):
+    def dm_maxstroke(self, *, stroke):
         self.internal_state['bmc-max_stroke'] = stroke
         rprint(f'Set BMC Max Stroke to {stroke} (virtually)')
 
-    def bmc_strokemode(self, *, mode):
+    def dm_strokemode(self, *, mode):
         self.internal_state['bmc-stroke_mode'] = mode
         rprint(f'Set BMC Stroke Mode to {mode} (virtually)')
 
-    def bmc_targetstroke(self, *, target):
+    def dm_targetstroke(self, *, target):
         self.internal_state['bmc-target_stroke'] = target
         rprint(f'Set BMC Target Stroke to {target} (virtually)')
 
@@ -983,7 +985,7 @@ class MainBackend(FakeSHMFPSBackend):
         self._fake_motor_move(0, 'calibunit_position', 'calibunit_state',
                               config.CalibUnit.velocity)
         self._fake_motor_move(
-            config.PLC.initial_pos[config.PLC.Node.CALIB_UNIT],
+            config.PLC.initial_state[config.PLC.Node.CALIB_UNIT],
             'calibunit_position', 'calibunit_state', config.CalibUnit.velocity)
         rprint(f'Init Calibration Unit (virtually)')
 
@@ -1049,7 +1051,7 @@ class MainBackend(FakeSHMFPSBackend):
     def plc_adc1_init(self):
         self._fake_motor_move(0, 'adc1_angle', 'adc1_state',
                               config.ADC.velocity)
-        self._fake_motor_move(config.PLC.initial_pos[config.PLC.Node.ADC1],
+        self._fake_motor_move(config.PLC.initial_state[config.PLC.Node.ADC1],
                               'adc1_angle', 'adc1_state', config.ADC.velocity)
         rprint(f'Init ADC1 (virtually)')
 
@@ -1064,7 +1066,7 @@ class MainBackend(FakeSHMFPSBackend):
     def plc_adc2_init(self):
         self._fake_motor_move(0, 'adc2_angle', 'adc2_state',
                               config.ADC.velocity)
-        self._fake_motor_move(config.PLC.initial_pos[config.PLC.Node.ADC2],
+        self._fake_motor_move(config.PLC.initial_state[config.PLC.Node.ADC2],
                               'adc2_angle', 'adc2_state', config.ADC.velocity)
         rprint(f'Init ADC2 (virtually)')
 
@@ -1078,6 +1080,10 @@ class MainBackend(FakeSHMFPSBackend):
     def plc_adc_maxdisp(self):
         # TODO
         rprint(f'Set ADC to maximum dispersion (virtually)')
+
+    def plc_adc_angleoffset(self, *, angle, offset):
+        # TODO
+        rprint(f'Set ADC to angle {angle}° and offset {offset}° (virtually)')
 
     def plc_pump_state(self, *, state):
         if state:
@@ -1119,7 +1125,7 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state[state_key] = PLCStatus.STANDING
         self.internal_state[position_key] = position
 
-    def fli_take(self, *, exposure_time, frames, roi_size):
+    def camera_take(self, *, exposure_time, frames, roi_size):
         rprint(
             f'Started FLI with {frames} exposure(s) of size {roi_size}x{roi_size} and of exposure time {exposure_time} s (virtually)'
         )
@@ -1141,15 +1147,15 @@ class MainBackend(FakeSHMFPSBackend):
 
             self.internal_state['fli-remaining_frames'] -= 1
 
-    def fli_cancel(self):
+    def camera_cancel(self):
         self.internal_state['fli-remaining_time'] = 0
         rprint(f'Canceled FLI exposure (virtually)')
 
-    def nuvu_acquisition_start(self):
+    def wfs_acquisition_start(self):
         self.internal_state['nuvu-acq'] = True
         rprint(f'Started Nüvü acquisition (virtually)')
 
-    def nuvu_acquisition_stop(self):
+    def wfs_acquisition_stop(self):
         self.internal_state['nuvu-acq'] = False
         rprint(f'Stopped Nüvü acquisition (virtually)')
 
@@ -1230,7 +1236,7 @@ class MainBackend(FakeSHMFPSBackend):
     ##### Focusing
 
     def focus_autofocus(self):
-        rprint(f'Autofocus launched (virtually)')
+        rprint('Autofocus launched (virtually)')
 
     ##### Logs
 
@@ -1286,3 +1292,12 @@ class MainBackend(FakeSHMFPSBackend):
             message = f'{log} | {message}'
 
         return LogEntry(level, timestamp, origin, message)
+
+    ##### Instrument
+
+    def shutdown(self):
+        def shutdown(self, *, iknowwhatimdoing):
+            if iknowwhatimdoing == 'yes':
+                rprint('Shutdown sequence launched')
+            else:
+                rprint('Shutdown sequence refused')

@@ -1,8 +1,8 @@
 from typing import Any
 
 from kalao import logger
-from kalao.plc import (adc, calibunit, core, filterwheel, flipmirror, laser,
-                       shutter, temperature_control, tungsten)
+from kalao.hardware import (adc, calibunit, cooling, environment, filterwheel,
+                            flipmirror, laser, plc, shutter, tungsten)
 
 from opcua import Client
 
@@ -33,7 +33,7 @@ def lamps_off() -> ReturnCode:
     return ReturnCode.GENERIC_ERROR
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def get_all_status(filter_from_db: bool = False,
                    beck: Client = None) -> dict[str, Any]:
     """
@@ -43,8 +43,8 @@ def get_all_status(filter_from_db: bool = False,
 
     # TODO check if all initialised
 
-    temps = temperature_control.get_temperatures(beck=beck)
-    cooling_system = temperature_control.get_cooling_status(beck=beck)
+    environment_readings = environment.get_readings(beck=beck)
+    cooling_system = cooling.get_status(beck=beck)
 
     return {
         'shutter_state':
@@ -73,16 +73,10 @@ def get_all_status(filter_from_db: bool = False,
             filterwheel.get_filter(type=int, from_db=filter_from_db),
         'filterwheel_filter_name':
             filterwheel.get_filter(type=str, from_db=filter_from_db),
-        'temp_bench_air':
-            temps['temp_bench_air'],
-        'temp_bench_board':
-            temps['temp_bench_board'],
-        'temp_water_in':
-            temps['temp_water_in'],
-        'temp_water_out':
-            temps['temp_water_out'],
-        'hygro_bench_air':
-            temps['hygro_bench_air'],
+        'coolant_temp_in':
+            cooling_system['coolant_temp_in'],
+        'coolant_temp_out':
+            cooling_system['coolant_temp_out'],
         'pump_status':
             cooling_system['pump_status'],
         'pump_temp':
@@ -93,4 +87,10 @@ def get_all_status(filter_from_db: bool = False,
             cooling_system['fan_status'],
         'coolant_flow_rate':
             cooling_system['coolant_flow_rate'],
+        'bench_air_temp':
+            environment_readings['bench_air_temp'],
+        'bench_board_temp':
+            environment_readings['bench_board_temp'],
+        'bench_air_hygro':
+            environment_readings['bench_air_hygro'],
     }

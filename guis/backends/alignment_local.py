@@ -2,10 +2,10 @@ import time
 
 import numpy as np
 
+from PySide6.QtCore import Signal
+
 from kalao.cacao import toolbox
 from kalao.utils import ktools
-
-from PySide2.QtCore import Signal
 
 from guis.backends.abstract import emit, timeit
 from guis.backends.local import SHMFPSBackend

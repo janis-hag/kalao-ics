@@ -32,14 +32,21 @@ from kalao.definitions.enums import (CameraServerStatus, ObservationType,
 import config
 
 
-def take_empty(filepath: str | Path | None = None) -> Path | None:
+def take_fake(filepath: str | Path | None = None,
+              nbframes: int | None = None) -> Path | None:
     if filepath is None:
-        filepath = Path('/tmp/fli_empty.fits')
+        filepath = Path('/tmp/camera_fake.fits')
     elif not isinstance(filepath, Path):
         filepath = Path(filepath)
 
-    params = {'filepath': filepath}
-    ret, _ = _send_request('/empty', params)
+    if nbframes == 1:
+        nbframes = None
+
+    params = {
+        'filepath': filepath,
+        'nbframes': nbframes,
+    }
+    ret, _ = _send_request('/fake', params)
 
     if ret == ReturnCode.CAMERA_OK:
         return filepath
@@ -47,12 +54,12 @@ def take_empty(filepath: str | Path | None = None) -> Path | None:
         return None
 
 
-def take_frame(exptime: float | None = None,
-               filepath: str | Path | None = None,
-               nbflushes: int | None = None, nbframes: int | None = None,
-               roi: ROI | None = None) -> Path | None:
+def take_frame(filepath: str | Path | None = None,
+               exptime: float | None = None, nbframes: int | None = None,
+               roi: ROI | None = None,
+               nbflushes: int | None = None) -> Path | None:
     if filepath is None:
-        filepath = Path('/tmp/fli_frame.fits')
+        filepath = Path('/tmp/camera_frame.fits')
     elif not isinstance(filepath, Path):
         filepath = Path(filepath)
 
@@ -65,11 +72,11 @@ def take_frame(exptime: float | None = None,
         roi_dict = dataclasses.asdict(roi)
 
     params = {
+        'filepath': filepath,
         'exptime': exptime,
         'nbframes': nbframes,
-        'filepath': filepath,
+        'roi': roi_dict,
         'nbflushes': nbflushes,
-        'roi': roi_dict
     }
 
     symlink = config.FITS.last_image_all
@@ -89,31 +96,25 @@ def take_image(obs_type: ObservationType, exptime: float | None = None,
                filepath: str | Path | None = None, nbframes: int | None = None,
                roi_size: int | None = None,
                comment: str | None = None) -> Path | None:
-    """
-    :param sequencer_arguments:
-    :param exptime: Detector integration time to use
-    :param filepath: Path where the file should be stored
-    :return: path to the image
-    """
 
     if exptime is not None and exptime < 0.001:
         logger.error(
-            'fli',
+            'camera',
             f'Abort before exposure started. exptime = {exptime} s is below minimum value of 0.001 s'
         )
         return None
-    elif exptime is not None and exptime > config.FLI.request_timeout:
+    elif exptime is not None and exptime > config.Camera.request_timeout:
         logger.error(
-            'fli',
-            f'Abort before exposure started. exptime = {exptime} s is above maximum value of {config.FLI.request_timeout} s'
+            'camera',
+            f'Abort before exposure started. exptime = {exptime} s is above maximum value of {config.Camera.request_timeout} s'
         )
         return None
 
     if roi_size is None or roi_size == 1024:
         roi = None
     else:
-        roi = ROI(config.FLI.center_x - roi_size//2,
-                  config.FLI.center_y - roi_size//2, roi_size, roi_size)
+        roi = ROI(config.Camera.center_x - roi_size//2,
+                  config.Camera.center_y - roi_size//2, roi_size, roi_size)
 
     if filepath is None:
         # Generate filename including path
@@ -122,11 +123,11 @@ def take_image(obs_type: ObservationType, exptime: float | None = None,
     # Store monitoring status at start of exposure
     database_timer.update_monitoring_db()
 
-    filepath = take_frame(exptime=exptime, filepath=filepath,
+    filepath = take_frame(filepath=filepath, exptime=exptime,
                           nbframes=nbframes, roi=roi)
 
     if filepath is not None:
-        database.store('obs', {'fli_temporary_image_path': filepath})
+        database.store('obs', {'camera_temporary_image_path': filepath})
         final_filepath = file_handling.save_tmp_image(filepath, obs_type,
                                                       comment=comment)
 
@@ -143,17 +144,17 @@ def increment_image_counter(params: dict[str, Any]) -> int:
     """
 
     try:
-        image_count = database.get('obs', 'fli_image_count',
-                                   days=3650)['fli_image_count'][0]['value']
+        image_count = database.get('obs', 'camera_image_count',
+                                   days=3650)['camera_image_count'][0]['value']
     except (KeyError, IndexError):
         image_count = 1
 
     image_count += 1
 
-    data = {'fli_image_count': image_count}
+    data = {'camera_image_count': image_count}
 
     if 'exptime' in params:
-        data['fli_exposure_time'] = params['exptime']
+        data['camera_exposure_time'] = params['exptime']
 
     database.store('obs', data)
 
@@ -173,8 +174,8 @@ def get_exposure_status() -> dict[str, float]:
         return exposure_status
     else:
         return {
-            'remaining_time': -1,
-            'exposure_time': -1,
+            'remaining_time': np.nan,
+            'exposure_time': np.nan,
             'frames': -1,
             'remaining_frames': -1
         }
@@ -192,7 +193,7 @@ def get_temperatures() -> dict[str, float]:
     if ret == ReturnCode.CAMERA_OK:
         return temperatures
     else:
-        return {'heatsink': np.inf, 'ccd': np.inf}
+        return {'heatsink': np.nan, 'ccd': np.nan}
 
 
 def set_temperature(temperature: float) -> ReturnCode:
@@ -216,12 +217,11 @@ def _send_request(endpoint: str,
         elif key == 'filepath':
             params[key] = str(value)
 
-    if config.FLI.dummy_camera:
+    if config.Camera.dummy_camera:
         if endpoint == '/acquire':
             time.sleep(params['exptime'])
 
-            # fits.PrimaryHDU(fake_data.fake_fli_image()).writeto(params['filepath'])
-            shutil.copy(config.FLI.dummy_image_path, params['filepath'])
+            shutil.copy(config.Camera.dummy_image_path, params['filepath'])
 
         return ReturnCode.CAMERA_OK, {}
 
@@ -229,17 +229,17 @@ def _send_request(endpoint: str,
         if endpoint == '/acquire':
             increment_image_counter(params)
 
-        url = f'http://{config.FLI.ip}:{config.FLI.port}{endpoint}'
+        url = f'http://{config.Camera.ip}:{config.Camera.port}{endpoint}'
 
         try:
             if params == {}:
-                req = requests.get(url, timeout=config.FLI.request_timeout)
+                req = requests.get(url, timeout=config.Camera.request_timeout)
             else:
                 req = requests.post(url, json=params,
-                                    timeout=config.FLI.request_timeout)
+                                    timeout=config.Camera.request_timeout)
         except requests.exceptions.RequestException:
             logger.error(
-                'fli',
+                'camera',
                 f'Camera server endpoint {endpoint} answered with a error.')
             return ReturnCode.CAMERA_SERVER_DOWN, None
 
@@ -263,7 +263,7 @@ def _send_request(endpoint: str,
                 text = f' {data}'
 
             logger.error(
-                'fli',
+                'camera',
                 f'Camera server endpoint {endpoint} answered with an Error {req.status_code}.{text}'
             )
 
@@ -277,7 +277,8 @@ def check_server_status() -> CameraServerStatus:
     :return: status of the camera server (UP/DOWN/ERROR)
     """
     try:
-        r = requests.get(f'http://{config.FLI.ip}:{config.FLI.port}/ping')
+        r = requests.get(
+            f'http://{config.Camera.ip}:{config.Camera.port}/ping')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return CameraServerStatus.DOWN

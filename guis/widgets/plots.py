@@ -301,7 +301,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
                         self.value_before_conversion[name][key][timestamp] = v
                         v = config.GUI.plots_mapping[v]
 
-                    if v is None:
+                    if v is None or np.isnan(v) or np.isinf(v):
                         # TODO: interupt line
                         continue
 
@@ -311,6 +311,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
                     plot_min = min(plot_min, v)
                     plot_max = max(plot_max, v)
 
+                    # Create a "staircase" effect
                     if name == 'obs' and series.count() > 0:
                         prev = series.points()[-1]
                         series.append(QPointF(timestamp, prev.y()))

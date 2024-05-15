@@ -15,7 +15,7 @@ from guis.utils.definitions import Color
 from guis.utils.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.utils.ui_loader import loadUi
 from guis.utils.widgets import KMessageBox, KWidget
-from guis.windows.fli_zoom import FLIZoomWindow
+from guis.windows.camera_zoom import CameraZoomWindow
 
 import config
 
@@ -46,20 +46,20 @@ def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
         return latest_file
 
 
-class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
+class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     associated_stream = config.Streams.FLI
     image_info = config.Images.fli
 
     data_unit = ' ADU'
     data_precision = 0
-    data_center_x = config.FLI.center_x
-    data_center_y = config.FLI.center_y
+    data_center_x = config.Camera.center_x
+    data_center_y = config.Camera.center_y
 
     axis_unit = ' px'
     axis_precision = 0
     axis_scaling = 1
 
-    WFS_fov = 4 * config.WFS.plate_scale / config.FLI.plate_scale
+    WFS_fov = 4 * config.WFS.plate_scale / config.Camera.plate_scale
 
     zoom_window = None
 
@@ -71,14 +71,14 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.backend = backend
 
-        loadUi('fli.ui', self)
+        loadUi('camera.ui', self)
         self.resize(600, 400)
 
-        self.init_minmax(self.fli_view)
+        self.init_minmax(self.camera_view)
 
-        self.fli_view.setView(self.image_info['shape'])
+        self.camera_view.setView(self.image_info['shape'])
 
-        self.fli_view.margins = QMarginsF(40, 30, 40, 30)
+        self.camera_view.margins = QMarginsF(40, 30, 40, 30)
 
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
@@ -86,21 +86,21 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         pen = QPen(Color.BLUE, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        self.roi = self.fli_view.scene.addEllipse(
+        self.roi = self.camera_view.scene.addEllipse(
             self.data_center_x - self.WFS_fov / 2, self.data_center_y -
             self.WFS_fov / 2, self.WFS_fov, self.WFS_fov, pen)
         self.roi.setZValue(1)
 
         self.update_labels()
 
-        self.fli_view.hovered.connect(self.hover_xyv_to_str)
+        self.camera_view.hovered.connect(self.hover_xyv_to_str)
         backend.all_updated.connect(self.all_updated)
-        backend.fli_image_updated.connect(self.fli_image_updated)
+        backend.camera_image_updated.connect(self.camera_image_updated)
 
     def all_updated(self, data):
         mtime = self.consume_fits_mtime(data, config.FITS.last_image_all)
         if mtime != None:
-            self.backend.fli_image()
+            self.backend.camera_image()
 
         centering_manual_v, centering_manual_t = self.consume_db(
             data, 'obs', 'centering_manual')
@@ -113,7 +113,7 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 if self.zoom_window is not None:
                     self.zoom_window.exit_manual_centering()
 
-    def fli_image_updated(self, data):
+    def camera_image_updated(self, data):
         hdul = self.consume_fits_full(data, config.FITS.last_image_all)
 
         if hdul is not None:
@@ -126,12 +126,12 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             elif len(hdul[0].data.shape) == 3:
                 img = hdul[0].data[-1, :, :]
             else:
-                raise Exception('Unexpected shape for FLI image')
+                raise Exception('Unexpected shape for camera image')
 
             self.timestamp = datetime.fromisoformat(
                 hdul[0].header['DATE']).replace(tzinfo=timezone.utc)
 
-            # self.fli_view.setNEIndicator(parang from keywords)
+            # self.camera_view.setNEIndicator(parang from keywords)
 
             img_min, img_max = self.compute_min_max(img)
 
@@ -140,11 +140,14 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             # View is full image size
             view = QRectF(0, 0, self.image_info['shape'][1],
                           self.image_info['shape'][0])
-            offset = QPointF(hdul[0].header['HIERARCH ESO DET WIN STARTX'],
-                             hdul[0].header['HIERARCH ESO DET WIN STARTY'])
+            offset = QPointF(hdul[0].header['HIERARCH ESO DET WIN1 STRX'] - 1 -
+                             hdul[0].header['HIERARCH ESO DET OUT1 PRSCX'],
+                             hdul[0].header['HIERARCH ESO DET WIN1 STRY'] - 1 -
+                             hdul[0].header['HIERARCH ESO DET OUT1 PRSCY']
+                             )  # Note: FITS indexing starts at 1
 
-            self.fli_view.setImage(img, img_min, img_max, scale=LogScale,
-                                   view=view, offset=offset)
+            self.camera_view.setImage(img, img_min, img_max, scale=LogScale,
+                                      view=view, offset=offset)
 
             self.update_labels()
 
@@ -164,7 +167,7 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.axis_scaling = config.FLI.plate_scale
+            self.axis_scaling = config.Camera.plate_scale
             self.axis_unit = '"'
             self.axis_precision = 1
         else:
@@ -184,14 +187,14 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             ticks_x.append((tick_pos_x, tick_label))
             ticks_y.append((tick_pos_y, tick_label))
 
-        self.fli_view.setTickParams(5, 5, 5, 10, ticks_x, ticks_y)
+        self.camera_view.setTickParams(5, 5, 5, 10, ticks_x, ticks_y)
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.fli_view.updateColormap(
+            self.camera_view.updateColormap(
                 colormaps.GrayscaleSaturationTransparent())
         else:
-            self.fli_view.updateColormap(colormaps.BlackBody())
+            self.camera_view.updateColormap(colormaps.BlackBody())
 
     @Slot(bool)
     def on_open_button_clicked(self, checked):
@@ -232,7 +235,7 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                         )
                         continue
 
-                    FLIZoomWindow(self.backend, file=filename, parent=self)
+                    CameraZoomWindow(self.backend, file=filename, parent=self)
                 except PermissionError:
                     error_list.append(
                         f'{filename.name}: Can\'t read file, permission refused.'
@@ -263,6 +266,6 @@ class FLIWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             else:
                 hdul = None
 
-            self.zoom_window = FLIZoomWindow(
+            self.zoom_window = CameraZoomWindow(
                 self.backend, hdul, on_sky_unit=(self.axis_unit == '"'),
                 parent=self)

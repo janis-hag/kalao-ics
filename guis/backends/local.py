@@ -8,9 +8,10 @@ from astropy.io import fits
 
 from kalao import database, ippower, logs, services
 from kalao.cacao import aocontrol, toolbox
-from kalao.fli import camera
-from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser,
-                       plc_utils, shutter, temperature_control, tungsten)
+from kalao.hardware import (adc, calibunit, camera, cooling, filterwheel,
+                            flipmirror, laser, plc_utils, shutter, tungsten,
+                            wfs)
+from kalao.rtc import rtc
 from kalao.sequencer import centering, focusing
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
@@ -161,9 +162,9 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    @emit('fli_image_updated')
+    @emit('camera_image_updated')
     @timeit
-    def fli_image(self):
+    def camera_image(self):
         data = {}
 
         self._update_fits_full(data, config.FITS.last_image_all)
@@ -205,8 +206,8 @@ class MainBackend(SHMFPSBackend):
         self._update_dict(data, 'plc',
                           plc_utils.get_all_status(filter_from_db=True))
         self._update_dict(data, 'services', services.get_all_status())
-        self._update_dict(data, 'fli', camera.get_exposure_status())
-        self._update_dict(data, 'fli', camera.get_temperatures())
+        self._update_dict(data, 'camera', camera.get_exposure_status())
+        self._update_dict(data, 'camera', camera.get_temperatures())
         self._update_dict(data, 'ippower', ippower.status_all())
 
         self._update_db(
@@ -292,7 +293,7 @@ class MainBackend(SHMFPSBackend):
         return data
 
     def calibration_ready(self, *, conf, loop):
-        if not aocontrol.acquisition_running():
+        if not wfs.acquisition_running():
             return {'ready': False, 'reason': 'WFS acquisition is not running'}
 
         if not aocontrol.check_wfs_flux():
@@ -487,7 +488,7 @@ class MainBackend(SHMFPSBackend):
 
         self._update_fits(
             data, config.AO.cacao_workdir /
-            f'KalAO-{conf}-rootdir/conf/zrespM-H.fits')
+            f'KalAO-{conf}-rootdir/conf/RMmodesWFS/zrespM-H.fits')
 
         return data
 
@@ -546,8 +547,8 @@ class MainBackend(SHMFPSBackend):
 
     ##### FLI Zoom
 
-    def centering_manual(self, *, x, y):
-        centering.manual_centering(x, y)
+    def centering_manual(self, *, dx, dy):
+        centering.manual_centering(dx, dy)
 
     def centering_validate(self):
         centering.validate_manual_centering()
@@ -592,36 +593,36 @@ class MainBackend(SHMFPSBackend):
 
     # Wavefront Sensor
 
-    def nuvu_emgain(self, *, emgain):
+    def wfs_emgain(self, *, emgain):
         aocontrol.set_emgain(emgain)
 
-    def nuvu_exposuretime(self, *, exposuretime):
+    def wfs_exposuretime(self, *, exposuretime):
         aocontrol.set_exptime(exposuretime)
 
-    def nuvu_autogain_on(self, *, state):
+    def wfs_autogain_on(self, *, state):
         aocontrol.switch_autogain(state)
 
-    def nuvu_autogain_setting(self, *, setting):
+    def wfs_autogain_setting(self, *, setting):
         aocontrol.set_autogain_setting(setting)
 
     # Deformable Mirror
 
-    def bmc_maxstroke(self, *, stroke):
-        aocontrol.set_bmc_max_stroke(stroke)
+    def dm_maxstroke(self, *, stroke):
+        aocontrol.set_dm_max_stroke(stroke)
 
-    def bmc_strokemode(self, *, mode):
-        aocontrol.set_bmc_stroke_mode(mode)
+    def dm_strokemode(self, *, mode):
+        aocontrol.set_dm_stroke_mode(mode)
 
-    def bmc_targetstroke(self, *, target):
-        aocontrol.set_bmc_target_stroke(target)
+    def dm_targetstroke(self, *, target):
+        aocontrol.set_dm_target_stroke(target)
 
     # Observation
 
     def adc_update(self, *, state):
-        aocontrol._set_fps_value(config.FPS.CONFIG, 'adc_update', state)
+        toolbox.set_fps_value(config.FPS.CONFIG, 'adc_update', state)
 
     def ttm_offload(self, *, state):
-        aocontrol._set_fps_value(config.FPS.CONFIG, 'ttm_offload', state)
+        toolbox.set_fps_value(config.FPS.CONFIG, 'ttm_offload', state)
 
     # Modal gains
 
@@ -711,36 +712,39 @@ class MainBackend(SHMFPSBackend):
     def plc_adc_maxdisp(self):
         adc.set_max_disp()
 
+    def plc_adc_angleoffset(self, *, angle, offset):
+        adc.set_angle(angle, offset)
+
     def plc_pump_state(self, *, state):
         if state:
-            temperature_control.pump_on()
+            cooling.pump_on()
         else:
-            temperature_control.pump_off()
+            cooling.pump_off()
 
     def plc_fan_state(self, *, state):
         if state:
-            temperature_control.fan_on()
+            cooling.fan_on()
         else:
-            temperature_control.fan_off()
+            cooling.fan_off()
 
     def plc_heater_state(self, *, state):
         if state:
-            temperature_control.heater_on()
+            cooling.heater_on()
         else:
-            temperature_control.heater_off()
+            cooling.heater_off()
 
-    def fli_take(self, *, exposure_time, frames, roi_size):
+    def camera_take(self, *, exposure_time, frames, roi_size):
         camera.take_image(ObservationType.ENGINEERING, exptime=exposure_time,
                           nbframes=frames, roi_size=roi_size)
 
-    def fli_cancel(self):
+    def camera_cancel(self):
         camera.cancel()
 
-    def nuvu_acquisition_start(self):
-        aocontrol.start_wfs_acquisition()
+    def wfs_acquisition_start(self):
+        wfs.start_acquisition()
 
-    def nuvu_acquisition_stop(self):
-        aocontrol.stop_wfs_acquisition()
+    def wfs_acquisition_stop(self):
+        wfs.stop_acquisition()
 
     def ippower_rtc_on(self):
         ippower.switch(config.IPPower.Port.RTC, IPPowerStatus.ON)
@@ -755,10 +759,10 @@ class MainBackend(SHMFPSBackend):
         ippower.switch(config.IPPower.Port.Bench, IPPowerStatus.OFF)
 
     def ippower_dm_on(self):
-        ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.ON)
+        ippower.switch(config.IPPower.Port.DM, IPPowerStatus.ON)
 
     def ippower_dm_off(self):
-        ippower.switch(config.IPPower.Port.BMC_DM, IPPowerStatus.OFF)
+        ippower.switch(config.IPPower.Port.DM, IPPowerStatus.OFF)
 
     def centering_laser(self):
         centering.center_on_laser()
@@ -802,3 +806,11 @@ class MainBackend(SHMFPSBackend):
 
     def logs_between(self, *, since, until):
         return logs.get_entries_between(since, until)
+
+    ##### Instrument
+
+    def shutdown(self, *, iknowwhatimdoing):
+        if iknowwhatimdoing == 'yes':
+            return rtc.shutdown_sequence()
+        else:
+            return None

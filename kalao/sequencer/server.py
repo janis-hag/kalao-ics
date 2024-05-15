@@ -13,9 +13,9 @@ from typing import Any
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
-from kalao import database, euler, logger, services
-from kalao.plc import (adc, calibunit, filterwheel, flipmirror, laser, shutter,
-                       tungsten)
+from kalao import database, euler, ippower, logger, services
+from kalao.hardware import (adc, calibunit, cooling, filterwheel, flipmirror,
+                            laser, shutter, tungsten)
 from kalao.sequencer import commands
 from kalao.utils import background
 from kalao.utils.rprint import rprint
@@ -46,9 +46,15 @@ def handler(signal_received: int, frame: FrameType | None) -> None:
 
 
 def init() -> ReturnCode:
+    logger.info(
+        'sequencer',
+        f'Starting KalAO Instrument Control Software (KalAO-ICS), version {config.version}'
+    )
+
     logger.info('sequencer', 'Server initialisation')
 
     init_list = [
+        ippower.init,
         services.init,
         calibunit.init,
         partial(adc.init, config.PLC.Node.ADC1),
@@ -58,6 +64,7 @@ def init() -> ReturnCode:
         tungsten.init,
         laser.init,
         filterwheel.init,
+        cooling.init,
     ]
 
     background.launch('sequencer', init_list, config.SEQ.init_timeout)
@@ -131,18 +138,14 @@ def serve() -> ReturnCode:
                            {'sequencer_status': SequencerStatus.ABORTING})
             logger.info('sequencer', f'Received {command}. Aborting sequence.')
 
-            commands.commands[command]()
+            execute_command(command, args, update_status=False)
 
             if th is not None:
                 th.join()
                 th = None
-
-            database.store('obs',
-                           {'sequencer_status': SequencerStatus.WAITING})
         else:
             if th is not None:
                 th.join()
-                th = None
 
             if 'alphacat' in args and 'deltacat' in args:
                 coord = SkyCoord(ra=args['alphacat'], dec=args['deltacat'],
@@ -213,24 +216,41 @@ def cast_args(args: dict[str, Any]) -> ReturnCode:
         #     return 1
 
         if k == 'kalfilter' and isinstance(v, str):
-            args[k] = v.lower()
+            if v in ['g', 'r', 'i', 'z']:
+                args[k] = 'SDSS-' + v
+            elif v == 'nd':
+                args[k] = 'ND1.5'
 
     return ReturnCode.SEQ_OK
 
 
-def execute_command(command: str, seq_args: dict[str, Any]) -> ReturnCode:
+def execute_command(command: str, seq_args: dict[str, Any],
+                    update_status: bool = True) -> ReturnCode:
     try:
         commands.commands[command](**seq_args)
+
     except AbortRequested:
-        database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
+        if update_status:
+            database.store('obs',
+                           {'sequencer_status': SequencerStatus.WAITING})
+
         logger.info('sequencer', f'{command} aborted on request')
+
         return ReturnCode.SEQ_OK
+
     except FLICancelFailed:
-        database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
+        if update_status:
+            database.store('obs',
+                           {'sequencer_status': SequencerStatus.WAITING})
+
         logger.info('sequencer', f'FLI cancel failed in {command}')
+
         return ReturnCode.SEQ_ERROR
+
     except SequencerException as e:
-        database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+        if update_status:
+            database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+
         logger.error('sequencer', f'"{e.__doc__}" happened during {command}')
 
         # Close shutter after exception
@@ -239,8 +259,11 @@ def execute_command(command: str, seq_args: dict[str, Any]) -> ReturnCode:
                          'Failed to close the shutter after error')
 
         return ReturnCode.SEQ_ERROR
+
     except Exception as e:
-        database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+        if update_status:
+            database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+
         logger.error('sequencer',
                      f'Unknown exception occurred during {command}')
 
@@ -252,8 +275,12 @@ def execute_command(command: str, seq_args: dict[str, Any]) -> ReturnCode:
                          'Failed to close the shutter after error')
 
         return ReturnCode.SEQ_ERROR
+
     else:
-        database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
+        if update_status:
+            database.store('obs',
+                           {'sequencer_status': SequencerStatus.WAITING})
+
         logger.info('sequencer', f'{command} ended')
 
         return ReturnCode.SEQ_OK

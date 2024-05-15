@@ -5,17 +5,32 @@
 """
 import math
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeVar
 
 import numpy as np
 
 from astropy.io import fits
 
-from pyMilk.interfacing.fps import FPS
-from pyMilk.interfacing.shm import SHM
+from kalao import logger
+
+import libtmux
+import libtmux.exc
 
 from kalao.definitions.enums import ReturnCode
+
+try:
+    from pyMilk.interfacing.fps import FPS
+    from pyMilk.interfacing.shm import SHM
+except ImportError:
+
+    class SHM:
+        pass
+
+    class FPS:
+        pass
 
 
 @dataclass
@@ -152,3 +167,52 @@ def load_fits_to_stream(fits_file: str | Path,
     stream_shm.set_data(pattern, True)
 
     return ReturnCode.OK
+
+
+ReturnValue = TypeVar('ReturnValue', int, float, str, bool)
+
+
+def set_fps_value(fps_name: str, key: str,
+                  value: ReturnValue) -> ReturnValue | None:
+    fps = open_fps_once(fps_name)
+
+    if fps is None:
+        logger.error('ao', f'Can\'t set {key}, {fps_name} is missing')
+        return None
+
+    fps.set_param(key, value)
+
+    return fps.get_param(key)
+
+
+def set_tmux_value(session_name: str, key: str,
+                   value: ReturnValue | None = None) -> ReturnValue | None:
+    server = libtmux.Server()
+
+    try:
+        session = server.sessions.get(session_name=session_name)
+        if value is None:
+            session.attached_pane.send_keys(f'{key}()', enter=True)
+        else:
+            session.attached_pane.send_keys(f'{key}({value})', enter=True)
+    except libtmux.exc.TmuxObjectDoesNotExist:
+        logger.error('ao', f'Can\'t set {key}, {session_name} is missing')
+        return None
+
+    return value
+
+
+def wait_file(file: str | Path, timeout: float = 30,
+              wait_time: float = 1) -> ReturnCode:
+    if not isinstance(file, Path):
+        file = Path(file)
+
+    start = time.monotonic()
+
+    while True:
+        if file.exists():
+            return ReturnCode.OK
+        elif (time.monotonic() - start) > timeout:
+            return ReturnCode.TIMEOUT
+
+        time.sleep(wait_time)

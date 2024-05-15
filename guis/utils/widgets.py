@@ -391,7 +391,7 @@ class KGraphicsView(QGraphicsView):
     neindicator_visible = False
     neindicator_parallactic_angle = None
 
-    hovered = Signal(int, int, float)
+    hovered = Signal(float, float, float)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -532,8 +532,6 @@ class KGraphicsView(QGraphicsView):
             return
 
         if not (np.isnan(x) or np.isnan(y)):
-            x = math.floor(x)
-            y = math.floor(y)
             x_img = math.floor(x - self.offset.x())
             y_img = math.floor(y - self.offset.y())
 
@@ -546,10 +544,10 @@ class KGraphicsView(QGraphicsView):
                     self.hovered.emit(x, y, self.img[y_img, x_img])
             else:
                 self.unsetCursor()
-                self.hovered.emit(-1, -1, np.nan)
+                self.hovered.emit(np.nan, np.nan, np.nan)
         else:
             self.unsetCursor()
-            self.hovered.emit(-1, -1, np.nan)
+            self.hovered.emit(np.nan, np.nan, np.nan)
 
     def setTickParams(self, spacing, length, text_spacing, fontsize, ticks_x,
                       ticks_y):
@@ -886,7 +884,7 @@ class KChartView(QChartView):
 
         if area.left() <= sp.x() <= area.right():
             painter.drawLine(y1, y2)
-        if area.top() < sp.y() < area.bottom():
+        if area.top() <= sp.y() <= area.bottom():
             painter.drawLine(x1, x2)
 
     def mouseMoveEvent(self, event):

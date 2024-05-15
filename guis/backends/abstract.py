@@ -46,7 +46,7 @@ def name_to_url(name):
 
 class AbstractBackend(QObject):
     streams_all_updated = Signal(object)
-    fli_image_updated = Signal(object)
+    camera_image_updated = Signal(object)
     all_updated = Signal(object)
     monitoringandtelemetry_updated = Signal(object)
     streams_channels_dm_updated = Signal(object)

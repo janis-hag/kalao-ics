@@ -4,7 +4,6 @@ target_name:
   short: Target name
   long: Name of current target
   unit:
-  fits_keyword: HIERARCH ESO OBS TARGET NAME
 
 target_magnitude:
   short: Target visual magnitude
@@ -35,23 +34,23 @@ centering_manual:
   unit:
 
 # FLI
-fli_last_image_path:
+camera_last_image_path:
   short: Path to saved image
   long: Path to saved image
   unit:
 
-fli_temporary_image_path:
+camera_temporary_image_path:
   short: Path to temporary image
   long: Path to temporary image
   unit:
 
-fli_image_count:
-  short: Image counter
+camera_image_count:
+  short: Image sequential number
   long: Counter giving the image number
   unit:
-  fits_keyword: HIERARCH ESO DET FRAM COUNT
+  fits_keyword: HIERARCH ESO DET FRAM ID
 
-fli_exposure_time:
+camera_exposure_time:
   short: Exposure time
   long: Requested exposure time
   unit: s
@@ -103,7 +102,7 @@ filterwheel_filter_position:
   short: Filter number
   long: Filter wheel filter position
   unit:
-  group: FLI, Motors
+  group: Hardware
   fits_keyword: HIERARCH ESO INS FILT NO
 
 filterwheel_filter_name:

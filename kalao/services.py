@@ -25,7 +25,7 @@ import config
 # For documentation on the API
 
 
-def connect_dbus(
+def connect_dbus_systemd(
     system: bool = False
 ) -> tuple[dbus.SystemBus | dbus.SessionBus, dbus.Interface]:
     if system:
@@ -42,7 +42,7 @@ def connect_dbus(
 
 
 def get_status(unit: str, system: bool = False) -> tuple[str, str, datetime]:
-    bus, manager = connect_dbus(system)
+    bus, manager = connect_dbus_systemd(system)
 
     service = bus.get_object('org.freedesktop.systemd1',
                              object_path=manager.LoadUnit(unit))
@@ -65,7 +65,7 @@ def get_status(unit: str, system: bool = False) -> tuple[str, str, datetime]:
 
 
 def is_enabled(unit: str, system: bool = False) -> bool | None:
-    bus, manager = connect_dbus(system)
+    bus, manager = connect_dbus_systemd(system)
 
     enabled = str(manager.GetUnitFileState(unit))
 
@@ -130,7 +130,7 @@ def unit_control(unit: str, action: ServiceAction, system: bool = False,
     if action != ServiceAction.STATUS:
         logger.info('services', f'Sending {action} command to {unit}.')
 
-    bus, manager = connect_dbus(system)
+    bus, manager = connect_dbus_systemd(system)
 
     if action == ServiceAction.STATUS:
         # Status is always returned as long as the action keyword is correct

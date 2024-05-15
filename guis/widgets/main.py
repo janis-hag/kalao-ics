@@ -7,8 +7,8 @@ from guis.utils.definitions import Color, Logo
 from guis.utils.mixins import BackendDataMixin
 from guis.utils.ui_loader import loadUi
 from guis.utils.widgets import KWidget
+from guis.widgets.camera import CameraWidget
 from guis.widgets.dm import DMWidget
-from guis.widgets.fli import FLIWidget
 from guis.widgets.flux import FluxWidget
 from guis.widgets.slopes import SlopesWidget
 from guis.widgets.ttm import TTMWidget
@@ -30,24 +30,25 @@ class MainWidget(KWidget, BackendDataMixin):
         self.logo_label.load(str(Logo.svg))
         self.logo_label.renderer().setAspectRatioMode(Qt.KeepAspectRatio)
 
-        self.fli_exposure_time_lineedit.updateText(exposure_time=np.nan)
-        self.fli_remaining_time_lineedit.updateText(remaining_time=np.nan)
-        self.fli_remaining_frames_lineedit.updateText(remaining_frames=np.nan)
-        self.fli_ccd_temperature_lineedit.updateText(ccd_temperature=np.nan)
-        self.nuvu_emgain_lineedit.updateText(emgain=np.nan)
-        self.nuvu_exposuretime_lineedit.updateText(exposuretime=np.nan)
-        self.nuvu_framerate_lineedit.updateText(framerate=np.nan)
-        self.nuvu_ccd_temperature_lineedit.updateText(ccd_temperature=np.nan)
+        self.camera_exposure_time_lineedit.updateText(exposure_time=np.nan)
+        self.camera_remaining_time_lineedit.updateText(remaining_time=np.nan)
+        self.camera_remaining_frames_lineedit.updateText(
+            remaining_frames=np.nan)
+        self.camera_ccd_temperature_lineedit.updateText(ccd_temperature=np.nan)
+        self.wfs_emgain_lineedit.updateText(emgain=np.nan)
+        self.wfs_exposuretime_lineedit.updateText(exposuretime=np.nan)
+        self.wfs_framerate_lineedit.updateText(framerate=np.nan)
+        self.wfs_ccd_temperature_lineedit.updateText(ccd_temperature=np.nan)
 
         self.wfs = WFSWidget(backend, parent=self)
-        self.fli = FLIWidget(backend, parent=self)
+        self.fli = CameraWidget(backend, parent=self)
         self.slopes = SlopesWidget(backend, parent=self)
         self.flux = FluxWidget(backend, parent=self)
         self.dm = DMWidget(backend, parent=self)
         self.ttm = TTMWidget(backend, parent=self)
 
         self.wfs_frame.layout().addWidget(self.wfs)
-        self.fli_frame.layout().addWidget(self.fli)
+        self.camera_frame.layout().addWidget(self.fli)
         self.dm_frame.layout().addWidget(self.dm)
         self.slopes_frame.layout().addWidget(self.slopes)
         self.flux_frame.layout().addWidget(self.flux)
@@ -101,71 +102,71 @@ class MainWidget(KWidget, BackendDataMixin):
             else:
                 self.ttmloop_indicator.setStatus(Color.RED, loopON)
 
-        ### FLI
+        ### Camera
 
-        exposure_time = self.consume_dict(data, 'fli', 'exposure_time')
+        exposure_time = self.consume_dict(data, 'camera', 'exposure_time')
         if exposure_time is not None:
-            self.fli_exposure_time_lineedit.updateText(
+            self.camera_exposure_time_lineedit.updateText(
                 exposure_time=exposure_time)
 
-        remaining_time = self.consume_dict(data, 'fli', 'remaining_time')
+        remaining_time = self.consume_dict(data, 'camera', 'remaining_time')
         if remaining_time is not None:
-            self.fli_remaining_time_lineedit.updateText(
+            self.camera_remaining_time_lineedit.updateText(
                 remaining_time=remaining_time)
 
-        remaining_frames = self.consume_dict(data, 'fli', 'remaining_frames')
+        remaining_frames = self.consume_dict(data, 'camera',
+                                             'remaining_frames')
         if remaining_frames is not None:
-            self.fli_remaining_frames_lineedit.updateText(
+            self.camera_remaining_frames_lineedit.updateText(
                 remaining_frames=remaining_frames)
 
             if remaining_frames > 0:
-                self.fli_exposure_indicator.setStatus(Color.GREEN,
-                                                      remaining_frames)
+                self.camera_exposure_indicator.setStatus(
+                    Color.GREEN, remaining_frames)
             elif remaining_frames == 0:
-                self.fli_exposure_indicator.setStatus(Color.BLACK,
-                                                      remaining_frames)
+                self.camera_exposure_indicator.setStatus(
+                    Color.BLACK, remaining_frames)
             else:
-                self.fli_exposure_indicator.setStatus(Color.RED,
-                                                      remaining_frames)
+                self.camera_exposure_indicator.setStatus(
+                    Color.RED, remaining_frames)
 
-        ccd = self.consume_dict(data, 'fli', 'ccd')
+        ccd = self.consume_dict(data, 'camera', 'ccd')
         if ccd is not None:
-            self.fli_ccd_temperature_lineedit.updateText(ccd_temperature=ccd)
+            self.camera_ccd_temperature_lineedit.updateText(
+                ccd_temperature=ccd)
 
-        ### Nuvu
+        ### WFS
 
         autogain_on = self.consume_param(data, config.FPS.NUVU, 'autogain_on')
         if autogain_on is not None:
             if autogain_on is True:
-                self.nuvu_autogain_indicator.setStatus(Color.GREEN,
-                                                       autogain_on)
+                self.wfs_autogain_indicator.setStatus(Color.GREEN, autogain_on)
             elif autogain_on is False:
-                self.nuvu_autogain_indicator.setStatus(Color.BLACK,
-                                                       autogain_on)
+                self.wfs_autogain_indicator.setStatus(Color.BLACK, autogain_on)
             else:
-                self.nuvu_autogain_indicator.setStatus(Color.RED, autogain_on)
+                self.wfs_autogain_indicator.setStatus(Color.RED, autogain_on)
 
-        nuvu_emgain = self.consume_stream_keyword(data,
-                                                  config.Streams.NUVU_RAW,
-                                                  'EMGAIN')
-        if nuvu_emgain is not None:
-            self.nuvu_emgain_lineedit.updateText(emgain=nuvu_emgain)
+        wfs_emgain = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
+                                                 'EMGAIN')
+        if wfs_emgain is not None:
+            self.wfs_emgain_lineedit.updateText(emgain=wfs_emgain)
 
-        nuvu_exposuretime = self.consume_stream_keyword(
-            data, config.Streams.NUVU_RAW, 'EXPTIME')
-        if nuvu_exposuretime is not None:
-            self.nuvu_exposuretime_lineedit.updateText(
-                exposuretime=nuvu_exposuretime)
+        wfs_exposuretime = self.consume_stream_keyword(data,
+                                                       config.Streams.NUVU_RAW,
+                                                       'EXPTIME')
+        if wfs_exposuretime is not None:
+            self.wfs_exposuretime_lineedit.updateText(
+                exposuretime=wfs_exposuretime)
 
-        nuvu_mframerate = self.consume_stream_keyword(data,
-                                                      config.Streams.NUVU_RAW,
-                                                      'MFRATE')
-        if nuvu_mframerate is not None:
-            self.nuvu_framerate_lineedit.updateText(framerate=nuvu_mframerate)
-
-        nuvu_temp_ccd = self.consume_stream_keyword(data,
+        wfs_framerate = self.consume_stream_keyword(data,
                                                     config.Streams.NUVU_RAW,
-                                                    'T_CCD')
-        if nuvu_temp_ccd is not None:
-            self.nuvu_ccd_temperature_lineedit.updateText(
-                ccd_temperature=nuvu_temp_ccd)
+                                                    'MFRATE')
+        if wfs_framerate is not None:
+            self.wfs_framerate_lineedit.updateText(framerate=wfs_framerate)
+
+        wfs_temp_ccd = self.consume_stream_keyword(data,
+                                                   config.Streams.NUVU_RAW,
+                                                   'T_CCD')
+        if wfs_temp_ccd is not None:
+            self.wfs_ccd_temperature_lineedit.updateText(
+                ccd_temperature=wfs_temp_ccd)

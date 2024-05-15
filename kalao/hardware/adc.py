@@ -15,7 +15,8 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 
 from kalao import database, euler, logger
-from kalao.plc import core, filterwheel
+from kalao.cacao import toolbox
+from kalao.hardware import filterwheel, plc
 from kalao.utils import atmosphere
 
 from opcua import Client
@@ -52,6 +53,11 @@ def configure(zenith_angle: float | None = None,
               beck: Client = None) -> int:
     if not skip_tracking_check and not euler.telescope_tracking():
         logger.warn('adc', 'Configuring ADC while telescope is not tracking')
+
+    config_fps = toolbox.open_fps_once(config.FPS.CONFIG)
+
+    if config_fps is None or not config_fps.get_param('adc_update'):
+        return 0
 
     filter_name = filterwheel.get_filter(type=str, from_db=True)
 
@@ -108,7 +114,7 @@ def set_angle(angle: float, offset: float = 0., blocking: bool = True,
     if blocking:
         time.sleep(2)
 
-        wait_rotate_both(beck=beck)
+        wait_both(beck=beck)
 
     # TODO: check motors moved successfully
     return angle
@@ -139,8 +145,8 @@ def rotate(node: str, position: float, velocity: float = config.ADC.velocity,
     logger.info('adc',
                 f'Moving ADC {node} to position {position}° at {velocity}°/s')
 
-    new_position = core.motor_move(node, position, velocity, blocking,
-                                   beck=beck)
+    new_position = plc.motor_move(node, position, velocity, blocking,
+                                  beck=beck)
 
     if blocking:
         logger.info('adc', f'Moved ADC {node} to position {new_position}°')
@@ -148,42 +154,43 @@ def rotate(node: str, position: float, velocity: float = config.ADC.velocity,
     return new_position
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def stop(node: str, beck: Client = None) -> None:
     logger.info('adc', f'Stopping ADC {node}')
-    core.motor_send_stop(node, beck=beck)
+    plc.motor_send_stop(node, beck=beck)
 
 
-@core.beckhoff_autoconnect
-def wait_rotate(node: str, beck: Client = None) -> int:
-    core.wait_loop(f'Waiting for ADC {node} rotation',
-                   lambda: is_moving(node, beck=beck), 5)
+@plc.autoconnect
+def wait(node: str, beck: Client = None) -> int:
+    plc.wait_loop(f'Waiting for ADC {node} rotation',
+                  lambda: is_moving(node, beck=beck), 5)
 
     return 0
 
 
-def wait_rotate_both(beck: Client = None) -> int:
-    wait_rotate(config.PLC.Node.ADC1, beck=beck)
-    wait_rotate(config.PLC.Node.ADC2, beck=beck)
+@plc.autoconnect
+def wait_both(beck: Client = None) -> int:
+    wait(config.PLC.Node.ADC1, beck=beck)
+    wait(config.PLC.Node.ADC2, beck=beck)
 
     return 0
 
 
 def get_position(node: str, beck: Client = None) -> float:
-    position = core.motor_get_position(node, beck=beck)
+    position = plc.motor_get_position(node, beck=beck)
 
     if np.isnan(position):
-        error_code, error_text = core.get_error(node, beck=beck)
+        error_code, error_text = plc.get_error(node, beck=beck)
         logger.error('adc', f'{error_text} ({error_code})')
 
     return position
 
 
 def is_moving(node: str, beck: Client = None) -> bool:
-    return core.motor_is_moving(node, beck=beck)
+    return plc.motor_get_status(node, beck=beck) == PLCStatus.MOVING
 
 
-@core.beckhoff_autoconnect
+@plc.autoconnect
 def init(node: str, force_init: bool = False,
          beck: Client = None) -> ReturnCode:
     """
@@ -191,18 +198,18 @@ def init(node: str, force_init: bool = False,
     """
     logger.info('adc', f'Initialising ADC {node}')
 
-    ret_init = core.motor_init(node, force_init, beck=beck)
+    ret_init = plc.motor_init(node, force_init, beck=beck)
 
     if ret_init != ReturnCode.PLC_INIT_SUCCESS:
         logger.error('adc', f'ADC {node} initialisation failed')
     else:
         logger.info('adc', f'ADC {node} initialised')
 
-        if node in config.PLC.initial_pos:
-            rotate(node, config.PLC.initial_pos[node], beck=beck)
+        if node in config.PLC.initial_state:
+            rotate(node, config.PLC.initial_state[node], beck=beck)
 
     return ret_init
 
 
 def get_state(node, beck: Client = None) -> PLCStatus:
-    return core.motor_get_status(node, beck=beck)
+    return plc.motor_get_status(node, beck=beck)
