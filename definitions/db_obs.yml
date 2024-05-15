@@ -33,7 +33,7 @@ centering_manual:
   long: Flag do indicate if manual centering is needed
   unit:
 
-# FLI
+# Science Camera
 camera_last_image_path:
   short: Path to saved image
   long: Path to saved image
@@ -97,7 +97,7 @@ observer_email:
   long: Email of the current observer
   unit:
 
-# FilterWheel
+# Filter Wheel
 filterwheel_filter_position:
   short: Filter number
   long: Filter wheel filter position
