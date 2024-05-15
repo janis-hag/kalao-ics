@@ -271,7 +271,7 @@ def _header_from_yml(file: str | Path) -> pd.DataFrame:
     if not isinstance(file, Path):
         file = Path(file)
 
-    with open(file, 'SDSS-r') as f:
+    with open(file, 'r') as f:
         header_df = pd.json_normalize(yaml.safe_load(f))
 
     header_df.set_index('keyword', inplace=True)
@@ -319,7 +319,8 @@ def _header_from_db(collection_name: str, dt: datetime | None) -> pd.DataFrame:
         data = database.get(collection_name, query_list.keys(), at=dt)
 
         for key, keyword in query_list.items():
-            header_dict[keyword]['value'] = data[key][0]['value']
+            if key in data:
+                header_dict[keyword]['value'] = data[key][0]['value']
 
     header_df = pd.DataFrame.from_dict(header_dict, orient='index')
     header_df.index.name = 'keyword'
@@ -502,6 +503,9 @@ def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
                                                'value']
         header_df.loc['OBJECT', 'source'] += '+dynamic'
     else:
+        header_df.drop('RA')
+        header_df.drop('DEC')
+
         header_df.loc['OBJECT',
                       'value'] = header_df.loc['HIERARCH ESO DPR TYPE',
                                                'value']

@@ -36,8 +36,6 @@ def translate_to_filter_position(filter: Filter) -> int:
         else:
             return filter
     elif isinstance(filter, str):
-        filter = filter.lower()
-
         if filter not in config.FilterWheel.position_list:
             logger.error('filterwheel', f'Wrong filter name (got {filter})')
             return FilterWheelStatus.ERROR_POSITION
@@ -56,8 +54,6 @@ def translate_to_filter_name(filter: Filter) -> str:
         else:
             return config.FilterWheel.position_list[filter]
     elif isinstance(filter, str):
-        filter = filter.lower()
-
         if filter not in config.FilterWheel.position_list:
             logger.error('filterwheel', f'Wrong filter name (got {filter})')
             return FilterWheelStatus.ERROR_NAME
@@ -180,6 +176,8 @@ def init() -> ReturnCode:
             fw.initialize()
 
             logger.info('filterwheel', 'Filter wheel initialised')
+
+            set_filter(config.FilterWheel.initial_position)
 
             return ReturnCode.PLC_INIT_SUCCESS
 

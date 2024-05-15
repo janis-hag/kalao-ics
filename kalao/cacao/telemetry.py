@@ -63,7 +63,8 @@ def gather() -> dict[str, Any]:
         telemetry_data['wfs_algorithm'] = shwfs_fps.get_param('algorithm')
         telemetry_data['wfs_flux_avg'] = shwfs_fps.get_param('flux_avg')
         telemetry_data['wfs_flux_max'] = shwfs_fps.get_param('flux_max')
-        telemetry_data['wfs_residual_rms'] = shwfs_fps.get_param('residual_rms')
+        telemetry_data['wfs_residual_rms'] = shwfs_fps.get_param(
+            'residual_rms')
 
     # Tip/tilt stream
     ttm_stream = toolbox.open_stream_once(config.Streams.TTM)

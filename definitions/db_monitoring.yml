@@ -87,8 +87,8 @@ bench_air_hygro:
   unit: '%'
   group: Environment
   fits_keyword: HIERARCH ESO INS ENC RHUM
-  warn_range: [ 15, 60 ]
-  error_range: [ 10, 75 ]
+  warn_range: [ 10, 60 ]
+  error_range: [ 5, 75 ]
 
 bench_air_temp:
   short: Bench air temp.

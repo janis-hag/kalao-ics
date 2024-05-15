@@ -94,8 +94,8 @@ def get_port_name(power_port: int) -> str:
 
 def _get_port_name_from_req(req: requests.Response, power_port: int) -> str:
     if req.status_code == 200:
-        if 0 <= power_port < len(req.json()['outputs']):
-            return req.json()['outputs'][power_port]
+        if 0 < power_port <= len(req.json()['outputs']):
+            return req.json()['outputs'][power_port - 1]['name']
         else:
             return ''
 

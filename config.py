@@ -217,6 +217,7 @@ class FilterWheel:
     device_port = '/dev/ttyUSB0'
     retries = 3  # -
     retry_wait = 2  # s
+    initial_position = 'clear'
 
     position_list = ['clear', 'SDSS-g', 'SDSS-r', 'SDSS-i', 'SDSS-z', 'ND1.5']
 

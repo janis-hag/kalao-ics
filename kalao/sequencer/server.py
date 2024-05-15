@@ -216,6 +216,7 @@ def cast_args(args: dict[str, Any]) -> ReturnCode:
         #     return 1
 
         if k == 'kalfilter' and isinstance(v, str):
+            v = v.lower()
             if v in ['g', 'r', 'i', 'z']:
                 args[k] = 'SDSS-' + v
             elif v == 'nd':

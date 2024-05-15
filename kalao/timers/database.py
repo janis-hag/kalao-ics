@@ -161,7 +161,7 @@ def check_range(collection_name: str, key: str, value: int | float,
 
         logger_func(
             'database_timer',
-            f'{key} = {value}{unit} {verb} {level} threshold of {threshold}{unit} (since {since} s)'
+            f'{key} = {value}{unit} {verb} {level} threshold of {threshold}{unit} (since {since:.0f} s)'
         )
 
 

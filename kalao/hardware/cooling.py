@@ -90,9 +90,9 @@ def switch(node: str, action_name: RelayCommand | RelayState,
         action_name = RelayCommand.OFF
 
     if action_name == RelayCommand.ON:
-        logger.info('temperature', f'Switching on {node}')
+        logger.info('cooling', f'Switching on {node}')
     elif action_name == RelayCommand.OFF:
-        logger.info('temperature', f'Switching off {node}')
+        logger.info('cooling', f'Switching off {node}')
 
     relay_switch = beck.get_node(node)
     relay_switch.set_attribute(
@@ -237,23 +237,21 @@ def get_flow(beck: Client = None) -> float:
 
 @plc.autoconnect
 def init(beck: Client = None) -> ReturnCode:
+    logger.info('cooling', 'Initialising cooling system')
+
     error = False
 
-    if config.PLC.Node.FAN in config.PLC.initial_state:
-        state = config.PLC.initial_state[config.PLC.Node.FAN]
-        if switch(state, beck=beck) != state:
-            error = True
+    for node in [
+            config.PLC.Node.FAN, config.PLC.Node.PUMP, config.PLC.Node.HEATER
+    ]:
+        if node in config.PLC.initial_state:
+            state = config.PLC.initial_state[node]
+            if switch(node, state, beck=beck) != state:
+                error = True
 
-    if config.PLC.Node.PUMP in config.PLC.initial_state:
-        state = config.PLC.initial_state[config.PLC.Node.PUMP]
-        if switch(state, beck=beck) != state:
-            error = True
-
-    if config.PLC.Node.HEATER in config.PLC.initial_state:
-        state = config.PLC.initial_state[config.PLC.Node.HEATER]
-        if switch(state, beck=beck) != state:
-            error = True
     if error:
+        logger.info('cooling', 'Cooling system initialisation failed')
         return ReturnCode.PLC_INIT_FAILED
     else:
+        logger.info('cooling', 'Cooling system initialised')
         return ReturnCode.PLC_INIT_SUCCESS

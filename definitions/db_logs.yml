@@ -64,7 +64,7 @@ filterwheel_log:
   long: Filter wheel log
   unit:
 
-temperature_log:
+cooling_log:
   short: Temperature log
   long: Temperature log
   unit:

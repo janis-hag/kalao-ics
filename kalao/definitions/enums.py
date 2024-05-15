@@ -139,6 +139,7 @@ class ReturnCode(IntEnum):
     OK = 0
     GENERIC_ERROR = -1
     TIMEOUT = -2
+    EXCEPTION = -3
 
     SEQ_OK = OK
     SEQ_ERROR = auto()

@@ -1,4 +1,5 @@
 import time
+import traceback
 from multiprocessing import Process, Queue
 from typing import Callable
 
@@ -7,6 +8,7 @@ import numpy as np
 from kalao import logger
 
 from kalao.definitions.enums import ReturnCode
+from kalao.utils.rprint import rprint
 
 
 def get_name(func: Callable) -> str:
@@ -18,11 +20,20 @@ def get_name(func: Callable) -> str:
 
 def wrapper(log: str, func: Callable, queue: Queue) -> None:
     logger.info(log, f'Launching {get_name(func)} in background')
-    ret = func()
-    if isinstance(ret, ReturnCode):
-        logger.info(log, f'{get_name(func)} returned {ret.value} ({ret.name})')
+
+    try:
+        ret = func()
+    except Exception as e:
+        logger.error(log,
+                     f'Exception occurred during {get_name(func)} execution')
+        rprint(''.join(traceback.format_exception(e)))
+        ret = ReturnCode.EXCEPTION
     else:
-        logger.info(log, f'{get_name(func)} returned {ret}')
+        if isinstance(ret, ReturnCode):
+            logger.info(log,
+                        f'{get_name(func)} returned {ret.value} ({ret.name})')
+        else:
+            logger.info(log, f'{get_name(func)} returned {ret}')
     queue.put({get_name(func): ret})
 
 
