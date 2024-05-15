@@ -134,7 +134,7 @@ def get(collection_name: str, keys: str | list[str] | None = None,
 
     if at is None:
         # Projection used for values array
-        if np.isinf(nb_of_point):
+        if nb_of_point == -1:
             values_projection_find = values_projection_aggregate = 1
         else:
             values_projection_find = {'$slice': -nb_of_point}
@@ -156,7 +156,7 @@ def get(collection_name: str, keys: str | list[str] | None = None,
         }
 
         # Projection used on values array
-        if np.isinf(nb_of_point):
+        if nb_of_point == -1:
             values_projection_aggregate = values_filter
         else:
             values_projection_aggregate = {
@@ -224,7 +224,8 @@ def get(collection_name: str, keys: str | list[str] | None = None,
                 document['values'].reverse()
                 data[key] += document['values']
 
-                if isinstance(keys, list) and len(data[key]) >= nb_of_point:
+                if isinstance(keys, list) and nb_of_point != -1 and len(
+                        data[key]) >= nb_of_point:
                     if len(data[key]) > nb_of_point:
                         data[key] = data[key][:nb_of_point]
 
@@ -233,7 +234,8 @@ def get(collection_name: str, keys: str | list[str] | None = None,
         # Check if we gathered the correct number of points
         if keys is None and data != {}:
             return data
-        elif isinstance(keys, str) and len(data.get(keys, [])) >= nb_of_point:
+        elif isinstance(keys, str) and nb_of_point != -1 and len(
+                data.get(keys, [])) >= nb_of_point:
             if len(data[keys]) > nb_of_point:
                 data[keys] = data[keys][:nb_of_point]
             return data
@@ -457,8 +459,7 @@ def read_mongo_to_pandas(collection_name: str, keys: list | None = None,
     if dt is None:
         dt = datetime.now(timezone.utc)
 
-    data_db = get(collection_name, keys, nb_of_point=sys.maxsize, dt=dt,
-                  days=days)
+    data_db = get(collection_name, keys, nb_of_point=-1, dt=dt, days=days)
 
     data_df = {}
     for key in data_db.keys():

@@ -503,8 +503,8 @@ def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
                                                'value']
         header_df.loc['OBJECT', 'source'] += '+dynamic'
     else:
-        header_df.drop('RA')
-        header_df.drop('DEC')
+        header_df.drop('RA', inplace=True)
+        header_df.drop('DEC', inplace=True)
 
         header_df.loc['OBJECT',
                       'value'] = header_df.loc['HIERARCH ESO DPR TYPE',
@@ -566,17 +566,6 @@ def generate_wcs(coord: SkyCoord, time: Time,
         center_x = config.Camera.center_x - roi.x
         center_y = config.Camera.center_y - roi.y
 
-    parang = parallactic_angle(coord, time) * np.pi / 180
-    parang = 0
-
-    sx = config.Camera.plate_scale / 3600
-    sy = config.Camera.plate_scale / 3600
-    cos = np.cos(parang)
-    sin = np.sin(parang)
-
-    transformation_matrix = np.array([[sx * cos, -sy * sin],
-                                      [sx * sin, sy * cos]])
-
     wcs_header = _header_empty()
 
     wcs_header.loc['WCSAXES'] = (2, 'Number of coordinate axes', 'wcs')
@@ -589,6 +578,17 @@ def generate_wcs(coord: SkyCoord, time: Time,
                                 )  # Note: FITS indexing starts at 1
 
     if coord is not None:
+        parang = parallactic_angle(coord, time) * np.pi / 180
+        parang = 0  # TODO: remove
+
+        sx = config.Camera.plate_scale / 3600
+        sy = config.Camera.plate_scale / 3600
+        cos = np.cos(parang)
+        sin = np.sin(parang)
+
+        transformation_matrix = np.array([[sx * cos, -sy * sin],
+                                          [sx * sin, sy * cos]])
+
         wcs_header.loc['CTYPE1'] = ('RA---TAN',
                                     'Right ascension, gnomonic projection',
                                     'wcs')
