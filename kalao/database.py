@@ -71,7 +71,7 @@ def _get_collection(collection_name: str) -> Collection:
             timeseries={
                 'timeField': 'timestamp',
                 'metaField': 'metadata',
-                #'granularity': 'minutes',
+                #'granularity': 'minutes', # Set manually below
                 'bucketMaxSpanSeconds': 86400,
                 'bucketRoundingSeconds': 86400,
             })

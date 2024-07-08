@@ -5,4 +5,4 @@ source /home/kalao/kalao-venv-3.11/bin/activate
 
 cd /home/kalao/kalao-ics
 
-python /home/kalao/kalao-ics/kalao/timers/database.py
+python /home/kalao/kalao-ics/kalao/timers/monitoring.py
