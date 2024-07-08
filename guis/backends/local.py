@@ -76,7 +76,7 @@ class SHMFPSBackend(AbstractBackend):
             'shape': shm.shape,
             'cnt0': shm.IMAGE.md.cnt0,
             'creationtime': shm.IMAGE.md.creationtime,
-            'lastaccesstime': shm.IMAGE.md.lastaccesstime,
+            'acqtime': shm.IMAGE.md.acqtime,
         }
 
     def _update_fps_param(self, data, fps_name, param_name):

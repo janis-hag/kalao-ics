@@ -706,9 +706,9 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                     elif previous_md['cnt0'] == md['cnt0']:
                         fps = 0
                     else:
-                        fps = (previous_md['cnt0'] - md['cnt0']) / (
-                            previous_md['lastaccesstime'] -
-                            md['lastaccesstime']).total_seconds()
+                        fps = (previous_md['cnt0'] -
+                               md['cnt0']) / (previous_md['acqtime'] -
+                                              md['acqtime']).total_seconds()
                 else:
                     fps = np.nan
 

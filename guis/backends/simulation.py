@@ -70,7 +70,7 @@ class FakeSHMFPSBackend(AbstractBackend):
             'shape': (12, 12),
             'cnt0': 123,
             'creationtime': datetime.fromtimestamp(0),
-            'lastaccesstime': datetime.now(),
+            'acqtime': datetime.now(),
         }
 
     def _update_fps_param(self, data, fps_name, param_name, param):
