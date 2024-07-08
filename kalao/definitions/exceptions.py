@@ -10,7 +10,7 @@ class MissingKeyword(SequencerException):
     """Missing keyword in function call."""
 
 
-class LoopNotClosed(SequencerException):
+class LoopsNotClosed(SequencerException):
     """Failed to close loops"""
 
 
@@ -26,7 +26,7 @@ class DMNotOn(SequencerException):
     """Failed to power on DM driver"""
 
 
-class WFSNotOn(SequencerException):
+class WFSAcquisitionOff(SequencerException):
     """Failed to start WFS acquisition"""
 
 
@@ -78,7 +78,7 @@ class CameraTakeImageFailed(SequencerException):
     """Failed to take image"""
 
 
-class FLICancelFailed(SequencerException):
+class CameraCancelFailed(SequencerException):
     """Failed to cancel camera exposure"""
 
 

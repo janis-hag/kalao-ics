@@ -22,6 +22,7 @@ from astropy.io import fits
 from astropy.time import Time
 
 from kalao import database, euler, logger
+from kalao.timers import monitoring
 from kalao.utils import kstring, ktime
 from kalao.utils.rprint import rprint
 
@@ -162,27 +163,26 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
     header_base = _header_from_yml(config.FITS.fits_default_header_file)
 
     for key, value in config.FITS.base_header[obs_type].items():
-        header_base.loc[f'HIERARCH ESO {key}', 'value'] = value
+        header_base.loc[key, 'value'] = value
 
     with fits.open(image_path, mode='update') as hdul:
         fits_header = hdul[0].header
 
         dt_obs = datetime.fromisoformat(fits_header['DATE-OBS']).replace(
             tzinfo=timezone.utc)
+        dt_end = datetime.fromisoformat(fits_header['DATE-END']).replace(
+            tzinfo=timezone.utc)
         filename = f'KALAO.{ktime.utc_millis_str(dt_obs)}.fits'
 
-        header_obs = _header_from_db('obs', dt_obs)
-        header_monitoring = _header_from_db('monitoring', dt_obs)
-        header_telemetry = _header_from_db('telemetry', dt_obs)
+        data = monitoring.gather_general() | monitoring.gather_ao()
 
-        flipmirror_position = header_monitoring.loc[
-            'HIERARCH ESO INS FLIP STATUS', 'value']
-        shutter_state = header_monitoring.loc['HIERARCH ESO INS SHUT STATUS',
-                                              'value']
+        header_obs = _header_from_db('obs', dt_end)
+        header_monitoring = _header_from_db('monitoring', dt=None, data=data)
 
         on_sky = obs_type in config.FITS.on_sky_types or (
-            obs_type == ObservationType.ENGINEERING and flipmirror_position
-            == FlipMirrorPosition.DOWN and shutter_state == ShutterState.OPEN)
+            obs_type == ObservationType.ENGINEERING and
+            data['flipmirror_position'] == FlipMirrorPosition.DOWN and
+            data['shutter_state'] == ShutterState.OPEN)
 
         if on_sky:
             header_telescope = _clean_header(
@@ -195,7 +195,6 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
             header_base,
             header_obs,
             header_monitoring,
-            header_telemetry,
             header_telescope,
         ]).query('~index.duplicated(keep="last")')
 
@@ -280,7 +279,8 @@ def _header_from_yml(file: str | Path) -> pd.DataFrame:
     return header_df
 
 
-def _header_from_db(collection_name: str, dt: datetime | None) -> pd.DataFrame:
+def _header_from_db(collection_name: str, dt: datetime | None,
+                    data: dict | None = None) -> pd.DataFrame:
     header_dict = {}
     query_list = {}
 
@@ -316,11 +316,16 @@ def _header_from_db(collection_name: str, dt: datetime | None) -> pd.DataFrame:
 
     # Note: dt=None is mainly for debugging purposes
     if dt is not None:
-        data = database.get(collection_name, query_list.keys(), at=dt)
+        data = database.get_all_last(collection_name, keys=query_list.keys(),
+                                     at=dt)
 
         for key, keyword in query_list.items():
             if key in data:
-                header_dict[keyword]['value'] = data[key][0]['value']
+                header_dict[keyword]['value'] = data[key]['value']
+    elif data is not None:
+        for key, keyword in query_list.items():
+            if key in data:
+                header_dict[keyword]['value'] = data[key]
 
     header_df = pd.DataFrame.from_dict(header_dict, orient='index')
     header_df.index.name = 'keyword'
@@ -505,6 +510,7 @@ def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
     else:
         header_df.drop('RA', inplace=True)
         header_df.drop('DEC', inplace=True)
+        header_df.drop('HIERARCH ESO OBS TARG NAME', inplace=True)
 
         header_df.loc['OBJECT',
                       'value'] = header_df.loc['HIERARCH ESO DPR TYPE',
@@ -551,8 +557,8 @@ def _header_to_string(header_df: pd.DataFrame, max_length: int = 45,
                                    float_format=float_format)
 
 
-def generate_wcs(coord: SkyCoord, time: Time,
-                 roi: ROI | None = None) -> pd.DataFrame:
+def generate_wcs(coord: SkyCoord, time: Time, roi: ROI | None = None,
+                 method='CD') -> pd.DataFrame:
     """
     Queries the current telescope coordinates to generate a WCS object.
 
@@ -578,16 +584,11 @@ def generate_wcs(coord: SkyCoord, time: Time,
                                 )  # Note: FITS indexing starts at 1
 
     if coord is not None:
-        parang = parallactic_angle(coord, time) * np.pi / 180
-        parang = 0  # TODO: remove
-
-        sx = config.Camera.plate_scale / 3600
-        sy = config.Camera.plate_scale / 3600
-        cos = np.cos(parang)
-        sin = np.sin(parang)
-
-        transformation_matrix = np.array([[sx * cos, -sy * sin],
-                                          [sx * sin, sy * cos]])
+        cdelt1 = config.Camera.plate_scale / 3600
+        cdelt2 = config.Camera.plate_scale / 3600
+        # crota2 = parallactic_angle(coord, time) + config.ADC.max_disp_offset
+        crota2 = 0
+        crota2_ = crota2 * np.pi / 180
 
         wcs_header.loc['CTYPE1'] = ('RA---TAN',
                                     'Right ascension, gnomonic projection',
@@ -609,18 +610,41 @@ def generate_wcs(coord: SkyCoord, time: Time,
                                     'Units of coordinate increment and value',
                                     'wcs')
 
-        wcs_header.loc['CD1_1'] = (transformation_matrix[0, 0],
-                                   'Coordinate transformation matrix element',
-                                   'wcs')
-        wcs_header.loc['CD1_2'] = (transformation_matrix[0, 1],
-                                   'Coordinate transformation matrix element',
-                                   'wcs')
-        wcs_header.loc['CD2_1'] = (transformation_matrix[1, 0],
-                                   'Coordinate transformation matrix element',
-                                   'wcs')
-        wcs_header.loc['CD2_2'] = (transformation_matrix[1, 1],
-                                   'Coordinate transformation matrix element',
-                                   'wcs')
+        if method == 'CD':
+            cd11 = cdelt1 * np.cos(crota2_)
+            cd12 = -cdelt2 * np.sin(crota2_)
+            cd21 = cdelt1 * np.sin(crota2_)
+            cd22 = cdelt2 * np.cos(crota2_)
+
+            wcs_header.loc['CD1_1'] = (
+                cd11, 'Coordinate transformation matrix element', 'wcs')
+            wcs_header.loc['CD1_2'] = (
+                cd12, 'Coordinate transformation matrix element', 'wcs')
+            wcs_header.loc['CD2_1'] = (
+                cd21, 'Coordinate transformation matrix element', 'wcs')
+            wcs_header.loc['CD2_2'] = (
+                cd22, 'Coordinate transformation matrix element', 'wcs')
+        elif method == 'PC':
+            pc11 = np.cos(crota2_)
+            pc12 = -np.sin(crota2_)
+            pc21 = np.sin(crota2_)
+            pc22 = np.cos(crota2_)
+
+            wcs_header.loc['CDELT1'] = (cdelt1, 'Coordinate scales', 'wcs')
+            wcs_header.loc['CDELT2'] = (cdelt2, 'Coordinate scalse', 'wcs')
+            wcs_header.loc['PC1_1'] = (
+                pc11, 'Coordinate transformation matrix element', 'wcs')
+            wcs_header.loc['PC1_2'] = (
+                pc12, 'Coordinate transformation matrix element', 'wcs')
+            wcs_header.loc['PC2_1'] = (
+                pc21, 'Coordinate transformation matrix element', 'wcs')
+            wcs_header.loc['PC2_2'] = (
+                pc22, 'Coordinate transformation matrix element', 'wcs')
+        elif method == 'CROTA':
+            wcs_header.loc['CDELT1'] = (cdelt1, 'Coordinate scales', 'wcs')
+            wcs_header.loc['CDELT2'] = (cdelt2, 'Coordinate scales', 'wcs')
+            wcs_header.loc['CROTA2'] = (crota2, 'Rotation of coordinate axis',
+                                        'wcs')
 
         radesys = coord.frame.name.upper()
 

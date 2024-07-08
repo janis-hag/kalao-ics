@@ -36,8 +36,8 @@ class MinMaxMixin:
     def init_minmax(self, view_list=[], symetric=False):
         self.min_spinbox.setMaximum(self.max_spinbox.value())
         self.max_spinbox.setMinimum(self.min_spinbox.value())
-        self.min_spinbox.setReadOnly(self.autoscale_checkbox.isChecked())
-        self.max_spinbox.setReadOnly(self.autoscale_checkbox.isChecked())
+        # self.min_spinbox.setReadOnly(self.autoscale_button.isChecked())
+        # self.max_spinbox.setReadOnly(self.autoscale_button.isChecked())
 
         if not isinstance(view_list, list):
             view_list = [view_list]
@@ -51,6 +51,9 @@ class MinMaxMixin:
 
     @Slot(float)
     def on_min_spinbox_valueChanged(self, d):
+        self.autoscale_button.setChecked(False)
+        self.fullscale_button.setChecked(False)
+
         self.max_spinbox.setMinimum(d)
 
         for view in self.views:
@@ -59,31 +62,36 @@ class MinMaxMixin:
 
     @Slot(float)
     def on_max_spinbox_valueChanged(self, d):
+        self.autoscale_button.setChecked(False)
+        self.fullscale_button.setChecked(False)
+
         self.min_spinbox.setMaximum(d)
 
         for view in self.views:
             view.updateMinMax(self.min_spinbox.value(),
                               self.max_spinbox.value())
 
-    @Slot(int)
-    def on_autoscale_checkbox_stateChanged(self, state):
-        self.min_spinbox.setReadOnly(Qt.CheckState(state) == Qt.Checked)
-        self.max_spinbox.setReadOnly(Qt.CheckState(state) == Qt.Checked)
+    @Slot(bool)
+    def on_autoscale_button_toggled(self, checked):
+        # self.min_spinbox.setReadOnly(checked)
+        # self.max_spinbox.setReadOnly(checked)
 
-        if self.autoscale_checkbox.isChecked() and not (np.isinf(
-                self.autoscale_min) or np.isinf(self.autoscale_max)):
-            with QSignalBlocker(self.min_spinbox):
-                self.min_spinbox.setMaximum(self.autoscale_max)
-                self.min_spinbox.setValue(self.autoscale_min)
+        if checked:
+            self.fullscale_button.setChecked(False)
 
-            with QSignalBlocker(self.max_spinbox):
-                self.max_spinbox.setMinimum(self.autoscale_min)
-                self.max_spinbox.setValue(self.autoscale_max)
+            if not np.isinf(self.autoscale_min) and not np.isinf(
+                    self.autoscale_max):
+                with QSignalBlocker(self.min_spinbox):
+                    self.min_spinbox.setMaximum(self.autoscale_max)
+                    self.min_spinbox.setValue(self.autoscale_min)
 
-            for view in self.views:
-                view.updateMinMax(self.autoscale_min, self.autoscale_max)
+                with QSignalBlocker(self.max_spinbox):
+                    self.max_spinbox.setMinimum(self.autoscale_min)
+                    self.max_spinbox.setValue(self.autoscale_max)
 
-        # if self.autoscale_checkbox.isChecked():
+                for view in self.views:
+                    view.updateMinMax(self.autoscale_min, self.autoscale_max)
+
         #     self.min_spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
         #     self.max_spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
         # else:
@@ -91,20 +99,21 @@ class MinMaxMixin:
         #     self.max_spinbox.setButtonSymbols(QAbstractSpinBox.UpDownArrows)
 
     @Slot(bool)
-    def on_fullscale_button_clicked(self, checked):
-        self.autoscale_checkbox.setChecked(False)
+    def on_fullscale_button_toggled(self, checked):
+        if checked:
+            self.autoscale_button.setChecked(False)
 
-        with QSignalBlocker(self.min_spinbox):
-            self.min_spinbox.setMaximum(self.image_info['max'])
-            self.min_spinbox.setValue(self.image_info['min'])
+            with QSignalBlocker(self.min_spinbox):
+                self.min_spinbox.setMaximum(self.image_info['max'])
+                self.min_spinbox.setValue(self.image_info['min'])
 
-        with QSignalBlocker(self.max_spinbox):
-            self.max_spinbox.setMinimum(self.image_info['min'])
-            self.max_spinbox.setValue(self.image_info['max'])
+            with QSignalBlocker(self.max_spinbox):
+                self.max_spinbox.setMinimum(self.image_info['min'])
+                self.max_spinbox.setValue(self.image_info['max'])
 
-        for view in self.views:
-            view.updateMinMax(self.image_info['min'] * self.data_scaling,
-                              self.image_info['max'] * self.data_scaling)
+            for view in self.views:
+                view.updateMinMax(self.image_info['min'] * self.data_scaling,
+                                  self.image_info['max'] * self.data_scaling)
 
     def update_spinboxes_unit(self, unit, scaling, precision):
         self.min_spinbox.setScale(scaling, precision)
@@ -132,7 +141,7 @@ class MinMaxMixin:
         self.autoscale_min = img_min
         self.autoscale_max = img_max
 
-        if self.autoscale_checkbox.isChecked():
+        if self.autoscale_button.isChecked():
             with QSignalBlocker(self.min_spinbox):
                 self.min_spinbox.setMaximum(img_max)
                 self.min_spinbox.setValue(img_min)
@@ -227,9 +236,9 @@ class BackendActionMixin:
         if worker.exception is not None:
             msgbox = KMessageBox(self)
             msgbox.setIcon(QMessageBox.Critical)
-            msgbox.setText("<b>An error occured!</b>")
+            msgbox.setText('<b>An error occured!</b>')
             msgbox.setInformativeText(
-                f'An error occurred during action, please check the logs.')
+                'An error occurred during action, please check the logs.')
             msgbox.setModal(True)
             msgbox.show()
 
@@ -248,44 +257,76 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_stream(self, data, stream_name, default=None, force=False):
+    def consume_shm(self, data, shm_name, default=None, force=False):
         try:
-            if stream_name not in self.data_cache:
-                self.data_cache[stream_name] = {}
+            if shm_name not in self.data_cache:
+                self.data_cache[shm_name] = {}
 
-            cnt0 = data[stream_name]['cnt0']
-            prev = self.data_cache[stream_name].get('cnt0', None)
+            cnt0 = data[shm_name]['cnt0']
+            prev = self.data_cache[shm_name].get('cnt0', None)
 
             if cnt0 != prev or force:
-                self.data_cache[stream_name]['cnt0'] = cnt0
-                return data[stream_name]['data']
+                self.data_cache[shm_name]['cnt0'] = cnt0
+                return data[shm_name]['data']
             else:
                 return default
         except KeyError:
             return default
 
-    def consume_stream_keyword(self, data, stream_name, key, default=None,
-                               force=False):
+    def consume_shm_keyword(self, data, shm_name, key, default=None,
+                            force=False):
         try:
-            if stream_name not in self.data_cache:
-                self.data_cache[stream_name] = {}
+            if shm_name not in self.data_cache:
+                self.data_cache[shm_name] = {}
 
-            if 'keywords' not in self.data_cache[stream_name]:
-                self.data_cache[stream_name]['keywords'] = {}
+            if 'keywords' not in self.data_cache[shm_name]:
+                self.data_cache[shm_name]['keywords'] = {}
 
-            value = data[stream_name]['keywords'][key]
-            prev = self.data_cache[stream_name]['keywords'].get(key, None)
+            value = data[shm_name]['keywords'][key]
+            prev = self.data_cache[shm_name]['keywords'].get(key, None)
 
             if value != prev or force:
-                self.data_cache[stream_name]['keywords'][key] = value
+                self.data_cache[shm_name]['keywords'][key] = value
                 return value
             else:
                 return default
         except KeyError:
             return default
 
-    def consume_param(self, data, fps_name, param_name, default=None,
-                      force=False):
+    def consume_shm_state(self, data, shm_name, default=None, force=False):
+        try:
+            if shm_name not in self.data_cache:
+                self.data_cache[shm_name] = {}
+
+            value = data[shm_name]['state']
+            prev = self.data_cache[shm_name].get('state', None)
+
+            if value != prev or force:
+                self.data_cache[shm_name]['state'] = value
+                return value
+            else:
+                return default
+        except KeyError:
+            return default
+
+    def consume_shm_md(self, data, shm_name, default=None, force=False):
+        try:
+            if shm_name not in self.data_cache:
+                self.data_cache[shm_name] = {}
+
+            value = data[shm_name]['md']
+            prev = self.data_cache[shm_name].get('md', None)
+
+            if value != prev or force:
+                self.data_cache[shm_name]['md'] = value
+                return value
+            else:
+                return default
+        except KeyError:
+            return default
+
+    def consume_fps_param(self, data, fps_name, param_name, default=None,
+                          force=False):
         try:
             if fps_name not in self.data_cache:
                 self.data_cache[fps_name] = {}
@@ -295,6 +336,22 @@ class BackendDataMixin:
 
             if value != prev or force:
                 self.data_cache[fps_name][param_name] = value
+                return value
+            else:
+                return default
+        except KeyError:
+            return default
+
+    def consume_fps_state(self, data, fps_name, default=None, force=False):
+        try:
+            if fps_name not in self.data_cache:
+                self.data_cache[fps_name] = {}
+
+            value = data[fps_name]['state']
+            prev = self.data_cache[fps_name].get('state', None)
+
+            if value != prev or force:
+                self.data_cache[fps_name]['state'] = value
                 return value
             else:
                 return default
@@ -323,8 +380,8 @@ class BackendDataMixin:
             if collection not in self.data_cache:
                 self.data_cache[collection] = {}
 
-            value = data[collection][key][0]['value']
-            timestamp = data[collection][key][0]['timestamp']
+            value = data[collection][key]['value']
+            timestamp = data[collection][key]['timestamp']
 
             prev = self.data_cache[collection].get(key, None)
 

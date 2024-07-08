@@ -45,7 +45,7 @@ def run(args):
 
     resulting_slopes_no_tt = zernike.generate_slopes(slopes_coeffs, (11, 22))
 
-    print(f'Slopes coefficients :')
+    print('Slopes coefficients :')
     zernike.print_coeffs(slopes_coeffs)
 
     # Save
@@ -53,7 +53,7 @@ def run(args):
     fits.PrimaryHDU(resulting_slopes_no_tt.data.astype(np.float32)).writeto(
         args.ncpa_folder / 'slopes_fitted.fits', overwrite=True)
 
-    print(f'Results written')
+    print('Results written')
 
     # Display everything
 

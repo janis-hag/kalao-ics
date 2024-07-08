@@ -17,13 +17,13 @@ import config
 
 
 def run():
-    nuvu_in_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
-    nuvu_out_stream = toolbox.open_or_create_stream(config.Streams.NUVU,
-                                                    (64, 64), np.uint16)
+    nuvu_in_shm = toolbox.open_shm_once(config.SHM.NUVU_RAW)
+    nuvu_out_shm = toolbox.open_or_create_shm(config.SHM.NUVU, (64, 64),
+                                              np.uint16)
 
     while True:
-        data = nuvu_in_stream.get_data(check=True)[4:-2, ::8].astype(np.uint16)
-        nuvu_out_stream.set_data(data)
+        data = nuvu_in_shm.get_data(check=True)[4:-2, ::8].astype(np.uint16)
+        nuvu_out_shm.set_data(data)
 
 
 if __name__ == '__main__':

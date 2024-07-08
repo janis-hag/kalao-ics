@@ -137,7 +137,7 @@ def generate_pattern(
     coeffs: np.ndarray, shape: tuple[int, int],
     indices_inverse: Callable[[int], tuple[int,
                                            int]] = Zernike.standard_inverse
-) -> np.ma.core.MaskedArray:
+) -> np.ndarray:
     rx = 1 - 1 / shape[0]
     ry = 1 - 1 / shape[1]
 
@@ -155,8 +155,7 @@ def generate_pattern(
         n, m = indices_inverse(i)
         pattern += coeff * Zernike.Z(n, m, R, Theta, norm='RMS')
 
-    return np.ma.masked_array(pattern, mask=generate_pattern_mask(shape),
-                              fill_value=np.nan)
+    return pattern
 
 
 def _slopes_from_pattern(pattern: np.ndarray) -> np.ndarray:
@@ -173,7 +172,7 @@ def generate_slopes(
     coeffs: np.ndarray, shape: tuple[int, int], upsampling: int = 2,
     indices_inverse: Callable[[int], tuple[int,
                                            int]] = Zernike.standard_inverse
-) -> np.ma.core.MaskedArray:
+) -> np.ndarray:
     pattern = generate_pattern(coeffs, (shape[0] * upsampling,
                                         shape[1] // 2 * upsampling),
                                indices_inverse)
@@ -183,8 +182,7 @@ def generate_slopes(
     # Downsample
     slopes = block_reduce(slopes, upsampling, np.mean)
 
-    return np.ma.masked_array(slopes, mask=generate_slopes_mask(shape),
-                              fill_value=np.nan)
+    return slopes
 
 
 def fit_pattern(pattern: np.ndarray, orders: int | None = None,
@@ -272,9 +270,7 @@ def slopes_from_pattern_interp(pattern: np.ndarray,
     slopes[0:slopes.shape[0], slopes.shape[1] //
            2:slopes.shape[1]] *= 1 + 1 / (slopes.shape[1] // 2)
 
-    return np.ma.masked_array(
-        slopes, mask=_slopes_mask_from_pattern_mask(pattern.mask),
-        fill_value=pattern.fill_value)
+    return slopes
 
 
 def get_coeff_name(

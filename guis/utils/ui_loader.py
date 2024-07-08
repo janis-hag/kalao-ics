@@ -3,9 +3,12 @@ from pathlib import Path
 from PySide6.QtCore import QMetaObject
 from PySide6.QtUiTools import QUiLoader
 
-from guis.utils.widgets import *
+from guis.utils.widgets import (KChartView, KColorbar, KDateTimeEdit,
+                                KDraggableChartView, KGraphicsView, KLabel,
+                                KLineEdit, KScaledDoubleSpinbox,
+                                KStatusIndicator, KSvgWidget)
 
-uipath = Path(__file__).absolute().parent.parent / 'ui'
+uipath = Path(__file__).absolute().parent.parent / 'uis'
 
 
 class UiLoader(QUiLoader):
@@ -23,6 +26,7 @@ class UiLoader(QUiLoader):
         self.registerCustomWidget(KDateTimeEdit)
         self.registerCustomWidget(KStatusIndicator)
         self.registerCustomWidget(KScaledDoubleSpinbox)
+        self.registerCustomWidget(KColorbar)
 
     def createWidget(self, class_name, parent=None, name=''):
         if parent is None and self.baseinstance:
@@ -36,7 +40,7 @@ class UiLoader(QUiLoader):
                 try:
                     widget = self.customWidgets[class_name](parent)
 
-                except (TypeError, KeyError) as e:
+                except (TypeError, KeyError):
                     raise Exception(
                         'No custom widget ' + class_name +
                         ' found in customWidgets param of UiLoader __init__.')

@@ -1,5 +1,5 @@
 [Unit]
-Description=KalAO - Database timer
+Description=KalAO - Monitoring timer
 
 After=network-online.target
 Wants=network-online.target
@@ -9,7 +9,8 @@ After=mongodb.service
 
 [Service]
 Type=simple
-ExecStart=/home/kalao/kalao-ics/scripts/kalao_database-timer.sh
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_monitoring-timer.sh
+ExecReload=kill -HUP $MAINPID
 Restart=always
 RestartSec=30
 StandardOutput=journal

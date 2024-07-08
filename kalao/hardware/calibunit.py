@@ -97,13 +97,13 @@ def move(position: float, velocity: float = config.CalibUnit.velocity,
 
 @plc.autoconnect
 def stop(beck: Client = None) -> None:
-    logger.info('calibunit', f'Stopping calibration unit')
+    logger.info('calibunit', 'Stopping calibration unit')
     plc.motor_send_stop(config.PLC.Node.CALIB_UNIT, beck=beck)
 
 
 @plc.autoconnect
 def wait(beck: Client = None) -> int:
-    plc.wait_loop(f'Waiting for calibration unit movement',
+    plc.wait_loop('Waiting for calibration unit movement',
                   lambda: is_moving(beck=beck), 5)
 
     return 0
@@ -136,8 +136,8 @@ def init(force_init: bool = True, beck: Client = None) -> ReturnCode:
     ret_init = plc.motor_init(config.PLC.Node.CALIB_UNIT, force_init,
                               beck=beck)
 
-    if ret_init != ReturnCode.PLC_INIT_SUCCESS:
-        logger.error('calibunit', f'Calibration unit initialisation failed')
+    if ret_init != ReturnCode.HW_INIT_SUCCESS:
+        logger.error('calibunit', 'Calibration unit initialisation failed')
     else:
         logger.info('calibunit', 'Calibration unit initialised')
 

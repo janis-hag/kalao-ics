@@ -100,24 +100,24 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
                 view.subap = subap
                 view.label = getattr(subwindow, f'label_{i+1}')
 
-                view.max_entries = {
+                view.lines = {
                     PokeState.FLAT: {
-                        VERT: view.scene.addLine(2, 0, 2, 4, pen_blue),
-                        HORI: view.scene.addLine(0, 2, 4, 2, pen_blue)
+                        VERT: view.scene().addLine(2, 0, 2, 4, pen_blue),
+                        HORI: view.scene().addLine(0, 2, 4, 2, pen_blue)
                     },
                     PokeState.UP: {
-                        VERT: view.scene.addLine(2, 0, 2, 4, pen_green),
-                        HORI: view.scene.addLine(0, 2, 4, 2, pen_green)
+                        VERT: view.scene().addLine(2, 0, 2, 4, pen_green),
+                        HORI: view.scene().addLine(0, 2, 4, 2, pen_green)
                     },
                     PokeState.DOWN: {
-                        VERT: view.scene.addLine(2, 0, 2, 4, pen_red),
-                        HORI: view.scene.addLine(0, 2, 4, 2, pen_red)
+                        VERT: view.scene().addLine(2, 0, 2, 4, pen_red),
+                        HORI: view.scene().addLine(0, 2, 4, 2, pen_red)
                     },
                 }
 
                 for j in PokeState:
                     for k in [VERT, HORI]:
-                        view.max_entries[j][k].setZValue(1)
+                        view.lines[j][k].setZValue(1)
 
         backend.streams_all_updated.connect(self.streams_all_updated)
 
@@ -129,7 +129,7 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
 
         subapertures = {}
         for state in PokeState:
-            frame = self.consume_stream(data, f'{config.Streams.NUVU}_{state}')
+            frame = self.consume_shm(data, f'{config.SHM.NUVU}_{state}')
 
             _, subapertures[state] = ktools.get_roi_and_subapertures(frame)
 
@@ -157,8 +157,9 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
                 pos = {}
 
                 for state in PokeState:
-                    frame = self.consume_stream(
-                        data, f'{config.Streams.NUVU}_{state}', force=True)
+                    frame = self.consume_shm(data,
+                                             f'{config.SHM.NUVU}_{state}',
+                                             force=True)
 
                     _, subapertures[state] = ktools.get_roi_and_subapertures(
                         frame)

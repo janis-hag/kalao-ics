@@ -10,8 +10,6 @@ camera.py is part of the KalAO Instrument Control Software
 """
 import dataclasses
 import json
-import shutil
-import time
 from pathlib import Path
 from typing import Any
 
@@ -19,15 +17,15 @@ import numpy as np
 
 from kalao import database, logger
 from kalao.sequencer.seq_context import with_sequencer_status
-from kalao.timers import database as database_timer
 from kalao.utils import file_handling
 
 import requests
 import requests.exceptions
 
 from kalao.definitions.dataclasses import ROI
-from kalao.definitions.enums import (CameraServerStatus, ObservationType,
-                                     ReturnCode, SequencerStatus)
+from kalao.definitions.enums import (CameraServerStatus, CameraStatus,
+                                     ObservationType, ReturnCode,
+                                     SequencerStatus)
 
 import config
 
@@ -86,7 +84,10 @@ def take_frame(filepath: str | Path | None = None,
     ret, _ = _send_request('/acquire', params)
 
     if ret == ReturnCode.CAMERA_OK:
-        return filepath
+        if filepath.exists():
+            return filepath
+        else:
+            return None
     else:
         return None
 
@@ -120,9 +121,6 @@ def take_image(obs_type: ObservationType, exptime: float | None = None,
         # Generate filename including path
         filepath = file_handling.get_tmp_image_filepath()
 
-    # Store monitoring status at start of exposure
-    database_timer.update_monitoring_db()
-
     filepath = take_frame(filepath=filepath, exptime=exptime,
                           nbframes=nbframes, roi=roi)
 
@@ -143,13 +141,12 @@ def increment_image_counter(params: dict[str, Any]) -> int:
     :return: new image counter value
     """
 
-    try:
-        image_count = database.get('obs', 'camera_image_count',
-                                   days=3650)['camera_image_count'][0]['value']
-    except (KeyError, IndexError):
-        image_count = 1
+    image_count = database.get_last_value('obs', 'camera_image_count')
 
-    image_count += 1
+    if image_count is None:
+        image_count = 0
+    else:
+        image_count += 1
 
     data = {'camera_image_count': image_count}
 
@@ -161,10 +158,23 @@ def increment_image_counter(params: dict[str, Any]) -> int:
     return image_count
 
 
-def cancel() -> ReturnCode:
-    ret, _ = _send_request('/cancelExposure')
+def cancel(keepframe: bool | None = None) -> ReturnCode:
+    params = {
+        'keepframe': keepframe,
+    }
+
+    ret, _ = _send_request('/cancelExposure', params)
 
     return ret
+
+
+def get_camera_status() -> str:
+    ret, camera_status = _send_request('/cameraStatus')
+
+    if ret == ReturnCode.CAMERA_OK:
+        return camera_status['status']
+    else:
+        return CameraStatus.ERROR
 
 
 def get_exposure_status() -> dict[str, float]:
@@ -217,60 +227,52 @@ def _send_request(endpoint: str,
         elif key == 'filepath':
             params[key] = str(value)
 
-    if config.Camera.dummy_camera:
-        if endpoint == '/acquire':
-            time.sleep(params['exptime'])
+    if endpoint == '/acquire':
+        increment_image_counter(params)
 
-            shutil.copy(config.Camera.dummy_image_path, params['filepath'])
+    url = f'http://{config.Camera.ip}:{config.Camera.port}{endpoint}'
 
-        return ReturnCode.CAMERA_OK, {}
-
-    else:
-        if endpoint == '/acquire':
-            increment_image_counter(params)
-
-        url = f'http://{config.Camera.ip}:{config.Camera.port}{endpoint}'
-
-        try:
-            if params == {}:
-                req = requests.get(url, timeout=config.Camera.request_timeout)
-            else:
-                req = requests.post(url, json=params,
-                                    timeout=config.Camera.request_timeout)
-        except requests.exceptions.RequestException:
-            logger.error(
-                'camera',
-                f'Camera server endpoint {endpoint} answered with a error.')
-            return ReturnCode.CAMERA_SERVER_DOWN, None
-
-        try:
-            data = json.loads(req.text)
-        except Exception:
-            data = req.text
-
-        if req.status_code == 200:
-            return ReturnCode.CAMERA_OK, data
+    try:
+        if params == {}:
+            req = requests.get(url, timeout=config.Camera.request_timeout)
         else:
-            text = ''
+            req = requests.post(url, json=params,
+                                timeout=config.Camera.request_timeout)
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            'camera',
+            f'Camera server endpoint {endpoint} answered with a {e.__class__.__name__} exception.'
+        )
+        return ReturnCode.CAMERA_SERVER_DOWN, None
 
-            if isinstance(data, dict):
-                if data.get('error_text') is not None:
-                    text += f' {data.get("error_text")}'
+    try:
+        data = json.loads(req.text)
+    except Exception:
+        data = req.text
 
-                if data.get('error_status') is not None:
-                    text += f' (status = {data.get("error_status")})'
-            else:
-                text = f' {data}'
+    if req.status_code == 200:
+        return ReturnCode.CAMERA_OK, data
+    else:
+        text = ''
 
-            logger.error(
-                'camera',
-                f'Camera server endpoint {endpoint} answered with an Error {req.status_code}.{text}'
-            )
+        if isinstance(data, dict):
+            if data.get('error_text') is not None:
+                text += f' {data.get("error_text")}'
 
-            return ReturnCode.CAMERA_ERROR, data
+            if data.get('error_status') is not None:
+                text += f' (status = {data.get("error_status")})'
+        else:
+            text = f' {data}'
+
+        logger.error(
+            'camera',
+            f'Camera server endpoint {endpoint} answered with an Error {req.status_code}.{text}'
+        )
+
+        return ReturnCode.CAMERA_ERROR, data
 
 
-def check_server_status() -> CameraServerStatus:
+def server_status() -> CameraServerStatus:
     """
     Verify if the camera server is up and running and check if the camera can be queried.
 

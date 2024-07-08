@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 
-from kalao import logger
+from kalao import database, logger
 from kalao.cacao import toolbox
 from kalao.hardware import calibunit
 from kalao.interfaces import etcs
@@ -52,15 +52,14 @@ def wfs_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
 
 
 def camera_to_ttm(dx: float, dy: float, gain: float = 1,
-                  output_stream: str = config.Streams.TTM_CENTERING
-                  ) -> ReturnCode:
-    ttm_stream = toolbox.open_stream_once(output_stream)
+                  output_stream: str = config.SHM.TTM_CENTERING) -> ReturnCode:
+    ttm_shm = toolbox.open_shm_once(output_stream)
 
-    if ttm_stream is None:
+    if ttm_shm is None:
         logger.error('ttm', f'{output_stream} is missing')
         return ReturnCode.GENERIC_ERROR
 
-    tip, tilt = ttm_stream.get_data(check=False)
+    tip, tilt = ttm_shm.get_data(check=False)
 
     new_tip = tip + dx * config.Offsets.camera_x_to_ttm_tip * gain
     new_tilt = tilt + dy * config.Offsets.camera_y_to_ttm_tilt * gain
@@ -72,7 +71,7 @@ def camera_to_ttm(dx: float, dy: float, gain: float = 1,
     #     f'Changing tip-tilt based on FLI. On FLI: tip={dx}px, tilt={dy}px. TTM set to: tip={new_tip}mrad, tilt={new_tilt}mrad'
     # )
 
-    ttm_stream.set_data(np.array([new_tip, new_tilt]), True)
+    ttm_shm.set_data(np.array([new_tip, new_tilt]), True)
 
     time.sleep(1)
 
@@ -80,15 +79,14 @@ def camera_to_ttm(dx: float, dy: float, gain: float = 1,
 
 
 def wfs_to_ttm(dx: float, dy: float, gain: float = 1,
-               output_stream: str = config.Streams.TTM_CENTERING
-               ) -> ReturnCode:
-    ttm_stream = toolbox.open_stream_once(output_stream)
+               output_stream: str = config.SHM.TTM_CENTERING) -> ReturnCode:
+    ttm_shm = toolbox.open_shm_once(output_stream)
 
-    if ttm_stream is None:
+    if ttm_shm is None:
         logger.error('ttm', f'{output_stream} is missing')
         return ReturnCode.GENERIC_ERROR
 
-    tip, tilt = ttm_stream.get_data(check=False)
+    tip, tilt = ttm_shm.get_data(check=False)
 
     new_tip = tip + dy * config.Offsets.wfs_y_to_ttm_tip * gain
     new_tilt = tilt + dx * config.Offsets.wfs_x_to_ttm_tilt * gain
@@ -100,7 +98,7 @@ def wfs_to_ttm(dx: float, dy: float, gain: float = 1,
     #     f'Changing tip-tilt based on WFS. On WFS: dx={dx}px, dy={dy}px. TTM set to: tip={new_tip}mrad, tilt={new_tilt}mrad'
     # )
 
-    ttm_stream.set_data(np.array([new_tip, new_tilt]), True)
+    ttm_shm.set_data(np.array([new_tip, new_tilt]), True)
 
     time.sleep(1)
 
@@ -128,8 +126,7 @@ def check_ttm_saturation(tip: float, tilt: float) -> tuple[float, float]:
 def offload_ttm_to_telescope(gain: float = config.TTM.offload_gain,
                              threshold: float = config.TTM.offload_threshold,
                              override_threshold: bool = False,
-                             input_stream: str = config.Streams.TTM
-                             ) -> ReturnCode:
+                             input_stream: str = config.SHM.TTM) -> ReturnCode:
     """
     Offload current tip/tilt on the telescope by sending corresponding alt/az offsets.
     The gain can be adjusted to set how much of the tip/tilt should be offloaded.
@@ -139,16 +136,16 @@ def offload_ttm_to_telescope(gain: float = config.TTM.offload_gain,
 
     config_fps = toolbox.open_fps_once(config.FPS.CONFIG)
 
-    if config_fps is None or not config_fps.get_param('ttm_offload'):
+    if config_fps is None or not config_fps.get_param('ttm_offloading'):
         return ReturnCode.GENERIC_ERROR
 
-    ttm_stream = toolbox.open_stream_once(input_stream)
+    ttm_shm = toolbox.open_shm_once(input_stream)
 
-    if ttm_stream is None:
+    if ttm_shm is None:
         logger.error('ttm', f'{input_stream} is missing')
         return ReturnCode.GENERIC_ERROR
 
-    tip, tilt = ttm_stream.get_data(check=False)
+    tip, tilt = ttm_shm.get_data(check=False)
 
     to_offload = np.sqrt(tip**2 + tilt**2)
 
@@ -161,6 +158,12 @@ def offload_ttm_to_telescope(gain: float = config.TTM.offload_gain,
                               config.TTM.max_tel_offload)
         az_offload = np.clip(az_offload, -config.TTM.max_tel_offload,
                              config.TTM.max_tel_offload)
+
+        database.store(
+            'obs', {
+                'telescope_offload_altitude': alt_offload,
+                'telescope_offload_azimut': az_offload
+            })
 
         logger.info(
             'ttm',

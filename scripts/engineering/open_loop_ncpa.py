@@ -22,6 +22,7 @@ from astropy.io import fits
 from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import camera, filterwheel, laser
 from kalao.utils import kmath, ktime, starfinder, zernike
+from kalao.utils.terminal_colors import TerminalColors as TC
 
 from kalao.definitions.enums import CameraServerStatus
 
@@ -30,13 +31,11 @@ import config
 PEAK_VALUE = 0
 COEFF = 1
 
-from kalao.utils.terminal_colors import TerminalColors as TC
 
-
-def handler(signal_received, frame):
+def sig_handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
-    ret = toolbox.zero_stream(config.Streams.DM_NCPA)
+    ret = toolbox.zero_stream(config.SHM.DM_NCPA)
 
     if ret == 0:
         print('Resetted DM pattern')
@@ -71,18 +70,18 @@ def display_and_measure(dm_stream, zernike_coeffs, args):
 
 def run(args):
     # Open DM stream
-    dm_stream = toolbox.open_stream_once(config.Streams.DM_NCPA)
-    if dm_stream is None:
-        print(f'{config.Streams.DM_NCPA} missing')
+    dm_shm = toolbox.open_shm_once(config.SHM.DM_NCPA)
+    if dm_shm is None:
+        print(f'{config.SHM.DM_NCPA} missing')
         exit()
 
     # Open slopes stream
-    slopes_stream = toolbox.open_stream_once(config.Streams.SLOPES)
-    if slopes_stream is None:
-        print(f'{config.Streams.SLOPES} missing')
+    slopes_shm = toolbox.open_shm_once(config.SHM.SLOPES)
+    if slopes_shm is None:
+        print(f'{config.SHM.SLOPES} missing')
         exit()
 
-    toolbox.zero_stream(config.Streams.DM_NCPA)
+    toolbox.zero_stream(config.SHM.DM_NCPA)
 
     peak = take_and_measure(args)
     print(f'Exposure time: {args.exptime}')
@@ -100,7 +99,7 @@ def run(args):
         f'Correcting {args.orders_to_correct} orders with {args.orders_to_skip} first orders skipped'
     )
     print()
-    print(f'Current coefficients:')
+    print('Current coefficients:')
 
     for i in range(args.iterations):
         for order in range(args.orders_to_skip, args.orders_to_correct):
@@ -131,7 +130,7 @@ def run(args):
             peak_array = np.zeros((3, 2))
 
             start_peak = peak_array[1][PEAK_VALUE] = display_and_measure(
-                dm_stream, zernike_coeffs, args)
+                dm_shm, zernike_coeffs, args)
             start_coeff = peak_array[1][COEFF] = zernike_coeffs[order]
 
             # Reset value to zero before starting search
@@ -151,14 +150,14 @@ def run(args):
                 zernike_coeffs[order] = up
 
                 peak_array[2][PEAK_VALUE] = display_and_measure(
-                    dm_stream, zernike_coeffs, args)
+                    dm_shm, zernike_coeffs, args)
                 peak_array[2][COEFF] = up
 
                 # Test down
                 zernike_coeffs[order] = down
 
                 peak_array[0][PEAK_VALUE] = display_and_measure(
-                    dm_stream, zernike_coeffs, args)
+                    dm_shm, zernike_coeffs, args)
                 peak_array[0][COEFF] = down
 
                 # Get zernike value of max flux
@@ -178,16 +177,16 @@ def run(args):
                 zernike_coeff_incr = zernike_coeff_incr / 2
 
             end_peak = peak_array[1][PEAK_VALUE] = display_and_measure(
-                dm_stream, zernike_coeffs, args)
+                dm_shm, zernike_coeffs, args)
             end_coeff = peak_array[1][COEFF] = zernike_coeffs[order]
 
             highest_peak = max(highest_peak, end_peak)
 
             print(TC.UP * (8 + len(zernike_coeffs)), end=TC.CLEAR)
 
-    peak = display_and_measure(dm_stream, zernike_coeffs, args)
+    peak = display_and_measure(dm_shm, zernike_coeffs, args)
 
-    print(TC.UP + TC.CLEAR + f'Final coefficients:')
+    print(TC.UP + TC.CLEAR + 'Final coefficients:')
     zernike.print_coeffs(zernike_coeffs)
     print(TC.CLEAR)
 
@@ -209,14 +208,14 @@ def run(args):
     folder.mkdir(parents=True)
 
     np.savetxt(folder / 'dm_zernike_coeffs.txt', zernike_coeffs)
-    toolbox.save_stream_to_fits(config.Streams.DM, f'{folder}/dm.fits')
+    toolbox.save_stream_to_fits(config.SHM.DM, f'{folder}/dm.fits')
 
-    print(f'Averaging slopes')
+    print('Averaging slopes')
     slopes = []
 
     for i in range(args.slopes_avg):
         print(TC.UP + TC.CLEAR + f'Averaging slopes {i+1}/{args.slopes_avg}')
-        slopes.append(slopes_stream.get_data(check=True))
+        slopes.append(slopes_shm.get_data(check=True))
 
     slopes = np.array(slopes)
     fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /
@@ -226,7 +225,7 @@ def run(args):
     fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /
                                                        'slopes_median.fits')
 
-    print(f'Results written')
+    print('Results written')
 
 
 if __name__ == '__main__':
@@ -280,7 +279,7 @@ if __name__ == '__main__':
             f'Recommended values are {", ".join(str(_) for _ in kmath.triangular_up_to(121))}'
         )
 
-    if camera.check_server_status() != CameraServerStatus.UP:
+    if camera.server_status() != CameraServerStatus.UP:
         print(
             'Error connecting to camera. Please try to restart the kalao_fli service.'
         )
@@ -289,7 +288,7 @@ if __name__ == '__main__':
     laser.set_power(args.laser_power, enable=True)
 
     # Tell Python to run the handler() function when SIGINT is recieved
-    signal(SIGINT, handler)
+    signal(SIGINT, sig_handler)
 
     if filterwheel.set_filter(args.filter_name) != args.filter_name:
         print('Error with filter selection')

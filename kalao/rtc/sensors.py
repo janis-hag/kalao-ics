@@ -23,8 +23,9 @@ def status() -> dict[str, Any]:
             for feature in chip:
                 chipname = '_'.join(str(chip).split('-')[:-1])
                 sensor_name = chipname + '-' + feature.label
-                rtc_sensors[sensor_name.replace(' ',
-                                                '_')] = feature.get_value()
+                rtc_sensors[
+                    'rtc_' +
+                    sensor_name.replace(' ', '_')] = feature.get_value()
     finally:
         sensors.cleanup()
 

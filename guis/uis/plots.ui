@@ -6,43 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1042</width>
-    <height>731</height>
+    <width>1067</width>
+    <height>598</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Plots - KalAO</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="1,0">
-   <item row="1" column="0">
-    <widget class="KChartView" name="plots_view"/>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="selection_label">
-     <property name="font">
-      <font>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Quick Selection</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <layout class="QHBoxLayout" name="group_layout">
-     <item>
-      <widget class="QPushButton" name="reset_button">
-       <property name="text">
-        <string>Reset all</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="scale_layout">
      <item>
@@ -129,7 +100,7 @@
      </item>
     </layout>
    </item>
-   <item row="0" column="1" rowspan="4">
+   <item row="0" column="1" rowspan="3">
     <layout class="QFormLayout" name="side_layout">
      <property name="labelAlignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -168,113 +139,56 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="0" colspan="2">
-      <widget class="QLabel" name="telemetry_label">
-       <property name="font">
-        <font>
-         <bold>true</bold>
-        </font>
-       </property>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label">
        <property name="text">
-        <string>Telemetry</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
+        <string>Last</string>
        </property>
       </widget>
      </item>
-     <item row="5" column="0" colspan="2">
-      <widget class="QListWidget" name="telemetry_list">
-       <property name="cursor" stdset="0">
-        <cursorShape>WhatsThisCursor</cursorShape>
-       </property>
-       <property name="mouseTracking">
-        <bool>true</bool>
-       </property>
-       <property name="selectionMode">
-        <enum>QAbstractItemView::MultiSelection</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0" colspan="2">
-      <widget class="QLabel" name="monitoring_label">
-       <property name="font">
-        <font>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>Monitoring</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0" colspan="2">
-      <widget class="QListWidget" name="monitoring_list">
-       <property name="cursor" stdset="0">
-        <cursorShape>WhatsThisCursor</cursorShape>
-       </property>
-       <property name="mouseTracking">
-        <bool>true</bool>
-       </property>
-       <property name="selectionMode">
-        <enum>QAbstractItemView::MultiSelection</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="0">
-      <widget class="QLabel" name="live_label">
-       <property name="text">
-        <string>Live view</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="1">
-      <widget class="QCheckBox" name="live_checkbox"/>
-     </item>
-     <item row="11" column="0" colspan="2">
-      <widget class="QPushButton" name="plot_button">
-       <property name="text">
-        <string>Plot</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="0" colspan="2">
-      <widget class="QListWidget" name="obs_list">
-       <property name="cursor" stdset="0">
-        <cursorShape>WhatsThisCursor</cursorShape>
-       </property>
-       <property name="mouseTracking">
-        <bool>true</bool>
-       </property>
-       <property name="selectionMode">
-        <enum>QAbstractItemView::MultiSelection</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="0" colspan="2">
-      <widget class="QLabel" name="obs_label">
-       <property name="font">
-        <font>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>Observation</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0" colspan="2">
-      <widget class="QPushButton" name="last_hour_button">
-       <property name="text">
-        <string>Last hour</string>
-       </property>
-      </widget>
+     <item row="2" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QToolButton" name="last_hour_button">
+         <property name="toolTip">
+          <string>One hour</string>
+         </property>
+         <property name="text">
+          <string>1h</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="last_day_button">
+         <property name="toolTip">
+          <string>One day</string>
+         </property>
+         <property name="text">
+          <string>1d</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="last_week_button">
+         <property name="toolTip">
+          <string>One week</string>
+         </property>
+         <property name="text">
+          <string>1w</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="last_month_button">
+         <property name="toolTip">
+          <string>One month</string>
+         </property>
+         <property name="text">
+          <string>1m</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item row="3" column="0" colspan="2">
       <widget class="QPushButton" name="tonight_button">
@@ -283,7 +197,64 @@
        </property>
       </widget>
      </item>
+     <item row="4" column="0" colspan="2">
+      <widget class="QTreeWidget" name="monitoring_treeview">
+       <property name="cursor" stdset="0">
+        <cursorShape>WhatsThisCursor</cursorShape>
+       </property>
+       <property name="mouseTracking">
+        <bool>true</bool>
+       </property>
+       <column>
+        <property name="text">
+         <string>Monitoring</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+     <item row="5" column="0" colspan="2">
+      <widget class="QTreeWidget" name="obs_treeview">
+       <property name="cursor" stdset="0">
+        <cursorShape>WhatsThisCursor</cursorShape>
+       </property>
+       <property name="mouseTracking">
+        <bool>true</bool>
+       </property>
+       <column>
+        <property name="text">
+         <string>Observation</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="live_label">
+       <property name="text">
+        <string>Live view</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QCheckBox" name="live_checkbox"/>
+     </item>
+     <item row="7" column="0" colspan="2">
+      <widget class="QPushButton" name="reset_all_button">
+       <property name="text">
+        <string>Reset all</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="0" colspan="2">
+      <widget class="QPushButton" name="plot_button">
+       <property name="text">
+        <string>Plot</string>
+       </property>
+      </widget>
+     </item>
     </layout>
+   </item>
+   <item row="1" column="0">
+    <widget class="KChartView" name="plots_view"/>
    </item>
   </layout>
  </widget>

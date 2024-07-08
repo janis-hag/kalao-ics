@@ -148,57 +148,54 @@ def _send_request(endpoint: str,
         if value is None:
             del params[key]
 
-    if config.ETCS.dummy_telescope:
-        return ReturnCode.ETCS_OK, {}
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": config.ETCS.token
+    }
 
-    else:
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": config.ETCS.token
-        }
+    url = f'http://{config.ETCS.ip}:{config.ETCS.port}{endpoint}'
 
-        url = f'http://{config.ETCS.ip}:{config.ETCS.port}{endpoint}'
-
-        try:
-            if params == {}:
-                req = requests.get(url, timeout=config.ETCS.request_timeout,
-                                   headers=headers)
-            else:
-                req = requests.post(url, json=params,
-                                    timeout=config.ETCS.request_timeout,
-                                    headers=headers)
-        except requests.exceptions.RequestException:
-            logger.error(
-                'etcs',
-                f'Telescope server endpoint {endpoint} answered with a error.')
-
-            return ReturnCode.ETCS_SERVER_DOWN, None
-
-        try:
-            data = json.loads(req.text)
-        except Exception:
-            data = req.text
-
-        if req.status_code == 200:
-            return ReturnCode.ETCS_OK, data
+    try:
+        if params == {}:
+            req = requests.get(url, timeout=config.ETCS.request_timeout,
+                               headers=headers)
         else:
-            text = ''
+            req = requests.post(url, json=params,
+                                timeout=config.ETCS.request_timeout,
+                                headers=headers)
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            'etcs',
+            f'Telescope server endpoint {endpoint} answered with a {e.__class__.__name__} exception.'
+        )
 
-            if isinstance(data, dict):
-                if data.get('message') is not None:
-                    text += f' {data.get("message")}'
-            else:
-                text = f' {data}'
+        return ReturnCode.ETCS_SERVER_DOWN, None
 
-            logger.error(
-                'etcs',
-                f'Telescope server endpoint {endpoint} answered with an Error {req.status_code}.{text}'
-            )
+    try:
+        data = json.loads(req.text)
+    except Exception:
+        data = req.text
 
-            return ReturnCode.ETCS_ERROR, data
+    if req.status_code == 200:
+        return ReturnCode.ETCS_OK, data
+    else:
+        text = ''
+
+        if isinstance(data, dict):
+            if data.get('message') is not None:
+                text += f' {data.get("message")}'
+        else:
+            text = f' {data}'
+
+        logger.error(
+            'etcs',
+            f'Telescope server endpoint {endpoint} answered with an Error {req.status_code}.{text}'
+        )
+
+        return ReturnCode.ETCS_ERROR, data
 
 
-def check_server_status() -> ETCSServerStatus:
+def server_status() -> ETCSServerStatus:
     """
     Verify if the ETCS server is up and running and check if the camera can be queried.
 

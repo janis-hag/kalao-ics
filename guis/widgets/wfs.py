@@ -15,7 +15,6 @@ import config
 
 
 class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
-    associated_stream = config.Streams.NUVU
     image_info = config.Images.nuvu_stream
 
     data_unit = ' ADU'
@@ -63,7 +62,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             pen = QPen(color, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
             pen.setCosmetic(True)
 
-            roi = self.wfs_view.scene.addRect(
+            roi = self.wfs_view.scene().addRect(
                 self.subaps_pitch * k + self.subaps_offset,
                 self.subaps_pitch * j + self.subaps_offset, self.subaps_size,
                 self.subaps_size, pen)
@@ -78,7 +77,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                        Qt.MiterJoin)
             pen.setCosmetic(True)
 
-            roi = self.wfs_view.scene.addEllipse(
+            roi = self.wfs_view.scene().addEllipse(
                 self.subaps_pitch * k + self.subaps_offset - 1,
                 self.subaps_pitch * j + self.subaps_offset - 1, 1, 1, pen)
             roi.setZValue(1)
@@ -90,7 +89,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         backend.streams_all_updated.connect(self.streams_all_updated)
 
     def streams_all_updated(self, data):
-        img = self.consume_stream(data, config.Streams.NUVU)
+        img = self.consume_shm(data, config.SHM.NUVU)
 
         if img is not None:
             img_min, img_max = self.compute_min_max(img)

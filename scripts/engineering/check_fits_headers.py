@@ -23,7 +23,7 @@ def run(args):
         if camera_imported:
             ret = camera.take_fake('/tmp/camera_fake.fits')
 
-            if ret != None:
+            if ret is not None:
                 camera_header = file_handling._header_from_fits_file(
                     '/tmp/camera_fake.fits')
             else:
@@ -38,7 +38,6 @@ def run(args):
         camera_header,
         file_handling._header_from_yml(config.FITS.fits_default_header_file),
         file_handling._header_from_db('obs', dt=None),
-        file_handling._header_from_db('telemetry', dt=None),
         file_handling._header_from_db('monitoring', dt=None),
         #file_handling._clean_header(file_handling._header_from_last_telescope_header()
     ]).query('~index.duplicated(keep="last")')

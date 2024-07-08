@@ -19,9 +19,9 @@ while True:
         break
 
     logger.info('hardware_timer',
-                f'Inactivity dead-man triggered (turn off if unused).')
+                'Inactivity dead-man triggered (turn off if unused).')
     database.store('obs', {'deadman_keepalive': tick})
 
     tick += 1
 
-    time.sleep(config.Timers.inactivity_timeout / 3)
+    time.sleep(config.Hardware.inactivity_timeout / 3)

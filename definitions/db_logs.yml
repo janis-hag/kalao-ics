@@ -2,119 +2,95 @@
 rtc_log:
   short: RTC log
   long: Real-time Computer log
-  unit:
 
 ao_log:
   short: AO log
   long: Adaptive Optics log
-  unit:
 
 dm_log:
   short: DM log
   long: Deformable Mirror log
-  unit:
 
 ttm_log:
   short: TTM log
   long: Tip-Tilt Mirror log
-  unit:
 
 wfs_log:
   short: WFS log
   long: Wavefront Sensor (Nüvü) log
-  unit:
 
 camera_log:
   short: Camera log
   long: Science Camera (FLI) log
-  unit:
 
 services_log:
   short: Services log
   long: Services log
-  unit:
 
 ippower_log:
   short: IPPower log
   long: IPPower log
-  unit:
 
 adc_log:
   short: ADC log
   long: ADC log
-  unit:
 
 shutter_log:
   short: Shutter log
   long: Shutter log
-  unit:
 
 flipmirror_log:
   short: Flip mirror log
   long: Flip mirror log
-  unit:
 
 calibunit_log:
   short: Calibration Unit log
   long: Calibration Unit log
-  unit:
 
 filterwheel_log:
   short: Filter wheel log
   long: Filter wheel log
-  unit:
 
 cooling_log:
   short: Temperature log
   long: Temperature log
-  unit:
 
 laser_log:
   short: Laser log
   long: Laser log
-  unit:
 
 tungsten_log:
   short: Tungsten log
   long: Tungsten lamp log
-  unit:
 
 sequencer_log:
   short: Sequencer log
   long: Sequencer log
-  unit:
 
 centering_log:
   short: Centering log
   long: Centering log
-  unit:
 
 focusing_log:
   short: Focusing log
   long: Focusing log
-  unit:
 
 gop_log:
   short: GOP log
   long: GOP server log
-  unit:
 
 hardware_timer_log:
   short: Hardware timer log
   long: Hardware timer log
-  unit:
 
-database_timer_log:
-  short: Database timer log
-  long: Database timer log
-  unit:
+monitoring_timer_log:
+  short: Monitoring timer log
+  long: Monitoring timer log
 
 observation_timer_log:
   short: Observation timer log
   long: Observation timer log
-  unit:
 
 etcs_log:
   short: ETCS log
   long: ETCS client log
-  unit:

@@ -2,7 +2,6 @@ from astropy import units as u
 from astropy.coordinates import AltAz, EarthLocation, SkyCoord, get_sun
 from astropy.time import Time
 
-from kalao import database
 from kalao.interfaces import etcs
 
 import config
@@ -35,18 +34,6 @@ def observing_location() -> EarthLocation:
                          height=config.Euler.altitude * u.m)
 
 
-def star_coord() -> SkyCoord:
-    star_ra = database.get_last_value('obs', 'target_ra')
-    star_dec = database.get_last_value('obs', 'target_dec')
-
-    # TODO verify star_ra and star_dec validity
-
-    coord = SkyCoord(ra=star_ra * u.degree, dec=star_dec * u.degree,
-                     frame=config.Euler.frame, equinox=config.Euler.equinox)
-
-    return coord
-
-
 def telescope_coord_altaz() -> SkyCoord:
     time = Time.now()
     altaz_frame = AltAz(location=observing_location(), obstime=time)
@@ -57,18 +44,17 @@ def telescope_coord_altaz() -> SkyCoord:
                     frame=altaz_frame)
 
 
-def telescope_zenith_angle() -> float:
-    return 90 - telescope_coord_altaz().alt.deg
+def telescope_zenith_angle(coord: SkyCoord | None = None) -> float:
+    if coord is None:
+        return 90 - telescope_coord_altaz().alt.deg
+    else:
+        time = Time.now()
+        altaz_frame = AltAz(location=observing_location(), obstime=time)
+
+        return 90 - coord.transform_to(altaz_frame).alt.deg
 
 
-def telescope_future_zenith_angle(coord: SkyCoord) -> float:
-    time = Time.now()
-    altaz_frame = AltAz(location=observing_location(), obstime=time)
-
-    return 90 - coord.transform_to(altaz_frame).alt.deg
-
-
-def telescope_tracking() -> bool:
+def telescope_is_tracking() -> bool:
     return etcs.get_tracking()
 
 

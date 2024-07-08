@@ -1,11 +1,14 @@
+import math
+
 import numpy as np
 
 from PySide6.QtCharts import QScatterSeries, QValueAxis
-from PySide6.QtCore import QPointF, QSignalBlocker, Slot
+from PySide6.QtCore import QPointF, QSignalBlocker, QTimer, Slot
 from PySide6.QtGui import QBrush, QPen, Qt
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QWidget
 
-from guis.utils import colormaps
+from guis.utils import ascii2html, colormaps
+from guis.utils.colormaps import CoolWarmTransparent
 from guis.utils.definitions import Color
 from guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
                                SceneHoverMixin)
@@ -37,31 +40,46 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         self.dm_shape = dm_shape
 
         loadUi('calibration.ui', self)
-        self.resize(800, 400)
+        self.resize(1200, 600)
 
         self.setWindowTitle(f'{conf.upper()} - {self.windowTitle()}')
 
-        self.buttons_order = [
-            self.latency_measure_button,
-            self.RMCM_mkDMpokemodes_button,
-            self.RMCM_takeref_button,
-            self.RMCM_acqlinResp_button,
-            self.RMCM_RMHdecode_button,
-            self.RMCM_RMmkmask_button,
-            self.RMCM_compCM_button,
-            self.RMCM_load_button,
-            self.RMCM_save_frame,
+        self.calibration_order = [
+            'prepare',
+            'mlat',
+            'mkDMpokemodes',
+            'takeref',
+            'acqlinResp',
+            'RMHdecode',
+            'RMmkmask',
+            'compCM',
+            'load',
+            'save_restore',
         ]
 
         if conf == 'ttmloop':
             self.latency_max = 20
+            self.zRM_timer_interval = 1000
         else:
             self.latency_max = 5
+            self.zRM_timer_interval = 100
+
+        self.all_modes_widget = QWidget()
+        self.DMmodes_tiled_view = KGraphicsView(self.all_modes_widget)
+        self.modesWFS_tiled_view = KGraphicsView(self.all_modes_widget)
+
+        layout = QHBoxLayout(self.all_modes_widget)
+        layout.addWidget(self.DMmodes_tiled_view)
+        layout.addWidget(self.modesWFS_tiled_view)
+
+        layout.setStretch(0, 1)
+        layout.setStretch(1, 2)
 
         ### Calibration tab
 
-        self.calib_combobox.addItem('Loaded')
-        self.calib_combobox.addItem('Configuration')
+        with QSignalBlocker(self.calib_combobox):
+            self.calib_combobox.addItem('Loaded')
+            self.calib_combobox.addItem('Configuration')
 
         for key in dir(self):
             attr = getattr(self, key)
@@ -114,34 +132,124 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         chart.legend().hide()
 
-        self.clear_latency()
+        ### Logs tab
 
-        ### Response Matrix and Control Matrix tab
+        self.calibration_textedit.document().setDefaultStyleSheet(
+            ascii2html.stylesheet)
 
-        self.RMCM_loopname_label.updateText(loop_name=f'KalAO-{conf}')
-        self.RMCM_loopnumber_label.updateText(loop_number=self.loop)
+        ### Calibration sequence
 
-        self.RMCM_zRM_view.updateColormap(colormaps.CoolWarm())
+        self.calibration_loopname_label.updateText(loop_name=f'KalAO-{conf}')
+        self.calibration_loopnumber_label.updateText(loop_number=self.loop)
+
+        self.zRM_view.updateColormap(colormaps.CoolWarm())
 
         ### Common
 
-        self.update_buttons(None)
+        self.step_post(None, None)
+
+        self.tabWidget.setCurrentIndex(0)
 
         self.center()
         self.show()
 
-    def update_buttons(self, button):
-        if button is None:
-            i = -1
+    def step_pre(self, step):
+        getattr(self, f'calibration_{step}_indicator').setStatus(
+            Color.ORANGE, 'Running')
+
+        self.calibration_textedit.clear()
+
+    def step_post(self, step, data):
+        if step is None:
+            step_index = -1
         else:
-            i = self.buttons_order.index(button)
+            step_index = self.calibration_order.index(step)
 
-        if i + 1 < len(self.buttons_order):
-            self.buttons_order[i + 1].setEnabled(True)
+        sucess = data is None or data['returncode'] == 0
 
-        if i + 2 < len(self.buttons_order):
-            for button in self.buttons_order[i + 2:]:
-                button.setEnabled(False)
+        if 0 <= step_index < len(self.calibration_order):
+            key = self.calibration_order[step_index]
+
+            if key == 'save_restore':
+                pass
+            else:
+                if data is None:
+                    pass
+                else:
+                    if sucess:
+                        getattr(self,
+                                f'calibration_{key}_indicator').setStatus(
+                                    Color.GREEN, 'Success')
+                        if key == 'mlat':
+                            i = self.tabWidget.indexOf(self.latency_tab)
+                            self.tabWidget.setTabEnabled(i, True)
+                            self.tabWidget.setCurrentIndex(i)
+                        elif key == 'RMHdecode':
+                            i = self.tabWidget.indexOf(self.zRM_tab)
+                            self.tabWidget.setTabEnabled(i, True)
+                            self.tabWidget.setCurrentIndex(i)
+                        elif key == 'load':
+                            i = self.tabWidget.indexOf(self.calibration_tab)
+                            self.tabWidget.setCurrentIndex(i)
+                    else:
+                        getattr(self,
+                                f'calibration_{key}_indicator').setStatus(
+                                    Color.RED, 'Error')
+
+                        i = self.tabWidget.indexOf(self.logs_tab)
+                        self.tabWidget.setCurrentIndex(i)
+
+                    self.calibration_textedit.appendHtml(
+                        ascii2html.translate(data['stdout']))
+                    horizontal_scrollbar = self.calibration_textedit.horizontalScrollBar(
+                    )
+                    horizontal_scrollbar.setValue(0)
+
+                    vertical_scrollbar = self.calibration_textedit.verticalScrollBar(
+                    )
+                    vertical_scrollbar.setValue(vertical_scrollbar.maximum())
+
+        def cleanup(key):
+            if key == 'mlat':
+                i = self.tabWidget.indexOf(self.latency_tab)
+                self.tabWidget.setTabEnabled(i, False)
+            elif key == 'RMHdecode':
+                i = self.tabWidget.indexOf(self.zRM_tab)
+                self.tabWidget.setTabEnabled(i, False)
+
+        if step_index + 1 < len(self.calibration_order):
+            key = self.calibration_order[step_index + 1]
+
+            if key == 'save_restore':
+                self.calibration_save_restore_frame.setEnabled(True)
+            else:
+                key = self.calibration_order[step_index + 1]
+                getattr(self, f'calibration_{key}_button').setEnabled(True)
+                getattr(self, f'calibration_{key}_indicator').setStatus(
+                    Color.BLACK, 'Ready')
+
+                cleanup(key)
+
+        if step_index + 2 < len(self.calibration_order):
+            for key in self.calibration_order[step_index + 2:]:
+                if key == 'save_restore':
+                    self.calibration_save_restore_frame.setEnabled(False)
+                else:
+                    getattr(self,
+                            f'calibration_{key}_button').setEnabled(False)
+                    getattr(self, f'calibration_{key}_indicator').setStatus(
+                        Color.BLACK, 'Not ready')
+
+                    cleanup(key)
+
+        return sucess
+
+    def calibration_check_return(self, data):
+        self.calibration_textedit.appendHtml(data['stdout'])
+
+        if data['returncode'] != 0:
+            i = self.tabWidget.indexOf(self.logs_tab)
+            self.tabWidget.setCurrentIndex(i)
 
     ##### Calibration tab
 
@@ -188,6 +296,12 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         self.mode_spinbox.setSuffix(f' / {self.modes_number}')
 
     @Slot(bool)
+    def on_all_modes_button_clicked(self, checked):
+        self.update_all_modes_images()
+        self.all_modes_widget.show()
+        self.all_modes_widget.resize(1500, 1000)
+
+    @Slot(bool)
     def on_refresh_button_clicked(self, checked):
         self.modes_data = self.action_send(self.refresh_button,
                                            self.backend.calibration_data,
@@ -195,6 +309,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         self.update_modes_stats()
         self.update_calib_images()
+        self.update_all_modes_images()
 
     @Slot(int)
     def on_minmax_checkbox_stateChanged(self, state):
@@ -204,6 +319,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_calib_combobox_currentIndexChanged(self, index):
         self.update_modes_stats()
         self.update_calib_images()
+        self.update_all_modes_images()
 
     @Slot(int)
     def on_mode_spinbox_valueChanged(self, i):
@@ -211,53 +327,86 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
     def update_calib_images(self):
         if self.calib_combobox.currentText() == 'Configuration':
-            self.update_image_fits('wfsref', 'wfsref', symetric=True)
-            self.update_image_fits('wfsrefc', 'wfsrefc', symetric=True)
-            self.update_image_fits('wfsmask', 'wfsmask')
-            self.update_image_fits('wfsmap', 'wfsmap')
-            self.update_image_fits('dmmask', 'dmmask')
-            self.update_image_fits('dmmap', 'dmmap')
-            self.update_image_fits('DMmodes', 'CMmodesDM', cube=True,
-                                   symetric=True)
-            self.update_image_fits('modesWFS', 'CMmodesWFS', cube=True,
-                                   symetric=True)
+            self.update_image('wfsref', 'wfsref', symetric=True)
+            self.update_image('wfsrefc', 'wfsrefc', symetric=True)
+            self.update_image('wfsmask', 'wfsmask')
+            self.update_image('wfsmap', 'wfsmap')
+            self.update_image('dmmask', 'dmmask')
+            self.update_image('dmmap', 'dmmap')
+            self.update_image('DMmodes', 'CMmodesDM', cube=True, symetric=True,
+                              first_axis=True)
+            self.update_image('modesWFS', 'CMmodesWFS', cube=True,
+                              symetric=True, first_axis=True)
         else:
-            self.update_image_stream('wfsref', f'aol{self.loop}_wfsref',
-                                     symetric=True)
-            self.update_image_stream('wfsrefc', f'aol{self.loop}_wfsrefc',
-                                     symetric=True)
-            self.update_image_stream('wfsmask', f'aol{self.loop}_wfsmask')
-            self.update_image_stream('wfsmap', f'aol{self.loop}_wfsmap')
-            self.update_image_stream('dmmask', f'aol{self.loop}_dmmask')
-            self.update_image_stream('dmmap', f'aol{self.loop}_dmmap')
-            self.update_image_stream('DMmodes', f'aol{self.loop}_DMmodes',
-                                     cube=True, symetric=True)
-            self.update_image_stream('modesWFS', f'aol{self.loop}_modesWFS',
-                                     cube=True, symetric=True)
+            self.update_image('wfsref', f'aol{self.loop}_wfsref',
+                              symetric=True)
+            self.update_image('wfsrefc', f'aol{self.loop}_wfsrefc',
+                              symetric=True)
+            self.update_image('wfsmask', f'aol{self.loop}_wfsmask')
+            self.update_image('wfsmap', f'aol{self.loop}_wfsmap')
+            self.update_image('dmmask', f'aol{self.loop}_dmmask')
+            self.update_image('dmmap', f'aol{self.loop}_dmmap')
+            self.update_image('DMmodes', f'aol{self.loop}_DMmodes', cube=True,
+                              symetric=True, first_axis=False)
+            self.update_image('modesWFS', f'aol{self.loop}_modesWFS',
+                              cube=True, symetric=True, first_axis=False)
 
-    def update_image_fits(self, view_key, data_key, cube=False,
-                          symetric=False):
-        view = getattr(self, f'{view_key}_view')
-        data = self.modes_data.get(data_key, {}).get('data')
+    def update_all_modes_images(self):
+        if self.calib_combobox.currentText() == 'Configuration':
+            self.create_images_tile(
+                self.modes_data.get('CMmodesDM').get('data'),
+                self.DMmodes_tiled_view, first_axis=True)
+            self.create_images_tile(
+                self.modes_data.get('CMmodesWFS').get('data'),
+                self.modesWFS_tiled_view, first_axis=True)
+        else:
+            self.create_images_tile(
+                self.modes_data.get(f'aol{self.loop}_DMmodes').get('data'),
+                self.DMmodes_tiled_view, first_axis=False)
+            self.create_images_tile(
+                self.modes_data.get(f'aol{self.loop}_modesWFS').get('data'),
+                self.modesWFS_tiled_view, first_axis=False)
 
-        if data is not None:
-            if not cube:
-                img = data
-            elif len(data.shape) == 2:
-                img = data[self.mode_spinbox.value() - 1, :]
-            elif len(data.shape) == 3:
-                img = data[self.mode_spinbox.value() - 1, :, :]
+    def create_images_tile(self, img, widget, first_axis=True):
+        if first_axis:
+            size = img.shape[0]
+            img_i = img.shape[1]
+            img_j = img.shape[2]
+        else:
+            img_i = img.shape[0]
+            img_j = img.shape[1]
+            size = img.shape[2]
+
+        x = math.ceil(math.sqrt(size))
+        y = math.ceil(size / x)
+
+        img_full = np.full((img_i * y, img_j * x), np.nan)
+        img_mask = np.full((img_i * y, img_j * x), False)
+
+        for k in range(size):
+            if first_axis:
+                img_new = img[k, :, :]
             else:
-                raise Exception(
-                    f'Unexpected image size {len(data.shape)} for {data_key}')
+                img_new = img[:, :, k]
 
-            img_min, img_max = self.compute_minmax(img, view_key, symetric)
-            view.setImage(img, img_min, img_max)
-        else:
-            view.setImage(None)
+            img_full[k // x * img_i:k//x*img_i + img_i,
+                     k % x * img_j:k%x*img_j + img_j] = img_new
 
-    def update_image_stream(self, view_key, data_key, cube=False,
-                            symetric=False):
+        for k in range(size, x * y):
+            img_mask[k // x * img_i:k//x*img_i + img_i,
+                     k % x * img_j:k%x*img_j + img_j] = np.full((img_i, img_j),
+                                                                True)
+
+        img_min = np.nanmin(img_full)
+        img_max = np.nanmax(img_full)
+        img_abs = max(abs(img_min), abs(img_max))
+
+        widget.updateColormap(CoolWarmTransparent())
+        widget.setImage(np.ma.masked_array(img_full, mask=img_mask),
+                        img_min=-img_abs, img_max=img_abs)
+
+    def update_image(self, view_key, data_key, cube=False, symetric=False,
+                     first_axis=True):
         view = getattr(self, f'{view_key}_view')
         data = self.modes_data.get(data_key, {}).get('data')
 
@@ -265,10 +414,12 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             if not cube:
                 img = data
             elif len(data.shape) == 2:
-                # Note: mode axis is odd compared to 3D case, but is correct
                 img = data[self.mode_spinbox.value() - 1, :]
             elif len(data.shape) == 3:
-                img = data[:, :, self.mode_spinbox.value() - 1]
+                if first_axis:
+                    img = data[self.mode_spinbox.value() - 1, :, :]
+                else:
+                    img = data[:, :, self.mode_spinbox.value() - 1]
             else:
                 raise Exception(
                     f'Unexpected image size {len(data.shape)} for {data_key}')
@@ -308,44 +459,58 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
                                 self.backend.calibration_reload,
                                 conf=self.conf, loop=self.loop)
 
-        self.check_subprocess_error(data)
+        self.calibration_check_return(data)
 
         self.on_refresh_button_clicked(False)
 
     ##### Latency tab
 
     def clear_latency(self):
-        self.latency_framerate_lineedit.setText(f'-- Hz')
-        self.latency_frames_lineedit.setText(f'-- frames')
+        self.latency_framerate_lineedit.setText('-- Hz')
+        self.latency_frames_lineedit.setText('-- frames')
 
         self.latency_series.clear()
 
         self.latency_axis_y.setRange(0, 1)
 
+    ##### Calibration sequence tab
+
     @Slot(bool)
-    def on_latency_measure_button_clicked(self, checked):
+    def on_calibration_prepare_button_clicked(self, checked):
+        self.step_pre('prepare')
+
+        data = self.action_send(self.calibration_prepare_button,
+                                self.backend.calibration_prepare,
+                                conf=self.conf, loop=self.loop)
+
+        self.step_post('prepare', data)
+
+    @Slot(bool)
+    def on_calibration_mlat_button_clicked(self, checked):
         # Clear data
 
         self.clear_latency()
 
+        self.step_pre('mlat')
+
         # Take measurement
 
-        data = self.action_send(self.latency_measure_button,
-                                self.backend.latency_measure, conf=self.conf,
+        data = self.action_send(self.calibration_mlat_button,
+                                self.backend.calibration_mlat, conf=self.conf,
                                 loop=self.loop)
 
         # Display data
 
-        if self.check_subprocess_error(data):
+        if not self.step_post('mlat', data):
             return
 
-        framerateHz = self.consume_param(data, f'mlat-{self.loop}',
-                                         'out.framerateHz')
+        framerateHz = self.consume_fps_param(data, f'mlat-{self.loop}',
+                                             'out.framerateHz', force=True)
         if framerateHz is not None:
             self.latency_framerate_lineedit.setText(f'{framerateHz:.2f} Hz')
 
-        latencyfr = self.consume_param(data, f'mlat-{self.loop}',
-                                       'out.latencyfr')
+        latencyfr = self.consume_fps_param(data, f'mlat-{self.loop}',
+                                           'out.latencyfr', force=True)
         if latencyfr is not None:
             self.latency_frames_lineedit.setText(f'{latencyfr:.2f} frames')
 
@@ -354,9 +519,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             if np.isnan(latency_data[:, 2]).all():
                 msgbox = KMessageBox(self)
                 msgbox.setIcon(QMessageBox.Critical)
-                msgbox.setText("<b>Latency measruement failed!</b>")
+                msgbox.setText('<b>Latency measurement failed!</b>')
                 msgbox.setInformativeText(
-                    f'Even though the latency measurement succeeded, it only returned NaNs.'
+                    'Even though the latency measurement succeeded, it only returned NaNs.'
                 )
                 msgbox.setModal(True)
                 msgbox.show()
@@ -370,63 +535,45 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             self.latency_series.replace(points)
             self.latency_axis_y.setRange(0, latency_data[:, 2].max() * 1.05)
 
-        self.update_buttons(self.latency_measure_button)
-        self.RMCM_zRM_view.setImage(None)
-
-    ##### Response Matrix and Control Matrix tab
-
     @Slot(bool)
-    def on_RMCM_prepare_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_prepare_button,
-                                self.backend.RMCM_prepare, conf=self.conf,
-                                loop=self.loop)
+    def on_calibration_mkDMpokemodes_button_clicked(self, checked):
+        self.step_pre('mkDMpokemodes')
 
-        if self.check_subprocess_error(data):
-            return
-
-    @Slot(bool)
-    def on_RMCM_mkDMpokemodes_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_mkDMpokemodes_button,
-                                self.backend.RMCM_mkDMpokemodes,
+        data = self.action_send(self.calibration_mkDMpokemodes_button,
+                                self.backend.calibration_mkDMpokemodes,
                                 conf=self.conf, loop=self.loop)
 
-        if self.check_subprocess_error(data):
-            return
-
-        self.update_buttons(self.RMCM_mkDMpokemodes_button)
-        self.RMCM_zRM_view.setImage(None)
+        self.step_post('mkDMpokemodes', data)
 
     @Slot(bool)
-    def on_RMCM_takeref_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_takeref_button,
-                                self.backend.RMCM_takeref, conf=self.conf,
-                                loop=self.loop)
+    def on_calibration_takeref_button_clicked(self, checked):
+        self.step_pre('takeref')
 
-        if self.check_subprocess_error(data):
-            return
+        data = self.action_send(self.calibration_takeref_button,
+                                self.backend.calibration_takeref,
+                                conf=self.conf, loop=self.loop)
 
-        self.update_buttons(self.RMCM_takeref_button)
-        self.RMCM_zRM_view.setImage(None)
+        self.step_post('takeref', data)
 
     @Slot(bool)
-    def on_RMCM_acqlinResp_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_acqlinResp_button,
-                                self.backend.RMCM_acqlinResp, conf=self.conf,
-                                loop=self.loop)
+    def on_calibration_acqlinResp_button_clicked(self, checked):
+        self.step_pre('acqlinResp')
 
-        if self.check_subprocess_error(data):
-            return
+        data = self.action_send(self.calibration_acqlinResp_button,
+                                self.backend.calibration_acqlinResp,
+                                conf=self.conf, loop=self.loop)
 
-        self.update_buttons(self.RMCM_acqlinResp_button)
-        self.RMCM_zRM_view.setImage(None)
+        self.step_post('acqlinResp', data)
 
     @Slot(bool)
-    def on_RMCM_RMHdecode_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_RMHdecode_button,
-                                self.backend.RMCM_RMHdecode, conf=self.conf,
-                                loop=self.loop)
+    def on_calibration_RMHdecode_button_clicked(self, checked):
+        self.step_pre('RMHdecode')
 
-        if self.check_subprocess_error(data):
+        data = self.action_send(self.calibration_RMHdecode_button,
+                                self.backend.calibration_RMHdecode,
+                                conf=self.conf, loop=self.loop)
+
+        if not self.step_post('RMHdecode', data):
             return
 
         img = self.consume_fits(data, 'zrespM-H')
@@ -435,32 +582,49 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             self.zRM_min = img.min()
             self.zRM_max = img.max()
 
-            with QSignalBlocker(self.RMCM_zRM_poke_spinbox):
-                self.RMCM_zRM_poke_spinbox.setMaximum(img.shape[0])
-                self.RMCM_zRM_poke_spinbox.setSuffix(f' / {img.shape[0]}')
-                self.RMCM_zRM_poke_spinbox.setValue(1)
+            with QSignalBlocker(self.zRM_poke_spinbox):
+                self.zRM_poke_spinbox.setMaximum(img.shape[0])
+                self.zRM_poke_spinbox.setSuffix(f' / {img.shape[0]}')
+                self.zRM_poke_spinbox.setValue(1)
 
             self.update_zRM_view()
+
+            self.zRM_timer = QTimer(self)
+            self.zRM_timer.setInterval(self.zRM_timer_interval)
+            self.zRM_timer.timeout.connect(self.zRM_next_image)
+            self.zRM_play_button.setChecked(True)
         else:
             self.zRM_img = None
             self.zRM_min = np.nan
             self.zRM_max = np.nan
 
-            with QSignalBlocker(self.RMCM_zRM_poke_spinbox):
-                self.RMCM_zRM_poke_spinbox.setMaximum(1)
-                self.RMCM_zRM_poke_spinbox.setSuffix(f' / --')
-                self.RMCM_zRM_poke_spinbox.setValue(1)
+            with QSignalBlocker(self.zRM_poke_spinbox):
+                self.zRM_poke_spinbox.setMaximum(1)
+                self.zRM_poke_spinbox.setSuffix(' / --')
+                self.zRM_poke_spinbox.setValue(1)
 
-            self.RMCM_zRM_view.setImage(None)
+    def zRM_next_image(self):
+        with QSignalBlocker(self.zRM_poke_spinbox):
+            self.zRM_poke_spinbox.setValue(self.zRM_poke_spinbox.value() %
+                                           self.zRM_poke_spinbox.maximum() + 1)
 
-        self.update_buttons(self.RMCM_RMHdecode_button)
+            self.update_zRM_view()
+
+    @Slot(bool)
+    def on_zRM_play_button_toggled(self, checked):
+        if checked:
+            self.zRM_timer.start()
+        else:
+            self.zRM_timer.stop()
 
     @Slot(int)
-    def on_RMCM_minmax_checkbox_stateChanged(self, state):
+    def on_zRM_minmax_checkbox_stateChanged(self, state):
         self.update_zRM_view()
 
     @Slot(int)
-    def on_RMCM_zRM_poke_spinbox_valueChanged(self, i):
+    def on_zRM_poke_spinbox_valueChanged(self, i):
+        self.zRM_play_button.setChecked(False)
+
         self.update_zRM_view()
 
     def update_zRM_view(self):
@@ -469,7 +633,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         img = self.zRM_img[self.zRM_poke_spinbox.value() - 1, :, :]
 
-        if self.RMCM_minmax_checkbox.isChecked():
+        if self.zRM_minmax_checkbox.isChecked():
             img_min = img.min()
             img_max = img.max()
         else:
@@ -480,75 +644,59 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         img_min = -abs_max
         img_max = abs_max
 
-        self.RMCM_zRM_view.setImage(img, img_min, img_max)
+        self.zRM_view.setImage(img, img_min, img_max)
 
     @Slot(bool)
-    def on_RMCM_RMmkmask_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_RMmkmask_button,
-                                self.backend.RMCM_RMmkmask, conf=self.conf,
-                                loop=self.loop)
+    def on_calibration_RMmkmask_button_clicked(self, checked):
+        self.step_pre('RMmkmask')
 
-        if self.check_subprocess_error(data):
-            return
-
-        self.update_buttons(self.RMCM_RMmkmask_button)
-
-    @Slot(bool)
-    def on_RMCM_compCM_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_compCM_button,
-                                self.backend.RMCM_compCM, conf=self.conf,
-                                loop=self.loop)
-
-        if self.check_subprocess_error(data):
-            return
-
-        self.update_buttons(self.RMCM_compCM_button)
-
-    @Slot(bool)
-    def on_RMCM_load_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_load_button, self.backend.RMCM_load,
+        data = self.action_send(self.calibration_RMmkmask_button,
+                                self.backend.calibration_RMmkmask,
                                 conf=self.conf, loop=self.loop)
 
-        if self.check_subprocess_error(data):
-            return
+        self.step_post('RMmkmask', data)
 
-        self.update_buttons(self.RMCM_load_button)
+    @Slot(bool)
+    def on_calibration_compCM_button_clicked(self, checked):
+        self.step_pre('compCM')
+
+        data = self.action_send(self.calibration_compCM_button,
+                                self.backend.calibration_compCM,
+                                conf=self.conf, loop=self.loop)
+
+        self.step_post('compCM', data)
+
+    @Slot(bool)
+    def on_calibration_load_button_clicked(self, checked):
+        self.step_pre('load')
+
+        data = self.action_send(self.calibration_load_button,
+                                self.backend.calibration_load, conf=self.conf,
+                                loop=self.loop)
+
+        self.step_post('load', data)
 
         self.on_refresh_button_clicked(False)
 
     @Slot(bool)
-    def on_RMCM_save_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_save_button, self.backend.RMCM_save,
-                                conf=self.conf, loop=self.loop,
-                                comment=self.RMCM_comment_lineedit.text())
+    def on_calibration_save_button_clicked(self, checked):
+        data = self.action_send(
+            self.calibration_save_button, self.backend.calibration_save,
+            conf=self.conf, loop=self.loop,
+            comment=self.calibration_comment_lineedit.text())
 
-        if self.check_subprocess_error(data):
+        if self.calibration_check_return(data):
             return
 
         self.on_refresh_button_clicked(False)
 
     @Slot(bool)
-    def on_RMCM_restore_button_clicked(self, checked):
-        data = self.action_send(self.RMCM_restore_button,
+    def on_calibration_restore_button_clicked(self, checked):
+        data = self.action_send(self.calibration_restore_button,
                                 self.backend.calibration_reload,
                                 conf=self.conf, loop=self.loop)
 
-        if self.check_subprocess_error(data):
+        if self.calibration_check_return(data):
             return
 
         self.on_refresh_button_clicked(False)
-
-    def check_subprocess_error(self, data):
-        if data['returncode'] == 0:
-            return False
-
-        msgbox = KMessageBox(self)
-        msgbox.setIcon(QMessageBox.Critical)
-        msgbox.setText("<b>An error occured!</b>")
-        msgbox.setInformativeText(
-            'The underlying cacao process failed. See below for more details.')
-        msgbox.setDetailedText(data['stdout'])
-        msgbox.setModal(True)
-        msgbox.show()
-
-        return True

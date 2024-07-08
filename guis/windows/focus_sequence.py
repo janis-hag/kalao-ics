@@ -17,14 +17,14 @@ from guis.utils.widgets import KGraphicsView, KLabel, KMainWindow, KMessageBox
 import config
 
 
-class FocusWindow(KMainWindow, BackendDataMixin):
+class FocusSequenceWindow(KMainWindow, BackendDataMixin):
     def __init__(self, backend, file=None, parent=None):
         super().__init__(parent)
 
         self.backend = backend
         self.file = file
 
-        loadUi('focus.ui', self)
+        loadUi('focus_sequence.ui', self)
         self.resize(800, 400)
 
         self.widgets = {}
@@ -108,12 +108,12 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
             hdul = fits.open(self.file)
 
-            if 'HIERARCH KAL FOC SUCCESS' not in hdul[0].header:
+            if 'HIERARCH KAO FOC SUCCESS' not in hdul[0].header:
                 msgbox = KMessageBox(self)
                 msgbox.setIcon(QMessageBox.Critical)
-                msgbox.setText("<b>Invalid file!</b>")
+                msgbox.setText('<b>Invalid file!</b>')
                 msgbox.setInformativeText(
-                    f'The selected file doesn\'t seem to contain a focus sequence.'
+                    'The selected file doesn\'t seem to contain a focus sequence.'
                 )
                 msgbox.setModal(True)
                 msgbox.show()
@@ -139,8 +139,8 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             view.setImage(hdul[i].data)
 
             fwhm = hdul[i].header[
-                "HIERARCH KAL FOC STAR FWHM"] * config.Camera.plate_scale
-            focus = hdul[i].header["HIERARCH KAL FOC M2 POS"]
+                "HIERARCH KAO FOC STAR FWHM"] * config.Camera.plate_scale
+            focus = hdul[i].header["HIERARCH KAO FOC M2 POS"]
 
             desc_label.updateText(fwhm=fwhm)
 
@@ -165,10 +165,10 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             self.axis_x.setRange(x_min, x_max)
             self.axis_y.setRange(y_min * 0.8, y_max * 1.2)
 
-        if 'HIERARCH KAL FOC FIT QUAD' in hdul[0].header:
-            a = hdul[0].header['HIERARCH KAL FOC FIT QUAD']
-            b = hdul[0].header['HIERARCH KAL FOC FIT LIN']
-            c = hdul[0].header['HIERARCH KAL FOC FIT CONST']
+        if 'HIERARCH KAO FOC FIT QUAD' in hdul[0].header:
+            a = hdul[0].header['HIERARCH KAO FOC FIT QUAD']
+            b = hdul[0].header['HIERARCH KAO FOC FIT LIN']
+            c = hdul[0].header['HIERARCH KAO FOC FIT CONST']
 
             fit = Polynomial([c, b, a])
 
@@ -178,18 +178,18 @@ class FocusWindow(KMainWindow, BackendDataMixin):
             for x, y in zip(focus_s, fwhms):
                 self.focus_fit_series.append(QPointF(x, y))
 
-        if 'HIERARCH KAL FOC BEST M2 POS' in hdul[0].header:
-            best_focus = hdul[0].header['HIERARCH KAL FOC BEST M2 POS']
+        if 'HIERARCH KAO FOC BEST M2 POS' in hdul[0].header:
+            best_focus = hdul[0].header['HIERARCH KAO FOC BEST M2 POS']
             best_fwhm = hdul[0].header[
-                'HIERARCH KAL FOC BEST STAR FWHM'] * config.Camera.plate_scale
+                'HIERARCH KAO FOC BEST STAR FWHM'] * config.Camera.plate_scale
 
             self.focus_series.append(QPointF(best_focus, best_fwhm))
             self.focus_series.setPointConfiguration(
                 self.focus_series.count() - 1,
                 {QXYSeries.PointConfiguration.Color: Color.GREEN})
 
-        if 'HIERARCH KAL FOC SUCCESS' in hdul[0].header:
-            sucess = hdul[0].header['HIERARCH KAL FOC SUCCESS']
+        if 'HIERARCH KAO FOC SUCCESS' in hdul[0].header:
+            sucess = hdul[0].header['HIERARCH KAO FOC SUCCESS']
 
             if self.file is None:
                 # Stop timer to spare resources
@@ -199,7 +199,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
                 self.status_label.updateText(status='Success!')
                 self.status_label.setStyleSheet('')
             else:
-                reason = hdul[0].header['HIERARCH KAL FOC REASON']
+                reason = hdul[0].header['HIERARCH KAO FOC REASON']
 
                 self.status_label.updateText(status=reason)
                 self.status_label.setStyleSheet(f'color: {Color.RED.name()};')
@@ -207,7 +207,7 @@ class FocusWindow(KMainWindow, BackendDataMixin):
                 if self.file is None:
                     msgbox = KMessageBox(self)
                     msgbox.setIcon(QMessageBox.Critical)
-                    msgbox.setText("<b>Focusing failed!</b>")
+                    msgbox.setText('<b>Focusing failed!</b>')
                     msgbox.setInformativeText(
                         f'Focusing failed with the following error:\n\n{reason}'
                     )

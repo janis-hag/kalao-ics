@@ -101,15 +101,51 @@ class AO:
     # How long to wait after starting AO
     loop_stabilization_time = 2  # s
 
+    flux_min = 800  # ADU
     flux_stabilization_timeout = 10  # s
     flux_stabilization_time = 1.5  # s
+
+    check_interval = 1  # s
 
     wait_fps_run = 3  # s
 
     wfs_algorithms = ['Quad-cell', 'Center of mass']
     dm_stroke_modes = ['Mid-stroke', 'Minimize stroke']
 
-    flux_avg = 10  # frames
+    procs = [
+        'nuvu_acquire-1',
+        'shwfs_process-1',
+        'bmc_display-1',
+        'kalao_config-1',
+        'telemetry_gather-1',
+        # DM Loop
+        'acquWFS-1',
+        'wfs2cmodeval-1',
+        'mfilt-1',
+        'mvalC2dm-1',
+        'DMch2disp-01',
+        # TTM Loop
+        'acquWFS-2',
+        'wfs2cmodeval-2',
+        'mfilt-2',
+        'mvalC2dm-2',
+        'DMch2disp-02',
+    ]
+
+    streams = [
+        'nuvu_raw',
+        'nuvu_stream',
+        'shwfs_slopes',
+        'shwfs_flux',
+        'aol1_imWFS2',
+        'aol1_modevalWFS',
+        'aol1_modevalDM',
+        'aol2_imWFS2',
+        'aol2_modevalWFS',
+        'aol2_modevalDM',
+        'dm01disp',
+        'dm02disp',
+    ]
 
 
 class DM:
@@ -147,9 +183,6 @@ class Camera:
 
     median_bias = 1007  # ADU
 
-    dummy_camera = False
-    dummy_image_path = '/home/kalao/data/tmp_KALAO.2022-06-13T10:34:16.102.fits'
-
     laser_calib_power = 0.35  # mW
     laser_calib_exptime = 0.01  # s
     laser_calib_filter = 'ND1.5'
@@ -171,28 +204,6 @@ class WFS:
     laser_calib_power = 8  # mW
     laser_calib_exptime = 0.5  # ms
     laser_calib_emgain = 5  # -
-
-    illumination_threshold = 1000  # ADU
-    illumination_fraction = 0.5  # -
-
-    # Flux at least 90%
-    fully_illuminated_subaps = [
-        4, 5, 6, 13, 14, 15, 16, 17, 18, 19, 23, 24, 25, 26, 27, 28, 29, 30,
-        31, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 51, 52, 53, 54,
-        55, 56, 57, 58, 62, 63, 64, 65, 66, 67, 68, 69, 73, 74, 75, 76, 78, 79,
-        80, 81, 82, 83, 84, 85, 86, 89, 90, 91, 92, 93, 94, 95, 96, 97, 101,
-        102, 103, 104, 105, 106, 107, 114, 115, 116
-    ]
-
-    # Flux at least 15%
-    all_illuminated_subaps = [
-        3, 4, 5, 6, 7, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23, 24, 25, 26, 27,
-        28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
-        47, 48, 50, 51, 52, 53, 54, 55, 56, 57, 58, 62, 63, 64, 65, 66, 67, 68,
-        69, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87,
-        89, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106,
-        107, 108, 113, 114, 115, 116, 117
-    ]
 
     spots_file = AO.cacao_workdir / 'setupfiles/hwloop/rundir/spots_tel_pupil.txt'
     autogain_file = AO.cacao_workdir / 'setupfiles/hwloop/rundir/autogain_params.txt'
@@ -320,7 +331,7 @@ class PLC:
         LASER = 'ns=4;s=MAIN.Laser'
 
         PUMP = 'ns=4;s=MAIN.bRelayPump'
-        FAN = 'ns=4;s=MAIN.bRelayFan'
+        HEAT_EXCHANGER_FAN = 'ns=4;s=MAIN.bRelayFan'
         HEATER = 'ns=4;s=MAIN.bWaterHeater'
         PUMP_TEMP = 'ns=4;s=MAIN.Temp_Pump'
         COOLANT_TEMP_IN = 'ns=4;s=MAIN.Temp_Water_In'
@@ -336,7 +347,7 @@ class PLC:
         Node.ADC1: ADC.max_disp_angle_1 + 90,  # Zero dispersion
         Node.ADC2: ADC.max_disp_angle_2 + 90,  # Zero dispersion
         Node.PUMP: RelayState.ON,
-        Node.FAN: RelayState.ON,
+        Node.HEAT_EXCHANGER_FAN: RelayState.ON,
         Node.HEATER: RelayState.OFF,
     }
 
@@ -391,39 +402,39 @@ class FITS:
 
     base_header = {
         ObservationType.TARGET: {
-            'DPR CATG': 'SCIENCE',
-            'DPR TYPE': 'OBJECT',
+            'HIERARCH ESO DPR CATG': 'SCIENCE',
+            'HIERARCH ESO DPR TYPE': 'OBJECT',
         },
         ObservationType.DARK: {
-            'DPR CATG': 'CALIB',
-            'DPR TYPE': 'DARK',
-            'OBS PROG ID': '199',
+            'HIERARCH ESO DPR CATG': 'CALIB',
+            'HIERARCH ESO DPR TYPE': 'DARK',
+            'HIERARCH ESO OBS PROG ID': '199',
         },
         ObservationType.SKY_FLAT: {
-            'DPR CATG': 'CALIB',
-            'DPR TYPE': 'FLAT,SKY',
-            'OBS PROG ID': '199',
+            'HIERARCH ESO DPR CATG': 'CALIB',
+            'HIERARCH ESO DPR TYPE': 'FLAT,SKY',
+            'HIERARCH ESO OBS PROG ID': '199',
         },
         ObservationType.LAMP_FLAT: {
-            'DPR CATG': 'CALIB',
-            'DPR TYPE': 'FLAT,LAMP',
-            'OBS PROG ID': '199',
+            'HIERARCH ESO DPR CATG': 'CALIB',
+            'HIERARCH ESO DPR TYPE': 'FLAT,LAMP',
+            'HIERARCH ESO OBS PROG ID': '199',
         },
         ObservationType.FOCUS: {
-            'DPR CATG': 'TECHNICAL',
-            'DPR TYPE': 'OBJECT,FOCUS',
-            'OBS PROG ID': '199',
+            'HIERARCH ESO DPR CATG': 'TECHNICAL',
+            'HIERARCH ESO DPR TYPE': 'OBJECT,FOCUS',
+            'HIERARCH ESO OBS PROG ID': '199',
         },
         ObservationType.TARGET_CENTERING: {
-            'DPR CATG': 'ACQUISITION',
-            'DPR TYPE': 'OBJECT',
+            'HIERARCH ESO DPR CATG': 'ACQUISITION',
+            'HIERARCH ESO DPR TYPE': 'OBJECT',
         },
         ObservationType.LASER_CENTERING: {
-            'DPR CATG': 'ACQUISITION',
-            'DPR TYPE': 'STD,FIBER',
+            'HIERARCH ESO DPR CATG': 'ACQUISITION',
+            'HIERARCH ESO DPR TYPE': 'STD,FIBER',
         },
         ObservationType.ENGINEERING: {
-            'DPR CATG': 'TECHNICAL',
+            'HIERARCH ESO DPR CATG': 'TECHNICAL',
         },
     }
 
@@ -614,10 +625,11 @@ class Systemd:
             'enabled': True,
             'restart': True
         },
-        'Database Timer': {
-            'unit': 'kalao_database-timer.service',
+        'Monitoring Timer': {
+            'unit': 'kalao_monitoring-timer.service',
             'enabled': True,
-            'restart': True
+            'restart': True,
+            'reload-allowed': True
         },
         'Hardware Timer': {
             'unit': 'kalao_hardware-timer.service',
@@ -641,11 +653,12 @@ class Database:
     ip = 'localhost'
     port = 27017
 
-    max_days = 30  # days
 
-    telemetry_update_interval = 10  # s
-    monitoring_update_interval = 60  # s
-    monitoring_min_update_interval = 5  # s
+class Monitoring:
+    update_interval = 60  # s
+    ao_update_interval = 1  # s
+
+    warning_repetition_rate = 900  # s
 
 
 class ETCS:
@@ -657,8 +670,6 @@ class ETCS:
     temperature_file = '/gls/data/services/CURRENT/temperature_telescope.rdb'
     max_age = 120
 
-    dummy_telescope = False
-
 
 class Cooling:
     heater_hysteresis_temp = 2  # °C
@@ -667,7 +678,7 @@ class Cooling:
     max_pump_temperature = 60  # °C
 
 
-class Timers:
+class Hardware:
     cooling_check_interval = 5  # s
     inactivity_check_interval = 30  # s
 
@@ -683,8 +694,7 @@ class GUI:
     logs_max_entries = 10000  # -
     logs_initial_entries = 1000  # -
 
-    monitoring_max_age = 2 * max(Database.monitoring_update_interval,
-                                 Database.telemetry_update_interval)  # s
+    monitoring_max_age = 2 * Monitoring.update_interval  # s
 
     plots_mapping = {
         # -1
@@ -721,13 +731,15 @@ class GUI:
     refreshrate_data = 1  # /s
     refreshrate_logs = 1  # /s
     refreshrate_focus = 1  # /s
-    refreshrate_dbs = 1 / min(Database.monitoring_update_interval,
-                              Database.telemetry_update_interval)  # /s
+    refreshrate_monitoring = 0.1  # /s
 
     http_host = '10.10.132.120'  # kalaortc01
     # http_host = '127.0.0.1'  # localhost
-    http_port = 6666
+    http_port = 8080
     http_dataformat = 'application/octet-stream'
+
+    opengl_graphicsview = False
+    opengl_charts = True
 
 
 class FPS:
@@ -739,10 +751,9 @@ class FPS:
     CONFIG = 'kalao_config-1'
 
 
-class Streams:
+class SHM:
     NUVU_RAW = 'nuvu_raw'
     NUVU = 'nuvu_stream'
-    FLI = 'fli_stream'
     SLOPES = 'shwfs_slopes'
     FLUX = 'shwfs_flux'
     DM = 'dm01disp'
@@ -787,4 +798,9 @@ if WFS.autogain_file.exists():
 else:
     rprint(
         f'CONFIG | [WARNING] {WFS.autogain_file} does not exists, using default value in config (may not be up-to-date)'
+    )
+
+if '-dirty' in version:
+    rprint(
+        f'CONFIG | [WARNING] KalAO-ICS (version {version}) contains uncommited changes'
     )

@@ -83,10 +83,10 @@ def get_all_status(filter_from_db: bool = False,
             cooling_system['pump_temp'],
         'heater_status':
             cooling_system['heater_status'],
-        'fan_status':
-            cooling_system['fan_status'],
-        'coolant_flow_rate':
-            cooling_system['coolant_flow_rate'],
+        'heatexchanger_fan_status':
+            cooling_system['heatexchanger_fan_status'],
+        'coolant_flowrate':
+            cooling_system['coolant_flowrate'],
         'bench_air_temp':
             environment_readings['bench_air_temp'],
         'bench_board_temp':

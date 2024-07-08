@@ -110,15 +110,16 @@ def slopes(wfs_frame):
     for i, subap in enumerate(subapertures):
         j, k = ktools.get_subaperture_2d(i)
 
-        x, y = np.clip(
-            np.array(ndimage.center_of_mass(subap)) - [1.5, 1.5], -2, 2)
+        if math.isclose(np.sum(subap), 0):
+            x, y = 0, 0
+        else:
+            x, y = np.clip(
+                np.array(ndimage.center_of_mass(subap)) - [1.5, 1.5], -2, 2)
 
         slopes[k, j] = x
         slopes[k, j + 11] = y
 
-    mask = ktools.generate_slopes_mask_from_subaps(config.WFS.masked_subaps)
-
-    return np.ma.masked_array(slopes, mask=mask, fill_value=0).filled()
+    return slopes
 
 
 def flux(wfs_frame):
@@ -131,17 +132,15 @@ def flux(wfs_frame):
 
         flux[k, j] = np.sum(subap)
 
-    mask = ktools.generate_flux_mask_from_subaps(config.WFS.masked_subaps)
-
-    return np.ma.masked_array(flux, mask=mask, fill_value=0).filled()
+    return flux
 
 
 def dmdisp(zernike_coeffs=None, orders=15):
     if zernike_coeffs is None:
-        zernike_coeffs = rng.normal(0, 0.5, orders)
+        zernike_coeffs = rng.normal(0, 0.1, orders)
         zernike_coeffs[0] = 0
 
-    return zernike.generate_pattern(zernike_coeffs, (12, 12)).filled(0)
+    return zernike.generate_pattern(zernike_coeffs, (12, 12))
 
 
 def camera_frame(

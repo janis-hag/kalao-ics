@@ -123,10 +123,10 @@ def init(beck: Client = None) -> ReturnCode:
         if not beck.get_node(
                 f'{config.PLC.Node.TUNGSTEN}.stat.bInitialised').get_value():
             logger.error('tungsten', 'Tungsten lamp initialisation failed')
-            return ReturnCode.PLC_INIT_FAILED
+            return ReturnCode.HW_INIT_FAILED
 
     logger.info('tungsten', 'Tungsten lamp initialised')
-    return ReturnCode.PLC_INIT_SUCCESS
+    return ReturnCode.HW_INIT_SUCCESS
 
 
 @plc.autoconnect

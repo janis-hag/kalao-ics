@@ -1,25 +1,27 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
 
-from PySide6.QtCore import QEvent, QObject, QSignalBlocker, Signal, Slot
+from PySide6.QtCore import (QEvent, QObject, QSignalBlocker, QTimer, Signal,
+                            Slot)
 from PySide6.QtGui import Qt
-from PySide6.QtWidgets import (QFileDialog, QLabel, QLineEdit, QMessageBox,
-                               QPushButton)
+from PySide6.QtWidgets import (QFileDialog, QFrame, QLabel, QLineEdit,
+                               QMessageBox, QPushButton, QSizePolicy)
 
 from kalao.hardware import adc
 
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendActionMixin, BackendDataMixin
 from guis.utils.ui_loader import loadUi
-from guis.utils.widgets import KMessageBox, KStatusIndicator, KWidget
+from guis.utils.widgets import KLabel, KMessageBox, KStatusIndicator, KWidget
 from guis.windows.dm_channels import DMChannelsWindow
 from guis.windows.dm_direct_control import DMDirectControlWindow
-from guis.windows.focus import FocusWindow
+from guis.windows.focus_sequence import FocusSequenceWindow
 from guis.windows.ttm_direct_control import TTMDirectControlWindow
 
-from kalao.definitions.enums import (FilterWheelStatus, FlipMirrorPosition,
+from kalao.definitions.enums import (CameraServerStatus, CameraStatus,
+                                     FilterWheelStatus, FlipMirrorPosition,
                                      IPPowerStatus, LaserState, PLCStatus,
                                      RelayState, SequencerStatus,
                                      ServiceAction, ShutterState,
@@ -30,19 +32,19 @@ import config
 
 class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     hovered = Signal(str)
+    updated = Signal(int, int)
 
-    dm_channels = None
-    ttm_channels = None
-    dm_calibration = None
-    ttm_calibration = None
-    dm_direct_control = None
-    ttm_direct_control = None
-    focus_window = None
+    activeToolTip = None
 
-    adc1_angle = np.nan
-    adc2_angle = np.nan
+    dm_channels_window = None
+    ttm_channels_window = None
+    dm_calibration_window = None
+    ttm_calibration_window = None
+    dm_direct_control_window = None
+    ttm_direct_control_window = None
+    focus_sequence_window = None
 
-    def __init__(self, backend, *args, **kwargs):
+    def __init__(self, backend, deadman=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.backend = backend
@@ -50,11 +52,14 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         loadUi('engineering.ui', self)
         self.resize(600, 400)
 
+        self.indicators_list = []
+
         for key in dir(self):
             attr = getattr(self, key)
 
             if isinstance(attr, KStatusIndicator):
                 attr.installEventFilter(self)
+                self.indicators_list.append(attr)
 
         with QSignalBlocker(self.shutter_combobox):
             for state in [ShutterState.CLOSED, ShutterState.OPEN]:
@@ -75,6 +80,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
             self.filterwheel_combobox.setCurrentIndex(-1)
 
+        ##### Services
+
         self.services_widgets = {}
         for i, (key, service) in enumerate(config.Systemd.services.items()):
             label = QLabel(key)
@@ -88,6 +95,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             indicator = KStatusIndicator()
             indicator.setCursor(Qt.WhatsThisCursor)
             indicator.installEventFilter(self)
+            self.indicators_list.append(indicator)
 
             self.services_widgets[service['unit']] = {
                 'lineedit': lineedit,
@@ -124,6 +132,112 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.services_layout.setColumnStretch(5, 1)
         self.services_layout.setColumnStretch(6, 1)
         self.services_layout.setColumnStretch(7, 1)
+
+        ##### CACAO processes
+
+        self.milk_processes_widgets = {}
+        separators = 0
+        for i, proc in enumerate(config.AO.procs):
+            if proc in ['acquWFS-1', 'acquWFS-2']:
+                frame = QFrame()
+                frame.setFrameShape(QFrame.HLine)
+                frame.setFrameShadow(QFrame.Sunken)
+
+                row = i + 1 + separators
+
+                self.proc_layout.addWidget(frame, row, 0, 1, 4)
+
+                separators += 1
+
+            label = QLabel(proc)
+
+            tmux_indicator = KStatusIndicator()
+            tmux_indicator.setCursor(Qt.WhatsThisCursor)
+            tmux_indicator.installEventFilter(self)
+            tmux_indicator.setFixedSize(20, 20)
+            tmux_indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self.indicators_list.append(tmux_indicator)
+
+            conf_indicator = KStatusIndicator()
+            conf_indicator.setCursor(Qt.WhatsThisCursor)
+            conf_indicator.installEventFilter(self)
+            conf_indicator.setFixedSize(20, 20)
+            conf_indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self.indicators_list.append(conf_indicator)
+
+            run_indicator = KStatusIndicator()
+            run_indicator.setCursor(Qt.WhatsThisCursor)
+            run_indicator.installEventFilter(self)
+            run_indicator.setFixedSize(20, 20)
+            run_indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self.indicators_list.append(run_indicator)
+
+            row = i + 1 + separators
+
+            self.proc_layout.addWidget(label, row, 0, Qt.AlignLeft)
+            self.proc_layout.addWidget(tmux_indicator, row, 1, Qt.AlignHCenter)
+            self.proc_layout.addWidget(conf_indicator, row, 2, Qt.AlignHCenter)
+            self.proc_layout.addWidget(run_indicator, row, 3, Qt.AlignHCenter)
+
+            self.milk_processes_widgets[proc] = {
+                'tmux_indicator': tmux_indicator,
+                'conf_indicator': conf_indicator,
+                'run_indicator': run_indicator,
+            }
+
+        ##### CACAO streams
+
+        self.milk_streams_widgets = {}
+        self.milk_streams_data = {}
+        separators = 0
+        for i, stream in enumerate(config.AO.streams):
+            if stream in ['aol1_imWFS2', 'aol2_imWFS2', 'dm01disp']:
+                frame = QFrame()
+                frame.setFrameShape(QFrame.HLine)
+                frame.setFrameShadow(QFrame.Sunken)
+
+                row = i + 1 + separators
+
+                self.stream_layout.addWidget(frame, row, 0, 1, 4)
+
+                separators += 1
+
+            label = QLabel(stream)
+
+            indicator = KStatusIndicator()
+            indicator.setCursor(Qt.WhatsThisCursor)
+            indicator.installEventFilter(self)
+            indicator.setFixedSize(20, 20)
+            indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self.indicators_list.append(indicator)
+
+            size_label = QLabel('Unknown')
+            fps_label = KLabel('{fps} Hz')
+            fps_label.updateText(fps=np.nan)
+
+            row = i + 1 + separators
+
+            self.stream_layout.addWidget(label, row, 0, Qt.AlignLeft)
+            self.stream_layout.addWidget(indicator, row, 1, Qt.AlignHCenter)
+            self.stream_layout.addWidget(size_label, row, 2, Qt.AlignHCenter)
+            self.stream_layout.addWidget(fps_label, row, 3, Qt.AlignRight)
+
+            self.milk_streams_widgets[stream] = {
+                'indicator': indicator,
+                'size_label': size_label,
+                'fps_label': fps_label,
+            }
+
+        ##### Dead-man
+
+        self.deadman_timer = QTimer()
+        self.deadman_timer.setInterval(300000)
+        self.deadman_timer.timeout.connect(self.update_deadman)
+        self.reset_deadman()
+
+        self.deadman_checkbox.setChecked(deadman)
+
+        ##### Misc.
 
         backend.all_updated.connect(self.all_updated)
 
@@ -200,6 +314,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             elif calibunit_state == PLCStatus.INITIALISING:
                 self.calibunit_indicator.setStatus(Color.ORANGE,
                                                    calibunit_state.name)
+
             else:  # NOT_ENABLED, NOT_INITIALISED, ERROR, UNKNOWN
                 self.calibunit_indicator.setStatus(Color.RED,
                                                    calibunit_state.name)
@@ -272,8 +387,6 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             with QSignalBlocker(self.adc1_spinbox):
                 self.adc1_spinbox.setValue(adc1_angle)
 
-            self.adc1_angle = adc1_angle
-
         adc1_state = self.consume_dict(data, 'plc', 'adc1_state')
         if adc1_state is not None:
             if adc1_state == PLCStatus.STANDING:
@@ -295,8 +408,6 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             with QSignalBlocker(self.adc2_spinbox):
                 self.adc2_spinbox.setValue(adc2_angle)
 
-            self.adc2_angle = adc2_angle
-
         adc2_state = self.consume_dict(data, 'plc', 'adc2_state')
         if adc2_state is not None:
             if adc2_state == PLCStatus.STANDING:
@@ -314,13 +425,21 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.adc2_spinbox.setEnabled(True)
 
         if adc1_angle is not None or adc2_angle is not None:
+            if adc1_angle is None:
+                adc1_angle = self.consume_dict(data, 'plc', 'adc1_angle',
+                                               force=True, default=np.nan)
+
+            if adc2_angle is None:
+                adc2_angle = self.consume_dict(data, 'plc', 'adc2_angle',
+                                               force=True, default=np.nan)
+
             adc_angle, adc_offset = adc.compute_angle_and_offset(
-                self.adc1_angle, self.adc2_angle)
+                adc1_angle, adc2_angle)
 
             with QSignalBlocker(self.adc_angle_spinbox):
                 self.adc_angle_spinbox.setValue(adc_angle)
 
-            with QSignalBlocker(self.adc_angle_spinbox):
+            with QSignalBlocker(self.adc_offset_spinbox):
                 self.adc_offset_spinbox.setValue(adc_offset)
 
         pump_status = self.consume_dict(data, 'plc', 'pump_status')
@@ -335,17 +454,22 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             else:
                 self.pump_indicator.setStatus(Color.RED, pump_status.name)
 
-        fan_status = self.consume_dict(data, 'plc', 'fan_status')
-        if fan_status is not None:
+        heatexchanger_fan_status = self.consume_dict(
+            data, 'plc', 'heatexchanger_fan_status')
+        if heatexchanger_fan_status is not None:
             with QSignalBlocker(self.fan_checkbox):
-                self.fan_checkbox.setChecked(fan_status == RelayState.ON)
+                self.fan_checkbox.setChecked(
+                    heatexchanger_fan_status == RelayState.ON)
 
-            if fan_status == RelayState.ON:
-                self.fan_indicator.setStatus(Color.GREEN, fan_status.name)
-            elif fan_status == RelayState.OFF:
-                self.fan_indicator.setStatus(Color.BLACK, fan_status.name)
+            if heatexchanger_fan_status == RelayState.ON:
+                self.fan_indicator.setStatus(Color.GREEN,
+                                             heatexchanger_fan_status.name)
+            elif heatexchanger_fan_status == RelayState.OFF:
+                self.fan_indicator.setStatus(Color.BLACK,
+                                             heatexchanger_fan_status.name)
             else:
-                self.fan_indicator.setStatus(Color.RED, fan_status.name)
+                self.fan_indicator.setStatus(Color.RED,
+                                             heatexchanger_fan_status.name)
 
         heater_status = self.consume_dict(data, 'plc', 'heater_status')
         if heater_status is not None:
@@ -415,6 +539,37 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             with QSignalBlocker(self.camera_frames_spinbox):
                 self.camera_frames_spinbox.setValue(frames)
 
+        camera_server_status = self.consume_dict(data, 'camera',
+                                                 'camera_server_status')
+        if camera_server_status is not None:
+            if camera_server_status == CameraServerStatus.UP:
+                self.camera_server_status_indicator.setStatus(
+                    Color.GREEN, camera_server_status)
+            elif camera_server_status == CameraServerStatus.DOWN:
+                self.camera_server_status_indicator.setStatus(
+                    Color.BLACK, camera_server_status)
+            else:
+                self.camera_server_status_indicator.setStatus(
+                    Color.RED, camera_server_status)
+
+        camera_status = self.consume_dict(data, 'camera', 'camera_status')
+        if camera_status is not None:
+            if camera_status in [
+                    CameraStatus.EXPOSING, CameraStatus.READING_CCD
+            ]:
+                self.camera_status_indicator.setStatus(Color.GREEN,
+                                                       camera_status)
+            elif camera_status in [
+                    CameraStatus.IDLE, CameraStatus.WAITING_TRIGGER
+            ]:
+                self.camera_status_indicator.setStatus(Color.BLACK,
+                                                       camera_status)
+            else:  # UNKNOWN, UNEXPECTED, ERROR
+                self.camera_status_indicator.setStatus(Color.RED,
+                                                       camera_status)
+
+            self.camera_status_lineedit.setText(camera_status)
+
         remaining_frames = self.consume_dict(data, 'camera',
                                              'remaining_frames')
         if remaining_frames is not None:
@@ -432,8 +587,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.camera_frames_spinbox.setEnabled(False)
                 self.camera_roi_spinbox.setEnabled(False)
 
-        maqtime = self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
-                                              '_MAQTIME', force=True)
+        maqtime = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
+                                           '_MAQTIME', force=True)
         timestamp = self.consume_metadata(data, 'timestamp')
         if maqtime is not None:
             maqtime = datetime.fromtimestamp(maqtime / 1e6, tz=timezone.utc)
@@ -449,16 +604,18 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             status = self.consume_dict(data, 'services', service['unit'])
             if status is not None:
                 widgets = self.services_widgets[service['unit']]
+                widgets['lineedit'].setText(f'{status[0]}')
                 if status[1] != '':
-                    widgets['lineedit'].setText(f'{status[0]} | {status[1]}')
+                    detailed_status = f'{status[0]} ({status[1]})'
                 else:
-                    widgets['lineedit'].setText(f'{status[0]}')
-                widgets[
-                    'lineedit'].hover_text = f'Since: {status[2].astimezone().strftime("%H:%M:%S %d-%m-%Y")}'
+                    detailed_status = f'{status[0]}'
+                widgets['lineedit'].setToolTip(
+                    f'Status: {detailed_status} | Since: {status[2].astimezone().strftime("%H:%M:%S %d-%m-%Y")}'
+                )
 
-                if status[0] in ['active']:
+                if status[0] == 'active':
                     widgets['indicator'].setStatus(Color.GREEN, status[0])
-                elif status[0] in ['inactive']:
+                elif status[0] == 'inactive':
                     widgets['indicator'].setStatus(Color.BLACK, status[0])
                 elif status[0] in ['activating', 'deactivating', 'reloading']:
                     widgets['indicator'].setStatus(Color.ORANGE, status[0])
@@ -470,8 +627,107 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         if sequencer_status_v is not None:
             if sequencer_status_v == SequencerStatus.FOCUSING:
                 self.open_focus_window()
-                if self.focus_window is not None:
-                    self.focus_window.focus_timer.start()
+                if self.focus_sequence_window is not None:
+                    self.focus_sequence_window.focus_timer.start()
+
+        tmux_server_alive = self.consume_dict(data, 'tmux',
+                                              'tmux_server_alive')
+        if tmux_server_alive is not None:
+            if tmux_server_alive:
+                self.tmux_server_indicator.setStatus(Color.GREEN,
+                                                     tmux_server_alive)
+            else:
+                self.tmux_server_indicator.setStatus(Color.BLACK,
+                                                     tmux_server_alive)
+
+        tmux_sessions = self.consume_dict(data, 'tmux', 'tmux_sessions')
+        if tmux_sessions is not None:
+            if 'kalaocam_ctrl' in tmux_sessions:
+                self.camstack_indicator.setStatus(Color.GREEN)
+            else:
+                self.camstack_indicator.setStatus(Color.BLACK)
+
+            for proc in config.AO.procs:
+                if proc in tmux_sessions:
+                    self.milk_processes_widgets[proc][
+                        'tmux_indicator'].setStatus(Color.GREEN)
+                else:
+                    self.milk_processes_widgets[proc][
+                        'tmux_indicator'].setStatus(Color.BLACK)
+
+        for proc in config.AO.procs:
+            state = self.consume_fps_state(data, proc)
+
+            if state is not None:
+                if 'M' in state:
+                    self.milk_processes_widgets[proc][
+                        'conf_indicator'].setStatus(Color.RED, state)
+                    self.milk_processes_widgets[proc][
+                        'run_indicator'].setStatus(Color.RED, state)
+                    continue
+
+                if 'C' in state:
+                    self.milk_processes_widgets[proc][
+                        'conf_indicator'].setStatus(Color.GREEN, state)
+                else:
+                    self.milk_processes_widgets[proc][
+                        'conf_indicator'].setStatus(Color.BLACK, state)
+
+                if 'R' in state:
+                    self.milk_processes_widgets[proc][
+                        'run_indicator'].setStatus(Color.GREEN, state)
+                else:
+                    self.milk_processes_widgets[proc][
+                        'run_indicator'].setStatus(Color.BLACK, state)
+
+        for stream in config.AO.streams:
+            state = self.consume_shm_state(data, stream)
+            if state is not None:
+                if 'M' in state:
+                    self.milk_streams_widgets[stream]['indicator'].setStatus(
+                        Color.RED, state)
+                    continue
+
+                if 'E' in state:
+                    self.milk_streams_widgets[stream]['indicator'].setStatus(
+                        Color.GREEN, state)
+                else:
+                    self.milk_streams_widgets[stream]['indicator'].setStatus(
+                        Color.BLACK, state)
+
+            md = self.consume_shm_md(data, stream, force=True)
+            if md is not None:
+                if stream in self.milk_streams_data:
+                    previous_md = self.milk_streams_data[stream]
+                    if previous_md['creationtime'] != md['creationtime']:
+                        fps = np.nan
+                    elif md['cnt0'] < previous_md['cnt0']:
+                        fps = np.nan
+                    elif previous_md['cnt0'] == md['cnt0']:
+                        fps = 0
+                    else:
+                        fps = (previous_md['cnt0'] - md['cnt0']) / (
+                            previous_md['lastaccesstime'] -
+                            md['lastaccesstime']).totals_seconds()
+                else:
+                    fps = np.nan
+
+                self.milk_streams_data[stream] = md.copy()
+                self.milk_streams_widgets[stream]['fps_label'].updateText(
+                    fps=fps)
+                self.milk_streams_widgets[stream]['size_label'].setText(
+                    'x'.join([str(i) for i in md['shape']]))
+
+        ##### Indicators
+
+        warnings = 0
+        errors = 0
+        for indicator in self.indicators_list:
+            if indicator.brush.color() == Color.ORANGE:
+                warnings += 1
+            elif indicator.brush.color() == Color.RED:
+                errors += 1
+        self.updated.emit(warnings, errors)
 
     @Slot(int)
     def on_shutter_combobox_currentIndexChanged(self, index):
@@ -676,70 +932,92 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_dm_channels_button_clicked(self, checked):
-        if self.dm_channels is not None:
-            self.dm_channels.show()
-            self.dm_channels.activateWindow()
+        if self.dm_channels_window is not None:
+            self.dm_channels_window.show()
+            self.dm_channels_window.activateWindow()
         else:
-            self.dm_channels = DMChannelsWindow(self.backend,
-                                                config.AO.DM_loop_number,
-                                                parent=self)
+            self.dm_channels_window = DMChannelsWindow(
+                self.backend, config.AO.DM_loop_number, parent=self)
 
     @Slot(bool)
     def on_ttm_channels_button_clicked(self, checked):
-        if self.ttm_channels is not None:
-            self.ttm_channels.show()
-            self.ttm_channels.activateWindow()
+        if self.ttm_channels_window is not None:
+            self.ttm_channels_window.show()
+            self.ttm_channels_window.activateWindow()
         else:
-            self.ttm_channels = DMChannelsWindow(self.backend,
-                                                 config.AO.TTM_loop_number,
-                                                 parent=self)
+            self.ttm_channels_window = DMChannelsWindow(
+                self.backend, config.AO.TTM_loop_number, parent=self)
 
     @Slot(bool)
     def on_dm_calibration_button_clicked(self, checked):
-        if self.dm_calibration is not None:
-            self.dm_calibration.show()
-            self.dm_calibration.activateWindow()
+        if self.dm_calibration_window is not None:
+            self.dm_calibration_window.show()
+            self.dm_calibration_window.activateWindow()
         else:
             from guis.windows.calibration import CalibrationWindow
-            self.dm_calibration = CalibrationWindow(self.backend, 'dmloop',
-                                                    config.AO.DM_loop_number,
-                                                    (11, 22), (12, 12),
-                                                    parent=self)
+            self.dm_calibration_window = CalibrationWindow(
+                self.backend, 'dmloop', config.AO.DM_loop_number, (11, 22),
+                (12, 12), parent=self)
 
     @Slot(bool)
     def on_ttm_calibration_button_clicked(self, checked):
-        if self.ttm_calibration is not None:
-            self.ttm_calibration.show()
-            self.ttm_calibration.activateWindow()
+        if self.ttm_calibration_window is not None:
+            self.ttm_calibration_window.show()
+            self.ttm_calibration_window.activateWindow()
         else:
             from guis.windows.calibration import CalibrationWindow
-            self.ttm_calibration = CalibrationWindow(self.backend, 'ttmloop',
-                                                     config.AO.TTM_loop_number,
-                                                     (12, 12), (1, 2),
-                                                     parent=self)
+            self.ttm_calibration_window = CalibrationWindow(
+                self.backend, 'ttmloop', config.AO.TTM_loop_number, (12, 12),
+                (1, 2), parent=self)
 
     @Slot(bool)
     def on_dm_direct_control_button_clicked(self, checked):
-        if self.dm_direct_control is not None:
-            self.dm_direct_control.show()
-            self.dm_direct_control.activateWindow()
+        if self.dm_direct_control_window is not None:
+            self.dm_direct_control_window.show()
+            self.dm_direct_control_window.activateWindow()
         else:
-            self.dm_direct_control = DMDirectControlWindow(
+            self.dm_direct_control_window = DMDirectControlWindow(
                 self.backend, parent=self)
 
     @Slot(bool)
     def on_ttm_direct_control_button_clicked(self, checked):
-        if self.ttm_direct_control is not None:
-            self.ttm_direct_control.show()
-            self.ttm_direct_control.activateWindow()
+        if self.ttm_direct_control_window is not None:
+            self.ttm_direct_control_window.show()
+            self.ttm_direct_control_window.activateWindow()
         else:
-            self.ttm_direct_control = TTMDirectControlWindow(
+            self.ttm_direct_control_window = TTMDirectControlWindow(
                 self.backend, parent=self)
 
     @Slot(bool)
     def on_centering_laser_button_clicked(self, checked):
         self.action_send(self.centering_laser_button,
                          self.backend.centering_laser)
+
+    @Slot(int)
+    def on_deadman_checkbox_stateChanged(self, state):
+        if Qt.CheckState(state) == Qt.Checked:
+            self.update_deadman()
+            self.deadman_timer.start()
+        else:
+            self.deadman_timer.stop()
+            self.reset_deadman()
+
+    def reset_deadman(self):
+        self.deadman_count = 0
+        self.deadman_label.updateText(count=0, last='--', next='--')
+
+    def update_deadman(self):
+        self.deadman_count += 1
+
+        self.action_send([], self.backend.deadman, count=self.deadman_count)
+
+        now = datetime.now()
+        next = now + timedelta(
+            milliseconds=self.deadman_timer.interval())  #TODO: remainingTime()
+
+        self.deadman_label.updateText(count=self.deadman_count,
+                                      last=now.strftime('%H:%M:%S %d-%m-%Y'),
+                                      next=next.strftime('%H:%M:%S %d-%m-%Y'))
 
     @Slot(bool)
     def on_open_focus_sequence_button_clicked(self, checked):
@@ -754,7 +1032,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         error_dialog = KMessageBox(self)
         error_dialog.setIcon(QMessageBox.Critical)
         error_dialog.setModal(True)
-        error_dialog.setText("<b>Focus sequence loading failed!</b>")
+        error_dialog.setText('<b>Focus sequence loading failed!</b>')
 
         if dialog.exec():
             filenames = dialog.selectedFiles()
@@ -780,7 +1058,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                         )
                         continue
 
-                    FocusWindow(self.backend, filename, parent=self)
+                    FocusSequenceWindow(self.backend, filename, parent=self)
                 except PermissionError:
                     error_list.append(
                         f'{filename.name}: Can\'t read file, permission refused.'
@@ -800,16 +1078,25 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          action=action)
 
     def open_focus_window(self):
-        if self.focus_window is not None:
-            self.focus_window.show()
-            self.focus_window.activateWindow()
+        if self.focus_sequence_window is not None:
+            self.focus_sequence_window.show()
+            self.focus_sequence_window.activateWindow()
         else:
-            self.focus_window = FocusWindow(self.backend, parent=self)
+            self.focus_sequence_window = FocusSequenceWindow(
+                self.backend, parent=self)
 
     def eventFilter(self, source, event):
-        if hasattr(source, 'hover_text'):
-            if event.type() == QEvent.Enter:
-                self.hovered.emit(source.hover_text)
-            elif event.type() == QEvent.Leave:
-                self.hovered.emit('')
+        if event.type() == QEvent.ToolTip:
+            # Disable tooltips
+            return True
+
+        if event.type(
+        ) == QEvent.ToolTipChange and source == self.activeToolTip:
+            self.hovered.emit(source.toolTip())
+        if event.type() == QEvent.Enter:
+            self.activeToolTip = source
+            self.hovered.emit(source.toolTip())
+        elif event.type() == QEvent.Leave:
+            self.hovered.emit('')
+
         return QObject.eventFilter(self, source, event)

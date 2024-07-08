@@ -9,10 +9,12 @@ from astropy.io import fits
 from kalao import database, ippower, logs, services
 from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import (adc, calibunit, camera, cooling, filterwheel,
-                            flipmirror, laser, plc_utils, shutter, tungsten,
+                            flipmirror, hw_utils, laser, shutter, tungsten,
                             wfs)
 from kalao.rtc import rtc
 from kalao.sequencer import centering, focusing
+
+import libtmux
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 
@@ -22,44 +24,89 @@ import config
 
 
 class SHMFPSBackend(AbstractBackend):
-    def _update_stream(self, data, stream_name, key=None):
+    def _update_shm(self, data, shm_name, key=None):
         if key is None:
-            key = stream_name
+            key = shm_name
 
-        stream = toolbox.open_stream_once(stream_name)
+        shm = toolbox.open_shm_once(shm_name)
 
-        if stream is None:
+        if shm is None:
             return
 
         if key not in data:
             data[key] = {}
 
         data[key].update({
-            'cnt0': stream.IMAGE.md.cnt0,
-            'data': stream.get_data(check=False),
+            'cnt0': shm.IMAGE.md.cnt0,
+            'data': shm.get_data(check=False),
         })
 
-    def _update_stream_keywords(self, data, stream_name):
-        stream = toolbox.open_stream_once(stream_name)
+    def _update_shm_keywords(self, data, shm_name):
+        shm = toolbox.open_shm_once(shm_name)
 
-        if stream is None:
+        if shm is None:
             return
 
-        if stream_name not in data:
-            data[stream_name] = {}
+        if shm_name not in data:
+            data[shm_name] = {}
 
-        data[stream_name]['keywords'] = stream.get_keywords()
+        data[shm_name]['keywords'] = shm.get_keywords()
 
-    def _update_param(self, data, fps_name, param_name):
-        if fps_name not in data:
-            data[fps_name] = {}
+    def _update_shm_state(self, data, shm_name):
+        shm = toolbox.open_shm_once(shm_name)
 
+        if shm_name not in data:
+            data[shm_name] = {}
+
+        if shm is None:
+            data[shm_name]['state'] = 'M'
+        else:
+            data[shm_name]['state'] = 'E'
+
+    def _update_shm_md(self, data, shm_name):
+        shm = toolbox.open_shm_once(shm_name)
+
+        if shm is None:
+            return
+
+        if shm_name not in data:
+            data[shm_name] = {}
+
+        data[shm_name]['md'] = {
+            'shape': shm.shape,
+            'cnt0': shm.IMAGE.md.cnt0,
+            'creationtime': shm.IMAGE.md.creationtime,
+            'lastaccesstime': shm.IMAGE.md.lastaccesstime,
+        }
+
+    def _update_fps_param(self, data, fps_name, param_name):
         fps = toolbox.open_fps_once(fps_name)
 
         if fps is None:
             return
 
+        if fps_name not in data:
+            data[fps_name] = {}
+
         data[fps_name][param_name] = fps.get_param(param_name)
+
+    def _update_fps_state(self, data, fps_name):
+        fps = toolbox.open_fps_once(fps_name)
+
+        if fps_name not in data:
+            data[fps_name] = {}
+
+        if fps is None:
+            data[fps_name]['state'] = 'M'
+
+        else:
+            data[fps_name]['state'] = ''
+
+            if fps.conf_isrunning():
+                data[fps_name]['state'] += 'C'
+
+            if fps.run_isrunning():
+                data[fps_name]['state'] += 'R'
 
     def _update_dict(self, data, key, dict):
         if key not in data:
@@ -139,30 +186,33 @@ class MainBackend(SHMFPSBackend):
 
         self.reader = logs.get_reader(True)
 
-    @emit('streams_all_updated')
+    def version(self):
+        return config.version
+
+    @emit
     @timeit
     def streams_all(self):
         data = {}
 
-        self._update_stream(data, config.Streams.DM)
-        self._update_param(data, config.FPS.BMC, 'max_stroke')
+        self._update_shm(data, config.SHM.DM)
+        self._update_fps_param(data, config.FPS.BMC, 'max_stroke')
 
-        self._update_stream(data, config.Streams.NUVU)
+        self._update_shm(data, config.SHM.NUVU)
 
-        self._update_stream(data, config.Streams.SLOPES)
-        self._update_param(data, config.FPS.SHWFS, 'slope_x_avg')
-        self._update_param(data, config.FPS.SHWFS, 'slope_y_avg')
-        self._update_param(data, config.FPS.SHWFS, 'residual_rms')
+        self._update_shm(data, config.SHM.SLOPES)
+        self._update_fps_param(data, config.FPS.SHWFS, 'slope_x_avg')
+        self._update_fps_param(data, config.FPS.SHWFS, 'slope_y_avg')
+        self._update_fps_param(data, config.FPS.SHWFS, 'residual_rms')
 
-        self._update_stream(data, config.Streams.FLUX)
-        self._update_param(data, config.FPS.SHWFS, 'flux_avg')
-        self._update_param(data, config.FPS.SHWFS, 'flux_max')
+        self._update_shm(data, config.SHM.FLUX)
+        self._update_fps_param(data, config.FPS.SHWFS, 'flux_avg')
+        self._update_fps_param(data, config.FPS.SHWFS, 'flux_max')
 
-        self._update_stream(data, config.Streams.MODE_COEFFS)
+        self._update_shm(data, config.SHM.MODE_COEFFS)
 
         return data
 
-    @emit('camera_image_updated')
+    @emit
     @timeit
     def camera_image(self):
         data = {}
@@ -171,100 +221,117 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    @emit('all_updated')
+    @emit
     @timeit
     def all(self):
         data = {}
 
         self._update_fits_mtime(data, config.FITS.last_image_all)
 
-        self._update_stream(data, config.Streams.TTM)
-        self._update_stream(data, config.Streams.MODALGAINS)
+        self._update_shm(data, config.SHM.TTM)
+        self._update_shm(data, config.SHM.MODALGAINS)
 
-        self._update_param(data, config.FPS.NUVU, 'autogain_on')
-        self._update_param(data, config.FPS.NUVU, 'autogain_setting')
+        self._update_fps_param(data, config.FPS.NUVU, 'autogain_on')
+        self._update_fps_param(data, config.FPS.NUVU, 'autogain_setting')
 
-        self._update_param(data, config.FPS.BMC, 'max_stroke')
-        self._update_param(data, config.FPS.BMC, 'stroke_mode')
-        self._update_param(data, config.FPS.BMC, 'target_stroke')
+        self._update_fps_param(data, config.FPS.BMC, 'max_stroke')
+        self._update_fps_param(data, config.FPS.BMC, 'stroke_mode')
+        self._update_fps_param(data, config.FPS.BMC, 'target_stroke')
 
-        self._update_param(data, config.FPS.SHWFS, 'algorithm')
+        self._update_fps_param(data, config.FPS.SHWFS, 'algorithm')
 
-        self._update_param(data, config.FPS.DMLOOP, 'loopON')
-        self._update_param(data, config.FPS.DMLOOP, 'loopgain')
-        self._update_param(data, config.FPS.DMLOOP, 'loopmult')
-        self._update_param(data, config.FPS.DMLOOP, 'looplimit')
+        self._update_fps_param(data, config.FPS.DMLOOP, 'loopON')
+        self._update_fps_param(data, config.FPS.DMLOOP, 'loopgain')
+        self._update_fps_param(data, config.FPS.DMLOOP, 'loopmult')
+        self._update_fps_param(data, config.FPS.DMLOOP, 'looplimit')
 
-        self._update_param(data, config.FPS.TTMLOOP, 'loopON')
-        self._update_param(data, config.FPS.TTMLOOP, 'loopgain')
-        self._update_param(data, config.FPS.TTMLOOP, 'loopmult')
-        self._update_param(data, config.FPS.TTMLOOP, 'looplimit')
+        self._update_fps_param(data, config.FPS.TTMLOOP, 'loopON')
+        self._update_fps_param(data, config.FPS.TTMLOOP, 'loopgain')
+        self._update_fps_param(data, config.FPS.TTMLOOP, 'loopmult')
+        self._update_fps_param(data, config.FPS.TTMLOOP, 'looplimit')
 
-        self._update_param(data, config.FPS.CONFIG, 'adc_update')
-        self._update_param(data, config.FPS.CONFIG, 'ttm_offload')
+        self._update_fps_param(data, config.FPS.CONFIG, 'adc_synchronisation')
+        self._update_fps_param(data, config.FPS.CONFIG, 'ttm_offloading')
 
         self._update_dict(data, 'plc',
-                          plc_utils.get_all_status(filter_from_db=True))
+                          hw_utils.get_all_status(filter_from_db=True))
         self._update_dict(data, 'services', services.get_all_status())
+        self._update_dict(
+            data, 'camera', {
+                'camera_server_status': camera.server_status(),
+                'camera_status': camera.get_camera_status()
+            })
         self._update_dict(data, 'camera', camera.get_exposure_status())
         self._update_dict(data, 'camera', camera.get_temperatures())
         self._update_dict(data, 'ippower', ippower.status_all())
 
+        tmux_server = libtmux.Server()
+        self._update_dict(
+            data, 'tmux', {
+                'tmux_server_alive':
+                    tmux_server.is_alive(),
+                'tmux_sessions':
+                    [session.name for session in tmux_server.sessions]
+            })
+
+        for proc in config.AO.procs:
+            self._update_fps_state(data, proc)
+
+        for stream in config.AO.streams:
+            self._update_shm_state(data, stream)
+            self._update_shm_md(data, stream)
+
         self._update_db(
             data, 'obs',
-            database.get('obs', ['sequencer_status', 'centering_manual']))
+            database.get_all_last('obs',
+                                  ['sequencer_status', 'centering_manual']))
 
-        self._update_stream(data, config.Streams.TELEMETRY_TTM)
+        self._update_shm(data, config.SHM.TELEMETRY_TTM)
 
         # Last so it is the closest to timestamp computation
-        self._update_stream_keywords(data, config.Streams.NUVU_RAW)
+        self._update_shm_keywords(data, config.SHM.NUVU_RAW)
 
         return data
 
-    @emit('monitoringandtelemetry_updated')
+    @emit
     @timeit
-    def monitoringandtelemetry(self):
+    def monitoring(self):
         data = {}
 
         self._update_db(data, 'monitoring',
                         database.get_all_last('monitoring'))
-        self._update_db(data, 'telemetry', database.get_all_last('telemetry'))
 
-        self._update_dict(
-            data, 'db-timestamps', {
-                'monitoring':
-                    database.get_collection_last_update('monitoring'),
-                'telemetry':
-                    database.get_collection_last_update('telemetry'),
-            })
+        self._update_dict(data, 'db-timestamps', {
+            'monitoring': database.get_collection_last_update('monitoring'),
+        })
 
         return data
 
-    @emit('streams_channels_dm_updated')
+    @emit
     @timeit
     def streams_channels_dm(self):
         data = {}
 
-        self._update_stream(data, config.Streams.DM)
+        self._update_shm(data, config.SHM.DM)
 
         for i in range(0, 12):
-            self._update_stream(data, f'{config.Streams.DM}{i:02d}')
+            self._update_shm(data, f'{config.SHM.DM}{i:02d}')
 
         return data
 
-    @emit('streams_channels_ttm_updated')
+    @emit
     @timeit
     def streams_channels_ttm(self):
         data = {}
 
-        self._update_stream(data, config.Streams.TTM)
+        self._update_shm(data, config.SHM.TTM)
 
         for i in range(0, 12):
-            self._update_stream(data, f'{config.Streams.TTM}{i:02d}')
+            self._update_shm(data, f'{config.SHM.TTM}{i:02d}')
 
         return data
 
-    @emit('focus_sequence_updated')
+    @emit
     @timeit
     def focus_sequence(self):
         data = {}
@@ -273,22 +340,17 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def plots_data(self, *, since, until, monitoring_keys, telemetry_keys,
-                   obs_keys):
+    def plots_data(self, *, since, until, monitoring_keys, obs_keys):
 
         data = {}
 
         if len(monitoring_keys) > 0:
-            data['monitoring'] = database.read_mongo_to_pandas_by_timestamp(
-                'monitoring', since, until, monitoring_keys)
-
-        if len(telemetry_keys) > 0:
-            data['telemetry'] = database.read_mongo_to_pandas_by_timestamp(
-                'telemetry', since, until, telemetry_keys)
+            data['monitoring'] = database.read_mongo_to_pandas(
+                'monitoring', keys=monitoring_keys, since=since, until=until)
 
         if len(obs_keys) > 0:
-            data['obs'] = database.read_mongo_to_pandas_by_timestamp(
-                'obs', since, until, obs_keys)
+            data['obs'] = database.read_mongo_to_pandas(
+                'obs', keys=obs_keys, since=since, until=until)
 
         return data
 
@@ -342,14 +404,14 @@ class MainBackend(SHMFPSBackend):
             data,
             config.AO.cacao_workdir / f'setupfiles/{conf}/conf/CMmodesDM.fits')
 
-        self._update_stream(data, f'aol{loop}_wfsref')
-        self._update_stream(data, f'aol{loop}_wfsrefc')
-        self._update_stream(data, f'aol{loop}_wfsmask')
-        self._update_stream(data, f'aol{loop}_wfsmap')
-        self._update_stream(data, f'aol{loop}_modesWFS')
-        self._update_stream(data, f'aol{loop}_dmmask')
-        self._update_stream(data, f'aol{loop}_dmmap')
-        self._update_stream(data, f'aol{loop}_DMmodes')
+        self._update_shm(data, f'aol{loop}_wfsref')
+        self._update_shm(data, f'aol{loop}_wfsrefc')
+        self._update_shm(data, f'aol{loop}_wfsmask')
+        self._update_shm(data, f'aol{loop}_wfsmap')
+        self._update_shm(data, f'aol{loop}_modesWFS')
+        self._update_shm(data, f'aol{loop}_dmmask')
+        self._update_shm(data, f'aol{loop}_dmmap')
+        self._update_shm(data, f'aol{loop}_DMmodes')
 
         return data
 
@@ -366,39 +428,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def latency_measure(self, *, conf, loop):
-        data = {}
-
-        ready_data = self.calibration_ready(conf=conf, loop=loop)
-        if not ready_data['ready']:
-            return {
-                'returncode':
-                    -1,
-                'stdout':
-                    f'Calibration not ready to run: {ready_data["reason"]}'
-            }
-
-        script = config.AO.cacao_workdir / f'scripts/{conf}/00-mlat.sh'
-
-        res = subprocess.run([script], timeout=60, capture_output=True)
-
-        data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
-
-        if res.returncode != 0:
-            return data
-
-        self._update_param(data, f'mlat-{loop}', 'out.framerateHz')
-        self._update_param(data, f'mlat-{loop}', 'out.latencyfr')
-
-        data['hardwlatencypts'] = np.loadtxt(
-            config.AO.cacao_workdir /
-            f'KalAO-{conf}-rootdir/rundir/fps.mlat-{loop}.datadir/hardwlatencypts.dat'
-        )
-
-        return data
-
-    def RMCM_prepare(self, *, conf, loop):
+    def calibration_prepare(self, *, conf, loop):
         if conf == 'dmloop':
             if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
                 return {'returncode': -1, 'stdout': 'Failed to open loops'}
@@ -422,7 +452,39 @@ class MainBackend(SHMFPSBackend):
 
         return {'returncode': 0, 'stdout': 'Success!'}
 
-    def RMCM_mkDMpokemodes(self, *, conf, loop):
+    def calibration_mlat(self, *, conf, loop):
+        data = {}
+
+        ready_data = self.calibration_ready(conf=conf, loop=loop)
+        if not ready_data['ready']:
+            return {
+                'returncode':
+                    -1,
+                'stdout':
+                    f'Calibration not ready to run: {ready_data["reason"]}'
+            }
+
+        script = config.AO.cacao_workdir / f'scripts/{conf}/00-mlat.sh'
+
+        res = subprocess.run([script], timeout=60, capture_output=True)
+
+        data['returncode'] = res.returncode
+        data['stdout'] = res.stdout.decode()
+
+        if res.returncode != 0:
+            return data
+
+        self._update_fps_param(data, f'mlat-{loop}', 'out.framerateHz')
+        self._update_fps_param(data, f'mlat-{loop}', 'out.latencyfr')
+
+        data['hardwlatencypts'] = np.loadtxt(
+            config.AO.cacao_workdir /
+            f'KalAO-{conf}-rootdir/rundir/fps.mlat-{loop}.datadir/hardwlatencypts.dat'
+        )
+
+        return data
+
+    def calibration_mkDMpokemodes(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/01-mkDMpokemodes.sh'
@@ -434,7 +496,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def RMCM_takeref(self, *, conf, loop):
+    def calibration_takeref(self, *, conf, loop):
         data = {}
 
         ready_data = self.calibration_ready(conf=conf, loop=loop)
@@ -455,7 +517,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def RMCM_acqlinResp(self, *, conf, loop):
+    def calibration_acqlinResp(self, *, conf, loop):
         data = {}
 
         ready_data = self.calibration_ready(conf=conf, loop=loop)
@@ -476,7 +538,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def RMCM_RMHdecode(self, *, conf, loop):
+    def calibration_RMHdecode(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/04-RMHdecode.sh'
@@ -492,7 +554,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def RMCM_RMmkmask(self, *, conf, loop):
+    def calibration_RMmkmask(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/05-RMmkmask.sh'
@@ -504,7 +566,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def RMCM_compCM(self, *, conf, loop):
+    def calibration_compCM(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/06-compCM.sh'
@@ -516,7 +578,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def RMCM_load(self, *, conf, loop):
+    def calibration_load(self, *, conf, loop):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/apply-calib-rootdir.sh'
@@ -528,7 +590,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def RMCM_save(self, *, conf, loop, comment):
+    def calibration_save(self, *, conf, loop, comment):
         data = {}
 
         script = config.AO.cacao_workdir / f'scripts/{conf}/save-calib.sh'
@@ -545,7 +607,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    ##### FLI Zoom
+    ##### Science Camera
 
     def centering_manual(self, *, dx, dy):
         centering.manual_centering(dx, dy)
@@ -618,11 +680,11 @@ class MainBackend(SHMFPSBackend):
 
     # Observation
 
-    def adc_update(self, *, state):
-        toolbox.set_fps_value(config.FPS.CONFIG, 'adc_update', state)
+    def adc_synchronisation(self, *, state):
+        toolbox.set_fps_value(config.FPS.CONFIG, 'adc_synchronisation', state)
 
-    def ttm_offload(self, *, state):
-        toolbox.set_fps_value(config.FPS.CONFIG, 'ttm_offload', state)
+    def ttm_offloading(self, *, state):
+        toolbox.set_fps_value(config.FPS.CONFIG, 'ttm_offloading', state)
 
     # Modal gains
 
@@ -680,7 +742,7 @@ class MainBackend(SHMFPSBackend):
         laser.init()
 
     def plc_lamps_off(self):
-        plc_utils.lamps_off()
+        hw_utils.lamps_off()
 
     def plc_filterwheel_filter(self, *, filter):
         filterwheel.set_filter(filter)
@@ -723,9 +785,9 @@ class MainBackend(SHMFPSBackend):
 
     def plc_fan_state(self, *, state):
         if state:
-            cooling.fan_on()
+            cooling.heatexchanger_fan_on()
         else:
-            cooling.fan_off()
+            cooling.heatexchanger_fan_off()
 
     def plc_heater_state(self, *, state):
         if state:
@@ -770,6 +832,9 @@ class MainBackend(SHMFPSBackend):
     def services_action(self, *, unit, action):
         services.unit_control(unit, action)
 
+    def deadman(self, *, count):
+        database.store('obs', {'deadman_keepalive': count})
+
     ##### DM channels
 
     def channels_resetall(self, *, dm_number):
@@ -781,14 +846,14 @@ class MainBackend(SHMFPSBackend):
     ##### DM & TTM control
 
     def dm_pattern(self, *, pattern):
-        stream = toolbox.open_stream_once(config.Streams.DM_USER_CONTROLLED)
-        if stream is not None:
-            stream.set_data(pattern, True)
+        shm = toolbox.open_shm_once(config.SHM.DM_USER_CONTROLLED)
+        if shm is not None:
+            shm.set_data(pattern, True)
 
     def ttm_position(self, *, tip, tilt):
-        stream = toolbox.open_stream_once(config.Streams.TTM_USER_CONTROLLED)
-        if stream is not None:
-            stream.set_data(np.array([tip, tilt]), True)
+        shm = toolbox.open_shm_once(config.SHM.TTM_USER_CONTROLLED)
+        if shm is not None:
+            shm.set_data(np.array([tip, tilt]), True)
 
     ##### Focusing
 

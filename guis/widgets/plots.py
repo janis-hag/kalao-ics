@@ -2,27 +2,27 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from PySide6.QtCharts import (QChartView, QDateTimeAxis, QLineSeries,
-                              QValueAxis, QXYSeries)
-from PySide6.QtCore import (QDateTime, QEvent, QObject, QPointF,
-                            QSignalBlocker, QTimer, QTimeZone, Signal, Slot)
+from PySide6.QtCharts import QChartView, QDateTimeAxis, QLineSeries, QValueAxis
+from PySide6.QtCore import (QDateTime, QEvent, QObject, QPointF, QTimer,
+                            QTimeZone, Signal, Slot)
 from PySide6.QtGui import QPen, Qt
-from PySide6.QtWidgets import (QListWidget, QListWidgetItem, QMessageBox,
-                               QPushButton)
+from PySide6.QtWidgets import QMessageBox, QTreeWidgetItem
 
 from kalao import database
 from kalao.utils import kstring, ktime
 
-from guis.utils.definitions import ColorPalette
+from guis.utils.definitions import Color, ColorPalette
 from guis.utils.mixins import BackendActionMixin
 from guis.utils.ui_loader import loadUi
-from guis.utils.widgets import KListWidgetItem, KMessageBox, KWidget
+from guis.utils.widgets import KMessageBox, KWidget
 
 import config
 
 
 class PlotsWidget(KWidget, BackendActionMixin):
     hovered = Signal(str)
+
+    activeToolTip = None
 
     current_index = -1
 
@@ -37,50 +37,43 @@ class PlotsWidget(KWidget, BackendActionMixin):
         self.groups = {}
         self.items = {}
 
-        for k, v in sorted(
-                database.definitions['telemetry']['metadata'].items(),
-                key=lambda t: t[1]['short'].casefold()):
-            item = KListWidgetItem(k, self.get_display_name(v))
-            item.hover_text = v['long']
-            # item.installEventFilter(self)
+        for collection_name, item_list in [('monitoring',
+                                            self.monitoring_treeview),
+                                           ('obs', self.obs_treeview)]:
+            for k, v in sorted(
+                    database.definitions[collection_name]['metadata'].items(),
+                    key=lambda t:
+                (t[1].get('group', ''), t[1]['short'].casefold())):
+                if k in config.GUI.plots_exclude_list:
+                    continue
 
-            group = v.get('group', 'Generic')
-            if group not in self.groups:
-                self.groups[group] = []
-            self.groups[group].append(('telemetry', k))
+                item = QTreeWidgetItem([v['short']])
+                item.setCheckState(0, Qt.Unchecked)
+                item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+                item.setToolTip(0, v['long'])
+                item.key = k
 
-            self.telemetry_list.addItem(item)
-            self.items[f'telemetry/{k}'] = item
-        self.telemetry_list.installEventFilter(self)
+                group = v.get('group')
+                group_key = f'{collection_name}/{group}'
+                if group is None:
+                    item_list.addTopLevelItem(item)
+                elif group_key not in self.groups:
+                    group_item = self.groups[group_key] = QTreeWidgetItem([
+                        group
+                    ])
+                    item_list.addTopLevelItem(group_item)
+                    group_item.setFlags(Qt.ItemIsUserCheckable |
+                                        Qt.ItemIsEnabled |
+                                        Qt.ItemIsAutoTristate)
+                    group_item.setExpanded(True)
+                    group_item.key = group
+                else:
+                    group_item = self.groups[group_key]
 
-        for k, v in sorted(
-                database.definitions['monitoring']['metadata'].items(),
-                key=lambda t: t[1]['short'].casefold()):
-            item = KListWidgetItem(k, self.get_display_name(v))
-            item.hover_text = v['long']
-            # item.installEventFilter(self)
+                group_item.addChild(item)
 
-            group = v.get('group', 'Generic')
-            if group not in self.groups:
-                self.groups[group] = []
-            self.groups[group].append(('monitoring', k))
-
-            self.monitoring_list.addItem(item)
-            self.items[f'monitoring/{k}'] = item
-        self.monitoring_list.installEventFilter(self)
-
-        for k, v in sorted(database.definitions['obs']['metadata'].items(),
-                           key=lambda t: t[1]['short'].casefold()):
-            if k in config.GUI.plots_exclude_list:
-                continue
-
-            item = KListWidgetItem(k, self.get_display_name(v))
-            item.hover_text = v['long']
-            # item.installEventFilter(self)
-            self.obs_list.addItem(item)
-
-            self.items[f'obs/{k}'] = item
-        self.obs_list.installEventFilter(self)
+                self.items[f'{collection_name}/{k}'] = item
+            item_list.installEventFilter(self)
 
         # Create Chart and set General Chart setting
         chart = self.plots_view.chart()
@@ -93,26 +86,21 @@ class PlotsWidget(KWidget, BackendActionMixin):
                              self.until_datetimeedit.dateTime())
         chart.addAxis(self.axis_x, Qt.AlignBottom)
 
+        self.axis_x.rangeChanged.connect(self.x_range_changed)
+
         # Y Axis Settings
         self.axis_y = QValueAxis()
         self.axis_y.setTickCount(20)
         self.axis_y.setRange(-1, 1)
         chart.addAxis(self.axis_y, Qt.AlignLeft)
 
+        self.axis_y.rangeChanged.connect(self.y_range_changed)
+
         #chart.legend().hide()
 
         chart.hovered.connect(self.hover_xy_to_str)
 
         self.plots_view.setRubberBand(QChartView.RectangleRubberBand)
-
-        ### Group buttons
-
-        for group in sorted(self.groups.keys(),
-                            key=lambda key: key.casefold()):
-            button = QPushButton(group)
-            button.clicked.connect(lambda checked=False, group=group: self.
-                                   on_group_button_clicked(checked, group))
-            self.group_layout.addWidget(button)
 
         self.live_timer = QTimer(parent=self)
 
@@ -127,41 +115,15 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
         return f'{metadata["short"]}{unit}'
 
-    def on_group_button_clicked(self, checked, group):
-        self.on_reset_button_clicked(checked)
-
-        for collection, key in self.groups[group]:
-            item = self.items[f'{collection}/{key}']
-            item.setSelected(True)
-
-            if collection == 'monitoring':
-                self.monitoring_list.scrollToItem(item)
-            elif collection == 'telemetry':
-                self.telemetry_list.scrollToItem(item)
-            elif collection == 'obs':
-                self.obs_list.scrollToItem(item)
-
-    @Slot(QListWidgetItem)
-    def on_telemetry_list_itemEntered(self, item):
-        self.hovered.emit(item.hover_text)
-
-    @Slot(QListWidgetItem)
-    def on_monitoring_list_itemEntered(self, item):
-        self.hovered.emit(item.hover_text)
-
-    @Slot(QListWidgetItem)
-    def on_obs_list_itemEntered(self, item):
-        self.hovered.emit(item.hover_text)
-
     @Slot(bool)
-    def on_reset_button_clicked(self, checked):
-        self.monitoring_list.clearSelection()
-        self.telemetry_list.clearSelection()
-        self.obs_list.clearSelection()
+    def on_reset_all_button_clicked(self, checked):
+        for item in self.monitoring_treeview.findItems(
+                '', Qt.MatchContains | Qt.MatchRecursive):
+            item.setCheckState(0, Qt.Unchecked)
 
-        self.monitoring_list.scrollToTop()
-        self.telemetry_list.scrollToTop()
-        self.obs_list.scrollToTop()
+        for item in self.obs_treeview.findItems(
+                '', Qt.MatchContains | Qt.MatchRecursive):
+            item.setCheckState(0, Qt.Unchecked)
 
     @Slot(QDateTime)
     def on_since_datetimeedit_dateTimeChanged(self, datetime):
@@ -196,6 +158,30 @@ class PlotsWidget(KWidget, BackendActionMixin):
         self.until_datetimeedit.setDateTime(until)
 
     @Slot(bool)
+    def on_last_day_button_clicked(self, checked):
+        until = QDateTime.currentDateTime()
+        since = until.addSecs(-86400)
+
+        self.since_datetimeedit.setDateTime(since)
+        self.until_datetimeedit.setDateTime(until)
+
+    @Slot(bool)
+    def on_last_week_button_clicked(self, checked):
+        until = QDateTime.currentDateTime()
+        since = until.addSecs(-604800)
+
+        self.since_datetimeedit.setDateTime(since)
+        self.until_datetimeedit.setDateTime(until)
+
+    @Slot(bool)
+    def on_last_month_button_clicked(self, checked):
+        until = QDateTime.currentDateTime()
+        since = until.addSecs(-18144000)
+
+        self.since_datetimeedit.setDateTime(since)
+        self.until_datetimeedit.setDateTime(until)
+
+    @Slot(bool)
     def on_tonight_button_clicked(self, checked):
         start_of_night = ktime.get_start_of_night(datetime.now(timezone.utc))
 
@@ -208,7 +194,8 @@ class PlotsWidget(KWidget, BackendActionMixin):
     @Slot(int)
     def on_live_checkbox_stateChanged(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.live_timer.setInterval(int(1000 / config.GUI.refreshrate_dbs))
+            self.live_timer.setInterval(
+                int(1000 / config.GUI.refreshrate_monitoring))
             self.live_timer.timeout.connect(self.on_live_timer_timeout)
 
             self.on_live_timer_timeout()
@@ -231,17 +218,28 @@ class PlotsWidget(KWidget, BackendActionMixin):
     @Slot(bool)
     def on_plot_button_clicked(self, checked):
         monitoring_keys = []
-        telemetry_keys = []
         obs_keys = []
 
-        for item in self.monitoring_list.selectedItems():
-            monitoring_keys.append(item.key)
+        for item in self.monitoring_treeview.findItems(
+                '', Qt.MatchContains | Qt.MatchRecursive):
+            if item.checkState(0) == Qt.Checked and item.childCount() == 0:
+                monitoring_keys.append(item.key)
 
-        for item in self.telemetry_list.selectedItems():
-            telemetry_keys.append(item.key)
+        for item in self.obs_treeview.findItems(
+                '', Qt.MatchContains | Qt.MatchRecursive):
+            if item.checkState(0) == Qt.Checked and item.childCount() == 0:
+                obs_keys.append(item.key)
 
-        for item in self.obs_list.selectedItems():
-            obs_keys.append(item.key)
+        series_to_draw = len(monitoring_keys) + len(obs_keys)
+
+        if series_to_draw == 0:
+            msgbox = KMessageBox(self)
+            msgbox.setIcon(QMessageBox.Critical)
+            msgbox.setText('<b>No series selected!</b>')
+            msgbox.setInformativeText('Please select at least one series.')
+            msgbox.setModal(True)
+            msgbox.show()
+            return
 
         since = self.since_datetimeedit.dateTime().toUTC().toPython().replace(
             tzinfo=timezone.utc)
@@ -253,7 +251,6 @@ class PlotsWidget(KWidget, BackendActionMixin):
         data = self.action_send(self.plot_button, self.backend.plots_data,
                                 since=since, until=until,
                                 monitoring_keys=monitoring_keys,
-                                telemetry_keys=telemetry_keys,
                                 obs_keys=obs_keys)
 
         # Display plots
@@ -270,27 +267,51 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
         no_data = True
 
-        for name, collection in data.items():
+        self.plots_view.resetHLines()
+
+        for collection_name, collection in data.items():
             if collection.empty:
                 continue
 
             no_data = False
 
-            self.value_before_conversion[name] = {}
+            self.value_before_conversion[collection_name] = {}
 
             for key, values in collection.items():
-                self.value_before_conversion[name][key] = {}
+                self.value_before_conversion[collection_name][key] = {}
+
+                metadata = database.definitions[collection_name]['metadata'][
+                    key]
 
                 pen = QPen(ColorPalette[color_index], 1.25, Qt.SolidLine,
                            Qt.SquareCap, Qt.MiterJoin)
 
                 series = self.series[key] = QLineSeries()
-                series.setName(
-                    self.get_display_name(
-                        database.definitions[name]['metadata'][key]))
-                series.setMarkerSize(chart.point_size)
-                series.setPointsVisible(True)
+                series.setName(self.get_display_name(metadata))
                 series.setPen(pen)
+
+                points = []
+
+                if config.GUI.opengl_charts:
+                    series.setUseOpenGL(True)
+
+                if series_to_draw == 1:
+                    error_range = metadata.get('error_range', [np.nan, np.nan])
+                    warn_range = metadata.get('warn_range', [np.nan, np.nan])
+
+                    error_min = error_range[0]
+                    error_max = error_range[1]
+                    warn_min = warn_range[0]
+                    warn_max = warn_range[1]
+
+                    if not np.isnan(error_min):
+                        self.plots_view.addHLine(error_min, Color.RED)
+                    if not np.isnan(error_max):
+                        self.plots_view.addHLine(error_max, Color.RED)
+                    if not np.isnan(warn_min):
+                        self.plots_view.addHLine(warn_min, Color.ORANGE)
+                    if not np.isnan(warn_max):
+                        self.plots_view.addHLine(warn_max, Color.ORANGE)
 
                 for t, v in values.items():
                     t = t.astimezone(timezone.utc)
@@ -298,56 +319,45 @@ class PlotsWidget(KWidget, BackendActionMixin):
                                           QTimeZone.utc()).toMSecsSinceEpoch()
 
                     if v in config.GUI.plots_mapping:
-                        self.value_before_conversion[name][key][timestamp] = v
+                        self.value_before_conversion[collection_name][key][
+                            timestamp] = v
                         v = config.GUI.plots_mapping[v]
 
                     if v is None or np.isnan(v) or np.isinf(v):
                         # TODO: interupt line
                         continue
 
-                    if type(v) != int and type(v) != float:
+                    if not isinstance(v, int) and not isinstance(v, float):
                         continue
 
                     plot_min = min(plot_min, v)
                     plot_max = max(plot_max, v)
 
                     # Create a "staircase" effect
-                    if name == 'obs' and series.count() > 0:
-                        prev = series.points()[-1]
-                        series.append(QPointF(timestamp, prev.y()))
+                    if collection_name == 'obs' and len(points) > 0:
+                        prev = points[-1]
+                        points.append(QPointF(timestamp, prev.y()))
 
-                        series.setPointConfiguration(series.count() - 1, {
-                            QXYSeries.PointConfiguration.Visibility: False
-                        })
+                    points.append(QPointF(timestamp, v))
 
-                    series.append(QPointF(timestamp, v))
-
-                if name == 'obs' and series.count() > 0:
+                if collection_name == 'obs' and series.count() > 0:
                     now = QDateTime.currentMSecsSinceEpoch()
-                    prev = series.points()[-1]
+                    prev = points[-1]
                     if now > prev.x():
-                        series.append(QPointF(now, prev.y()))
+                        points.append(QPointF(now, prev.y()))
 
-                        series.setPointConfiguration(series.count() - 1, {
-                            QXYSeries.PointConfiguration.Visibility: False
-                        })
+                series.replace(points)
 
                 chart.addSeries(series)
                 series.attachAxis(self.axis_x)
                 series.attachAxis(self.axis_y)
 
-                series.hovered.connect(lambda point, state, name=name, key=key:
-                                       self.pointHoveredEvent(
-                                           point, state, name, key))
+                series.hovered.connect(lambda point, state, collection_name=
+                                       collection_name, key=key: self.
+                                       pointHoveredEvent(
+                                           point, state, collection_name, key))
 
                 color_index = (color_index+1) % len(ColorPalette)
-
-        time_delta = self.since_datetimeedit.dateTime().secsTo(
-            self.until_datetimeedit.dateTime())
-        if time_delta > 86400:
-            self.axis_x.setFormat("HH:mm dd.MM.yy")
-        else:
-            self.axis_x.setFormat("HH:mm")
 
         delta = plot_max - plot_min
         if abs(delta) < config.epsilon:
@@ -363,43 +373,55 @@ class PlotsWidget(KWidget, BackendActionMixin):
         self.axis_y.setTickCount(20)
         self.axis_y.applyNiceNumbers()
 
-        with QSignalBlocker(self.min_spinbox):
-            self.min_spinbox.setMaximum(self.axis_y.max())
-            self.min_spinbox.setValue(self.axis_y.min())
-
-        with QSignalBlocker(self.max_spinbox):
-            self.max_spinbox.setMinimum(self.axis_y.min())
-            self.max_spinbox.setValue(self.axis_y.max())
-
         if no_data:
             msgbox = KMessageBox(self)
             msgbox.setIcon(QMessageBox.Critical)
-            msgbox.setText("<b>No data!</b>")
+            msgbox.setText('<b>No data!</b>')
             msgbox.setInformativeText(
-                f'No data was found for the requested period of time and the requested series.'
+                'No data was found for the requested period of time and the requested series.'
             )
             msgbox.setModal(True)
             msgbox.show()
 
-    def hover_xy_to_str(self, x, y):
+    def x_range_changed(self, min, max):
+        self.since_datetimeedit.setDateTime(min)
+        self.until_datetimeedit.setDateTime(max)
+
+        time_delta = min.secsTo(max)
+
+        if time_delta > 86400 * 365:
+            self.axis_x.setFormat("HH:mm dd.MM.yy")
+        elif time_delta > 86400:
+            self.axis_x.setFormat("HH:mm dd.MM")
+        else:
+            self.axis_x.setFormat("HH:mm")
+
+    def y_range_changed(self, min, max):
+        self.min_spinbox.setValue(min)
+        self.max_spinbox.setValue(max)
+
+    def hover_xy_to_str(self, series, x, y):
         if not np.isnan(x) and not np.isnan(y):
-            metadata = database.definitions[self.current_name]['metadata'][
-                self.current_key]
-
-            try:
-                y_true = f' ({self.value_before_conversion[self.current_name][self.current_key][x]})'
-            except KeyError:
-                y_true = ''
-
             x = QDateTime.fromMSecsSinceEpoch(
                 int(x)).toString("HH:mm:ss dd-MM-yy")
 
-            unit = kstring.get_unit_string(metadata)
+            if series is None:
+                self.hovered.emit(f'{y:.6g} at {x}')
+            else:
+                metadata = database.definitions[self.current_name]['metadata'][
+                    self.current_key]
 
-            self.hovered.emit(
-                f'{metadata["short"]}: {y:.5g}{unit}{y_true} at {x}')
+                try:
+                    y_true = f' ({self.value_before_conversion[self.current_name][self.current_key][x]})'
+                except KeyError:
+                    y_true = ''
+
+                unit = kstring.get_unit_string(metadata)
+
+                self.hovered.emit(
+                    f'{metadata["short"]}: {y:.6g}{unit}{y_true} at {x}')
         else:
-            self.hovered.emit(f'')
+            self.hovered.emit('')
 
     def pointHoveredEvent(self, point, state, name, key):
         self.current_name = name
@@ -408,8 +430,17 @@ class PlotsWidget(KWidget, BackendActionMixin):
         self.plots_view.chart().pointHoveredEvent(point, state,
                                                   self.series[key])
 
+    @Slot(QTreeWidgetItem, int)
+    def on_monitoring_treeview_itemEntered(self, item, column):
+        self.hovered.emit(item.toolTip(0))
+
+    @Slot(QTreeWidgetItem, int)
+    def on_obs_treeview_itemEntered(self, item, column):
+        self.hovered.emit(item.toolTip(0))
+
     def eventFilter(self, source, event):
-        if isinstance(source, QListWidget):
-            if event.type() == QEvent.Leave:
-                self.hovered.emit('')
+        if isinstance(source,
+                      QTreeWidgetItem) and event.type() == QEvent.Leave:
+            self.hovered.emit('')
+
         return QObject.eventFilter(self, source, event)

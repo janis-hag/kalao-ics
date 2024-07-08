@@ -7,25 +7,25 @@
 """
 Timer to do offloading and adc update
 """
-
+import threading
 import time
+from typing import Callable
 
-from kalao import euler
-from kalao.cacao import aocontrol, toolbox
-from kalao.hardware import adc
+from kalao import euler, logger
+from kalao.cacao import aocontrol
+from kalao.hardware import adc, camera, wfs
 from kalao.utils import offsets
 
 import schedule
-from opcua import Client
 
 from kalao.definitions.enums import LoopStatus
 
 import config
 
 
-def _update_adc(beck: Client = None) -> None:
-    if euler.telescope_on_kalao() and euler.telescope_tracking():
-        adc.configure(beck=beck, skip_tracking_check=True)
+def _update_adc() -> None:
+    if euler.telescope_on_kalao() and euler.telescope_is_tracking():
+        adc.configure()
 
 
 def _offload_ttm() -> None:
@@ -33,9 +33,45 @@ def _offload_ttm() -> None:
         offsets.offload_ttm_to_telescope()
 
 
+def _check_ao() -> None:
+    loops_status = aocontrol.check_loops()
+
+    if LoopStatus.TTM_LOOP_ON in loops_status and LoopStatus.DM_LOOP_ON not in loops_status:
+        logger.warn('observation_timer',
+                    'Disabling TTM loop as DM loop is inactive')
+
+        aocontrol.open_loop(config.AO.TTM_loop_number)
+
+    if LoopStatus.DM_LOOP_ON in loops_status:
+        if not wfs.acquisition_running():
+            logger.warn('observation_timer',
+                        'Disabling DM loop as WFS acquisition froze')
+
+            camera.cancel()
+
+            aocontrol.open_loops()
+
+        if not aocontrol.check_wfs_flux():
+            logger.warn('observation_timer',
+                        'Disabling DM loop as flux is too low')
+
+            camera.cancel()
+
+            aocontrol.open_loops()
+
+
 if __name__ == '__main__':
-    schedule.every(config.ADC.update_interval).seconds.do(_update_adc)
-    schedule.every(config.TTM.offload_interval).seconds.do(_offload_ttm)
+
+    def run_threaded(job_func: Callable) -> None:
+        job_thread = threading.Thread(target=job_func)
+        job_thread.start()
+
+    schedule.every(config.ADC.update_interval).seconds.do(
+        run_threaded, _update_adc)
+    schedule.every(config.TTM.offload_interval).seconds.do(
+        run_threaded, _offload_ttm)
+    schedule.every(config.AO.check_interval).seconds.do(
+        run_threaded, _check_ao)
 
     while True:
         n = schedule.idle_seconds()

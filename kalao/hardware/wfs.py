@@ -25,60 +25,53 @@ def start(start_nuvu_acquire: bool = True,
         'KALAOCAM'
     ])
 
-    logger.info('wfs', f'Waiting for nuvu_raw to start')
+    logger.info('wfs', 'Waiting for nuvu_raw to start')
 
     if toolbox.wait_file('/tmp/milk/nuvu_raw.im.shm') != ReturnCode.OK:
-        logger.error('wfs', f'Timeout while waiting for nuvu_raw')
+        logger.error('wfs', 'Timeout while waiting for nuvu_raw')
         return ReturnCode.GENERIC_ERROR
 
     if nuvu_acquire_fps is not None and start_nuvu_acquire:
-        if not nuvu_acquire_fps.run_runs():
+        if not nuvu_acquire_fps.run_isrunning():
             logger.info('wfs', f'Starting {config.FPS.NUVU}')
 
             nuvu_acquire_fps.run_start()
 
             time.sleep(config.AO.wait_fps_run)
 
-        if not nuvu_acquire_fps.run_runs():
+        if not nuvu_acquire_fps.run_isrunning():
             logger.error('wfs', f'Unable to start {config.FPS.NUVU}')
             return ReturnCode.GENERIC_ERROR
 
     if shwfs_process_fps is not None and start_shwfs_process:
-        if not shwfs_process_fps.run_runs():
+        if not shwfs_process_fps.run_isrunning():
             logger.info('wfs', f'Starting {config.FPS.SHWFS}')
 
             shwfs_process_fps.run_start()
 
             time.sleep(config.AO.wait_fps_run)
 
-        if not shwfs_process_fps.run_runs():
+        if not shwfs_process_fps.run_isrunning():
             logger.error('wfs', f'Unable to start {config.FPS.SHWFS}')
             return ReturnCode.GENERIC_ERROR
 
     return ReturnCode.OK
 
 
-def stop() -> tuple[bool, bool]:
+def stop() -> ReturnCode:
     logger.info('wfs', 'Stopping WFS')
 
     shwfs_process_fps = toolbox.open_fps_once(config.FPS.SHWFS)
     nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU)
 
-    shwfs_process_was_running = False
-    nuvu_acquire_was_running = False
-
     if shwfs_process_fps is not None:
-        if shwfs_process_fps.run_runs():
-            shwfs_process_was_running = True
-
+        if shwfs_process_fps.run_isrunning():
             logger.info('wfs', f'Stopping {config.FPS.SHWFS}')
 
             shwfs_process_fps.run_stop()
 
     if nuvu_acquire_fps is not None:
-        if nuvu_acquire_fps.run_runs():
-            nuvu_acquire_was_running = True
-
+        if nuvu_acquire_fps.run_isrunning():
             logger.info('wfs', f'Stopping {config.FPS.NUVU}')
 
             nuvu_acquire_fps.run_stop()
@@ -100,30 +93,25 @@ def stop() -> tuple[bool, bool]:
 
     Path('/tmp/milk/nuvu_raw.im.shm').unlink(missing_ok=True)
 
-    return nuvu_acquire_was_running, shwfs_process_was_running
-
-
-def restart() -> int:
-    nuvu_acquire_was_running, shwfs_process_was_running = stop()
-    return start(nuvu_acquire_was_running, shwfs_process_was_running)
+    return ReturnCode.OK
 
 
 def acquisition_running() -> bool:
-    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
+    nuvu_raw_shm = toolbox.open_shm_once(config.SHM.NUVU_RAW)
 
-    if nuvu_raw_stream is None:
+    if nuvu_raw_shm is None:
         return False
 
     maqtime = datetime.fromtimestamp(
-        nuvu_raw_stream.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
+        nuvu_raw_shm.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
     return (datetime.now(timezone.utc) -
             maqtime).total_seconds() < config.WFS.acquisition_time_timeout
 
 
 def start_acquisition() -> ReturnCode:
-    nuvu_raw_stream = toolbox.open_stream_once(config.Streams.NUVU_RAW)
+    nuvu_raw_shm = toolbox.open_shm_once(config.SHM.NUVU_RAW)
 
-    if nuvu_raw_stream is None:
+    if nuvu_raw_shm is None:
         return ReturnCode.GENERIC_ERROR
 
     # Check if already running

@@ -19,24 +19,23 @@ class MainWindow(KMainWindow, BackendDataMixin):
     previous_update_time = 0
     fps = 0
 
-    def __init__(self, backend, streams_timer, expert_mode=False,
-                 on_sky_unit=False, parent=None):
+    def __init__(self, backend, expert_mode=False, on_sky_unit=False,
+                 deadman=False, parent=None):
         super().__init__(parent)
 
         self.backend = backend
-        self.streams_timer = streams_timer
 
         #self.showMaximized()
-        self.resize(1500, 1000)
+        self.resize(1700, 1000)
 
         self.tabwidget = QTabWidget(parent=self)
         self.setCentralWidget(self.tabwidget)
 
-        self.main = MainWidget(backend, streams_timer, on_sky_unit=on_sky_unit,
-                               parent=self)
+        self.main = MainWidget(backend, on_sky_unit=on_sky_unit, parent=self)
         self.loop_controls = LoopControlsWidget(backend, parent=self)
         self.monitoring = MonitoringWidget(backend, parent=self)
-        self.engineering = EngineeringWidget(backend, parent=self)
+        self.engineering = EngineeringWidget(backend, deadman=deadman,
+                                             parent=self)
         self.plots = PlotsWidget(backend, parent=self)
         self.logs = LogsWidget(backend, parent=self)
 
@@ -60,20 +59,20 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.expert_checkbox = QCheckBox('Expert Mode', parent=self)
         self.expert_checkbox.stateChanged.connect(
             self.on_expert_checkbox_stateChanged)
-        self.expert_checkbox.setChecked(expert_mode)
         self.statusBar().addPermanentWidget(self.expert_checkbox)
-        self.on_expert_checkbox_stateChanged(self.expert_checkbox.checkState())
 
         for widget in [
-                self.main.wfs, self.main.fli, self.main.slopes, self.main.flux,
-                self.main.dm, self.loop_controls, self.monitoring,
-                self.engineering, self.plots
+                self.main, self.main.wfs, self.main.camera, self.main.slopes,
+                self.main.flux, self.main.dm, self.main.ttm,
+                self.loop_controls, self.monitoring, self.engineering,
+                self.plots
         ]:
             widget.hovered.connect(self.info_to_statusbar)
 
         self.initial_tab_color = self.tabwidget.tabBar().tabTextColor(0)
 
         self.monitoring.updated.connect(self.on_monitoring_updated)
+        self.engineering.updated.connect(self.on_engineering_updated)
         self.logs.logged.connect(self.on_logs_logged)
 
         backend.streams_all_updated.connect(self.streams_all_updated)
@@ -84,6 +83,8 @@ class MainWindow(KMainWindow, BackendDataMixin):
             self.on_tabwidget_tabBarDoubleClicked)
 
         self.tabwidget.setCurrentIndex(0)
+
+        self.expert_checkbox.setChecked(expert_mode)
 
         self.show()
         self.center()
@@ -108,6 +109,26 @@ class MainWindow(KMainWindow, BackendDataMixin):
             text += f' ({", ".join(list)})'
 
         tab_index = self.tabwidget.indexOf(self.monitoring)
+        self.tabwidget.tabBar().setTabText(tab_index, text)
+        self.tabwidget.tabBar().setTabTextColor(tab_index, color)
+
+    def on_engineering_updated(self, warnings, errors):
+        list = []
+        color = self.initial_tab_color
+        text = self.engineering.windowTitle().removesuffix(" - KalAO")
+
+        if warnings != 0:
+            color = Color.ORANGE
+            list.append(f'W: {warnings}')
+
+        if errors != 0:
+            color = Color.RED
+            list.append(f'E: {errors}')
+
+        if len(list) > 0:
+            text += f' ({", ".join(list)})'
+
+        tab_index = self.tabwidget.indexOf(self.engineering)
         self.tabwidget.tabBar().setTabText(tab_index, text)
         self.tabwidget.tabBar().setTabTextColor(tab_index, color)
 
@@ -161,7 +182,8 @@ class MainWindow(KMainWindow, BackendDataMixin):
 
     def all_updated(self, data):
         self.last_update_label.setText(
-            'Last update: ' + datetime.now().strftime('%H:%M:%S %d-%m-%Y'))
+            'Last update: ' +
+            datetime.now().astimezone().strftime('%H:%M:%S %d-%m-%Y'))
 
     def closeEvent(self, event):
         app = QApplication.instance()

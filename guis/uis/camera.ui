@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>FluxWidget</class>
- <widget class="QWidget" name="FluxWidget">
+ <class>FLIWidget</class>
+ <widget class="QWidget" name="FLIWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>837</width>
-    <height>497</height>
+    <width>823</width>
+    <height>494</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Flux - KalAO</string>
+   <string>Science Camera - KalAO</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="0,1">
    <item row="0" column="1">
@@ -22,7 +22,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Flux</string>
+      <string>Science Camera</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -30,7 +30,7 @@
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="KGraphicsView" name="flux_view">
+    <widget class="KGraphicsView" name="camera_view">
      <property name="enabled">
       <bool>true</bool>
      </property>
@@ -51,25 +51,18 @@
    <item row="0" column="0" rowspan="2">
     <layout class="QVBoxLayout" name="side_layout">
      <item>
-      <layout class="QGridLayout" name="scale_layout" columnstretch="0,1">
-       <item row="4" column="0" colspan="2">
-        <widget class="QPushButton" name="fullscale_button">
+      <layout class="QGridLayout" name="scale_layout" columnstretch="1,0,1">
+       <item row="2" column="0" colspan="3" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+        <widget class="KLabel" name="saturation_label">
          <property name="text">
-          <string>Full Scale</string>
+          <string>Saturation {saturation:.0f} %</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="1" column="0" colspan="2" alignment="Qt::AlignHCenter">
-        <widget class="QCheckBox" name="autoscale_checkbox">
-         <property name="text">
-          <string>Autoscale</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
+       <item row="1" column="0">
         <widget class="KScaledDoubleSpinbox" name="min_spinbox">
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -78,37 +71,17 @@
           <number>0</number>
          </property>
          <property name="minimum">
-          <double>-999999.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
          <property name="maximum">
-          <double>999999.000000000000000</double>
+          <double>100000.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>100.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="min_label">
-         <property name="text">
-          <string>Min </string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="max_label">
-         <property name="text">
-          <string>Max </string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
+       <item row="1" column="2" alignment="Qt::AlignVCenter">
         <widget class="KScaledDoubleSpinbox" name="max_spinbox">
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -117,23 +90,55 @@
           <number>0</number>
          </property>
          <property name="minimum">
-          <double>-999999.000000000000000</double>
+          <double>0.000000000000000</double>
          </property>
          <property name="maximum">
-          <double>999999.000000000000000</double>
+          <double>100000.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>100.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="KLabel" name="saturation_label">
+       <item row="1" column="1">
+        <widget class="QLabel" name="minmax_label">
          <property name="text">
-          <string>Saturation {saturation:.0f} %</string>
+          <string>–</string>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QToolButton" name="fullscale_button">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Fullscale</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QToolButton" name="autoscale_button">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Autoscale</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -153,9 +158,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="KLabel" name="flux_avg_label">
+      <widget class="KLabel" name="timestamp_label">
        <property name="text">
-        <string>Average flux: {flux_avg:.0f}{unit}</string>
+        <string>Timestamp: {timestamp}</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -163,12 +168,23 @@
       </widget>
      </item>
      <item>
-      <widget class="KLabel" name="flux_brightest_label">
+      <widget class="QPushButton" name="fits_viewer_button">
        <property name="text">
-        <string>Brightest Flux: {flux_brightest:.0f}{unit}</string>
+        <string>Open detailed view</string>
        </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="open_button">
+       <property name="text">
+        <string>Open a file ...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="ds9_button">
+       <property name="text">
+        <string>Open last image with DS9</string>
        </property>
       </widget>
      </item>
@@ -183,13 +199,13 @@
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KScaledDoubleSpinbox</class>
-   <extends>QDoubleSpinBox</extends>
+   <class>KLabel</class>
+   <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KLabel</class>
-   <extends>QLabel</extends>
+   <class>KScaledDoubleSpinbox</class>
+   <extends>QDoubleSpinBox</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

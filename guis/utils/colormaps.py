@@ -16,15 +16,17 @@ colormap_path = Path(__file__).absolute().parent.parent / 'colormaps'
 class Colormap:
     table = None
 
-    color_saturation_low = None
-    color_saturation_high = None
+    saturation_low_color = None
+    saturation_high_color = None
     has_transparency = False
-
-    no_data_value = 0
-    transparency_value = 255
 
     min = 0
     max = 255
+
+    no_data_value = min
+    transparency_value = max
+    saturation_low_value = min
+    saturation_high_value = max
 
 
 class ColormapExtrapolated(Colormap):
@@ -34,13 +36,18 @@ class ColormapExtrapolated(Colormap):
         length = len(self.colors)
 
         if self.has_transparency:
+            self.transparency_value = end
+            self.max = end - 1
             end -= 1
-            self.max = end
 
-        if self.color_saturation_low is not None:
+        if self.saturation_low_color is not None:
+            self.saturation_low_value = start
+            self.min = start + 1
             start += 1
 
-        if self.color_saturation_high is not None:
+        if self.saturation_high_color is not None:
+            self.saturation_high_value = end
+            self.max = end - 1
             end -= 1
 
         limits = []
@@ -50,11 +57,11 @@ class ColormapExtrapolated(Colormap):
         self.table = []
         j = 0
 
-        if self.color_saturation_low is not None:
+        if self.saturation_low_color is not None:
             self.table.append(
-                QColor(self.color_saturation_low[0] * color_max,
-                       self.color_saturation_low[1] * color_max,
-                       self.color_saturation_low[2] * color_max).rgba())
+                QColor(self.saturation_low_color[0] * color_max,
+                       self.saturation_low_color[1] * color_max,
+                       self.saturation_low_color[2] * color_max).rgba())
 
         for i in range(start, end + 1):
             if i > limits[j + 1]:
@@ -70,11 +77,11 @@ class ColormapExtrapolated(Colormap):
                 QColor(red * color_max, green * color_max,
                        blue * color_max).rgba())
 
-        if self.color_saturation_high is not None:
+        if self.saturation_high_color is not None:
             self.table.append(
-                QColor(self.color_saturation_high[0] * color_max,
-                       self.color_saturation_high[1] * color_max,
-                       self.color_saturation_high[2] * color_max).rgba())
+                QColor(self.saturation_high_color[0] * color_max,
+                       self.saturation_high_color[1] * color_max,
+                       self.saturation_high_color[2] * color_max).rgba())
 
         if self.has_transparency:
             self.table.append(QColor(0, 0, 0, 0).rgba())
@@ -94,12 +101,19 @@ class ColormapCSV(Colormap):
                        row['RGB_b'] * self.scale).rgba())
 
         if self.has_transparency:
+            self.transparency_value = self.max
             self.max -= 1
             self.table[-1] = QColor(0, 0, 0, 0).rgba()
 
 
 class Grayscale(ColormapExtrapolated):
     colors = [(0, 0, 0), (1, 1, 1)]
+
+
+class GrayscaleSaturation(ColormapExtrapolated):
+    colors = [(0, 0, 0), (1, 1, 1)]
+    saturation_low_color = (0, 0, 1)
+    saturation_high_color = (1, 0, 0)
 
 
 class GrayscaleTransparent(ColormapExtrapolated):
@@ -109,8 +123,8 @@ class GrayscaleTransparent(ColormapExtrapolated):
 
 class GrayscaleSaturationTransparent(ColormapExtrapolated):
     colors = [(0, 0, 0), (1, 1, 1)]
-    color_saturation_low = (0, 0, 1)
-    color_saturation_high = (1, 0, 0)
+    saturation_low_color = (0, 0, 1)
+    saturation_high_color = (1, 0, 0)
     has_transparency = True
 
 

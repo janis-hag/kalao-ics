@@ -7,7 +7,7 @@ from kalao.utils.image import (LinearScale, LogScale, MinMaxCut, PercentileCut,
                                SigmaCut, SquaredScale, SquareRootScale)
 
 
-class Color():
+class Color:
     TRANSPARENT = QColor(0, 0, 0, 0)
 
     BLACK = QColor('#000000')

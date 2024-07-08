@@ -1,10 +1,11 @@
 import math
-from datetime import datetime, timezone
+from datetime import timezone
 
 import numpy as np
 
 from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis
-from PySide6.QtCore import QDateTime, QPointF, QSignalBlocker, QTimeZone
+from PySide6.QtCore import (QDateTime, QPointF, QSignalBlocker, QTimeZone,
+                            Signal)
 from PySide6.QtGui import QPen, Qt
 
 from guis.utils.definitions import Color
@@ -16,8 +17,9 @@ import config
 
 
 class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
-    associated_stream = config.Streams.TTM
     image_info = config.Images.dm02disp
+
+    hovered = Signal(str)
 
     data_unit = ' mrad'
     data_precision = 2
@@ -43,9 +45,13 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         pen = QPen(Color.RED, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
 
         tip_series = self.tip_series = QLineSeries()
+        tip_series.setUseOpenGL(True)
         tip_series.setPen(pen)
         tip_series.setName('Tip')
         chart.addSeries(tip_series)
+
+        if config.GUI.opengl_charts:
+            tip_series.setUseOpenGL(True)
 
         pen = QPen(Color.BLUE, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
 
@@ -54,10 +60,13 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         tilt_series.setName('Tilt')
         chart.addSeries(tilt_series)
 
+        if config.GUI.opengl_charts:
+            tilt_series.setUseOpenGL(True)
+
         # X Axis Settings
         axis_x = self.axis_x = QDateTimeAxis()
         axis_x.setTickCount(5)
-        axis_x.setFormat('H:mm')
+        axis_x.setFormat('H:mm:ss')
         chart.addAxis(axis_x, Qt.AlignBottom)
         tip_series.attachAxis(axis_x)
         tilt_series.attachAxis(axis_x)
@@ -71,12 +80,14 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
 
         chart.legend().hide()
 
+        chart.hovered.connect(self.hover_xy_to_str)
+
         self.update_labels()
 
         backend.all_updated.connect(self.all_updated)
 
     def all_updated(self, data):
-        img = self.consume_stream(data, config.Streams.TTM)
+        img = self.consume_shm(data, config.SHM.TTM)
 
         if img is not None:
             timestamp = self.consume_metadata(data, 'timestamp').astimezone(
@@ -131,7 +142,7 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         self.autoscale_min = y_min
         self.autoscale_max = y_max
 
-        if self.autoscale_checkbox.isChecked():
+        if self.autoscale_button.isChecked():
             with QSignalBlocker(self.min_spinbox):
                 self.min_spinbox.setMaximum(y_max / self.data_scaling)
                 self.min_spinbox.setValue(y_min / self.data_scaling)
@@ -181,3 +192,12 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         self.tilt_series.replace(new_tilt)
 
         self.update_axis()
+
+    def hover_xy_to_str(self, series, x, y):
+        if not np.isnan(x) and not np.isnan(y):
+            x = QDateTime.fromMSecsSinceEpoch(
+                int(x)).toString("HH:mm:ss dd-MM-yy")
+
+            self.hovered.emit(f'{y:.{self.data_precision}f} at {x}')
+        else:
+            self.hovered.emit('')

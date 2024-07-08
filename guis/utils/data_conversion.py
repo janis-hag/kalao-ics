@@ -14,26 +14,36 @@ def ndarray_to_qimage(img, img_min=None, img_max=None,
     if len(img.shape) < 2:
         img = img[np.newaxis, :]
 
+    img_scaled = ndarray_normalize(img, img_min=img_min, img_max=img_max,
+                                   colormap=colormap, scale=scale)
+
+    img_uint8 = np.require(img_scaled, np.uint8, 'C')
+    image = QImage(img_uint8.data, img_uint8.shape[1], img_uint8.shape[0],
+                   img_uint8.shape[1], QImage.Format_Indexed8)
+    image.setColorTable(colormap.table)
+
+    return image
+
+
+def ndarray_normalize(img, img_min=None, img_max=None,
+                      colormap=colormaps.Grayscale(), scale=LinearScale):
+
+    is_scalar = np.isscalar(img)
+
     if img_min is None:
-        img_min = img.min()
+        img_min = np.min(img)
 
     if img_max is None:
-        img_max = img.max()
+        img_max = np.max(img)
 
     delta = img_max - img_min
 
     scale_min = colormap.min
     scale_max = colormap.max
 
-    if colormap.color_saturation_high is not None:
-        scale_max -= 0.4999
-
-    if colormap.color_saturation_low is not None:
-        scale_min += 0.4999
-
     if np.ma.is_masked(img):
         mask = img.mask
-        img = img.filled()
+        img = img.filled(img_min)
     else:
         mask = None
 
@@ -46,7 +56,23 @@ def ndarray_to_qimage(img, img_min=None, img_max=None,
         img_scaled = scale(scale_min, scale_max).scale(img_scaled)
         img_scaled = np.rint(img_scaled).astype(np.uint8)
     else:
-        img_scaled = np.ones(img.shape) * colormap.no_data_value
+        if is_scalar:
+            img_scaled = colormap.no_data_value
+        else:
+            img_scaled = np.ones(img.shape) * colormap.no_data_value
+
+    if is_scalar:
+        if colormap.saturation_low_color is not None and img <= img_min:
+            img_scaled = colormap.saturation_low_value
+
+        if colormap.saturation_high_color is not None and img >= img_max:
+            img_scaled = colormap.saturation_high_value
+    else:
+        if colormap.saturation_low_color is not None:
+            img_scaled[img <= img_min] = colormap.saturation_low_value
+
+        if colormap.saturation_high_color is not None:
+            img_scaled[img >= img_max] = colormap.saturation_high_value
 
     if mask is not None:
         if colormap.has_transparency:
@@ -54,9 +80,4 @@ def ndarray_to_qimage(img, img_min=None, img_max=None,
         else:
             img_scaled[mask] = colormap.no_data_value
 
-    img_uint8 = np.require(img_scaled, np.uint8, 'C')
-    image = QImage(img_uint8.data, img_uint8.shape[1], img_uint8.shape[0],
-                   img_uint8.shape[1], QImage.Format_Indexed8)
-    image.setColorTable(colormap.table)
-
-    return image
+    return img_scaled

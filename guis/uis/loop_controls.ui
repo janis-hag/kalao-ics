@@ -400,28 +400,28 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <item row="0" column="0">
-         <widget class="QLabel" name="adc_update_label">
+         <widget class="QLabel" name="adc_synchronisation_label">
           <property name="text">
-           <string>ADC Synchronization</string>
+           <string>ADC Synchronisation</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QCheckBox" name="adc_update_checkbox">
+         <widget class="QCheckBox" name="adc_synchronisation_checkbox">
           <property name="text">
            <string/>
           </property>
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="ttm_offload_label">
+         <widget class="QLabel" name="ttm_offloading_label">
           <property name="text">
            <string>TTM to Telescope Offloading</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QCheckBox" name="ttm_offload_checkbox">
+         <widget class="QCheckBox" name="ttm_offloading_checkbox">
           <property name="text">
            <string/>
           </property>

@@ -5,20 +5,16 @@ from functools import wraps
 from PySide6.QtCore import QObject, Signal
 
 
-def emit(signal):
-    def _emit(fun):
-        @wraps(fun)
-        def wrapper(self, *args, **kwargs):
-            data = fun(self, *args, **kwargs)
+def emit(fun):
+    @wraps(fun)
+    def wrapper(self, *args, **kwargs):
+        data = fun(self, *args, **kwargs)
 
-            if self._emit:
-                getattr(self, signal).emit(data)
+        getattr(self, fun.__name__ + '_updated').emit(data)
 
-            return data
+        return data
 
-        return wrapper
-
-    return _emit
+    return wrapper
 
 
 def timeit(fun):
@@ -48,9 +44,7 @@ class AbstractBackend(QObject):
     streams_all_updated = Signal(object)
     camera_image_updated = Signal(object)
     all_updated = Signal(object)
-    monitoringandtelemetry_updated = Signal(object)
+    monitoring_updated = Signal(object)
     streams_channels_dm_updated = Signal(object)
     streams_channels_ttm_updated = Signal(object)
     focus_sequence_updated = Signal(object)
-
-    _emit = True

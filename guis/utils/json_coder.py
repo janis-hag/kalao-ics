@@ -10,10 +10,10 @@ class KalAOJSONEncoder(json.JSONEncoder):
         if isinstance(obj, datetime):
             return {'_type': 'datetime', 'value': obj.isoformat()}
 
-        if isinstance(obj, pd.DataFrame):
+        elif isinstance(obj, pd.DataFrame):
             return {'_type': 'DataFrame', 'value': obj.to_json()}
 
-        if isinstance(obj, np.ndarray):
+        elif isinstance(obj, np.ndarray):
             if np.ma.is_masked(obj):
                 return {
                     '_type': 'ndarray_masked',
@@ -29,7 +29,8 @@ class KalAOJSONEncoder(json.JSONEncoder):
                     'shape': list(obj.shape)
                 }
 
-        return json.JSONEncoder.default(self, obj)
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 
 class KalAOJSONDecoder(json.JSONDecoder):
@@ -40,20 +41,20 @@ class KalAOJSONDecoder(json.JSONDecoder):
         if '_type' not in obj:
             return obj
 
-        type = obj['_type']
+        match obj['_type']:
+            case 'datetime':
+                return datetime.fromisoformat(obj['value'])
 
-        if type == 'datetime':
-            return datetime.fromisoformat(obj['value'])
+            case 'DataFrame':
+                return pd.read_json(obj['value'])
 
-        if type == 'DataFrame':
-            return pd.read_json(obj['value'])
+            case 'ndarray':
+                return np.array(obj['data']).reshape(obj['shape'])
 
-        if type == 'ndarray':
-            return np.array(obj['data']).reshape(obj['shape'])
+            case 'ndarray_masked':
+                return np.ma.array(obj['data'], mask=obj['mask'],
+                                   fill_value=obj['fill_value']).reshape(
+                                       obj['shape'])
 
-        if type == 'ndarray_masked':
-            return np.ma.array(obj['data'], mask=obj['mask'],
-                               fill_value=obj['fill_value']).reshape(
-                                   obj['shape'])
-
-        return obj
+            case _:
+                return obj

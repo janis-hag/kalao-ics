@@ -5,90 +5,50 @@ import numpy as np
 
 from astropy.io import fits
 
+from kalao.utils import ktools
+
 import config
 
 
 def run(args):
     ##### DM flat
+
     dm_flat = np.zeros((12, 12), dtype=np.float32)
+
     fits.PrimaryHDU(dm_flat).writeto(
         args.output_folder / 'hwloop/rundir/dmflat_empty.fits', overwrite=True)
 
     ##### DM wfsmask
 
-    # yapf: disable
-    dm_wfsmask = np.array(
-        [[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-         [0., 0., 1., 1., 1., 1., 1., 1., 1., 0., 0., 0., 0., 1., 1., 1., 1., 1., 1., 1., 0., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 0., 0., 0., 1., 1., 1., 0., 0., 1., 1., 1., 0., 0., 0., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 0., 0., 0., 1., 1., 1., 0., 0., 1., 1., 1., 0., 0., 0., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 0., 0., 0., 1., 1., 1., 0., 0., 1., 1., 1., 0., 0., 0., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 0., 1., 1., 1., 1., 1., 1., 1., 0., 0., 0., 0., 1., 1., 1., 1., 1., 1., 1., 0., 0.],
-         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-        ], dtype=np.float32)
-    # yapf: enable
+    dm_wfsmask = ktools.generate_dm_wfsmask()
 
     fits.PrimaryHDU(dm_wfsmask).writeto(
         args.output_folder / 'dmloop/conf/wfsmask.fits', overwrite=True)
 
     ##### DM dmmask
 
-    # yapf: disable
-    dm_dmmask = np.array(
-        [[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-         [0., 0., 0., 1., 1., 1., 1., 1., 1., 0., 0., 0.],
-         [0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 0., 0., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 0., 0., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0.],
-         [0., 0., 0., 1., 1., 1., 1., 1., 1., 0., 0., 0.],
-         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-        ], dtype=np.float32)
-    # yapf: enable
+    dm_dmmask = ktools.generate_dm_dmmask()
 
     fits.PrimaryHDU(dm_dmmask).writeto(
         args.output_folder / 'dmloop/conf/dmmask.fits', overwrite=True)
 
     ##### TTM wfsmask
 
-    # yapf: disable
-    ttm_wfsmask = np.array(
-        [[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-         [0., 0., 0., 1., 1., 1., 1., 1., 1., 0., 0., 0.],
-         [0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 0., 0., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 0., 0., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],
-         [0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0.],
-         [0., 0., 0., 1., 1., 1., 1., 1., 1., 0., 0., 0.],
-         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-        ], dtype=np.float32)
-    # yapf: enable
+    ttm_wfsmask = ktools.generate_ttm_wfsmask()
 
     fits.PrimaryHDU(ttm_wfsmask).writeto(
         args.output_folder / 'ttmloop/conf/wfsmask.fits', overwrite=True)
 
     ##### TTM dmmask
 
-    ttm_dmmask = np.array([[1., 1.]], dtype=np.float32)
+    ttm_dmmask = ktools.generate_ttm_dmmask()
 
     fits.PrimaryHDU(ttm_dmmask).writeto(
         args.output_folder / 'ttmloop/conf/dmmask.fits', overwrite=True)
 
     ##### TTM wfsrefc
 
-    ttm_wfsrefc = np.zeros((12, 12), dtype=np.float32)
+    ttm_wfsrefc = ktools.generate_ttm_wfsrefc()
 
     fits.PrimaryHDU(ttm_wfsrefc).writeto(
         args.output_folder / 'ttmloop/conf/wfsrefc.fits', overwrite=True)

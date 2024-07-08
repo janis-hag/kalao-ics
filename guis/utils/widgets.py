@@ -2,13 +2,15 @@ import math
 
 import numpy as np
 
-from PySide6.QtCharts import QChart, QChartView, QDateTimeAxis, QXYSeries
+from PySide6.QtCharts import (QAbstractSeries, QChart, QChartView,
+                              QDateTimeAxis, QXYSeries)
 from PySide6.QtCore import (QEvent, QLineF, QMargins, QMarginsF, QPoint,
                             QPointF, QRect, QRectF, QSignalBlocker, QSize,
                             Signal)
-from PySide6.QtGui import (QBrush, QFont, QGuiApplication, QIcon, QPainter,
-                           QPainterPath, QPen, QPixmap, QPolygonF, Qt,
-                           QTransform)
+from PySide6.QtGui import (QBrush, QFont, QGuiApplication, QIcon, QImage,
+                           QPainter, QPainterPath, QPen, QPixmap, QPolygonF,
+                           QSurfaceFormat, Qt, QTransform)
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
                                QGraphicsScene, QGraphicsSimpleTextItem,
@@ -18,10 +20,11 @@ from PySide6.QtWidgets import (QDateTimeEdit, QDoubleSpinBox, QGraphicsItem,
 
 from kalao.utils.image import LinearScale
 
-from guis.utils import colormaps
-from guis.utils.data_conversion import ndarray_to_qimage
+from guis.utils import colormaps, data_conversion
 from guis.utils.definitions import Color, Logo
 from guis.utils.string_formatter import KalAOFormatter
+
+import config
 
 
 class OffsetedTextItem(QGraphicsSimpleTextItem):
@@ -39,8 +42,8 @@ class OffsetedTextItem(QGraphicsSimpleTextItem):
 
     def boundingRect(self):
         b = super().boundingRect()
-        return QRectF(b.x() - self.offset_x,
-                      b.y() - self.offset_y, b.width(), b.height())
+        return QRectF(b.x() + self.offset_x,
+                      b.y() + self.offset_y, b.width(), b.height())
 
 
 class KLabel(QLabel):
@@ -80,7 +83,7 @@ class KLabel(QLabel):
             super().setPixmap(self.scaledPixmap())
 
     def setImage(self, img):
-        self.image = ndarray_to_qimage(img)
+        self.image = data_conversion.ndarray_to_qimage(img)
 
         self.setPixmap(QPixmap.fromImage(self.image))
 
@@ -270,7 +273,6 @@ class KDetachedTabWindow(KMainWindow):
 
 
 class KWidget(QWidget):
-    associated_stream = None
     opened = 0
 
     def __init__(self, *args, parent=None, **kwargs):
@@ -304,8 +306,10 @@ class KHoverableGraphicsScene(QGraphicsScene):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.changed.connect(self.scene_updated)
+
     def event(self, event):
-        if event.type() == QEvent.Type.GraphicsSceneMouseMove:
+        if event.type() == QEvent.GraphicsSceneMouseMove:
             self.x = event.scenePos().x()
             self.y = event.scenePos().y()
 
@@ -320,7 +324,7 @@ class KHoverableGraphicsScene(QGraphicsScene):
 
             return True
 
-        elif event.type() == QEvent.Type.GraphicsSceneLeave:
+        elif event.type() == QEvent.GraphicsSceneLeave:
             self.x = np.nan
             self.y = np.nan
 
@@ -328,10 +332,10 @@ class KHoverableGraphicsScene(QGraphicsScene):
 
             return True
 
-        elif event.type() == QEvent.Type.GraphicsSceneHoverEnter:
+        elif event.type() == QEvent.GraphicsSceneHoverEnter:
             return True
 
-        elif event.type() == QEvent.Type.GraphicsSceneWheel:
+        elif event.type() == QEvent.GraphicsSceneWheel:
             x = event.scenePos().x()
             y = event.scenePos().y()
 
@@ -342,7 +346,7 @@ class KHoverableGraphicsScene(QGraphicsScene):
 
             return True
 
-        elif event.type() == QEvent.Type.GraphicsSceneMousePress:
+        elif event.type() == QEvent.GraphicsSceneMousePress:
             x = event.scenePos().x()
             y = event.scenePos().y()
 
@@ -355,7 +359,7 @@ class KHoverableGraphicsScene(QGraphicsScene):
 
             return True
 
-        elif event.type() == QEvent.Type.GraphicsSceneMouseRelease:
+        elif event.type() == QEvent.GraphicsSceneMouseRelease:
             self.dragging = False
 
             return True
@@ -363,7 +367,7 @@ class KHoverableGraphicsScene(QGraphicsScene):
         else:
             return super().event(event)
 
-    def pixmap_updated(self):
+    def scene_updated(self):
         if not (np.isnan(self.x) or np.isnan(self.y)):
             self.hovered.emit(self.x, self.y)
 
@@ -396,26 +400,41 @@ class KGraphicsView(QGraphicsView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.scene = KHoverableGraphicsScene()
-        self.setScene(self.scene)
+        self._scene = KHoverableGraphicsScene()
+        self.setScene(self._scene)
+
+        if config.GUI.opengl_graphicsview:
+            gl = QOpenGLWidget()
+            format = QSurfaceFormat()
+            format.setSamples(4)
+            gl.setFormat(format)
+            self.setViewport(gl)
 
         self.setRenderHints(QPainter.Antialiasing |
                             QPainter.SmoothPixmapTransform)
 
         self.setStyleSheet("background: transparent")
+        self.setBackgroundBrush(QBrush(Color.TRANSPARENT))
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.neindicator_group = self.scene.createItemGroup([])
-        self.axes_group = self.scene.createItemGroup([])
+        self.neindicator_group = self._scene.createItemGroup([])
+        self.axes_group = self._scene.createItemGroup([])
 
-    def viewSize(self):
-        return self.view
+        # policy = self.sizePolicy()
+        # policy.setVerticalPolicy(QSizePolicy.Preferred)
+        # policy.setHorizontalPolicy(QSizePolicy.Preferred)
+        # # policy = QSizePolicy()
+        # policy.setHeightForWidth(True)
+        # self.setSizePolicy(policy)
+
+    # def hasHeightForWidth(self):
+    #     return True
 
     def heightForWidth(self, width):
         if self.pixmap is None:
-            super().heightForWidth(width)
+            return super().heightForWidth(width)
         else:
             if self.pixmap.width() == 0:
                 return 0
@@ -440,6 +459,12 @@ class KGraphicsView(QGraphicsView):
 
         self.scaling = xratio = yratio = min(xratio, yratio)
 
+        self._scene.setSceneRect(
+            self.view.adjusted(-self.margins.left() / self.scaling,
+                               -self.margins.top() / self.scaling,
+                               self.margins.right() / self.scaling,
+                               self.margins.bottom() / self.scaling))
+
         self.setTransform(QTransform(xratio, 0, 0, yratio, 0, 0))
         self.centerOn(rect.center())
 
@@ -453,8 +478,7 @@ class KGraphicsView(QGraphicsView):
         super().resizeEvent(e)
 
         if self.view is not None:
-            self.scene.setSceneRect(self.viewSize())
-            self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
+            self.fitInView(self.view, Qt.KeepAspectRatio)
 
     def setImage(self, img, img_min=None, img_max=None, scale=LinearScale,
                  view=None, offset=None):
@@ -471,18 +495,17 @@ class KGraphicsView(QGraphicsView):
                 self.pixmap_item.setPixmap(QPixmap())
             return
 
-        self.image = ndarray_to_qimage(img, img_min, img_max, self.colormap,
-                                       scale)
+        self.image = data_conversion.ndarray_to_qimage(img, img_min, img_max,
+                                                       self.colormap, scale)
 
         self.pixmap = QPixmap.fromImage(self.image)
 
         if self.pixmap_item is None:
-            self.pixmap_item = self.scene.addPixmap(self.pixmap)
+            self.pixmap_item = self._scene.addPixmap(self.pixmap)
             self.pixmap_item.setAcceptHoverEvents(True)
-            self.scene.hovered.connect(self.hover_to_xyv)
+            self._scene.hovered.connect(self.hover_to_xyv)
         else:
             self.pixmap_item.setPixmap(self.pixmap)
-            self.scene.pixmap_updated()
 
         if offset is None:
             self.offset = QPointF(0, 0)
@@ -496,8 +519,7 @@ class KGraphicsView(QGraphicsView):
 
         if self.view != view:
             self.view = view
-            self.scene.setSceneRect(self.viewSize())
-            self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
+            self.fitInView(self.view, Qt.KeepAspectRatio)
             self.shape = img.shape
 
     def updateColormap(self, colormap):
@@ -524,8 +546,13 @@ class KGraphicsView(QGraphicsView):
 
     def setView(self, shape):
         self.view = QRect(0, 0, shape[1], shape[0])
-        self.scene.setSceneRect(self.viewSize())
-        self.fitInView(self.viewSize(), Qt.KeepAspectRatio)
+        self.fitInView(self.view, Qt.KeepAspectRatio)
+
+    def setMargins(self, margins):
+        self.margins = margins
+
+        if self.view is not None:
+            self.fitInView(self.view, Qt.KeepAspectRatio)
 
     def hover_to_xyv(self, x, y):
         if self.img is None:
@@ -563,7 +590,7 @@ class KGraphicsView(QGraphicsView):
 
     def _draw_axes(self):
         for item in self.axes_group.childItems():
-            self.scene.removeItem(item)
+            self._scene.removeItem(item)
             self.axes_group.removeFromGroup(item)
 
         width = self.view.width()
@@ -571,8 +598,9 @@ class KGraphicsView(QGraphicsView):
 
         spacing = self.tick_spacing / self.scaling
         length = self.tick_length / self.scaling
+        text_spacing = self.tick_text_spacing / self.scaling
 
-        pen = QPen(Color.GREY, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen = QPen(Color.BLACK, 0.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
         self._draw_vertical_axis(0, height, -(spacing), -(spacing + length),
@@ -589,39 +617,39 @@ class KGraphicsView(QGraphicsView):
         font.setPixelSize(self.tick_fontsize)
 
         self._draw_vertical_tick_labels(
-            width + spacing + length + self.tick_text_spacing, font,
-            self.tick_ticks_y)
+            width + spacing + length + text_spacing, font, self.tick_ticks_y)
         self._draw_horizontal_tick_labels(
-            height + spacing + length + self.tick_text_spacing, font,
-            self.tick_ticks_x)
+            height + spacing + length + text_spacing, font, self.tick_ticks_x)
+
+        self.axes_group.setZValue(1)
 
     def _draw_vertical_axis(self, start, end, tick_start, tick_end, pen,
                             ticks_y):
         self.axes_group.addToGroup(
-            self.scene.addLine(tick_start, start, tick_start, end, pen))
+            self._scene.addLine(tick_start, start, tick_start, end, pen))
 
         self.axes_group.addToGroup(
-            self.scene.addLine(tick_start, start, tick_end, start, pen))
+            self._scene.addLine(tick_start, start, tick_end, start, pen))
         self.axes_group.addToGroup(
-            self.scene.addLine(tick_start, end, tick_end, end, pen))
+            self._scene.addLine(tick_start, end, tick_end, end, pen))
 
         for y, label in ticks_y:
             self.axes_group.addToGroup(
-                self.scene.addLine(tick_start, y, tick_end, y, pen))
+                self._scene.addLine(tick_start, y, tick_end, y, pen))
 
     def _draw_horizontal_axis(self, start, end, tick_start, tick_end, pen,
                               ticks_x):
         self.axes_group.addToGroup(
-            self.scene.addLine(start, tick_start, end, tick_start, pen))
+            self._scene.addLine(start, tick_start, end, tick_start, pen))
 
         self.axes_group.addToGroup(
-            self.scene.addLine(start, tick_start, start, tick_end, pen))
+            self._scene.addLine(start, tick_start, start, tick_end, pen))
         self.axes_group.addToGroup(
-            self.scene.addLine(end, tick_start, end, tick_end, pen))
+            self._scene.addLine(end, tick_start, end, tick_end, pen))
 
         for x, label in ticks_x:
             self.axes_group.addToGroup(
-                self.scene.addLine(x, tick_start, x, tick_end, pen))
+                self._scene.addLine(x, tick_start, x, tick_end, pen))
 
     def _draw_vertical_tick_labels(self, text_start, font, ticks_y):
         for y, label in ticks_y:
@@ -629,7 +657,7 @@ class KGraphicsView(QGraphicsView):
             text_item.setFont(font)
             text_item.setPos(text_start, y)
             text_item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-            self.scene.addItem(text_item)
+            self._scene.addItem(text_item)
 
             if not label.startswith('-'):
                 label = '-' + label
@@ -638,12 +666,12 @@ class KGraphicsView(QGraphicsView):
             probe.setFont(font)
             probe.setFlag(QGraphicsItem.ItemIgnoresTransformations)
 
-            self.scene.addItem(probe)
+            self._scene.addItem(probe)
             text_item.setOffset(
-                text_item.boundingRect().width() -
-                probe.boundingRect().width(),
-                text_item.boundingRect().height() / 2)
-            self.scene.removeItem(probe)
+                probe.boundingRect().width() -
+                text_item.boundingRect().width(),
+                -text_item.boundingRect().height() / 2)
+            self._scene.removeItem(probe)
 
             self.axes_group.addToGroup(text_item)
 
@@ -653,7 +681,7 @@ class KGraphicsView(QGraphicsView):
             text_item.setFont(font)
             text_item.setPos(x, text_start)
             text_item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-            self.scene.addItem(text_item)
+            self._scene.addItem(text_item)
 
             label = label.removeprefix('-')
 
@@ -661,11 +689,11 @@ class KGraphicsView(QGraphicsView):
             probe.setFont(font)
             probe.setFlag(QGraphicsItem.ItemIgnoresTransformations)
 
-            self.scene.addItem(probe)
+            self._scene.addItem(probe)
             text_item.setOffset(
-                text_item.boundingRect().width() -
-                probe.boundingRect().width() / 2, 0)
-            self.scene.removeItem(probe)
+                probe.boundingRect().width() / 2 -
+                text_item.boundingRect().width(), 0)
+            self._scene.removeItem(probe)
 
             self.axes_group.addToGroup(text_item)
 
@@ -677,7 +705,7 @@ class KGraphicsView(QGraphicsView):
 
     def _draw_neindicator(self):
         for item in self.neindicator_group.childItems():
-            self.scene.removeItem(item)
+            self._scene.removeItem(item)
             self.neindicator_group.removeFromGroup(item)
 
         # Reset group position to avoid drifting
@@ -731,16 +759,16 @@ class KGraphicsView(QGraphicsView):
         north_east_path.lineTo(center_point)
         north_east_path.lineTo(east_point)
 
-        north_east = self.scene.addPath(north_east_path, pen)
+        north_east = self._scene.addPath(north_east_path, pen)
 
         pen = QPen(Color.TRANSPARENT, 0, Qt.SolidLine, Qt.SquareCap,
                    Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        north_arrow = self.scene.addPolygon(
+        north_arrow = self._scene.addPolygon(
             QPolygonF([north_arrow_p0, north_arrow_p1, north_arrow_p2]), pen,
             brush)
-        east_arrow = self.scene.addPolygon(
+        east_arrow = self._scene.addPolygon(
             QPolygonF([east_arrow_p0, east_arrow_p1, east_arrow_p2]), pen,
             brush)
 
@@ -752,9 +780,9 @@ class KGraphicsView(QGraphicsView):
                               arrow_size)
         north_textitem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         north_textitem.setBrush(brush)
-        self.scene.addItem(north_textitem)
-        north_textitem.setOffset(north_textitem.boundingRect().width() / 2,
-                                 north_textitem.boundingRect().height() / 2)
+        self._scene.addItem(north_textitem)
+        north_textitem.setOffset(-north_textitem.boundingRect().width() / 2,
+                                 -north_textitem.boundingRect().height() / 2)
 
         east_textitem = OffsetedTextItem('E')
         east_textitem.setFont(font)
@@ -764,9 +792,9 @@ class KGraphicsView(QGraphicsView):
                              arrow_size)
         east_textitem.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         east_textitem.setBrush(brush)
-        self.scene.addItem(east_textitem)
-        east_textitem.setOffset(east_textitem.boundingRect().width() / 2,
-                                east_textitem.boundingRect().height() / 2)
+        self._scene.addItem(east_textitem)
+        east_textitem.setOffset(-east_textitem.boundingRect().width() / 2,
+                                -east_textitem.boundingRect().height() / 2)
 
         self.neindicator_group.addToGroup(north_east)
         self.neindicator_group.addToGroup(north_arrow)
@@ -780,42 +808,79 @@ class KGraphicsView(QGraphicsView):
 
 
 class KChart(QChart):
-    hovered = Signal(float, float)
+    hovered = Signal(QAbstractSeries, float, float)
 
     point_size = 2
     current_hovered_index = None
 
+    pos = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def addAxis(self, axis, alignment):
+        super().addAxis(axis, alignment)
+
+        axis.rangeChanged.connect(self.rangeChanged)
+
+    def rangeChanged(self, min, max):
+        if self.current_hovered_index is not None:
+            return
+
+        if self.pos is None:
+            return
+
+        pos_values = self.mapToValue(self.mapFromParent(self.pos))
+        self.hovered.emit(None, pos_values.x(), pos_values.y())
+
+    def mouseEvent(self, event):
+        if self.current_hovered_index is not None:
+            return
+
+        if event.type() == QEvent.Leave:
+            self.pos = None
+            self.hovered.emit(None, np.nan, np.nan)
+        else:
+            self.pos = event.pos()
+
+            if self.plotArea().contains(self.pos):
+                pos_values = self.mapToValue(self.mapFromParent(self.pos))
+                self.hovered.emit(None, pos_values.x(), pos_values.y())
+            else:
+                self.pos = None
+                self.hovered.emit(None, np.nan, np.nan)
 
     def pointHoveredEvent(self, point, state, series):
         points = series.points()
 
         closest_point, closest_index = self.find_closest_point(point, points)
-
         if self.current_hovered_index is not None:
-            series.setPointConfiguration(self.current_hovered_index, {
-                QXYSeries.PointConfiguration.Size: self.point_size
-            })
-            self.hovered.emit(np.nan, np.nan)
+            if series.pointsVisible():
+                series.setPointConfiguration(self.current_hovered_index, {
+                    QXYSeries.PointConfiguration.Size: self.point_size
+                })
+            self.hovered.emit(series, np.nan, np.nan)
+            self.current_hovered_index = None
 
         if not self.point_visible(series, closest_index):
             return
 
         if state:
-            series.setPointConfiguration(closest_index, {
-                QXYSeries.PointConfiguration.Size: 2 * self.point_size
-            })
+            if series.pointsVisible():
+                series.setPointConfiguration(closest_index, {
+                    QXYSeries.PointConfiguration.Size: 2 * self.point_size
+                })
 
-            self.hovered.emit(closest_point.x(), closest_point.y())
+            self.hovered.emit(series, closest_point.x(), closest_point.y())
+            self.current_hovered_index = closest_index
         else:
-            series.setPointConfiguration(closest_index, {
-                QXYSeries.PointConfiguration.Size: self.point_size
-            })
+            if series.pointsVisible():
+                series.setPointConfiguration(closest_index, {
+                    QXYSeries.PointConfiguration.Size: self.point_size
+                })
 
-            self.hovered.emit(np.nan, np.nan)
-
-        self.current_hovered_index = closest_index
+            self.hovered.emit(series, np.nan, np.nan)
+            self.current_hovered_index = None
 
     def point_visible(self, series, index):
         for k, v in series.pointConfiguration(index).items():
@@ -864,28 +929,71 @@ class KChartView(QChartView):
         self._value_pos = QPoint()
         self.setMouseTracking(True)
 
+        self.vlines = []
+        self.hlines = []
+
     def updateMinMax(self, y_min, y_max):
         self.chart().axisY().setRange(y_min, y_max)
 
     def drawForeground(self, painter, rect):
         super().drawForeground(painter, rect)
-        if self.chart() is None or self._value_pos.isNull():
-            return
 
-        pen = QPen(Color.GREY, 0.5, Qt.DashLine, Qt.FlatCap, Qt.MiterJoin)
-        painter.setPen(pen)
+        painter.save()
 
         area = self.chart().plotArea()
-        sp = self._value_pos
-        x1 = QPointF(area.left() + pen.width() / 2, sp.y())
-        x2 = QPointF(area.right() - pen.width() / 2, sp.y())
-        y1 = QPointF(sp.x(), area.top() + pen.width() / 2)
-        y2 = QPointF(sp.x(), area.bottom() - pen.width() / 2)
 
-        if area.left() <= sp.x() <= area.right():
-            painter.drawLine(y1, y2)
-        if area.top() <= sp.y() <= area.bottom():
-            painter.drawLine(x1, x2)
+        for x, color in self.vlines:
+            pen = QPen(color, 0.5, Qt.DashLine, Qt.FlatCap, Qt.MiterJoin)
+            painter.setPen(pen)
+
+            pos = self.chart().mapToPosition(QPoint(x, 0))
+
+            y1 = QPointF(pos.x(), area.top() + pen.width() / 2)
+            y2 = QPointF(pos.x(), area.bottom() - pen.width() / 2)
+
+            if area.left() <= pos.x() <= area.right():
+                painter.drawLine(y1, y2)
+
+        for y, color in self.hlines:
+            pen = QPen(color, 1, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+            painter.setPen(pen)
+
+            pos = self.chart().mapToPosition(QPointF(0, y))
+
+            x1 = QPointF(area.left() + pen.width() / 2, pos.y())
+            x2 = QPointF(area.right() - pen.width() / 2, pos.y())
+
+            if area.left() <= pos.y() <= area.right():
+                painter.drawLine(x1, x2)
+
+        if not self._value_pos.isNull():
+            pen = QPen(Color.GREY, 0.5, Qt.DashLine, Qt.FlatCap, Qt.MiterJoin)
+            painter.setPen(pen)
+
+            sp = self._value_pos
+            x1 = QPointF(area.left() + pen.width() / 2, sp.y())
+            x2 = QPointF(area.right() - pen.width() / 2, sp.y())
+            y1 = QPointF(sp.x(), area.top() + pen.width() / 2)
+            y2 = QPointF(sp.x(), area.bottom() - pen.width() / 2)
+
+            if area.left() <= sp.x() <= area.right():
+                painter.drawLine(y1, y2)
+            if area.top() <= sp.y() <= area.bottom():
+                painter.drawLine(x1, x2)
+
+        painter.restore()
+
+    def resetVLines(self):
+        self.vlines = []
+
+    def resetHLines(self):
+        self.hlines = []
+
+    def addVLine(self, x, color):
+        self.vlines.append((x, color))
+
+    def addHLine(self, y, color):
+        self.hlines.append((y, color))
 
     def mouseMoveEvent(self, event):
         super().mouseMoveEvent(event)
@@ -893,7 +1001,10 @@ class KChartView(QChartView):
         if self.chart() is None:
             return
 
+        self.chart().mouseEvent(event)
+
         pos = self.mapToScene(event.pos())
+
         if self.chart().plotArea().contains(pos):
             self._value_pos = pos
             self.setCursor(Qt.CrossCursor)
@@ -903,12 +1014,24 @@ class KChartView(QChartView):
 
         self.update()
 
+    def event(self, event):
+        if self.chart() is None:
+            return super().event(event)
+
+        if event.type() == QEvent.Leave:
+            self._value_pos = QPoint()
+            self.unsetCursor()
+
+            self.chart().mouseEvent(event)
+
+        return super().event(event)
+
 
 class KDraggableChartView(KChartView):
     drag_max = 1
     drag_min = 0
 
-    dragged = Signal(float, float)
+    dragged = Signal(QAbstractSeries, float, float)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -931,7 +1054,7 @@ class KDraggableChartView(KChartView):
             chart.current_dragged_series.replace(chart.current_dragged_index,
                                                  QPointF(x, y))
 
-            self.dragged.emit(x, y)
+            self.dragged.emit(chart.current_dragged_series, x, y)
 
         super().mouseMoveEvent(event)
 
@@ -957,13 +1080,12 @@ class KStatusIndicator(QGraphicsView):
     diameter = 100
     border = 8
     view = QRectF(0, 0, diameter, diameter)
-    hover_text = ''
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.scene = QGraphicsScene()
-        self.setScene(self.scene)
+        self._scene = QGraphicsScene()
+        self.setScene(self._scene)
 
         self.setRenderHints(QPainter.Antialiasing |
                             QPainter.SmoothPixmapTransform)
@@ -977,16 +1099,16 @@ class KStatusIndicator(QGraphicsView):
                         Qt.MiterJoin)
         self.brush = QBrush(Color.DARK_GREY, Qt.SolidPattern)
 
-        self.ellipse = self.scene.addEllipse(0, 0, self.diameter,
-                                             self.diameter, self.pen,
-                                             self.brush)
+        self.ellipse = self._scene.addEllipse(0, 0, self.diameter,
+                                              self.diameter, self.pen,
+                                              self.brush)
 
         self.fitInView(self.view, Qt.KeepAspectRatio)
 
     def setStatus(self, color=Color.DARK_GREY, tooltip=''):
         self.brush.setColor(color)
         self.ellipse.setBrush(self.brush)
-        self.hover_text = f'Status: {tooltip}'
+        self.setToolTip(f'Status: {tooltip}')
 
     def heightForWidth(self, width):
         return width
@@ -999,3 +1121,165 @@ class KStatusIndicator(QGraphicsView):
         super().resizeEvent(e)
 
         self.fitInView(self.view, Qt.KeepAspectRatio)
+
+
+class KColorbar(QGraphicsView):
+    view = None
+    margins = QMargins(0, 0, 0, 0)
+
+    scale = LinearScale
+    img_min = np.nan
+    img_max = np.nan
+    true_min = np.nan
+    true_max = np.nan
+
+    nb_ticks = 7
+    margin = 75
+    tick_length = 5
+    tick_text_spacing = 5
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.scene = QGraphicsScene()
+        self.setScene(self.scene)
+
+        self.setRenderHints(QPainter.Antialiasing |
+                            QPainter.SmoothPixmapTransform)
+
+        self.setStyleSheet("background: transparent")
+        self.setBackgroundBrush(QBrush(Color.TRANSPARENT))
+
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.ticks_group = self.scene.createItemGroup([])
+        self.pixmap_item = self.scene.addPixmap(QPixmap())
+
+        pen = QPen(Color.BLACK, 0.5, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        pen.setCosmetic(True)
+
+        self.border = self.scene.addRect(0, 0, 1, 1, pen)
+
+    def draw_colorbar(self):
+        colorbar_width = self.size().width() - self.margin
+
+        scale = self.scale(0, 255)
+
+        if self.img_min < self.true_min:
+            i_min = 0
+            colorbar_min = data_conversion.ndarray_normalize(
+                self.true_min, self.img_min, self.img_max,
+                colormap=self.colormap, scale=self.scale)
+        else:
+            i_min = scale.scale((self.img_min - self.true_min) /
+                                (self.true_max - self.true_min) * 255)
+            colorbar_min = data_conversion.ndarray_normalize(
+                self.img_min, self.img_min, self.img_max,
+                colormap=self.colormap, scale=self.scale)
+
+        if self.img_max > self.true_max:
+            i_max = 255
+            colorbar_max = data_conversion.ndarray_normalize(
+                self.true_max, self.img_min, self.img_max,
+                colormap=self.colormap, scale=self.scale)
+        else:
+            i_max = scale.scale((self.img_max - self.true_min) /
+                                (self.true_max - self.true_min) * 255)
+            colorbar_max = data_conversion.ndarray_normalize(
+                self.img_max, self.img_min, self.img_max,
+                colormap=self.colormap, scale=self.scale)
+
+        pixels = []
+        for i in np.linspace(0, 255, 256):
+            if i < i_min:
+                pixels.append(colorbar_min)
+            elif i > i_max:
+                pixels.append(colorbar_max)
+            else:
+                pixels.append((i-i_min) / (i_max-i_min) *
+                              (colorbar_max-colorbar_min) + colorbar_min)
+
+        pixels = np.flip(np.rint(np.array(pixels))[:, np.newaxis])
+
+        img_uint8 = np.require(pixels, np.uint8, 'C')
+        image = QImage(img_uint8.data, img_uint8.shape[1], img_uint8.shape[0],
+                       img_uint8.shape[1], QImage.Format_Indexed8)
+        image.setColorTable(self.colormap.table)
+
+        self.pixmap = QPixmap.fromImage(image).scaled(colorbar_width, 256)
+        self.pixmap_item.setPixmap(self.pixmap)
+
+        self.view = self.pixmap.rect().adjusted(
+            -self.margins.left(), -self.margins.top(), self.margins.right(),
+            self.margins.bottom()).adjusted(0, -5, self.margin, 5)
+
+        self.fitInView(self.view, Qt.IgnoreAspectRatio)
+
+        self.border.setRect(self.pixmap_item.pixmap().rect())
+
+        for item in self.ticks_group.childItems():
+            self.scene.removeItem(item)
+            self.ticks_group.removeFromGroup(item)
+
+        pen = QPen(Color.BLACK, 0.5, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        pen.setCosmetic(True)
+
+        font = QFont()
+        font.setPixelSize(10)
+
+        for i in np.linspace(0, 255, self.nb_ticks):
+            self.ticks_group.addToGroup(
+                self.scene.addLine(colorbar_width, 255.5 - i, colorbar_width +
+                                   self.tick_length, 255.5 - i, pen))
+
+            v = scale.inverse(i) / 255 * (self.true_max -
+                                          self.true_min) + self.true_min
+
+            text_item = OffsetedTextItem(f'{v:3.3g}')
+            text_item.setFont(font)
+            text_item.setPos(
+                colorbar_width + self.tick_length + self.tick_text_spacing,
+                255.5 - i)
+            text_item.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+            self.scene.addItem(text_item)
+            self.ticks_group.addToGroup(text_item)
+
+            probe = OffsetedTextItem(f'{v:3.3g}')  # TODO minus?
+            probe.setFont(font)
+            probe.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+
+            self.scene.addItem(probe)
+            text_item.setOffset(
+                0,
+                probe.boundingRect().height() / 2 -
+                text_item.boundingRect().height())
+            self.scene.removeItem(probe)
+
+    def setTrueMinMax(self, true_min, true_max):
+        self.true_min = true_min
+        self.true_max = true_max
+
+        self.draw_colorbar()
+
+    def setColormap(self, colormap):
+        self.colormap = colormap
+
+        self.draw_colorbar()
+
+    def updateMinMax(self, img_min, img_max):
+        self.img_min = img_min
+        self.img_max = img_max
+
+        self.draw_colorbar()
+
+    def updateScale(self, scale):
+        self.scale = scale
+
+        self.draw_colorbar()
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+
+        if self.view is not None:
+            self.fitInView(self.view, Qt.IgnoreAspectRatio)

@@ -88,6 +88,9 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         series.released.connect(self.on_modalgains_released)
         chart.addSeries(series)
 
+        # if config.GUI.opengl_charts:
+        #     series.setUseOpenGL(True)
+
         # X Axis Settings
         axis_x = self.modalgains_axis_x = QValueAxis()
         axis_x.setLabelFormat("%.0f")
@@ -119,8 +122,8 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             for s in laws.keys():
                 self.law_combobox.addItem(s)
 
-        chart.hovered.connect(self.hover_xy_to_str)
-        self.modalgains_plot.dragged.connect(self.hover_xy_to_str)
+        chart.hovered.connect(self.hover_xy_to_str_modalgains)
+        self.modalgains_plot.dragged.connect(self.hover_xy_to_str_modalgains)
 
         # Create Chart and set General Chart setting
         chart = self.modes_plot.chart()
@@ -132,6 +135,10 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         series_line = self.modes_series_line = QLineSeries()
         chart.addSeries(series_line)
+
+        # if config.GUI.opengl_charts:
+        #     series.setUseOpenGL(True)
+        #     series_line.setUseOpenGL(True)
 
         # X Axis Settings
         axis_x = self.modes_axis_x = QValueAxis()
@@ -156,18 +163,21 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         chart.legend().hide()
 
+        chart.hovered.connect(self.hover_xy_to_str_modes_coeffs)
+
         # Create Chart and set General Chart setting
         chart = self.tip_spectrum_plot.chart()
 
         # Serie
         pen = QPen(Color.BLUE, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
 
-        series_tip = self.tip_spectrum_series = QLineSeries()
-        series_tip.setPen(pen)
-        series_tip.setMarkerSize(chart.point_size)
-        series_tip.setName("Tip Spectrum")
-        series_tip.setPointsVisible(True)
-        chart.addSeries(series_tip)
+        series = self.tip_spectrum_series = QLineSeries()
+        series.setPen(pen)
+        series.setName("Tip Spectrum")
+        chart.addSeries(series)
+
+        if config.GUI.opengl_charts:
+            series.setUseOpenGL(True)
 
         # X Axis Settings
         axis_x = self.tip_spectrum_axis_x = QLogValueAxis()
@@ -176,7 +186,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_x.setMinorTickCount(8)
         axis_x.setTitleText('Frequency [Hz]')
         chart.addAxis(axis_x, Qt.AlignBottom)
-        series_tip.attachAxis(axis_x)
+        series.attachAxis(axis_x)
 
         # Y Axis Settings
         axis_y = self.tip_spectrum_axis_y = QValueAxis()
@@ -184,9 +194,11 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_y.setRange(0, 1.05)
         axis_y.setTitleText('Amplitude RMS [mrad]')
         chart.addAxis(axis_y, Qt.AlignLeft)
-        series_tip.attachAxis(axis_y)
+        series.attachAxis(axis_y)
 
         chart.legend().hide()
+
+        chart.hovered.connect(self.hover_xy_to_str_spectrum)
 
         # Create Chart and set General Chart setting
         chart = self.tilt_spectrum_plot.chart()
@@ -194,12 +206,13 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         # Serie
         pen = QPen(Color.RED, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
 
-        series_tilt = self.tilt_spectrum_series = QLineSeries()
-        series_tilt.setPen(pen)
-        series_tilt.setMarkerSize(chart.point_size)
-        series_tilt.setName("Tilt Spectrum")
-        series_tilt.setPointsVisible(True)
-        chart.addSeries(series_tilt)
+        series = self.tilt_spectrum_series = QLineSeries()
+        series.setPen(pen)
+        series.setName("Tilt Spectrum")
+        chart.addSeries(series)
+
+        if config.GUI.opengl_charts:
+            series.setUseOpenGL(True)
 
         # X Axis Settings
         axis_x = self.tilt_spectrum_axis_x = QLogValueAxis()
@@ -208,7 +221,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_x.setMinorTickCount(8)
         axis_x.setTitleText('Frequency [Hz]')
         chart.addAxis(axis_x, Qt.AlignBottom)
-        series_tilt.attachAxis(axis_x)
+        series.attachAxis(axis_x)
 
         # Y Axis Settings
         axis_y = self.tilt_spectrum_axis_y = QValueAxis()
@@ -216,9 +229,11 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         axis_y.setRange(0, 1.05)
         axis_y.setTitleText('Amplitude RMS [mrad]')
         chart.addAxis(axis_y, Qt.AlignLeft)
-        series_tilt.attachAxis(axis_y)
+        series.attachAxis(axis_y)
 
         chart.legend().hide()
+
+        chart.hovered.connect(self.hover_xy_to_str_spectrum)
 
         backend.all_updated.connect(self.all_updated)
         backend.streams_all_updated.connect(self.streams_all_updated)
@@ -257,32 +272,31 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         # Wavefront Sensor
 
         self.data_to_widget(
-            self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
-                                        'EMGAIN'), self.wfs_emgain_spinbox)
+            self.consume_shm_keyword(data, config.SHM.NUVU_RAW, 'EMGAIN'),
+            self.wfs_emgain_spinbox)
         self.data_to_widget(
-            self.consume_stream_keyword(data, config.Streams.NUVU_RAW,
-                                        'EXPTIME'),
+            self.consume_shm_keyword(data, config.SHM.NUVU_RAW, 'EXPTIME'),
             self.wfs_exposuretime_spinbox)
         self.data_to_widget(
-            self.consume_param(data, config.FPS.NUVU, 'autogain_on'),
+            self.consume_fps_param(data, config.FPS.NUVU, 'autogain_on'),
             self.wfs_autogain_checkbox)
         self.data_to_widget(
-            self.consume_param(data, config.FPS.NUVU, 'autogain_setting'),
+            self.consume_fps_param(data, config.FPS.NUVU, 'autogain_setting'),
             self.wfs_autogain_setting_combobox)
 
         # Deformable Mirror
 
-        max_stroke = self.consume_param(data, config.FPS.BMC, 'max_stroke')
+        max_stroke = self.consume_fps_param(data, config.FPS.BMC, 'max_stroke')
         if max_stroke is not None:
             with QSignalBlocker(self.dm_maxstroke_spinbox):
                 self.dm_maxstroke_spinbox.setValue(max_stroke * 100)
 
         self.data_to_widget(
-            self.consume_param(data, config.FPS.BMC, 'stroke_mode'),
+            self.consume_fps_param(data, config.FPS.BMC, 'stroke_mode'),
             self.dm_strokemode_combobox)
 
-        target_stroke = self.consume_param(data, config.FPS.BMC,
-                                           'target_stroke')
+        target_stroke = self.consume_fps_param(data, config.FPS.BMC,
+                                               'target_stroke')
         if target_stroke is not None:
             with QSignalBlocker(self.dm_targetstroke_spinbox):
                 self.dm_targetstroke_spinbox.setValue(target_stroke * 100)
@@ -290,21 +304,22 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         # Observation
 
         self.data_to_widget(
-            self.consume_param(data, config.FPS.CONFIG, 'adc_update'),
-            self.adc_update_checkbox)
+            self.consume_fps_param(data, config.FPS.CONFIG,
+                                   'adc_synchronisation'),
+            self.adc_synchronisation_checkbox)
         self.data_to_widget(
-            self.consume_param(data, config.FPS.CONFIG, 'ttm_offload'),
-            self.ttm_offload_checkbox)
+            self.consume_fps_param(data, config.FPS.CONFIG, 'ttm_offloading'),
+            self.ttm_offloading_checkbox)
 
         # Slopes
 
         self.data_to_widget(
-            self.consume_param(data, config.FPS.SHWFS, 'algorithm'),
+            self.consume_fps_param(data, config.FPS.SHWFS, 'algorithm'),
             self.wfs_algorithm_combobox)
 
         # Modal gains
 
-        img = self.consume_stream(data, config.Streams.MODALGAINS)
+        img = self.consume_shm(data, config.SHM.MODALGAINS)
         if img is not None:
             if img.size != self.modalgains_series.count():
                 with QSignalBlocker(self.cutoff_spinbox):
@@ -320,12 +335,12 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         # Tip-Tilt spectrum
 
-        img = self.consume_stream(data, config.Streams.TELEMETRY_TTM)
+        img = self.consume_shm(data, config.SHM.TELEMETRY_TTM)
         if img is not None:
             self.display_tiptilt_spectrum(img)
 
     def streams_all_updated(self, data):
-        img = self.consume_stream(data, config.Streams.MODE_COEFFS)
+        img = self.consume_shm(data, config.SHM.MODE_COEFFS)
         if img is not None:
             self.display_modes_coeff(img)
 
@@ -424,13 +439,15 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
     # Observation
 
     @Slot(int)
-    def on_adc_update_checkbox_stateChanged(self, state):
-        self.action_send(self.adc_update_checkbox, self.backend.adc_update,
+    def on_adc_synchronisation_checkbox_stateChanged(self, state):
+        self.action_send(self.adc_synchronisation_checkbox,
+                         self.backend.adc_synchronisation,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
-    def on_ttm_offload_checkbox_stateChanged(self, state):
-        self.action_send(self.ttm_offload_checkbox, self.backend.ttm_offload,
+    def on_ttm_offloading_checkbox_stateChanged(self, state):
+        self.action_send(self.ttm_offloading_checkbox,
+                         self.backend.ttm_offloading,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     # Modal gains
@@ -463,11 +480,26 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send([], self.backend.loops_dm_modalgains,
                          modalgains=np.array(modalgains))
 
-    def hover_xy_to_str(self, x, y):
+    def hover_xy_to_str_modalgains(self, series, x, y):
         if not np.isnan(x) and not np.isnan(y):
-            self.hovered.emit(f'Mode: {x:.0f}, Gain: {y:.2f}')
+            if series is None:
+                self.hovered.emit(f'Mode: {x:.1f}, Gain: {y:.2f}')
+            else:
+                self.hovered.emit(f'Mode: {x:.0f}, Gain: {y:.2f}')
         else:
-            self.hovered.emit(f'')
+            self.hovered.emit('')
+
+    def hover_xy_to_str_modes_coeffs(self, series, x, y):
+        if not np.isnan(x) and not np.isnan(y):
+            self.hovered.emit(f'Mode: {x:.1f}, Coefficient: {y:.2f}')
+        else:
+            self.hovered.emit('')
+
+    def hover_xy_to_str_spectrum(self, series, x, y):
+        if not np.isnan(x) and not np.isnan(y):
+            self.hovered.emit(f'Frequency: {x:.1f}, Amplitude: {y:.2f}')
+        else:
+            self.hovered.emit('')
 
     @Slot(int)
     def on_cutoff_spinbox_valueChanged(self, i):
@@ -506,7 +538,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.modalgains_axis_x.setRange(0, modalgains.size + 1)
 
     def display_modes_coeff(self, modes_coeff):
-        set = QBarSet(f'Mode Coefficients')
+        set = QBarSet('Mode Coefficients')
 
         # Add zero coeff. to shift the graph
         set.append(0)

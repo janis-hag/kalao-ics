@@ -52,17 +52,16 @@ shm_cache: dict[str, SHMInfo] = {}
 fps_cache: dict[str, FPSInfo] = {}
 
 
-def open_or_create_stream(stream_name: str, shape: tuple[int],
-                          dtype: type) -> SHM:
-    shm_path = milk_path / (stream_name+'.im.shm')
+def open_or_create_shm(shm_name: str, shape: tuple[int], dtype: type) -> SHM:
+    shm_path = milk_path / (shm_name+'.im.shm')
 
     if shm_path.exists():
-        shm = open_stream_once(stream_name)
+        shm = open_shm_once(shm_name)
     else:
         img = np.zeros(shape, dtype)
 
         shm = SHM(
-            stream_name,
+            shm_name,
             img,
             location=-1,  # CPU
             shared=True,  # Shared
@@ -71,9 +70,9 @@ def open_or_create_stream(stream_name: str, shape: tuple[int],
     return shm
 
 
-def open_stream_once(stream_name: str) -> SHM:
-    shm_info = shm_cache.get(stream_name)
-    shm_path = milk_path / (stream_name+'.im.shm')
+def open_shm_once(shm_name: str) -> SHM:
+    shm_info = shm_cache.get(shm_name)
+    shm_path = milk_path / (shm_name+'.im.shm')
 
     if not shm_path.exists():
         return None
@@ -87,8 +86,8 @@ def open_stream_once(stream_name: str) -> SHM:
         if shm_info is not None:
             shm_info.shm.close()
 
-        shm = SHM(stream_name)
-        shm_cache[stream_name] = SHMInfo(shm, stat)
+        shm = SHM(shm_name)
+        shm_cache[shm_name] = SHMInfo(shm, stat)
         return shm
 
 
@@ -119,7 +118,7 @@ def zero_stream(stream_or_name: str | SHM | None) -> ReturnCode:
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_shm = open_stream_once(stream_or_name)
+        stream_shm = open_shm_once(stream_or_name)
 
         if stream_shm is None:
             return ReturnCode.GENERIC_ERROR
@@ -137,7 +136,7 @@ def save_stream_to_fits(stream_or_name: str | SHM | None,
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_shm = open_stream_once(stream_or_name)
+        stream_shm = open_shm_once(stream_or_name)
 
         if stream_shm is None:
             return ReturnCode.GENERIC_ERROR
@@ -154,7 +153,7 @@ def load_fits_to_stream(fits_file: str | Path,
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_shm = open_stream_once(stream_or_name)
+        stream_shm = open_shm_once(stream_or_name)
 
         if stream_shm is None:
             return ReturnCode.GENERIC_ERROR

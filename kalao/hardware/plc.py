@@ -104,7 +104,7 @@ def motor_init(node: str, force_init: bool = True,
                            motor_bEnable.get_data_type_as_variant_type())))
 
         if not beck.get_node(f"{node}.stat.bEnabled").get_value():
-            return ReturnCode.PLC_INIT_FAILED
+            return ReturnCode.HW_INIT_FAILED
 
     # Check if init, if not do init
     if not beck.get_node(f"{node}.stat.bInitialised").get_value() or force_init:
@@ -117,9 +117,9 @@ def motor_init(node: str, force_init: bool = True,
             config.PLC.init_poll_interval)
 
         if not beck.get_node(f"{node}.stat.bInitialised").get_value():
-            return ReturnCode.PLC_INIT_FAILED
+            return ReturnCode.HW_INIT_FAILED
 
-    return ReturnCode.PLC_INIT_SUCCESS
+    return ReturnCode.HW_INIT_SUCCESS
 
 
 @autoconnect

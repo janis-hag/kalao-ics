@@ -103,18 +103,8 @@ def set_filter(filter: Filter) -> Filter:
                 )
                 return _return_filter(position_act, filter)
 
-        except thorlabs.serial.SerialException:
-            logger.warn(
-                'filterwheel',
-                f'SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
-            )
-            time.sleep(config.FilterWheel.retry_wait)
-
-        except ValueError:
-            logger.warn(
-                'filterwheel',
-                f'ValueError on filter wheel. Retrying ({retry + 1}/{config.FilterWheel.retries}).'
-            )
+        except (thorlabs.serial.SerialException, ValueError) as e:
+            _log_exception(e, retry)
             time.sleep(config.FilterWheel.retry_wait)
 
     logger.error('filterwheel', 'Filter wheel failed too many time.')
@@ -134,18 +124,8 @@ def get_filter(type: Filter | type = str, from_db: bool = False) -> Filter:
 
                 return _return_filter(position, type)
 
-            except thorlabs.serial.SerialException:
-                logger.warn(
-                    'filterwheel',
-                    f'SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
-                )
-                time.sleep(config.FilterWheel.retry_wait)
-
-            except ValueError:
-                logger.warn(
-                    'filterwheel',
-                    f'ValueError on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
-                )
+            except (thorlabs.serial.SerialException, ValueError) as e:
+                _log_exception(e, retry)
                 time.sleep(config.FilterWheel.retry_wait)
 
     logger.error('filterwheel', 'Filter wheel failed too many time.')
@@ -153,16 +133,15 @@ def get_filter(type: Filter | type = str, from_db: bool = False) -> Filter:
 
 
 def _return_filter(filter: Filter, return_type: str | int | type) -> str | int:
-    if type(return_type) != type:
+    if not isinstance(return_type, type):
         return_type = type(return_type)
 
-    if return_type == str:
+    if return_type is str:
         return translate_to_filter_name(filter)
-    elif return_type == int:
+    elif return_type is int:
         return translate_to_filter_position(filter)
     else:
-        logger.error('filterwheel', f'Unknown return type ({return_type}).')
-        return None
+        raise TypeError(f'Unknown return type ({return_type}).')
 
 
 def init() -> ReturnCode:
@@ -179,23 +158,25 @@ def init() -> ReturnCode:
 
             set_filter(config.FilterWheel.initial_position)
 
-            return ReturnCode.PLC_INIT_SUCCESS
+            return ReturnCode.HW_INIT_SUCCESS
 
-        except thorlabs.serial.SerialException:
-            logger.warn(
-                'filterwheel',
-                f'SerialException on filter wheel. Retrying ({retry+1}/{config.FilterWheel.retries}).'
-            )
-            time.sleep(config.FilterWheel.retry_wait)
-
-        except ValueError:
-            logger.warn(
-                'filterwheel',
-                f'ValueError on filter wheel. Retrying ({retry + 1}/{config.FilterWheel.retries}).'
-            )
+        except (thorlabs.serial.SerialException, ValueError) as e:
+            _log_exception(e, retry)
             time.sleep(config.FilterWheel.retry_wait)
 
     logger.error('filterwheel', 'Filter wheel failed too many time.')
     logger.error('filterwheel', 'Filter wheel initialisation failed')
 
-    return ReturnCode.PLC_INIT_FAILED
+    return ReturnCode.HW_INIT_FAILED
+
+
+def _log_exception(exc, retry):
+    if retry == 0:
+        log_func = logger.info
+    else:
+        log_func = logger.warn
+
+    log_func(
+        'filterwheel',
+        f'{exc.__class__.__name__} on filter wheel. Retrying ({retry + 1}/{config.FilterWheel.retries}).'
+    )

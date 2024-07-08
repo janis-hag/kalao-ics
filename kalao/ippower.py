@@ -22,23 +22,23 @@ def switch(power_port: str | int, state: IPPowerStatus) -> IPPowerStatus:
     """
 
     if isinstance(power_port, str):
-        power_port = get_port_number(power_port)
+        _power_port = get_port_number(power_port)
+    else:
+        _power_port = power_port
 
     logger.info('ippower', f'Switching port {power_port} to {state}')
 
-    params = {'components': 50947, 'cmd': 1, 'p': power_port, 's': int(state)}
-    req = requests.get(config.IPPower.url, params=params)
+    req = _send_request({'cmd': 1, 'p': power_port, 's': int(state)})
 
-    if req.status_code == 200:
-        new_state = req.json()['outputs'][power_port - 1]['state']
+    if req is not None and _power_port != -1:
+        new_state = req.json()['outputs'][_power_port - 1]['state']
 
         if new_state in [0, 1]:
             return IPPowerStatus(new_state)
 
     logger.error(
         'ippower',
-        f'Could not switch IPPower for port {power_port} to {state}. HTTP-response: {req.text}  ({req.status_code})'
-    )
+        f'Could not switch IPPower for port {power_port} to {state}.')
     return IPPowerStatus.ERROR
 
 
@@ -50,60 +50,58 @@ def status(power_port: str | int) -> IPPowerStatus:
     :return: IPPowerStatus or ReturnCode
     """
 
-    req = requests.get(config.IPPower.url, params={'components': 50947})
+    req = _send_request()
 
     if isinstance(power_port, str):
-        power_port = _get_port_number_from_req(req, power_port)
+        _power_port = _get_port_number_from_req(req, power_port)
+    else:
+        _power_port = power_port
 
-    if req.status_code == 200:
-        state = req.json()['outputs'][power_port - 1]['state']
+    if req is not None and _power_port != -1:
+        state = req.json()['outputs'][_power_port - 1]['state']
 
         if state in [0, 1]:
             return IPPowerStatus(state)
 
-    logger.error(
-        'ippower',
-        f'Could not get IPPower status for port {power_port}. HTTP-response: {req.text}  ({req.status_code})'
-    )
+    logger.error('ippower',
+                 f'Could not get IPPower status for port {power_port}.')
     return IPPowerStatus.ERROR
 
 
 def get_port_number(power_port: str) -> int:
-    req = requests.get(config.IPPower.url, params={'components': 50947})
+    req = _send_request()
 
     return _get_port_number_from_req(req, power_port)
 
 
 def _get_port_number_from_req(req: requests.Response, power_port: str) -> int:
-    if req.status_code == 200:
-        return next((i + 1 for i, v in enumerate(req.json()['outputs'])
-                     if v['name'] == power_port), -1)
+    _power_port = -1
 
-    logger.error(
-        'ippower',
-        f'Could not contact IPPower to get port number. HTTP-response: {req.text}  ({req.status_code})'
-    )
-    return -1
+    if req is not None:
+        _power_port = next((i + 1 for i, v in enumerate(req.json()['outputs'])
+                            if v['name'] == power_port), -1)
+
+    if _power_port != -1:
+        return _power_port
+    else:
+        logger.error('ippower',
+                     f'Cloud not find port number for port {power_port}')
+        return -1
 
 
 def get_port_name(power_port: int) -> str:
-    req = requests.get(config.IPPower.url, params={'components': 50947})
+    req = _send_request()
 
     return _get_port_name_from_req(req, power_port)
 
 
 def _get_port_name_from_req(req: requests.Response, power_port: int) -> str:
-    if req.status_code == 200:
-        if 0 < power_port <= len(req.json()['outputs']):
-            return req.json()['outputs'][power_port - 1]['name']
-        else:
-            return ''
-
-    logger.error(
-        'ippower',
-        f'Could not contact IPPower to get port name. HTTP-response: {req.text}  ({req.status_code})'
-    )
-    return ''
+    if req is not None and 0 < power_port <= len(req.json()['outputs']):
+        return req.json()['outputs'][power_port - 1]['name']
+    else:
+        logger.error('ippower',
+                     f'Cloud not find port name for port {power_port}')
+        return ''
 
 
 def status_all() -> dict[str, IPPowerStatus]:
@@ -115,6 +113,8 @@ def status_all() -> dict[str, IPPowerStatus]:
 
 
 def init() -> ReturnCode:
+    logger.info('ippower', 'Initialising IPPowers')
+
     # Do not change state of PC or DM
 
     # Powering up the bench
@@ -122,3 +122,25 @@ def init() -> ReturnCode:
         return ReturnCode.IPPOWER_OK
     else:
         return ReturnCode.IPPOWER_ERROR
+
+
+def _send_request(params: dict = {}) -> requests.Response | None:
+    _params = {'components': 50947}
+    _params.update(params)
+
+    try:
+        req = requests.get(config.IPPower.url, params=_params)
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            'ippower',
+            f'IPPower endpoint answered with a {e.__class__.__name__} exception.'
+        )
+        return None
+
+    if req.status_code == 200:
+        return req
+    else:
+        logger.error(
+            'ippower',
+            f'IPPower endpoint answered with an Error {req.status_code}: {req.text}'
+        )

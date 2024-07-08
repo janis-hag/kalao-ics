@@ -9,9 +9,9 @@ from datetime import datetime, timedelta, timezone
 import pytz
 
 
-def datetime_is_naive(d: datetime) -> bool:
+def datetime_is_naive(dt: datetime) -> bool:
     # From: https://docs.python.org/3/library/datetime.html#determining-if-an-object-is-aware-or-naive
-    return d.tzinfo is None or d.tzinfo.utcoffset(d) is None
+    return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
 
 
 def get_start_of_night(dt: datetime | None = None) -> datetime:
@@ -24,6 +24,8 @@ def get_start_of_night(dt: datetime | None = None) -> datetime:
 
     if dt is None:
         dt = datetime.now(timezone.utc)
+    elif datetime_is_naive(dt):
+        raise Exception('Naive datetimes are not supported')
 
     timezone_chile = pytz.timezone('America/Santiago')
     dt_chile = dt.astimezone(timezone_chile)
@@ -49,6 +51,8 @@ def get_night_str(dt: datetime | None = None) -> str:
 def utc_millis_str(dt: datetime | None = None) -> str:
     if dt is None:
         dt = datetime.now(timezone.utc)
+    elif datetime_is_naive(dt):
+        raise Exception('Naive datetimes are not supported')
 
     return dt.astimezone(timezone.utc).replace(tzinfo=None).isoformat(
         timespec="milliseconds")

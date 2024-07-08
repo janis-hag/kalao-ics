@@ -43,9 +43,8 @@ if __name__ == '__main__':
     parser.add_argument('-r', action="store", dest="rate", required=True,
                         type=int, help='Framerate of the turbulences')
     parser.add_argument(
-        '-s', action="store", dest="stream",
-        default=config.Streams.DM_TURBULENCES, type=str,
-        help='Stream in which the turbulences will be injected')
+        '-s', action="store", dest="stream", default=config.SHM.DM_TURBULENCES,
+        type=str, help='Stream in which the turbulences will be injected')
 
     args = parser.parse_args()
 

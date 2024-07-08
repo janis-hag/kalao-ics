@@ -14,7 +14,6 @@ import config
 
 
 class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
-    associated_stream = config.Streams.SLOPES
     image_info = config.Images.shwfs_slopes
 
     data_unit = ' px'
@@ -27,6 +26,9 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     slope_x_avg = np.nan
     slope_y_avg = np.nan
     residual_rms = np.nan
+
+    img = None
+    masked = False
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
@@ -47,33 +49,46 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         backend.streams_all_updated.connect(self.streams_all_updated)
 
     def streams_all_updated(self, data):
-        img = self.consume_stream(data, config.Streams.SLOPES)
+        img = self.consume_shm(data, config.SHM.SLOPES)
 
         if img is not None:
-            img = np.ma.masked_array(img, mask=self.mask, fill_value=np.nan)
+            self.img = img
+            self.update_view()
 
-            self.saturation = max(img.max() / self.image_info['max'],
-                                  img.min() / self.image_info['min'])
-
-            img_min, img_max = self.compute_min_max(img)
-
-            self.slopes_view.setImage(img, img_min, img_max)
-
-        slope_x_avg = self.consume_param(data, config.FPS.SHWFS, 'slope_x_avg')
+        slope_x_avg = self.consume_fps_param(data, config.FPS.SHWFS,
+                                             'slope_x_avg')
         if slope_x_avg is not None:
             self.slope_x_avg = slope_x_avg
 
-        slope_y_avg = self.consume_param(data, config.FPS.SHWFS, 'slope_y_avg')
+        slope_y_avg = self.consume_fps_param(data, config.FPS.SHWFS,
+                                             'slope_y_avg')
         if slope_y_avg is not None:
             self.slope_y_avg = slope_y_avg
 
-        residual_rms = self.consume_param(data, config.FPS.SHWFS,
-                                          'residual_rms')
+        residual_rms = self.consume_fps_param(data, config.FPS.SHWFS,
+                                              'residual_rms')
         if residual_rms is not None:
             self.residual_rms = residual_rms
 
         if slope_x_avg is not None or slope_y_avg is not None or residual_rms is not None:
             self.update_labels()
+
+    def update_view(self):
+        if self.img is None:
+            return
+
+        if self.masked:
+            img = np.ma.masked_array(self.img, mask=self.mask,
+                                     fill_value=np.nan)
+        else:
+            img = self.img
+
+        self.saturation = max(img.max() / self.image_info['max'],
+                              img.min() / self.image_info['min'])
+
+        img_min, img_max = self.compute_min_max(img)
+
+        self.slopes_view.setImage(img, img_min, img_max)
 
     def update_labels(self):
         self.slope_x_avg_label.updateText(
@@ -107,3 +122,7 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 colormaps.GrayscaleSaturationTransparent())
         else:
             self.slopes_view.updateColormap(colormaps.CoolWarmTransparent())
+
+    def change_mask(self, state):
+        self.masked = Qt.CheckState(state) == Qt.Checked
+        self.update_view()

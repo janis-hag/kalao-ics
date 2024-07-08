@@ -1,4 +1,4 @@
-from enum import Enum, Flag, IntEnum, StrEnum, auto
+from enum import Flag, IntEnum, StrEnum, auto
 
 
 class ObservationType(StrEnum):
@@ -82,6 +82,16 @@ class ETCSServerStatus(StrEnum):
     ERROR = 'ERROR'
 
 
+class CameraStatus(StrEnum):
+    UNKNOWN = 'unknown'
+    IDLE = 'idle'
+    WAITING_TRIGGER = 'waiting-trigger'
+    EXPOSING = 'exposing'
+    READING_CCD = 'reading-ccd'
+    UNEXPECTED = 'unexpected'
+    ERROR = 'error'
+
+
 class FlipMirrorPosition(StrEnum):
     UP = 'UP'
     DOWN = 'DOWN'
@@ -159,8 +169,8 @@ class ReturnCode(IntEnum):
     ETCS_SERVER_DOWN = auto()
     ETCS_ERROR = auto()
 
-    PLC_INIT_SUCCESS = OK
-    PLC_INIT_FAILED = auto()
+    HW_INIT_SUCCESS = OK
+    HW_INIT_FAILED = auto()
 
     DATABASE_OK = OK
     DATABASE_ERROR = auto()

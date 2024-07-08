@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1406</width>
-    <height>927</height>
+    <width>1627</width>
+    <height>961</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Engineering - KalAO</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" columnstretch="1,1">
-   <item row="0" column="0">
+  <layout class="QHBoxLayout" name="horizontalLayout_3">
+   <item>
     <layout class="QVBoxLayout" name="left_pane_layout">
      <item>
       <widget class="QGroupBox" name="plc_groupbox">
        <property name="title">
-        <string>PLC (Beckhoff)</string>
+        <string>PLC (Beckhoff) / Misc. hardware</string>
        </property>
        <property name="checkable">
         <bool>false</bool>
@@ -129,7 +129,7 @@
         <item row="0" column="0">
          <widget class="QLabel" name="shutter_label">
           <property name="text">
-           <string>Shutter State</string>
+           <string>Shutter</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -235,7 +235,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="flipmirror_label">
           <property name="text">
-           <string>Flip Mirror State</string>
+           <string>Flip Mirror</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -829,6 +829,19 @@
           </property>
          </widget>
         </item>
+        <item row="5" column="3" colspan="3">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>&lt;a href=&quot;https://gitlab.unige.ch/kalao/kalao-ics/-/wikis/Technical/Filters-and-Science-Camera&quot;&gt;Filter details here.&lt;/a&gt;</string>
+          </property>
+          <property name="openExternalLinks">
+           <bool>true</bool>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::TextBrowserInteraction</set>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>
@@ -837,11 +850,11 @@
        <property name="title">
         <string>Services</string>
        </property>
-       <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="0">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
          <layout class="QGridLayout" name="services_layout"/>
         </item>
-        <item row="1" column="0">
+        <item>
          <spacer name="verticalSpacer_7">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -888,25 +901,113 @@
      </item>
     </layout>
    </item>
-   <item row="0" column="1">
-    <layout class="QVBoxLayout" name="right_pane_layout">
+   <item>
+    <layout class="QVBoxLayout" name="middle_pane_layout">
      <item>
       <widget class="QGroupBox" name="camera_groupbox">
        <property name="title">
-        <string>Science Camera (First Light Imaging)</string>
+        <string>Science Camera (Finger Lakes Instrumentation)</string>
        </property>
        <layout class="QFormLayout" name="formLayout_2">
         <property name="labelAlignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <item row="0" column="0">
+         <widget class="QLabel" name="camera_server_status_label">
+          <property name="text">
+           <string>Server</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="KStatusIndicator" name="camera_server_status_indicator">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="cursor" stdset="0">
+             <cursorShape>WhatsThisCursor</cursorShape>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_8">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="camera_status_label">
+            <property name="text">
+             <string>Camera</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="KStatusIndicator" name="camera_status_indicator">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="cursor" stdset="0">
+             <cursorShape>WhatsThisCursor</cursorShape>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="camera_status_lineedit">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0">
          <widget class="QLabel" name="camera_exposure_time_label">
           <property name="text">
            <string>Exposure time</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
+        <item row="1" column="1">
          <widget class="QDoubleSpinBox" name="camera_exposure_time_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
@@ -928,14 +1029,14 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
          <widget class="QLabel" name="camera_remaining_time_label">
           <property name="text">
            <string>Remaining time</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
+        <item row="2" column="1">
          <widget class="QDoubleSpinBox" name="camera_remaining_time_spinbox">
           <property name="readOnly">
            <bool>true</bool>
@@ -960,44 +1061,34 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="0" colspan="2">
-         <widget class="QPushButton" name="camera_new_image_button">
+        <item row="3" column="0">
+         <widget class="QLabel" name="camera_frames_label">
           <property name="text">
-           <string>Take a new image</string>
+           <string>Frames</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="0" colspan="2">
-         <widget class="QPushButton" name="camera_cancel_button">
-          <property name="text">
-           <string>Cancel exposure</string>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="0" colspan="2">
-         <spacer name="verticalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="2" column="1">
+        <item row="3" column="1">
          <widget class="QSpinBox" name="camera_frames_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
+          </property>
+          <property name="suffix">
+           <string> frames</string>
           </property>
           <property name="minimum">
            <number>1</number>
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
+        <item row="4" column="0">
+         <widget class="QLabel" name="camera_remaining_frames_label">
+          <property name="text">
+           <string>Remaining frames</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
          <widget class="QSpinBox" name="camera_remaining_frames_spinbox">
           <property name="readOnly">
            <bool>true</bool>
@@ -1008,36 +1099,28 @@
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
+          <property name="suffix">
+           <string> frames</string>
+          </property>
           <property name="minimum">
            <number>-1</number>
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="camera_frames_label">
-          <property name="text">
-           <string>Frames</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="camera_remaining_frames_label">
-          <property name="text">
-           <string>Remaining frames</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="camera_roi_label">
           <property name="text">
            <string>Window size</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="1">
+        <item row="5" column="1">
          <widget class="QSpinBox" name="camera_roi_spinbox">
           <property name="keyboardTracking">
            <bool>false</bool>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="minimum">
            <number>1</number>
@@ -1053,6 +1136,33 @@
           </property>
          </widget>
         </item>
+        <item row="6" column="0" colspan="2">
+         <widget class="QPushButton" name="camera_new_image_button">
+          <property name="text">
+           <string>Take a new image</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0" colspan="2">
+         <widget class="QPushButton" name="camera_cancel_button">
+          <property name="text">
+           <string>Cancel exposure</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0" colspan="2">
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
        </layout>
       </widget>
      </item>
@@ -1062,6 +1172,13 @@
         <string>Wavefront Sensor (Nüvü)</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_6" columnstretch="0,0,1,1">
+        <item row="0" column="2">
+         <widget class="QPushButton" name="wfs_acquisition_start_button">
+          <property name="text">
+           <string>Start</string>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="1">
          <widget class="KStatusIndicator" name="wfs_acquisition_indicator">
           <property name="sizePolicy">
@@ -1084,13 +1201,6 @@
           </property>
           <property name="cursor" stdset="0">
            <cursorShape>WhatsThisCursor</cursorShape>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="wfs_acquisition_start_button">
-          <property name="text">
-           <string>Start</string>
           </property>
          </widget>
         </item>
@@ -1135,30 +1245,8 @@
        <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,0,1,1">
         <item row="1" column="0">
          <widget class="QLabel" name="ippower_bench_label">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
           <property name="text">
            <string>Bench</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="ippower_rtc_label">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>RTC</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1227,12 +1315,6 @@
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="ippower_dm_label">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
           <property name="text">
            <string>DM</string>
           </property>
@@ -1301,6 +1383,16 @@
          <widget class="QPushButton" name="ippower_dm_off_button">
           <property name="text">
            <string>Power off</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="ippower_rtc_label">
+          <property name="text">
+           <string>RTC</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
          </widget>
         </item>
@@ -1402,7 +1494,7 @@
         <item>
          <widget class="QPushButton" name="open_focus_sequence_button">
           <property name="text">
-           <string>Open focus sequence ...</string>
+           <string>Open a focus sequence ...</string>
           </property>
          </widget>
         </item>
@@ -1431,12 +1523,352 @@
      </item>
     </layout>
    </item>
+   <item>
+    <layout class="QGridLayout" name="right_pane_layout">
+     <item row="0" column="1">
+      <widget class="QGroupBox" name="camstack_groupbox">
+       <property name="title">
+        <string>Camstack</string>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QLabel" name="camstack_label">
+          <property name="text">
+           <string>kalaocam_ctrl</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="KStatusIndicator" name="camstack_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_9">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QGroupBox" name="proc_groupbox">
+       <property name="title">
+        <string>CACAO Processes</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <layout class="QGridLayout" name="proc_layout" columnstretch="0,1,1,1">
+          <item row="0" column="3" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="proc_run_label">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>RUN</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="proc_conf_label">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>CONF</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="proc_tmux_label">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>TMUX</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="proc_name_label">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Name</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_9">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="milk_procCTRL_label">
+          <property name="text">
+           <string>Use &lt;span style=&quot;font-weight: bold;&quot;&gt;milk-procCTRL&lt;/span&gt; for advanced control.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QGroupBox" name="tmux_server_groupbox">
+       <property name="title">
+        <string>Terminal multiplexer (tmux)</string>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QLabel" name="tmux_server_label">
+          <property name="text">
+           <string>Server</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="KStatusIndicator" name="tmux_server_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QGroupBox" name="stream_groupbox">
+       <property name="title">
+        <string>CACAO Streams</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <layout class="QGridLayout" name="stream_layout" columnstretch="0,0,0,0">
+          <item row="0" column="2" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="stream_size_label">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Size</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="shm_name_label">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Name</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="stream_framerate_label">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Framerate</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="stream_exists_label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_10">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="milk_streamCTRL_label">
+          <property name="text">
+           <string>Use &lt;span style=&quot;font-weight: bold;&quot;&gt;milk-streamCTRL&lt;/span&gt; for advanced control.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="3" column="0" colspan="2">
+      <widget class="QGroupBox" name="modalstats_groupbox">
+       <property name="title">
+        <string>CACAO Modal stats</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <widget class="QLabel" name="cacao_modalstatsTUI_label">
+          <property name="text">
+           <string>Use &lt;span style=&quot;font-weight: bold;&quot;&gt;cacao-modalstatsTUI&lt;/span&gt; to tune modal gains et check loops stability.</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="4" column="0" colspan="2">
+      <widget class="QGroupBox" name="deadman_groupbox">
+       <property name="title">
+        <string>Dead-man</string>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QCheckBox" name="deadman_checkbox">
+          <property name="text">
+           <string>Active</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_7">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="KLabel" name="deadman_label">
+          <property name="text">
+           <string>Count: {count}, last update: {last}, next update: {next}</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
    <class>KStatusIndicator</class>
    <extends>QGraphicsView</extends>
+   <header>kalao</header>
+  </customwidget>
+  <customwidget>
+   <class>KLabel</class>
+   <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

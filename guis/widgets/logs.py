@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QTreeWidgetItem
 from kalao import database
 from kalao.utils import kstring
 
+from guis.utils import ascii2html
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendActionMixin
 from guis.utils.ui_loader import loadUi
@@ -42,22 +43,8 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.logs_textedit.setFont(
             QFontDatabase.systemFont(QFontDatabase.FixedFont))
 
-        self.logs_textedit.document().setDefaultStyleSheet(f"""
-            span {{
-                white-space: pre;            
-            }}
-            .bold {{
-                font-weight: bold;
-            }}
-            .red {{
-                color: {Color.RED.name()};
-            }}
-            .yellow {{
-                color: {Color.YELLOW.name()};
-            }}
-            .green {{
-                color: {Color.GREEN.name()};
-            }}
+        self.logs_textedit.document().setDefaultStyleSheet(
+            ascii2html.stylesheet + f"""
             .grey {{
                 color: {Color.GREY.name()};
             }}
@@ -145,15 +132,6 @@ class LogsWidget(KWidget, BackendActionMixin):
 
         #####
 
-        entries = self.backend.logs_init()
-        if entries is not None:
-            for entry in entries:
-                self.add_log_entry(entry)
-
-        self.on_acknowledge_button_clicked(None)
-
-        #####
-
         until = QDateTime.currentDateTime()
         since = until.addSecs(-3600)
 
@@ -163,6 +141,17 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.logs_timer = QTimer(parent=self)
         self.logs_timer.setInterval(int(1000 / config.GUI.refreshrate_logs))
         self.logs_timer.timeout.connect(self.get_logs_new)
+
+        QTimer.singleShot(0, self.get_logs_init)
+
+    def get_logs_init(self):
+        entries = self.backend.logs_init()
+        if entries is not None:
+            for entry in entries:
+                self.add_log_entry(entry)
+
+        self.on_acknowledge_button_clicked(None)
+
         self.logs_timer.start()
 
     def get_logs_new(self):
@@ -186,7 +175,7 @@ class LogsWidget(KWidget, BackendActionMixin):
             self.logged.emit(self.warnings_spinbox.value(),
                              self.errors_spinbox.value())
 
-            style_origin = '<span class="bold red blink">'
+            style_origin = '<span class="bold red">'
             style_message = '<span class="bold red">'
         elif entry.level == LogLevel.WARNING:
             self.warnings_spinbox.setValue(self.warnings_spinbox.value() + 1)
@@ -194,6 +183,7 @@ class LogsWidget(KWidget, BackendActionMixin):
             self.logged.emit(self.warnings_spinbox.value(),
                              self.errors_spinbox.value())
 
+            style_origin = '<span class="bold yellow">'
             style_message = '<span class="bold yellow">'
 
         message = entry.message
@@ -205,7 +195,7 @@ class LogsWidget(KWidget, BackendActionMixin):
             message = ' '*17 + ' | ' + message
 
         self.logs_textedit.appendHtml(
-            f'{style_timestamp}{entry.timestamp}{style_end} {style_origin}{entry.origin:>17s}{style_end}: {style_message}{message}{style_end}'
+            f'{style_timestamp}{entry.timestamp}{style_end} {style_origin}{entry.origin:>17s}{style_end}: {style_message}{ascii2html.translate(message)}{style_end}'
         )
 
         block = self.logs_textedit.document().lastBlock()

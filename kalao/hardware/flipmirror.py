@@ -127,7 +127,7 @@ def init(beck: Client = None) -> ReturnCode:
 
     logger.info('flipmirror', 'Flip mirror initialised')
 
-    return ReturnCode.PLC_INIT_SUCCESS
+    return ReturnCode.HW_INIT_SUCCESS
 
 
 def get_switch_time() -> tuple[str, float]:

@@ -73,7 +73,7 @@ def init(beck: Client = None) -> ReturnCode:
 
     logger.info('shutter', 'Shutter initialised')
 
-    return ReturnCode.PLC_INIT_SUCCESS
+    return ReturnCode.HW_INIT_SUCCESS
 
 
 def open(beck: Client = None) -> ShutterState:

@@ -7,7 +7,7 @@
 """
 starfinder.py is part of the KalAO Instrument Control Software (KalAO-ICS).
 """
-import math
+
 import sys
 
 import numpy as np
@@ -59,13 +59,12 @@ def find_stars_and_bad_pixels(img: np.ndarray,
     img_filtered = skimage.filters.median(img, skimage.morphology.square(3))
     img_filtered = skimage.filters.gaussian(img_filtered, 2)
 
-    mean_filtered, median_filtered, stddev_filtered = sigma_clipped_stats(
-        img_filtered)
+    mean, median, stddev = sigma_clipped_stats(img_filtered)
 
     img_diff = img - img_filtered
     bad_pixels = np.argwhere((np.abs(img_diff) > 6 * img_diff.std()))
 
-    threshold = median_filtered + max(6 * stddev_filtered, min_peak)
+    threshold = median + max(6 * stddev, min_peak)
     peaks = skimage.feature.peak_local_max(img_filtered, min_distance=1,
                                            exclude_border=0,
                                            threshold_abs=threshold,

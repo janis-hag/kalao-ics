@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QGridLayout, QGroupBox, QLabel, QLineEdit,
                                QSizePolicy, QSpacerItem, QVBoxLayout)
 
 from kalao import database
+from kalao.timers import monitoring
 from kalao.utils import kstring
 
 from guis.utils.definitions import Color
@@ -23,6 +24,8 @@ class MonitoringWidget(KWidget, BackendDataMixin):
     hovered = Signal(str)
     updated = Signal(int, int, int)
 
+    activeToolTip = None
+
     formatter = KalAOFormatter()
 
     def __init__(self, backend, parent=None):
@@ -32,11 +35,6 @@ class MonitoringWidget(KWidget, BackendDataMixin):
 
         loadUi('monitoring.ui', self)
         self.resize(600, 400)
-
-        self.monitoring_interval_label.updateText(
-            monitoring_interval=config.Database.monitoring_update_interval)
-        self.telemetry_interval_label.updateText(
-            telemetry_interval=config.Database.telemetry_update_interval)
 
         self.data_layout.addLayout(QVBoxLayout())
         self.data_layout.addLayout(QVBoxLayout())
@@ -51,10 +49,6 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                 'metadata'].items():
             self.add_item('monitoring', key, metadata)
 
-        for key, metadata in database.definitions['telemetry'][
-                'metadata'].items():
-            self.add_item('telemetry', key, metadata)
-
         column_length = np.zeros(self.data_layout.count())
         for groupbox in sorted(self.groupboxes.values(),
                                key=lambda g: g.layout().count(), reverse=True):
@@ -67,8 +61,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
             self.data_layout.itemAt(i).addWidget(groupbox)
             column_length[i] += groupbox.layout().count()
 
-        self.backend.monitoringandtelemetry_updated.connect(
-            self.monitoringandtelemetry_updated)
+        self.backend.monitoring_updated.connect(self.monitoring_updated)
 
     def add_item(self, collection, key, metadata):
         group = metadata.get('group', 'Generic')
@@ -82,7 +75,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
 
         label = QLabel(metadata.get('short'))
         label.setCursor(Qt.WhatsThisCursor)
-        label.hover_text = metadata.get('long')
+        label.setToolTip(metadata.get('long'))
         label.installEventFilter(self)
 
         lineedit = QLineEdit()
@@ -91,14 +84,41 @@ class MonitoringWidget(KWidget, BackendDataMixin):
         lineedit.collection = collection
         lineedit.key = key
         lineedit.timestamp = None
-        lineedit.value = np.nan
+        lineedit.value = None
         lineedit.metadata = metadata
         lineedit.unit = kstring.get_unit_string(metadata)
-        lineedit.hover_text = 'No data'
         lineedit.installEventFilter(self)
 
-        lineedit.setText(f'--{lineedit.unit}')
-        lineedit.setStyleSheet(f'color: {Color.GREY.name()};')
+        lineedit.ranges = ''
+
+        error_range = lineedit.metadata.get('error_range', [np.nan, np.nan])
+        warn_range = lineedit.metadata.get('warn_range', [np.nan, np.nan])
+
+        error_values = lineedit.metadata.get('error_values', [])
+        error_min = error_range[0]
+        error_max = error_range[1]
+        warn_min = warn_range[0]
+        warn_max = warn_range[1]
+
+        if not np.isnan(warn_min) or not np.isnan(warn_max):
+            lineedit.ranges += self.formatter.format(
+                ' | Warning range: [{warn_min}{unit}; {warn_max}{unit}]',
+                warn_min=warn_min, warn_max=warn_max, unit=lineedit.unit)
+
+        if not np.isnan(error_min) or not np.isnan(error_min):
+            lineedit.ranges += self.formatter.format(
+                ' | Error range: [{error_min}{unit}; {error_max}{unit}]',
+                error_min=error_min, error_max=error_max, unit=lineedit.unit)
+
+        if len(error_values) > 0:
+            lineedit.ranges += ' | Error values: ' + ', '.join(
+                self.formatter.format('{value}{unit}', value=value,
+                                      unit=lineedit.unit)
+                for value in error_values)
+
+        lineedit.setText('No data')
+        lineedit.setToolTip(f'No data{lineedit.ranges}')
+        lineedit.setStyleSheet(f'background-color: {Color.GREY.name()};')
 
         row = groupbox.layout().rowCount()
         groupbox.layout().addWidget(label, row, 0)
@@ -106,7 +126,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
 
         self.lineedits[f'{collection}/{key}'] = lineedit
 
-    def monitoringandtelemetry_updated(self, data):
+    def monitoring_updated(self, data):
         outdated = 0
         errors = 0
         warnings = 0
@@ -116,7 +136,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                                                lineedit.key)
             if value is not None:
                 if isinstance(value, float):
-                    text = self.formatter.format('{value:.3g}{lineedit.unit}',
+                    text = self.formatter.format('{value:.6g}{lineedit.unit}',
                                                  value=value,
                                                  lineedit=lineedit)
                 else:
@@ -129,64 +149,63 @@ class MonitoringWidget(KWidget, BackendDataMixin):
             if lineedit.timestamp is None:
                 continue
 
-            since_text = f'Since: {lineedit.timestamp.astimezone().strftime("%H:%M:%S %d-%m-%Y")}'
+            timestamp_text = f'Timestamp: {lineedit.timestamp.astimezone().strftime("%H:%M:%S %d-%m-%Y")}'
 
             if (datetime.now(timezone.utc) - lineedit.timestamp
                 ).total_seconds() > config.GUI.monitoring_max_age:
-                lineedit.setStyleSheet(f'color: {Color.GREY.name()};')
-                lineedit.hover_text = f'{since_text} (outdated)'
+                lineedit.setStyleSheet(
+                    f'background-color: {Color.GREY.name()};')
+                lineedit.setToolTip(
+                    f'{timestamp_text} (outdated){lineedit.ranges}')
                 outdated += 1
-            elif isinstance(lineedit.value, float) or isinstance(
-                    lineedit.value, int):
-                error_range = lineedit.metadata.get('error_range',
-                                                    [np.nan, np.nan])
-                warn_range = lineedit.metadata.get('warn_range',
-                                                   [np.nan, np.nan])
+            else:
+                level, _, _ = monitoring.check_warning_error(
+                    lineedit.key, lineedit.value)
 
-                error_min = error_range[0]
-                error_max = error_range[1]
-                warn_min = warn_range[0]
-                warn_max = warn_range[1]
-
-                if lineedit.value > error_max or lineedit.value < error_min:
-                    lineedit.setStyleSheet(f'color: {Color.RED.name()};')
-                    lineedit.hover_text = self.formatter.format(
-                        '{since_text} | Outside of error range [{error_min}{unit}; {error_max}{unit}]',
-                        since_text=since_text, error_min=error_min,
-                        error_max=error_max, unit=lineedit.unit)
+                if level == 'error':
+                    lineedit.setStyleSheet(
+                        f'background-color: {Color.RED.name()};')
                     errors += 1
-                elif lineedit.value > warn_max or lineedit.value < warn_min:
-                    lineedit.setStyleSheet(f'color: {Color.ORANGE.name()};')
-                    lineedit.hover_text = self.formatter.format(
-                        '{since_text} | Outside of warning range [{warn_min}{unit}; {warn_max}{unit}]',
-                        since_text=since_text, warn_min=warn_min,
-                        warn_max=warn_max, unit=lineedit.unit)
+                elif level == 'warning':
+                    lineedit.setStyleSheet(
+                        f'background-color: {Color.ORANGE.name()};')
                     warnings += 1
                 else:
-                    lineedit.setStyleSheet(f'color: {Color.BLACK.name()};')
-                    lineedit.hover_text = since_text
+                    lineedit.setStyleSheet(
+                        f'background-color: {Color.GREEN.name()};')
+
+                lineedit.setToolTip(f'{timestamp_text}{lineedit.ranges}')
+
+        monitoring_timestamp = self.consume_dict(data, 'db-timestamps',
+                                                 'monitoring')
+        if monitoring_timestamp is not None:
+            self.last_update_label.updateText(
+                last_update=monitoring_timestamp.astimezone().strftime(
+                    '%H:%M:%S %d-%m-%Y'))
+
+            if (datetime.now(timezone.utc) - monitoring_timestamp
+                ).total_seconds() > config.GUI.monitoring_max_age:
+                self.last_update_label.setStyleSheet(
+                    f'color: {Color.RED.name()};')
+                errors += 1
             else:
-                lineedit.setStyleSheet(f'color: {Color.BLACK.name()};')
-                lineedit.hover_text = since_text
-
-        monitoring = self.consume_dict(data, 'db-timestamps', 'monitoring')
-        if monitoring is not None:
-            self.monitoring_update_label.updateText(
-                monitoring_update=monitoring.astimezone().strftime(
-                    '%H:%M:%S %d-%m-%Y'))
-
-        telemetry = self.consume_dict(data, 'db-timestamps', 'telemetry')
-        if telemetry is not None:
-            self.telemetry_update_label.updateText(
-                telemetry_update=telemetry.astimezone().strftime(
-                    '%H:%M:%S %d-%m-%Y'))
+                self.last_update_label.setStyleSheet(
+                    f'color: {Color.BLACK.name()};')
 
         self.updated.emit(outdated, warnings, errors)
 
     def eventFilter(self, source, event):
-        if hasattr(source, 'hover_text'):
-            if event.type() == QEvent.Enter:
-                self.hovered.emit(source.hover_text)
-            elif event.type() == QEvent.Leave:
-                self.hovered.emit('')
+        if event.type() == QEvent.ToolTip:
+            # Disable tooltips
+            return True
+
+        if event.type(
+        ) == QEvent.ToolTipChange and source == self.activeToolTip:
+            self.hovered.emit(source.toolTip())
+        if event.type() == QEvent.Enter:
+            self.activeToolTip = source
+            self.hovered.emit(source.toolTip())
+        elif event.type() == QEvent.Leave:
+            self.hovered.emit('')
+
         return QObject.eventFilter(self, source, event)

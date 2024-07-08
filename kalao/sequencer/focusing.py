@@ -14,7 +14,13 @@ from kalao.utils import file_handling, starfinder
 
 from kalao.definitions.enums import (ObservationType, ReturnCode,
                                      SequencerStatus)
-from kalao.definitions.exceptions import *
+from kalao.definitions.exceptions import (AbortRequested,
+                                          CameraTakeImageFailed,
+                                          FocusingException,
+                                          FocusingInvertedCurve,
+                                          FocusingMinimaOutsideRange,
+                                          FocusingNoMinima, FocusingSaturated,
+                                          FocusingStarNotFound)
 
 import config
 
@@ -47,9 +53,9 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
             filter = filterwheel.get_filter(type=str, from_db=True)
 
             hdu = fits.PrimaryHDU()
-            hdu.header.set('HIERARCH KAL FOC EXPTIME', exptime,
+            hdu.header.set('HIERARCH KAO FOC EXPTIME', exptime,
                            '[s] Exposure time')
-            hdu.header.set('HIERARCH KAL FOC FILTER', filter, 'Filter name')
+            hdu.header.set('HIERARCH KAO FOC FILTER', filter, 'Filter name')
             hdul.append(hdu)
             hdul.flush()
 
@@ -97,13 +103,13 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
                               window_size//2]
 
                 hdu = fits.ImageHDU(img_cut, name=f'FOCUS{step+1}')
-                hdu.header.set('HIERARCH KAL FOC M2 POS', m2_position, '[um]')
-                hdu.header.set('HIERARCH KAL FOC STAR X', star.x, '[px]')
-                hdu.header.set('HIERARCH KAL FOC STAR Y', star.y, '[px]')
-                hdu.header.set('HIERARCH KAL FOC STAR PEAK', star.peak,
+                hdu.header.set('HIERARCH KAO FOC M2 POS', m2_position, '[um]')
+                hdu.header.set('HIERARCH KAO FOC STAR X', star.x, '[px]')
+                hdu.header.set('HIERARCH KAO FOC STAR Y', star.y, '[px]')
+                hdu.header.set('HIERARCH KAO FOC STAR PEAK', star.peak,
                                '[ADU]')
-                hdu.header.set('HIERARCH KAL FOC STAR FWHM', star.fwhm, '[px]')
-                hdu.header.set('HIERARCH KAL FOC FILE', filepath.stem, '')
+                hdu.header.set('HIERARCH KAO FOC STAR FWHM', star.fwhm, '[px]')
+                hdu.header.set('HIERARCH KAO FOC FILE', filepath.stem, '')
                 hdul.append(hdu)
 
                 # If we have at least three points, start fitting a parabola
@@ -114,11 +120,11 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
                     fit = np.polynomial.polynomial.Polynomial.fit(x, y, 2)
                     c, b, a = fit.convert().coef
 
-                    hdul[0].header.set('HIERARCH KAL FOC FIT QUAD', a,
+                    hdul[0].header.set('HIERARCH KAO FOC FIT QUAD', a,
                                        '[1/um] Fit quadratic term')
-                    hdul[0].header.set('HIERARCH KAL FOC FIT LIN', b,
+                    hdul[0].header.set('HIERARCH KAO FOC FIT LIN', b,
                                        '[-] Fit linear term')
-                    hdul[0].header.set('HIERARCH KAL FOC FIT CONST', c,
+                    hdul[0].header.set('HIERARCH KAO FOC FIT CONST', c,
                                        '[um] Fit constant term')
 
                 hdul.flush()
@@ -142,9 +148,9 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
                 best_focus = data['focus'][idxmin]
                 best_fwhm = fit(best_focus)
 
-                hdul[0].header.set('HIERARCH KAL FOC BEST M2 POS', best_focus,
+                hdul[0].header.set('HIERARCH KAO FOC BEST M2 POS', best_focus,
                                    '[um] Best focus')
-                hdul[0].header.set('HIERARCH KAL FOC BEST STAR FWHM',
+                hdul[0].header.set('HIERARCH KAO FOC BEST STAR FWHM',
                                    best_fwhm, '[px] Best focus FWHM')
 
                 # Set focus to minimum value found anyway
@@ -161,11 +167,11 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
 
             logger.info('focusing', f'Best focus found at {best_focus:.2f} µm')
 
-            hdul[0].header.set('HIERARCH KAL FOC BEST M2 POS', best_focus,
+            hdul[0].header.set('HIERARCH KAO FOC BEST M2 POS', best_focus,
                                '[um] Best focus (estimated using fit)')
-            hdul[0].header.set('HIERARCH KAL FOC BEST STAR FWHM', best_fwhm,
+            hdul[0].header.set('HIERARCH KAO FOC BEST STAR FWHM', best_fwhm,
                                '[px] Best focus FWHM (estimated using fit)')
-            hdul[0].header.set('HIERARCH KAL FOC SUCCESS', True,
+            hdul[0].header.set('HIERARCH KAO FOC SUCCESS', True,
                                'Focus sequence successful')
             hdul.flush()
 
@@ -173,15 +179,15 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
         except (FocusingException, AbortRequested, CameraTakeImageFailed) as e:
             logger.error('focusing', f'Focus sequence aborted, "{e.__doc__}"')
 
-            hdul[0].header.set('HIERARCH KAL FOC SUCCESS', False,
+            hdul[0].header.set('HIERARCH KAO FOC SUCCESS', False,
                                'Focus sequence successful')
-            hdul[0].header.set('HIERARCH KAL FOC REASON', e.__doc__,
+            hdul[0].header.set('HIERARCH KAO FOC REASON', e.__doc__,
                                'Reason why focus sequence failed')
             hdul.flush()
 
             if not isinstance(e, FocusingNoMinima):
                 # Restore focus
-                logger.info('focusing', f'Restoring focus using autofocus')
+                logger.info('focusing', 'Restoring focus using autofocus')
                 autofocus()
 
             # Seal focus sequence file

@@ -38,7 +38,7 @@ def kalao_status() -> str:
     elif sequencer_status_value == SequencerStatus.WAITING:
         status_string = f'|status|WAITING|path|{_last_filepath_archived()}'
     elif sequencer_status_value == SequencerStatus.ERROR:
-        status_string = f'|status|ERROR'
+        status_string = '|status|ERROR'
     elif sequencer_status_value == SequencerStatus.WAITLAMP:
         status_string = f'|status|BUSY|{elapsed_time(sequencer_status):.0f}'
     elif sequencer_status_value == SequencerStatus.EXP:

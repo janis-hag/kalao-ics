@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1202</width>
-    <height>867</height>
+    <height>809</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,20 +46,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QLabel" name="min_label">
-        <property name="text">
-         <string>Min </string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="KScaledDoubleSpinbox" name="min_spinbox">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -67,10 +54,10 @@
          <number>2</number>
         </property>
         <property name="minimum">
-         <double>-9.000000000000000</double>
+         <double>-99.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>9.000000000000000</double>
+         <double>99.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -78,25 +65,9 @@
        </widget>
       </item>
       <item>
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::Maximum</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QLabel" name="max_label">
+       <widget class="QLabel" name="minmax_label">
         <property name="text">
-         <string>Max </string>
+         <string>–</string>
         </property>
        </widget>
       </item>
@@ -109,10 +80,10 @@
          <number>2</number>
         </property>
         <property name="minimum">
-         <double>-9.000000000000000</double>
+         <double>-99.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>9.000000000000000</double>
+         <double>99.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -136,9 +107,18 @@
        </spacer>
       </item>
       <item>
-       <widget class="QCheckBox" name="autoscale_checkbox">
+       <widget class="QToolButton" name="autoscale_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Autoscale</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
         </property>
         <property name="checked">
          <bool>true</bool>
@@ -162,9 +142,18 @@
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="fullscale_button">
+       <widget class="QToolButton" name="fullscale_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
-         <string>Full Scale</string>
+         <string>Fullscale</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -900,13 +889,13 @@
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KScaledDoubleSpinbox</class>
-   <extends>QDoubleSpinBox</extends>
+   <class>KLabel</class>
+   <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KLabel</class>
-   <extends>QLabel</extends>
+   <class>KScaledDoubleSpinbox</class>
+   <extends>QDoubleSpinBox</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

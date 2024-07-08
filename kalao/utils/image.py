@@ -65,6 +65,9 @@ class LinearScale(AbstractScale):
     def scale(self, img: np.ndarray) -> np.ndarray:
         return img
 
+    def inverse(self, img: np.ndarray) -> np.ndarray:
+        return img
+
 
 class LogScale(AbstractScale):
     __name__ = 'Logarithmic'
@@ -73,6 +76,10 @@ class LogScale(AbstractScale):
         return self.delta / np.log(self.delta + 1) * np.log(img - self.min +
                                                             1) + self.min
 
+    def inverse(self, img: np.ndarray) -> np.ndarray:
+        return np.exp(np.log(self.delta + 1) / self.delta *
+                      (img - self.min)) + self.min - 1
+
 
 class SquareRootScale(AbstractScale):
     __name__ = 'Square Root'
@@ -80,12 +87,18 @@ class SquareRootScale(AbstractScale):
     def scale(self, img: np.ndarray) -> np.ndarray:
         return np.sqrt(self.delta) * np.sqrt(img - self.min) + self.min
 
+    def inverse(self, img: np.ndarray) -> np.ndarray:
+        return ((img - self.min) / np.sqrt(self.delta))**2 + self.min
+
 
 class SquaredScale(AbstractScale):
     __name__ = 'Squared'
 
     def scale(self, img: np.ndarray) -> np.ndarray:
-        return 1 / self.delta * (img - self.min)**2 + self.min
+        return (img - self.min)**2 / self.delta + self.min
+
+    def inverse(self, img: np.ndarray) -> np.ndarray:
+        return np.sqrt(self.delta * (img - self.min)) + self.min
 
 
 ### Cuts

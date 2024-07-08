@@ -10,10 +10,9 @@ cooling.py is part of the KalAO Instrument Control Software
 """
 
 import time
-from datetime import datetime, timezone
 from typing import Any
 
-from kalao import database, logger
+from kalao import logger
 from kalao.hardware import plc
 
 from opcua import Client, ua
@@ -23,7 +22,7 @@ from kalao.definitions.enums import RelayState, ReturnCode
 import config
 
 
-class RelayCommand():
+class RelayCommand:
     OFF = False
     ON = True
 
@@ -44,10 +43,10 @@ def get_status(beck: Client = None) -> dict[str, Any]:
             pump_temperature(beck=beck),
         'heater_status':
             heater_status(beck=beck),
-        'fan_status':
-            fan_status(beck=beck),
-        'coolant_flow_rate':
-            get_flow(beck=beck),
+        'heatexchanger_fan_status':
+            heatexchanger_fan_status(beck=beck),
+        'coolant_flowrate':
+            get_flowrate(beck=beck),
         'coolant_temp_in':
             config.PLC.coolant_temp_in_offset +
             beck.get_node(config.PLC.Node.COOLANT_TEMP_IN).get_value(),
@@ -188,7 +187,7 @@ def heater_status(beck: Client = None) -> RelayState:
     return get_state(config.PLC.Node.HEATER, beck=beck)
 
 
-def fan_on(beck: Client = None) -> RelayState:
+def heatexchanger_fan_on(beck: Client = None) -> RelayState:
     """
     Convenience function to turn on the coolant fan
 
@@ -196,10 +195,10 @@ def fan_on(beck: Client = None) -> RelayState:
     :return: status of the fan
     """
 
-    return switch(config.PLC.Node.FAN, RelayState.ON, beck=beck)
+    return switch(config.PLC.Node.HEAT_EXCHANGER_FAN, RelayState.ON, beck=beck)
 
 
-def fan_off(beck: Client = None) -> RelayState:
+def heatexchanger_fan_off(beck: Client = None) -> RelayState:
     """
     Convenience function to turn off the coolant fan
 
@@ -207,10 +206,11 @@ def fan_off(beck: Client = None) -> RelayState:
     :return: status of the fan
     """
 
-    return switch(config.PLC.Node.FAN, RelayState.OFF, beck=beck)
+    return switch(config.PLC.Node.HEAT_EXCHANGER_FAN, RelayState.OFF,
+                  beck=beck)
 
 
-def fan_status(beck: Client = None) -> RelayState:
+def heatexchanger_fan_status(beck: Client = None) -> RelayState:
     """
     Convenience function to query the status of the coolant fan
 
@@ -218,11 +218,11 @@ def fan_status(beck: Client = None) -> RelayState:
     :return: status of the fan
     """
 
-    return get_state(config.PLC.Node.FAN, beck=beck)
+    return get_state(config.PLC.Node.HEAT_EXCHANGER_FAN, beck=beck)
 
 
 @plc.autoconnect
-def get_flow(beck: Client = None) -> float:
+def get_flowrate(beck: Client = None) -> float:
     """
     Convenience function to query the value of the coolant flow from the flowmeter
 
@@ -242,7 +242,8 @@ def init(beck: Client = None) -> ReturnCode:
     error = False
 
     for node in [
-            config.PLC.Node.FAN, config.PLC.Node.PUMP, config.PLC.Node.HEATER
+            config.PLC.Node.HEAT_EXCHANGER_FAN, config.PLC.Node.PUMP,
+            config.PLC.Node.HEATER
     ]:
         if node in config.PLC.initial_state:
             state = config.PLC.initial_state[node]
@@ -251,7 +252,7 @@ def init(beck: Client = None) -> ReturnCode:
 
     if error:
         logger.info('cooling', 'Cooling system initialisation failed')
-        return ReturnCode.PLC_INIT_FAILED
+        return ReturnCode.HW_INIT_FAILED
     else:
         logger.info('cooling', 'Cooling system initialised')
-        return ReturnCode.PLC_INIT_SUCCESS
+        return ReturnCode.HW_INIT_SUCCESS

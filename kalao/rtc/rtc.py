@@ -1,5 +1,5 @@
 from kalao import ippower, logger
-from kalao.hardware import cooling, dm, plc_utils, shutter
+from kalao.hardware import cooling, dm, hw_utils, shutter
 
 import dbus
 
@@ -52,7 +52,7 @@ def shutdown_sequence() -> None:
         logger.error('rtc', 'Failed to turn off DM')
 
     # Turn off lamps
-    if plc_utils.lamps_off() != ReturnCode.OK:
+    if hw_utils.lamps_off() != ReturnCode.OK:
         logger.error('rtc', 'Failed to turn off lamps')
 
     # Warm cameras
@@ -70,8 +70,9 @@ def shutdown_sequence() -> None:
     if cooling.pump_off() != RelayState.OFF:
         logger.error('rtc', 'Failed to turn off pump')
 
-    if cooling.fan_off() != RelayState.OFF:
+    if cooling.heatexchanger_fan_off() != RelayState.OFF:
         logger.error('rtc', 'Failed to turn off heat exchanger fan')
 
     # Shut down computer
+    logger.info('rtc', 'Shutdown sequence over, powering off')
     power_off()

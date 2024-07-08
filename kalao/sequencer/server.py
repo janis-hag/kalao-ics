@@ -21,7 +21,8 @@ from kalao.utils import background
 from kalao.utils.rprint import rprint
 
 from kalao.definitions.enums import ReturnCode, SequencerStatus, ShutterState
-from kalao.definitions.exceptions import *
+from kalao.definitions.exceptions import (AbortRequested, CameraCancelFailed,
+                                          SequencerException)
 
 import config
 
@@ -29,7 +30,7 @@ conn = None
 socketSeq = None
 
 
-def handler(signal_received: int, frame: FrameType | None) -> None:
+def sig_handler(signal_received: int, frame: FrameType | None) -> None:
     if signal_received == signal.SIGINT or signal_received == signal.SIGTERM:
         rprint('\nSIGTERM or SIGINT or CTRL-C detected. Exiting.')
 
@@ -157,9 +158,8 @@ def serve() -> ReturnCode:
                 })
 
                 # Pre-configure ADCs
-                zenith_angle = euler.telescope_future_zenith_angle(coord)
-                adc.configure(zenith_angle=zenith_angle,
-                              skip_tracking_check=True, blocking=False)
+                zenith_angle = euler.telescope_zenith_angle(coord)
+                adc.configure(zenith_angle=zenith_angle, blocking=False)
 
             database.store('obs', {'sequencer_status': SequencerStatus.SETUP})
             logger.info('sequencer', f'Starting {command}')
@@ -239,12 +239,13 @@ def execute_command(command: str, seq_args: dict[str, Any],
 
         return ReturnCode.SEQ_OK
 
-    except FLICancelFailed:
+    except CameraCancelFailed:
         if update_status:
             database.store('obs',
                            {'sequencer_status': SequencerStatus.WAITING})
 
-        logger.info('sequencer', f'FLI cancel failed in {command}')
+        logger.info('sequencer',
+                    f'Camera exposure cancellation failed in {command}')
 
         return ReturnCode.SEQ_ERROR
 
@@ -290,8 +291,8 @@ def execute_command(command: str, seq_args: dict[str, Any],
 if __name__ == '__main__':
     database.store('obs', {'sequencer_status': SequencerStatus.INITIALISING})
 
-    signal.signal(signal.SIGTERM, handler)
-    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, sig_handler)
+    signal.signal(signal.SIGINT, sig_handler)
 
     init()
     serve()

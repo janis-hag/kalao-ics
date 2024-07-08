@@ -17,14 +17,14 @@ from kalao.hardware import camera
 from kalao.definitions.enums import CameraServerStatus
 
 
-def handler(signal_received, frame):
+def sig_handler(signal_received, frame):
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
     exit(0)
 
 
 def run(args):
-    if camera.check_server_status() == CameraServerStatus.UP:
+    if camera.server_status() == CameraServerStatus.UP:
         print('Connecting to camera through REST API')
 
         while True:
@@ -43,6 +43,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Tell Python to run the handler() function when SIGINT is recieved
-    signal(SIGINT, handler)
+    signal(SIGINT, sig_handler)
 
     run(args)

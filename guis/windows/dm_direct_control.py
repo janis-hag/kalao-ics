@@ -130,7 +130,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
             'All (*.fits *.csv);;Images (*.fits);;Text files (*.csv)')
         dialog.setAcceptMode(QFileDialog.AcceptOpen)
 
-        self.error_dialog.setText("<b>Loading failed!</b>")
+        self.error_dialog.setText('<b>Loading failed!</b>')
 
         try:
             if dialog.exec():
@@ -200,7 +200,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
             'All (*.fits *.csv);;Images (*.fits);;Text files (*.csv)')
         dialog.setAcceptMode(QFileDialog.AcceptSave)
 
-        self.error_dialog.setText("<b>Saving failed!</b>")
+        self.error_dialog.setText('<b>Saving failed!</b>')
 
         try:
             if dialog.exec():

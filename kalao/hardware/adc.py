@@ -48,15 +48,11 @@ def get_optimal_adc_angle(zenith_angle: float, wavelength: float, T: float,
 
 
 def configure(zenith_angle: float | None = None,
-              override_threshold: bool = False,
-              skip_tracking_check: bool = False, blocking: bool = True,
+              override_threshold: bool = False, blocking: bool = True,
               beck: Client = None) -> int:
-    if not skip_tracking_check and not euler.telescope_tracking():
-        logger.warn('adc', 'Configuring ADC while telescope is not tracking')
-
     config_fps = toolbox.open_fps_once(config.FPS.CONFIG)
 
-    if config_fps is None or not config_fps.get_param('adc_update'):
+    if config_fps is None or not config_fps.get_param('adc_synchronisation'):
         return 0
 
     filter_name = filterwheel.get_filter(type=str, from_db=True)
@@ -200,7 +196,7 @@ def init(node: str, force_init: bool = False,
 
     ret_init = plc.motor_init(node, force_init, beck=beck)
 
-    if ret_init != ReturnCode.PLC_INIT_SUCCESS:
+    if ret_init != ReturnCode.HW_INIT_SUCCESS:
         logger.error('adc', f'ADC {node} initialisation failed')
     else:
         logger.info('adc', f'ADC {node} initialised')

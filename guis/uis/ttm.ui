@@ -1,46 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>DMWidget</class>
- <widget class="QWidget" name="DMWidget">
+ <class>TTMWidget</class>
+ <widget class="QWidget" name="TTMWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>827</width>
-    <height>495</height>
+    <width>834</width>
+    <height>497</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Deformable Mirror - KalAO</string>
+   <string>Tip-Tilt Mirror - KalAO</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="0,1">
-   <item row="0" column="1">
-    <widget class="QLabel" name="title_label">
-     <property name="font">
-      <font>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Deformable Mirror</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="0" rowspan="2">
     <layout class="QVBoxLayout" name="side_layout">
      <item>
-      <layout class="QGridLayout" name="scale_layout" columnstretch="0,1">
-       <item row="3" column="0" colspan="2">
-        <widget class="QPushButton" name="fullscale_button">
+      <layout class="QGridLayout" name="scale_layout" columnstretch="1,0,1">
+       <item row="2" column="0" colspan="3" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+        <widget class="KLabel" name="saturation_label">
          <property name="text">
-          <string>Full Scale</string>
+          <string>Saturation {saturation:.0f} %</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="1" column="0">
+        <widget class="KScaledDoubleSpinbox" name="min_spinbox">
+         <property name="keyboardTracking">
+          <bool>false</bool>
+         </property>
+         <property name="decimals">
+          <number>2</number>
+         </property>
+         <property name="minimum">
+          <double>-99.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>99.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2" alignment="Qt::AlignVCenter">
         <widget class="KScaledDoubleSpinbox" name="max_spinbox">
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -60,74 +67,51 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="KScaledDoubleSpinbox" name="min_spinbox">
+        <widget class="QLabel" name="minmax_label">
+         <property name="text">
+          <string>–</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QToolButton" name="fullscale_button">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="keyboardTracking">
-          <bool>false</bool>
+         <property name="text">
+          <string>Fullscale</string>
          </property>
-         <property name="decimals">
-          <number>2</number>
-         </property>
-         <property name="minimum">
-          <double>-99.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>99.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.100000000000000</double>
+         <property name="checkable">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="0" column="0" colspan="2" alignment="Qt::AlignHCenter">
-        <widget class="QCheckBox" name="autoscale_checkbox">
+       <item row="0" column="0">
+        <widget class="QToolButton" name="autoscale_button">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="text">
           <string>Autoscale</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
          </property>
          <property name="checked">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="max_label">
-         <property name="text">
-          <string>Max </string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="min_label">
-         <property name="text">
-          <string>Min </string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="KLabel" name="saturation_label">
-         <property name="text">
-          <string>Saturation {saturation:.0f} %</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
       </layout>
      </item>
      <item>
-      <spacer name="verticalSpacer">
+      <spacer name="verticalSpacer_2">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
@@ -140,9 +124,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="KLabel" name="stroke_raw_label">
+      <widget class="KLabel" name="tip_label">
        <property name="text">
-        <string>Stroke (raw): {stroke_raw:.2f}{unit}</string>
+        <string>Tip: {tip:.3f}{unit}</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -150,9 +134,9 @@
       </widget>
      </item>
      <item>
-      <widget class="KLabel" name="stroke_effective_label">
+      <widget class="KLabel" name="tilt_label">
        <property name="text">
-        <string>Stroke (actual): {stroke_effective:.2f}{unit}</string>
+        <string>Tilt: {tilt:.3f}{unit}</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -161,8 +145,24 @@
      </item>
     </layout>
    </item>
+   <item row="0" column="1">
+    <widget class="QLabel" name="title_label">
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Tip-Tilt Mirror</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="1">
-    <widget class="KGraphicsView" name="dm_view">
+    <widget class="KChartView" name="tiptilt_plot">
      <property name="enabled">
       <bool>true</bool>
      </property>
@@ -184,8 +184,8 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KGraphicsView</class>
-   <extends>QGraphicsView</extends>
+   <class>KLabel</class>
+   <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
@@ -194,8 +194,8 @@
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KLabel</class>
-   <extends>QLabel</extends>
+   <class>KChartView</class>
+   <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>
  </customwidgets>

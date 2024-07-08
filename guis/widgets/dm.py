@@ -14,7 +14,6 @@ import config
 
 
 class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
-    associated_stream = config.Streams.DM
     image_info = config.Images.dm01disp
 
     data_unit = ' µm'
@@ -27,6 +26,9 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     stroke_raw = np.nan
     stroke_effective = np.nan
     saturation = np.nan
+
+    img = None
+    masked = False
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
@@ -46,32 +48,42 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         backend.streams_all_updated.connect(self.streams_all_updated)
 
     def streams_all_updated(self, data):
-        img = self.consume_stream(data, config.Streams.DM)
+        img = self.consume_shm(data, config.SHM.DM)
 
-        max_stroke = self.consume_param(data, config.FPS.BMC, 'max_stroke')
+        max_stroke = self.consume_fps_param(data, config.FPS.BMC, 'max_stroke')
 
         if max_stroke is not None:
             self.max_stroke = max_stroke
 
         if img is not None:
-            img = np.ma.masked_array(img, mask=self.mask, fill_value=np.nan)
+            self.img = img
+            self.update_view()
 
-            img_min, img_max = self.compute_min_max(img)
+    def update_view(self):
+        if self.img is None:
+            return
 
-            self.saturation = max(
-                img.max() / self.image_info['max'],
-                img.min() / self.image_info['min']) / self.max_stroke
+        if self.masked:
+            img = np.ma.masked_array(self.img, mask=self.mask,
+                                     fill_value=np.nan)
+        else:
+            img = self.img
 
-            self.dm_view.setImage(img, img_min, img_max)
+        img_min, img_max = self.compute_min_max(img)
 
-            stroke_max = np.max(img)
-            stroke_min = np.min(img)
-            self.stroke_raw = stroke_max - stroke_min
-            self.stroke_effective = min(
-                stroke_max, 1.75 * self.max_stroke) - max(
-                    stroke_min, -1.75 * self.max_stroke)
+        self.saturation = max(
+            img.max() / self.image_info['max'],
+            img.min() / self.image_info['min']) / self.max_stroke
 
-            self.update_labels()
+        self.dm_view.setImage(img, img_min, img_max)
+
+        stroke_max = np.max(img)
+        stroke_min = np.min(img)
+        self.stroke_raw = stroke_max - stroke_min
+        self.stroke_effective = min(stroke_max, 1.75 * self.max_stroke) - max(
+            stroke_min, -1.75 * self.max_stroke)
+
+        self.update_labels()
 
     def update_labels(self):
         self.stroke_raw_label.updateText(
@@ -102,3 +114,7 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 colormaps.GrayscaleSaturationTransparent())
         else:
             self.dm_view.updateColormap(colormaps.CoolWarmTransparent())
+
+    def change_mask(self, state):
+        self.masked = Qt.CheckState(state) == Qt.Checked
+        self.update_view()

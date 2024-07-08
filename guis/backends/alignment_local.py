@@ -23,68 +23,67 @@ class AlignmentBackend(SHMFPSBackend):
     def __init__(self):
         super().__init__()
 
-        self.nuvu_stream = toolbox.open_stream_once(config.Streams.NUVU)
-        self.poke_stream = toolbox.open_stream_once(
-            config.Streams.DM_REGISTRATION)
-        self.slopes_stream = toolbox.open_stream_once(config.Streams.SLOPES)
+        self.nuvu_shm = toolbox.open_shm_once(config.SHM.NUVU)
+        self.poke_shm = toolbox.open_shm_once(config.SHM.DM_REGISTRATION)
+        self.slopes_shm = toolbox.open_shm_once(config.SHM.SLOPES)
 
         self.slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS)
 
-    @emit('streams_all_updated')
+    @emit
     @timeit
     def streams_all(self):
-        dm_array = np.zeros(self.poke_stream.shape, self.poke_stream.nptype)
+        dm_array = np.zeros(self.poke_shm.shape, self.poke_shm.nptype)
 
         # Do not poke actuators
         for act in self.alignment_window.actuators_to_poke:
             dm_array[ktools.get_actuator_2d(act)] = 0
 
-        self.poke_stream.set_data(dm_array, True)
+        self.poke_shm.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
-        self._update_stream(self.streams, config.Streams.NUVU,
-                            key=f'{config.Streams.NUVU}_{PokeState.FLAT}')
-        self._update_stream(self.streams, config.Streams.SLOPES,
-                            key=f'{config.Streams.SLOPES}_{PokeState.FLAT}')
+        self._update_shm(self.streams, config.SHM.NUVU,
+                         key=f'{config.SHM.NUVU}_{PokeState.FLAT}')
+        self._update_shm(self.streams, config.SHM.SLOPES,
+                         key=f'{config.SHM.SLOPES}_{PokeState.FLAT}')
 
-        self._update_stream(self.streams, config.Streams.FLUX)
+        self._update_shm(self.streams, config.SHM.FLUX)
 
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_x_avg')
-        self._update_param(self.streams, config.FPS.SHWFS, 'slope_y_avg')
-        self._update_param(self.streams, config.FPS.SHWFS, 'residual_rms')
+        self._update_fps_param(self.streams, config.FPS.SHWFS, 'slope_x_avg')
+        self._update_fps_param(self.streams, config.FPS.SHWFS, 'slope_y_avg')
+        self._update_fps_param(self.streams, config.FPS.SHWFS, 'residual_rms')
 
         # Poke actuators down
         for act in self.alignment_window.actuators_to_poke:
             dm_array[ktools.get_actuator_2d(
                 act)] = -self.alignment_window.poke_amplitude
 
-        self.poke_stream.set_data(dm_array, True)
+        self.poke_shm.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
-        self._update_stream(self.streams, config.Streams.NUVU,
-                            key=f'{config.Streams.NUVU}_{PokeState.DOWN}')
-        self._update_stream(self.streams, config.Streams.SLOPES,
-                            key=f'{config.Streams.SLOPES}_{PokeState.DOWN}')
+        self._update_shm(self.streams, config.SHM.NUVU,
+                         key=f'{config.SHM.NUVU}_{PokeState.DOWN}')
+        self._update_shm(self.streams, config.SHM.SLOPES,
+                         key=f'{config.SHM.SLOPES}_{PokeState.DOWN}')
 
         # Poke actuators up
         for act in self.alignment_window.actuators_to_poke:
             dm_array[ktools.get_actuator_2d(
                 act)] = self.alignment_window.poke_amplitude
 
-        self.poke_stream.set_data(dm_array, True)
+        self.poke_shm.set_data(dm_array, True)
         time.sleep(self.alignment_window.wait_after_poke)
-        self._update_stream(self.streams, config.Streams.NUVU,
-                            key=f'{config.Streams.NUVU}_{PokeState.UP}')
-        self._update_stream(self.streams, config.Streams.SLOPES,
-                            key=f'{config.Streams.SLOPES}_{PokeState.UP}')
+        self._update_shm(self.streams, config.SHM.NUVU,
+                         key=f'{config.SHM.NUVU}_{PokeState.UP}')
+        self._update_shm(self.streams, config.SHM.SLOPES,
+                         key=f'{config.SHM.SLOPES}_{PokeState.UP}')
 
-        self.streams[config.Streams.NUVU] = self.streams[
-            f'{config.Streams.NUVU}_{self.alignment_window.display}']
+        self.streams[config.SHM.NUVU] = self.streams[
+            f'{config.SHM.NUVU}_{self.alignment_window.display}']
 
         if self.alignment_window.display == PokeState.FLAT:
-            self.streams[config.Streams.SLOPES] = self.streams[
-                f'{config.Streams.SLOPES}_{PokeState.FLAT}']
+            self.streams[config.SHM.SLOPES] = self.streams[
+                f'{config.SHM.SLOPES}_{PokeState.FLAT}']
         else:
-            self.streams[config.Streams.SLOPES] = self.streams[
+            self.streams[config.SHM.SLOPES] = self.streams[
                 self.alignment_window.display] - self.streams[
-                    f'{config.Streams.SLOPES}_{PokeState.FLAT}']
+                    f'{config.SHM.SLOPES}_{PokeState.FLAT}']
 
         return self.streams

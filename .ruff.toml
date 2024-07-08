@@ -1,0 +1,53 @@
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    "tcs_communication"
+]
+
+line-length = 80
+indent-width = 4
+target-version = "py311"
+
+[lint]
+select = ["E", "F"] #, "I"]
+ignore = ["F405", "E501"]
+
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "native"
+
+docstring-code-format = true
+
+[lint.isort.sections]
+"math" = ["numpy", "scipy", "pandas"]
+"astro" = ["astropy", "photutils"]
+"cacao" = ["pyMilk", "CacaoProcessTools"]
+"graphic" = ["PySide6"]
+"kalao" = ["kalao"]
+"definitions" = ["kalao.definitions"]
+"config" = ["config"]
+
+[lint.isort]
+split-on-trailing-comma = false
+
+section-order = [
+    "future",
+    "standard-library",
+    "math",
+    "astro",
+    "cacao",
+    "graphic",
+    "kalao",
+    "third-party",
+    "first-party",
+    "local-folder",
+    "definitions",
+    "config"
+]

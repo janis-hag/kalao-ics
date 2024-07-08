@@ -7,10 +7,11 @@
 """
 Timer to verify KalAO bench health (KalAO-ICS).
 """
-
+import threading
 import time
 from datetime import datetime, timezone
 from functools import partial
+from typing import Callable
 
 import numpy as np
 
@@ -30,7 +31,7 @@ import config
 
 
 def _get_elapsed_time_since_activity() -> float:
-    latest_obs_entry_time = database.get_last_time('obs')
+    latest_obs_entry_time = database.get_collection_last_update('obs')
 
     if latest_obs_entry_time is not None:
         return (datetime.now(timezone.utc) -
@@ -80,8 +81,8 @@ def _check_dm_inactive() -> None:
 
     bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC)
 
-    if euler.sun_elevation() > config.Timers.dm_sun_min_elevation and (
-        (bmc_display_fps is not None and bmc_display_fps.run_runs()) or
+    if euler.sun_elevation() > config.Hardware.dm_sun_min_elevation and (
+        (bmc_display_fps is not None and bmc_display_fps.run_isrunning()) or
             ippower.status(config.IPPower.Port.DM) == IPPowerStatus.ON):
         logger.info('hardware_timer',
                     'Turning off DM due to inactivity timeout')
@@ -139,7 +140,7 @@ def _check_inactivity() -> None:
 
     inactivity_time = _get_elapsed_time_since_activity()
 
-    if inactivity_time > config.Timers.inactivity_timeout:
+    if inactivity_time > config.Hardware.inactivity_timeout:
         _check_shutteropen_inactive()
         _check_laseron_inactive()
         _check_dm_inactive()
@@ -169,6 +170,13 @@ def _check_cooling_status() -> None:
             )
             cooling.heater_on()
 
+        if cooling.heatexchanger_fan_status() != RelayState.OFF:
+            logger.info(
+                'hardware_timer',
+                f'Coolant temperature too low ({coolant_temp} {unit}), stopping heat exchanger fan'
+            )
+            cooling.heatexchanger_fan_off()
+
     elif coolant_temp > min_coolant_temp + config.Cooling.heater_hysteresis_temp:
         if cooling.heater_status() != RelayState.OFF:
             logger.info(
@@ -176,6 +184,13 @@ def _check_cooling_status() -> None:
                 f'Coolant temperature high enough ({coolant_temp} {unit}), stopping heater'
             )
             cooling.heater_off()
+
+        if cooling.heatexchanger_fan_status() != RelayState.ON:
+            logger.info(
+                'hardware_timer',
+                f'Coolant temperature high enough ({coolant_temp} {unit}), starting heat exchanger fan'
+            )
+            cooling.heatexchanger_fan_on()
 
 
 @plc.autoconnect
@@ -210,10 +225,15 @@ def _check_plc() -> None:
 
 
 if __name__ == '__main__':
-    schedule.every(
-        config.Timers.cooling_check_interval).seconds.do(_check_cooling_status)
-    schedule.every(
-        config.Timers.inactivity_check_interval).seconds.do(_check_inactivity)
+
+    def run_threaded(job_func: Callable) -> None:
+        job_thread = threading.Thread(target=job_func)
+        job_thread.start()
+
+    schedule.every(config.Hardware.cooling_check_interval).seconds.do(
+        run_threaded, _check_cooling_status)
+    schedule.every(config.Hardware.inactivity_check_interval).seconds.do(
+        run_threaded, _check_inactivity)
     schedule.every(60).seconds.do(_check_pump_temp)
     schedule.every().day.at('15:00', 'America/Santiago').do(_check_plc)
 

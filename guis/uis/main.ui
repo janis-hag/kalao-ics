@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1297</width>
-    <height>889</height>
+    <height>909</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -254,7 +254,7 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="KStatusIndicator" name="camera_exposure_indicator">
+         <widget class="KStatusIndicator" name="cameras_status_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -276,7 +276,7 @@
          </widget>
         </item>
         <item row="0" column="0">
-         <widget class="QLabel" name="camera_exposure_label">
+         <widget class="QLabel" name="camera_status_label">
           <property name="minimumSize">
            <size>
             <width>120</width>
@@ -284,7 +284,7 @@
            </size>
           </property>
           <property name="text">
-           <string>Exposure</string>
+           <string>Status</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -394,43 +394,7 @@
         <string>Wavefront Sensor</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_10">
-        <item row="2" column="1">
-         <widget class="KLineEdit" name="wfs_exposuretime_lineedit">
-          <property name="text">
-           <string>{exposuretime:.2f} ms</string>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="wfs_exposuretime_label">
-          <property name="minimumSize">
-           <size>
-            <width>120</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Exposure time</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="KLineEdit" name="wfs_emgain_lineedit">
-          <property name="text">
-           <string>{emgain:.0f}</string>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
          <widget class="QLabel" name="wfs_emgain_label">
           <property name="minimumSize">
            <size>
@@ -446,17 +410,7 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="1">
-         <widget class="KLineEdit" name="wfs_ccd_temperature_lineedit">
-          <property name="text">
-           <string>{ccd_temperature:.1f} °C</string>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
+        <item row="4" column="0">
          <widget class="QLabel" name="wfs_framerate_label">
           <property name="minimumSize">
            <size>
@@ -472,17 +426,55 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
-         <widget class="KLineEdit" name="wfs_framerate_lineedit">
+        <item row="1" column="1">
+         <widget class="KStatusIndicator" name="wfs_autogain_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>30</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>30</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="wfs_exposuretime_label">
+          <property name="minimumSize">
+           <size>
+            <width>120</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="text">
-           <string>{framerate:.2f} Hz</string>
+           <string>Exposure time</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="KLineEdit" name="wfs_exposuretime_lineedit">
+          <property name="text">
+           <string>{exposuretime:.2f} ms</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="wfs_ccd_temperature_label">
           <property name="minimumSize">
            <size>
@@ -498,7 +490,7 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
+        <item row="1" column="0">
          <widget class="QLabel" name="wfs_autogain_label">
           <property name="minimumSize">
            <size>
@@ -514,8 +506,54 @@
           </property>
          </widget>
         </item>
+        <item row="5" column="1">
+         <widget class="KLineEdit" name="wfs_ccd_temperature_lineedit">
+          <property name="text">
+           <string>{ccd_temperature:.1f} °C</string>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="KLineEdit" name="wfs_emgain_lineedit">
+          <property name="text">
+           <string>{emgain:.0f}</string>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="KLineEdit" name="wfs_framerate_lineedit">
+          <property name="text">
+           <string>{framerate:.2f} Hz</string>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="wfs_acquisition_label">
+          <property name="minimumSize">
+           <size>
+            <width>120</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Acquisition</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="1">
-         <widget class="KStatusIndicator" name="wfs_autogain_indicator">
+         <widget class="KStatusIndicator" name="wfs_acquisition_indicator">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -553,9 +591,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="QGroupBox" name="streams_groupbox">
+      <widget class="QGroupBox" name="options_groupbox">
        <property name="title">
-        <string>Streams</string>
+        <string>Options</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_7">
         <item>
@@ -566,16 +604,19 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="colormap_checkbox">
+         <widget class="QCheckBox" name="masks_checkbox">
           <property name="text">
-           <string>Grayscale Colormap (w/ saturation)</string>
+           <string>Use Masks</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="freeze_checkbox">
+         <widget class="QCheckBox" name="colormap_checkbox">
           <property name="text">
-           <string>Freeze streams</string>
+           <string>Grayscale Colormap (w/ saturation)</string>
           </property>
          </widget>
         </item>

@@ -1,10 +1,10 @@
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from subprocess import Popen
 
 import numpy as np
 
-from PySide6.QtCore import QMarginsF, QPointF, QRectF, Slot
+from PySide6.QtCore import QMarginsF, QPointF, QRectF, QTimer, Slot
 from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
@@ -15,7 +15,7 @@ from guis.utils.definitions import Color
 from guis.utils.mixins import BackendDataMixin, MinMaxMixin, SceneHoverMixin
 from guis.utils.ui_loader import loadUi
 from guis.utils.widgets import KMessageBox, KWidget
-from guis.windows.camera_zoom import CameraZoomWindow
+from guis.windows.fits_viewer import FITSViewerWindow
 
 import config
 
@@ -47,7 +47,6 @@ def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
 
 
 class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
-    associated_stream = config.Streams.FLI
     image_info = config.Images.fli
 
     data_unit = ' ADU'
@@ -61,7 +60,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     WFS_fov = 4 * config.WFS.plate_scale / config.Camera.plate_scale
 
-    zoom_window = None
+    fits_viewer = None
 
     saturation = np.nan
     timestamp = None
@@ -78,7 +77,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.camera_view.setView(self.image_info['shape'])
 
-        self.camera_view.margins = QMarginsF(40, 30, 40, 30)
+        self.camera_view.setMargins(QMarginsF(40, 30, 40, 30))
 
         self.change_units(Qt.Unchecked)
         self.change_colormap(Qt.Unchecked)
@@ -86,7 +85,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         pen = QPen(Color.BLUE, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
         pen.setCosmetic(True)
 
-        self.roi = self.camera_view.scene.addEllipse(
+        self.roi = self.camera_view.scene().addEllipse(
             self.data_center_x - self.WFS_fov / 2, self.data_center_y -
             self.WFS_fov / 2, self.WFS_fov, self.WFS_fov, pen)
         self.roi.setZValue(1)
@@ -99,19 +98,19 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def all_updated(self, data):
         mtime = self.consume_fits_mtime(data, config.FITS.last_image_all)
-        if mtime != None:
-            self.backend.camera_image()
+        if mtime is not None:
+            QTimer.singleShot(0, self, self.backend.camera_image)
 
         centering_manual_v, centering_manual_t = self.consume_db(
             data, 'obs', 'centering_manual')
         if centering_manual_v is not None:
             if centering_manual_v is True:
-                self.open_zoom_window()
-                if self.zoom_window is not None:
-                    self.zoom_window.enter_manual_centering()
+                self.open_fits_viewer()
+                if self.fits_viewer is not None:
+                    self.fits_viewer.enter_manual_centering()
             elif centering_manual_v is False:
-                if self.zoom_window is not None:
-                    self.zoom_window.exit_manual_centering()
+                if self.fits_viewer is not None:
+                    self.fits_viewer.exit_manual_centering()
 
     def camera_image_updated(self, data):
         hdul = self.consume_fits_full(data, config.FITS.last_image_all)
@@ -129,7 +128,8 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 raise Exception('Unexpected shape for camera image')
 
             self.timestamp = datetime.fromisoformat(
-                hdul[0].header['DATE']).replace(tzinfo=timezone.utc)
+                hdul[0].header['DATE']).replace(
+                    tzinfo=timezone.utc).astimezone()
 
             # self.camera_view.setNEIndicator(parang from keywords)
 
@@ -167,13 +167,13 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_units(self, state):
         if Qt.CheckState(state) == Qt.Checked:
-            self.axis_scaling = config.Camera.plate_scale
             self.axis_unit = '"'
             self.axis_precision = 1
+            self.axis_scaling = config.Camera.plate_scale
         else:
-            self.axis_scaling = 1
             self.axis_unit = ' px'
             self.axis_precision = 0
+            self.axis_scaling = 1
 
         self.update_labels()
 
@@ -187,7 +187,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             ticks_x.append((tick_pos_x, tick_label))
             ticks_y.append((tick_pos_y, tick_label))
 
-        self.camera_view.setTickParams(5, 5, 5, 10, ticks_x, ticks_y)
+        self.camera_view.setTickParams(0, 5, 5, 10, ticks_x, ticks_y)
 
     def change_colormap(self, state):
         if Qt.CheckState(state) == Qt.Checked:
@@ -209,7 +209,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         error_dialog = KMessageBox(self)
         error_dialog.setIcon(QMessageBox.Critical)
         error_dialog.setModal(True)
-        error_dialog.setText("<b>FITS loading failed!</b>")
+        error_dialog.setText('<b>FITS loading failed!</b>')
 
         if dialog.exec():
             filenames = dialog.selectedFiles()
@@ -235,7 +235,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                         )
                         continue
 
-                    CameraZoomWindow(self.backend, file=filename, parent=self)
+                    FITSViewerWindow(self.backend, file=filename, parent=self)
                 except PermissionError:
                     error_list.append(
                         f'{filename.name}: Can\'t read file, permission refused.'
@@ -247,25 +247,25 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_ds9_button_clicked(self, checked):
-        Popen(['ds9', get_latest_image_path(sort='symlink')])
+        subprocess.Popen(['ds9', get_latest_image_path(sort='symlink')])
 
     @Slot(bool)
-    def on_zoom_window_button_clicked(self, checked):
-        self.open_zoom_window()
+    def on_fits_viewer_button_clicked(self, checked):
+        self.open_fits_viewer()
 
-    def open_zoom_window(self):
-        if self.zoom_window is not None:
-            self.zoom_window.show()
-            self.zoom_window.activateWindow()
+    def open_fits_viewer(self):
+        if self.fits_viewer is not None:
+            self.fits_viewer.show()
+            self.fits_viewer.activateWindow()
 
             if self.hdul is not None:
-                self.zoom_window.update_image(self.hdul.copy())
+                self.fits_viewer.update_image(self.hdul.copy())
         else:
             if self.hdul is not None:
                 hdul = self.hdul.copy()
             else:
                 hdul = None
 
-            self.zoom_window = CameraZoomWindow(
+            self.fits_viewer = FITSViewerWindow(
                 self.backend, hdul, on_sky_unit=(self.axis_unit == '"'),
                 parent=self)

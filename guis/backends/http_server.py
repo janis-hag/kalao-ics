@@ -2,6 +2,7 @@ import argparse
 import inspect
 import logging
 import pickle
+import subprocess
 import traceback
 from functools import partial
 
@@ -39,6 +40,24 @@ app.json = KalAOProvider(app)
 
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
+
+
+@app.route("/night_summary")
+@app.route("/night_summary/<night>")
+def night_summary(night=None):
+    args = ['python', 'scripts/engineering/summary_generator.py']
+    if night is not None:
+        args.append('--night')
+        args.append(night)
+
+    res = subprocess.run(args, timeout=60, capture_output=True,
+                         cwd=config.kalao_ics_path)
+
+    content = res.stdout.decode('utf8')
+    response = make_response(content)
+    response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+
+    return response
 
 
 def serve(fun):
@@ -125,7 +144,6 @@ if __name__ == '__main__':
 
     global backend
     backend = backends.MainBackend()
-    backend._emit = False
 
     app.run(host='0.0.0.0', port=config.GUI.http_port, threaded=True,
             debug=args.debug)

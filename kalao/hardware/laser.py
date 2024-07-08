@@ -112,7 +112,7 @@ def set_power(power: float, enable: bool = False,
 
     :return: value of the new intensity
     """
-    logger.info('laser', f'Setting laser intensity to {power}')
+    logger.info('laser', f'Setting laser power to {power}')
 
     if power != 0:
         aocontrol.emgain_off()
@@ -196,4 +196,4 @@ def init() -> ReturnCode:
     logger.info('laser', 'Initialising laser')
     logger.info('laser', 'Laser initialised')
 
-    return ReturnCode.PLC_INIT_SUCCESS
+    return ReturnCode.HW_INIT_SUCCESS

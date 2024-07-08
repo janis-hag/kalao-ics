@@ -14,7 +14,12 @@ from kalao.utils import offsets, starfinder
 from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
                                      FlipMirrorPosition, ObservationType,
                                      ReturnCode, SequencerStatus, ShutterState)
-from kalao.definitions.exceptions import *
+from kalao.definitions.exceptions import (
+    AbortRequested, AutomaticCenteringTimeout, CameraTakeImageFailed,
+    CenteringException, CenteringFluxWFSTooLow, CenteringMaxIter,
+    CenteringOffsetingFailed, CenteringStarNotFound, DMNotOn,
+    FilterWheelNotInPosition, FlipMirrorNotUp, ManualCenteringTimeout,
+    ShutterNotClosed, WFSAcquisitionOff)
 
 import config
 
@@ -43,7 +48,7 @@ def center_on_target(
     timeout = time.monotonic() + config.Centering.automatic_timeout
 
     if centering_mode == CenteringMode.AUTOMATIC:
-        logger.info('centering', f'Starting automatic centering')
+        logger.info('centering', 'Starting automatic centering')
 
         try:
             xy = _get_star(ObservationType.TARGET_CENTERING, exptime)
@@ -66,7 +71,7 @@ def center_on_target(
             # Will wait until manual centering is done, or raise an exception if manual centering timeout is reached
             request_manual_centering()
     else:
-        logger.info('centering', f'Starting manual centering')
+        logger.info('centering', 'Starting manual centering')
 
         # Take at least one image so the observer can click on it
         img_path = camera.take_image(ObservationType.TARGET_CENTERING)
@@ -82,16 +87,17 @@ def center_on_target(
         if aocontrol.optimize_wfs_flux() != ReturnCode.OK:
             raise CenteringFluxWFSTooLow
 
-        try:
-            on_wfs_with_ttm()
-        except (CenteringException, AbortRequested,
-                CameraTakeImageFailed) as e:
-            logger.error('centering',
-                         f'"{e.__doc__}" happened during centering on target')
+        # Note: currently disabled, let's let the AO do the centering by itself
+        # try:
+        #     on_wfs_with_ttm()
+        # except (CenteringException, AbortRequested,
+        #         CameraTakeImageFailed) as e:
+        #     logger.error('centering',
+        #                  f'"{e.__doc__}" happened during centering on target')
+        #
+        #     raise e
 
-            raise e
-
-    logger.info('centering', f'Centering done')
+    logger.info('centering', 'Centering done')
 
     return ReturnCode.CENTERING_OK
 
@@ -111,13 +117,13 @@ def center_on_laser() -> ReturnCode:
     :return:
     """
 
-    logger.info('centering', f'Starting centering on laser')
+    logger.info('centering', 'Starting centering on laser')
 
-    if dm.on() != 0:
+    if dm.on() != ReturnCode.OK:
         raise DMNotOn
 
-    if wfs.start_acquisition() != 0:
-        raise WFSNotOn
+    if wfs.start_acquisition() != ReturnCode.OK:
+        raise WFSAcquisitionOff
 
     if shutter.close() != ShutterState.CLOSED:
         raise ShutterNotClosed

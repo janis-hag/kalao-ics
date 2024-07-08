@@ -1,5 +1,5 @@
 import argparse
-from signal import SIGINT, signal
+import signal
 
 import numpy as np
 
@@ -16,60 +16,60 @@ from guis.windows.alignment import AlignmentWindow
 import config
 
 
-def handler(signal_received, frame):
+def sig_handler(signal_received, frame):
+    app.closeAllWindows()
     app.quit()
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='KalAO - Alignment Tools.')
-    parser.add_argument('--simulation', action="store_true", dest="simulation",
-                        help='Simulation mode')
+parser = argparse.ArgumentParser(description='KalAO - Alignment Tools.')
+parser.add_argument('--simulation', action="store_true", dest="simulation",
+                    help='Simulation mode')
 
-    args = parser.parse_args()
+args = parser.parse_args()
 
-    signal(SIGINT, handler)
+signal.signal(signal.SIGINT, sig_handler)
 
-    # Numpy
+# Numpy
 
-    np.ma.masked_print_option.set_display('--')
-    np.set_printoptions(nanstr='--')
+np.ma.masked_print_option.set_display('--')
+np.set_printoptions(nanstr='--')
 
-    # Qt stuff
+# Qt stuff
 
-    loader = QUiLoader()
+loader = QUiLoader()
 
-    app = QApplication(['KalAO - Alignment tools'])
-    app.setQuitOnLastWindowClosed(True)
+app = QApplication(['KalAO - Alignment tools'])
+app.setQuitOnLastWindowClosed(True)
 
-    # Windows
+# Windows
 
-    if args.simulation:
-        from guis.backends.alignment_simulation import AlignmentBackend
-    else:
-        from guis.backends.alignment_local import AlignmentBackend
+if args.simulation:
+    from guis.backends.alignment_simulation import AlignmentBackend
+else:
+    from guis.backends.alignment_local import AlignmentBackend
 
-    backend = AlignmentBackend()
+backend = AlignmentBackend()
 
-    wfs = WFSWidget(backend)
-    wfs.show()
-    wfs.wfs_view.updateColormap(colormaps.Grayscale())
+wfs = WFSWidget(backend)
+wfs.show()
+wfs.wfs_view.updateColormap(colormaps.Grayscale())
 
-    slopes = SlopesWidget(backend)
-    slopes.show()
-    slopes.slopes_view.updateColormap(colormaps.GrayscaleTransparent())
+slopes = SlopesWidget(backend)
+slopes.show()
+slopes.slopes_view.updateColormap(colormaps.GrayscaleTransparent())
 
-    flux = FluxWidget(backend)
-    flux.show()
-    flux.flux_view.updateColormap(colormaps.GrayscaleTransparent())
+flux = FluxWidget(backend)
+flux.show()
+flux.flux_view.updateColormap(colormaps.GrayscaleTransparent())
 
-    alignment = AlignmentWindow(backend, wfs)
-    alignment.show()
+alignment = AlignmentWindow(backend, wfs)
+alignment.show()
 
-    backend.alignment_window = alignment
+backend.alignment_window = alignment
 
-    timer = QTimer()
-    timer.setInterval(int(1000 / config.GUI.refreshrate_streams))
-    timer.timeout.connect(backend.streams_all)
-    timer.start()
+timer = QTimer()
+timer.setInterval(int(1000 / config.GUI.refreshrate_streams))
+timer.timeout.connect(backend.streams_all)
+timer.start()
 
-    app.exec()
+app.exec()
