@@ -71,9 +71,9 @@ def _get_collection(collection_name: str) -> Collection:
             timeseries={
                 'timeField': 'timestamp',
                 'metaField': 'metadata',
-                'granularity': 'minutes',
-                #'bucketMaxSpanSeconds': 86400,
-                #'bucketRoundingSeconds': 86400,
+                #'granularity': 'minutes',
+                'bucketMaxSpanSeconds': 86400,
+                'bucketRoundingSeconds': 86400,
             })
 
     # collection.create_index([('key', TEXT)], background=True)
