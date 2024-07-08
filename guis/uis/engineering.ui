@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1627</width>
+    <width>1739</width>
     <height>961</height>
    </rect>
   </property>
@@ -1651,9 +1651,12 @@
          </spacer>
         </item>
         <item>
-         <widget class="QLabel" name="milk_procCTRL_label">
+         <widget class="QLabel" name="milk_fpsCTRL_label">
           <property name="text">
-           <string>Use &lt;span style=&quot;font-weight: bold;&quot;&gt;milk-procCTRL&lt;/span&gt; for advanced control.</string>
+           <string>Use &lt;span style=&quot;font-weight: bold;&quot;&gt;milk-fpsCTRL&lt;/span&gt; and &lt;span style=&quot;font-weight: bold;&quot;&gt;milk-procCTRL&lt;/span&gt; for advanced control.</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -1795,6 +1798,9 @@
          <widget class="QLabel" name="milk_streamCTRL_label">
           <property name="text">
            <string>Use &lt;span style=&quot;font-weight: bold;&quot;&gt;milk-streamCTRL&lt;/span&gt; for advanced control.</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
           </property>
          </widget>
         </item>

@@ -28,7 +28,7 @@ def switch(power_port: str | int, state: IPPowerStatus) -> IPPowerStatus:
 
     logger.info('ippower', f'Switching port {power_port} to {state}')
 
-    req = _send_request({'cmd': 1, 'p': power_port, 's': int(state)})
+    req = _send_request({'cmd': 1, 'p': _power_port, 's': int(state)})
 
     if req is not None and _power_port != -1:
         new_state = req.json()['outputs'][_power_port - 1]['state']

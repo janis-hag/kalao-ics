@@ -30,8 +30,11 @@ def wrapper(log: str, func: Callable, queue: Queue) -> None:
         ret = ReturnCode.EXCEPTION
     else:
         if isinstance(ret, ReturnCode):
-            logger.info(log,
-                        f'{get_name(func)} returned {ret.value} ({ret.name})')
+            message = f'{get_name(func)} returned {ret.value} ({ret.name})'
+            if ret != ReturnCode.OK:
+                logger.warn(log, message)
+            else:
+                logger.info(log, message)
         else:
             logger.info(log, f'{get_name(func)} returned {ret}')
     queue.put({get_name(func): ret})
@@ -105,7 +108,6 @@ def launch(log: str, func_list: list[Callable], timeout: float = np.inf,
 
     for f, ret in returns.items():
         if ret != ReturnCode.OK:
-            logger.error(log, f'{f} returned {ret}')
             processes_error[f] = ret
 
     logger.info(

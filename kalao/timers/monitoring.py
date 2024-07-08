@@ -293,10 +293,10 @@ def _check_and_log(key: str, value: int | float, timestamp: datetime) -> None:
 
         hr, min, sec = _sec_to_hms(since)
 
-        since_str = f'm {sec:.0f}s'
+        since_str = f'{sec:.0f}s'
 
         if min != 0 or hr != 0:
-            since_str = f'{min:d} ' + since_str
+            since_str = f'{min:d}m ' + since_str
 
         if hr != 0:
             since_str = f'{hr:d}h ' + since_str
