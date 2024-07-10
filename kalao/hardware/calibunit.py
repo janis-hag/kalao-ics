@@ -17,7 +17,7 @@ from kalao.hardware import plc
 
 from opcua import Client
 
-from kalao.definitions.enums import PLCStatus, ReturnCode
+from kalao.definitions.enums import PLCStatus, ReturnCode, CalibUnitPositionName
 
 import config
 
@@ -31,7 +31,8 @@ def move_to_tungsten_position() -> float:
 
     new_position = move(config.Tungsten.position)
 
-    if math.isclose(new_position, config.Tungsten.position, abs_tol=0.1):
+    if get_position_name(position=new_position, tolerance=config.CalibUnit.
+                         tolerance_move) == CalibUnitPositionName.TUNGSTEN:
         return new_position
     else:
         logger.error(
@@ -50,7 +51,8 @@ def move_to_laser_position() -> float:
 
     new_position = move(config.Laser.position)
 
-    if math.isclose(new_position, config.Laser.position, abs_tol=0.1):
+    if get_position_name(position=new_position, tolerance=config.CalibUnit.
+                         tolerance_move) == CalibUnitPositionName.LASER:
         return new_position
     else:
         logger.error(
@@ -118,6 +120,23 @@ def get_position(beck: Client = None) -> float:
         logger.error('calibunit', f'{error_text} ({error_code})')
 
     return position
+
+
+def get_position_name(position=None, tolerance=config.CalibUnit.tolerance_disp,
+                      beck: Client = None) -> CalibUnitPositionName:
+    if position is None:
+        position = get_position(beck=beck)
+
+    if np.isnan(position):
+        return CalibUnitPositionName.ERROR
+    elif math.isclose(position, config.Laser.position, abs_tol=tolerance,
+                      rel_tol=0):
+        return CalibUnitPositionName.LASER
+    elif math.isclose(position, config.Tungsten.position, abs_tol=tolerance,
+                      rel_tol=0):
+        return CalibUnitPositionName.TUNGSTEN
+    else:
+        return CalibUnitPositionName.UNKNOWN
 
 
 def is_moving(beck: Client = None) -> bool:

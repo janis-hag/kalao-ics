@@ -1,5 +1,5 @@
-class TerminalColors:
-    """ ANSI color codes """
+class ANSIEscapeCodes:
+    """ ANSI escape codes """
     BLACK = "\033[30m"
     RED = "\033[31m"
     GREEN = "\033[32m"
@@ -44,8 +44,8 @@ class TerminalColors:
     BLINK = "\033[5m"
     BLINK_Q = "\033[6m"
     REVERSE = "\033[7m"
-    CONCEAL = "\033[7m"
-    CROSSED = "\033[9m"
+    HIDDEN = "\033[7m"
+    STRIKETHROUGH = "\033[9m"
 
     UP = "\033[1A"
     DOWN = "\033[1B"

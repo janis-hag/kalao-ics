@@ -2,7 +2,7 @@ import argparse
 import select
 
 from kalao import logs
-from kalao.utils.terminal_colors import TerminalColors as TC
+from kalao.utils.ansi_escape_codes import ANSIEscapeCodes as ANSI
 
 from kalao.definitions.enums import LogLevel
 
@@ -22,16 +22,16 @@ def run(args):
 
 
 def format_entry(entry):
-    style_timestamp = TC.WHITE
+    style_timestamp = ANSI.WHITE
     style_origin = ''
     style_message = ''
-    style_end = TC.RESET
+    style_end = ANSI.RESET
 
     if entry.level == LogLevel.ERROR:
-        style_origin = TC.BOLD + TC.BRIGHT_RED + TC.BLINK
-        style_message = TC.BOLD + TC.BRIGHT_RED
+        style_origin = ANSI.BOLD + ANSI.BRIGHT_RED + ANSI.BLINK
+        style_message = ANSI.BOLD + ANSI.BRIGHT_RED
     elif entry.level == LogLevel.WARNING:
-        style_message = TC.BOLD + TC.BRIGHT_YELLOW,
+        style_message = ANSI.BOLD + ANSI.BRIGHT_YELLOW,
 
     print(
         f'{style_timestamp}{entry.timestamp}{style_end} {style_origin}{entry.origin:>17s}{style_end}: {style_message}{entry.message}{style_end}'

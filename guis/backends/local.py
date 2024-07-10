@@ -253,7 +253,7 @@ class MainBackend(SHMFPSBackend):
         self._update_fps_param(data, config.FPS.CONFIG, 'adc_synchronisation')
         self._update_fps_param(data, config.FPS.CONFIG, 'ttm_offloading')
 
-        self._update_dict(data, 'plc',
+        self._update_dict(data, 'hw',
                           hw_utils.get_all_status(filter_from_db=True))
         self._update_dict(data, 'services', services.get_all_status())
         self._update_dict(
@@ -274,7 +274,18 @@ class MainBackend(SHMFPSBackend):
                     [session.name for session in tmux_server.sessions]
             })
 
-        for proc in config.AO.procs:
+        self._update_dict(
+            data, 'pgrep', {
+                'kalaocam_ctrl':
+                    subprocess.run([
+                        'pgrep', '-f', 'camstack.cam_mains.kalaocam'
+                    ]).returncode,
+                'nuvu_fgrab':
+                    subprocess.run(['pgrep', '-f', 'hwacq-edttake']
+                                   ).returncode,
+            })
+
+        for proc in config.AO.processes:
             self._update_fps_state(data, proc)
 
         for stream in config.AO.streams:
@@ -313,6 +324,7 @@ class MainBackend(SHMFPSBackend):
         data = {}
 
         self._update_shm(data, config.SHM.DM)
+        self._update_shm(data, config.SHM.COMMANDS_DM)
 
         for i in range(0, 12):
             self._update_shm(data, f'{config.SHM.DM}{i:02d}')
@@ -325,6 +337,7 @@ class MainBackend(SHMFPSBackend):
         data = {}
 
         self._update_shm(data, config.SHM.TTM)
+        self._update_shm(data, config.SHM.COMMANDS_TTM)
 
         for i in range(0, 12):
             self._update_shm(data, f'{config.SHM.TTM}{i:02d}')

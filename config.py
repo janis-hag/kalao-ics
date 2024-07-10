@@ -54,6 +54,9 @@ class CalibUnit:
     position_min = 0  # mm
     position_max = 99  # mm
 
+    tolerance_move = 0.1  # mm
+    tolerance_disp = 1  # mm
+
 
 class ADC:
     velocity = 1  # °/s
@@ -112,12 +115,12 @@ class AO:
     wfs_algorithms = ['Quad-cell', 'Center of mass']
     dm_stroke_modes = ['Mid-stroke', 'Minimize stroke']
 
-    procs = [
+    processes = [
+        'kalao_config-1',
+        'telemetry_gather-1',
         'nuvu_acquire-1',
         'shwfs_process-1',
         'bmc_display-1',
-        'kalao_config-1',
-        'telemetry_gather-1',
         # DM Loop
         'acquWFS-1',
         'wfs2cmodeval-1',
@@ -145,6 +148,8 @@ class AO:
         'aol2_modevalDM',
         'dm01disp',
         'dm02disp',
+        'bmc_commands_dm',
+        'bmc_commands_ttm',
     ]
 
 
@@ -672,14 +677,15 @@ class ETCS:
 
 
 class Cooling:
-    heater_hysteresis_temp = 2  # °C
+    heating_margin = 2  # ° C
+    heating_hysteresis = 6  # °C
 
     pump_restart_temp = 35  # °C
     max_pump_temperature = 60  # °C
 
 
 class Hardware:
-    cooling_check_interval = 5  # s
+    cooling_check_interval = 10  # s
     inactivity_check_interval = 30  # s
 
     inactivity_timeout = 2700  # s
@@ -773,6 +779,9 @@ class SHM:
     TTM_USER_CONTROLLED = 'dm02disp11'
 
     TELEMETRY_TTM = 'telemetry_ttm'
+
+    COMMANDS_DM = 'bmc_commands_dm'
+    COMMANDS_TTM = 'bmc_commands_ttm'
 
 
 class Images:

@@ -1,10 +1,332 @@
 import re
+from enum import StrEnum
 
 
-def translate(str):
-    pattern = re.compile(r"\u001b\[([0-9]+)m")
-    nb_span = 0
+class Category(StrEnum):
+    FG_COLOR = 'fg-color'
+    BG_COLOR = 'bg-color'
+    INTENSITY = 'intensity'
+    ITALIC = 'italic'
+    UNDERLINE = 'underline'
+    BLINKING = 'blinking'
+    REVERSE = 'reverse'
+    HIDDEN = 'hidden'
+    STRIKETHROUGH = 'strikethrough'
+    OVERLINE = 'overline'
 
+
+default_state = {
+    Category.FG_COLOR: None,
+    Category.BG_COLOR: None,
+    Category.INTENSITY: 0,
+    Category.ITALIC: 0,
+    Category.UNDERLINE: 0,
+    Category.BLINKING: 0,
+    Category.REVERSE: 0,
+    Category.HIDDEN: 0,
+    Category.STRIKETHROUGH: 0,
+    Category.OVERLINE: 0
+}
+
+
+def _generate_substitution(codes, state):
+    _handle_ansi_codes(codes, state)
+
+    classes = []
+    styles = []
+
+    fg = state[Category.FG_COLOR]
+    bg = state[Category.BG_COLOR]
+    reverse = state[Category.REVERSE]
+
+    color = fg if not reverse else bg
+    if color is not None:
+        if color.startswith('#'):
+            styles.append(f'color: {color}')
+        else:
+            classes.append(color)
+
+    color = bg if not reverse else fg
+    if color is not None:
+        if color.startswith('#'):
+            styles.append(f'background-color: {color}')
+        else:
+            classes.append(color + '-bg')
+
+    if state[Category.INTENSITY] == 1:
+        classes.append('bold')
+    elif state[Category.INTENSITY] == -1:
+        classes.append('faint')
+
+    if state[Category.ITALIC]:
+        classes.append('italic')
+
+    if state[Category.UNDERLINE] == 1:
+        classes.append('underline')
+    elif state[Category.UNDERLINE] == 2:
+        classes.append('double-underline')
+
+    if state[Category.BLINKING]:
+        classes.append('blinking')
+
+    if state[Category.HIDDEN]:
+        classes.append('hidden')
+
+    if state[Category.STRIKETHROUGH]:
+        classes.append('strikethrough')
+
+    if state[Category.OVERLINE]:
+        classes.append('overline')
+
+    str = ''
+
+    if state['in_span']:
+        str += '</span>'
+        state['in_span'] = False
+
+    if len(classes) != 0 or len(styles) != 0:
+        str += f'<span'
+
+        if len(classes) != 0:
+            str += f' class="{" ".join(classes)}"'
+
+        if len(styles) != 0:
+            str += f' style="{"; ".join(styles)}"'
+
+        str += '>'
+        state['in_span'] = True
+
+    return str
+
+
+def _handle_ansi_codes(codes, state):
+    if codes == '':
+        state.update(default_state)
+        return
+
+    codes = re.split(r'[;:]', codes)
+
+    def convert(v):
+        if v == '':
+            return 0
+
+        try:
+            return int(v)
+        except ValueError:
+            return v
+
+    codes = [convert(v) for v in codes]
+
+    i = 0
+    while i < len(codes):
+        code = codes[i]
+
+        # Basics
+
+        if code == '':
+            pass
+
+        elif code == 0:
+            state.update(default_state)
+
+        elif code == 1:
+            state[Category.INTENSITY] = 1
+
+        elif code == 2:
+            state[Category.INTENSITY] = -1
+
+        elif code == 3:
+            state[Category.ITALIC] = 1
+
+        elif code == 4:
+            state[Category.UNDERLINE] = 1
+
+        elif code == 5:
+            state[Category.BLINKING] = 1
+
+        elif code == 6:
+            state[Category.BLINKING] = 2
+
+        elif code == 7:
+            state[Category.REVERSE] = 1
+
+        elif code == 8:
+            state[Category.HIDDEN] = 1
+
+        elif code == 9:
+            state[Category.STRIKETHROUGH] = 1
+
+        # Fonts
+
+        # 10 to 20 are fonts (unsupported)
+
+        elif code == 21:
+            state[Category.UNDERLINE] = 2
+
+        # Reset
+
+        elif code == 22:
+            state[Category.INTENSITY] = 0
+
+        elif code == 23:
+            state[Category.ITALIC] = 0
+
+        elif code == 24:
+            state[Category.UNDERLINE] = 0
+
+        elif code == 25:
+            state[Category.BLINKING] = 0
+
+        elif code == 27:
+            state[Category.REVERSE] = 0
+
+        elif code == 28:
+            state[Category.HIDDEN] = 0
+
+        elif code == 29:
+            state[Category.STRIKETHROUGH] = 0
+
+        # Foreground
+
+        elif 30 <= code <= 37:
+            color = _get_8color(code - 30)
+            if color is not None:
+                state[Category.FG_COLOR] = color
+
+        elif code == 38:
+            color, incr = _get_256color_or_truecolor(codes, i)
+            if color is not None:
+                state[Category.FG_COLOR] = color
+            i += incr
+
+        elif code == 39:
+            state[Category.FG_COLOR] = None
+
+        # Background
+
+        elif 40 <= code <= 47:
+            color = _get_8color(code - 40)
+            if color is not None:
+                state[Category.BG_COLOR] = color
+
+        elif code == 48:
+            color, incr = _get_256color_or_truecolor(codes, i)
+            if color is not None:
+                state[Category.BG_COLOR] = color
+            i += incr
+
+        elif code == 49:
+            state[Category.BG_COLOR] = None
+
+        elif code == 53:
+            state[Category.OVERLINE] = 1
+
+        elif code == 45:
+            state[Category.OVERLINE] = 0
+
+        # Foreground bright
+
+        elif 90 <= code <= 97:
+            color = _get_8color(code - 90)
+            if color is not None:
+                state[Category.FG_COLOR] = color + '-bright'
+
+        # Background bright
+
+        elif 100 <= code <= 107:
+            color = _get_8color(code - 100)
+            if color is not None:
+                state[Category.BG_COLOR] = color + '-bright'
+
+        else:
+            pass
+
+        i += 1
+
+
+def _get_8color(n):
+    match n:
+        case 0:
+            return 'black'
+
+        case 1:
+            return 'red'
+
+        case 2:
+            return 'green'
+
+        case 3:
+            return 'yellow'
+
+        case 4:
+            return 'blue'
+
+        case 5:
+            return 'magenta'
+
+        case 6:
+            return 'cyan'
+
+        case 7:
+            return 'white'
+
+        case _:
+            return None
+
+
+def _get_256color_or_truecolor(codes, i):
+    try:
+        if codes[i + 1] == 5:
+            c = codes[i + 2]
+
+            if c == '':
+                c = 0
+
+            if 0 <= c <= 7:
+                color = _get_8color(c)
+            elif 8 <= c <= 15:
+                color = _get_8color(c - 8) + '-bright'
+            elif 16 <= c <= 231:
+                b = (c-16) % 6
+                g = ((c-16-b) // 6) % 6
+                r = (c - 16 - b - 6*g) // 36
+
+                color = f'#{r*51:02X}{g*51:02X}{b*51:02X}'
+            elif 232 <= c <= 255:
+                g = 8 + 10 * (c-232)
+
+                color = f'#{g:02X}{g:02X}{g:02X}'
+            else:
+                color = None
+
+            return color, 2
+
+        elif codes[i + 1] == 2:
+            r = codes[i + 2]
+            g = codes[i + 3]
+            b = codes[i + 4]
+
+            if r == '':
+                r = 0
+
+            if g == '':
+                g = 0
+
+            if b == '':
+                b = 0
+
+            color = f'#{r:02X}{g:02X}{b:02X}'
+
+            return color, 4
+
+        else:
+            return None, 0
+
+    except IndexError:
+        return None, 0
+
+
+def translate(str, close_last_span=True):
     # Escape HTML characters
     table = str.maketrans({
         '\n': '<br/>',
@@ -16,148 +338,39 @@ def translate(str):
     })
     str = str.translate(table)
 
-    def dashrepl(matchobj):
-        nonlocal nb_span
+    # Useless codes (https://invisible-island.net/xterm/ctlseqs/ctlseqs.html)
+    replace_list = [
+        '\u001b%@',  # ISO 8859-1 charset
+        '\u001b%G',  # UTF-8 charset
+        '\u001b\\(B',  # USASCII charset
+    ]
 
-        nb_span += 1
+    str = re.sub('(' + '|'.join(replace_list) + ')', '', str)
 
-        match matchobj.group(1):
-            case '0':
-                str = '</span>' * (nb_span-1)
-                nb_span = 0
-                return str
+    state = {
+        'in_span': False,
+    } | default_state
 
-            case '1':
-                return '<span class="bold">'
+    str = re.sub(
+        re.compile(r'\u001b\[([0-9;]*)m'),
+        lambda matchobj: _generate_substitution(matchobj.group(1), state), str)
 
-            case '3':
-                return '<span class="italic">'
-
-            case '4':
-                return '<span class="underline">'
-
-            case '9':
-                return '<span class="crossed">'
-
-            # Foreground
-
-            case '30':
-                return '<span class="black">'
-
-            case '31':
-                return '<span class="red">'
-
-            case '32':
-                return '<span class="green">'
-
-            case '33':
-                return '<span class="yellow">'
-
-            case '34':
-                return '<span class="blue">'
-
-            case '35':
-                return '<span class="magenta">'
-
-            case '36':
-                return '<span class="cyan">'
-
-            case '37':
-                return '<span class="white">'
-
-            # Background
-
-            case '40':
-                return '<span class="black-bg">'
-
-            case '41':
-                return '<span class="red-bg">'
-
-            case '42':
-                return '<span class="green-bg">'
-
-            case '43':
-                return '<span class="yellow-bg">'
-
-            case '44':
-                return '<span class="blue-bg">'
-
-            case '45':
-                return '<span class="magenta-bg">'
-
-            case '46':
-                return '<span class="cyan-bg">'
-
-            case '47':
-                return '<span class="white-bg">'
-
-            # Foreground bright
-
-            case '90':
-                return '<span class="black-bright">'
-
-            case '91':
-                return '<span class="red-bright">'
-
-            case '92':
-                return '<span class="green-bright">'
-
-            case '93':
-                return '<span class="yellow-bright">'
-
-            case '94':
-                return '<span class="blue-bright">'
-
-            case '95':
-                return '<span class="magenta-bright">'
-
-            case '96':
-                return '<span class="cyan-bright">'
-
-            case '97':
-                return '<span class="white-bright">'
-
-            # Background bright
-
-            case '100':
-                return '<span class="black-bright-bg">'
-
-            case '101':
-                return '<span class="red-bright-bg">'
-
-            case '102':
-                return '<span class="green-bright-bg">'
-
-            case '103':
-                return '<span class="yellow-bright-bg">'
-
-            case '104':
-                return '<span class="blue-bright-bg">'
-
-            case '105':
-                return '<span class="magenta-bright-bg">'
-
-            case '106':
-                return '<span class="cyan-bright-bg">'
-
-            case '107':
-                return '<span class="white-bright-bg">'
-
-            case _:
-                return '<span>'
-
-    str = re.sub(pattern, dashrepl, str)
+    if state['in_span'] and close_last_span:
+        str += '</span>'
 
     return str
 
 stylesheet = \
     """
-        span {
+        * {
             white-space: pre;
         }
         
         .bold {
             font-weight: bold;
+        }
+        .faint {
+            font-weight: 100;
         }
         .italic {
             font-style: italic;
@@ -165,8 +378,18 @@ stylesheet = \
         .underline {
             text-decoration: underline;
         }
-        .crossed {
+        .double-underline {
+             text-decoration: underline double;
+        }
+        .hidden {
+            visibility: hidden;
+            opacity: 0;
+        }
+        .strikethrough {
             text-decoration: line-through;
+        }
+        .strikethrough {
+            text-decoration: overline;
         }
         
         .black {

@@ -22,7 +22,7 @@ from astropy.io import fits
 from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import camera, filterwheel, laser
 from kalao.utils import kmath, ktime, starfinder, zernike
-from kalao.utils.terminal_colors import TerminalColors as TC
+from kalao.utils.ansi_escape_codes import ANSIEscapeCodes as ANSI
 
 from kalao.definitions.enums import CameraServerStatus
 
@@ -104,21 +104,21 @@ def run(args):
     for i in range(args.iterations):
         for order in range(args.orders_to_skip, args.orders_to_correct):
             zernike.print_coeffs(zernike_coeffs)
-            print(TC.CLEAR)
+            print(ANSI.CLEAR)
 
-            print(TC.CLEAR + f'Highest peak recorded: {highest_peak:.1f}')
-            print(TC.CLEAR)
+            print(ANSI.CLEAR + f'Highest peak recorded: {highest_peak:.1f}')
+            print(ANSI.CLEAR)
 
             print(
-                TC.CLEAR +
+                ANSI.CLEAR +
                 f'Result of previous optimization: Zernike amplitude {start_coeff:f} -> {end_coeff:f}     Peak {start_peak:.1f} -> {end_peak:.1f}'
             )
-            print(TC.CLEAR)
+            print(ANSI.CLEAR)
 
             coeff_name, (coeff_n, coeff_m) = zernike.get_coeff_name(order)
 
             print(
-                TC.CLEAR +
+                ANSI.CLEAR +
                 f'Iteration {i + 1}/{args.iterations}   Optimising order ({coeff_n: 2},{coeff_m: 2}) {coeff_name}'
             )
 
@@ -137,10 +137,10 @@ def run(args):
             zernike_coeffs[order] = 0
 
             print(
-                TC.CLEAR +
+                ANSI.CLEAR +
                 f'Starting point                          Zernike amplitude {peak_array[1][COEFF]: 11.8f}     Peak: {peak_array[1][PEAK_VALUE]:.0f}'
             )
-            print(TC.CLEAR)
+            print(ANSI.CLEAR)
 
             while step < args.steps and zernike_coeff_incr > args.min_incr:
                 up = zernike_coeffs[order] + zernike_coeff_incr
@@ -169,7 +169,7 @@ def run(args):
                 peak_array[1][COEFF] = zernike_coeffs[order]
 
                 print(
-                    TC.UP + TC.CLEAR +
+                    ANSI.UP + ANSI.CLEAR +
                     f'Step {step: 5d}     Increment {zernike_coeff_incr:.8f}     Zernike amplitude {peak_array[1][COEFF]: 11.8f}     Peak: {peak_array[1][PEAK_VALUE]:.0f}'
                 )
 
@@ -182,21 +182,21 @@ def run(args):
 
             highest_peak = max(highest_peak, end_peak)
 
-            print(TC.UP * (8 + len(zernike_coeffs)), end=TC.CLEAR)
+            print(ANSI.UP * (8 + len(zernike_coeffs)), end=ANSI.CLEAR)
 
     peak = display_and_measure(dm_shm, zernike_coeffs, args)
 
-    print(TC.UP + TC.CLEAR + 'Final coefficients:')
+    print(ANSI.UP + ANSI.CLEAR + 'Final coefficients:')
     zernike.print_coeffs(zernike_coeffs)
-    print(TC.CLEAR)
+    print(ANSI.CLEAR)
 
-    print(TC.CLEAR + f'Highest peak recorded: {highest_peak:.1f}')
-    print(TC.CLEAR)
+    print(ANSI.CLEAR + f'Highest peak recorded: {highest_peak:.1f}')
+    print(ANSI.CLEAR)
 
-    print(TC.CLEAR + f'Final peak value: {peak:.1f}')
-    print(TC.CLEAR)
-    print(TC.CLEAR)
-    print(TC.CLEAR)
+    print(ANSI.CLEAR + f'Final peak value: {peak:.1f}')
+    print(ANSI.CLEAR)
+    print(ANSI.CLEAR)
+    print(ANSI.CLEAR)
 
     laser.set_power(config.WFS.laser_calib_power, enable=True)
     aocontrol.set_exptime(config.WFS.laser_calib_exptime)
@@ -214,7 +214,8 @@ def run(args):
     slopes = []
 
     for i in range(args.slopes_avg):
-        print(TC.UP + TC.CLEAR + f'Averaging slopes {i+1}/{args.slopes_avg}')
+        print(ANSI.UP + ANSI.CLEAR +
+              f'Averaging slopes {i + 1}/{args.slopes_avg}')
         slopes.append(slopes_shm.get_data(check=True))
 
     slopes = np.array(slopes)

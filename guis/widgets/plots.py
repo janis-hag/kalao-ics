@@ -406,7 +406,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
                 int(x)).toString("HH:mm:ss dd-MM-yy")
 
             if series is None:
-                self.hovered.emit(f'{y:.6g} at {x}')
+                self.hovered.emit(f'{y:.9g} at {x}')
             else:
                 metadata = database.definitions[self.current_name]['metadata'][
                     self.current_key]
@@ -419,7 +419,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
                 unit = kstring.get_unit_string(metadata)
 
                 self.hovered.emit(
-                    f'{metadata["short"]}: {y:.6g}{unit}{y_true} at {x}')
+                    f'{metadata["short"]}: {y:.9g}{unit}{y_true} at {x}')
         else:
             self.hovered.emit('')
 

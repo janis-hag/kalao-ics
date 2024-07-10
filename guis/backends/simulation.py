@@ -525,7 +525,7 @@ class MainBackend(FakeSHMFPSBackend):
                                self.internal_state['ttm_offloading'])
 
         self._update_dict(
-            data, 'plc', {
+            data, 'hw', {
                 'shutter_state':
                     self.internal_state['shutter_state'],
                 'flipmirror_position':
@@ -626,11 +626,18 @@ class MainBackend(FakeSHMFPSBackend):
 
         self._update_dict(
             data, 'tmux', {
-                'tmux_server_alive': True,
-                'tmux_sessions': ['kalaocam_ctrl'] + config.AO.procs
+                'tmux_server_alive':
+                    True,
+                'tmux_sessions': ['kalaocam_ctrl', 'nuvu_fgrab'] +
+                                 config.AO.processes
             })
 
-        for proc in config.AO.procs:
+        self._update_dict(data, 'pgrep', {
+            'kalaocam_ctrl': 0,
+            'nuvu_fgrab': 0,
+        })
+
+        for proc in config.AO.processes:
             self._update_fps_state(data, proc)
 
         for stream in config.AO.streams:
@@ -701,7 +708,11 @@ class MainBackend(FakeSHMFPSBackend):
     def streams_channels_dm(self):
         data = {}
 
-        self._update_shm(data, config.SHM.DM, self._get_dm01disp())
+        dm01disp = self._get_dm01disp()
+
+        self._update_shm(data, config.SHM.DM, dm01disp)
+        self._update_shm(data, config.SHM.COMMANDS_DM,
+                         np.clip(dm01disp/3.5 + 0.5, 0, 1))
 
         for i in range(0, 12):
             self._update_shm(data, f'{config.SHM.DM}{i:02d}',
@@ -714,7 +725,11 @@ class MainBackend(FakeSHMFPSBackend):
     def streams_channels_ttm(self):
         data = {}
 
-        self._update_shm(data, config.SHM.TTM, self._get_dm02disp())
+        dm02disp = self._get_dm02disp()
+
+        self._update_shm(data, config.SHM.TTM, dm02disp)
+        self._update_shm(data, config.SHM.COMMANDS_TTM,
+                         np.clip(dm02disp/5 + 0.5, 0, 1))
 
         for i in range(0, 12):
             self._update_shm(data, f'{config.SHM.TTM}{i:02d}',
@@ -1465,7 +1480,7 @@ class MainBackend(FakeSHMFPSBackend):
         rprint(f'Sent {action} to {unit} (virtually)')
 
     def deadman(self, *, count):
-        print('Dead-man triggered (virtually)')
+        rprint('Dead-man triggered (virtually)')
 
     ##### DM channels
 

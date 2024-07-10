@@ -23,20 +23,20 @@ import config
 Filter = TypeVar('Filter', int, str)
 
 
-def get_names_to_positions() -> dict[str, int]:
-    return {n: p for p, n in enumerate(config.FilterWheel.position_list)}
-
-
 def translate_to_filter_position(filter: Filter) -> int:
     if isinstance(filter, int):
-        if filter not in range(0, 6):
+        if filter == FilterWheelStatus.ERROR_POSITION:
+            return FilterWheelStatus.ERROR_POSITION
+        elif filter not in range(0, 6):
             logger.error('filterwheel',
                          f'Wrong filter position, (got {filter})')
             return FilterWheelStatus.ERROR_POSITION
         else:
             return filter
     elif isinstance(filter, str):
-        if filter not in config.FilterWheel.position_list:
+        if filter == FilterWheelStatus.ERROR_NAME:
+            return FilterWheelStatus.ERROR_POSITION
+        elif filter not in config.FilterWheel.position_list:
             logger.error('filterwheel', f'Wrong filter name (got {filter})')
             return FilterWheelStatus.ERROR_POSITION
         else:
@@ -47,14 +47,18 @@ def translate_to_filter_position(filter: Filter) -> int:
 
 def translate_to_filter_name(filter: Filter) -> str:
     if isinstance(filter, int):
-        if filter not in range(0, 6):
+        if filter == FilterWheelStatus.ERROR_POSITION:
+            return FilterWheelStatus.ERROR_NAME
+        elif filter not in range(0, 6):
             logger.error('filterwheel',
                          f'Wrong filter position, (got {filter})')
             return FilterWheelStatus.ERROR_NAME
         else:
             return config.FilterWheel.position_list[filter]
     elif isinstance(filter, str):
-        if filter not in config.FilterWheel.position_list:
+        if filter == FilterWheelStatus.ERROR_NAME:
+            return FilterWheelStatus.ERROR_NAME
+        elif filter not in config.FilterWheel.position_list:
             logger.error('filterwheel', f'Wrong filter name (got {filter})')
             return FilterWheelStatus.ERROR_NAME
         else:

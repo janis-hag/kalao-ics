@@ -194,7 +194,8 @@ def set_tmux_value(session_name: str, key: str,
             session.attached_pane.send_keys(f'{key}()', enter=True)
         else:
             session.attached_pane.send_keys(f'{key}({value})', enter=True)
-    except libtmux.exc.TmuxObjectDoesNotExist:
+    except (libtmux.exc.TmuxObjectDoesNotExist,
+            libtmux._internal.query_list.ObjectDoesNotExist):
         logger.error('ao', f'Can\'t set {key}, {session_name} is missing')
         return None
 

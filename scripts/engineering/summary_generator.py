@@ -2,6 +2,9 @@ import argparse
 import sys
 from datetime import date, datetime, time, timedelta, timezone
 
+from systemd import journal
+
+import config
 from kalao import database
 from kalao.timers import monitoring
 from kalao.utils import ktime
@@ -24,6 +27,29 @@ def print_title(title, level=1):
     print()
 
 
+def print_table_header(headers, sizes):
+    print('┏━' + '━┳━'.join(['━' * s for s in sizes]) + '━┓')
+    print('┃ ' + ' ┃ '.join([f'{h:<{s}}'
+                             for h, s in zip(headers, sizes)]) + ' ┃')
+    print('┡━' + '━╇━'.join(["━" * s for s in sizes]) + '━┩')
+
+
+def print_table_row(rows, sizes):
+    formaters = []
+    formaters.append('<')
+    for _ in range(len(sizes) - 1):
+        formaters.append('>')
+
+    print(
+        '│ ' +
+        ' │ '.join([f'{h:{f}{s}}'
+                    for h, s, f in zip(rows, sizes, formaters)]) + ' │')
+
+
+def print_table_footer(sizes):
+    print('└─' + '─┴─'.join(['─' * s for s in sizes]) + '─┘')
+
+
 def generate_summary(since: datetime, until: datetime, short=False,
                      sort='key'):
     fmt = '%Y-%m-%d %H:%M:%S'
@@ -43,24 +69,22 @@ def generate_summary(since: datetime, until: datetime, short=False,
     tz_cl = pytz.timezone('America/Santiago')
     tz_ch = pytz.timezone('Europe/Zurich')
 
-    print(
-        '┏━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓'
-    )
-    print(
-        f'┃       ┃ UTC                 ┃ CH/GVA ({since.astimezone(tz_ch).strftime("%z")})      ┃ CL/LSO ({since.astimezone(tz_cl).strftime("%z")})      ┃'
-    )
-    print(
-        '┡━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩'
-    )
-    print(
-        f'│ Since │ {since.astimezone(timezone.utc).strftime(fmt)} │ {since.astimezone(tz_ch).strftime(fmt)} │ {since.astimezone(tz_cl).strftime(fmt)} │'
-    )
-    print(
-        f'│ Until │ {until.astimezone(timezone.utc).strftime(fmt)} │ {until.astimezone(tz_ch).strftime(fmt)} │ {until.astimezone(tz_cl).strftime(fmt)} │'
-    )
-    print(
-        '└───────┴─────────────────────┴─────────────────────┴─────────────────────┘'
-    )
+    sizes = [5, 19, 19]
+    print_table_header([
+        'UTC', f'CH/GVA ({since.astimezone(tz_ch).strftime("%z")})',
+        f'CL/LSO ({since.astimezone(tz_cl).strftime("%z")})'
+    ], sizes)
+    print_table_row([
+        'Since',
+        since.astimezone(timezone.utc).strftime(fmt),
+        since.astimezone(tz_cl).strftime(fmt)
+    ], sizes)
+    print_table_row([
+        'Until',
+        until.astimezone(timezone.utc).strftime(fmt),
+        until.astimezone(tz_cl).strftime(fmt)
+    ], sizes)
+    print_table_footer(sizes)
 
     if sort is not None:
         sort_keys = sort.split(',')
@@ -68,7 +92,10 @@ def generate_summary(since: datetime, until: datetime, short=False,
         def sorting_fun(row):
             t = []
             for key in sort_keys:
-                if key in ['warnings', 'errors']:
+                if key not in row:
+                    continue
+
+                if key in ['warnings', 'errors', 'failures']:
                     t.append(sys.maxsize - row[key])
                 else:
                     t.append(row[key])
@@ -118,12 +145,11 @@ def generate_summary(since: datetime, until: datetime, short=False,
     monitoring_stats = []
 
     for key in keys:
+        points = 0
         warnings = 0
         errors = 0
 
-        if key not in data:
-            points = 0
-        else:
+        if key in data:
             points = len(data[key])
 
             for row in data[key]:
@@ -150,27 +176,18 @@ def generate_summary(since: datetime, until: datetime, short=False,
                 errors
         })
 
-    print(f'┏━{"━" * 29}━┳━{"━" * 8}━┳━{"━" * 8}━┳━{"━" * 8}━┓')
-    print(
-        f'┃ {"Data": <29s} ┃ {"Points": <8s} ┃ {"Warnings": <8s} ┃ {"Errors": <8s} ┃'
-    )
-    print(f'┡━{"━" * 29}━╇━{"━" * 8}━╇━{"━" * 8}━╇━{"━" * 8}━┩')
+    sizes = [29, 8, 8, 8]
+    print_table_header(['Data', 'Points', 'Warnings', 'Errors'], sizes)
 
     for row in sorted(monitoring_stats, key=sorting_fun):
-        key = row['key']
-        points = row['points']
-        warnings = row['warnings']
-        errors = row['errors']
-
-        print(
-            f'│ {key: <29s} │ {points:>8d} │ {warnings:>8d} │ {errors:>8d} │')
+        print_table_row([
+            row['key'], row['points'], row['warnings'], row['errors']
+        ], sizes)
 
     if len(monitoring_stats) == 0:
-        print(
-            f'│ {"Nothing to show": <29s} │ {"N/A":>8s} │ {"N/A":>8s} │ {"N/A":>8s} │'
-        )
+        print_table_row(['Nothing to show', 'N/A', 'N/A', 'N/A'], sizes)
 
-    print(f'└─{"─"*29}─┴─{"─"*8}─┴─{"─"*8}─┴─{"─"*8}─┘')
+    print_table_footer(sizes)
 
     ##### Logs
 
@@ -234,45 +251,37 @@ def generate_summary(since: datetime, until: datetime, short=False,
                         messages.append(row)
                     infos += 1
 
-        key = key.removesuffix('_log').replace("_", " ").upper()
-
         if short and errors == 0 and warnings == 0:
             continue
 
         logs_stats.append({
-            'key': key,
+            'key': key.removesuffix('_log').replace("_", " ").upper(),
             'infos': infos,
             'warnings': warnings,
             'errors': errors
         })
 
-    print(f'┏━{"━" * 17}━┳━{"━" * 8}━┳━{"━" * 8}━┳━{"━" * 8}━┓')
-    print(
-        f'┃ {"Log": <17s} ┃ {LogLevel.INFO: <8s} ┃ {LogLevel.WARNING: <8s} ┃ {LogLevel.ERROR: <8s} ┃'
-    )
-    print(f'┡━{"━" * 17}━╇━{"━" * 8}━╇━{"━" * 8}━╇━{"━" * 8}━┩')
+    sizes = [17, 8, 8, 8]
+    print_table_header([
+        'Log', LogLevel.INFO, LogLevel.WARNING, LogLevel.ERROR
+    ], sizes)
 
     for row in sorted(logs_stats, key=sorting_fun):
-        key = row['key']
-        infos = row['infos']
-        warnings = row['warnings']
-        errors = row['errors']
+        print_table_row([
+            row['key'], row['infos'], row['warnings'], row['errors']
+        ], sizes)
 
-        print(f'│ {key: <17s} │ {infos:>8d} │ {warnings:>8d} │ {errors:>8d} │')
+    if len(monitoring_stats) == 0:
+        print_table_row(['Nothing to show', 'N/A', 'N/A', 'N/A'], sizes)
 
-    if len(logs_stats) == 0:
-        print(
-            f'│ {"Nothing to show": <17s} │ {"N/A":>8s} │ {"N/A":>8s} │ {"N/A":>8s} │'
-        )
-
-    print(f'└─{"─"*17}─┴─{"─"*8}─┴─{"─"*8}─┴─{"─"*8}─┘')
+    print_table_footer(sizes)
 
     ##### Messages
 
     print_title('Log messages', level=2)
 
     if len(messages) == 0:
-        print('No log messages to show')
+        print('No messages to show')
     else:
         print("All times are UTC")
         print()
@@ -286,7 +295,63 @@ def generate_summary(since: datetime, until: datetime, short=False,
 
         print(f'{timestamp} {origin:>17s} | [{level}] {message}')
 
-    return monitoring_stats, logs_stats, messages
+    ##### Services
+
+    print_title('Services')
+
+    keys = [service['unit'] for service in config.Systemd.services.values()]
+
+    reader = journal.Reader()
+
+    for key in keys:
+        reader.add_match(_SYSTEMD_USER_UNIT=key)
+        reader.add_disjunction()
+        reader.add_match(USER_UNIT=key)
+        reader.add_disjunction()
+
+    reader.seek_realtime(since)
+
+    data = {}
+    for entry in reader:
+        if entry['__REALTIME_TIMESTAMP'] > until:
+            break
+
+        if 'UNIT_RESULT' in entry:
+            key = entry['USER_UNIT']
+
+            if key not in data:
+                data[key] = []
+
+            data[key].append(entry)
+
+    services_stats = []
+
+    for key in keys:
+        failures = 0
+
+        if key in data:
+            failures = len(data[key])
+
+        if short and failures == 0:
+            continue
+
+        services_stats.append({
+            'key': key.removesuffix('.service'),
+            'failures': failures,
+        })
+
+    sizes = [24, 8]
+    print_table_header(['Service', 'Failures'], sizes)
+
+    for row in sorted(services_stats, key=sorting_fun):
+        print_table_row([row['key'], row['failures']], sizes)
+
+    if len(monitoring_stats) == 0:
+        print_table_row(['Nothing to show', 'N/A'], sizes)
+
+    print_table_footer(sizes)
+
+    return monitoring_stats, logs_stats, messages, services_stats
 
 
 if __name__ == '__main__':
@@ -294,7 +359,7 @@ if __name__ == '__main__':
     parser.add_argument('--long', action="store_false", dest="short",
                         help='Show everything')
     parser.add_argument('--sort', action="store", dest="sort",
-                        default='errors,warnings,key', help='Sorting')
+                        default='failures,errors,warnings,key', help='Sorting')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--night', action="store", dest="night",

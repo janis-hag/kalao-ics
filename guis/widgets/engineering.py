@@ -137,7 +137,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         self.milk_processes_widgets = {}
         separators = 0
-        for i, proc in enumerate(config.AO.procs):
+        for i, proc in enumerate(config.AO.processes):
             if proc in ['acquWFS-1', 'acquWFS-2']:
                 frame = QFrame()
                 frame.setFrameShape(QFrame.HLine)
@@ -191,7 +191,9 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.milk_streams_data = {}
         separators = 0
         for i, stream in enumerate(config.AO.streams):
-            if stream in ['aol1_imWFS2', 'aol2_imWFS2', 'dm01disp']:
+            if stream in [
+                    'aol1_imWFS2', 'aol2_imWFS2', 'dm01disp', 'bmc_commands_dm'
+            ]:
                 frame = QFrame()
                 frame.setFrameShape(QFrame.HLine)
                 frame.setFrameShadow(QFrame.Sunken)
@@ -212,7 +214,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.indicators_list.append(indicator)
 
             size_label = QLabel('Unknown')
-            fps_label = KLabel('{fps} Hz')
+            fps_label = KLabel('{fps:.1f} Hz')
             fps_label.updateText(fps=np.nan)
 
             row = i + 1 + separators
@@ -262,7 +264,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             return f'{name} ({start_str} – {end_str})'
 
     def all_updated(self, data):
-        shutter_state = self.consume_dict(data, 'plc', 'shutter_state')
+        shutter_state = self.consume_dict(data, 'hw', 'shutter_state')
         if shutter_state is not None:
             with QSignalBlocker(self.shutter_combobox):
                 self.shutter_combobox.setCurrentIndex(
@@ -277,7 +279,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             else:  # ERROR
                 self.shutter_indicator.setStatus(Color.RED, shutter_state.name)
 
-        flipmirror_position = self.consume_dict(data, 'plc',
+        flipmirror_position = self.consume_dict(data, 'hw',
                                                 'flipmirror_position')
         if flipmirror_position is not None:
             with QSignalBlocker(self.flipmirror_combobox):
@@ -297,13 +299,13 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.flipmirror_indicator.setStatus(Color.RED,
                                                     flipmirror_position.name)
 
-        calibunit_position = self.consume_dict(data, 'plc',
+        calibunit_position = self.consume_dict(data, 'hw',
                                                'calibunit_position')
         if calibunit_position is not None:
             with QSignalBlocker(self.calibunit_spinbox):
                 self.calibunit_spinbox.setValue(calibunit_position)
 
-        calibunit_state = self.consume_dict(data, 'plc', 'calibunit_state')
+        calibunit_state = self.consume_dict(data, 'hw', 'calibunit_state')
         if calibunit_state is not None:
             if calibunit_state == PLCStatus.STANDING:
                 self.calibunit_indicator.setStatus(Color.GREEN,
@@ -324,7 +326,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             else:
                 self.calibunit_spinbox.setEnabled(True)
 
-        tungsten_state = self.consume_dict(data, 'plc', 'tungsten_state')
+        tungsten_state = self.consume_dict(data, 'hw', 'tungsten_state')
         if tungsten_state is not None:
             with QSignalBlocker(self.tungsten_state_checkbox):
                 self.tungsten_state_checkbox.setChecked(
@@ -340,21 +342,21 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.tungsten_state_indicator.setStatus(
                     Color.RED, tungsten_state.name)
 
-        laser_state = self.consume_dict(data, 'plc', 'laser_state')
+        laser_state = self.consume_dict(data, 'hw', 'laser_state')
         if laser_state is not None:
             with QSignalBlocker(self.laser_state_checkbox):
                 self.laser_state_checkbox.setChecked(
                     laser_state == LaserState.ON)
 
-        laser_power = self.consume_dict(data, 'plc', 'laser_power')
+        laser_power = self.consume_dict(data, 'hw', 'laser_power')
         if laser_power is not None:
             with QSignalBlocker(self.laser_power_spinbox):
                 self.laser_power_spinbox.setValue(laser_power)
 
         if laser_power is not None or laser_state is not None:
-            laser_state = self.consume_dict(data, 'plc', 'laser_state',
+            laser_state = self.consume_dict(data, 'hw', 'laser_state',
                                             force=True)
-            laser_power = self.consume_dict(data, 'plc', 'laser_power',
+            laser_power = self.consume_dict(data, 'hw', 'laser_power',
                                             force=True)
 
             if laser_state == LaserState.ON and laser_power > 0:
@@ -367,7 +369,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.laser_indicator.setStatus(
                     Color.RED, f'{laser_state.name} & {laser_power}')
 
-        filterwheel_filter_name = self.consume_dict(data, 'plc',
+        filterwheel_filter_name = self.consume_dict(data, 'hw',
                                                     'filterwheel_filter_name')
         if filterwheel_filter_name is not None:
             with QSignalBlocker(self.filterwheel_combobox):
@@ -382,12 +384,12 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.filterwheel_indicator.setStatus(Color.RED,
                                                      filterwheel_filter_name)
 
-        adc1_angle = self.consume_dict(data, 'plc', 'adc1_angle')
+        adc1_angle = self.consume_dict(data, 'hw', 'adc1_angle')
         if adc1_angle is not None:
             with QSignalBlocker(self.adc1_spinbox):
                 self.adc1_spinbox.setValue(adc1_angle)
 
-        adc1_state = self.consume_dict(data, 'plc', 'adc1_state')
+        adc1_state = self.consume_dict(data, 'hw', 'adc1_state')
         if adc1_state is not None:
             if adc1_state == PLCStatus.STANDING:
                 self.adc1_indicator.setStatus(Color.GREEN, adc1_state.name)
@@ -403,12 +405,12 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             else:
                 self.adc1_spinbox.setEnabled(True)
 
-        adc2_angle = self.consume_dict(data, 'plc', 'adc2_angle')
+        adc2_angle = self.consume_dict(data, 'hw', 'adc2_angle')
         if adc2_angle is not None:
             with QSignalBlocker(self.adc2_spinbox):
                 self.adc2_spinbox.setValue(adc2_angle)
 
-        adc2_state = self.consume_dict(data, 'plc', 'adc2_state')
+        adc2_state = self.consume_dict(data, 'hw', 'adc2_state')
         if adc2_state is not None:
             if adc2_state == PLCStatus.STANDING:
                 self.adc2_indicator.setStatus(Color.GREEN, adc2_state.name)
@@ -426,11 +428,11 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         if adc1_angle is not None or adc2_angle is not None:
             if adc1_angle is None:
-                adc1_angle = self.consume_dict(data, 'plc', 'adc1_angle',
+                adc1_angle = self.consume_dict(data, 'hw', 'adc1_angle',
                                                force=True, default=np.nan)
 
             if adc2_angle is None:
-                adc2_angle = self.consume_dict(data, 'plc', 'adc2_angle',
+                adc2_angle = self.consume_dict(data, 'hw', 'adc2_angle',
                                                force=True, default=np.nan)
 
             adc_angle, adc_offset = adc.compute_angle_and_offset(
@@ -442,7 +444,15 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             with QSignalBlocker(self.adc_offset_spinbox):
                 self.adc_offset_spinbox.setValue(adc_offset)
 
-        pump_status = self.consume_dict(data, 'plc', 'pump_status')
+        if adc1_state is not None or adc2_state is not None:
+            if self.adc1_spinbox.isEnabled() and self.adc2_spinbox.isEnabled():
+                self.adc_angle_spinbox.setEnabled(True)
+                self.adc_offset_spinbox.setEnabled(True)
+            else:
+                self.adc_angle_spinbox.setEnabled(False)
+                self.adc_offset_spinbox.setEnabled(False)
+
+        pump_status = self.consume_dict(data, 'hw', 'pump_status')
         if pump_status is not None:
             with QSignalBlocker(self.pump_checkbox):
                 self.pump_checkbox.setChecked(pump_status == RelayState.ON)
@@ -455,7 +465,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.pump_indicator.setStatus(Color.RED, pump_status.name)
 
         heatexchanger_fan_status = self.consume_dict(
-            data, 'plc', 'heatexchanger_fan_status')
+            data, 'hw', 'heatexchanger_fan_status')
         if heatexchanger_fan_status is not None:
             with QSignalBlocker(self.fan_checkbox):
                 self.fan_checkbox.setChecked(
@@ -471,7 +481,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 self.fan_indicator.setStatus(Color.RED,
                                              heatexchanger_fan_status.name)
 
-        heater_status = self.consume_dict(data, 'plc', 'heater_status')
+        heater_status = self.consume_dict(data, 'hw', 'heater_status')
         if heater_status is not None:
             with QSignalBlocker(self.heater_checkbox):
                 self.heater_checkbox.setChecked(heater_status == RelayState.ON)
@@ -643,11 +653,16 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         tmux_sessions = self.consume_dict(data, 'tmux', 'tmux_sessions')
         if tmux_sessions is not None:
             if 'kalaocam_ctrl' in tmux_sessions:
-                self.camstack_indicator.setStatus(Color.GREEN)
+                self.kalaocamctrl_tmux_indicator.setStatus(Color.GREEN)
             else:
-                self.camstack_indicator.setStatus(Color.BLACK)
+                self.kalaocamctrl_tmux_indicator.setStatus(Color.BLACK)
 
-            for proc in config.AO.procs:
+            if 'nuvu_fgrab' in tmux_sessions:
+                self.nuvufgrab_tmux_indicator.setStatus(Color.GREEN)
+            else:
+                self.nuvufgrab_tmux_indicator.setStatus(Color.BLACK)
+
+            for proc in config.AO.processes:
                 if proc in tmux_sessions:
                     self.milk_processes_widgets[proc][
                         'tmux_indicator'].setStatus(Color.GREEN)
@@ -655,7 +670,25 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                     self.milk_processes_widgets[proc][
                         'tmux_indicator'].setStatus(Color.BLACK)
 
-        for proc in config.AO.procs:
+        kalaocam_ctrl_proc = self.consume_dict(data, 'pgrep', 'kalaocam_ctrl')
+        if kalaocam_ctrl_proc is not None:
+            if kalaocam_ctrl_proc == 0:
+                self.kalaocamctrl_proc_indicator.setStatus(
+                    Color.GREEN, kalaocam_ctrl_proc)
+            else:
+                self.kalaocamctrl_proc_indicator.setStatus(
+                    Color.BLACK, kalaocam_ctrl_proc)
+
+        nuvu_fgrab_proc = self.consume_dict(data, 'pgrep', 'nuvu_fgrab')
+        if nuvu_fgrab_proc is not None:
+            if nuvu_fgrab_proc == 0:
+                self.nuvufgrab_proc_indicator.setStatus(
+                    Color.GREEN, nuvu_fgrab_proc)
+            else:
+                self.nuvufgrab_proc_indicator.setStatus(
+                    Color.BLACK, nuvu_fgrab_proc)
+
+        for proc in config.AO.processes:
             state = self.consume_fps_state(data, proc)
 
             if state is not None:
@@ -699,16 +732,19 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             if md is not None:
                 if stream in self.milk_streams_data:
                     previous_md = self.milk_streams_data[stream]
+
+                    delta_cnt = previous_md['cnt0'] - md['cnt0']
+                    delta_acqtime = (previous_md['acqtime'] -
+                                     md['acqtime']).total_seconds()
+
                     if previous_md['creationtime'] != md['creationtime']:
                         fps = np.nan
-                    elif md['cnt0'] < previous_md['cnt0']:
-                        fps = np.nan
-                    elif previous_md['cnt0'] == md['cnt0']:
+                    elif delta_cnt == 0:
                         fps = 0
+                    elif delta_cnt < 0 or delta_acqtime == 0:
+                        fps = np.nan
                     else:
-                        fps = (previous_md['cnt0'] -
-                               md['cnt0']) / (previous_md['acqtime'] -
-                                              md['acqtime']).total_seconds()
+                        fps = delta_cnt / delta_acqtime
                 else:
                     fps = np.nan
 

@@ -92,6 +92,13 @@ class CameraStatus(StrEnum):
     ERROR = 'error'
 
 
+class CalibUnitPositionName(StrEnum):
+    UNKNOWN = 'Unknown'
+    LASER = 'Laser'
+    TUNGSTEN = 'Tungsten'
+    ERROR = 'Error'
+
+
 class FlipMirrorPosition(StrEnum):
     UP = 'UP'
     DOWN = 'DOWN'
@@ -105,7 +112,7 @@ class ShutterState(StrEnum):
     ERROR = 'ERROR'
 
 
-class FilterWheelStatus():
+class FilterWheelStatus:
     ERROR_POSITION = -1
     ERROR_NAME = 'error'
 

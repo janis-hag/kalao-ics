@@ -157,7 +157,7 @@ def _check_cooling_status() -> None:
     """
 
     min_coolant_temp = database.definitions['monitoring']['metadata'][
-        'coolant_temp_in']['warn_range'][0]
+        'coolant_temp_in']['warn_range'][0] + config.Cooling.heating_margin
     unit = database.definitions['monitoring']['metadata']['coolant_temp_in'][
         'unit']
     coolant_temp = cooling.get_status()['coolant_temp_in']
@@ -177,7 +177,7 @@ def _check_cooling_status() -> None:
             )
             cooling.heatexchanger_fan_off()
 
-    elif coolant_temp > min_coolant_temp + config.Cooling.heater_hysteresis_temp:
+    elif coolant_temp > min_coolant_temp + config.Cooling.heating_hysteresis:
         if cooling.heater_status() != RelayState.OFF:
             logger.info(
                 'hardware_timer',

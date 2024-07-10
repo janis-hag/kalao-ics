@@ -194,7 +194,7 @@ def gather_ao() -> dict[str, Any]:
     return data
 
 
-def check_warning_error(key: str, value: int | float) -> [str, str, Any]:
+def check_warning_error(key: str, value: Any) -> [str, str, Any]:
     metadata = database.definitions['monitoring']['metadata'][key]
 
     error_values = metadata.get('error_values', [])
@@ -234,8 +234,9 @@ def _update_general() -> None:
 
     timestamp = datetime.now(timezone.utc)
 
-    for key, value in data.items():
-        _check_and_log(key, value, timestamp)
+    for key in data.keys():
+        data[key] = _round(key, data[key])
+        _check_and_log(key, data[key], timestamp)
 
     if data != {}:
         database.store('monitoring', data, timestamp=timestamp)
@@ -249,8 +250,9 @@ def _update_ao() -> None:
     data = gather_ao()
     timestamp = datetime.now(timezone.utc)
 
-    for key, value in data.items():
-        _check_and_log(key, value, timestamp)
+    for key in data.keys():
+        data[key] = _round(key, data[key])
+        _check_and_log(key, data[key], timestamp)
 
     if data != {}:
         database.store('monitoring', data, timestamp=timestamp)
@@ -259,7 +261,22 @@ def _update_ao() -> None:
         data.get('dmloop_on', False) or data.get('ttmloop_on', False))
 
 
-def _check_and_log(key: str, value: int | float, timestamp: datetime) -> None:
+def _round(key: str, value: Any):
+    metadata = database.definitions['monitoring']['metadata'][key]
+
+    rounding = metadata.get('rounding')
+
+    if rounding is None:
+        return value
+    elif np.isnan(value):
+        return value
+    elif rounding == 0:
+        return round(value)
+    else:
+        return round(value, rounding)
+
+
+def _check_and_log(key: str, value: Any, timestamp: datetime) -> None:
     metadata = database.definitions['monitoring']['metadata'][key]
 
     level, condition, threshold = check_warning_error(key, value)
@@ -312,10 +329,10 @@ def _check_and_log(key: str, value: int | float, timestamp: datetime) -> None:
 
 
 def _sec_to_hms(sec: float, decimal: int = 0) -> tuple[int, int, float | int]:
-    sec = round(sec * 3600, decimal)
-
     if decimal == 0:
-        sec = int(sec)
+        sec = round(sec)
+    else:
+        sec = round(sec, decimal)
 
     hr = math.floor(sec / 3600)
     min = math.floor((sec/60) % 60)

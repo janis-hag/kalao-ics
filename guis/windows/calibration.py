@@ -368,6 +368,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
                 self.modesWFS_tiled_view, first_axis=False)
 
     def create_images_tile(self, img, widget, first_axis=True):
+        if len(img.shape) < 3:
+            img = img[np.newaxis, :]
+
         if first_axis:
             size = img.shape[0]
             img_i = img.shape[1]

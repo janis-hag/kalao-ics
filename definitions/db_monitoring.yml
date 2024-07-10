@@ -18,6 +18,7 @@ camera_ccd_temp:
   short: Camera CCD temp.
   long: Temperature of the Science Camera CCD
   unit: °C
+  rounding: 2
   group: Science Camera
   error_range: [ -30.1, -29.9 ]
 
@@ -25,6 +26,7 @@ camera_heatsink_temp:
   short: Camera HS temp.
   long: Temperature of the Science Camera heatsink
   unit: °C
+  rounding: 2
   group: Science Camera
   warn_range: [ .nan, 30 ]
   error_range: [ .nan, 35 ]
@@ -56,12 +58,14 @@ telescope_altitude:
   short: Tel. altitude
   long: Telescope altitude
   unit: °
+  rounding: 4
   group: Telescope
 
 telescope_azimut:
   short: Tel. azimut
   long: Telescope azimut
   unit: °
+  rounding: 4
   group: Telescope
 
 # Hardware
@@ -85,6 +89,7 @@ calibunit_position:
   short: Calib. Unit position
   long: Calibration Unit position
   unit: mm
+  rounding: 2
   group: Hardware
   fits_keyword: HIERARCH ESO INS CALIB POS
   error_values: [ .nan ]
@@ -108,6 +113,7 @@ laser_power:
   short: Laser power
   long: Laser calibration lamp power
   unit: mW
+  rounding: 2
   group: Lamps
   fits_keyword: HIERARCH ESO INS LASER POWER
   error_values: [ .nan ]
@@ -124,6 +130,7 @@ adc1_angle:
   short: ADC1 raw angle
   long: Raw angle of first ADC prism
   unit: °
+  rounding: 3
   group: Hardware
   fits_keyword: HIERARCH ESO INS ADC1 ANGLE
   error_values: [ .nan ]
@@ -139,6 +146,7 @@ adc2_angle:
   short: ADC2 raw angle
   long: Raw angle of second ADC prism
   unit: °
+  rounding: 3
   group: Hardware
   fits_keyword: HIERARCH ESO INS ADC2 ANGLE
   error_values: [ .nan ]
@@ -177,6 +185,7 @@ coolant_flowrate:
   short: Coolant flow rate
   long: Flow rate of the coolant
   unit: l/min
+  rounding: 2
   group: Cooling
   warn_range: [ 1.2, .nan ]
   error_range: [ 0.5, .nan ]
@@ -185,6 +194,7 @@ coolant_temp_in:
   short: Coolant in temp.
   long: Temperature of the incoming coolant
   unit: °C
+  rounding: 2
   group: Cooling
   fits_keyword: HIERARCH ESO INS TEMP WATER IN
   warn_range: [ 6, .nan ]
@@ -194,6 +204,7 @@ coolant_temp_out:
   short: Coolant out temp.
   long: Temperature of the outgoing coolant
   unit: °C
+  rounding: 2
   group: Cooling
   fits_keyword: HIERARCH ESO INS TEMP WATER OUT
   warn_range: [ 6, .nan ]
@@ -209,6 +220,7 @@ pump_temp:
   short: Pump temperature
   long: Temperature of the cooling system's pump
   unit: °C
+  rounding: 2
   group: Cooling
   error_range: [ .nan, 60 ]
 
@@ -229,6 +241,7 @@ bench_air_hygro:
   short: Bench air hygro.
   long: Hygrometry inside the KalAO enclosure
   unit: '%'
+  rounding: 1
   group: Environment
   fits_keyword: HIERARCH ESO INS ENC RHUM
   warn_range: [ 10, 60 ]
@@ -238,6 +251,7 @@ bench_air_temp:
   short: Bench air temp.
   long: Temperature inside the KalAO enclosure
   unit: °C
+  rounding: 2
   group: Environment
   fits_keyword: HIERARCH ESO INS ENC TEMP
 
@@ -245,6 +259,7 @@ bench_board_temp:
   short: Bench board temp.
   long: Temperature of the aluminum bench
   unit: °C
+  rounding: 2
   group: Environment
   fits_keyword: HIERARCH ESO INS TEMP BENCH
 
@@ -253,78 +268,91 @@ rtc_nvme_pci-Composite:
   short: SSD mean temp.
   long:  SSD mean temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_nvme_pci-Sensor_1:
   short: SSD 1 temp.
   long:  SSD 1 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_nvme_pci-Sensor_2:
   short: SSD 2 temp.
   long:  SSD 2 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_acpitz_acpi-temp1:
   short: Mainboard temp.
   long:  Mainboard temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_coretemp_isa-Package_id_0:
   short: CPU mean temp.
   long:  CPU mean temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_coretemp_isa-Core_0:
   short: Core 0 temp.
   long:  Core 0 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_coretemp_isa-Core_1:
   short: Core 1 temp.
   long:  Core 1 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_coretemp_isa-Core_2:
   short: Core 2 temp.
   long:  Core 2 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_coretemp_isa-Core_3:
   short: Core 3 temp.
   long:  Core 3 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_coretemp_isa-Core_4:
   short: Core 4 temp.
   long:  Core 4 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_coretemp_isa-Core_5:
   short: Core 5 temp.
   long:  Core 5 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_coretemp_isa-Core_6:
   short: Core 6 temp.
   long:  Core 6 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 rtc_coretemp_isa-Core_7:
   short: Core 7 temp.
   long: Core 7 temperature
   unit: °C
+  rounding: 1
   group: Real-time Computer
 
 # GPU
@@ -332,12 +360,14 @@ gpu_temp:
   short: GPU temperature
   long: Current temperature of the GPU
   unit: °C
+  rounding: 2
   group: GPU
 
 gpu_power_draw:
   short: GPU Power draw
   long: Current power draw by the GPU
   unit: W
+  rounding: 0
   group: GPU
 
 gpu_memory_used:
@@ -356,6 +386,7 @@ gpu_load:
   short: GPU load
   long: Current load on the GPU
   unit: '%'
+  rounding: 1
   group: GPU
 
 # Tip-Tilt Mirror
@@ -363,6 +394,7 @@ ttm_tip:
   short: TTM tip
   long: Tip on Tip-Tilt Mirror
   unit: mrad
+  rounding: 2
   group: Tip-Tilt Mirror
   warn_range: [ -2.25, 2.25 ]
   error_range: [ -2.5, 2.5 ]
@@ -371,6 +403,7 @@ ttm_tilt:
   short: TTM tilt
   long: Tilt on Tip-Tilt Mirror
   unit: mrad
+  rounding: 2
   group: Tip-Tilt Mirror
   warn_range: [ -2.25, 2.25 ]
   error_range: [ -2.5, 2.5 ]
@@ -386,6 +419,7 @@ wfs_ccd_temp:
   short: WFS EMCCD temp.
   long: Temperature of the Wavefront Sensor EMCCD
   unit: °C
+  rounding: 2
   group: Wavefront Sensor
   error_range: [ -60.1, -59.9 ]
 
@@ -393,24 +427,28 @@ wfs_controller_temp:
   short: WFS CNTRLR temp.
   long: Temperature of the Wavefront Sensor controller
   unit: °C
+  rounding: 2
   group: Wavefront Sensor
 
 wfs_powersupply_temp:
   short: WFS PSU temp.
   long: Temperature of the Wavefront Sensor power supply
   unit: °C
+  rounding: 2
   group: Wavefront Sensor
 
 wfs_fpga_temp:
   short: WFS FPGA temp.
   long: Temperature of the Wavefront Sensor FPGA
   unit: °C
+  rounding: 2
   group: Wavefront Sensor
 
 wfs_heatsink_temp:
   short: WFS HS temp.
   long: Temperature of the Wavefront Sensor heatsink
   unit: °C
+  rounding: 2
   group: Wavefront Sensor
 
 wfs_detgain:
@@ -443,6 +481,7 @@ wfs_framerate:
   short: WFS framerate
   long: Measured frame rate of the Wavefront Sensor
   unit: Hz
+  rounding: 1
   group: Wavefront Sensor
   fits_keyword: HIERARCH ESO AOS WFS FRATE
 
@@ -468,30 +507,35 @@ wfs_flux_avg:
   short: WFS avg. flux
   long: Average flux of active subapertures
   unit: ADU
+  rounding: 0
   group: Wavefront Sensor
 
 wfs_flux_max:
   short: WFS max. flux
   long: Maximum flux of active subapertures
   unit: ADU
+  rounding: 0
   group: Wavefront Sensor
 
 wfs_residual_rms:
   short: WFS RMS error
   long: RMS residual of active subapertures
   unit: px
+  rounding: 2
   group: Wavefront Sensor
 
 wfs_slope_x_avg:
   short: WFS Avg. slope X
   long: Average of the slopes in X direction
   unit: px
+  rounding: 2
   group: Wavefront Sensor
 
 wfs_slope_y_avg:
   short: WFS Avg. slope Y
   long: Average of the slopes in Y direction
   unit: px
+  rounding: 2
   group: Wavefront Sensor
 
 # Deformable mirror

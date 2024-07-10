@@ -136,7 +136,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                                                lineedit.key)
             if value is not None:
                 if isinstance(value, float):
-                    text = self.formatter.format('{value:.6g}{lineedit.unit}',
+                    text = self.formatter.format('{value:.9g}{lineedit.unit}',
                                                  value=value,
                                                  lineedit=lineedit)
                 else:

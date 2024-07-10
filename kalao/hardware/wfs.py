@@ -88,7 +88,8 @@ def stop() -> ReturnCode:
         pane.send_keys('C-z', enter=False)
         pane.send_keys('kill %', enter=True)
         session.kill_session()
-    except libtmux.exc.TmuxObjectDoesNotExist:
+    except (libtmux.exc.TmuxObjectDoesNotExist,
+            libtmux._internal.query_list.ObjectDoesNotExist):
         pass
 
     Path('/tmp/milk/nuvu_raw.im.shm').unlink(missing_ok=True)

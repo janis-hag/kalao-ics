@@ -11,6 +11,12 @@ from kalao.definitions.enums import IPPowerStatus, ReturnCode
 
 import config
 
+mapping = {
+    'ippower_rtc_status': config.IPPower.Port.RTC,
+    'ippower_bench_status': config.IPPower.Port.Bench,
+    'ippower_dm_status': config.IPPower.Port.DM,
+}
+
 
 def switch(power_port: str | int, state: IPPowerStatus) -> IPPowerStatus:
     """
@@ -52,6 +58,20 @@ def status(power_port: str | int) -> IPPowerStatus:
 
     req = _send_request()
 
+    return _get_port_status_from_req(req, power_port)
+
+
+def status_all() -> dict[str, IPPowerStatus]:
+    req = _send_request()
+
+    data = {}
+    for key, power_port in mapping.items():
+        data[key] = _get_port_status_from_req(req, power_port)
+
+    return data
+
+
+def _get_port_status_from_req(req: requests.Response, power_port: str | int):
     if isinstance(power_port, str):
         _power_port = _get_port_number_from_req(req, power_port)
     else:
@@ -62,10 +82,15 @@ def status(power_port: str | int) -> IPPowerStatus:
 
         if state in [0, 1]:
             return IPPowerStatus(state)
+        else:
+            logger.error('ippower',
+                         f'Invalid status {state} for {power_port}.')
+            return IPPowerStatus.ERROR
 
-    logger.error('ippower',
-                 f'Could not get IPPower status for port {power_port}.')
-    return IPPowerStatus.ERROR
+    else:
+        logger.error('ippower',
+                     f'Could not get IPPower status for port {power_port}.')
+        return IPPowerStatus.ERROR
 
 
 def get_port_number(power_port: str) -> int:
@@ -104,14 +129,6 @@ def _get_port_name_from_req(req: requests.Response, power_port: int) -> str:
         return ''
 
 
-def status_all() -> dict[str, IPPowerStatus]:
-    return {
-        'ippower_rtc_status': status(config.IPPower.Port.RTC),
-        'ippower_bench_status': status(config.IPPower.Port.Bench),
-        'ippower_dm_status': status(config.IPPower.Port.DM),
-    }
-
-
 def init() -> ReturnCode:
     logger.info('ippower', 'Initialising IPPowers')
 
@@ -144,3 +161,5 @@ def _send_request(params: dict = {}) -> requests.Response | None:
             'ippower',
             f'IPPower endpoint answered with an Error {req.status_code}: {req.text}'
         )
+
+        return None
