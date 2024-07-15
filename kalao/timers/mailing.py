@@ -8,6 +8,8 @@ from kalao.utils import ktime, report
 
 import schedule
 
+from kalao.definitions.enums import ReportType
+
 
 def _send_night_report() -> None:
 
@@ -16,12 +18,14 @@ def _send_night_report() -> None:
 
     night_str = ktime.get_night_str(since)
 
-    logger.info('monitoring_timer',
+    logger.info('mailing_timer',
                 f'Sending daily night report for night {night_str}')
 
-    message = report.generate(since, since + timedelta(days=1), short=True)
+    message = report.generate(since, since + timedelta(days=1), short=True,
+                              type=ReportType.HTML)
 
-    email.send_email(f'KalAO Night Report {night_str}', message)
+    email.send_email(f'KalAO Night Report {night_str}', message,
+                     subtype='html')
 
 
 if __name__ == '__main__':

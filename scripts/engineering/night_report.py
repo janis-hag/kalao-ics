@@ -1,6 +1,7 @@
 import argparse
 from datetime import date, datetime, time, timedelta
 
+from kalao.definitions.enums import ReportType
 from kalao.utils import ktime, report
 
 import pytz
@@ -11,6 +12,8 @@ if __name__ == '__main__':
                         help='Show everything')
     parser.add_argument('--sort', action="store", dest="sort",
                         default='failures,errors,warnings,key', help='Sorting')
+    parser.add_argument('--type', action="store", dest="type",
+                        default=ReportType.CLI, type=ReportType, help='Type')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--night', action="store", dest="night",
@@ -31,4 +34,4 @@ if __name__ == '__main__':
 
     print(
         report.generate(since, since + timedelta(days=1), short=args.short,
-                        sort=args.sort))
+                        sort=args.sort, type=args.type))

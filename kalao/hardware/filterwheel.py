@@ -112,7 +112,7 @@ def get_filter(type: Filter | type = str, from_memory: bool = False) -> Filter:
         name = memory.get('filterwheel_filter_position')
 
         if name is not None:
-            return _return_filter(name, type)
+            return _return_filter(int(name), type)
 
     for retry in range(config.FilterWheel.retries):
         try:

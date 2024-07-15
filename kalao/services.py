@@ -92,8 +92,9 @@ def get_all_status() -> dict[str, tuple[str, str, datetime]]:
     status_dict = {}
     for service in config.Systemd.services.values():
         unit = service['unit']
+        system = service.get('system', False)
 
-        status_dict[unit] = get_status(unit)
+        status_dict[unit] = get_status(unit, system=system)
 
     return status_dict
 

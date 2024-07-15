@@ -689,8 +689,8 @@ class Monitoring:
     update_interval = 60  # s
     ao_update_interval = 1  # s
 
-    # issues_repetition_rate = None  # Turn off printing
-    issues_repetition_rate = 900  # s
+    issues_repetition_rate = None  # Turn off printing
+    # issues_repetition_rate = 900  # s
 
 
 class ETCS:

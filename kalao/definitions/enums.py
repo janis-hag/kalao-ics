@@ -189,3 +189,8 @@ class ReturnCode(IntEnum):
 
     SERVICES_OK = OK
     SERVICES_ERROR = auto()
+
+
+class ReportType(StrEnum):
+    CLI = 'CLI'
+    HTML = 'HTML'

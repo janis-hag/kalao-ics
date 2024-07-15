@@ -11,68 +11,163 @@ import pytz
 from pymongo import DESCENDING
 from systemd import journal
 
-from kalao.definitions.enums import LogLevel
+from kalao.definitions.enums import LogLevel, ReportType
 
 import config
 
-
-def title(str_io: io.StringIO, title: str, level: int = 1) -> None:
-    if level == 1:
-        c = '='
-    elif level == 2:
-        c = '-'
-
-    print(file=str_io)
-    print(title, file=str_io)
-    print(c * len(title), file=str_io)
-    print(file=str_io)
+_print = print
 
 
-def table_header(str_io: io.StringIO, headers: list[Any],
-                 sizes: list[int]) -> None:
-    print('┏━' + '━┳━'.join(['━' * s for s in sizes]) + '━┓', file=str_io)
-    print(
-        '┃ ' + ' ┃ '.join([f'{h:<{s}}'
-                           for h, s in zip(headers, sizes)]) + ' ┃',
-        file=str_io)
-    print('┡━' + '━╇━'.join(["━" * s for s in sizes]) + '━┩', file=str_io)
+def print(str_io: io.StringIO, text: str = '',
+          type: ReportType = ReportType.CLI):
+    if type == ReportType.HTML:
+        _print(f'{text}<br/>', file=str_io)
+    else:
+        _print(text, file=str_io)
 
 
-def table_row(str_io: io.StringIO, rows: list[Any], sizes: list[int]) -> None:
-    formaters = []
-    formaters.append('<')
-    for _ in range(len(sizes) - 1):
-        formaters.append('>')
+def start_document(str_io: io.StringIO, type: ReportType = ReportType.CLI):
+    if type == ReportType.HTML:
+        _print(
+            """\
+<html>
+    <head>
+        <style>
+            table, th, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+            
+            th, td {
+                text-align: left;
+                padding: 5px;
+            }
+            
+            .align-right {
+                text-align: right;
+            }
+            
+            pre {
+                font: monospace;
+            }
+        </style>
+    </head>
+    <body>""", file=str_io)
 
-    print(
-        '│ ' +
-        ' │ '.join([f'{h:{f}{s}}'
-                    for h, s, f in zip(rows, sizes, formaters)]) + ' │',
-        file=str_io)
+
+def end_document(str_io: io.StringIO, type: ReportType = ReportType.CLI):
+    if type == ReportType.HTML:
+        _print("""\
+    </body>
+</html>""", file=str_io)
 
 
-def table_footer(str_io: io.StringIO, sizes: list[int]) -> None:
-    print('└─' + '─┴─'.join(['─' * s for s in sizes]) + '─┘', file=str_io)
+def start_code(str_io: io.StringIO, type: ReportType = ReportType.CLI):
+    if type == ReportType.HTML:
+        _print('<pre>', file=str_io)
+
+
+def print_code(str_io: io.StringIO, text: str = '',
+               type: ReportType = ReportType.CLI):
+    if type == ReportType.HTML:
+        _print(text, file=str_io)
+    else:
+        _print(text, file=str_io)
+
+
+def end_code(str_io: io.StringIO, type: ReportType = ReportType.CLI):
+    if type == ReportType.HTML:
+        _print('</pre>', file=str_io)
+
+
+def title(str_io: io.StringIO, title: str, level: int = 1,
+          type: ReportType = ReportType.CLI) -> None:
+    if type == ReportType.HTML:
+        _print(f'<h{level}>{title}</h{level}>', file=str_io)
+    else:
+        if level == 1:
+            c = '='
+        elif level == 2:
+            c = '-'
+
+        _print(file=str_io)
+        _print(title, file=str_io)
+        _print(c * len(title), file=str_io)
+        _print(file=str_io)
+
+
+def table_header(str_io: io.StringIO, headers: list[Any], sizes: list[int],
+                 type: ReportType = ReportType.CLI) -> None:
+    if type == ReportType.HTML:
+        _print(
+            '<table><thead><tr>' + ''.join([f'<th>{h}</th>'
+                                            for h in headers]) +
+            '</tr></thead>', file=str_io)
+    else:
+        _print('┏━' + '━┳━'.join(['━' * s for s in sizes]) + '━┓', file=str_io)
+        _print(
+            '┃ ' + ' ┃ '.join([f'{h:<{s}}'
+                               for h, s in zip(headers, sizes)]) + ' ┃',
+            file=str_io)
+        _print('┡━' + '━╇━'.join(["━" * s for s in sizes]) + '━┩', file=str_io)
+
+
+def table_row(str_io: io.StringIO, rows: list[Any], sizes: list[int],
+              type: ReportType = ReportType.CLI) -> None:
+    if type == ReportType.HTML:
+        formaters = []
+        formaters.append('align-left')
+        for _ in range(len(sizes) - 1):
+            formaters.append('align-right')
+
+        _print(
+            '<tr>' + ''.join(
+                [f'<td class="{f}">{r}</td>'
+                 for r, f in zip(rows, formaters)]) + '</tr>', file=str_io)
+    else:
+        formaters = []
+        formaters.append('<')
+        for _ in range(len(sizes) - 1):
+            formaters.append('>')
+
+        _print(
+            '│ ' + ' │ '.join(
+                [f'{h:{f}{s}}'
+                 for h, s, f in zip(rows, sizes, formaters)]) + ' │',
+            file=str_io)
+
+
+def table_footer(str_io: io.StringIO, sizes: list[int],
+                 type: ReportType = ReportType.CLI) -> None:
+    if type == ReportType.HTML:
+        _print('</table>', file=str_io)
+    else:
+        _print('└─' + '─┴─'.join(['─' * s for s in sizes]) + '─┘', file=str_io)
 
 
 def generate(since: datetime, until: datetime, short: bool = False,
-             sort: str = 'failures,errors,warnings,key') -> str:
+             sort: str = 'failures,errors,warnings,key',
+             type=ReportType.CLI) -> str:
     with io.StringIO() as str_io:
+        start_document(str_io, type=type)
+
         fmt = '%Y-%m-%d %H:%M:%S'
 
         if short:
             print(
+                str_io,
                 'Report mode: short. Only warnings and errors will be displayed.',
-                file=str_io)
+                type=type)
         else:
-            print('Report mode: long', file=str_io)
-        print(f'Generated: {datetime.now(timezone.utc).strftime(fmt)} UTC',
-              file=str_io)
+            print(str_io, 'Report mode: long', type=type)
+        print(str_io,
+              f'Generated: {datetime.now(timezone.utc).strftime(fmt)} UTC',
+              type=type)
 
-        title(str_io, 'Time')
+        title(str_io, 'Time', type=type)
 
-        print(f'Night: {ktime.get_night_str(since)}', file=str_io)
-        print(file=str_io)
+        print(str_io, f'Night: {ktime.get_night_str(since)}', type=type)
+        print(str_io, type=type)
 
         tz_cl = pytz.timezone('America/Santiago')
         tz_ch = pytz.timezone('Europe/Zurich')
@@ -81,18 +176,18 @@ def generate(since: datetime, until: datetime, short: bool = False,
         table_header(str_io, [
             'UTC', f'CH/GVA ({since.astimezone(tz_ch).strftime("%z")})',
             f'CL/LSO ({since.astimezone(tz_cl).strftime("%z")})'
-        ], sizes)
+        ], sizes, type=type)
         table_row(str_io, [
             'Since',
             since.astimezone(timezone.utc).strftime(fmt),
             since.astimezone(tz_cl).strftime(fmt)
-        ], sizes)
+        ], sizes, type=type)
         table_row(str_io, [
             'Until',
             until.astimezone(timezone.utc).strftime(fmt),
             until.astimezone(tz_cl).strftime(fmt)
-        ], sizes)
-        table_footer(str_io, sizes)
+        ], sizes, type=type)
+        table_footer(str_io, sizes, type=type)
 
         if sort is not None:
             sort_keys = sort.split(',')
@@ -116,7 +211,7 @@ def generate(since: datetime, until: datetime, short: bool = False,
 
         ##### Monitoring
 
-        title(str_io, 'Monitoring')
+        title(str_io, 'Monitoring', type=type)
 
         keys = sorted(
             list(database.definitions['monitoring']['metadata'].keys()))
@@ -187,21 +282,23 @@ def generate(since: datetime, until: datetime, short: bool = False,
             })
 
         sizes = [29, 8, 8, 8]
-        table_header(str_io, ['Data', 'Points', 'Warnings', 'Errors'], sizes)
+        table_header(str_io, ['Data', 'Points', 'Warnings', 'Errors'], sizes,
+                     type=type)
 
         for row in sorted(monitoring_stats, key=sorting_fun):
             table_row(str_io, [
                 row['key'], row['points'], row['warnings'], row['errors']
-            ], sizes)
+            ], sizes, type=type)
 
         if len(monitoring_stats) == 0:
-            table_row(str_io, ['Nothing to show', 'N/A', 'N/A', 'N/A'], sizes)
+            table_row(str_io, ['Nothing to show', 'N/A', 'N/A', 'N/A'], sizes,
+                      type=type)
 
-        table_footer(str_io, sizes)
+        table_footer(str_io, sizes, type=type)
 
         ##### Logs
 
-        title(str_io, 'Logs')
+        title(str_io, 'Logs', type=type)
 
         keys = sorted(list(database.definitions['logs']['metadata'].keys()))
         pipeline = [{
@@ -274,27 +371,29 @@ def generate(since: datetime, until: datetime, short: bool = False,
         sizes = [17, 8, 8, 8]
         table_header(str_io,
                      ['Log', LogLevel.INFO, LogLevel.WARNING, LogLevel.ERROR],
-                     sizes)
+                     sizes, type=type)
 
         for row in sorted(logs_stats, key=sorting_fun):
             table_row(str_io, [
                 row['key'], row['infos'], row['warnings'], row['errors']
-            ], sizes)
+            ], sizes, type=type)
 
-        if len(monitoring_stats) == 0:
-            table_row(str_io, ['Nothing to show', 'N/A', 'N/A', 'N/A'], sizes)
+        if len(logs_stats) == 0:
+            table_row(str_io, ['Nothing to show', 'N/A', 'N/A', 'N/A'], sizes,
+                      type=type)
 
-        table_footer(str_io, sizes)
+        table_footer(str_io, sizes, type=type)
 
         ##### Messages
 
-        title(str_io, 'Log messages', level=2)
+        title(str_io, 'Log messages', level=2, type=type)
 
+        start_code(str_io, type=type)
         if len(messages) == 0:
-            print('No messages to show', file=str_io)
+            print_code(str_io, 'No messages to show', type=type)
         else:
-            print('All times are UTC', file=str_io)
-            print(file=str_io)
+            print_code(str_io, 'All times are UTC', type=type)
+            print_code(str_io, type=type)
 
         for message in sorted(messages, key=lambda row: row['timestamp']):
             timestamp = message['timestamp'].astimezone(
@@ -304,12 +403,14 @@ def generate(since: datetime, until: datetime, short: bool = False,
                 "_", " ").upper()
             message = message['message']
 
-            print(f'{timestamp} {origin:>17s} | [{level}] {message}',
-                  file=str_io)
+            print_code(str_io,
+                       f'{timestamp} {origin:>17s} | [{level}] {message}',
+                       type=type)
+        end_code(str_io, type=type)
 
         ##### Services
 
-        title(str_io, 'Services')
+        title(str_io, 'Services', type=type)
 
         keys = [
             service['unit'] for service in config.Systemd.services.values()
@@ -355,14 +456,16 @@ def generate(since: datetime, until: datetime, short: bool = False,
             })
 
         sizes = [24, 8]
-        table_header(str_io, ['Service', 'Failures'], sizes)
+        table_header(str_io, ['Service', 'Failures'], sizes, type=type)
 
         for row in sorted(services_stats, key=sorting_fun):
-            table_row(str_io, [row['key'], row['failures']], sizes)
+            table_row(str_io, [row['key'], row['failures']], sizes, type=type)
 
-        if len(monitoring_stats) == 0:
-            table_row(str_io, ['Nothing to show', 'N/A'], sizes)
+        if len(services_stats) == 0:
+            table_row(str_io, ['Nothing to show', 'N/A'], sizes, type=type)
 
-        table_footer(str_io, sizes)
+        table_footer(str_io, sizes, type=type)
+
+        end_document(str_io, type=type)
 
         return str_io.getvalue()
