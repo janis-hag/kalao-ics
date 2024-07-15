@@ -1,11 +1,12 @@
 [Unit]
-Description=KalAO - Loop timer
+Description=KalAO - Observation timer
 
 After=network-online.target
 Wants=network-online.target
 
 After=kalao_system-setup.service
-After=mongodb.service
+After=mongod.service
+After=redis-server.service
 
 [Service]
 Type=simple

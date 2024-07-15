@@ -9,6 +9,8 @@ from kalao.definitions.enums import LogLevel
 
 import config
 
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.journal-fields.html
+
 
 def get_reader(filter: bool = True) -> journal.Reader:
     reader = journal.Reader()
@@ -75,27 +77,24 @@ def get_entries_between(since: datetime, until: datetime,
 
 def process_entry(entry: dict) -> LogEntry | None:
     message = entry['MESSAGE']
+
     if message != '':
         level = LogLevel.INFO
 
         timestamp = entry['__REALTIME_TIMESTAMP'].strftime('%y-%m-%d %H:%M:%S')
 
         if 'USER_UNIT' in entry:
-            if '_COMM' in entry:
-                origin = entry['_COMM']
-            else:
-                origin = entry['SYSLOG_IDENTIFIER']
+            origin = kstring.get_service_name(entry['USER_UNIT'])
 
             if entry.get('EXIT_STATUS', 0) != 0 or entry.get(
                     'UNIT_RESULT', '') == 'exit-code':
                 level = LogLevel.ERROR
+
+        elif '_SYSTEMD_USER_UNIT' in entry:
+            origin = kstring.get_service_name(entry['_SYSTEMD_USER_UNIT'])
+
         else:
-            if '_SYSTEMD_USER_UNIT' in entry:
-                origin = kstring.get_service_name(entry['_SYSTEMD_USER_UNIT'])
-            elif '_COMM' in entry:
-                origin = entry['_COMM']
-            else:
-                return None
+            return None
 
         if 'ERROR' in message or 'Failed' in message or 'Traceback' in message:
             level = LogLevel.ERROR

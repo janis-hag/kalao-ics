@@ -8,11 +8,12 @@ from astropy.io import fits
 
 from kalao import database, ippower, logs, services
 from kalao.cacao import aocontrol, toolbox
-from kalao.hardware import (adc, calibunit, camera, cooling, filterwheel,
-                            flipmirror, hw_utils, laser, shutter, tungsten,
-                            wfs)
+from kalao.hardware import (adc, calibunit, camera, cooling, dm, filterwheel,
+                            flipmirror, hw_utils, laser, shutter, ttm,
+                            tungsten, wfs)
 from kalao.rtc import rtc
-from kalao.sequencer import centering, focusing
+from kalao.sequencer import centering, focusing, seq_utils
+from kalao.timers import monitoring
 
 import libtmux
 
@@ -250,12 +251,19 @@ class MainBackend(SHMFPSBackend):
         self._update_fps_param(data, config.FPS.TTMLOOP, 'loopmult')
         self._update_fps_param(data, config.FPS.TTMLOOP, 'looplimit')
 
-        self._update_fps_param(data, config.FPS.CONFIG, 'adc_synchronisation')
-        self._update_fps_param(data, config.FPS.CONFIG, 'ttm_offloading')
+        self._update_dict(
+            data, 'memory', {
+                'sequencer_status': seq_utils.get_sequencer_status(),
+                'centering_manual': centering.get_manual_centering_flag(),
+                'adc_synchronisation': adc.get_synchronisation(),
+                'ttm_offloading': ttm.get_offloading(),
+            })
 
         self._update_dict(data, 'hw',
-                          hw_utils.get_all_status(filter_from_db=True))
+                          hw_utils.get_all_status(filter_from_memory=True))
+
         self._update_dict(data, 'services', services.get_all_status())
+
         self._update_dict(
             data, 'camera', {
                 'camera_server_status': camera.server_status(),
@@ -263,26 +271,24 @@ class MainBackend(SHMFPSBackend):
             })
         self._update_dict(data, 'camera', camera.get_exposure_status())
         self._update_dict(data, 'camera', camera.get_temperatures())
+
         self._update_dict(data, 'ippower', ippower.status_all())
 
         tmux_server = libtmux.Server()
-        self._update_dict(
-            data, 'tmux', {
-                'tmux_server_alive':
-                    tmux_server.is_alive(),
-                'tmux_sessions':
-                    [session.name for session in tmux_server.sessions]
-            })
+        self._update_dict(data, 'tmux', {
+            'tmux_sessions':
+                [session.name for session in tmux_server.sessions]
+        })
 
         self._update_dict(
             data, 'pgrep', {
                 'kalaocam_ctrl':
-                    subprocess.run([
-                        'pgrep', '-f', 'camstack.cam_mains.kalaocam'
-                    ]).returncode,
+                    subprocess.run(
+                        ['pgrep', '-f', 'camstack.cam_mains.kalaocam'],
+                        capture_output=True).returncode,
                 'nuvu_fgrab':
-                    subprocess.run(['pgrep', '-f', 'hwacq-edttake']
-                                   ).returncode,
+                    subprocess.run(['pgrep', '-f', 'hwacq-edttake'],
+                                   capture_output=True).returncode,
             })
 
         for proc in config.AO.processes:
@@ -291,11 +297,6 @@ class MainBackend(SHMFPSBackend):
         for stream in config.AO.streams:
             self._update_shm_state(data, stream)
             self._update_shm_md(data, stream)
-
-        self._update_db(
-            data, 'obs',
-            database.get_all_last('obs',
-                                  ['sequencer_status', 'centering_manual']))
 
         self._update_shm(data, config.SHM.TELEMETRY_TTM)
 
@@ -353,7 +354,7 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
-    def plots_data(self, *, since, until, monitoring_keys, obs_keys):
+    def plots_data_db(self, *, since, until, monitoring_keys, obs_keys):
 
         data = {}
 
@@ -367,11 +368,17 @@ class MainBackend(SHMFPSBackend):
 
         return data
 
+    def plots_data_live(self):
+        data = monitoring.gather_general() | monitoring.gather_ao()
+        data['timestamp'] = datetime.now(timezone.utc)
+
+        return data
+
     def calibration_ready(self, *, conf, loop):
         if not wfs.acquisition_running():
             return {'ready': False, 'reason': 'WFS acquisition is not running'}
 
-        if not aocontrol.check_wfs_flux():
+        if not wfs.check_flux():
             return {'ready': False, 'reason': 'Not enough flux on WFS'}
 
         # TODO: check frequency
@@ -669,16 +676,16 @@ class MainBackend(SHMFPSBackend):
     # Wavefront Sensor
 
     def wfs_emgain(self, *, emgain):
-        aocontrol.set_emgain(emgain)
+        wfs.set_emgain(emgain)
 
     def wfs_exposuretime(self, *, exposuretime):
-        aocontrol.set_exptime(exposuretime)
+        wfs.set_exptime(exposuretime)
 
     def wfs_autogain_on(self, *, state):
         aocontrol.switch_autogain(state)
 
     def wfs_autogain_setting(self, *, setting):
-        aocontrol.set_autogain_setting(setting)
+        wfs.set_autogain_setting(setting)
 
     # Deformable Mirror
 
@@ -694,10 +701,10 @@ class MainBackend(SHMFPSBackend):
     # Observation
 
     def adc_synchronisation(self, *, state):
-        toolbox.set_fps_value(config.FPS.CONFIG, 'adc_synchronisation', state)
+        adc.set_synchronisation(state)
 
     def ttm_offloading(self, *, state):
-        toolbox.set_fps_value(config.FPS.CONFIG, 'ttm_offloading', state)
+        ttm.set_offloading(state)
 
     # Modal gains
 
@@ -821,6 +828,12 @@ class MainBackend(SHMFPSBackend):
     def wfs_acquisition_stop(self):
         wfs.stop_acquisition()
 
+    def dm_on(self):
+        dm.on()
+
+    def dm_off(self):
+        dm.off()
+
     def ippower_rtc_on(self):
         ippower.switch(config.IPPower.Port.RTC, IPPowerStatus.ON)
 
@@ -885,10 +898,13 @@ class MainBackend(SHMFPSBackend):
     def logs_between(self, *, since, until):
         return logs.get_entries_between(since, until)
 
-    ##### Instrument
+    ##### Instrument / RTC
 
-    def shutdown(self, *, iknowwhatimdoing):
-        if iknowwhatimdoing == 'yes':
-            return rtc.shutdown_sequence()
-        else:
-            return None
+    def instrument_shutdown(self):
+        return rtc.shutdown_sequence()
+
+    def rtc_poweroff(self):
+        return rtc.power_off()
+
+    def rtc_reboot(self):
+        return rtc.reboot()

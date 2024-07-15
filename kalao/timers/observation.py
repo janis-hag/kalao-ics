@@ -13,12 +13,12 @@ from typing import Callable
 
 from kalao import euler, logger
 from kalao.cacao import aocontrol
-from kalao.hardware import adc, camera, wfs
-from kalao.utils import offsets
+from kalao.hardware import adc, camera, ttm, wfs
+from kalao.sequencer import seq_utils
 
 import schedule
 
-from kalao.definitions.enums import LoopStatus
+from kalao.definitions.enums import LoopStatus, SequencerStatus
 
 import config
 
@@ -30,7 +30,7 @@ def _update_adc() -> None:
 
 def _offload_ttm() -> None:
     if aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON:
-        offsets.offload_ttm_to_telescope()
+        ttm.offload_to_telescope()
 
 
 def _check_ao() -> None:
@@ -47,16 +47,16 @@ def _check_ao() -> None:
             logger.warn('observation_timer',
                         'Disabling DM loop as WFS acquisition froze')
 
+            seq_utils.set_sequencer_status(SequencerStatus.ABORTING_ERROR)
             camera.cancel()
-
             aocontrol.open_loops()
 
-        if not aocontrol.check_wfs_flux():
+        elif not wfs.check_flux():
             logger.warn('observation_timer',
                         'Disabling DM loop as flux is too low')
 
+            seq_utils.set_sequencer_status(SequencerStatus.ABORTING_ERROR)
             camera.cancel()
-
             aocontrol.open_loops()
 
 

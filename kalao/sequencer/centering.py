@@ -4,11 +4,12 @@ import numpy as np
 
 from astropy.io import fits
 
-from kalao import database, logger
+from kalao import database, logger, memory
 from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import (calibunit, camera, dm, filterwheel, flipmirror,
                             laser, shutter, wfs)
-from kalao.sequencer.seq_context import with_sequencer_status
+from kalao.sequencer import seq_utils
+from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import offsets, starfinder
 
 from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
@@ -84,7 +85,7 @@ def center_on_target(
 
     if adaptiveoptics_mode == AdaptiveOpticsMode.ENABLED:
         # Check if enough light is on the WFS for precise centering
-        if aocontrol.optimize_wfs_flux() != ReturnCode.OK:
+        if wfs.optimize_flux() != ReturnCode.OK:
             raise CenteringFluxWFSTooLow
 
         # Note: currently disabled, let's let the AO do the centering by itself
@@ -131,7 +132,7 @@ def center_on_laser() -> ReturnCode:
     if flipmirror.up() != FlipMirrorPosition.UP:
         raise FlipMirrorNotUp
 
-    if not aocontrol.check_wfs_flux():
+    if not wfs.check_flux():
         # Move calib unit to approximately correct position if too far
         if np.abs(calibunit.get_position() - config.Laser.position) > 0.5:
             calibunit.move_to_laser_position()
@@ -161,11 +162,11 @@ def center_on_laser() -> ReturnCode:
             return ReturnCode.CENTERING_ERROR
 
         # Precise centering with WFS
-        aocontrol.emgain_off()
+        wfs.emgain_off()
 
         laser.set_power(config.WFS.laser_calib_power, enable=True)
-        aocontrol.set_exptime(config.WFS.laser_calib_exptime)
-        aocontrol.set_emgain(config.WFS.laser_calib_emgain)
+        wfs.set_exptime(config.WFS.laser_calib_exptime)
+        wfs.set_emgain(config.WFS.laser_calib_emgain)
 
     try:
         on_wfs_with_ttm()
@@ -179,26 +180,25 @@ def center_on_laser() -> ReturnCode:
 
 def request_manual_centering() -> ReturnCode:
     logger.info('centering', 'Starting manual centering.')
-    database.store('obs', {'centering_manual': True})
+    set_manual_centering_flag(True)
 
     timeout = time.monotonic() + config.Centering.manual_timeout
 
     while time.monotonic() < timeout:
-        centering = database.get_last_value('obs', 'centering_manual')
+        centering = get_manual_centering_flag()
 
         if centering is False:
             break
 
-        if database.get_last_value(
-                'sequencer_status') == SequencerStatus.ABORTING:
-            database.store('obs', {'centering_manual': False})
+        if seq_utils.is_aborting():
+            set_manual_centering_flag(False)
             raise AbortRequested
 
         time.sleep(1)
     else:
         logger.error('centering',
                      'Timeout while waiting for manual centering from user.')
-        database.store('obs', {'centering_manual': False})
+        set_manual_centering_flag(False)
         raise ManualCenteringTimeout
 
     # If the user validated the centering before exposure ended, wait
@@ -206,7 +206,8 @@ def request_manual_centering() -> ReturnCode:
     while exposure_status['remaining_time'] > 0:
         time.sleep(1)
 
-        _check_abort()
+        if seq_utils.is_aborting():
+            raise AbortRequested
 
         exposure_status = camera.get_exposure_status()
 
@@ -215,9 +216,29 @@ def request_manual_centering() -> ReturnCode:
 
 def validate_manual_centering() -> ReturnCode:
     logger.info('centering', 'Manual centering done.')
-    database.store('obs', {'centering_manual': False})
+    set_manual_centering_flag(False)
 
     return ReturnCode.CENTERING_OK
+
+
+def invalidate_manual_centering() -> ReturnCode:
+    set_manual_centering_flag(False)
+
+    return ReturnCode.CENTERING_OK
+
+
+def get_manual_centering_flag() -> bool:
+    flag = memory.get('centering_manual')
+
+    if flag is None:
+        return False
+    else:
+        return bool(flag)
+
+
+def set_manual_centering_flag(flag: bool) -> None:
+    memory.set('centering_manual', int(flag))
+    database.store('obs', {'centering_manual': flag})
 
 
 def manual_centering(dx: float, dy: float) -> ReturnCode:
@@ -251,7 +272,8 @@ def on_camera_with_calibunit(obs_type: ObservationType, exptime: float,
         if error <= config.Centering.camera_with_calibunit_precision:
             break
 
-        _check_abort()
+        if seq_utils.is_aborting():
+            raise AbortRequested
 
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
@@ -291,7 +313,8 @@ def on_camera_with_telescope(obs_type: ObservationType, exptime: float,
         if error <= config.Centering.camera_with_telescope_precision:
             break
 
-        _check_abort()
+        if seq_utils.is_aborting():
+            raise AbortRequested
 
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
@@ -331,7 +354,8 @@ def on_camera_with_ttm(obs_type: ObservationType, exptime: float,
         if error <= config.Centering.camera_with_ttm_precision:
             break
 
-        _check_abort()
+        if seq_utils.is_aborting():
+            raise AbortRequested
 
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
@@ -370,7 +394,8 @@ def on_wfs_with_ttm(max_iter: int = config.Centering.
         if error <= config.Centering.wfs_with_ttm_precision:
             break
 
-        _check_abort()
+        if seq_utils.is_aborting():
+            raise AbortRequested
 
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
@@ -386,14 +411,6 @@ def on_wfs_with_ttm(max_iter: int = config.Centering.
         'centering',
         f'Centered on WFS using Tip-Tilt Mirror, error = {error:.3f} px')
     return -dx, -dy
-
-
-def _check_abort() -> ReturnCode:
-    if database.get_last_value('obs',
-                               'sequencer_status') == SequencerStatus.ABORTING:
-        raise AbortRequested
-
-    return ReturnCode.CENTERING_OK
 
 
 def _get_star(obs_type: ObservationType,

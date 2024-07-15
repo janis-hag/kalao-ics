@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @Filename : open_loop_ncpa.py
+# @Filename : ncpa.py
 # @Date : 2022-03-19-15-33
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-open_loop_ncpa.py is part of the KalAO Instrument Control Software
+ncpa.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
@@ -20,11 +20,11 @@ import numpy as np
 from astropy.io import fits
 
 from kalao.cacao import aocontrol, toolbox
-from kalao.hardware import camera, filterwheel, laser
+from kalao.hardware import camera, filterwheel, laser, wfs
 from kalao.utils import kmath, ktime, starfinder, zernike
 from kalao.utils.ansi_escape_codes import ANSIEscapeCodes as ANSI
 
-from kalao.definitions.enums import CameraServerStatus
+from kalao.definitions.enums import CameraServerStatus, LoopStatus
 
 import config
 
@@ -60,28 +60,45 @@ def take_and_measure(args):
     return star.peak
 
 
-def display_and_measure(dm_stream, zernike_coeffs, args):
-    pattern = zernike.generate_pattern(zernike_coeffs, dm_stream.shape)
-    dm_stream.set_data(pattern, True)
+def display_and_measure(output_shm, zernike_coeffs, args):
+    if args.open:
+        pattern = zernike.generate_pattern(zernike_coeffs, output_shm.shape)
+    else:
+        pattern = zernike.generate_slopes(zernike_coeffs, output_shm.shape)
+
+    output_shm.set_data(pattern, True)
     time.sleep(0.1)
 
     return take_and_measure(args)
 
 
 def run(args):
-    # Open DM stream
-    dm_shm = toolbox.open_shm_once(config.SHM.DM_NCPA)
-    if dm_shm is None:
-        print(f'{config.SHM.DM_NCPA} missing')
-        exit()
+    if args.open:
+        # Open DM stream
+        output_shm = toolbox.open_shm_once(config.SHM.DM_NCPA)
+        if output_shm is None:
+            print(f'{config.SHM.DM_NCPA} missing')
+            exit()
 
-    # Open slopes stream
-    slopes_shm = toolbox.open_shm_once(config.SHM.SLOPES)
-    if slopes_shm is None:
-        print(f'{config.SHM.SLOPES} missing')
-        exit()
+        # Open slopes stream
+        slopes_shm = toolbox.open_shm_once(config.SHM.SLOPES)
+        if slopes_shm is None:
+            print(f'{config.SHM.SLOPES} missing')
+            exit()
+    else:
+        # Open WFS reference stream
+        output_shm = toolbox.open_shm_once(config.SHM.WFS_REF)
+        if output_shm is None:
+            print(f'{config.SHM.WFS_REF} missing')
+            exit()
 
-    toolbox.zero_stream(config.SHM.DM_NCPA)
+        loop_status = aocontrol.close_loop(config.AO.DM_loop_number,
+                                           with_autogain=False)
+        if LoopStatus.DM_LOOP_ON not in loop_status:
+            print('Failed to close loop')
+            exit()
+
+    toolbox.zero_stream(output_shm)
 
     peak = take_and_measure(args)
     print(f'Exposure time: {args.exptime}')
@@ -130,7 +147,7 @@ def run(args):
             peak_array = np.zeros((3, 2))
 
             start_peak = peak_array[1][PEAK_VALUE] = display_and_measure(
-                dm_shm, zernike_coeffs, args)
+                output_shm, zernike_coeffs, args)
             start_coeff = peak_array[1][COEFF] = zernike_coeffs[order]
 
             # Reset value to zero before starting search
@@ -150,14 +167,14 @@ def run(args):
                 zernike_coeffs[order] = up
 
                 peak_array[2][PEAK_VALUE] = display_and_measure(
-                    dm_shm, zernike_coeffs, args)
+                    output_shm, zernike_coeffs, args)
                 peak_array[2][COEFF] = up
 
                 # Test down
                 zernike_coeffs[order] = down
 
                 peak_array[0][PEAK_VALUE] = display_and_measure(
-                    dm_shm, zernike_coeffs, args)
+                    output_shm, zernike_coeffs, args)
                 peak_array[0][COEFF] = down
 
                 # Get zernike value of max flux
@@ -177,14 +194,14 @@ def run(args):
                 zernike_coeff_incr = zernike_coeff_incr / 2
 
             end_peak = peak_array[1][PEAK_VALUE] = display_and_measure(
-                dm_shm, zernike_coeffs, args)
+                output_shm, zernike_coeffs, args)
             end_coeff = peak_array[1][COEFF] = zernike_coeffs[order]
 
             highest_peak = max(highest_peak, end_peak)
 
             print(ANSI.UP * (8 + len(zernike_coeffs)), end=ANSI.CLEAR)
 
-    peak = display_and_measure(dm_shm, zernike_coeffs, args)
+    peak = display_and_measure(output_shm, zernike_coeffs, args)
 
     print(ANSI.UP + ANSI.CLEAR + 'Final coefficients:')
     zernike.print_coeffs(zernike_coeffs)
@@ -198,40 +215,50 @@ def run(args):
     print(ANSI.CLEAR)
     print(ANSI.CLEAR)
 
-    laser.set_power(config.WFS.laser_calib_power, enable=True)
-    aocontrol.set_exptime(config.WFS.laser_calib_exptime)
-    aocontrol.set_emgain(config.WFS.laser_calib_emgain)
-
-    time.sleep(10)
-
     folder = Path(f'ncpa_{ktime.utc_millis_str()}')
     folder.mkdir(parents=True)
 
-    np.savetxt(folder / 'dm_zernike_coeffs.txt', zernike_coeffs)
-    toolbox.save_stream_to_fits(config.SHM.DM, f'{folder}/dm.fits')
+    np.savetxt(folder / 'zernike_coeffs.txt', zernike_coeffs)
 
-    print('Averaging slopes')
-    slopes = []
+    if args.open:
+        laser.set_power(config.WFS.laser_calib_power, enable=True)
+        wfs.set_exptime(config.WFS.laser_calib_exptime)
+        wfs.set_emgain(config.WFS.laser_calib_emgain)
 
-    for i in range(args.slopes_avg):
-        print(ANSI.UP + ANSI.CLEAR +
-              f'Averaging slopes {i + 1}/{args.slopes_avg}')
-        slopes.append(slopes_shm.get_data(check=True))
+        time.sleep(10)
 
-    slopes = np.array(slopes)
-    fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /
-                                                       'slopes_cube.fits')
+        toolbox.save_stream_to_fits(output_shm, f'{folder}/dm.fits')
 
-    slopes = np.median(slopes, axis=0)
-    fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /
-                                                       'slopes_median.fits')
+        print('Averaging slopes')
+        slopes = []
+
+        for i in range(args.slopes_avg):
+            print(ANSI.UP + ANSI.CLEAR +
+                  f'Averaging slopes {i + 1}/{args.slopes_avg}')
+            slopes.append(slopes_shm.get_data(check=True))
+
+        slopes = np.array(slopes)
+        fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /
+                                                           'slopes_cube.fits')
+
+        slopes = np.median(slopes, axis=0)
+        fits.PrimaryHDU(slopes.astype(np.float32)).writeto(
+            folder / 'slopes_median.fits')
+    else:
+        toolbox.save_stream_to_fits(output_shm, f'{folder}/wfsref.fits')
+
+        slopes = zernike.generate_slopes(zernike_coeffs, output_shm.shape)
+
+        fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /
+                                                           'slopes.fits')
 
     print('Results written')
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Run open-loop NCPA optimisation.')
+    parser = argparse.ArgumentParser(description='Run NCPA optimisation.')
+    parser.add_argument('--closed-loop', action='store_false', dest='open',
+                        help='Run the optimization in closed loop')
     parser.add_argument('--exptime', action='store', dest='exptime',
                         type=float, default=config.Camera.laser_calib_exptime,
                         help='Science camera integration time')

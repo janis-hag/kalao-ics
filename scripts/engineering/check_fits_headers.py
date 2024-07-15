@@ -2,6 +2,7 @@ import argparse
 
 import pandas as pd
 
+from kalao.hardware import camera
 from kalao.utils import file_handling
 
 from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
@@ -10,26 +11,16 @@ from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
 
 import config
 
-try:
-    from kalao.hardware import camera
-
-    camera_imported = True
-except ImportError:
-    camera_imported = False
-
 
 def run(args):
     if args.fits is None:
-        if camera_imported:
-            ret = camera.take_fake('/tmp/camera_fake.fits')
+        ret = camera.take_fake('/tmp/camera_fake.fits')
 
-            if ret is not None:
-                camera_header = file_handling._header_from_fits_file(
-                    '/tmp/camera_fake.fits')
-            else:
-                print("[ERROR] Failed to get empty file from FLI camera.")
-                camera_header = file_handling._header_empty()
+        if ret is not None:
+            camera_header = file_handling._header_from_fits_file(
+                '/tmp/camera_fake.fits')
         else:
+            print("[ERROR] Failed to get empty file from FLI camera.")
             camera_header = file_handling._header_empty()
     else:
         camera_header = file_handling._header_from_fits_file(args.fits)

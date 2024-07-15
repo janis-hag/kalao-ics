@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 source /home/kalao/.kalao_env
 source /home/kalao/kalao-venv-3.11/bin/activate
 

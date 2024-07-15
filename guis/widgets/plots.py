@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 import numpy as np
+import pandas as pd
 
 from PySide6.QtCharts import QChartView, QDateTimeAxis, QLineSeries, QValueAxis
 from PySide6.QtCore import (QDateTime, QEvent, QObject, QPointF, QTimer,
@@ -102,9 +103,11 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
         self.plots_view.setRubberBand(QChartView.RectangleRubberBand)
 
-        self.live_timer = QTimer(parent=self)
+        self.autoupdate_timer = QTimer(parent=self)
 
         self.on_tonight_button_clicked(None)
+        self.on_autoupdate_database_button_toggled(
+            self.autoupdate_database_button.isChecked())
 
     def get_display_name(self, metadata):
         unit = metadata.get('unit')
@@ -150,6 +153,14 @@ class PlotsWidget(KWidget, BackendActionMixin):
         self.axis_y.setMax(d)
 
     @Slot(bool)
+    def on_last_5minutes_button_clicked(self, checked):
+        until = QDateTime.currentDateTime()
+        since = until.addSecs(-300)
+
+        self.since_datetimeedit.setDateTime(since)
+        self.until_datetimeedit.setDateTime(until)
+
+    @Slot(bool)
     def on_last_hour_button_clicked(self, checked):
         until = QDateTime.currentDateTime()
         since = until.addSecs(-3600)
@@ -192,18 +203,38 @@ class PlotsWidget(KWidget, BackendActionMixin):
         self.until_datetimeedit.setDateTime(until)
 
     @Slot(int)
-    def on_live_checkbox_stateChanged(self, state):
+    def on_autoupdate_checkbox_stateChanged(self, state):
+        self.autoupdate_df = None
+
         if Qt.CheckState(state) == Qt.Checked:
-            self.live_timer.setInterval(
-                int(1000 / config.GUI.refreshrate_monitoring))
-            self.live_timer.timeout.connect(self.on_live_timer_timeout)
+            self.plot_button_container.setEnabled(False)
 
-            self.on_live_timer_timeout()
-            self.live_timer.start()
+            self.autoupdate_timer.timeout.connect(
+                self.on_autoupdate_timer_timeout)
+
+            self.on_autoupdate_timer_timeout()
+            self.autoupdate_timer.start()
         else:
-            self.live_timer.stop()
+            self.plot_button_container.setEnabled(True)
 
-    def on_live_timer_timeout(self):
+            self.autoupdate_timer.stop()
+
+    @Slot(bool)
+    def on_autoupdate_database_button_toggled(self, checked):
+        if checked:
+            self.autoupdate_timer.setInterval(
+                int(1000 * config.Monitoring.update_interval))
+            self.autoupdate_refresh_rate_spinbox.setEnabled(False)
+        else:
+            self.autoupdate_timer.setInterval(
+                int(1000 * self.autoupdate_refresh_rate_spinbox.value()))
+            self.autoupdate_refresh_rate_spinbox.setEnabled(True)
+
+    @Slot(float)
+    def on_autoupdate_refresh_rate_spinbox_valueChanged(self, d):
+        self.autoupdate_timer.setInterval(int(1000 * d))
+
+    def on_autoupdate_timer_timeout(self):
         time_delta = self.until_datetimeedit.dateTime().msecsTo(
             self.since_datetimeedit.dateTime())
 
@@ -213,7 +244,28 @@ class PlotsWidget(KWidget, BackendActionMixin):
         self.until_datetimeedit.setDateTime(now)
         self.since_datetimeedit.setDateTime(prev)
 
-        self.on_plot_button_clicked(None)
+        if self.autoupdate_database_button.isChecked():
+            self.on_plot_button_clicked(None)
+        else:
+            data = self.action_send([], self.backend.plots_data_live)
+
+            monitoring_keys = []
+            for item in self.monitoring_treeview.findItems(
+                    '', Qt.MatchContains | Qt.MatchRecursive):
+                if item.checkState(0) == Qt.Checked and item.childCount() == 0:
+                    monitoring_keys.append(item.key)
+
+            timestamp = data['timestamp']
+            del data['timestamp']
+
+            row = pd.DataFrame.from_records([data], index=[timestamp])
+
+            if self.autoupdate_df is None:
+                self.autoupdate_df = row
+            else:
+                self.autoupdate_df = pd.concat([self.autoupdate_df, row])
+
+            self.plot_data({'monitoring': self.autoupdate_df[monitoring_keys]})
 
     @Slot(bool)
     def on_plot_button_clicked(self, checked):
@@ -232,7 +284,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
         series_to_draw = len(monitoring_keys) + len(obs_keys)
 
-        if series_to_draw == 0:
+        if series_to_draw == 0 and not self.autoupdate_timer.isActive():
             msgbox = KMessageBox(self)
             msgbox.setIcon(QMessageBox.Critical)
             msgbox.setText('<b>No series selected!</b>')
@@ -248,13 +300,15 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
         # Gather plots data
 
-        data = self.action_send(self.plot_button, self.backend.plots_data,
+        data = self.action_send(self.plot_button, self.backend.plots_data_db,
                                 since=since, until=until,
                                 monitoring_keys=monitoring_keys,
                                 obs_keys=obs_keys)
 
         # Display plots
+        self.plot_data(data)
 
+    def plot_data(self, data):
         chart = self.plots_view.chart()
 
         chart.removeAllSeries()
@@ -295,7 +349,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
                 if config.GUI.opengl_charts:
                     series.setUseOpenGL(True)
 
-                if series_to_draw == 1:
+                if len(self.series) == 1:
                     error_range = metadata.get('error_range', [np.nan, np.nan])
                     warn_range = metadata.get('warn_range', [np.nan, np.nan])
 
@@ -312,6 +366,8 @@ class PlotsWidget(KWidget, BackendActionMixin):
                         self.plots_view.addHLine(warn_min, Color.ORANGE)
                     if not np.isnan(warn_max):
                         self.plots_view.addHLine(warn_max, Color.ORANGE)
+                else:
+                    self.plots_view.resetHLines()
 
                 for t, v in values.items():
                     t = t.astimezone(timezone.utc)
@@ -373,7 +429,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
         self.axis_y.setTickCount(20)
         self.axis_y.applyNiceNumbers()
 
-        if no_data:
+        if no_data and not self.autoupdate_timer.isActive():
             msgbox = KMessageBox(self)
             msgbox.setIcon(QMessageBox.Critical)
             msgbox.setText('<b>No data!</b>')
@@ -393,8 +449,10 @@ class PlotsWidget(KWidget, BackendActionMixin):
             self.axis_x.setFormat("HH:mm dd.MM.yy")
         elif time_delta > 86400:
             self.axis_x.setFormat("HH:mm dd.MM")
-        else:
+        elif time_delta > 3600:
             self.axis_x.setFormat("HH:mm")
+        else:
+            self.axis_x.setFormat("HH:mm:ss")
 
     def y_range_changed(self, min, max):
         self.min_spinbox.setValue(min)

@@ -11,7 +11,7 @@ beck.py is part of the KalAO Instrument Control Software
 
 import time
 from functools import wraps
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 
@@ -31,9 +31,10 @@ def connect(addr: str = config.PLC.ip, port: int = config.PLC.port) -> Client:
     return beck
 
 
-def autoconnect(fun):
+def autoconnect(fun: Callable) -> Any:
     @wraps(fun)
-    def wrapper(*args, beck: Client = None, **kwargs):
+    def wrapper(*args: tuple[Any, ...], beck: Client = None,
+                **kwargs: dict[str, Any]) -> Any:
         ret = None
         exception = None
 

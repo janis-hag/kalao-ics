@@ -55,7 +55,12 @@ client: MongoClient | None = None
 def _reset_client() -> None:
     global client
 
-    client = MongoClient(host=config.Database.ip, port=config.Database.port)
+    if client is not None:
+        client.close()
+
+    client = MongoClient(host=config.Database.host, port=config.Database.port)
+
+    # client.admin.command('ping')
 
 
 def _get_collection(collection_name: str) -> Collection:

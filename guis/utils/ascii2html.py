@@ -78,25 +78,25 @@ def _generate_substitution(codes, state):
     if state[Category.OVERLINE]:
         classes.append('overline')
 
-    str = ''
+    html = ''
 
     if state['in_span']:
-        str += '</span>'
+        html += '</span>'
         state['in_span'] = False
 
     if len(classes) != 0 or len(styles) != 0:
-        str += f'<span'
+        html += '<span'
 
         if len(classes) != 0:
-            str += f' class="{" ".join(classes)}"'
+            html += f' class="{" ".join(classes)}"'
 
         if len(styles) != 0:
-            str += f' style="{"; ".join(styles)}"'
+            html += f' style="{"; ".join(styles)}"'
 
-        str += '>'
+        html += '>'
         state['in_span'] = True
 
-    return str
+    return html
 
 
 def _handle_ansi_codes(codes, state):
@@ -221,7 +221,7 @@ def _handle_ansi_codes(codes, state):
         elif code == 53:
             state[Category.OVERLINE] = 1
 
-        elif code == 45:
+        elif code == 55:
             state[Category.OVERLINE] = 0
 
         # Foreground bright
@@ -326,9 +326,9 @@ def _get_256color_or_truecolor(codes, i):
         return None, 0
 
 
-def translate(str, close_last_span=True):
+def translate(text, close_last_span=True):
     # Escape HTML characters
-    table = str.maketrans({
+    table = text.maketrans({
         '\n': '<br/>',
         '&': '&amp;',
         '<': '&lt;',
@@ -336,7 +336,7 @@ def translate(str, close_last_span=True):
         '"': '&quot;',
         '\'': '&#39;',
     })
-    str = str.translate(table)
+    text = text.translate(table)
 
     # Useless codes (https://invisible-island.net/xterm/ctlseqs/ctlseqs.html)
     replace_list = [
@@ -345,20 +345,21 @@ def translate(str, close_last_span=True):
         '\u001b\\(B',  # USASCII charset
     ]
 
-    str = re.sub('(' + '|'.join(replace_list) + ')', '', str)
+    text = re.sub('(' + '|'.join(replace_list) + ')', '', text)
 
     state = {
         'in_span': False,
     } | default_state
 
-    str = re.sub(
+    text = re.sub(
         re.compile(r'\u001b\[([0-9;]*)m'),
-        lambda matchobj: _generate_substitution(matchobj.group(1), state), str)
+        lambda matchobj: _generate_substitution(matchobj.group(1), state),
+        text)
 
     if state['in_span'] and close_last_span:
-        str += '</span>'
+        text += '</span>'
 
-    return str
+    return text
 
 stylesheet = \
     """

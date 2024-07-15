@@ -16,7 +16,7 @@ from typing import Any
 import numpy as np
 
 from kalao import database, logger
-from kalao.sequencer.seq_context import with_sequencer_status
+from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import file_handling
 
 import requests
@@ -125,37 +125,12 @@ def take_image(obs_type: ObservationType, exptime: float | None = None,
                           nbframes=nbframes, roi=roi)
 
     if filepath is not None:
-        database.store('obs', {'camera_temporary_image_path': filepath})
         final_filepath = file_handling.save_tmp_image(filepath, obs_type,
                                                       comment=comment)
 
         return final_filepath
     else:
         return None
-
-
-def increment_image_counter(params: dict[str, Any]) -> int:
-    """
-    Increments the image counter by one
-
-    :return: new image counter value
-    """
-
-    image_count = database.get_last_value('obs', 'camera_image_count')
-
-    if image_count is None:
-        image_count = 0
-    else:
-        image_count += 1
-
-    data = {'camera_image_count': image_count}
-
-    if 'exptime' in params:
-        data['camera_exposure_time'] = params['exptime']
-
-    database.store('obs', data)
-
-    return image_count
 
 
 def cancel(keepframe: bool | None = None) -> ReturnCode:
@@ -226,9 +201,6 @@ def _send_request(endpoint: str,
             del params[key]
         elif key == 'filepath':
             params[key] = str(value)
-
-    if endpoint == '/acquire':
-        increment_image_counter(params)
 
     url = f'http://{config.Camera.ip}:{config.Camera.port}{endpoint}'
 

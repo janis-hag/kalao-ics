@@ -9,7 +9,8 @@ from astropy.io import fits
 from kalao import database, logger
 from kalao.hardware import camera, filterwheel
 from kalao.interfaces import etcs
-from kalao.sequencer.seq_context import with_sequencer_status
+from kalao.sequencer import seq_utils
+from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import file_handling, starfinder
 
 from kalao.definitions.enums import (ObservationType, ReturnCode,
@@ -50,7 +51,7 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
 
     with open(filepath, 'w+b') as file, fits.open(file, 'update') as hdul:
         try:
-            filter = filterwheel.get_filter(type=str, from_db=True)
+            filter = filterwheel.get_filter(type=str, from_memory=True)
 
             hdu = fits.PrimaryHDU()
             hdu.header.set('HIERARCH KAO FOC EXPTIME', exptime,
@@ -63,8 +64,7 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
 
             for step, m2_position in enumerate(m2_positions):
                 # Check if an abort was requested
-                if database.get_last_value(
-                        'sequencer_status') == SequencerStatus.ABORTING:
+                if seq_utils.is_aborting():
                     raise AbortRequested
 
                 etcs.set_focus(m2_position)

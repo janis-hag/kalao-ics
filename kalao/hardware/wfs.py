@@ -5,6 +5,7 @@ from pathlib import Path
 
 from kalao import database, logger
 from kalao.cacao import toolbox
+from kalao.utils.rprint import rprint
 
 import libtmux
 
@@ -159,3 +160,150 @@ def close_shutter() -> float:
     logger.info('wfs', 'Closing WFS shutter')
 
     return toolbox.set_tmux_value('kalaocam_ctrl', 'SetShutterMode', -2)
+
+
+def set_autogain_setting(setting: int) -> int | None:
+    setting = int(setting)
+
+    if setting > config.WFS.max_autogain_setting:
+        setting = config.WFS.max_autogain_setting
+    elif setting < 0:
+        setting = 0
+
+    return toolbox.set_fps_value(config.FPS.NUVU, 'autogain_setting', setting)
+
+
+def set_emgain(emgain: int = 1, method: str = 'fps') -> int | None:
+    """
+    Set the EM gain of the Nuvu WFS camera.
+
+    :param emgain: EM gain to set. 1 by default for no gain.
+    :return:
+    """
+
+    if emgain < config.WFS.min_emgain:
+        emgain = config.WFS.min_emgain
+    elif emgain > config.WFS.max_emgain:
+        emgain = config.WFS.max_emgain
+
+    if method == 'fps':
+        return toolbox.set_fps_value(config.FPS.NUVU, 'emgain', emgain)
+    elif method == 'tmux':
+        return toolbox.set_tmux_value('kalaocam_ctrl', 'SetEMCalibratedGain',
+                                      emgain)
+    else:
+        logger.error('ao', f'Unknown method {method} in set_emgain')
+        return -1
+
+
+def set_exptime(exptime: float = 0, method: str = 'fps') -> float | None:
+    """
+    Set the exposure time of the Nuvu WFS camera.
+
+    :param exptime: exposure time to set in milliseconds. 0 by default for highest frame rate.
+    :return:
+    """
+
+    if exptime < config.WFS.min_exposuretime:
+        exptime = config.WFS.min_exposuretime
+    elif exptime > config.WFS.max_exposuretime:
+        exptime = config.WFS.max_exposuretime
+
+    if method == 'fps':
+        return toolbox.set_fps_value(config.FPS.NUVU, 'exposuretime', exptime)
+    elif method == 'tmux':
+        return toolbox.set_tmux_value('kalaocam_ctrl', 'SetExposureTime',
+                                      exptime)
+    else:
+        logger.error('ao', f'Unknown method {method} in set_exptime')
+        return -1
+
+
+def emgain_off() -> ReturnCode:
+    """
+    Completely turn of EM gain on the WFS camera. For double safety the command is sent directly to the tmux as well as
+    to the nuvu_acquire fps.
+
+    :return: 0 on success
+    """
+
+    ret = ReturnCode.OK
+
+    try:
+        toolbox.set_fps_value(config.FPS.NUVU, 'autogain_on', False)
+        toolbox.set_fps_value(config.FPS.NUVU, 'autogain_setting', 0)
+    except Exception as err:
+        rprint(
+            f'Can\'t turn off autogain, {config.FPS.NUVU} seems not to be running.'
+        )
+        rprint(Exception, err)
+        ret = ReturnCode.GENERIC_ERROR
+
+    try:
+        toolbox.set_fps_value(config.FPS.NUVU, 'emgain', 1)
+    except Exception as err:
+        rprint(
+            f'Can\'t turn off emgain, {config.FPS.NUVU} seems not to be running.'
+        )
+        rprint(Exception, err)
+        ret = ReturnCode.GENERIC_ERROR
+
+    try:
+        toolbox.set_tmux_value('kalaocam_ctrl', 'SetEMCalibratedGain', 1)
+    except Exception as err:
+        rprint('Can\'t turn off emgain, nucu_ctrl seems not to be running.')
+        rprint(Exception, err)
+        ret = ReturnCode.GENERIC_ERROR
+
+    return ret
+
+
+def optimize_flux() -> ReturnCode:
+    # Check if we are already good
+    if check_flux():
+        return ReturnCode.OK
+
+    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU)
+
+    if nuvu_acquire_fps is None:
+        logger.error('wfs', f'{config.FPS.NUVU} is missing')
+        return ReturnCode.GENERIC_ERROR
+
+    nuvu_acquire_fps.set_param('autogain_on', True)
+
+    timeout = time.monotonic() + config.WFS.flux_stabilization_timeout
+
+    prev_setting = -1
+    prev_timestamp = time.monotonic()
+
+    while time.monotonic() < timeout:
+        setting = nuvu_acquire_fps.get_param('autogain_setting')
+        timestamp = time.monotonic()
+
+        if setting != prev_setting:
+            prev_setting = setting
+            prev_timestamp = timestamp
+
+        elif timestamp - prev_timestamp >= config.WFS.flux_stabilization_time:
+            if check_flux():
+                return ReturnCode.OK
+            else:
+                break
+
+    # Reset values if no signal detected
+    nuvu_acquire_fps.set_param('autogain_setting', 0)
+    set_emgain(1)
+    set_exptime(0)
+
+    return ReturnCode.TIMEOUT
+
+
+def check_flux() -> bool:
+    shwfs_fps = toolbox.open_fps_once(config.FPS.SHWFS)
+
+    if shwfs_fps is None or not shwfs_fps.run_isrunning():
+        return False
+
+    flux_avg = shwfs_fps.get_param('flux_avg')
+
+    return flux_avg > config.WFS.flux_min

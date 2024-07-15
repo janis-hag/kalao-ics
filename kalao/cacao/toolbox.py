@@ -190,16 +190,31 @@ def set_tmux_value(session_name: str, key: str,
 
     try:
         session = server.sessions.get(session_name=session_name)
+        pane = session.attached_pane
+
         if value is None:
-            session.attached_pane.send_keys(f'{key}()', enter=True)
+            pane.send_keys(f'{key}()', enter=True)
         else:
-            session.attached_pane.send_keys(f'{key}({value})', enter=True)
+            pane.send_keys(f'{key}({value})', enter=True)
+
+        stdout = pane.cmd('capture-pane', '-p').stdout
+
+        return_str = ''
+        i = -2
+
+        while not stdout[i].startswith('>>>') and -i <= len(stdout):
+            return_str = stdout[i] + '\n' + return_str
+            i -= 1
+
+        if return_str == '':
+            return None
+        else:
+            return eval(return_str)
+
     except (libtmux.exc.TmuxObjectDoesNotExist,
             libtmux._internal.query_list.ObjectDoesNotExist):
         logger.error('ao', f'Can\'t set {key}, {session_name} is missing')
         return None
-
-    return value
 
 
 def wait_file(file: str | Path, timeout: float = 30,

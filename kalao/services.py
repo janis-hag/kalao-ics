@@ -106,11 +106,9 @@ def check_all_active() -> dict[str, bool]:
             continue
 
         unit = service['unit']
+        system = service.get('system', False)
 
-        status_dict[unit] = is_active(unit)
-
-        if not status_dict[unit]:
-            logger.warn('services', f'{unit} is down!')
+        status_dict[unit] = is_active(unit, system=system)
 
     return status_dict
 
@@ -167,13 +165,12 @@ def init() -> ReturnCode:
     :return:
     '''
 
-    system_setup_active = is_active('kalao_system-setup.service', system=True)
-
-    if not system_setup_active:
-        logger.error('services', 'kalao_system-setup.service is down!')
-
     for service in config.Systemd.services.values():
         unit = service['unit']
+        system = service.get('system', False)
+
+        if system:
+            continue
 
         if service['enabled']:
             if not is_enabled(unit):
@@ -193,6 +190,10 @@ def init() -> ReturnCode:
     time.sleep(config.Systemd.service_restart_wait)
 
     all_statuses = check_all_active()
+
+    for unit, status in all_statuses.items():
+        if not status:
+            logger.error('services', f'{unit} is down!')
 
     if not all(all_statuses.values()):
         logger.error('services', 'One or more services are not running!')

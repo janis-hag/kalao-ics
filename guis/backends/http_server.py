@@ -2,12 +2,14 @@ import argparse
 import inspect
 import logging
 import pickle
-import subprocess
 import traceback
+from datetime import datetime, time, timedelta
 from functools import partial
 
+from kalao.utils import ktime, report
 from kalao.utils.rprint import rprint
 
+import pytz
 from flask import Flask, jsonify, make_response, request
 from flask.json.provider import JSONProvider
 
@@ -42,18 +44,18 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 
-@app.route("/night_summary")
-@app.route("/night_summary/<night>")
-def night_summary(night=None):
-    args = ['python', 'scripts/engineering/summary_generator.py']
-    if night is not None:
-        args.append('--night')
-        args.append(night)
+@app.route("/night_report")
+@app.route("/night_report/<night>")
+def night_report(night=None):
+    if night is None:
+        since = ktime.get_start_of_night()
+        since = since - timedelta(days=1)
+    else:
+        since = datetime.combine(night, time(12, 0, 0, 0))
+        since = pytz.timezone('America/Santiago').localize(since)
 
-    res = subprocess.run(args, timeout=60, capture_output=True,
-                         cwd=config.kalao_ics_path)
+    content = report.generate(since, since + timedelta(days=1), short=True)
 
-    content = res.stdout.decode('utf8')
     response = make_response(content)
     response.headers['Content-Type'] = 'text/plain; charset=utf-8'
 

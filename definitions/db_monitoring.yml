@@ -158,6 +158,22 @@ adc2_state:
   group: Hardware
   error_values: [ ERROR, NOT_ENABLED, NOT_INITIALISED ]
 
+adc_angle:
+  short: ADC angle
+  long: Angle between the two ADC prisms
+  unit: °
+  rounding: 3
+  group: Hardware
+  error_values: [ .nan ]
+
+adc_offset:
+  short: ADC offset
+  long: Offset of the two ADC prisms
+  unit: °
+  rounding: 3
+  group: Hardware
+  error_values: [ .nan ]
+
 adc_synchronisation:
   short: ADC synchronisation
   long: State of the ADC synchronisation
@@ -454,6 +470,12 @@ wfs_heatsink_temp:
 wfs_detgain:
   short: WFS detector gain
   long: Wavefront Sensor analogic detector gain
+  unit:
+  group: Wavefront Sensor
+
+wfs_detbias:
+  short: WFS detector bias
+  long: Wavefront Sensor analogic detector offset
   unit:
   group: Wavefront Sensor
 

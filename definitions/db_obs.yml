@@ -46,18 +46,11 @@ camera_last_image_path:
   unit:
   group: Science Camera
 
-camera_temporary_image_path:
-  short: Path to temporary image
-  long: Path to temporary image
-  unit:
-  group: Science Camera
-
 camera_image_count:
   short: Image sequential number
-  long: Counter giving the image number
+  long: Image sequential number
   unit:
   group: Science Camera
-  fits_keyword: HIERARCH ESO DET FRAM ID
 
 camera_exposure_time:
   short: Exposure time
@@ -101,26 +94,6 @@ observer_email:
   short: Observer email
   long: Email of the current observer
   unit:
-
-# Filter Wheel
-filterwheel_filter_position:
-  short: Filter number
-  long: Filter wheel filter position
-  unit:
-  group: Hardware
-
-filterwheel_filter_name:
-  short: Filter name
-  long: Filter wheel filter name
-  unit:
-  group: Hardware
-
-# ADC
-adc_angle:
-  short: ADC Angle
-  long: Angle between the ADC prisms
-  unit: °
-  group: Hardware
 
 # Telescope
 telescope_offload_altitude:

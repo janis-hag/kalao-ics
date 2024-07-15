@@ -87,9 +87,9 @@ class MonitoringWidget(KWidget, BackendDataMixin):
         lineedit.value = None
         lineedit.metadata = metadata
         lineedit.unit = kstring.get_unit_string(metadata)
-        lineedit.installEventFilter(self)
-
         lineedit.ranges = ''
+        lineedit.rounding = lineedit.metadata.get('rounding')
+        lineedit.installEventFilter(self)
 
         error_range = lineedit.metadata.get('error_range', [np.nan, np.nan])
         warn_range = lineedit.metadata.get('warn_range', [np.nan, np.nan])
@@ -135,12 +135,12 @@ class MonitoringWidget(KWidget, BackendDataMixin):
             value, timestamp = self.consume_db(data, lineedit.collection,
                                                lineedit.key)
             if value is not None:
-                if isinstance(value, float):
-                    text = self.formatter.format('{value:.9g}{lineedit.unit}',
-                                                 value=value,
-                                                 lineedit=lineedit)
-                else:
+                if lineedit.rounding is None:
                     text = f'{value}{lineedit.unit}'
+                else:
+                    text = self.formatter.format(
+                        f'{{value:.{lineedit.rounding}f}}{{lineedit.unit}}',
+                        value=value, lineedit=lineedit)
 
                 lineedit.setText(text)
                 lineedit.timestamp = timestamp
@@ -159,8 +159,8 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                     f'{timestamp_text} (outdated){lineedit.ranges}')
                 outdated += 1
             else:
-                level, _, _ = monitoring.check_warning_error(
-                    lineedit.key, lineedit.value)
+                level, _, _ = monitoring.check_issues(lineedit.key,
+                                                      lineedit.value)
 
                 if level == 'error':
                     lineedit.setStyleSheet(

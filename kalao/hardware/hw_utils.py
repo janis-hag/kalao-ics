@@ -34,7 +34,7 @@ def lamps_off() -> ReturnCode:
 
 
 @plc.autoconnect
-def get_all_status(filter_from_db: bool = False,
+def get_all_status(filter_from_memory: bool = False,
                    beck: Client = None) -> dict[str, Any]:
     """
     Query status of all PLC connected devices
@@ -46,8 +46,15 @@ def get_all_status(filter_from_db: bool = False,
     environment_readings = environment.get_readings(beck=beck)
     cooling_system = cooling.get_status(beck=beck)
 
-    filter_position = filterwheel.get_filter(type=int, from_db=filter_from_db),
+    filter_position = filterwheel.get_filter(type=int,
+                                             from_memory=filter_from_memory)
     filter_name = filterwheel.translate_to_filter_name(filter_position)
+
+    adc1_angle = adc.get_position(config.PLC.Node.ADC1, beck=beck)
+    adc2_angle = adc.get_position(config.PLC.Node.ADC2, beck=beck)
+
+    adc_angle, adc_offset = adc.compute_angle_and_offset(
+        adc1_angle, adc2_angle)
 
     return {
         'shutter_state': shutter.get_state(beck=beck),
@@ -57,10 +64,12 @@ def get_all_status(filter_from_db: bool = False,
         'laser_state': laser.get_state(beck=beck),
         'laser_power': laser.get_power(beck=beck),
         'tungsten_state': tungsten.get_state(beck=beck),
-        'adc1_angle': adc.get_position(config.PLC.Node.ADC1, beck=beck),
+        'adc1_angle': adc1_angle,
         'adc1_state': adc.get_state(config.PLC.Node.ADC1, beck=beck),
-        'adc2_angle': adc.get_position(config.PLC.Node.ADC2, beck=beck),
+        'adc2_angle': adc2_angle,
         'adc2_state': adc.get_state(config.PLC.Node.ADC2, beck=beck),
+        'adc_angle': adc_angle,
+        'adc_offset': adc_offset,
         'filterwheel_filter_position': filter_position,
         'filterwheel_filter_name': filter_name,
         'coolant_temp_in': cooling_system['coolant_temp_in'],

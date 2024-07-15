@@ -548,8 +548,9 @@ def _header_to_string(header_df: pd.DataFrame, max_length: int = 45,
         formatters[col] = lambda _, length=length[col]: kstring.ellipsis(
             str(_).ljust(length, ' '), max_length)
 
-        float_format = lambda _: f'{_:.{float_length}f}'[0:float_length].ljust(
-            length['value'], ' ')
+        def float_format(f):
+            return f'{f:.{float_length}f}'[0:float_length].ljust(
+                length['value'], ' ')
 
     pd.set_option("display.colheader_justify", "left")
     return header_df.fillna(

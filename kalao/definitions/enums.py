@@ -51,6 +51,7 @@ class LoopStatus(Flag):
 
 class SequencerStatus(StrEnum):
     ERROR = 'ERROR'
+    UNKNOWN = 'ERROR'
     OFF = 'OFF'
     INITIALISING = 'INITIALISING'
     WAITING = 'WAITING'
@@ -62,6 +63,7 @@ class SequencerStatus(StrEnum):
     FOCUSING = 'FOCUSING'
     DARKS = 'DARKS'
     ABORTING = 'ABORTING'
+    ABORTING_ERROR = 'ABORTING_ERROR'
 
 
 class IPPowerStatus(IntEnum):

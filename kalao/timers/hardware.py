@@ -107,8 +107,8 @@ def _check_wfs_inactive() -> None:
         logger.info('hardware_timer',
                     'Turning off EM gain due to inactivity timeout')
 
-        aocontrol.emgain_off()
-        aocontrol.set_exptime(0)
+        wfs.emgain_off()
+        wfs.set_exptime(0)
 
     if wfs.acquisition_running():
         logger.info('hardware_timer',
@@ -234,8 +234,9 @@ if __name__ == '__main__':
         run_threaded, _check_cooling_status)
     schedule.every(config.Hardware.inactivity_check_interval).seconds.do(
         run_threaded, _check_inactivity)
-    schedule.every(60).seconds.do(_check_pump_temp)
-    schedule.every().day.at('15:00', 'America/Santiago').do(_check_plc)
+    schedule.every(60).seconds.do(run_threaded, _check_pump_temp)
+    schedule.every().day.at('15:00',
+                            'America/Santiago').do(run_threaded, _check_plc)
 
     while True:
         n = schedule.idle_seconds()

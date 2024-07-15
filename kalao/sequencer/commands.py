@@ -21,8 +21,8 @@ from kalao.cacao import aocontrol
 from kalao.hardware import (adc, calibunit, camera, dm, filterwheel,
                             flipmirror, hw_utils, laser, shutter, tungsten,
                             wfs)
-from kalao.sequencer import centering, focusing
-from kalao.sequencer.seq_context import with_sequencer_status
+from kalao.sequencer import centering, focusing, seq_utils
+from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import exposure, file_handling
 
 from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
@@ -56,7 +56,8 @@ def dark(**seq_args: dict[str, Any]) -> ReturnCode:
         raise ShutterNotClosed
 
     # Check if an abort was requested before taking image
-    _check_abort()
+    if seq_utils.is_aborting():
+        raise AbortRequested
 
     # Take darks
     for _ in range(nbPic):
@@ -66,7 +67,8 @@ def dark(**seq_args: dict[str, Any]) -> ReturnCode:
             raise CameraTakeImageFailed
 
         # Check if an abort was requested
-        _check_abort()
+        if seq_utils.is_aborting():
+            raise AbortRequested
 
     return ReturnCode.SEQ_OK
 
@@ -83,7 +85,7 @@ def tungsten_flat(**seq_args: dict[str, Any]) -> ReturnCode:
     # if None in (q):
     #     raise MissingKeyword
 
-    if aocontrol.emgain_off() != ReturnCode.OK:
+    if wfs.emgain_off() != ReturnCode.OK:
         raise EMGainNotOff
 
     if dm.on() != ReturnCode.OK:
@@ -110,7 +112,8 @@ def tungsten_flat(**seq_args: dict[str, Any]) -> ReturnCode:
     _wait_for_tungsten()
 
     # Check if an abort was requested
-    _check_abort()
+    if seq_utils.is_aborting():
+        raise AbortRequested
 
     for filter_name in filter_list:
 
@@ -130,7 +133,8 @@ def tungsten_flat(**seq_args: dict[str, Any]) -> ReturnCode:
             raise CameraTakeImageFailed
 
         # Check if an abort was requested
-        _check_abort()
+        if seq_utils.is_aborting():
+            raise AbortRequested
 
     # Note: do not turn off tungsten in case of successive flats
 
@@ -145,7 +149,7 @@ def sky_flat(**seq_args: dict[str, Any]) -> ReturnCode:
     filter_list = seq_args.get('filter_list',
                                config.Calib.Flats.default_flat_list)
 
-    if aocontrol.emgain_off() != ReturnCode.OK:
+    if wfs.emgain_off() != ReturnCode.OK:
         raise EMGainNotOff
 
     if dm.on() != ReturnCode.OK:
@@ -170,7 +174,8 @@ def sky_flat(**seq_args: dict[str, Any]) -> ReturnCode:
         raise FilterWheelNotInPosition
 
     # Check if an abort was requested
-    _check_abort()
+    if seq_utils.is_aborting():
+        raise AbortRequested
 
     _wait_for_tracking()
 
@@ -212,7 +217,8 @@ def sky_flat(**seq_args: dict[str, Any]) -> ReturnCode:
         img = fits.getdata(image_path)
 
         # Check if an abort was requested
-        _check_abort()
+        if seq_utils.is_aborting():
+            raise AbortRequested
 
     if shutter.close() != ShutterState.CLOSED:
         logger.error('sequencer', 'Failed to close the shutter after sky flat')
@@ -412,8 +418,7 @@ def ob_change(**seq_args: dict[str, Any]) -> ReturnCode:
     logger.info('sequencer', 'OBCHANGE received, opening loop.')
 
     _open_loops()
-
-    database.store('obs', {'centering_manual': False})
+    centering.invalidate_manual_centering()
 
     return ReturnCode.SEQ_OK
 
@@ -428,8 +433,7 @@ def instrument_change(**seq_args: dict[str, Any]) -> ReturnCode:
     # Note: do NOT turn DM off (only at the end of the night)
     _open_loops()
     _shut_off_plc()
-
-    database.store('obs', {'centering_manual': False})
+    centering.invalidate_manual_centering()
 
     return ReturnCode.SEQ_OK
 
@@ -443,8 +447,7 @@ def end(**seq_args: dict[str, Any]) -> ReturnCode:
 
     _open_loops()
     _shut_off_plc()
-
-    database.store('obs', {'centering_manual': False})
+    centering.invalidate_manual_centering()
 
     if dm.off() != ReturnCode.OK:
         logger.warn('sequencer', 'Unable to turn off DM')
@@ -453,9 +456,7 @@ def end(**seq_args: dict[str, Any]) -> ReturnCode:
         logger.warn('sequencer', 'Unable to stop WFS acquisition')
 
     # Release Euler synchro
-    database.store('obs', {
-        'sequencer_status': SequencerStatus.WAITING,
-    })
+    seq_utils.set_sequencer_status(SequencerStatus.WAITING)
 
     time.sleep(2)
 
@@ -485,16 +486,8 @@ def edp_config(**seq_args: dict[str, Any]) -> ReturnCode:
     return ReturnCode.SEQ_OK
 
 
-def _check_abort() -> ReturnCode:
-    if database.get_last_value('obs',
-                               'sequencer_status') == SequencerStatus.ABORTING:
-        raise AbortRequested
-
-    return ReturnCode.SEQ_OK
-
-
 def _abort() -> ReturnCode:
-    database.store('obs', {'centering_manual': False})
+    centering.invalidate_manual_centering()
 
     if camera.cancel() != ReturnCode.OK:
         raise CameraCancelFailed
@@ -539,7 +532,8 @@ def _wait_for_tungsten() -> ReturnCode:
         if state != TungstenState.ON:
             raise TungstenSwitchedOff
 
-        _check_abort()
+        if seq_utils.is_aborting():
+            raise AbortRequested
 
         time.sleep(config.Tungsten.stabilisation_poll_interval)
 
@@ -580,10 +574,10 @@ def _open_loops() -> None:
     if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
         logger.warn('sequencer', 'Failed to open loops.')
 
-    if aocontrol.emgain_off() != ReturnCode.OK:
+    if wfs.emgain_off() != ReturnCode.OK:
         logger.warn('sequencer', 'Failed to turn WFS EM gain off.')
 
-    if aocontrol.set_exptime(0) != ReturnCode.OK:
+    if wfs.set_exptime(0) != ReturnCode.OK:
         logger.warn('sequencer', 'Failed to reset WFS exposure time.')
 
     if aocontrol.reset_all_dms() != ReturnCode.OK:

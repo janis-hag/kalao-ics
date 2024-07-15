@@ -17,7 +17,8 @@ from kalao.hardware import plc
 
 from opcua import Client
 
-from kalao.definitions.enums import PLCStatus, ReturnCode, CalibUnitPositionName
+from kalao.definitions.enums import (CalibUnitPositionName, PLCStatus,
+                                     ReturnCode)
 
 import config
 

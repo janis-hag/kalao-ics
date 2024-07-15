@@ -151,11 +151,12 @@ def _star_gaussian_fit(X: np.ndarray, Y: np.ndarray, img: np.ndarray,
     Y = Y.ravel()
     img = img.ravel()
 
-    fun = lambda x: np.sqrt(
-        np.sum((kmath.gaussian_2d_rotated(X, Y, *x, 0) - img)**2))
+    def gaussian(t):
+        return np.sqrt(
+            np.sum((kmath.gaussian_2d_rotated(X, Y, *t, 0) - img)**2))
 
     res = scipy.optimize.minimize(
-        fun, (peak_x, peak_y, 1, 1, 0, peak_value), method='L-BFGS-B',
+        gaussian, (peak_x, peak_y, 1, 1, 0, peak_value), method='L-BFGS-B',
         bounds=[(peak_x - hw, peak_x + hw), (peak_y - hw, peak_y + hw),
                 (1, 4 * hw), (1, 4 * hw), (-np.pi, np.pi), (1, 131072)])
 

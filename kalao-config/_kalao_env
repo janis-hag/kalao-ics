@@ -4,7 +4,7 @@ export PYTHONPATH=/home/kalao/kalao-ics
 export MILK_SHM_DIR=/tmp/milk
 mkdir -p $MILK_SHM_DIR
 
-export MILKCLI_ADD_LIBS="cacaoKalAONuvu,cacaoKalAOSHWFS,cacaoKalAOBMC,cacaoKalAOTelemetry,cacaoKalAOConfig"
+export MILKCLI_ADD_LIBS="cacaoKalAONuvu,cacaoKalAOSHWFS,cacaoKalAOBMC,cacaoKalAOTelemetry"
 
 export MILK_ROOT=${HOME}/kalao-cacao-src/milk
 export MILK_INSTALLDIR=/usr/local/milk

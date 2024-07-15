@@ -104,10 +104,6 @@ class AO:
     # How long to wait after starting AO
     loop_stabilization_time = 2  # s
 
-    flux_min = 800  # ADU
-    flux_stabilization_timeout = 10  # s
-    flux_stabilization_time = 1.5  # s
-
     check_interval = 1  # s
 
     wait_fps_run = 3  # s
@@ -116,7 +112,6 @@ class AO:
     dm_stroke_modes = ['Mid-stroke', 'Minimize stroke']
 
     processes = [
-        'kalao_config-1',
         'telemetry_gather-1',
         'nuvu_acquire-1',
         'shwfs_process-1',
@@ -202,6 +197,10 @@ class WFS:
 
     acquisition_time_timeout = 1
     acquisition_start_wait = 1
+
+    flux_min = 800  # ADU
+    flux_stabilization_timeout = 10  # s
+    flux_stabilization_time = 1.5  # s
 
     # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
     plate_scale = 1.16  # arcsec / px
@@ -600,10 +599,25 @@ class GOP:
     verbosity = 0
 
 
+class Email:
+    host = 'smtphost.hq.eso.org'
+    port = 25
+
+    sender = 'no-reply@eso.org'
+
+    receivers = ['nathanael.restori@unige.ch']
+
+
 class Systemd:
     service_restart_wait = 15  # s
 
     services = {
+        'System setup at boot': {
+            'unit': 'kalao_system-setup.service',
+            'enabled': True,
+            'restart': False,
+            'system': True
+        },
         'FLI (Science Camera)': {
             'unit': 'kalao_fli.service',
             'enabled': True,
@@ -646,6 +660,11 @@ class Systemd:
             'enabled': True,
             'restart': True
         },
+        'Mailing Timer': {
+            'unit': 'kalao_mailing-timer.service',
+            'enabled': True,
+            'restart': True
+        },
         'GUI Backend': {
             'unit': 'kalao_gui-backend.service',
             'enabled': True,
@@ -655,15 +674,23 @@ class Systemd:
 
 
 class Database:
-    ip = 'localhost'
+    # MongoDB
+    host = 'localhost'
     port = 27017
+
+
+class Memory:
+    # Redis
+    host = 'localhost'
+    port = 6379
 
 
 class Monitoring:
     update_interval = 60  # s
     ao_update_interval = 1  # s
 
-    warning_repetition_rate = 900  # s
+    # issues_repetition_rate = None  # Turn off printing
+    issues_repetition_rate = 900  # s
 
 
 class ETCS:
@@ -729,8 +756,8 @@ class GUI:
 
     plots_exclude_list = [
         'observer_name', 'observer_email', 'camera_last_image_path',
-        'camera_temporary_image_path', 'tcs_header_path',
-        'filterwheel_filter_name', 'sequencer_command_received', 't120_host'
+        'tcs_header_path', 'filterwheel_filter_name',
+        'sequencer_command_received', 't120_host'
     ]
 
     refreshrate_streams = 10  # /s
@@ -754,7 +781,6 @@ class FPS:
     BMC = 'bmc_display-1'
     DMLOOP = 'mfilt-1'
     TTMLOOP = 'mfilt-2'
-    CONFIG = 'kalao_config-1'
 
 
 class SHM:
@@ -766,6 +792,7 @@ class SHM:
     TTM = 'dm02disp'
     MODALGAINS = 'aol1_mgainfact'
     MODE_COEFFS = 'aol1_modevalDM'
+    WFS_REF = 'aol1_wfsrefc'
 
     DM_FLAT = 'dm01disp00'
     DM_LOOP = 'dm01disp03'

@@ -88,10 +88,10 @@ class MainWidget(KWidget, BackendDataMixin):
     def all_updated(self, data):
         ### Instrument
 
-        sequencer_status_v, sequencer_status_t = self.consume_db(
-            data, 'obs', 'sequencer_status')
-        if sequencer_status_v is not None:
-            self.sequencer_lineedit.setText(sequencer_status_v)
+        sequencer_status = self.consume_dict(data, 'memory',
+                                             'sequencer_status')
+        if sequencer_status is not None:
+            self.sequencer_lineedit.setText(sequencer_status)
 
         ### AO
 

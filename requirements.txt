@@ -35,6 +35,7 @@ dbus-python
 
 # DB
 pymongo
+redis[hiredis]
 
 # For GUIs
 PySide6

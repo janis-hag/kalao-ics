@@ -19,7 +19,7 @@ import numpy as np
 
 from kalao import database, euler, ippower, logger
 from kalao.cacao import aocontrol, toolbox
-from kalao.hardware import camera, hw_utils
+from kalao.hardware import adc, camera, hw_utils, ttm
 from kalao.rtc import gpu, sensors
 from kalao.utils import kstring
 
@@ -93,13 +93,10 @@ def gather_general() -> dict[str, Any]:
     }
     data.update(telescope_status)
 
-    # KalAO dynamic config
+    # In-memory config
 
-    config_fps = toolbox.open_fps_once(config.FPS.CONFIG)
-    if config_fps is not None:
-        data['ttm_offloading'] = config_fps.get_param('ttm_offloading')
-        data['adc_synchronisation'] = config_fps.get_param(
-            'adc_synchronisation')
+    data['ttm_offloading'] = ttm.get_offloading()
+    data['adc_synchronisation'] = adc.get_synchronisation()
 
     # Nuvu (camstack) stream
     nuvu_raw_shm = toolbox.open_shm_once(config.SHM.NUVU_RAW)
@@ -133,6 +130,7 @@ def gather_ao() -> dict[str, Any]:
 
         data['wfs_emgain'] = stream_keywords.get('EMGAIN', np.nan)
         data['wfs_detgain'] = stream_keywords.get('DETGAIN', np.nan)
+        data['wfs_detbias'] = stream_keywords.get('DETBIAS', np.nan)
         data['wfs_exposuretime'] = stream_keywords.get('EXPTIME', np.nan)
         data['wfs_acquisition_running'] = acquisition_running
         data['wfs_framerate'] = stream_keywords.get('MFRATE', np.nan)
@@ -194,7 +192,7 @@ def gather_ao() -> dict[str, Any]:
     return data
 
 
-def check_warning_error(key: str, value: Any) -> [str, str, Any]:
+def check_issues(key: str, value: Any) -> [str, str, Any]:
     metadata = database.definitions['monitoring']['metadata'][key]
 
     error_values = metadata.get('error_values', [])
@@ -277,9 +275,12 @@ def _round(key: str, value: Any):
 
 
 def _check_and_log(key: str, value: Any, timestamp: datetime) -> None:
+    if config.Monitoring.issues_repetition_rate is None:
+        return
+
     metadata = database.definitions['monitoring']['metadata'][key]
 
-    level, condition, threshold = check_warning_error(key, value)
+    level, condition, threshold = check_issues(key, value)
 
     if level != '':
         unit = kstring.get_unit_string(metadata)
@@ -305,7 +306,7 @@ def _check_and_log(key: str, value: Any, timestamp: datetime) -> None:
             last = (data['current']['timestamp'] -
                     data['since']['timestamp']).total_seconds()
 
-            if last // config.Monitoring.warning_repetition_rate == since // config.Monitoring.warning_repetition_rate:
+            if last // config.Monitoring.issues_repetition_rate == since // config.Monitoring.issues_repetition_rate:
                 return
 
         hr, min, sec = _sec_to_hms(since)

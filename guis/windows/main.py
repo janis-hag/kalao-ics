@@ -8,6 +8,7 @@ from guis.utils.definitions import Color
 from guis.utils.mixins import BackendDataMixin
 from guis.utils.widgets import KDetachedTabWindow, KLabel, KMainWindow
 from guis.widgets.engineering import EngineeringWidget
+from guis.widgets.help import HelpWidget
 from guis.widgets.logs import LogsWidget
 from guis.widgets.loop_controls import LoopControlsWidget
 from guis.widgets.main import MainWidget
@@ -38,10 +39,11 @@ class MainWindow(KMainWindow, BackendDataMixin):
                                              parent=self)
         self.plots = PlotsWidget(backend, parent=self)
         self.logs = LogsWidget(backend, parent=self)
+        self.help = HelpWidget(parent=self)
 
         self.widgets = [
             self.main, self.loop_controls, self.monitoring, self.plots,
-            self.engineering, self.logs
+            self.engineering, self.logs, self.help
         ]
 
         for widget in self.widgets:

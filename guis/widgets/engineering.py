@@ -9,8 +9,6 @@ from PySide6.QtGui import Qt
 from PySide6.QtWidgets import (QFileDialog, QFrame, QLabel, QLineEdit,
                                QMessageBox, QPushButton, QSizePolicy)
 
-from kalao.hardware import adc
-
 from guis.utils.definitions import Color
 from guis.utils.mixins import BackendActionMixin, BackendDataMixin
 from guis.utils.ui_loader import loadUi
@@ -97,9 +95,12 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             indicator.installEventFilter(self)
             self.indicators_list.append(indicator)
 
-            self.services_widgets[service['unit']] = {
+            unit = service['unit']
+
+            self.services_widgets[unit] = {
                 'lineedit': lineedit,
-                'indicator': indicator
+                'indicator': indicator,
+                'buttons': {},
             }
 
             self.services_layout.addWidget(label, i, 0, Qt.AlignVCenter)
@@ -114,15 +115,17 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                     ServiceAction.RELOAD
             ]):
                 button = QPushButton(action.value.title())
-                button.clicked.connect(lambda checked=False, unit=service[
-                    'unit'], action=action: self.
-                                       on_service_action_button_clicked(
-                                           checked, unit, action))
+                button.clicked.connect(
+                    lambda checked=False, unit=unit, action=action: self.
+                    on_service_action_button_clicked(checked, unit, action))
                 self.services_layout.addWidget(button, i, 3 + j)
 
                 if action == ServiceAction.RELOAD and not service.get(
-                        'reload-allowed', False):
+                        'reload-allowed', False) or service.get(
+                            'system', False):
                     button.setEnabled(False)
+                else:
+                    self.services_widgets[unit]['buttons'][action] = button
 
         self.services_layout.setColumnStretch(0, 0)
         self.services_layout.setColumnStretch(1, 0)
@@ -188,7 +191,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         ##### CACAO streams
 
         self.milk_streams_widgets = {}
-        self.milk_streams_data = {}
+        self.milk_streams_md = {}
         separators = 0
         for i, stream in enumerate(config.AO.streams):
             if stream in [
@@ -426,21 +429,13 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             else:
                 self.adc2_spinbox.setEnabled(True)
 
-        if adc1_angle is not None or adc2_angle is not None:
-            if adc1_angle is None:
-                adc1_angle = self.consume_dict(data, 'hw', 'adc1_angle',
-                                               force=True, default=np.nan)
-
-            if adc2_angle is None:
-                adc2_angle = self.consume_dict(data, 'hw', 'adc2_angle',
-                                               force=True, default=np.nan)
-
-            adc_angle, adc_offset = adc.compute_angle_and_offset(
-                adc1_angle, adc2_angle)
-
+        adc_angle = self.consume_dict(data, 'hw', 'adc_angle')
+        if adc_angle is not None:
             with QSignalBlocker(self.adc_angle_spinbox):
                 self.adc_angle_spinbox.setValue(adc_angle)
 
+        adc_offset = self.consume_dict(data, 'hw', 'adc_offset')
+        if adc_offset is not None:
             with QSignalBlocker(self.adc_offset_spinbox):
                 self.adc_offset_spinbox.setValue(adc_offset)
 
@@ -632,23 +627,13 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 else:  # failed
                     widgets['indicator'].setStatus(Color.RED, status[0])
 
-        sequencer_status_v, sequencer_status_t = self.consume_db(
-            data, 'obs', 'sequencer_status')
-        if sequencer_status_v is not None:
-            if sequencer_status_v == SequencerStatus.FOCUSING:
+        sequencer_status = self.consume_dict(data, 'memory',
+                                             'sequencer_status')
+        if sequencer_status is not None:
+            if sequencer_status == SequencerStatus.FOCUSING:
                 self.open_focus_window()
                 if self.focus_sequence_window is not None:
                     self.focus_sequence_window.focus_timer.start()
-
-        tmux_server_alive = self.consume_dict(data, 'tmux',
-                                              'tmux_server_alive')
-        if tmux_server_alive is not None:
-            if tmux_server_alive:
-                self.tmux_server_indicator.setStatus(Color.GREEN,
-                                                     tmux_server_alive)
-            else:
-                self.tmux_server_indicator.setStatus(Color.BLACK,
-                                                     tmux_server_alive)
 
         tmux_sessions = self.consume_dict(data, 'tmux', 'tmux_sessions')
         if tmux_sessions is not None:
@@ -692,13 +677,6 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             state = self.consume_fps_state(data, proc)
 
             if state is not None:
-                if 'M' in state:
-                    self.milk_processes_widgets[proc][
-                        'conf_indicator'].setStatus(Color.RED, state)
-                    self.milk_processes_widgets[proc][
-                        'run_indicator'].setStatus(Color.RED, state)
-                    continue
-
                 if 'C' in state:
                     self.milk_processes_widgets[proc][
                         'conf_indicator'].setStatus(Color.GREEN, state)
@@ -716,11 +694,6 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         for stream in config.AO.streams:
             state = self.consume_shm_state(data, stream)
             if state is not None:
-                if 'M' in state:
-                    self.milk_streams_widgets[stream]['indicator'].setStatus(
-                        Color.RED, state)
-                    continue
-
                 if 'E' in state:
                     self.milk_streams_widgets[stream]['indicator'].setStatus(
                         Color.GREEN, state)
@@ -730,12 +703,12 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
             md = self.consume_shm_md(data, stream, force=True)
             if md is not None:
-                if stream in self.milk_streams_data:
-                    previous_md = self.milk_streams_data[stream]
+                if stream in self.milk_streams_md:
+                    previous_md = self.milk_streams_md[stream]
 
-                    delta_cnt = previous_md['cnt0'] - md['cnt0']
-                    delta_acqtime = (previous_md['acqtime'] -
-                                     md['acqtime']).total_seconds()
+                    delta_cnt = md['cnt0'] - previous_md['cnt0']
+                    delta_acqtime = (md['acqtime'] -
+                                     previous_md['acqtime']).total_seconds()
 
                     if previous_md['creationtime'] != md['creationtime']:
                         fps = np.nan
@@ -748,11 +721,15 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 else:
                     fps = np.nan
 
-                self.milk_streams_data[stream] = md.copy()
+                shape = md['shape']
+                if len(shape) == 1:
+                    shape = (shape[0], 1)
+
+                self.milk_streams_md[stream] = md.copy()
                 self.milk_streams_widgets[stream]['fps_label'].updateText(
                     fps=fps)
                 self.milk_streams_widgets[stream]['size_label'].setText(
-                    'x'.join([str(i) for i in md['shape']]))
+                    'x'.join([str(i) for i in shape]))
 
         ##### Indicators
 
@@ -803,13 +780,15 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_calibunit_laser_button_clicked(self, checked):
-        self.action_send(self.calibunit_laser_button,
-                         self.backend.plc_calibunit_laser)
+        self.action_send([
+            self.calibunit_laser_button, self.calibunit_tungsten_button
+        ], self.backend.plc_calibunit_laser)
 
     @Slot(bool)
     def on_calibunit_tungsten_button_clicked(self, checked):
-        self.action_send(self.calibunit_tungsten_button,
-                         self.backend.plc_calibunit_tungsten)
+        self.action_send([
+            self.calibunit_tungsten_button, self.calibunit_laser_button
+        ], self.backend.plc_calibunit_tungsten)
 
     @Slot(int)
     def on_tungsten_state_checkbox_stateChanged(self, state):
@@ -880,24 +859,28 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_adc_zero_disp_button_clicked(self, checked):
-        self.action_send(self.adc_zero_disp_button,
+        self.action_send([self.adc_zero_disp_button, self.adc_max_disp_button],
                          self.backend.plc_adc_zerodisp)
 
     @Slot(bool)
     def on_adc_max_disp_button_clicked(self, checked):
-        self.action_send(self.adc_max_disp_button,
+        self.action_send([self.adc_max_disp_button, self.adc_zero_disp_button],
                          self.backend.plc_adc_maxdisp)
 
     @Slot(float)
     def on_adc_angle_spinbox_valueChanged(self, d):
-        self.action_send([self.adc_angle_spinbox, self.adc_offset_spinbox],
-                         self.backend.plc_adc_angleoffset, angle=d,
+        self.action_send([
+            self.adc_angle_spinbox, self.adc_offset_spinbox, self.adc1_spinbox,
+            self.adc2_spinbox
+        ], self.backend.plc_adc_angleoffset, angle=d,
                          offset=self.adc_offset_spinbox.value())
 
     @Slot(float)
     def on_adc_offset_spinbox_valueChanged(self, d):
-        self.action_send([self.adc_offset_spinbox, self.adc_angle_spinbox],
-                         self.backend.plc_adc_angleoffset, offset=d,
+        self.action_send([
+            self.adc_offset_spinbox, self.adc_angle_spinbox, self.adc1_spinbox,
+            self.adc2_spinbox
+        ], self.backend.plc_adc_angleoffset, offset=d,
                          angle=self.adc_angle_spinbox.value())
 
     @Slot(int)
@@ -929,42 +912,61 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(bool)
     def on_wfs_acquisition_start_button_clicked(self, checked):
-        self.action_send(self.wfs_acquisition_start_button,
-                         self.backend.wfs_acquisition_start)
+        self.action_send([
+            self.wfs_acquisition_start_button, self.wfs_acquisition_stop_button
+        ], self.backend.wfs_acquisition_start)
 
     @Slot(bool)
     def on_wfs_acquisition_stop_button_clicked(self, checked):
-        self.action_send(self.wfs_acquisition_start_button,
-                         self.backend.wfs_acquisition_stop)
+        self.action_send([
+            self.wfs_acquisition_stop_button, self.wfs_acquisition_start_button
+        ], self.backend.wfs_acquisition_stop)
 
     @Slot(bool)
     def on_ippower_rtc_on_button_clicked(self, checked):
-        self.action_send(self.ippower_rtc_on_button,
-                         self.backend.ippower_rtc_on)
+        self.action_send([
+            self.ippower_rtc_on_button, self.ippower_rtc_off_button
+        ], self.backend.ippower_rtc_on)
 
     @Slot(bool)
     def on_ippower_rtc_off_button_clicked(self, checked):
-        self.action_send(self.ippower_rtc_off_button,
-                         self.backend.ippower_rtc_off)
+        self.action_send([
+            self.ippower_rtc_off_button, self.ippower_rtc_on_button
+        ], self.backend.ippower_rtc_off)
 
     @Slot(bool)
     def on_ippower_bench_on_button_clicked(self, checked):
-        self.action_send(self.ippower_bench_on_button,
-                         self.backend.ippower_bench_on)
+        self.action_send([
+            self.ippower_bench_on_button, self.ippower_bench_off_button
+        ], self.backend.ippower_bench_on)
 
     @Slot(bool)
     def on_ippower_bench_off_button_clicked(self, checked):
-        self.action_send(self.ippower_bench_off_button,
-                         self.backend.ippower_bench_off)
+        self.action_send([
+            self.ippower_bench_off_button, self.ippower_bench_on_button
+        ], self.backend.ippower_bench_off)
 
     @Slot(bool)
     def on_ippower_dm_on_button_clicked(self, checked):
-        self.action_send(self.ippower_dm_on_button, self.backend.ippower_dm_on)
+        self.action_send([
+            self.ippower_dm_on_button, self.ippower_dm_off_button
+        ], self.backend.ippower_dm_on)
 
     @Slot(bool)
     def on_ippower_dm_off_button_clicked(self, checked):
-        self.action_send(self.ippower_dm_off_button,
-                         self.backend.ippower_dm_off)
+        self.action_send([
+            self.ippower_dm_off_button, self.ippower_dm_on_button
+        ], self.backend.ippower_dm_off)
+
+    @Slot(bool)
+    def on_dm_on_button_clicked(self, checked):
+        self.action_send([self.dm_on_button, self.dm_off_button],
+                         self.backend.dm_on)
+
+    @Slot(bool)
+    def on_dm_off_button_clicked(self, checked):
+        self.action_send([self.dm_off_button, self.dm_on_button],
+                         self.backend.dm_off)
 
     @Slot(bool)
     def on_dm_channels_button_clicked(self, checked):
@@ -1029,32 +1031,6 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send(self.centering_laser_button,
                          self.backend.centering_laser)
 
-    @Slot(int)
-    def on_deadman_checkbox_stateChanged(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
-            self.update_deadman()
-            self.deadman_timer.start()
-        else:
-            self.deadman_timer.stop()
-            self.reset_deadman()
-
-    def reset_deadman(self):
-        self.deadman_count = 0
-        self.deadman_label.updateText(count=0, last='--', next='--')
-
-    def update_deadman(self):
-        self.deadman_count += 1
-
-        self.action_send([], self.backend.deadman, count=self.deadman_count)
-
-        now = datetime.now()
-        next = now + timedelta(
-            milliseconds=self.deadman_timer.interval())  #TODO: remainingTime()
-
-        self.deadman_label.updateText(count=self.deadman_count,
-                                      last=now.strftime('%H:%M:%S %d-%m-%Y'),
-                                      next=next.strftime('%H:%M:%S %d-%m-%Y'))
-
     @Slot(bool)
     def on_open_focus_sequence_button_clicked(self, checked):
         dialog = QFileDialog(self)
@@ -1110,8 +1086,64 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          self.backend.focus_autofocus)
 
     def on_service_action_button_clicked(self, checked, unit, action):
-        self.action_send([], self.backend.services_action, unit=unit,
+        buttons_list = []
+
+        for key, button in self.services_widgets[unit]['buttons'].items():
+            if action != ServiceAction.KILL and key != ServiceAction.KILL:
+                buttons_list.append(button)
+
+        self.action_send(buttons_list, self.backend.services_action, unit=unit,
                          action=action)
+
+    @Slot(int)
+    def on_deadman_checkbox_stateChanged(self, state):
+        if Qt.CheckState(state) == Qt.Checked:
+            self.update_deadman()
+            self.deadman_timer.start()
+        else:
+            self.deadman_timer.stop()
+            self.reset_deadman()
+
+    def reset_deadman(self):
+        self.deadman_count = 0
+        self.deadman_label.updateText(count=0, last='--', next='--')
+
+    def update_deadman(self):
+        self.deadman_count += 1
+
+        self.action_send([], self.backend.deadman, count=self.deadman_count)
+
+        now = datetime.now()
+        next = now + timedelta(
+            milliseconds=self.deadman_timer.interval())  #TODO: remainingTime()
+
+        self.deadman_label.updateText(count=self.deadman_count,
+                                      last=now.strftime('%H:%M:%S %d-%m-%Y'),
+                                      next=next.strftime('%H:%M:%S %d-%m-%Y'))
+
+    @Slot(str)
+    def on_iknowwhatido_lineedit_textEdited(self, text):
+        if text == 'IKnowWhatIDo':
+            self.instrument_shutdown_sequence_button.setEnabled(True)
+            self.rtc_poweroff_button.setEnabled(True)
+            self.rtc_reboot_button.setEnabled(True)
+        else:
+            self.instrument_shutdown_sequence_button.setEnabled(False)
+            self.rtc_poweroff_button.setEnabled(False)
+            self.rtc_reboot_button.setEnabled(False)
+
+    @Slot(bool)
+    def on_instrument_shutdown_sequence_button_clicked(self, checked):
+        self.action_send(self.instrument_shutdown_sequence_button,
+                         self.backend.instrument_shutdown)
+
+    @Slot(bool)
+    def on_rtc_poweroff_button_clicked(self, checked):
+        self.action_send(self.rtc_poweroff_button, self.backend.rtc_poweroff)
+
+    @Slot(bool)
+    def on_rtc_reboot_button_clicked(self, checked):
+        self.action_send(self.rtc_reboot_button, self.backend.rtc_reboot)
 
     def open_focus_window(self):
         if self.focus_sequence_window is not None:

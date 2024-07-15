@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from kalao import database
-from kalao.hardware import tungsten
+from kalao.hardware import camera, tungsten
 
 from kalao.definitions.enums import SequencerStatus
 
@@ -24,7 +24,6 @@ import config
 def kalao_status() -> str:
     """
     Generate the string sequence to return to the Euler telescope software on status request.
-    TODO return sequencer_status, alt/az offset, focus offset, remaining_exposure_time 0 if not yet started
 
     :return: status_string to send to the Euler telescope
     """
@@ -40,17 +39,20 @@ def kalao_status() -> str:
     elif sequencer_status_value == SequencerStatus.ERROR:
         status_string = '|status|ERROR'
     elif sequencer_status_value == SequencerStatus.WAITLAMP:
-        status_string = f'|status|BUSY|{elapsed_time(sequencer_status):.0f}'
+        status_string = f'|status|BUSY|{get_elapsed_time(sequencer_status):.0f}'
     elif sequencer_status_value == SequencerStatus.EXP:
-        texp = database.get_last_value('obs', 'camera_exposure_time')
-        status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{texp:.0f}'
+        exposure_status = camera.get_exposure_status()
+        elapsed_time = exposure_status["exposure_time"] - exposure_status[
+            "remaining_time"]
+        requested_time = exposure_status["exposure_time"]
+        status_string = f'|status|BUSY|elapsed_time|{elapsed_time:.0f}|requested_time|{requested_time:.0f}'
     else:
-        status_string = f'|status|BUSY|elapsed_time|{elapsed_time(sequencer_status):.0f}|requested_time|{sequencer_status_value}'
+        status_string = f'|status|BUSY|elapsed_time|{get_elapsed_time(sequencer_status):.0f}|requested_time|{sequencer_status_value}'
 
     return status_string
 
 
-def elapsed_time(sequencer_status: dict[str, Any]) -> float:
+def get_elapsed_time(sequencer_status: dict[str, Any]) -> float:
     """
     Get the elapsed time since the current operation has started.
 
@@ -61,10 +63,7 @@ def elapsed_time(sequencer_status: dict[str, Any]) -> float:
     sequencer_status_value = sequencer_status.get('value')
     sequencer_status_time = sequencer_status.get('timestamp')
 
-    if sequencer_status_value == SequencerStatus.EXP:
-        elapsed_time = elapsed_exposure_seconds()
-
-    elif sequencer_status_value == SequencerStatus.WAITLAMP:
+    if sequencer_status_value == SequencerStatus.WAITLAMP:
         state, switch_time = tungsten.get_switch_time()
         elapsed_time = config.Tungsten.stabilisation_time - switch_time
 
@@ -84,57 +83,6 @@ def elapsed_time(sequencer_status: dict[str, Any]) -> float:
                                         sequencer_status_time).total_seconds()
 
     return elapsed_time
-
-
-def elapsed_exposure_seconds() -> float:
-    """
-    Calculates the elapsed time since the current operation has started.
-
-    :return: Elapsed time in seconds (int)
-    """
-
-    last_exposure_start = _last_exposure_start()
-    last_exposure_end = _last_exposure_end()
-
-    if last_exposure_start > last_exposure_end:
-        # An exposure is running
-        elapsed_time = (datetime.now(timezone.utc) -
-                        last_exposure_start).total_seconds()
-    else:
-        elapsed_time = (last_exposure_end -
-                        last_exposure_start).total_seconds()
-
-    return elapsed_time
-
-
-def _last_exposure_start() -> datetime:
-    """
-    Query the time of the last exposure start in the KalAO-ICS mongo database.
-
-    :return: Time of exposure start (datetime)
-    """
-
-    timestamp = database.get_last_time('obs', 'camera_image_count')
-
-    if timestamp is None:
-        return datetime.fromtimestamp(0, tz=timezone.utc)
-    else:
-        return timestamp
-
-
-def _last_exposure_end() -> datetime:
-    """
-    Query the time of the last exposure end in the KalAO-ICS mongo database.
-
-    :return: Time of exposure end (datetime)
-    """
-
-    timestamp = database.get_last_time('obs', 'camera_temporary_image_path')
-
-    if timestamp is None:
-        return datetime.fromtimestamp(0, tz=timezone.utc)
-    else:
-        return timestamp
 
 
 def _last_filepath_archived() -> str:

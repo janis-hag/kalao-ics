@@ -16,7 +16,7 @@ from astropy.coordinates import SkyCoord
 from kalao import database, euler, ippower, logger, services
 from kalao.hardware import (adc, calibunit, cooling, filterwheel, flipmirror,
                             laser, shutter, tungsten)
-from kalao.sequencer import commands
+from kalao.sequencer import commands, seq_utils
 from kalao.utils import background
 from kalao.utils.rprint import rprint
 
@@ -40,7 +40,7 @@ def sig_handler(signal_received: int, frame: FrameType | None) -> None:
         if socketSeq is not None:
             socketSeq.close()
 
-        database.store('obs', {'sequencer_status': SequencerStatus.OFF})
+        seq_utils.set_sequencer_status(SequencerStatus.OFF)
         logger.info('sequencer', 'Sequencer server off')
 
         exit(0)
@@ -89,7 +89,7 @@ def serve() -> ReturnCode:
 
     th = None
 
-    database.store('obs', {'sequencer_status': SequencerStatus.WAITING})
+    seq_utils.set_sequencer_status(SequencerStatus.WAITING)
     logger.info('sequencer', 'Server on')
 
     while True:
@@ -107,7 +107,7 @@ def serve() -> ReturnCode:
         command = command_list[0]
         arguments = command_list[1:]
 
-        database.store('obs', {'sequencer_status': SequencerStatus.BUSY})
+        seq_utils.set_sequencer_status(SequencerStatus.BUSY)
         logger.info('sequencer',
                     f'command=> {command} < arg={" ".join(arguments)}')
 
@@ -129,14 +129,13 @@ def serve() -> ReturnCode:
         # try to cast every values of args dict in type needed
         check = cast_args(args)
         if check != 0:
-            database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+            seq_utils.set_sequencer_status(SequencerStatus.ERROR)
             logger.error('sequencer', 'Casting of args went wrong')
             continue
 
         # If abort command, start abort func and stop last command
         if 'ABORT' in command:
-            database.store('obs',
-                           {'sequencer_status': SequencerStatus.ABORTING})
+            seq_utils.set_sequencer_status(SequencerStatus.ABORTING)
             logger.info('sequencer', f'Received {command}. Aborting sequence.')
 
             execute_command(command, args, update_status=False)
@@ -161,7 +160,7 @@ def serve() -> ReturnCode:
                 zenith_angle = euler.telescope_zenith_angle(coord)
                 adc.configure(zenith_angle=zenith_angle, blocking=False)
 
-            database.store('obs', {'sequencer_status': SequencerStatus.SETUP})
+            seq_utils.set_sequencer_status(SequencerStatus.SETUP)
             logger.info('sequencer', f'Starting {command}')
 
             th = Thread(target=execute_command, kwargs={
@@ -173,7 +172,7 @@ def serve() -> ReturnCode:
     # in case of break, we disconnect the socket
     conn.close()
     socketSeq.close()
-    database.store('obs', {'sequencer_status': SequencerStatus.OFF})
+    seq_utils.set_sequencer_status(SequencerStatus.OFF)
     logger.info('sequencer', 'Sequencer server off')
 
     return ReturnCode.SEQ_OK
@@ -231,27 +230,46 @@ def execute_command(command: str, seq_args: dict[str, Any],
         commands.commands[command](**seq_args)
 
     except AbortRequested:
-        if update_status:
-            database.store('obs',
-                           {'sequencer_status': SequencerStatus.WAITING})
+        status = seq_utils.get_sequencer_status()
 
-        logger.info('sequencer', f'{command} aborted on request')
+        if status == SequencerStatus.ABORTING:
+            if update_status:
+                seq_utils.set_sequencer_status(SequencerStatus.WAITING)
 
-        return ReturnCode.SEQ_OK
+            logger.info('sequencer', f'{command} aborted on request')
+
+            return ReturnCode.SEQ_OK
+
+        else:
+            if update_status:
+                seq_utils.set_sequencer_status(SequencerStatus.ERROR)
+
+            logger.error('sequencer', f'{command} aborted')
+
+            # Close shutter after exception
+            if shutter.close() != ShutterState.CLOSED:
+                logger.error('sequencer',
+                             'Failed to close the shutter after error')
+
+            return ReturnCode.SEQ_ERROR
 
     except CameraCancelFailed:
         if update_status:
-            database.store('obs',
-                           {'sequencer_status': SequencerStatus.WAITING})
+            seq_utils.set_sequencer_status(SequencerStatus.WAITING)
 
         logger.info('sequencer',
                     f'Camera exposure cancellation failed in {command}')
+
+        # Close shutter after exception
+        if shutter.close() != ShutterState.CLOSED:
+            logger.error('sequencer',
+                         'Failed to close the shutter after error')
 
         return ReturnCode.SEQ_ERROR
 
     except SequencerException as e:
         if update_status:
-            database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+            seq_utils.set_sequencer_status(SequencerStatus.ERROR)
 
         logger.error('sequencer', f'"{e.__doc__}" happened during {command}')
 
@@ -264,7 +282,7 @@ def execute_command(command: str, seq_args: dict[str, Any],
 
     except Exception as e:
         if update_status:
-            database.store('obs', {'sequencer_status': SequencerStatus.ERROR})
+            seq_utils.set_sequencer_status(SequencerStatus.ERROR)
 
         logger.error('sequencer',
                      f'Unknown exception occurred during {command}')
@@ -280,8 +298,7 @@ def execute_command(command: str, seq_args: dict[str, Any],
 
     else:
         if update_status:
-            database.store('obs',
-                           {'sequencer_status': SequencerStatus.WAITING})
+            seq_utils.set_sequencer_status(SequencerStatus.WAITING)
 
         logger.info('sequencer', f'{command} ended')
 
@@ -289,10 +306,10 @@ def execute_command(command: str, seq_args: dict[str, Any],
 
 
 if __name__ == '__main__':
-    database.store('obs', {'sequencer_status': SequencerStatus.INITIALISING})
+    seq_utils.set_sequencer_status(SequencerStatus.INITIALISING)
 
-    signal.signal(signal.SIGTERM, sig_handler)
     signal.signal(signal.SIGINT, sig_handler)
+    signal.signal(signal.SIGTERM, sig_handler)
 
     init()
     serve()

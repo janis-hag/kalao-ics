@@ -14,8 +14,7 @@ from datetime import datetime, timezone
 from enum import StrEnum
 
 from kalao import database, logger
-from kalao.cacao import aocontrol
-from kalao.hardware import plc
+from kalao.hardware import plc, wfs
 
 from opcua import Client, ua
 
@@ -115,7 +114,7 @@ def set_power(power: float, enable: bool = False,
     logger.info('laser', f'Setting laser power to {power}')
 
     if power != 0:
-        aocontrol.emgain_off()
+        wfs.emgain_off()
 
     # Limit intensity to protect the WFS
     if power > config.Laser.max_power:
@@ -168,7 +167,7 @@ def _switch(action_name: LaserCommand | LaserState,
 
     if action_name == LaserCommand.ENABLE:
         logger.info('laser', 'Enabling laser')
-        aocontrol.emgain_off()
+        wfs.emgain_off()
     elif action_name == LaserCommand.DISABLE:
         logger.info('laser', 'Disabling laser')
     elif action_name == LaserCommand.LOCK:

@@ -14,8 +14,7 @@ import time
 import numpy as np
 from scipy.optimize import minimize_scalar
 
-from kalao import database, euler, logger
-from kalao.cacao import toolbox
+from kalao import euler, logger, memory
 from kalao.hardware import filterwheel, plc
 from kalao.utils import atmosphere
 
@@ -50,12 +49,10 @@ def get_optimal_adc_angle(zenith_angle: float, wavelength: float, T: float,
 def configure(zenith_angle: float | None = None,
               override_threshold: bool = False, blocking: bool = True,
               beck: Client = None) -> int:
-    config_fps = toolbox.open_fps_once(config.FPS.CONFIG)
-
-    if config_fps is None or not config_fps.get_param('adc_synchronisation'):
+    if not get_synchronisation():
         return 0
 
-    filter_name = filterwheel.get_filter(type=str, from_db=True)
+    filter_name = filterwheel.get_filter(type=str, from_memory=True)
 
     T = euler.outside_temperature()
     P = euler.outside_pressure()
@@ -80,8 +77,10 @@ def configure(zenith_angle: float | None = None,
     else:
         raise Exception(f'Unexpected type {type(wavelength)} for wavelength')
 
-    if override_threshold or np.abs(angle -
-                                    get_angle()) > config.ADC.angle_threshold:
+    current_angle = get_angle()
+
+    if override_threshold or np.isnan(current_angle) or np.abs(
+            angle - current_angle) > config.ADC.angle_threshold:
         set_angle(angle, blocking=blocking, beck=beck)
 
     return 0
@@ -99,7 +98,7 @@ def set_angle(angle: float, offset: float = 0., blocking: bool = True,
               beck: Client = None) -> float:
     logger.info('adc', f'Setting angle between ADC prisms to {angle}°')
 
-    database.store('obs', {'adc_angle': angle})
+    memory.mset({'adc_angle': angle, 'adc_offset': offset})
 
     # Motors are face to face, offset by same angle so they are counter-rotating
     rotate(config.PLC.Node.ADC1, config.ADC.max_disp_angle_1 + angle/2 +
@@ -117,12 +116,34 @@ def set_angle(angle: float, offset: float = 0., blocking: bool = True,
 
 
 def get_angle() -> float:
-    angle = database.get_last_value('obs', 'adc_angle')
+    angle = memory.get('adc_angle')
 
     if angle is None:
-        return np.inf
+        return np.nan
     else:
         return angle
+
+
+def get_offset() -> float:
+    angle = memory.get('adc_offset')
+
+    if angle is None:
+        return np.nan
+    else:
+        return angle
+
+
+def get_synchronisation() -> bool:
+    synchronisation = memory.get('adc_synchronisation')
+
+    if synchronisation is None:
+        return True
+    else:
+        return synchronisation
+
+
+def set_synchronisation(state: bool) -> None:
+    memory.set('adc_synchronisation', state)
 
 
 def compute_angle_and_offset(angle_adc1: float,

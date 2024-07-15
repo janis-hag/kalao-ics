@@ -79,6 +79,10 @@ gop_log:
   short: GOP log
   long: GOP server log
 
+etcs_log:
+  short: ETCS log
+  long: ETCS client log
+
 hardware_timer_log:
   short: Hardware timer log
   long: Hardware timer log
@@ -91,6 +95,6 @@ observation_timer_log:
   short: Observation timer log
   long: Observation timer log
 
-etcs_log:
-  short: ETCS log
-  long: ETCS client log
+mailing_timer_log:
+  short: Mailing timer log
+  long: Mailing timer log

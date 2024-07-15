@@ -22,7 +22,8 @@ from kalao.definitions.dataclasses import LogEntry
 from kalao.definitions.enums import (CameraServerStatus, CameraStatus,
                                      FlipMirrorPosition, IPPowerStatus,
                                      LaserState, LogLevel, PLCStatus,
-                                     RelayState, ServiceAction, ShutterState,
+                                     RelayState, SequencerStatus,
+                                     ServiceAction, ShutterState,
                                      TungstenState)
 
 import config
@@ -235,6 +236,8 @@ class MainBackend(FakeSHMFPSBackend):
                 IPPowerStatus.ON,
             'ippower_dm_status':
                 IPPowerStatus.ON,
+            'kalao_system-setup.service': ('active', 'exited',
+                                           datetime.now(timezone.utc)),
             'kalao_nuvu.service': ('active', 'exited',
                                    datetime.now(timezone.utc)),
             'kalao_cacao.service': ('active', 'exited',
@@ -251,6 +254,8 @@ class MainBackend(FakeSHMFPSBackend):
                                              datetime.now(timezone.utc)),
             'kalao_observation-timer.service': ('active', 'running',
                                                 datetime.now(timezone.utc)),
+            'kalao_mailing-timer.service': ('active', 'running',
+                                            datetime.now(timezone.utc)),
             'kalao_gui-backend.service': ('active', 'running',
                                           datetime.now(timezone.utc)),
             'focusing-step':
@@ -481,6 +486,7 @@ class MainBackend(FakeSHMFPSBackend):
                 'T_HSINK': 15.5,
                 'EMGAIN': self.internal_state['wfs_emgain'],
                 'DETGAIN': 1,
+                'DETBIAS': 3000,
                 'EXPTIME': self.internal_state['wfs_exposuretime'],
                 'MFRATE': self.internal_state['wfs_framerate'],
                 '_MAQTIME': self.internal_state['nuvu-maqtime'],
@@ -519,10 +525,17 @@ class MainBackend(FakeSHMFPSBackend):
         self._update_fps_param(data, config.FPS.TTMLOOP, 'looplimit',
                                self.internal_state['ttmloop_limit'])
 
-        self._update_fps_param(data, config.FPS.CONFIG, 'adc_synchronisation',
-                               self.internal_state['adc_synchronisation'])
-        self._update_fps_param(data, config.FPS.CONFIG, 'ttm_offloading',
-                               self.internal_state['ttm_offloading'])
+        self._update_dict(
+            data, 'memory', {
+                'sequencer_status':
+                    SequencerStatus.BUSY.value,
+                'centering_manual':
+                    False,
+                'adc_synchronisation':
+                    self.internal_state['adc_synchronisation'],
+                'ttm_offloading':
+                    self.internal_state['ttm_offloading']
+            })
 
         self._update_dict(
             data, 'hw', {
@@ -574,6 +587,8 @@ class MainBackend(FakeSHMFPSBackend):
 
         self._update_dict(
             data, 'services', {
+                'kalao_system-setup.service':
+                    self.internal_state['kalao_system-setup.service'],
                 'kalao_nuvu.service':
                     self.internal_state['kalao_nuvu.service'],
                 'kalao_cacao.service':
@@ -590,6 +605,8 @@ class MainBackend(FakeSHMFPSBackend):
                     self.internal_state['kalao_hardware-timer.service'],
                 'kalao_observation-timer.service':
                     self.internal_state['kalao_observation-timer.service'],
+                'kalao_mailing-timer.service':
+                    self.internal_state['kalao_mailing-timer.service'],
                 'kalao_gui-backend.service':
                     self.internal_state['kalao_gui-backend.service'],
             })
@@ -624,13 +641,10 @@ class MainBackend(FakeSHMFPSBackend):
                     self.internal_state['ippower_dm_status'],
             })
 
-        self._update_dict(
-            data, 'tmux', {
-                'tmux_server_alive':
-                    True,
-                'tmux_sessions': ['kalaocam_ctrl', 'nuvu_fgrab'] +
-                                 config.AO.processes
-            })
+        self._update_dict(data, 'tmux', {
+            'tmux_sessions': ['kalaocam_ctrl', 'nuvu_fgrab'] +
+                             config.AO.processes
+        })
 
         self._update_dict(data, 'pgrep', {
             'kalaocam_ctrl': 0,
@@ -643,18 +657,6 @@ class MainBackend(FakeSHMFPSBackend):
         for stream in config.AO.streams:
             self._update_shm_state(data, stream)
             self._update_shm_md(data, stream)
-
-        self._update_db(
-            data, 'obs', {
-                'sequencer_status': {
-                    'value': 'BUSY',
-                    'timestamp': datetime(2023, 12, 7, 10, 52, 17)
-                },
-                'centering_manual': {
-                    'value': False,
-                    'timestamp': datetime(2023, 12, 7, 10, 52, 17)
-                }
-            })
 
         fs = 1.8e3
         noise_power = 0.001 * fs / 2
@@ -809,7 +811,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    def plots_data(self, *, since, until, monitoring_keys, obs_keys):
+    def plots_data_db(self, *, since, until, monitoring_keys, obs_keys):
         now = datetime.now(timezone.utc)
         if until > now:
             until = now
@@ -825,6 +827,14 @@ class MainBackend(FakeSHMFPSBackend):
                 self._generate_plots_data(
                     obs_keys, pd.date_range(since, until, freq='300s')),
         }
+
+    def plots_data_live(self):
+        data = {}
+        data['timestamp'] = datetime.now(timezone.utc)
+        for key in database.definitions['monitoring']['metadata'].keys():
+            data[key] = np.random.normal(0, 1)
+
+        return data
 
     def _generate_plots_data(self, keys, timestamps):
         data = {}
@@ -1394,6 +1404,14 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state['wfs_acquisition_running'] = False
         rprint('Stopped Nüvü acquisition (virtually)')
 
+    def dm_on(self):
+        self.internal_state['ippower_dm_status'] = IPPowerStatus.ON
+        rprint('Turned on DM (virtually)')
+
+    def dm_off(self):
+        self.internal_state['ippower_dm_status'] = IPPowerStatus.OFF
+        rprint('Turned off DM (virtually)')
+
     def ippower_rtc_on(self):
         self.internal_state['ippower_rtc_status'] = IPPowerStatus.ON
         rprint('Powering on RTC (virtually)')
@@ -1580,11 +1598,13 @@ class MainBackend(FakeSHMFPSBackend):
 
         return LogEntry(level, timestamp, origin, message)
 
-    ##### Instrument
+    ##### Instrument / RTC
 
-    def shutdown(self):
-        def shutdown(self, *, iknowwhatimdoing):
-            if iknowwhatimdoing == 'yes':
-                rprint('Shutdown sequence launched')
-            else:
-                rprint('Shutdown sequence refused')
+    def instrument_shutdown(self):
+        rprint('Shutdown sequence initiated (virtually)')
+
+    def rtc_poweroff(self):
+        rprint('RTC power off initiated (virtually)')
+
+    def rtc_reboot(self):
+        rprint('RTC reboot initiated (virtually)')

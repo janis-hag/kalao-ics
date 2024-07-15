@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1067</width>
-    <height>598</height>
+    <width>1434</width>
+    <height>1045</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -100,6 +100,9 @@
      </item>
     </layout>
    </item>
+   <item row="1" column="0">
+    <widget class="KChartView" name="plots_view"/>
+   </item>
    <item row="0" column="1" rowspan="3">
     <layout class="QFormLayout" name="side_layout">
      <property name="labelAlignment">
@@ -140,14 +143,24 @@
       </widget>
      </item>
      <item row="2" column="0">
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="last_label">
        <property name="text">
         <string>Last</string>
        </property>
       </widget>
      </item>
      <item row="2" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout">
+      <layout class="QHBoxLayout" name="last_layout">
+       <item>
+        <widget class="QToolButton" name="last_5minutes_button">
+         <property name="toolTip">
+          <string>One hour</string>
+         </property>
+         <property name="text">
+          <string>5m</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="QToolButton" name="last_hour_button">
          <property name="toolTip">
@@ -227,15 +240,91 @@
        </column>
       </widget>
      </item>
-     <item row="6" column="0">
-      <widget class="QLabel" name="live_label">
-       <property name="text">
-        <string>Live view</string>
+     <item row="6" column="0" colspan="2">
+      <widget class="QGroupBox" name="autoupdate_groupbox">
+       <property name="title">
+        <string>Auto-update</string>
        </property>
+       <layout class="QFormLayout" name="formLayout">
+        <property name="labelAlignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <item row="0" column="1">
+         <widget class="QCheckBox" name="autoupdate_checkbox">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="autoupdate_label">
+          <property name="text">
+           <string>Enabled</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QDoubleSpinBox" name="autoupdate_refresh_rate_spinbox">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="suffix">
+           <string> s</string>
+          </property>
+          <property name="decimals">
+           <number>1</number>
+          </property>
+          <property name="minimum">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>3600.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>1.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QRadioButton" name="autoupdate_database_button">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QRadioButton" name="autoupdate_direct_button">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="autoupdate_database_label">
+          <property name="text">
+           <string>From database</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="autoupdate_refresh_rate_label">
+          <property name="text">
+           <string>Refresh rate</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="autoupdate_direct_label">
+          <property name="text">
+           <string>Real-time data</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
-     </item>
-     <item row="6" column="1">
-      <widget class="QCheckBox" name="live_checkbox"/>
      </item>
      <item row="7" column="0" colspan="2">
       <widget class="QPushButton" name="reset_all_button">
@@ -245,16 +334,34 @@
       </widget>
      </item>
      <item row="8" column="0" colspan="2">
-      <widget class="QPushButton" name="plot_button">
-       <property name="text">
-        <string>Plot</string>
-       </property>
+      <widget class="QWidget" name="plot_button_container" native="true">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QPushButton" name="plot_button">
+          <property name="text">
+           <string>Plot</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
     </layout>
-   </item>
-   <item row="1" column="0">
-    <widget class="KChartView" name="plots_view"/>
    </item>
   </layout>
  </widget>

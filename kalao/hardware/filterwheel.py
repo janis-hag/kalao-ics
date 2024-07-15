@@ -12,7 +12,7 @@ camera.py is part of the KalAO Instrument Control Software
 import time
 from typing import TypeVar
 
-from kalao import database, logger
+from kalao import logger, memory
 
 from microscope.filterwheels import thorlabs
 
@@ -89,18 +89,10 @@ def set_filter(filter: Filter) -> Filter:
             name_act = translate_to_filter_name(position_act)
 
             if position_act == position:
-                database.store(
-                    'obs', {
-                        'filterwheel_filter_name': name,
-                        'filterwheel_filter_position': position
-                    })
+                memory.set('filterwheel_filter_position', position)
                 return _return_filter(position, filter)
             else:
-                database.store(
-                    'obs', {
-                        'filterwheel_filter_name': name_act,
-                        'filterwheel_filter_position': position_act
-                    })
+                memory.set('filterwheel_filter_position', position_act)
                 logger.error(
                     'filterwheel',
                     f'Filter position expected {position} ({name}), but got {position_act} ({name_act})'
@@ -115,22 +107,25 @@ def set_filter(filter: Filter) -> Filter:
     return _return_filter(FilterWheelStatus.ERROR_POSITION, filter)
 
 
-def get_filter(type: Filter | type = str, from_db: bool = False) -> Filter:
-    if from_db:
-        name = database.get_last_value('obs', 'filterwheel_filter_name')
-        return _return_filter(name, type)
-    else:
-        for retry in range(config.FilterWheel.retries):
-            try:
-                fw = thorlabs.ThorlabsFilterWheel(
-                    com=config.FilterWheel.device_port)
-                position = fw.get_position()
+def get_filter(type: Filter | type = str, from_memory: bool = False) -> Filter:
+    if from_memory:
+        name = memory.get('filterwheel_filter_position')
 
-                return _return_filter(position, type)
+        if name is not None:
+            return _return_filter(name, type)
 
-            except (thorlabs.serial.SerialException, ValueError) as e:
-                _log_exception(e, retry)
-                time.sleep(config.FilterWheel.retry_wait)
+    for retry in range(config.FilterWheel.retries):
+        try:
+            fw = thorlabs.ThorlabsFilterWheel(
+                com=config.FilterWheel.device_port)
+            position = fw.get_position()
+
+            memory.set('filterwheel_filter_position', position)
+            return _return_filter(position, type)
+
+        except (thorlabs.serial.SerialException, ValueError) as e:
+            _log_exception(e, retry)
+            time.sleep(config.FilterWheel.retry_wait)
 
     logger.error('filterwheel', 'Filter wheel failed too many time.')
     return _return_filter(FilterWheelStatus.ERROR_POSITION, type)

@@ -304,11 +304,10 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         # Observation
 
         self.data_to_widget(
-            self.consume_fps_param(data, config.FPS.CONFIG,
-                                   'adc_synchronisation'),
+            self.consume_dict(data, 'memory', 'adc_synchronisation'),
             self.adc_synchronisation_checkbox)
         self.data_to_widget(
-            self.consume_fps_param(data, config.FPS.CONFIG, 'ttm_offloading'),
+            self.consume_dict(data, 'memory', 'ttm_offloading'),
             self.ttm_offloading_checkbox)
 
         # Slopes
