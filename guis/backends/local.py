@@ -444,7 +444,7 @@ class MainBackend(SHMFPSBackend):
                              cwd=config.AO.cacao_workdir)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         return data
 
@@ -489,7 +489,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         if res.returncode != 0:
             return data
@@ -512,7 +512,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         return data
 
@@ -533,7 +533,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         return data
 
@@ -554,7 +554,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         return data
 
@@ -566,7 +566,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         self._update_fits(
             data, config.AO.cacao_workdir /
@@ -582,7 +582,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         return data
 
@@ -594,7 +594,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         return data
 
@@ -606,7 +606,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run([script], timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         return data
 
@@ -623,7 +623,7 @@ class MainBackend(SHMFPSBackend):
         res = subprocess.run(args, timeout=60, capture_output=True)
 
         data['returncode'] = res.returncode
-        data['stdout'] = res.stdout.decode()
+        data['stdout'] = res.stdout.decode(errors='replace')
 
         return data
 
