@@ -3,7 +3,7 @@ import argparse
 import pandas as pd
 
 from kalao.hardware import camera
-from kalao.utils import file_handling
+from kalao.utils import fits_handling
 
 from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
                                      ObservationType, ShutterState,
@@ -17,20 +17,20 @@ def run(args):
         ret = camera.take_fake('/tmp/camera_fake.fits')
 
         if ret is not None:
-            camera_header = file_handling._header_from_fits_file(
+            camera_header = fits_handling._header_from_fits_file(
                 '/tmp/camera_fake.fits')
         else:
             print("[ERROR] Failed to get empty file from FLI camera.")
-            camera_header = file_handling._header_empty()
+            camera_header = fits_handling._header_empty()
     else:
-        camera_header = file_handling._header_from_fits_file(args.fits)
+        camera_header = fits_handling._header_from_fits_file(args.fits)
 
     df = pd.concat([
         camera_header,
-        file_handling._header_from_yml(config.FITS.fits_default_header_file),
-        file_handling._header_from_db('obs', dt=None),
-        file_handling._header_from_db('monitoring', dt=None),
-        #file_handling._clean_header(file_handling._header_from_last_telescope_header()
+        fits_handling._header_from_yml(config.FITS.fits_default_header_file),
+        fits_handling._header_from_db('obs', dt=None),
+        fits_handling._header_from_db('monitoring', dt=None),
+        #fits_handling._clean_header(fits_handling._header_from_last_telescope_header()
     ]).query('~index.duplicated(keep="last")')
 
     df.loc['RA', 'value'] = 0
@@ -42,11 +42,11 @@ def run(args):
     df.loc['HIERARCH ESO INS TUNGSTEN STATUS',
            'value'] = TungstenState.OFF.value
 
-    df = file_handling._dynamic_cards_update(
+    df = fits_handling._dynamic_cards_update(
         df, ObservationType.TARGET, True, 'KALAO.1970-01-01T00:00:00.000.fits')
-    df = file_handling._sort_header(df)
+    df = fits_handling._sort_header(df)
 
-    print(file_handling._header_to_string(df))
+    print(fits_handling._header_to_string(df))
 
 
 if __name__ == '__main__':

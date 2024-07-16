@@ -1,6 +1,9 @@
-default.target.wants
+kalao-config/config/_systemd/user/default.target.wants/
 
+*.a
+*.mke
 tcs_communication_tmp
+tcs_communication/pyipc/README_KalAO.txt
 
 # General Mac Bullshit
 .DS_Store

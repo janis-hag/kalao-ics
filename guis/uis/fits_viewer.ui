@@ -487,7 +487,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QFrame" name="frame_2">
+            <widget class="QFrame" name="frame">
              <property name="frameShape">
               <enum>QFrame::HLine</enum>
              </property>
@@ -509,14 +509,49 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
-            <widget class="QLineEdit" name="keywords_filter_lineedit">
-             <property name="placeholderText">
-              <string>Filter ...</string>
-             </property>
-             <property name="clearButtonEnabled">
-              <bool>true</bool>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="keywords_filter_layout">
+             <item>
+              <widget class="QLineEdit" name="keywords_filter_lineedit">
+               <property name="placeholderText">
+                <string>Filter ...</string>
+               </property>
+               <property name="clearButtonEnabled">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="keywords_columns_combobox">
+               <item>
+                <property name="text">
+                 <string>All columns</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Keyword</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Value</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Comment</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="keywords_casesensitive_checkbox">
+               <property name="text">
+                <string>Case sensitive</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
             <widget class="QTableView" name="keywords_table">

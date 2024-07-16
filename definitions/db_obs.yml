@@ -40,13 +40,13 @@ centering_manual_flag:
   unit:
 
 # Science Camera
-camera_last_image_path:
+camera_image_path:
   short: Path to saved image
   long: Path to saved image
   unit:
   group: Science Camera
 
-camera_image_count:
+camera_image_sequential_number:
   short: Image sequential number
   long: Image sequential number
   unit:

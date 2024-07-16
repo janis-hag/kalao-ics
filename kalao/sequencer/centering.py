@@ -75,7 +75,7 @@ def center_on_target(
         logger.info('centering', 'Starting manual centering')
 
         # Take at least one image so the observer can click on it
-        img_path = camera.take_image(ObservationType.TARGET_CENTERING)
+        img_path = camera.take_science_image(ObservationType.TARGET_CENTERING)
 
         if img_path is None:
             raise CameraTakeImageFailed
@@ -240,7 +240,7 @@ def manual_centering(dx: float, dy: float) -> ReturnCode:
     if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
         raise CenteringOffsetingFailed
 
-    img_path = camera.take_image(ObservationType.TARGET_CENTERING)
+    img_path = camera.take_science_image(ObservationType.TARGET_CENTERING)
 
     if img_path is None:
         raise CameraTakeImageFailed
@@ -410,8 +410,8 @@ def on_wfs_with_ttm(max_iter: int = config.Centering.
 
 def _get_star(obs_type: ObservationType,
               exptime: float) -> tuple[float, float]:
-    img_path = camera.take_image(obs_type, exptime=exptime,
-                                 comment="Centering sequence")
+    img_path = camera.take_science_image(obs_type, exptime=exptime,
+                                         comment="Centering sequence")
 
     if img_path is None:
         raise CameraTakeImageFailed

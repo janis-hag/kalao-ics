@@ -11,7 +11,7 @@ from kalao.hardware import camera, filterwheel
 from kalao.interfaces import etcs
 from kalao.sequencer import seq_utils
 from kalao.sequencer.seq_utils import with_sequencer_status
-from kalao.utils import file_handling, starfinder
+from kalao.utils import fits_handling, starfinder
 
 from kalao.definitions.enums import (ObservationType, ReturnCode,
                                      SequencerStatus)
@@ -35,7 +35,7 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
     Starts a sequence to find best telescope M2 focus position.
     """
 
-    filepath = file_handling.get_focus_sequence_filepath()
+    filepath = fits_handling.get_focus_sequence_filepath()
 
     initial_focus = etcs.get_focus()
     focus_start = initial_focus - steps/2*step_size
@@ -69,7 +69,7 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
 
                 etcs.set_focus(m2_position)
 
-                filepath = camera.take_image(
+                filepath = camera.take_science_image(
                     ObservationType.FOCUS, exptime=exptime, comment=
                     f'Focus sequence {step+1}/{steps}, focus={m2_position:.2f}um'
                 )

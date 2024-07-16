@@ -46,7 +46,7 @@ def sig_handler(signal_received, frame):
 def take_and_measure(args):
     hw = args.roi_size // 2
 
-    filepath = camera.take_frame(
+    filepath = camera.take_image(
         exptime=args.exptime, nbframes=args.img_avg,
         roi=(config.Camera.center_x - hw, config.Camera.center_y - hw, 2 * hw,
              2 * hw))

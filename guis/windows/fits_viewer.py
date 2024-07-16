@@ -33,10 +33,10 @@ class FollowMode(StrEnum):
 class FITSCardsModel(QAbstractTableModel):
     def __init__(self, parent):
         super().__init__(parent)
-        self.test_data = []
+        self.data = []
 
     def rowCount(self, parent):
-        return len(self.test_data)
+        return len(self.data)
 
     def columnCount(self, parent):
         return 3
@@ -46,7 +46,7 @@ class FITSCardsModel(QAbstractTableModel):
         col = index.column()
 
         if role == Qt.DisplayRole:
-            return self.test_data[row][col]
+            return self.data[row][col]
 
         return None
 
@@ -63,7 +63,7 @@ class FITSCardsModel(QAbstractTableModel):
     def update_data(self, header):
         self.layoutAboutToBeChanged.emit()
 
-        self.test_data = []
+        self.data = []
 
         for keyword in header.keys():
             if keyword == 'COMMENT':
@@ -74,7 +74,7 @@ class FITSCardsModel(QAbstractTableModel):
             else:
                 true_keyword = keyword
 
-            self.test_data.append(
+            self.data.append(
                 (true_keyword, header[keyword], header.comments[keyword]))
 
         self.layoutChanged.emit()
@@ -871,11 +871,30 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     @Slot(str)
     def on_keywords_filter_lineedit_textEdited(self, text):
+        self.filter_keywords()
+
+    @Slot(int)
+    def on_keywords_columns_combobox_currentIndexChanged(self, index):
+        self.filter_keywords()
+
+    @Slot(int)
+    def on_keywords_casesensitive_checkbox_stateChanged(self, state):
+        self.filter_keywords()
+
+    def filter_keywords(self):
+        text = self.keywords_filter_lineedit.text()
+
         if text == '':
             self.proxymodel.setFilterRegularExpression('')
         else:
-            self.proxymodel.setFilterKeyColumn(-1)
-            self.proxymodel.setFilterCaseSensitivity(Qt.CaseInsensitive)
+            if self.keywords_casesensitive_checkbox.isChecked():
+                case_senstitivity = Qt.CaseSensitive
+            else:
+                case_senstitivity = Qt.CaseInsensitive
+
+            self.proxymodel.setFilterKeyColumn(
+                self.keywords_columns_combobox.currentIndex() - 1)
+            self.proxymodel.setFilterCaseSensitivity(case_senstitivity)
             self.proxymodel.setFilterFixedString(text)
 
     def closeEvent(self, event):

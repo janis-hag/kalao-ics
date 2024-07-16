@@ -5,7 +5,7 @@
 # @Project: KalAO-ICS
 # @AUTHOR : Janis Hagelberg
 """
-file_handling.py is part of the KalAO Instrument Control Software
+fits_handling.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 
@@ -80,8 +80,8 @@ def get_focus_sequence_filepath() -> Path:
     return filepath
 
 
-def save_tmp_image(image_path: Path, obs_type: ObservationType,
-                   comment: str | None = None) -> Path | None:
+def save_image(image_path: Path, obs_type: ObservationType,
+               comment: str | None = None) -> Path | None:
     '''
     Updates the temporary image header and saves into the archive.
 
@@ -107,7 +107,7 @@ def save_tmp_image(image_path: Path, obs_type: ObservationType,
         final_filepath.chmod(config.FITS.file_mask)
         # TODO possibly add the right UID and GID
 
-        database.store('obs', {'camera_last_image_path': final_filepath})
+        database.store('obs', {'camera_image_path': final_filepath})
         logger.info('sequencer', f'Saved {image_path} to {final_filepath}')
 
         symlink = config.FITS.last_image
@@ -147,6 +147,36 @@ def update_db_from_telheader() -> ReturnCode:
 
     else:
         return ReturnCode.GENERIC_ERROR
+
+
+def update_db_from_fits(header_df: pd.DataFrame) -> ReturnCode:
+    # Version
+
+    version = header_df.loc['HIERARCH ESO DET SOFW ID', 'value']
+
+    if '-dirty' in version:
+        logger.warn(
+            'sequencer',
+            f'Camera software (version {version}) contains uncommited changes')
+
+    # Image sequencial number
+
+    image_number = header_df.loc['HIERARCH ESO DET FRAM ID', 'value']
+
+    previous_number = database.get_last_value(
+        'obs', 'camera_image_sequential_number')
+    if previous_number is None:
+        previous_number = 0
+
+    if image_number <= previous_number:
+        logger.warn(
+            'sequencer',
+            f'Image sequential number from FITS file ({image_number}) lower than or equal to last record ({previous_number})'
+        )
+
+    database.store('obs', {'camera_image_sequential_number': image_number})
+
+    return ReturnCode.OK
 
 
 def prepare_final_fits(image_path: Path, obs_type: ObservationType,
@@ -190,8 +220,13 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
         else:
             header_telescope = _header_empty()
 
+        header_fits = _header_from_fits_header(fits_header,
+                                               f'fits:{image_path.name}')
+
+        update_db_from_fits(header_fits)
+
         header_df = pd.concat([
-            _header_from_fits_header(fits_header, f'fits:{image_path.name}'),
+            header_fits,
             header_base,
             header_obs,
             header_monitoring,

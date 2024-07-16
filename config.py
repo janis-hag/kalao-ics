@@ -755,7 +755,7 @@ class GUI:
     }
 
     plots_exclude_list = [
-        'observer_name', 'observer_email', 'camera_last_image_path',
+        'observer_name', 'observer_email', 'camera_image_path',
         'tcs_header_path', 'filterwheel_filter_name',
         'sequencer_command_received', 't120_host'
     ]

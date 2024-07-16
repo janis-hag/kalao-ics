@@ -28,7 +28,7 @@ def run(args):
         print('Connecting to camera through REST API')
 
         while True:
-            camera.take_frame(exptime=args.exptime)
+            camera.take_image(exptime=args.exptime)
     else:
         print('Error connecting to camera. Please check the kalao_fli service')
 

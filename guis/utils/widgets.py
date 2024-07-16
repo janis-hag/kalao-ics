@@ -413,7 +413,7 @@ class KGraphicsView(QGraphicsView):
         self.setRenderHints(QPainter.Antialiasing |
                             QPainter.SmoothPixmapTransform)
 
-        self.setStyleSheet("background: transparent")
+        self.setStyleSheet('background: transparent')
         self.setBackgroundBrush(QBrush(Color.TRANSPARENT))
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -922,7 +922,7 @@ class KChartView(QChartView):
         chart.setMargins(QMargins(0, 0, 0, 0))
         chart.setBackgroundVisible(True)
 
-        self.setStyleSheet("background: transparent")
+        self.setStyleSheet('background: transparent')
 
         self.setChart(chart)
 
@@ -1090,7 +1090,7 @@ class KStatusIndicator(QGraphicsView):
         self.setRenderHints(QPainter.Antialiasing |
                             QPainter.SmoothPixmapTransform)
 
-        self.setStyleSheet("background: transparent")
+        self.setStyleSheet('background: transparent')
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -1147,7 +1147,7 @@ class KColorbar(QGraphicsView):
         self.setRenderHints(QPainter.Antialiasing |
                             QPainter.SmoothPixmapTransform)
 
-        self.setStyleSheet("background: transparent")
+        self.setStyleSheet('background: transparent')
         self.setBackgroundBrush(QBrush(Color.TRANSPARENT))
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)

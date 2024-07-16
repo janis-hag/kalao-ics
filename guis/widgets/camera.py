@@ -22,9 +22,9 @@ import config
 
 def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
     if sort == 'db':
-        from kalao.utils import file_handling
+        from kalao.utils import fits_handling
 
-        return file_handling.get_last_image_path()
+        return fits_handling.get_last_image_path()
 
     elif sort == 'symlink':
         return config.FITS.last_image

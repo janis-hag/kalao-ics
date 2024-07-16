@@ -92,4 +92,4 @@ def _last_filepath_archived() -> str:
     :return: Image file path (str)
     """
 
-    return database.get_last_value('obs', 'camera_last_image_path')
+    return database.get_last_value('obs', 'camera_image_path')

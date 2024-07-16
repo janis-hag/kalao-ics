@@ -186,13 +186,11 @@ class LogsWidget(KWidget, BackendActionMixin):
             style_origin = '<span class="bold yellow">'
             style_message = '<span class="bold yellow">'
 
-        message = entry.message
-        message_splitted = entry.message.split(' | ')
-        if len(message_splitted) > 1:
-            message = ' | '.join([f'{message_splitted[0]:>17s}'] +
-                                 message_splitted[1:])
+        message_splitted = entry.message.split(' | ', 1)
+        if len(message_splitted) == 1:
+            message = f'{" "*17} | {message_splitted[0]}'
         else:
-            message = ' '*17 + ' | ' + message
+            message = f'{message_splitted[0]:>17s} | {message_splitted[1]}'
 
         self.logs_textedit.appendHtml(
             f'{style_timestamp}{entry.timestamp}{style_end} {style_origin}{entry.origin:>17s}{style_end}: {style_message}{ascii2html.translate(message)}{style_end}'
@@ -309,7 +307,7 @@ class LogsWidget(KWidget, BackendActionMixin):
             # if self.services_items['toplevel'].checkState(0) != Qt.Checked:
             #     return False
 
-        message_splitted = entry.message.split('|')
+        message_splitted = entry.message.split(' | ', 1)
 
         if len(message_splitted) == 1:
             if self.logs_items['<none>'].checkState(0) != Qt.Checked:

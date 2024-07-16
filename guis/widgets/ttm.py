@@ -1,11 +1,9 @@
 import math
-from datetime import timezone
 
 import numpy as np
 
 from PySide6.QtCharts import QDateTimeAxis, QLineSeries, QValueAxis
-from PySide6.QtCore import (QDateTime, QPointF, QSignalBlocker, QTimeZone,
-                            Signal)
+from PySide6.QtCore import QDateTime, QPointF, QSignalBlocker, Signal
 from PySide6.QtGui import QPen, Qt
 
 from guis.utils.definitions import Color

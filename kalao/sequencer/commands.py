@@ -23,7 +23,7 @@ from kalao.hardware import (adc, calibunit, camera, dm, filterwheel,
                             wfs)
 from kalao.sequencer import centering, focusing, seq_utils
 from kalao.sequencer.seq_utils import with_sequencer_status
-from kalao.utils import exposure, file_handling
+from kalao.utils import exposure, fits_handling
 
 from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
                                      FlipMirrorPosition, LaserState,
@@ -61,7 +61,8 @@ def dark(**seq_args: dict[str, Any]) -> ReturnCode:
 
     # Take darks
     for _ in range(nbPic):
-        image_path = camera.take_image(ObservationType.DARK, exptime=exptime)
+        image_path = camera.take_science_image(ObservationType.DARK,
+                                               exptime=exptime)
 
         if image_path is None:
             raise CameraTakeImageFailed
@@ -126,8 +127,8 @@ def tungsten_flat(**seq_args: dict[str, Any]) -> ReturnCode:
 
         exptime = config.Tungsten.flat_exptime_list[filter_name]
 
-        image_path = camera.take_image(ObservationType.LAMP_FLAT,
-                                       exptime=exptime)
+        image_path = camera.take_science_image(ObservationType.LAMP_FLAT,
+                                               exptime=exptime)
 
         if image_path is None:
             raise CameraTakeImageFailed
@@ -208,8 +209,8 @@ def sky_flat(**seq_args: dict[str, Any]) -> ReturnCode:
 
             current_filter = filter
 
-        image_path = camera.take_image(ObservationType.SKY_FLAT,
-                                       exptime=exptime)
+        image_path = camera.take_science_image(ObservationType.SKY_FLAT,
+                                               exptime=exptime)
 
         if image_path is None:
             raise CameraTakeImageFailed
@@ -314,8 +315,9 @@ def target_observation(**seq_args: dict[str, Any]) -> ReturnCode:
 
         time.sleep(config.AO.loop_stabilization_time)
 
-    image_path = camera.take_image(ObservationType.TARGET, exptime=exptime,
-                                   nbframes=nbframes, roi_size=roi_size)
+    image_path = camera.take_science_image(ObservationType.TARGET,
+                                           exptime=exptime, nbframes=nbframes,
+                                           roi_size=roi_size)
 
     if image_path is None:
         raise CameraTakeImageFailed
@@ -508,7 +510,7 @@ def _wait_for_tracking() -> ReturnCode:
 
         if on_target:
             logger.info('sequencer', 'Telescope on target.')
-            file_handling.update_db_from_telheader()
+            fits_handling.update_db_from_telheader()
             return ReturnCode.SEQ_OK
 
         time.sleep(config.SEQ.pointing_poll_interval)
@@ -549,7 +551,7 @@ def generate_night_darks(folder=None) -> ReturnCode:
     Generate the darks needed for the calibration of the night which is assumed to have ended.
     """
 
-    exptimes = file_handling.get_exposure_times()
+    exptimes = fits_handling.get_exposure_times()
 
     if len(exptimes) == 0:
         logger.warn('sequencer', f'Not generating darks as {folder} is empty.')
@@ -565,7 +567,8 @@ def generate_night_darks(folder=None) -> ReturnCode:
                     'sequencer',
                     f'Generating dark for {exptime} s ({i}/{config.Calib.Darks.dark_number}'
                 )
-                camera.take_image(ObservationType.DARK, exptime=exptime)
+                camera.take_science_image(ObservationType.DARK,
+                                          exptime=exptime)
 
     return 0
 

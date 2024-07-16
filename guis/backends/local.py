@@ -816,8 +816,9 @@ class MainBackend(SHMFPSBackend):
             cooling.heater_off()
 
     def camera_take(self, *, exposure_time, frames, roi_size):
-        camera.take_image(ObservationType.ENGINEERING, exptime=exposure_time,
-                          nbframes=frames, roi_size=roi_size)
+        camera.take_science_image(ObservationType.ENGINEERING,
+                                  exptime=exposure_time, nbframes=frames,
+                                  roi_size=roi_size)
 
     def camera_cancel(self):
         camera.cancel()

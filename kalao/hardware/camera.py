@@ -17,7 +17,7 @@ import numpy as np
 
 from kalao import logger
 from kalao.sequencer.seq_utils import with_sequencer_status
-from kalao.utils import file_handling
+from kalao.utils import fits_handling
 
 import requests
 import requests.exceptions
@@ -52,12 +52,12 @@ def take_fake(filepath: str | Path | None = None,
         return None
 
 
-def take_frame(filepath: str | Path | None = None,
+def take_image(filepath: str | Path | None = None,
                exptime: float | None = None, nbframes: int | None = None,
                roi: ROI | None = None,
                nbflushes: int | None = None) -> Path | None:
     if filepath is None:
-        filepath = Path('/tmp/camera_frame.fits')
+        filepath = Path('/tmp/camera_image.fits')
     elif not isinstance(filepath, Path):
         filepath = Path(filepath)
 
@@ -93,10 +93,10 @@ def take_frame(filepath: str | Path | None = None,
 
 
 @with_sequencer_status(SequencerStatus.EXP)
-def take_image(obs_type: ObservationType, exptime: float | None = None,
-               filepath: str | Path | None = None, nbframes: int | None = None,
-               roi_size: int | None = None,
-               comment: str | None = None) -> Path | None:
+def take_science_image(obs_type: ObservationType, exptime: float | None = None,
+                       filepath: str | Path | None = None, nbframes: int |
+                       None = None, roi_size: int | None = None,
+                       comment: str | None = None) -> Path | None:
 
     if exptime is not None and exptime < 0.001:
         logger.error(
@@ -119,14 +119,14 @@ def take_image(obs_type: ObservationType, exptime: float | None = None,
 
     if filepath is None:
         # Generate filename including path
-        filepath = file_handling.get_tmp_image_filepath()
+        filepath = fits_handling.get_tmp_image_filepath()
 
-    filepath = take_frame(filepath=filepath, exptime=exptime,
+    filepath = take_image(filepath=filepath, exptime=exptime,
                           nbframes=nbframes, roi=roi)
 
     if filepath is not None:
-        final_filepath = file_handling.save_tmp_image(filepath, obs_type,
-                                                      comment=comment)
+        final_filepath = fits_handling.save_image(filepath, obs_type,
+                                                  comment=comment)
 
         return final_filepath
     else:
