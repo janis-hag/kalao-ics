@@ -228,17 +228,12 @@ def invalidate_manual_centering() -> ReturnCode:
 
 
 def get_manual_centering_flag() -> bool:
-    flag = memory.get('centering_manual')
-
-    if flag is None:
-        return False
-    else:
-        return bool(flag)
+    return memory.get('centering_manual_flag', type=bool, default=False)
 
 
 def set_manual_centering_flag(flag: bool) -> None:
-    memory.set('centering_manual', int(flag))
-    database.store('obs', {'centering_manual': flag})
+    memory.set('centering_manual_flag', flag)
+    database.store('obs', {'centering_manual_flag': flag})
 
 
 def manual_centering(dx: float, dy: float) -> ReturnCode:
@@ -380,7 +375,7 @@ def on_wfs_with_ttm(max_iter: int = config.Centering.
                     timeout: float = np.inf) -> tuple[float, float]:
     logger.info('centering', 'Centering on WFS using Tip-Tilt Mirror')
 
-    slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS)
+    slopes_fps = toolbox.get_fps(config.FPS.SHWFS)
 
     if slopes_fps is None:
         logger.error('centering', f'{config.FPS.SHWFS} is missing')

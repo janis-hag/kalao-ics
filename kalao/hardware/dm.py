@@ -27,7 +27,7 @@ def on() -> ReturnCode:
 
         time.sleep(config.Hardware.dm_wait_between_actions)
 
-    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC)
+    bmc_display_fps = toolbox.get_fps(config.FPS.BMC)
 
     if bmc_display_fps is not None:
         if not bmc_display_fps.run_isrunning():
@@ -59,7 +59,7 @@ def off() -> ReturnCode:
 
     time.sleep(config.Hardware.dm_wait_between_actions)
 
-    bmc_display_fps = toolbox.open_fps_once(config.FPS.BMC)
+    bmc_display_fps = toolbox.get_fps(config.FPS.BMC)
     if bmc_display_fps is not None:
         logger.info('dm', f'Stopping {config.FPS.BMC}')
         bmc_display_fps.run_stop()

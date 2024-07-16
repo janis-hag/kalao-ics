@@ -90,10 +90,8 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         img = self.consume_shm(data, config.SHM.TTM)
 
         if img is not None:
-            timestamp = self.consume_metadata(data, 'timestamp').astimezone(
-                timezone.utc)
-            timestamp = QDateTime(timestamp.date(), timestamp.time(),
-                                  QTimeZone.utc()).toMSecsSinceEpoch()
+            timestamp_msec = int(
+                self.consume_metadata(data, 'timestamp').timestamp() * 1000)
             self.tip, self.tilt = img
 
             saturation_tip = max(self.tip / self.image_info['max'],
@@ -103,11 +101,12 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
             self.saturation = max(saturation_tip, saturation_tilt)
 
             self.tip_series.append(
-                QPointF(timestamp, self.tip * self.data_scaling))
+                QPointF(timestamp_msec, self.tip * self.data_scaling))
             self.tilt_series.append(
-                QPointF(timestamp, self.tilt * self.data_scaling))
+                QPointF(timestamp_msec, self.tilt * self.data_scaling))
 
-            while self.tip_series.at(0).x() < timestamp - self.plot_length:
+            while self.tip_series.at(
+                    0).x() < timestamp_msec - self.plot_length:
                 self.tip_series.remove(0)
                 self.tilt_series.remove(0)
 

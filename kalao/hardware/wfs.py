@@ -18,8 +18,8 @@ def start(start_nuvu_acquire: bool = True,
           start_shwfs_process: bool = True) -> ReturnCode:
     logger.info('wfs', 'Starting WFS')
 
-    shwfs_process_fps = toolbox.open_fps_once(config.FPS.SHWFS)
-    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU)
+    shwfs_process_fps = toolbox.get_fps(config.FPS.SHWFS)
+    nuvu_acquire_fps = toolbox.get_fps(config.FPS.NUVU)
 
     subprocess.run([
         'python', '/home/kalao/kalao-camstack/camstack/cam_mains/main.py',
@@ -62,8 +62,8 @@ def start(start_nuvu_acquire: bool = True,
 def stop() -> ReturnCode:
     logger.info('wfs', 'Stopping WFS')
 
-    shwfs_process_fps = toolbox.open_fps_once(config.FPS.SHWFS)
-    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU)
+    shwfs_process_fps = toolbox.get_fps(config.FPS.SHWFS)
+    nuvu_acquire_fps = toolbox.get_fps(config.FPS.NUVU)
 
     if shwfs_process_fps is not None:
         if shwfs_process_fps.run_isrunning():
@@ -99,7 +99,7 @@ def stop() -> ReturnCode:
 
 
 def acquisition_running() -> bool:
-    nuvu_raw_shm = toolbox.open_shm_once(config.SHM.NUVU_RAW)
+    nuvu_raw_shm = toolbox.get_shm(config.SHM.NUVU_RAW)
 
     if nuvu_raw_shm is None:
         return False
@@ -111,7 +111,7 @@ def acquisition_running() -> bool:
 
 
 def start_acquisition() -> ReturnCode:
-    nuvu_raw_shm = toolbox.open_shm_once(config.SHM.NUVU_RAW)
+    nuvu_raw_shm = toolbox.get_shm(config.SHM.NUVU_RAW)
 
     if nuvu_raw_shm is None:
         return ReturnCode.GENERIC_ERROR
@@ -263,7 +263,7 @@ def optimize_flux() -> ReturnCode:
     if check_flux():
         return ReturnCode.OK
 
-    nuvu_acquire_fps = toolbox.open_fps_once(config.FPS.NUVU)
+    nuvu_acquire_fps = toolbox.get_fps(config.FPS.NUVU)
 
     if nuvu_acquire_fps is None:
         logger.error('wfs', f'{config.FPS.NUVU} is missing')
@@ -299,7 +299,7 @@ def optimize_flux() -> ReturnCode:
 
 
 def check_flux() -> bool:
-    shwfs_fps = toolbox.open_fps_once(config.FPS.SHWFS)
+    shwfs_fps = toolbox.get_fps(config.FPS.SHWFS)
 
     if shwfs_fps is None or not shwfs_fps.run_isrunning():
         return False

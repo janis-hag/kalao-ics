@@ -7,12 +7,8 @@ from kalao.definitions.enums import SequencerStatus
 
 
 def get_sequencer_status() -> SequencerStatus:
-    status = memory.get('sequencer_status')
-
-    if status is None:
-        return SequencerStatus.UNKNOWN
-    else:
-        return SequencerStatus(status)
+    return SequencerStatus(
+        memory.get('sequencer_status', default=SequencerStatus.UNKNOWN))
 
 
 def set_sequencer_status(status: SequencerStatus) -> None:

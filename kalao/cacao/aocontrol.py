@@ -45,13 +45,13 @@ def open_loops(autozero: bool = True,
 def check_loops() -> LoopStatus:
     status = LoopStatus(0)
 
-    dmloop_fps = toolbox.open_fps_once(config.FPS.DMLOOP)
+    dmloop_fps = toolbox.get_fps(config.FPS.DMLOOP)
 
     if dmloop_fps is not None and dmloop_fps.run_isrunning(
     ) and dmloop_fps.get_param('loopON'):
         status |= LoopStatus.DM_LOOP_ON
 
-    ttmloop_fps = toolbox.open_fps_once(config.FPS.TTMLOOP)
+    ttmloop_fps = toolbox.get_fps(config.FPS.TTMLOOP)
 
     if ttmloop_fps is not None and ttmloop_fps.run_isrunning(
     ) and ttmloop_fps.get_param('loopON'):
@@ -104,7 +104,7 @@ def switch_loop(loop_number: int, close: bool = True, autozero: bool = True,
     else:
         logger.info('ao', f'Opening loop {loop_number}')
 
-    fps_mfilt = toolbox.open_fps_once(f'mfilt-{loop_number}')
+    fps_mfilt = toolbox.get_fps(f'mfilt-{loop_number}')
 
     if fps_mfilt is None:
         logger.error('ao', f'mfilt-{loop_number} is missing')
@@ -173,7 +173,7 @@ def ttmloop_zero() -> bool | None:
 
 def set_modalgains(modalgains: np.ndarray,
                    shm_name: str = config.SHM.MODALGAINS) -> int:
-    modalgains_shm = toolbox.open_shm_once(shm_name)
+    modalgains_shm = toolbox.get_shm(shm_name)
 
     delta = modalgains_shm.shape[0] - modalgains.shape[0]
 
@@ -219,7 +219,7 @@ def reset_channel(dm_number: int, channel: int,
     shm_name = f'dm{dm_number:02d}disp{channel:02d}'
 
     if shm_name == config.SHM.DM_LOOP or shm_name == config.SHM.TTM_LOOP:
-        mfilt_fps = toolbox.open_fps_once(f'mfilt-{dm_number}')
+        mfilt_fps = toolbox.get_fps(f'mfilt-{dm_number}')
         if mfilt_fps is not None:
             logger.info(log, f'Zeroing loop {dm_number}')
 
@@ -228,7 +228,7 @@ def reset_channel(dm_number: int, channel: int,
     elif shm_name == config.SHM.DM_FLAT and not force_flat:
         return ReturnCode.OK
 
-    shm = toolbox.open_shm_once(shm_name)
+    shm = toolbox.get_shm(shm_name)
     toolbox.zero_stream(shm)
 
     return ReturnCode.OK

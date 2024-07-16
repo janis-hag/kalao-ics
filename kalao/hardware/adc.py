@@ -96,7 +96,10 @@ def set_zero_disp(beck: Client = None) -> float:
 
 def set_angle(angle: float, offset: float = 0., blocking: bool = True,
               beck: Client = None) -> float:
-    logger.info('adc', f'Setting angle between ADC prisms to {angle}°')
+    logger.info(
+        'adc',
+        f'Setting angle between ADC prisms to {angle}° with an offset of {offset}°'
+    )
 
     memory.mset({'adc_angle': angle, 'adc_offset': offset})
 
@@ -116,38 +119,23 @@ def set_angle(angle: float, offset: float = 0., blocking: bool = True,
 
 
 def get_angle() -> float:
-    angle = memory.get('adc_angle')
-
-    if angle is None:
-        return np.nan
-    else:
-        return angle
+    return memory.get('adc_angle', type=float, default=np.nan)
 
 
 def get_offset() -> float:
-    angle = memory.get('adc_offset')
-
-    if angle is None:
-        return np.nan
-    else:
-        return angle
+    return memory.get('adc_offset', type=float, default=np.nan)
 
 
 def get_synchronisation() -> bool:
-    synchronisation = memory.get('adc_synchronisation')
-
-    if synchronisation is None:
-        return True
-    else:
-        return synchronisation
+    return memory.get('adc_synchronisation', type=bool, default=True)
 
 
 def set_synchronisation(state: bool) -> None:
     memory.set('adc_synchronisation', state)
 
 
-def compute_angle_and_offset(angle_adc1: float,
-                             angle_adc2: float) -> tuple[float, float]:
+def _compute_angle_and_offset(angle_adc1: float,
+                              angle_adc2: float) -> tuple[float, float]:
     angle1 = angle_adc1 - config.ADC.max_disp_angle_1
     angle2 = angle_adc2 - config.ADC.max_disp_angle_2
 

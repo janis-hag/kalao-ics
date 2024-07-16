@@ -5,7 +5,7 @@ import pandas as pd
 
 from PySide6.QtCharts import QChartView, QDateTimeAxis, QLineSeries, QValueAxis
 from PySide6.QtCore import (QDateTime, QEvent, QObject, QPointF, QTimer,
-                            QTimeZone, Signal, Slot)
+                            Signal, Slot)
 from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import QMessageBox, QTreeWidgetItem
 
@@ -24,8 +24,6 @@ class PlotsWidget(KWidget, BackendActionMixin):
     hovered = Signal(str)
 
     activeToolTip = None
-
-    current_index = -1
 
     def __init__(self, backend, parent=None):
         super().__init__(parent)
@@ -331,16 +329,16 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
             self.value_before_conversion[collection_name] = {}
 
-            for key, values in collection.items():
-                self.value_before_conversion[collection_name][key] = {}
+            for series_name, series_values in collection.items():
+                self.value_before_conversion[collection_name][series_name] = {}
 
                 metadata = database.definitions[collection_name]['metadata'][
-                    key]
+                    series_name]
 
                 pen = QPen(ColorPalette[color_index], 1.25, Qt.SolidLine,
                            Qt.SquareCap, Qt.MiterJoin)
 
-                series = self.series[key] = QLineSeries()
+                series = self.series[series_name] = QLineSeries()
                 series.setName(self.get_display_name(metadata))
                 series.setPen(pen)
 
@@ -350,11 +348,11 @@ class PlotsWidget(KWidget, BackendActionMixin):
                     series.setUseOpenGL(True)
 
                 if len(self.series) == 1:
-                    error_range = metadata.get('error_range', [np.nan, np.nan])
+                    alarm_range = metadata.get('alarm_range', [np.nan, np.nan])
                     warn_range = metadata.get('warn_range', [np.nan, np.nan])
 
-                    error_min = error_range[0]
-                    error_max = error_range[1]
+                    error_min = alarm_range[0]
+                    error_max = alarm_range[1]
                     warn_min = warn_range[0]
                     warn_max = warn_range[1]
 
@@ -369,14 +367,12 @@ class PlotsWidget(KWidget, BackendActionMixin):
                 else:
                     self.plots_view.resetHLines()
 
-                for t, v in values.items():
-                    t = t.astimezone(timezone.utc)
-                    timestamp = QDateTime(t.date(), t.time(),
-                                          QTimeZone.utc()).toMSecsSinceEpoch()
+                for t, v in series_values.items():
+                    timestamp_msec = int(t.timestamp() * 1000)
 
                     if v in config.GUI.plots_mapping:
-                        self.value_before_conversion[collection_name][key][
-                            timestamp] = v
+                        self.value_before_conversion[collection_name][
+                            series_name][timestamp_msec] = v
                         v = config.GUI.plots_mapping[v]
 
                     if v is None or np.isnan(v) or np.isinf(v):
@@ -392,9 +388,9 @@ class PlotsWidget(KWidget, BackendActionMixin):
                     # Create a "staircase" effect
                     if collection_name == 'obs' and len(points) > 0:
                         prev = points[-1]
-                        points.append(QPointF(timestamp, prev.y()))
+                        points.append(QPointF(timestamp_msec, prev.y()))
 
-                    points.append(QPointF(timestamp, v))
+                    points.append(QPointF(timestamp_msec, v))
 
                 if collection_name == 'obs' and series.count() > 0:
                     now = QDateTime.currentMSecsSinceEpoch()
@@ -408,10 +404,10 @@ class PlotsWidget(KWidget, BackendActionMixin):
                 series.attachAxis(self.axis_x)
                 series.attachAxis(self.axis_y)
 
-                series.hovered.connect(lambda point, state, collection_name=
-                                       collection_name, key=key: self.
-                                       pointHoveredEvent(
-                                           point, state, collection_name, key))
+                series.hovered.connect(
+                    lambda point, state, collection_name=collection_name,
+                    series_name=series_name: self.pointHoveredEvent(
+                        point, state, collection_name, series_name))
 
                 color_index = (color_index+1) % len(ColorPalette)
 
@@ -466,11 +462,11 @@ class PlotsWidget(KWidget, BackendActionMixin):
             if series is None:
                 self.hovered.emit(f'{y:.9g} at {x}')
             else:
-                metadata = database.definitions[self.current_name]['metadata'][
-                    self.current_key]
+                metadata = database.definitions[
+                    self.current_collection]['metadata'][self.current_series]
 
                 try:
-                    y_true = f' ({self.value_before_conversion[self.current_name][self.current_key][x]})'
+                    y_true = f' ({self.value_before_conversion[self.current_collection][self.current_series][x]})'
                 except KeyError:
                     y_true = ''
 
@@ -481,12 +477,12 @@ class PlotsWidget(KWidget, BackendActionMixin):
         else:
             self.hovered.emit('')
 
-    def pointHoveredEvent(self, point, state, name, key):
-        self.current_name = name
-        self.current_key = key
+    def pointHoveredEvent(self, point, state, collection, series):
+        self.current_collection = collection
+        self.current_series = series
 
         self.plots_view.chart().pointHoveredEvent(point, state,
-                                                  self.series[key])
+                                                  self.series[series])
 
     @Slot(QTreeWidgetItem, int)
     def on_monitoring_treeview_itemEntered(self, item, column):

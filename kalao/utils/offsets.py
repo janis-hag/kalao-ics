@@ -53,7 +53,7 @@ def wfs_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
 
 def camera_to_ttm(dx: float, dy: float, gain: float = 1,
                   output_stream: str = config.SHM.TTM_CENTERING) -> ReturnCode:
-    ttm_shm = toolbox.open_shm_once(output_stream)
+    ttm_shm = toolbox.get_shm(output_stream)
 
     if ttm_shm is None:
         logger.error('ttm', f'{output_stream} is missing')
@@ -80,7 +80,7 @@ def camera_to_ttm(dx: float, dy: float, gain: float = 1,
 
 def wfs_to_ttm(dx: float, dy: float, gain: float = 1,
                output_stream: str = config.SHM.TTM_CENTERING) -> ReturnCode:
-    ttm_shm = toolbox.open_shm_once(output_stream)
+    ttm_shm = toolbox.get_shm(output_stream)
 
     if ttm_shm is None:
         logger.error('ttm', f'{output_stream} is missing')

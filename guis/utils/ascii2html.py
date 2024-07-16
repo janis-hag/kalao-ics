@@ -123,10 +123,7 @@ def _handle_ansi_codes(codes, state):
 
         # Basics
 
-        if code == '':
-            pass
-
-        elif code == 0:
+        if code == 0:
             state.update(default_state)
 
         elif code == 1:
@@ -279,9 +276,6 @@ def _get_256color_or_truecolor(codes, i):
         if codes[i + 1] == 5:
             c = codes[i + 2]
 
-            if c == '':
-                c = 0
-
             if 0 <= c <= 7:
                 color = _get_8color(c)
             elif 8 <= c <= 15:
@@ -305,15 +299,6 @@ def _get_256color_or_truecolor(codes, i):
             r = codes[i + 2]
             g = codes[i + 3]
             b = codes[i + 4]
-
-            if r == '':
-                r = 0
-
-            if g == '':
-                g = 0
-
-            if b == '':
-                b = 0
 
             color = f'#{r:02X}{g:02X}{b:02X}'
 

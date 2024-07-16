@@ -53,7 +53,7 @@ def get_all_status(filter_from_memory: bool = False,
     adc1_angle = adc.get_position(config.PLC.Node.ADC1, beck=beck)
     adc2_angle = adc.get_position(config.PLC.Node.ADC2, beck=beck)
 
-    adc_angle, adc_offset = adc.compute_angle_and_offset(
+    adc_angle, adc_offset = adc._compute_angle_and_offset(
         adc1_angle, adc2_angle)
 
     return {

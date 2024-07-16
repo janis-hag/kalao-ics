@@ -91,7 +91,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.show()
         self.center()
 
-    def on_monitoring_updated(self, outdated, warnings, errors):
+    def on_monitoring_updated(self, outdated, warnings, alarms):
         list = []
         color = self.initial_tab_color
         text = self.monitoring.windowTitle().removesuffix(" - KalAO")
@@ -103,9 +103,9 @@ class MainWindow(KMainWindow, BackendDataMixin):
             color = Color.ORANGE
             list.append(f'W: {warnings}')
 
-        if errors != 0:
+        if alarms != 0:
             color = Color.RED
-            list.append(f'E: {errors}')
+            list.append(f'A: {alarms}')
 
         if len(list) > 0:
             text += f' ({", ".join(list)})'

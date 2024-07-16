@@ -29,7 +29,7 @@ class SHMFPSBackend(AbstractBackend):
         if key is None:
             key = shm_name
 
-        shm = toolbox.open_shm_once(shm_name)
+        shm = toolbox.get_shm(shm_name)
 
         if shm is None:
             return
@@ -43,7 +43,7 @@ class SHMFPSBackend(AbstractBackend):
         })
 
     def _update_shm_keywords(self, data, shm_name):
-        shm = toolbox.open_shm_once(shm_name)
+        shm = toolbox.get_shm(shm_name)
 
         if shm is None:
             return
@@ -54,7 +54,7 @@ class SHMFPSBackend(AbstractBackend):
         data[shm_name]['keywords'] = shm.get_keywords()
 
     def _update_shm_state(self, data, shm_name):
-        shm = toolbox.open_shm_once(shm_name)
+        shm = toolbox.get_shm(shm_name)
 
         if shm_name not in data:
             data[shm_name] = {}
@@ -65,7 +65,7 @@ class SHMFPSBackend(AbstractBackend):
             data[shm_name]['state'] = 'E'
 
     def _update_shm_md(self, data, shm_name):
-        shm = toolbox.open_shm_once(shm_name)
+        shm = toolbox.get_shm(shm_name)
 
         if shm is None:
             return
@@ -81,7 +81,7 @@ class SHMFPSBackend(AbstractBackend):
         }
 
     def _update_fps_param(self, data, fps_name, param_name):
-        fps = toolbox.open_fps_once(fps_name)
+        fps = toolbox.get_fps(fps_name)
 
         if fps is None:
             return
@@ -92,7 +92,7 @@ class SHMFPSBackend(AbstractBackend):
         data[fps_name][param_name] = fps.get_param(param_name)
 
     def _update_fps_state(self, data, fps_name):
-        fps = toolbox.open_fps_once(fps_name)
+        fps = toolbox.get_fps(fps_name)
 
         if fps_name not in data:
             data[fps_name] = {}
@@ -254,7 +254,7 @@ class MainBackend(SHMFPSBackend):
         self._update_dict(
             data, 'memory', {
                 'sequencer_status': seq_utils.get_sequencer_status(),
-                'centering_manual': centering.get_manual_centering_flag(),
+                'centering_manual_flag': centering.get_manual_centering_flag(),
                 'adc_synchronisation': adc.get_synchronisation(),
                 'ttm_offloading': ttm.get_offloading(),
             })
@@ -872,12 +872,12 @@ class MainBackend(SHMFPSBackend):
     ##### DM & TTM control
 
     def dm_pattern(self, *, pattern):
-        shm = toolbox.open_shm_once(config.SHM.DM_USER_CONTROLLED)
+        shm = toolbox.get_shm(config.SHM.DM_USER_CONTROLLED)
         if shm is not None:
             shm.set_data(pattern, True)
 
     def ttm_position(self, *, tip, tilt):
-        shm = toolbox.open_shm_once(config.SHM.TTM_USER_CONTROLLED)
+        shm = toolbox.get_shm(config.SHM.TTM_USER_CONTROLLED)
         if shm is not None:
             shm.set_data(np.array([tip, tilt]), True)
 

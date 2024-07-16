@@ -75,19 +75,19 @@ def display_and_measure(output_shm, zernike_coeffs, args):
 def run(args):
     if args.open:
         # Open DM stream
-        output_shm = toolbox.open_shm_once(config.SHM.DM_NCPA)
+        output_shm = toolbox.get_shm(config.SHM.DM_NCPA)
         if output_shm is None:
             print(f'{config.SHM.DM_NCPA} missing')
             exit()
 
         # Open slopes stream
-        slopes_shm = toolbox.open_shm_once(config.SHM.SLOPES)
+        slopes_shm = toolbox.get_shm(config.SHM.SLOPES)
         if slopes_shm is None:
             print(f'{config.SHM.SLOPES} missing')
             exit()
     else:
         # Open WFS reference stream
-        output_shm = toolbox.open_shm_once(config.SHM.WFS_REF)
+        output_shm = toolbox.get_shm(config.SHM.WFS_REF)
         if output_shm is None:
             print(f'{config.SHM.WFS_REF} missing')
             exit()

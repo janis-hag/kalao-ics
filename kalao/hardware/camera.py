@@ -15,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from kalao import database, logger
+from kalao import logger
 from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import file_handling
 

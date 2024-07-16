@@ -1,10 +1,11 @@
 import argparse
 from datetime import date, datetime, time, timedelta
 
-from kalao.definitions.enums import ReportType
 from kalao.utils import ktime, report
 
 import pytz
+
+from kalao.definitions.enums import ReportType
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Report Generator.')

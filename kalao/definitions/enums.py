@@ -41,11 +41,12 @@ class ServiceAction(StrEnum):
 
 
 class LoopStatus(Flag):
+    ALL_LOOPS_OFF = 0
+
     DM_LOOP_ON = auto()
     TTM_LOOP_ON = auto()
     ERROR = auto()
 
-    ALL_LOOPS_OFF = 0
     ALL_LOOPS_ON = DM_LOOP_ON | TTM_LOOP_ON
 
 
@@ -148,7 +149,7 @@ class PLCStatus(StrEnum):
 
 
 class ReturnCode(IntEnum):
-    # This is fixed in python 3.13
+    # TODO: This is fixed in python 3.13
     def _generate_next_value_(name, start, count, last_values):
         if not last_values:
             return start
@@ -189,6 +190,12 @@ class ReturnCode(IntEnum):
 
     SERVICES_OK = OK
     SERVICES_ERROR = auto()
+
+
+class AlarmLevel(StrEnum):
+    ALARM = 'ALARM'
+    WARNING = 'WARNING'
+    OK = 'OK'
 
 
 class ReportType(StrEnum):

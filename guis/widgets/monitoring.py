@@ -17,6 +17,8 @@ from guis.utils.string_formatter import KalAOFormatter
 from guis.utils.ui_loader import loadUi
 from guis.utils.widgets import KWidget
 
+from kalao.definitions.enums import AlarmLevel
+
 import config
 
 
@@ -91,12 +93,12 @@ class MonitoringWidget(KWidget, BackendDataMixin):
         lineedit.rounding = lineedit.metadata.get('rounding')
         lineedit.installEventFilter(self)
 
-        error_range = lineedit.metadata.get('error_range', [np.nan, np.nan])
+        alarm_range = lineedit.metadata.get('alarm_range', [np.nan, np.nan])
         warn_range = lineedit.metadata.get('warn_range', [np.nan, np.nan])
 
-        error_values = lineedit.metadata.get('error_values', [])
-        error_min = error_range[0]
-        error_max = error_range[1]
+        alarm_values = lineedit.metadata.get('alarm_values', [])
+        alarm_min = alarm_range[0]
+        alarm_max = alarm_range[1]
         warn_min = warn_range[0]
         warn_max = warn_range[1]
 
@@ -105,16 +107,16 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                 ' | Warning range: [{warn_min}{unit}; {warn_max}{unit}]',
                 warn_min=warn_min, warn_max=warn_max, unit=lineedit.unit)
 
-        if not np.isnan(error_min) or not np.isnan(error_min):
+        if not np.isnan(alarm_min) or not np.isnan(alarm_min):
             lineedit.ranges += self.formatter.format(
-                ' | Error range: [{error_min}{unit}; {error_max}{unit}]',
-                error_min=error_min, error_max=error_max, unit=lineedit.unit)
+                ' | Alarm range: [{alarm_min}{unit}; {alarm_max}{unit}]',
+                alarm_min=alarm_min, alarm_max=alarm_max, unit=lineedit.unit)
 
-        if len(error_values) > 0:
-            lineedit.ranges += ' | Error values: ' + ', '.join(
+        if len(alarm_values) > 0:
+            lineedit.ranges += ' | Alarm values: ' + ', '.join(
                 self.formatter.format('{value}{unit}', value=value,
                                       unit=lineedit.unit)
-                for value in error_values)
+                for value in alarm_values)
 
         lineedit.setText('No data')
         lineedit.setToolTip(f'No data{lineedit.ranges}')
@@ -128,7 +130,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
 
     def monitoring_updated(self, data):
         outdated = 0
-        errors = 0
+        alarms = 0
         warnings = 0
 
         for lineedit in self.lineedits.values():
@@ -159,14 +161,14 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                     f'{timestamp_text} (outdated){lineedit.ranges}')
                 outdated += 1
             else:
-                level, _, _ = monitoring.check_issues(lineedit.key,
+                level, _, _ = monitoring.check_alarms(lineedit.key,
                                                       lineedit.value)
 
-                if level == 'error':
+                if level == AlarmLevel.ALARM:
                     lineedit.setStyleSheet(
                         f'background-color: {Color.RED.name()};')
-                    errors += 1
-                elif level == 'warning':
+                    alarms += 1
+                elif level == AlarmLevel.WARNING:
                     lineedit.setStyleSheet(
                         f'background-color: {Color.ORANGE.name()};')
                     warnings += 1
@@ -187,12 +189,12 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                 ).total_seconds() > config.GUI.monitoring_max_age:
                 self.last_update_label.setStyleSheet(
                     f'color: {Color.RED.name()};')
-                errors += 1
+                alarms += 1
             else:
                 self.last_update_label.setStyleSheet(
                     f'color: {Color.BLACK.name()};')
 
-        self.updated.emit(outdated, warnings, errors)
+        self.updated.emit(outdated, warnings, alarms)
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.ToolTip:

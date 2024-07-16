@@ -11,7 +11,7 @@ import pytz
 from pymongo import DESCENDING
 from systemd import journal
 
-from kalao.definitions.enums import LogLevel, ReportType
+from kalao.definitions.enums import AlarmLevel, LogLevel, ReportType
 
 import config
 
@@ -146,7 +146,7 @@ def table_footer(str_io: io.StringIO, sizes: list[int],
 
 
 def generate(since: datetime, until: datetime, short: bool = False,
-             sort: str = 'failures,errors,warnings,key',
+             sort: str = 'failures,alarms,errors,warnings,key',
              type=ReportType.CLI) -> str:
     with io.StringIO() as str_io:
         start_document(str_io, type=type)
@@ -156,7 +156,7 @@ def generate(since: datetime, until: datetime, short: bool = False,
         if short:
             print(
                 str_io,
-                'Report mode: short. Only warnings and errors will be displayed.',
+                'Report mode: short. Only warnings, errors, alarms and failures will be displayed.',
                 type=type)
         else:
             print(str_io, 'Report mode: long', type=type)
@@ -172,19 +172,21 @@ def generate(since: datetime, until: datetime, short: bool = False,
         tz_cl = pytz.timezone('America/Santiago')
         tz_ch = pytz.timezone('Europe/Zurich')
 
-        sizes = [5, 19, 19]
+        sizes = [5, 19, 19, 19]
         table_header(str_io, [
-            'UTC', f'CH/GVA ({since.astimezone(tz_ch).strftime("%z")})',
+            '', 'UTC', f'CH/GVA ({since.astimezone(tz_ch).strftime("%z")})',
             f'CL/LSO ({since.astimezone(tz_cl).strftime("%z")})'
         ], sizes, type=type)
         table_row(str_io, [
             'Since',
             since.astimezone(timezone.utc).strftime(fmt),
+            since.astimezone(tz_ch).strftime(fmt),
             since.astimezone(tz_cl).strftime(fmt)
         ], sizes, type=type)
         table_row(str_io, [
             'Until',
             until.astimezone(timezone.utc).strftime(fmt),
+            until.astimezone(tz_ch).strftime(fmt),
             until.astimezone(tz_cl).strftime(fmt)
         ], sizes, type=type)
         table_footer(str_io, sizes, type=type)
@@ -198,7 +200,7 @@ def generate(since: datetime, until: datetime, short: bool = False,
                     if key not in row:
                         continue
 
-                    if key in ['warnings', 'errors', 'failures']:
+                    if key in ['warnings', 'errors', 'alarms', 'failures']:
                         t.append(sys.maxsize - row[key])
                     else:
                         t.append(row[key])
@@ -251,20 +253,20 @@ def generate(since: datetime, until: datetime, short: bool = False,
         for key in keys:
             points = 0
             warnings = 0
-            errors = 0
+            alarms = 0
 
             if key in data:
                 points = len(data[key])
 
                 for row in data[key]:
-                    level, _, _ = monitoring.check_issues(key, row['value'])
+                    level, _, _ = monitoring.check_alarms(key, row['value'])
 
-                    if level == 'error':
-                        errors += 1
-                    elif level == 'warning':
+                    if level == AlarmLevel.ALARM:
+                        alarms += 1
+                    elif level == AlarmLevel.WARNING:
                         warnings += 1
 
-            if short and errors == 0 and warnings == 0:
+            if short and alarms == 0 and warnings == 0:
                 continue
 
             monitoring_stats.append({
@@ -277,22 +279,80 @@ def generate(since: datetime, until: datetime, short: bool = False,
                     points,
                 'warnings':
                     warnings,
-                'errors':
-                    errors
+                'alarms':
+                    alarms
             })
 
         sizes = [29, 8, 8, 8]
-        table_header(str_io, ['Data', 'Points', 'Warnings', 'Errors'], sizes,
+        table_header(str_io, ['Data', 'Points', 'Warnings', 'Alarms'], sizes,
                      type=type)
 
         for row in sorted(monitoring_stats, key=sorting_fun):
             table_row(str_io, [
-                row['key'], row['points'], row['warnings'], row['errors']
+                row['key'], row['points'], row['warnings'], row['alarms']
             ], sizes, type=type)
 
         if len(monitoring_stats) == 0:
             table_row(str_io, ['Nothing to show', 'N/A', 'N/A', 'N/A'], sizes,
                       type=type)
+
+        table_footer(str_io, sizes, type=type)
+
+        ##### Services
+
+        title(str_io, 'Services', type=type)
+
+        keys = [
+            service['unit'] for service in config.Systemd.services.values()
+        ]
+
+        reader = journal.Reader()
+
+        for key in keys:
+            reader.add_match(_SYSTEMD_USER_UNIT=key)
+            reader.add_disjunction()
+            reader.add_match(USER_UNIT=key)
+            reader.add_disjunction()
+
+        reader.seek_realtime(since)
+
+        data = {}
+        for entry in reader:
+            if entry['__REALTIME_TIMESTAMP'] > until:
+                break
+
+            if 'UNIT_RESULT' in entry:
+                key = entry['USER_UNIT']
+
+                if key not in data:
+                    data[key] = []
+
+                data[key].append(entry)
+
+        services_stats = []
+
+        for key in keys:
+            failures = 0
+
+            if key in data:
+                failures = len(data[key])
+
+            if short and failures == 0:
+                continue
+
+            services_stats.append({
+                'key': key.removesuffix('.service'),
+                'failures': failures,
+            })
+
+        sizes = [24, 8]
+        table_header(str_io, ['Service', 'Failures'], sizes, type=type)
+
+        for row in sorted(services_stats, key=sorting_fun):
+            table_row(str_io, [row['key'], row['failures']], sizes, type=type)
+
+        if len(services_stats) == 0:
+            table_row(str_io, ['Nothing to show', 'N/A'], sizes, type=type)
 
         table_footer(str_io, sizes, type=type)
 
@@ -407,64 +467,6 @@ def generate(since: datetime, until: datetime, short: bool = False,
                        f'{timestamp} {origin:>17s} | [{level}] {message}',
                        type=type)
         end_code(str_io, type=type)
-
-        ##### Services
-
-        title(str_io, 'Services', type=type)
-
-        keys = [
-            service['unit'] for service in config.Systemd.services.values()
-        ]
-
-        reader = journal.Reader()
-
-        for key in keys:
-            reader.add_match(_SYSTEMD_USER_UNIT=key)
-            reader.add_disjunction()
-            reader.add_match(USER_UNIT=key)
-            reader.add_disjunction()
-
-        reader.seek_realtime(since)
-
-        data = {}
-        for entry in reader:
-            if entry['__REALTIME_TIMESTAMP'] > until:
-                break
-
-            if 'UNIT_RESULT' in entry:
-                key = entry['USER_UNIT']
-
-                if key not in data:
-                    data[key] = []
-
-                data[key].append(entry)
-
-        services_stats = []
-
-        for key in keys:
-            failures = 0
-
-            if key in data:
-                failures = len(data[key])
-
-            if short and failures == 0:
-                continue
-
-            services_stats.append({
-                'key': key.removesuffix('.service'),
-                'failures': failures,
-            })
-
-        sizes = [24, 8]
-        table_header(str_io, ['Service', 'Failures'], sizes, type=type)
-
-        for row in sorted(services_stats, key=sorting_fun):
-            table_row(str_io, [row['key'], row['failures']], sizes, type=type)
-
-        if len(services_stats) == 0:
-            table_row(str_io, ['Nothing to show', 'N/A'], sizes, type=type)
-
-        table_footer(str_io, sizes, type=type)
 
         end_document(str_io, type=type)
 

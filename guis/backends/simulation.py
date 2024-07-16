@@ -11,6 +11,7 @@ from astropy.io import fits
 from PySide6.QtCore import QTimer
 
 from kalao import database
+from kalao.hardware import adc
 from kalao.interfaces import fake_data
 from kalao.utils import kmath, kstring, ktools, zernike
 from kalao.utils.rprint import rprint
@@ -529,13 +530,20 @@ class MainBackend(FakeSHMFPSBackend):
             data, 'memory', {
                 'sequencer_status':
                     SequencerStatus.BUSY.value,
-                'centering_manual':
+                'centering_manual_flag':
                     False,
                 'adc_synchronisation':
                     self.internal_state['adc_synchronisation'],
                 'ttm_offloading':
                     self.internal_state['ttm_offloading']
             })
+
+        adc_angle, adc_offset = adc._compute_angle_and_offset(
+            self.internal_state['adc1_angle'],
+            self.internal_state['adc2_angle'])
+
+        self.internal_state['adc_angle'] = adc_angle
+        self.internal_state['adc_offset'] = adc_offset
 
         self._update_dict(
             data, 'hw', {
@@ -561,6 +569,10 @@ class MainBackend(FakeSHMFPSBackend):
                     self.internal_state['adc2_angle'],
                 'adc2_state':
                     self.internal_state['adc2_state'],
+                'adc_angle':
+                    self.internal_state['adc_angle'],
+                'adc_offset':
+                    self.internal_state['adc_offset'],
                 'filterwheel_filter_position':
                     self.internal_state['filterwheel_filter_position'],
                 'filterwheel_filter_name':

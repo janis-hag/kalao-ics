@@ -10,12 +10,7 @@ import config
 
 
 def get_offloading() -> bool:
-    offloading = memory.get('ttm_offloading')
-
-    if offloading is None:
-        return True
-    else:
-        return offloading
+    return memory.get('ttm_offloading', type=bool, default=True)
 
 
 def set_offloading(state: bool) -> None:
@@ -36,7 +31,7 @@ def offload_to_telescope(gain: float = config.TTM.offload_gain,
     if not get_offloading():
         return ReturnCode.OK
 
-    ttm_shm = toolbox.open_shm_once(input_stream)
+    ttm_shm = toolbox.get_shm(input_stream)
 
     if ttm_shm is None:
         logger.error('ttm', f'{input_stream} is missing')

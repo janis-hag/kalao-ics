@@ -17,7 +17,7 @@ import config
 
 
 def run():
-    nuvu_in_shm = toolbox.open_shm_once(config.SHM.NUVU_RAW)
+    nuvu_in_shm = toolbox.get_shm(config.SHM.NUVU_RAW)
     nuvu_out_shm = toolbox.open_or_create_shm(config.SHM.NUVU, (64, 64),
                                               np.uint16)
 

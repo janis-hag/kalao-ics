@@ -23,11 +23,11 @@ class AlignmentBackend(SHMFPSBackend):
     def __init__(self):
         super().__init__()
 
-        self.nuvu_shm = toolbox.open_shm_once(config.SHM.NUVU)
-        self.poke_shm = toolbox.open_shm_once(config.SHM.DM_REGISTRATION)
-        self.slopes_shm = toolbox.open_shm_once(config.SHM.SLOPES)
+        self.nuvu_shm = toolbox.get_shm(config.SHM.NUVU)
+        self.poke_shm = toolbox.get_shm(config.SHM.DM_REGISTRATION)
+        self.slopes_shm = toolbox.get_shm(config.SHM.SLOPES)
 
-        self.slopes_fps = toolbox.open_fps_once(config.FPS.SHWFS)
+        self.slopes_fps = toolbox.get_fps(config.FPS.SHWFS)
 
     @emit
     @timeit

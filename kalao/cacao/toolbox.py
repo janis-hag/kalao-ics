@@ -52,11 +52,12 @@ shm_cache: dict[str, SHMInfo] = {}
 fps_cache: dict[str, FPSInfo] = {}
 
 
-def open_or_create_shm(shm_name: str, shape: tuple[int], dtype: type) -> SHM:
+def open_or_create_shm(shm_name: str, shape: tuple[int, ...],
+                       dtype: type) -> SHM:
     shm_path = milk_path / (shm_name+'.im.shm')
 
     if shm_path.exists():
-        shm = open_shm_once(shm_name)
+        shm = get_shm(shm_name)
     else:
         img = np.zeros(shape, dtype)
 
@@ -70,7 +71,7 @@ def open_or_create_shm(shm_name: str, shape: tuple[int], dtype: type) -> SHM:
     return shm
 
 
-def open_shm_once(shm_name: str) -> SHM:
+def get_shm(shm_name: str) -> SHM | None:
     shm_info = shm_cache.get(shm_name)
     shm_path = milk_path / (shm_name+'.im.shm')
 
@@ -91,7 +92,7 @@ def open_shm_once(shm_name: str) -> SHM:
         return shm
 
 
-def open_fps_once(fps_name: str) -> FPS:
+def get_fps(fps_name: str) -> FPS | None:
     fps_info = fps_cache.get(fps_name)
     fps_path = milk_path / (fps_name+'.fps.shm')
 
@@ -118,7 +119,7 @@ def zero_stream(stream_or_name: str | SHM | None) -> ReturnCode:
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_shm = open_shm_once(stream_or_name)
+        stream_shm = get_shm(stream_or_name)
 
         if stream_shm is None:
             return ReturnCode.GENERIC_ERROR
@@ -136,7 +137,7 @@ def save_stream_to_fits(stream_or_name: str | SHM | None,
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_shm = open_shm_once(stream_or_name)
+        stream_shm = get_shm(stream_or_name)
 
         if stream_shm is None:
             return ReturnCode.GENERIC_ERROR
@@ -153,7 +154,7 @@ def load_fits_to_stream(fits_file: str | Path,
     elif isinstance(stream_or_name, SHM):
         stream_shm = stream_or_name
     else:
-        stream_shm = open_shm_once(stream_or_name)
+        stream_shm = get_shm(stream_or_name)
 
         if stream_shm is None:
             return ReturnCode.GENERIC_ERROR
@@ -173,7 +174,7 @@ ReturnValue = TypeVar('ReturnValue', int, float, str, bool)
 
 def set_fps_value(fps_name: str, key: str,
                   value: ReturnValue) -> ReturnValue | None:
-    fps = open_fps_once(fps_name)
+    fps = get_fps(fps_name)
 
     if fps is None:
         logger.error('ao', f'Can\'t set {key}, {fps_name} is missing')
@@ -196,6 +197,8 @@ def set_tmux_value(session_name: str, key: str,
             pane.send_keys(f'{key}()', enter=True)
         else:
             pane.send_keys(f'{key}({value})', enter=True)
+
+        time.sleep(1)
 
         stdout = pane.cmd('capture-pane', '-p').stdout
 

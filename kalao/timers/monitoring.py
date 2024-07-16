@@ -25,7 +25,7 @@ from kalao.utils import kstring
 
 import schedule
 
-from kalao.definitions.enums import CameraServerStatus, LoopStatus
+from kalao.definitions.enums import AlarmLevel, CameraServerStatus, LoopStatus
 
 import config
 
@@ -99,7 +99,7 @@ def gather_general() -> dict[str, Any]:
     data['adc_synchronisation'] = adc.get_synchronisation()
 
     # Nuvu (camstack) stream
-    nuvu_raw_shm = toolbox.open_shm_once(config.SHM.NUVU_RAW)
+    nuvu_raw_shm = toolbox.get_shm(config.SHM.NUVU_RAW)
 
     if nuvu_raw_shm is not None:
         stream_keywords = nuvu_raw_shm.get_keywords()
@@ -117,7 +117,7 @@ def gather_ao() -> dict[str, Any]:
     data = {}
 
     # Nuvu (camstack) stream
-    nuvu_raw_shm = toolbox.open_shm_once(config.SHM.NUVU_RAW)
+    nuvu_raw_shm = toolbox.get_shm(config.SHM.NUVU_RAW)
 
     if nuvu_raw_shm is not None:
         stream_keywords = nuvu_raw_shm.get_keywords()
@@ -136,14 +136,14 @@ def gather_ao() -> dict[str, Any]:
         data['wfs_framerate'] = stream_keywords.get('MFRATE', np.nan)
 
     # Nuvu process
-    nuvu_fps = toolbox.open_fps_once(config.FPS.NUVU)
+    nuvu_fps = toolbox.get_fps(config.FPS.NUVU)
 
     if nuvu_fps is not None and nuvu_fps.run_isrunning():
         data['wfs_autogain_on'] = nuvu_fps.get_param('autogain_on')
         data['wfs_autogain_setting'] = nuvu_fps.get_param('autogain_setting')
 
     # BMC process
-    bmc_fps = toolbox.open_fps_once(config.FPS.BMC)
+    bmc_fps = toolbox.get_fps(config.FPS.BMC)
 
     if bmc_fps is not None and bmc_fps.run_isrunning():
         data['dm_max_stroke'] = bmc_fps.get_param('max_stroke')
@@ -151,7 +151,7 @@ def gather_ao() -> dict[str, Any]:
         data['dm_target_stroke'] = bmc_fps.get_param('target_stroke')
 
     # SHWFS process
-    shwfs_fps = toolbox.open_fps_once(config.FPS.SHWFS)
+    shwfs_fps = toolbox.get_fps(config.FPS.SHWFS)
 
     if shwfs_fps is not None and shwfs_fps.run_isrunning():
         data['wfs_algorithm'] = shwfs_fps.get_param('algorithm')
@@ -162,7 +162,7 @@ def gather_ao() -> dict[str, Any]:
         data['wfs_slope_y_avg'] = shwfs_fps.get_param('slope_y_avg')
 
     # Tip/tilt stream
-    ttm_shm = toolbox.open_shm_once(config.SHM.TTM)
+    ttm_shm = toolbox.get_shm(config.SHM.TTM)
 
     if ttm_shm is not None:
         # Check turned off to prevent timeout. Data may be obsolete
@@ -172,7 +172,7 @@ def gather_ao() -> dict[str, Any]:
         data['ttm_tilt'] = float(tt_data[1])
 
     # DM loop process
-    dmloop_fps = toolbox.open_fps_once(config.FPS.DMLOOP)
+    dmloop_fps = toolbox.get_fps(config.FPS.DMLOOP)
 
     if dmloop_fps is not None and dmloop_fps.run_isrunning():
         data['dmloop_on'] = dmloop_fps.get_param('loopON')
@@ -181,7 +181,7 @@ def gather_ao() -> dict[str, Any]:
         data['dmloop_limit'] = dmloop_fps.get_param('looplimit')
 
     # TTM loop process
-    ttmloop_fps = toolbox.open_fps_once(config.FPS.TTMLOOP)
+    ttmloop_fps = toolbox.get_fps(config.FPS.TTMLOOP)
 
     if ttmloop_fps is not None and ttmloop_fps.run_isrunning():
         data['ttmloop_on'] = ttmloop_fps.get_param('loopON')
@@ -192,36 +192,36 @@ def gather_ao() -> dict[str, Any]:
     return data
 
 
-def check_issues(key: str, value: Any) -> [str, str, Any]:
+def check_alarms(key: str, value: Any) -> [str, str, Any]:
     metadata = database.definitions['monitoring']['metadata'][key]
 
-    error_values = metadata.get('error_values', [])
+    alarm_values = metadata.get('alarm_values', [])
     is_numeric = isinstance(value, float) or isinstance(value, int)
 
-    if value in error_values or (is_numeric and np.isnan(value) and
-                                 np.isnan(error_values).any()):
-        return 'error', '==', value
+    if value in alarm_values or (is_numeric and np.isnan(value) and
+                                 np.isnan(alarm_values).any()):
+        return AlarmLevel.ALARM, '==', value
     elif is_numeric:
-        error_range = metadata.get('error_range', [np.nan, np.nan])
+        alarm_range = metadata.get('alarm_range', [np.nan, np.nan])
         warn_range = metadata.get('warn_range', [np.nan, np.nan])
 
-        error_min = error_range[0]
-        error_max = error_range[1]
+        alarm_min = alarm_range[0]
+        alarm_max = alarm_range[1]
         warn_min = warn_range[0]
         warn_max = warn_range[1]
 
-        if value > error_max:
-            return 'error', '>', error_max
-        elif value < error_min:
-            return 'error', '<', error_min
+        if value > alarm_max:
+            return AlarmLevel.ALARM, '>', alarm_max
+        elif value < alarm_min:
+            return AlarmLevel.ALARM, '<', alarm_min
         elif value > warn_max:
-            return 'warning', '>', warn_max
+            return AlarmLevel.WARNING, '>', warn_max
         elif value < warn_min:
-            return 'warning', '<', warn_min
+            return AlarmLevel.ALARM.WARNING, '<', warn_min
         else:
-            return '', '', None
+            return AlarmLevel.OK, '', None
     else:
-        return '', '', None
+        return AlarmLevel.OK, '', None
 
 
 def _update_general() -> None:
@@ -275,19 +275,19 @@ def _round(key: str, value: Any):
 
 
 def _check_and_log(key: str, value: Any, timestamp: datetime) -> None:
-    if config.Monitoring.issues_repetition_rate is None:
+    if config.Monitoring.alarms_repetition_rate is None:
         return
 
     metadata = database.definitions['monitoring']['metadata'][key]
 
-    level, condition, threshold = check_issues(key, value)
+    level, condition, threshold = check_alarms(key, value)
 
     if level != '':
         unit = kstring.get_unit_string(metadata)
 
-        if level == 'error':
+        if level == AlarmLevel.ALARM:
             log_func = logger.error
-        elif level == 'warning':
+        elif level == AlarmLevel.WARNING:
             log_func = logger.warn
 
         if condition == '>':
@@ -306,7 +306,7 @@ def _check_and_log(key: str, value: Any, timestamp: datetime) -> None:
             last = (data['current']['timestamp'] -
                     data['since']['timestamp']).total_seconds()
 
-            if last // config.Monitoring.issues_repetition_rate == since // config.Monitoring.issues_repetition_rate:
+            if last // config.Monitoring.alarms_repetition_rate == since // config.Monitoring.alarms_repetition_rate:
                 return
 
         hr, min, sec = _sec_to_hms(since)

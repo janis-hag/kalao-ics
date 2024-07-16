@@ -34,7 +34,7 @@ target_spt:
   group: Target
 
 # Centering
-centering_manual:
+centering_manual_flag:
   short: Manual centering flag
   long: Flag to indicate if manual centering is needed
   unit:
