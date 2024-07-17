@@ -34,9 +34,22 @@ from kalao.definitions.enums import ObservationType, PLCStatus, RelayState
 kalao_ics_path = Path(__file__).absolute().parent
 epsilon = 1e-12
 
-version = subprocess.check_output([
-    'git', 'describe', '--abbrev=7', '--dirty', '--always', '--tags'
-], cwd=kalao_ics_path).decode().strip()
+
+def get_git_version(repository: Path) -> str:
+    return subprocess.check_output([
+        'git', 'describe', '--abbrev=7', '--dirty', '--always', '--tags'
+    ], cwd=repository).decode().strip()
+
+
+version = get_git_version(kalao_ics_path)
+
+git_repositories = [
+    Path('/home/kalao/kalao-ics'),
+    Path('/home/kalao/kalao-fli'),
+    Path('/home/kalao/kalao-camstack'),
+    Path('/home/kalao/kalao-cacao-workdir'),
+    Path('/home/kalao/kalao-cacao-src/milk/plugins/kalao-src'),
+]
 
 
 class IPPower:

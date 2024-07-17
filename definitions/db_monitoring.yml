@@ -383,7 +383,7 @@ gpu_power_draw:
   short: GPU Power draw
   long: Current power draw by the GPU
   unit: W
-  rounding: 0
+  rounding: 1
   group: GPU
 
 gpu_memory_used:
@@ -565,6 +565,7 @@ dm_max_stroke:
   short: DM max stroke
   long: Maximum stroke of the DM
   unit:
+  rounding: 2
   group: Deformable Mirror
 
 dm_stroke_mode:
@@ -577,6 +578,7 @@ dm_target_stroke:
   short: DM target stroke
   long: Target stroke of the DM
   unit:
+  rounding: 2
   group: Deformable Mirror
 
 # AO loops status
@@ -591,6 +593,7 @@ dmloop_gain:
   short: DM Loop gain
   long: DM Loop gain
   unit:
+  rounding: 2
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP GAIN
 
@@ -598,6 +601,7 @@ dmloop_mult:
   short: DM Loop mult. coeff.
   long: DM Loop multiplication coefficient
   unit:
+  rounding: 2
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS LOOP MULT
 
@@ -605,6 +609,7 @@ dmloop_limit:
   short: DM Loop limit
   long: DM Loop limit
   unit:
+  rounding: 2
   group: Adaptive Optics Loops
 
 ttmloop_on:
@@ -618,6 +623,7 @@ ttmloop_gain:
   short: TTM Loop gain
   long: TTM Loop gain
   unit:
+  rounding: 2
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP GAIN
 
@@ -625,6 +631,7 @@ ttmloop_mult:
   short: TTM Loop mult. coeff.
   long: TTM Loop multiplication coefficient
   unit:
+  rounding: 2
   group: Adaptive Optics Loops
   fits_keyword: HIERARCH ESO AOS TT LOOP MULT
 
@@ -632,4 +639,5 @@ ttmloop_limit:
   short: TTM Loop limit
   long: TTM Loop limit
   unit:
+  rounding: 2
   group: Adaptive Optics Loops

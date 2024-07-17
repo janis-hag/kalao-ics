@@ -79,7 +79,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         with QSignalBlocker(self.calib_combobox):
             self.calib_combobox.addItem('Loaded')
-            self.calib_combobox.addItem('Configuration')
+            self.calib_combobox.addItem('Saved')
 
         for key in dir(self):
             attr = getattr(self, key)
@@ -132,19 +132,23 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         chart.legend().hide()
 
+        ### Zonal Response Matrix tab
+
+        self.zRM_view.updateColormap(colormaps.CoolWarm())
+
+        self.zRM_timer = QTimer(self)
+        self.zRM_timer.setInterval(self.zRM_timer_interval)
+        self.zRM_timer.timeout.connect(self.zRM_next_image)
+
         ### Logs tab
 
         self.calibration_textedit.document().setDefaultStyleSheet(
             ascii2html.stylesheet)
 
-        ### Calibration sequence
+        ### Common
 
         self.calibration_loopname_label.updateText(loop_name=f'KalAO-{conf}')
         self.calibration_loopnumber_label.updateText(loop_number=self.loop)
-
-        self.zRM_view.updateColormap(colormaps.CoolWarm())
-
-        ### Common
 
         self.step_post(None, None)
 
@@ -191,6 +195,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
                         elif key == 'load':
                             i = self.tabWidget.indexOf(self.calibration_tab)
                             self.tabWidget.setCurrentIndex(i)
+                            self.calib_combobox.setCurrentText('Loaded')
                     else:
                         getattr(self,
                                 f'calibration_{key}_indicator').setStatus(
@@ -260,7 +265,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         self.modesWFS_min = np.inf
         self.modes_wfs_max = -np.inf
 
-        if self.calib_combobox.currentText() == 'Configuration':
+        if self.calib_combobox.currentText() == 'Saved':
             data = self.modes_data.get('CMmodesDM', {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number, data.shape[0])
@@ -326,7 +331,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         self.update_calib_images()
 
     def update_calib_images(self):
-        if self.calib_combobox.currentText() == 'Configuration':
+        if self.calib_combobox.currentText() == 'Saved':
             self.update_image('wfsref', 'wfsref', symetric=True)
             self.update_image('wfsrefc', 'wfsrefc', symetric=True)
             self.update_image('wfsmask', 'wfsmask')
@@ -352,7 +357,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
                               cube=True, symetric=True, first_axis=False)
 
     def update_all_modes_images(self):
-        if self.calib_combobox.currentText() == 'Configuration':
+        if self.calib_combobox.currentText() == 'Saved':
             self.create_images_tile(
                 self.modes_data.get('CMmodesDM').get('data'),
                 self.DMmodes_tiled_view, first_axis=True)
@@ -592,9 +597,6 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
             self.update_zRM_view()
 
-            self.zRM_timer = QTimer(self)
-            self.zRM_timer.setInterval(self.zRM_timer_interval)
-            self.zRM_timer.timeout.connect(self.zRM_next_image)
             self.zRM_play_button.setChecked(True)
         else:
             self.zRM_img = None

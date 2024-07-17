@@ -232,14 +232,16 @@ def autofocus() -> ReturnCode:
     f0_db = database.get_last('obs', 'focusing_f0')
     f1_db = database.get_last('obs', 'focusing_f1')
 
-    if f0_db == {} or (datetime.now(timezone.utc) - f0_db['timestamp']
-                       ).total_seconds() > config.Focusing.autofocus_max_age:
+    if f0_db['value'] is None or (datetime.now(timezone.utc) -
+                                  f0_db['timestamp']).total_seconds(
+                                  ) > config.Focusing.autofocus_max_age:
         f0 = config.Focusing.autofocus_f0
     else:
         f0 = f0_db['value']
 
-    if f1_db == {} or (datetime.now(timezone.utc) - f1_db['timestamp']
-                       ).total_seconds() > config.Focusing.autofocus_max_age:
+    if f1_db['value'] is None or (datetime.now(timezone.utc) -
+                                  f1_db['timestamp']).total_seconds(
+                                  ) > config.Focusing.autofocus_max_age:
         f1 = config.Focusing.autofocus_f1
     else:
         f1 = f1_db['value']

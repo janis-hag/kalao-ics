@@ -15,7 +15,7 @@ class ObservationType(StrEnum):
 class CenteringMode(StrEnum):
     MANUAL = 'man'
     AUTOMATIC = 'auto'
-    NONE = 'non'
+    NONE = 'no'
 
 
 class AdaptiveOpticsMode(StrEnum):

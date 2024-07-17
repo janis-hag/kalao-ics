@@ -116,11 +116,11 @@ def get_last(collection_name: str, key: str) -> dict:
 
 
 def get_last_value(collection_name: str, key: str) -> Any:
-    return get_last(collection_name, key).get('value')
+    return get_last(collection_name, key)['value']
 
 
 def get_last_time(collection_name: str, key: str) -> Any:
-    return get_last(collection_name, key).get('timestamp')
+    return get_last(collection_name, key)['timestamp']
 
 
 def get_all_last(collection_name: str, keys: list | KeysView | None = None,

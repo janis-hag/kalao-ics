@@ -29,7 +29,7 @@ def kalao_status() -> str:
     """
 
     sequencer_status = database.get_last('obs', 'sequencer_status')
-    sequencer_status_value = sequencer_status.get('value')
+    sequencer_status_value = sequencer_status['value']
 
     if not sequencer_status_value:
         # If the status is not set, assume that the sequencer is down

@@ -401,6 +401,10 @@ def _header_from_last_telescope_header() -> pd.DataFrame:
 
     tcs_header_path_record = database.get_last('obs', 'tcs_header_path')
 
+    if tcs_header_path_record['value'] is None:
+        logger.error('sequencer', 'No TCS header file record in database')
+        return _header_empty()
+
     header_age = (datetime.now(timezone.utc) -
                   tcs_header_path_record['timestamp']).total_seconds()
 
@@ -409,7 +413,7 @@ def _header_from_last_telescope_header() -> pd.DataFrame:
     if header_age > config.FITS.tcs_header_validity:
         logger.warn(
             'sequencer',
-            f'{tcs_header_path_record["value"]} is {header_age / 60} minutes old. Discarding obsolete header.'
+            f'{tcs_header_path_record["value"]} is {header_age / 60:.1f} minutes old. Discarding obsolete TCS header.'
         )
         return _header_empty()
 
@@ -417,7 +421,8 @@ def _header_from_last_telescope_header() -> pd.DataFrame:
         return _header_from_fits_file(tcs_header_path)
 
     else:
-        logger.error('sequencer', f'Header file not found: {tcs_header_path}')
+        logger.error('sequencer',
+                     f'TCS header file not found: {tcs_header_path}')
         return _header_empty()
 
 

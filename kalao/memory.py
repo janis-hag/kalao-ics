@@ -45,7 +45,7 @@ def set(name: str, value: str | int | float | bool) -> bool:
 
 
 def mset(mapping: dict[str, str | int | float | bool]) -> bool:
-    for key, value in mapping:
+    for key, value in mapping.items():
         if isinstance(value, bool):
             mapping[key] = int(value)
 

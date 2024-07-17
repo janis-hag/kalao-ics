@@ -33,10 +33,10 @@ class FollowMode(StrEnum):
 class FITSCardsModel(QAbstractTableModel):
     def __init__(self, parent):
         super().__init__(parent)
-        self.data = []
+        self._data = []
 
     def rowCount(self, parent):
-        return len(self.data)
+        return len(self._data)
 
     def columnCount(self, parent):
         return 3
@@ -46,7 +46,7 @@ class FITSCardsModel(QAbstractTableModel):
         col = index.column()
 
         if role == Qt.DisplayRole:
-            return self.data[row][col]
+            return self._data[row][col]
 
         return None
 
@@ -63,7 +63,7 @@ class FITSCardsModel(QAbstractTableModel):
     def update_data(self, header):
         self.layoutAboutToBeChanged.emit()
 
-        self.data = []
+        self._data = []
 
         for keyword in header.keys():
             if keyword == 'COMMENT':
@@ -74,7 +74,7 @@ class FITSCardsModel(QAbstractTableModel):
             else:
                 true_keyword = keyword
 
-            self.data.append(
+            self._data.append(
                 (true_keyword, header[keyword], header.comments[keyword]))
 
         self.layoutChanged.emit()
@@ -401,7 +401,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
             # Update centering flag only if centering requested KalAO ICS and validation was by user
             if not self.centering_requested_by_user and requested_by_user:
-                self.action_send(self.centering_button,
+                self.action_send(self.exit_manual_centering_button,
                                  self.backend.centering_validate)
 
             self.centering = False

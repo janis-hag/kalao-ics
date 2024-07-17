@@ -65,6 +65,8 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     saturation = np.nan
     timestamp = None
 
+    hdul = None
+
     def __init__(self, backend, parent=None):
         super().__init__(parent)
 

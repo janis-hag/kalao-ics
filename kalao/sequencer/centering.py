@@ -12,9 +12,10 @@ from kalao.sequencer import seq_utils
 from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import offsets, starfinder
 
-from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
-                                     FlipMirrorPosition, ObservationType,
-                                     ReturnCode, SequencerStatus, ShutterState)
+from kalao.definitions.enums import (AdaptiveOpticsMode, CameraStatus,
+                                     CenteringMode, FlipMirrorPosition,
+                                     ObservationType, ReturnCode,
+                                     SequencerStatus, ShutterState)
 from kalao.definitions.exceptions import (
     AbortRequested, AutomaticCenteringTimeout, CameraTakeImageFailed,
     CenteringException, CenteringFluxWFSTooLow, CenteringMaxIter,
@@ -190,7 +191,7 @@ def request_manual_centering() -> ReturnCode:
         if centering is False:
             break
 
-        if seq_utils.is_aborting():
+        elif seq_utils.is_aborting():
             set_manual_centering_flag(False)
             raise AbortRequested
 
@@ -202,14 +203,14 @@ def request_manual_centering() -> ReturnCode:
         raise ManualCenteringTimeout
 
     # If the user validated the centering before exposure ended, wait
-    exposure_status = camera.get_exposure_status()
-    while exposure_status['remaining_time'] > 0:
+    camera_status = camera.get_camera_status()
+    while camera_status in [CameraStatus.EXPOSING, CameraStatus.READING_CCD]:
         time.sleep(1)
 
         if seq_utils.is_aborting():
             raise AbortRequested
 
-        exposure_status = camera.get_exposure_status()
+        camera_status = camera.get_camera_status()
 
     return ReturnCode.CENTERING_OK
 
@@ -222,7 +223,11 @@ def validate_manual_centering() -> ReturnCode:
 
 
 def invalidate_manual_centering() -> ReturnCode:
-    set_manual_centering_flag(False)
+    flag = get_manual_centering_flag()
+
+    if flag is not False:
+        logger.info('centering', 'Manual centering cancelled.')
+        set_manual_centering_flag(False)
 
     return ReturnCode.CENTERING_OK
 

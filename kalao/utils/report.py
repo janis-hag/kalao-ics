@@ -159,10 +159,17 @@ def generate(since: datetime, until: datetime, short: bool = False,
                 'Report mode: short. Only warnings, errors, alarms and failures will be displayed.',
                 type=type)
         else:
-            print(str_io, 'Report mode: long', type=type)
+            print(str_io, 'Report mode: long.', type=type)
         print(str_io,
               f'Generated: {datetime.now(timezone.utc).strftime(fmt)} UTC',
               type=type)
+
+        for repo in config.git_repositories:
+            if '-dirty' in config.get_git_version(repo):
+                print(
+                    str_io,
+                    f'Warning: {repo} git repository contains uncommited changes.',
+                    type=type)
 
         title(str_io, 'Time', type=type)
 

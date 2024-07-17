@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 
 from PySide6.QtGui import Qt
@@ -17,9 +16,6 @@ from guis.widgets.plots import PlotsWidget
 
 
 class MainWindow(KMainWindow, BackendDataMixin):
-    previous_update_time = 0
-    fps = 0
-
     def __init__(self, backend, expert_mode=False, on_sky_unit=False,
                  deadman=False, parent=None):
         super().__init__(parent)
@@ -51,10 +47,6 @@ class MainWindow(KMainWindow, BackendDataMixin):
                 widget,
                 widget.windowTitle().removesuffix(" - KalAO"))
 
-        self.fps_label = KLabel("Streams refresh rate : {fps:04.1f} FPS |",
-                                parent=self)
-        self.statusBar().addPermanentWidget(self.fps_label)
-
         self.last_update_label = KLabel(parent=self)
         self.statusBar().addPermanentWidget(self.last_update_label)
 
@@ -77,7 +69,6 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.engineering.updated.connect(self.on_engineering_updated)
         self.logs.logged.connect(self.on_logs_logged)
 
-        backend.streams_all_updated.connect(self.streams_all_updated)
         backend.all_updated.connect(self.all_updated)
 
         self.tabwidget.currentChanged.connect(self.on_tabwidget_currentChanged)
@@ -172,15 +163,6 @@ class MainWindow(KMainWindow, BackendDataMixin):
         else:
             self.engineering.setEnabled(False)
             self.loop_controls.setEnabled(False)
-
-    def streams_all_updated(self, data):
-        now = time.monotonic()
-
-        self.fps = 0.9 * self.fps + 0.1 / (now - self.previous_update_time)
-
-        self.fps_label.updateText(fps=self.fps)
-
-        self.previous_update_time = now
 
     def all_updated(self, data):
         self.last_update_label.setText(
