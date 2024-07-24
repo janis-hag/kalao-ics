@@ -61,7 +61,8 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                             QSizePolicy.Expanding))
 
             self.data_layout.itemAt(i).addWidget(groupbox)
-            column_length[i] += groupbox.layout().count()
+            column_length[i] += groupbox.layout().count(
+            ) + 1  # +1 to account space taken by title
 
         self.backend.monitoring_updated.connect(self.monitoring_updated)
 

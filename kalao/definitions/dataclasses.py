@@ -3,10 +3,10 @@ from datetime import datetime
 
 import numpy as np
 
-from kalao.definitions.enums import LogLevel
+from kalao.definitions.enums import LogLevel, ObservationType
 
 
-@dataclass
+@dataclass(frozen=True)
 class ROI:
     x: int
     y: int
@@ -14,7 +14,7 @@ class ROI:
     height: int
 
 
-@dataclass
+@dataclass(frozen=True)
 class Star:
     x: float
     y: float
@@ -26,12 +26,22 @@ class Star:
     fwhm: float = field(init=False)
 
     def __post_init__(self):
-        self.fwhm = np.sqrt(self.fwhm_w * self.fwhm_h)
+        object.__setattr__(self, 'fwhm', np.sqrt(self.fwhm_w * self.fwhm_h))
 
 
-@dataclass
+@dataclass(frozen=True)
 class LogEntry:
     level: LogLevel
     timestamp: datetime
     origin: str
     message: str
+
+
+@dataclass
+class CalibrationPose:
+    type: ObservationType
+    filter: str | None
+    exposure_time: float
+    median: float = np.nan
+    status: str = 'IDLE'
+    error_text: str = ''

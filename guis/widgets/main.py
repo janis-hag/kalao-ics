@@ -37,15 +37,14 @@ class MainWidget(KWidget, BackendDataMixin):
         self.logo_label.load(str(Logo.svg))
         self.logo_label.renderer().setAspectRatioMode(Qt.KeepAspectRatio)
 
-        self.camera_exposure_time_lineedit.updateText(exposure_time=np.nan)
-        self.camera_remaining_time_lineedit.updateText(remaining_time=np.nan)
-        self.camera_remaining_frames_lineedit.updateText(
-            remaining_frames=np.nan)
-        self.camera_ccd_temperature_lineedit.updateText(ccd_temperature=np.nan)
-        self.wfs_emgain_lineedit.updateText(emgain=np.nan)
-        self.wfs_exposuretime_lineedit.updateText(exposuretime=np.nan)
-        self.wfs_framerate_lineedit.updateText(framerate=np.nan)
-        self.wfs_ccd_temperature_lineedit.updateText(ccd_temperature=np.nan)
+        self.camera_exposure_time_spinbox.setValue(np.nan)
+        self.camera_remaining_time_spinbox.setValue(np.nan)
+        self.camera_remaining_frames_spinbox.setValue(-1)
+        self.camera_ccd_temperature_spinbox.setValue(np.nan)
+        self.wfs_emgain_spinbox.setValue(-1)
+        self.wfs_exposuretime_spinbox.setValue(np.nan)
+        self.wfs_framerate_spinbox.setValue(np.nan)
+        self.wfs_ccd_temperature_spinbox.setValue(np.nan)
 
         self.wfs = WFSWidget(backend, parent=self)
         self.camera = CameraWidget(backend, parent=self)
@@ -133,24 +132,20 @@ class MainWidget(KWidget, BackendDataMixin):
 
         exposure_time = self.consume_dict(data, 'camera', 'exposure_time')
         if exposure_time is not None:
-            self.camera_exposure_time_lineedit.updateText(
-                exposure_time=exposure_time)
+            self.camera_exposure_time_spinbox.setValue(exposure_time)
 
         remaining_time = self.consume_dict(data, 'camera', 'remaining_time')
         if remaining_time is not None:
-            self.camera_remaining_time_lineedit.updateText(
-                remaining_time=remaining_time)
+            self.camera_remaining_time_spinbox.setValue(remaining_time)
 
         remaining_frames = self.consume_dict(data, 'camera',
                                              'remaining_frames')
         if remaining_frames is not None:
-            self.camera_remaining_frames_lineedit.updateText(
-                remaining_frames=remaining_frames)
+            self.camera_remaining_frames_spinbox.setValue(remaining_frames)
 
         ccd = self.consume_dict(data, 'camera', 'ccd')
         if ccd is not None:
-            self.camera_ccd_temperature_lineedit.updateText(
-                ccd_temperature=ccd)
+            self.camera_ccd_temperature_spinbox.setValue(ccd)
 
         ### WFS
 
@@ -180,24 +175,22 @@ class MainWidget(KWidget, BackendDataMixin):
         wfs_emgain = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
                                               'EMGAIN')
         if wfs_emgain is not None:
-            self.wfs_emgain_lineedit.updateText(emgain=wfs_emgain)
+            self.wfs_emgain_spinbox.setValue(wfs_emgain)
 
         wfs_exposuretime = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
                                                     'EXPTIME')
         if wfs_exposuretime is not None:
-            self.wfs_exposuretime_lineedit.updateText(
-                exposuretime=wfs_exposuretime)
+            self.wfs_exposuretime_spinbox.setValue(wfs_exposuretime)
 
         wfs_framerate = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
                                                  'MFRATE')
         if wfs_framerate is not None:
-            self.wfs_framerate_lineedit.updateText(framerate=wfs_framerate)
+            self.wfs_framerate_spinbox.setValue(wfs_framerate)
 
         wfs_ccd_temp = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
                                                 'T_CCD')
         if wfs_ccd_temp is not None:
-            self.wfs_ccd_temperature_lineedit.updateText(
-                ccd_temperature=wfs_ccd_temp)
+            self.wfs_ccd_temperature_spinbox.setValue(wfs_ccd_temp)
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.ToolTip:

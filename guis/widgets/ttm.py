@@ -193,7 +193,7 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
     def hover_xy_to_str(self, series, x, y):
         if not np.isnan(x) and not np.isnan(y):
             x = QDateTime.fromMSecsSinceEpoch(
-                int(x)).toString("HH:mm:ss dd-MM-yy")
+                int(x)).toString('HH:mm:ss dd-MM-yy')
 
             self.hovered.emit(f'{y:.{self.data_precision}f} at {x}')
         else:

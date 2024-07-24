@@ -1,3 +1,4 @@
+import functools
 from pathlib import Path
 
 from PySide6.QtCore import QMetaObject
@@ -5,10 +6,25 @@ from PySide6.QtUiTools import QUiLoader
 
 from guis.utils.widgets import (KChartView, KColorbar, KDateTimeEdit,
                                 KDraggableChartView, KGraphicsView, KLabel,
-                                KLineEdit, KScaledDoubleSpinbox,
-                                KStatusIndicator, KSvgWidget)
+                                KLineEdit, KNaNDoubleSpinbox,
+                                KScaledDoubleSpinbox, KStatusIndicator,
+                                KSvgWidget)
 
 uipath = Path(__file__).absolute().parent.parent / 'uis'
+
+
+def setEnabledStack(self, enabled, source):
+    if enabled:
+        if source in self._disable_stack:
+            self._disable_stack.remove(source)
+
+        if len(self._disable_stack) == 0:
+            self.setEnabled(True)
+    else:
+        if source not in self._disable_stack:
+            self._disable_stack.append(source)
+
+            self.setEnabled(False)
 
 
 class UiLoader(QUiLoader):
@@ -25,6 +41,7 @@ class UiLoader(QUiLoader):
         self.registerCustomWidget(KSvgWidget)
         self.registerCustomWidget(KDateTimeEdit)
         self.registerCustomWidget(KStatusIndicator)
+        self.registerCustomWidget(KNaNDoubleSpinbox)
         self.registerCustomWidget(KScaledDoubleSpinbox)
         self.registerCustomWidget(KColorbar)
 
@@ -35,6 +52,10 @@ class UiLoader(QUiLoader):
         else:
             if class_name in self.availableWidgets():
                 widget = QUiLoader.createWidget(self, class_name, parent, name)
+
+                widget._disable_stack = []
+                widget.setEnabledStack = functools.partial(
+                    setEnabledStack, widget)
 
             else:
                 try:

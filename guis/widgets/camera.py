@@ -33,14 +33,14 @@ def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
 
     if sort == 'time':
         latest_folder = max(folders, key=lambda item: item.stat().st_ctime)
-        files = latest_folder.glob("*")
+        files = latest_folder.glob('*')
         latest_file = max(files, key=lambda item: item.stat().st_ctime)
 
         return latest_file
 
     elif sort == 'name':
         latest_folder = max(folders)
-        files = latest_folder.glob("*")
+        files = latest_folder.glob('*')
         latest_file = max(files)
 
         return latest_file

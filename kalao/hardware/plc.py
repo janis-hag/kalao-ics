@@ -22,8 +22,9 @@ from kalao.definitions.enums import PLCStatus, ReturnCode
 import config
 
 
-def connect(addr: str = config.PLC.ip, port: int = config.PLC.port) -> Client:
-    beck = Client(f'opc.tcp://{addr}:{port}')
+def connect(host: str = config.PLC.host,
+            port: int = config.PLC.port) -> Client:
+    beck = Client(f'opc.tcp://{host}:{port}')
     beck.connect()
     # root = beck.get_root_node()
     # objects = beck.get_objects_node()
@@ -222,6 +223,6 @@ def wait_loop(message: str, test: Callable[[], bool],
               wait_time: float) -> None:
     #rprint(f"{message} ", end='', flush=True)
     while test():
-        #rprint(".", end='', flush=True)
+        #rprint('.', end='', flush=True)
         time.sleep(wait_time)
-    #rprint(" DONE", flush=True)
+    #rprint(' DONE', flush=True)

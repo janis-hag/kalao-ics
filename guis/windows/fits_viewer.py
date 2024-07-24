@@ -402,7 +402,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             # Update centering flag only if centering requested KalAO ICS and validation was by user
             if not self.centering_requested_by_user and requested_by_user:
                 self.action_send(self.exit_manual_centering_button,
-                                 self.backend.centering_validate)
+                                 self.backend.centering_manual_validate)
 
             self.centering = False
 
@@ -458,7 +458,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             return
 
         if self.centering:
-            self.action_send([], self.backend.centering_manual,
+            self.action_send([], self.backend.centering_manual_offsets,
                              dx=self.data_center_x - x,
                              dy=self.data_center_y - y)
 

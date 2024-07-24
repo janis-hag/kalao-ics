@@ -47,4 +47,5 @@ class AbstractBackend(QObject):
     monitoring_updated = Signal(object)
     streams_channels_dm_updated = Signal(object)
     streams_channels_ttm_updated = Signal(object)
-    focus_sequence_updated = Signal(object)
+    focusing_sequence_fits_updated = Signal(object)
+    calibration_sequence_updated = Signal(object)

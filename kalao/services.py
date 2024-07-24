@@ -25,7 +25,7 @@ import config
 # For documentation on the API
 
 
-def connect_dbus_systemd(
+def _connect_dbus_systemd(
     system: bool = False
 ) -> tuple[dbus.SystemBus | dbus.SessionBus, dbus.Interface]:
     if system:
@@ -42,7 +42,7 @@ def connect_dbus_systemd(
 
 
 def get_status(unit: str, system: bool = False) -> tuple[str, str, datetime]:
-    bus, manager = connect_dbus_systemd(system)
+    bus, manager = _connect_dbus_systemd(system)
 
     service = bus.get_object('org.freedesktop.systemd1',
                              object_path=manager.LoadUnit(unit))
@@ -65,7 +65,7 @@ def get_status(unit: str, system: bool = False) -> tuple[str, str, datetime]:
 
 
 def is_enabled(unit: str, system: bool = False) -> bool | None:
-    bus, manager = connect_dbus_systemd(system)
+    bus, manager = _connect_dbus_systemd(system)
 
     enabled = str(manager.GetUnitFileState(unit))
 
@@ -116,7 +116,7 @@ def check_all_active() -> dict[str, bool]:
 
 def unit_control(unit: str, action: ServiceAction, system: bool = False,
                  runtime_only: bool = False, force: bool = True,
-                 mode: str = 'replace', whom: str = "all",
+                 mode: str = 'replace', whom: str = 'all',
                  signal: int = signal.SIGKILL) -> tuple[str, str, datetime]:
     """
     Function to control systemd unit services.
@@ -129,7 +129,7 @@ def unit_control(unit: str, action: ServiceAction, system: bool = False,
     if action != ServiceAction.STATUS:
         logger.info('services', f'Sending {action} command to {unit}.')
 
-    bus, manager = connect_dbus_systemd(system)
+    bus, manager = _connect_dbus_systemd(system)
 
     if action == ServiceAction.STATUS:
         # Status is always returned as long as the action keyword is correct

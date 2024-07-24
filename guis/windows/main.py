@@ -45,12 +45,13 @@ class MainWindow(KMainWindow, BackendDataMixin):
         for widget in self.widgets:
             self.tabwidget.addTab(
                 widget,
-                widget.windowTitle().removesuffix(" - KalAO"))
+                widget.windowTitle().removesuffix(' - KalAO'))
 
         self.last_update_label = KLabel(parent=self)
         self.statusBar().addPermanentWidget(self.last_update_label)
 
         self.expert_checkbox = QCheckBox('Expert Mode', parent=self)
+        self.expert_checkbox.setChecked(True)  # Default layout correspond to checked state, needed for next call to work properly
         self.expert_checkbox.stateChanged.connect(
             self.on_expert_checkbox_stateChanged)
         self.statusBar().addPermanentWidget(self.expert_checkbox)
@@ -85,7 +86,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
     def on_monitoring_updated(self, outdated, warnings, alarms):
         list = []
         color = self.initial_tab_color
-        text = self.monitoring.windowTitle().removesuffix(" - KalAO")
+        text = self.monitoring.windowTitle().removesuffix(' - KalAO')
 
         if outdated != 0:
             list.append(f'O: {outdated}')
@@ -108,7 +109,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
     def on_engineering_updated(self, warnings, errors):
         list = []
         color = self.initial_tab_color
-        text = self.engineering.windowTitle().removesuffix(" - KalAO")
+        text = self.engineering.windowTitle().removesuffix(' - KalAO')
 
         if warnings != 0:
             color = Color.ORANGE
@@ -128,7 +129,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
     def on_logs_logged(self, warnings, errors):
         list = []
         color = self.initial_tab_color
-        text = self.logs.windowTitle().removesuffix(" - KalAO")
+        text = self.logs.windowTitle().removesuffix(' - KalAO')
 
         if warnings != 0:
             color = Color.ORANGE

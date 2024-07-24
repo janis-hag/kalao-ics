@@ -18,7 +18,7 @@ from kalao.hardware import plc
 
 from opcua import Client, ua
 
-from kalao.definitions.enums import IntEnum, ReturnCode, TungstenState
+from kalao.definitions.enums import IntEnum, ReturnCode, TungstenStatus
 
 import config
 
@@ -29,7 +29,7 @@ class TungstenCommand(IntEnum):
     ON = 3
 
 
-def on(beck: Client = None) -> TungstenState:
+def on(beck: Client = None) -> TungstenStatus:
     """
     Turn off tungsten lamp
 
@@ -40,7 +40,7 @@ def on(beck: Client = None) -> TungstenState:
     return _switch(TungstenCommand.ON, beck=beck)
 
 
-def off(beck: Client = None) -> TungstenState:
+def off(beck: Client = None) -> TungstenStatus:
     """
     Turn off tungsten lamp
 
@@ -52,8 +52,8 @@ def off(beck: Client = None) -> TungstenState:
 
 
 @plc.autoconnect
-def _switch(nCommand_value: TungstenCommand | TungstenState,
-            beck: Client = None) -> TungstenState:
+def _switch(nCommand_value: TungstenCommand | TungstenStatus,
+            beck: Client = None) -> TungstenStatus:
     """
     Send a command to the tungsten lamp
 
@@ -62,9 +62,9 @@ def _switch(nCommand_value: TungstenCommand | TungstenState,
     :return:
     """
 
-    if nCommand_value == TungstenState.ON:
+    if nCommand_value == TungstenStatus.ON:
         nCommand_value = TungstenCommand.ON
-    elif nCommand_value == TungstenState.OFF:
+    elif nCommand_value == TungstenStatus.OFF:
         nCommand_value = TungstenCommand.OFF
 
     if nCommand_value == TungstenCommand.ON:
@@ -77,7 +77,7 @@ def _switch(nCommand_value: TungstenCommand | TungstenState,
     tungsten_bExecute = beck.get_node(
         f'{config.PLC.Node.TUNGSTEN}.ctrl.bExecute')
 
-    previous_state = get_state()
+    previous_status = get_status()
 
     tungsten_nCommand.set_attribute(
         ua.AttributeIds.Value,
@@ -92,12 +92,12 @@ def _switch(nCommand_value: TungstenCommand | TungstenState,
             ua.Variant(True,
                        tungsten_bExecute.get_data_type_as_variant_type())))
 
-    if (nCommand_value == TungstenCommand.ON and previous_state
-            != TungstenState.ON) or (nCommand_value == TungstenCommand.OFF and
-                                     previous_state != TungstenState.OFF):
+    if (nCommand_value == TungstenCommand.ON and previous_status
+            != TungstenStatus.ON) or (nCommand_value == TungstenCommand.OFF and
+                                      previous_status != TungstenStatus.OFF):
         time.sleep(config.Tungsten.switch_wait)
 
-    return get_state(beck=beck)
+    return get_status(beck=beck)
 
 
 @plc.autoconnect
@@ -130,9 +130,9 @@ def init(beck: Client = None) -> ReturnCode:
 
 
 @plc.autoconnect
-def get_state(beck: Client = None) -> TungstenState:
+def get_status(beck: Client = None) -> TungstenStatus:
     """
-    Get the current state of the tungsten lamp.
+    Get the current status of the tungsten lamp.
     """
 
     # Check error status
@@ -145,31 +145,31 @@ def get_state(beck: Client = None) -> TungstenState:
 
         logger.error('tungsten', f'{error_text} ({error_code})')
 
-        return TungstenState.ERROR
+        return TungstenStatus.ERROR
 
     else:
-        state_plc = beck.get_node(
+        status_plc = beck.get_node(
             f'{config.PLC.Node.TUNGSTEN}.stat.sStatus').get_value()
 
-        if state_plc == 'OFF':
-            return TungstenState.OFF
-        elif state_plc == 'ON':
-            return TungstenState.ON
+        if status_plc == 'OFF':
+            return TungstenStatus.OFF
+        elif status_plc == 'ON':
+            return TungstenStatus.ON
         else:
-            logger.error('tungsten', f'Unknown state {state_plc}')
+            logger.error('tungsten', f'Unknown status {status_plc}')
 
-            return TungstenState.ERROR
+            return TungstenStatus.ERROR
 
 
 def get_switch_time() -> tuple[str, float]:
     """
-    Looks up the time when the tungsten lamp as last been put into current state (ON/OFF/ERROR)
+    Looks up the time when the tungsten lamp as last been put into current status (ON/OFF/ERROR)
 
     :return:  switch_time a datetime object
     """
 
-    data = database.get_time_since_state('monitoring', 'tungsten_state', '==',
-                                         get_state())
+    data = database.get_time_since_state('monitoring', 'tungsten_status', '==',
+                                         get_status())
 
     if data.get('since') is None:
         return data['current']['value'], 0

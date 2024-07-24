@@ -18,7 +18,7 @@ from kalao.hardware import plc
 
 from opcua import Client, ua
 
-from kalao.definitions.enums import FlipMirrorPosition, ReturnCode
+from kalao.definitions.enums import FlipMirrorStatus, ReturnCode
 
 import config
 
@@ -28,7 +28,7 @@ class FlipMirrorCommand(StrEnum):
     UP = 'bUp_Flip'
 
 
-def down(beck: Client = None) -> FlipMirrorPosition:
+def down(beck: Client = None) -> FlipMirrorStatus:
     """
     Move the flip mirror down
 
@@ -38,7 +38,7 @@ def down(beck: Client = None) -> FlipMirrorPosition:
     return _switch(FlipMirrorCommand.DOWN, beck=beck)
 
 
-def up(beck: Client = None) -> FlipMirrorPosition:
+def up(beck: Client = None) -> FlipMirrorStatus:
     """
     Move the flip mirror up
 
@@ -49,8 +49,8 @@ def up(beck: Client = None) -> FlipMirrorPosition:
 
 
 @plc.autoconnect
-def _switch(action_name: FlipMirrorCommand | FlipMirrorPosition,
-            beck: Client = None) -> FlipMirrorPosition:
+def _switch(action_name: FlipMirrorCommand | FlipMirrorStatus,
+            beck: Client = None) -> FlipMirrorStatus:
     """
      Open or Close the shutter depending on action_name
 
@@ -58,9 +58,9 @@ def _switch(action_name: FlipMirrorCommand | FlipMirrorPosition,
     :return: position of flipmirror
     """
 
-    if action_name == FlipMirrorPosition.UP:
+    if action_name == FlipMirrorStatus.UP:
         action_name = FlipMirrorCommand.UP
-    elif action_name == FlipMirrorPosition.DOWN:
+    elif action_name == FlipMirrorStatus.DOWN:
         action_name = FlipMirrorCommand.DOWN
 
     if action_name == FlipMirrorCommand.UP:
@@ -77,13 +77,11 @@ def _switch(action_name: FlipMirrorCommand | FlipMirrorPosition,
 
     time.sleep(1)
 
-    position = get_position(beck=beck)
-
-    return position
+    return get_status(beck=beck)
 
 
 @plc.autoconnect
-def get_position(beck: Client = None) -> FlipMirrorPosition:
+def get_status(beck: Client = None) -> FlipMirrorStatus:
     """
     Query the single string status of the shutter.
 
@@ -102,17 +100,17 @@ def get_position(beck: Client = None) -> FlipMirrorPosition:
 
         logger.error('flipmirror', f'{error_text} ({error_code})')
 
-        return FlipMirrorPosition.ERROR
+        return FlipMirrorStatus.ERROR
 
     else:
         if beck.get_node(
                 f'{config.PLC.Node.FLIP_MIRROR}.bStatus_Up_Flip').get_value():
-            return FlipMirrorPosition.UP
+            return FlipMirrorStatus.UP
         elif beck.get_node(f'{config.PLC.Node.FLIP_MIRROR}.bStatus_Down_Flip'
                            ).get_value():
-            return FlipMirrorPosition.DOWN
+            return FlipMirrorStatus.DOWN
         else:
-            return FlipMirrorPosition.UNKNOWN
+            return FlipMirrorStatus.UNKNOWN
 
 
 @plc.autoconnect
@@ -137,8 +135,8 @@ def get_switch_time() -> tuple[str, float]:
     :return:  switch_time a datetime object
     """
 
-    data = database.get_time_since_state('monitoring', 'flipmirror_position',
-                                         '==', get_position())
+    data = database.get_time_since_state('monitoring', 'flipmirror_status',
+                                         '==', get_status())
 
     if data.get('since') is None:
         return data['current']['value'], 0

@@ -18,12 +18,12 @@ for i in range(140):
 
 plt.figure()
 plt.imshow(ktools.get_wfs_flux_map(upsampling=16))
-plt.title("WFS flux map")
+plt.title('WFS flux map')
 plt.colorbar()
 
 plt.figure()
 plt.imshow(ktools.get_dm_flux_map(upsampling=16))
-plt.title("DM flux map")
+plt.title('DM flux map')
 plt.colorbar()
 
 plt.show()

@@ -60,7 +60,7 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
         series_fit = self.focus_fit_series = QSplineSeries()
         series_fit.setPen(pen)
         series_fit.setMarkerSize(6)
-        series_fit.setName("Fit")
+        series_fit.setName('Fit')
         series_fit.setPointsVisible(False)
         chart.addSeries(series_fit)
 
@@ -69,13 +69,13 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
         series = self.focus_series = QScatterSeries()
         series.setBrush(brush)
         series.setMarkerSize(6)
-        series.setName("Focus Sequence")
+        series.setName('Focus Sequence')
         series.setPointsVisible(True)
         chart.addSeries(series)
 
         # X Axis Settings
         axis_x = self.axis_x = QValueAxis()
-        axis_x.setLabelFormat("%.0f")
+        axis_x.setLabelFormat('%.0f')
         axis_x.setTickCount(5)
         axis_x.setTitleText('M2 Position [µm]')
         chart.addAxis(axis_x, Qt.AlignBottom)
@@ -96,13 +96,14 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
         self.status_label.updateText(status='--')
 
         if self.file is None:
-            backend.focus_sequence_updated.connect(self.focus_sequence_updated,
-                                                   Qt.UniqueConnection)
+            backend.focusing_sequence_fits_updated.connect(
+                self.focusing_sequence_fits_updated)
 
             self.focus_timer = QTimer(parent=self)
             self.focus_timer.setInterval(
                 int(1000 / config.GUI.refreshrate_focus))
-            self.focus_timer.timeout.connect(self.backend.focus_sequence)
+            self.focus_timer.timeout.connect(
+                self.backend.focusing_sequence_fits)
             self.focus_timer.start()
         else:
             self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
@@ -125,7 +126,7 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
         self.center()
         self.setFixedSize(self.size())
 
-    def focus_sequence_updated(self, data):
+    def focusing_sequence_fits_updated(self, data):
         hdul = self.consume_fits_full(data, config.FITS.last_focus_sequence)
 
         if hdul is not None:
@@ -139,8 +140,8 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
             view.setImage(hdul[i].data)
 
             fwhm = hdul[i].header[
-                "HIERARCH KAO FOC STAR FWHM"] * config.Camera.plate_scale
-            focus = hdul[i].header["HIERARCH KAO FOC M2 POS"]
+                'HIERARCH KAO FOC STAR FWHM'] * config.Camera.plate_scale
+            focus = hdul[i].header['HIERARCH KAO FOC M2 POS']
 
             desc_label.updateText(fwhm=fwhm)
 
@@ -231,14 +232,11 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
     def closeEvent(self, event):
         if self.file is None:
             self.focus_timer.stop()
-            self.backend.focus_sequence_updated.disconnect(
-                self.focus_sequence_updated)
 
         event.accept()
 
     def showEvent(self, event):
         if self.file is None:
             self.focus_timer.start()
-            self.backend.focus_sequence_updated.connect(
-                self.focus_sequence_updated, Qt.UniqueConnection)
+
         event.accept()

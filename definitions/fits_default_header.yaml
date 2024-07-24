@@ -44,7 +44,7 @@
   comment: Observation type
 
 - keyword: HIERARCH ESO DPR TECH
-  value:
+  value: IMAGE
   comment: Observation technique
 
 - keyword: HIERARCH ESO OBS PROG ID

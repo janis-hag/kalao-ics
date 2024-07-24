@@ -153,7 +153,7 @@ def _send_request(endpoint: str,
         "Authorization": config.ETCS.token
     }
 
-    url = f'http://{config.ETCS.ip}:{config.ETCS.port}{endpoint}'
+    url = f'http://{config.ETCS.host}:{config.ETCS.port}{endpoint}'
 
     try:
         if params == {}:
@@ -182,8 +182,8 @@ def _send_request(endpoint: str,
         text = ''
 
         if isinstance(data, dict):
-            if data.get('message') is not None:
-                text += f' {data.get("message")}'
+            if 'message' in data:
+                text += f' {data["message"]}'
         else:
             text = f' {data}'
 
@@ -203,7 +203,7 @@ def server_status() -> ETCSServerStatus:
     """
 
     try:
-        r = requests.get(f'http://{config.ETCS.ip}:{config.ETCS.port}/')
+        r = requests.get(f'http://{config.ETCS.host}:{config.ETCS.port}/')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return ETCSServerStatus.DOWN

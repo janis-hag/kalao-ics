@@ -1,4 +1,6 @@
 import time
+from dataclasses import dataclass
+from enum import StrEnum
 
 import numpy as np
 
@@ -9,26 +11,47 @@ from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import (calibunit, camera, dm, filterwheel, flipmirror,
                             laser, shutter, wfs)
 from kalao.sequencer import seq_utils
-from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import offsets, starfinder
 
-from kalao.definitions.enums import (AdaptiveOpticsMode, CameraStatus,
-                                     CenteringMode, FlipMirrorPosition,
-                                     ObservationType, ReturnCode,
-                                     SequencerStatus, ShutterState)
+from kalao.definitions.dataclasses import Star
+from kalao.definitions.enums import (AdaptiveOpticsMode, CalibUnitPositionName,
+                                     CameraStatus, CenteringMode,
+                                     FlipMirrorStatus, ObservationType,
+                                     ReturnCode, ShutterStatus)
 from kalao.definitions.exceptions import (
     AbortRequested, AutomaticCenteringTimeout, CameraTakeImageFailed,
     CenteringException, CenteringFluxWFSTooLow, CenteringMaxIter,
-    CenteringOffsetingFailed, CenteringStarNotFound, DMNotOn,
+    CenteringOffsettingFailed, CenteringStarNotFound, DMNotOn,
     FilterWheelNotInPosition, FlipMirrorNotUp, ManualCenteringTimeout,
     ShutterNotClosed, WFSAcquisitionOff)
 
 import config
 
 
-@with_sequencer_status(SequencerStatus.CENTERING)
+class Direction(StrEnum):
+    TOP = 'TOP'
+    RIGHT = 'RIGHT'
+    BOTTOM = 'BOTTOM'
+    LEFT = 'LEFT'
+
+
+_spiral_next_mapping = {
+    Direction.TOP: Direction.RIGHT,
+    Direction.RIGHT: Direction.BOTTOM,
+    Direction.BOTTOM: Direction.LEFT,
+    Direction.LEFT: Direction.TOP,
+}
+
+
+@dataclass
+class CenteringMetadata:
+    star: Star = None
+    step: int = 0
+
+
 def center_on_target(
-    exptime: float, centering_mode: CenteringMode = CenteringMode.AUTOMATIC,
+    exptime: float | None = None,
+    centering_mode: CenteringMode = CenteringMode.AUTOMATIC,
     adaptiveoptics_mode: AdaptiveOpticsMode = AdaptiveOpticsMode.DISABLED
 ) -> ReturnCode:
     """
@@ -47,18 +70,21 @@ def center_on_target(
     if centering_mode == CenteringMode.NONE:
         return ReturnCode.CENTERING_OK
 
+    memory.set('centering_step', 0)
+
     timeout = time.monotonic() + config.Centering.automatic_timeout
 
     if centering_mode == CenteringMode.AUTOMATIC:
         logger.info('centering', 'Starting automatic centering')
 
         try:
-            xy = _get_star(ObservationType.TARGET_CENTERING, exptime)
-            xy = on_camera_with_telescope(ObservationType.TARGET_CENTERING,
-                                          exptime=exptime, xy=xy,
-                                          timeout=timeout)
-            xy = on_camera_with_ttm(ObservationType.TARGET_CENTERING,
-                                    exptime=exptime, xy=xy, timeout=timeout)
+            md = CenteringMetadata(
+                star=_get_star(ObservationType.TARGET_CENTERING, exptime))
+
+            on_camera_with_telescope(ObservationType.TARGET_CENTERING,
+                                     exptime=exptime, md=md, timeout=timeout)
+            on_camera_with_ttm(ObservationType.TARGET_CENTERING,
+                               exptime=exptime, md=md, timeout=timeout)
         except (AbortRequested, CameraTakeImageFailed) as e:
             logger.error('centering',
                          f'"{e.__doc__}" happened during centering on target')
@@ -104,7 +130,6 @@ def center_on_target(
     return ReturnCode.CENTERING_OK
 
 
-@with_sequencer_status(SequencerStatus.CENTERING)
 def center_on_laser() -> ReturnCode:
     """
     Center the calibration unit the laser on the WFS.
@@ -127,15 +152,17 @@ def center_on_laser() -> ReturnCode:
     if wfs.start_acquisition() != ReturnCode.OK:
         raise WFSAcquisitionOff
 
-    if shutter.close() != ShutterState.CLOSED:
+    if shutter.close() != ShutterStatus.CLOSED:
         raise ShutterNotClosed
 
-    if flipmirror.up() != FlipMirrorPosition.UP:
+    if flipmirror.up() != FlipMirrorStatus.UP:
         raise FlipMirrorNotUp
+
+    md = CenteringMetadata()
 
     if not wfs.check_flux():
         # Move calib unit to approximately correct position if too far
-        if np.abs(calibunit.get_position() - config.Laser.position) > 0.5:
+        if calibunit.get_position_name() != CalibUnitPositionName.LASER:
             calibunit.move_to_laser_position()
 
         if filterwheel.set_filter(config.Camera.laser_calib_filter
@@ -148,14 +175,15 @@ def center_on_laser() -> ReturnCode:
         aocontrol.reset_dm(config.AO.TTM_loop_number)
 
         try:
-            xy = _get_star(ObservationType.LASER_CENTERING,
-                           config.Camera.laser_calib_exptime)
-            xy = on_camera_with_calibunit(
-                ObservationType.LASER_CENTERING,
-                exptime=config.Camera.laser_calib_exptime, xy=xy)
-            xy = on_camera_with_ttm(ObservationType.LASER_CENTERING,
-                                    exptime=config.Camera.laser_calib_exptime,
-                                    xy=xy)
+            md.star = _get_star(ObservationType.LASER_CENTERING,
+                                config.Camera.laser_calib_exptime)
+
+            on_camera_with_calibunit(ObservationType.LASER_CENTERING,
+                                     exptime=config.Camera.laser_calib_exptime,
+                                     md=md)
+            on_camera_with_ttm(ObservationType.LASER_CENTERING,
+                               exptime=config.Camera.laser_calib_exptime,
+                               md=md)
         except (CenteringException, AbortRequested,
                 CameraTakeImageFailed) as e:
             logger.error('centering',
@@ -170,13 +198,76 @@ def center_on_laser() -> ReturnCode:
         wfs.set_emgain(config.WFS.laser_calib_emgain)
 
     try:
-        on_wfs_with_ttm()
+        on_wfs_with_ttm(md=md)
     except (CenteringException, AbortRequested, CameraTakeImageFailed) as e:
         logger.error('centering',
                      f'"{e.__doc__}" happened during centering on laser')
         return ReturnCode.CENTERING_ERROR
 
+    logger.info('centering', 'Centering done')
+
     return ReturnCode.CENTERING_OK
+
+
+def spiral_search(exptime: float | None = None, overlap: float = 0.25,
+                  direction: Direction = Direction.TOP,
+                  max_turns: int = 2) -> ReturnCode:
+    logger.info(
+        'centering',
+        f'Starting spiral search with an overlap of {overlap * 100:.0f}%.')
+
+    step = 0
+    tot_dx = 0
+    tot_dy = 0
+
+    max_steps = 4*max_turns + 1
+
+    while step < max_steps:
+        tot = step//2 + 1
+
+        for s in range(tot):
+            try:
+                _get_star(ObservationType.TARGET_CENTERING, exptime,
+                          comment='Spiral search')
+            except CenteringStarNotFound:
+                pass
+            else:
+                logger.info(
+                    'centering',
+                    f'Spiral search: found star in the field of view at dx = {tot_dx} px, dy = {tot_dy} px.'
+                )
+                return ReturnCode.CENTERING_OK
+
+            dx = 1024 * (1-overlap)
+            dy = 1024 * (1-overlap)
+
+            match direction:
+                case Direction.TOP:
+                    dx = 0
+                    # dy positive
+                case Direction.RIGHT:
+                    dx *= -1
+                    dy = 0
+                case Direction.BOTTOM:
+                    dx = 0
+                    dy *= -1
+                case Direction.LEFT:
+                    # dx positive
+                    dy = 0
+
+            logger.info('centering',
+                        f'Spiral search: moving {direction} ({s+1}/{tot}).')
+
+            offsets.camera_to_telescope(dx, dy)
+
+            tot_dx += dx
+            tot_dy += dy
+
+        direction = _spiral_next_mapping[direction]
+
+        step += 1
+
+    return ReturnCode.CENTERING_ERROR
 
 
 def request_manual_centering() -> ReturnCode:
@@ -192,14 +283,14 @@ def request_manual_centering() -> ReturnCode:
             break
 
         elif seq_utils.is_aborting():
-            set_manual_centering_flag(False)
+            invalidate_manual_centering()
             raise AbortRequested
 
         time.sleep(1)
     else:
         logger.error('centering',
                      'Timeout while waiting for manual centering from user.')
-        set_manual_centering_flag(False)
+        invalidate_manual_centering()
         raise ManualCenteringTimeout
 
     # If the user validated the centering before exposure ended, wait
@@ -216,8 +307,11 @@ def request_manual_centering() -> ReturnCode:
 
 
 def validate_manual_centering() -> ReturnCode:
-    logger.info('centering', 'Manual centering done.')
-    set_manual_centering_flag(False)
+    flag = get_manual_centering_flag()
+
+    if flag is not False:
+        logger.info('centering', 'Manual centering done.')
+        set_manual_centering_flag(False)
 
     return ReturnCode.CENTERING_OK
 
@@ -243,7 +337,7 @@ def set_manual_centering_flag(flag: bool) -> None:
 
 def manual_centering(dx: float, dy: float) -> ReturnCode:
     if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
-        raise CenteringOffsetingFailed
+        raise CenteringOffsettingFailed
 
     img_path = camera.take_science_image(ObservationType.TARGET_CENTERING)
 
@@ -254,19 +348,17 @@ def manual_centering(dx: float, dy: float) -> ReturnCode:
 
 
 def on_camera_with_calibunit(obs_type: ObservationType, exptime: float,
-                             xy: tuple[float, float] | None = None,
+                             md: CenteringMetadata | None = None,
                              max_iter: int = config.Centering.
                              camera_with_calibunit_max_iter,
-                             timeout: float = np.inf) -> tuple[float, float]:
-    if xy is None:
-        x, y = _get_star(obs_type, exptime)
-    else:
-        x, y = xy
+                             timeout: float = np.inf) -> None:
+    if md is None:
+        md = CenteringMetadata(star=_get_star(obs_type, exptime))
 
     logger.info('centering', 'Centering on Camera using calibration unit')
 
-    for i in range(max_iter):
-        dy = config.Camera.center_y - y
+    for _ in range(max_iter):
+        dy = config.Camera.center_y - md.star.y
         error = np.abs(dy)
 
         if error <= config.Centering.camera_with_calibunit_precision:
@@ -278,36 +370,37 @@ def on_camera_with_calibunit(obs_type: ObservationType, exptime: float,
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
+        md.step += 1
+        memory.set('centering_step', md.step)
+
         logger.info('centering',
-                    f'Centering step {i+1}, error = {error:.1f} px')
+                    f'Centering step {md.step}, error = {error:.1f} px')
 
-        offsets.camera_to_calibunit(dy)
+        if offsets.camera_to_calibunit(dy) != ReturnCode.OK:
+            raise CenteringOffsettingFailed
 
-        x, y = _get_star(obs_type, exptime)
+        md.star = _get_star(obs_type, exptime)
     else:
         raise CenteringMaxIter
 
     logger.info(
         'centering',
         f'Centered on Camera using calibration unit, error = {error:.1f} px')
-    return x, y
 
 
 def on_camera_with_telescope(obs_type: ObservationType, exptime: float,
-                             xy: tuple[float, float] | None = None,
+                             md: CenteringMetadata | None = None,
                              max_iter: int = config.Centering.
                              camera_with_calibunit_max_iter,
-                             timeout: float = np.inf) -> tuple[float, float]:
-    if xy is None:
-        x, y = _get_star(obs_type, exptime)
-    else:
-        x, y = xy
+                             timeout: float = np.inf) -> None:
+    if md is None:
+        md = CenteringMetadata(star=_get_star(obs_type, exptime))
 
     logger.info('centering', 'Centering on Camera using telescope')
 
-    for i in range(max_iter):
-        dx = config.Camera.center_x - x
-        dy = config.Camera.center_y - y
+    for _ in range(max_iter):
+        dx = config.Camera.center_x - md.star.x
+        dy = config.Camera.center_y - md.star.y
         error = np.sqrt(dx**2 + dy**2)
 
         if error <= config.Centering.camera_with_telescope_precision:
@@ -319,36 +412,36 @@ def on_camera_with_telescope(obs_type: ObservationType, exptime: float,
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
+        md.step += 1
+        memory.set('centering_step', md.step)
+
         logger.info('centering',
-                    f'Centering step {i+1}, error = {error:.1f} px')
+                    f'Centering step {md.step}, error = {error:.1f} px')
 
         if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
-            raise CenteringOffsetingFailed
+            raise CenteringOffsettingFailed
 
-        x, y = _get_star(obs_type, exptime)
+        md.star = _get_star(obs_type, exptime)
     else:
         raise CenteringMaxIter
 
     logger.info('centering',
                 f'Centered on Camera using telescope, error = {error:.1f} px')
-    return x, y
 
 
 def on_camera_with_ttm(obs_type: ObservationType, exptime: float,
-                       xy: tuple[float, float] | None = None,
+                       md: CenteringMetadata | None = None,
                        max_iter: int = config.Centering.
                        camera_with_calibunit_max_iter,
-                       timeout: float = np.inf) -> tuple[float, float]:
-    if xy is None:
-        x, y = _get_star(obs_type, exptime)
-    else:
-        x, y = xy
+                       timeout: float = np.inf) -> None:
+    if md is None:
+        md = CenteringMetadata(star=_get_star(obs_type, exptime))
 
     logger.info('centering', 'Centering on Camera using Tip-Tilt Mirror')
 
-    for i in range(max_iter):
-        dx = config.Camera.center_x - x
-        dy = config.Camera.center_y - y
+    for _ in range(max_iter):
+        dx = config.Camera.center_x - md.star.x
+        dy = config.Camera.center_y - md.star.y
         error = np.sqrt(dx**2 + dy**2)
 
         if error <= config.Centering.camera_with_ttm_precision:
@@ -360,33 +453,40 @@ def on_camera_with_ttm(obs_type: ObservationType, exptime: float,
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
+        md.step += 1
+        memory.set('centering_step', md.step)
+
         logger.info('centering',
-                    f'Centering step {i+1}, error = {error:.1f} px')
+                    f'Centering step {md.step}, error = {error:.1f} px')
 
-        offsets.camera_to_ttm(dx, dy)
+        if offsets.camera_to_ttm(dx, dy) != ReturnCode.OK:
+            raise CenteringOffsettingFailed
 
-        x, y = _get_star(obs_type, exptime)
+        md.star = _get_star(obs_type, exptime)
     else:
         raise CenteringMaxIter
 
     logger.info(
         'centering',
         f'Centered on Camera using Tip-Tilt Mirror, error = {error:.1f} px')
-    return x, y
 
 
-def on_wfs_with_ttm(max_iter: int = config.Centering.
+def on_wfs_with_ttm(md: CenteringMetadata | None = None,
+                    max_iter: int = config.Centering.
                     camera_with_calibunit_max_iter,
-                    timeout: float = np.inf) -> tuple[float, float]:
+                    timeout: float = np.inf) -> None:
+    if md is None:
+        md = CenteringMetadata()
+
     logger.info('centering', 'Centering on WFS using Tip-Tilt Mirror')
 
     slopes_fps = toolbox.get_fps(config.FPS.SHWFS)
 
     if slopes_fps is None:
         logger.error('centering', f'{config.FPS.SHWFS} is missing')
-        return np.nan, np.nan
+        return
 
-    for i in range(max_iter):
+    for _ in range(max_iter):
         dx = -slopes_fps.get_param('slope_x_avg')
         dy = -slopes_fps.get_param('slope_y_avg')
         error = np.sqrt(dx**2 + dy**2)
@@ -400,23 +500,26 @@ def on_wfs_with_ttm(max_iter: int = config.Centering.
         if time.monotonic() > timeout:
             raise AutomaticCenteringTimeout
 
-        logger.info('centering',
-                    f'Centering step {i+1}, error = {error:.3f} px')
+        md.step += 1
+        memory.set('centering_step', md.step)
 
-        offsets.wfs_to_ttm(dx, dy)
+        logger.info('centering',
+                    f'Centering step {md.step}, error = {error:.3f} px')
+
+        if offsets.wfs_to_ttm(dx, dy) != ReturnCode.OK:
+            raise CenteringOffsettingFailed
     else:
         raise CenteringMaxIter
 
     logger.info(
         'centering',
         f'Centered on WFS using Tip-Tilt Mirror, error = {error:.3f} px')
-    return -dx, -dy
 
 
-def _get_star(obs_type: ObservationType,
-              exptime: float) -> tuple[float, float]:
+def _get_star(obs_type: ObservationType, exptime: float,
+              comment='Centering sequence') -> Star:
     img_path = camera.take_science_image(obs_type, exptime=exptime,
-                                         comment="Centering sequence")
+                                         comment=comment)
 
     if img_path is None:
         raise CameraTakeImageFailed
@@ -428,4 +531,4 @@ def _get_star(obs_type: ObservationType,
     if star is None:
         raise CenteringStarNotFound
 
-    return star.x, star.y
+    return star

@@ -170,6 +170,36 @@ class KDateTimeEdit(QDateTimeEdit):
         self.setDateTime(dt)
 
 
+class KNaNDoubleSpinbox(QDoubleSpinBox):
+    _value = 0
+    nanstr = '--'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def value(self):
+        if np.isnan(self._value):
+            return self._value
+        else:
+            return super().value()
+
+    def setValue(self, value):
+        self._value = value
+        super().setValue(value)
+
+    def textFromValue(self, value):
+        if np.isnan(self._value):
+            return self.nanstr
+        else:
+            return super().textFromValue(value)
+
+    def valueFromText(self, text):
+        if text == self.nanstr:
+            return np.nan
+        else:
+            return super().valueFromText(text)
+
+
 class KScaledDoubleSpinbox(QDoubleSpinBox):
     scale = 1
 
@@ -257,13 +287,13 @@ class KDetachedTabWindow(KMainWindow):
             if j != -1:
                 self.parent.tabwidget.insertTab(
                     j + 1, widget,
-                    widget.windowTitle().removesuffix(" - KalAO"))
+                    widget.windowTitle().removesuffix(' - KalAO'))
                 self.parent.tabwidget.setCurrentIndex(j + 1)
                 break
         else:
             self.parent.tabwidget.addTab(
                 widget,
-                widget.windowTitle().removesuffix(" - KalAO"))
+                widget.windowTitle().removesuffix(' - KalAO'))
 
         if hasattr(widget, 'hovered'):
             widget.hovered.disconnect(self.info_to_statusbar)

@@ -24,15 +24,14 @@ from astropy.time import Time
 from kalao import database, euler, logger
 from kalao.timers import monitoring
 from kalao.utils import kstring, ktime
-from kalao.utils.rprint import rprint
 
 import yaml
 from unidecode import unidecode
 
 from kalao.definitions.dataclasses import ROI
-from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
-                                     ObservationType, ReturnCode, ShutterState,
-                                     TungstenState)
+from kalao.definitions.enums import (FlipMirrorStatus, LaserStatus,
+                                     ObservationType, ReturnCode,
+                                     ShutterStatus, TungstenStatus)
 
 import config
 
@@ -211,8 +210,8 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
 
         on_sky = obs_type in config.FITS.on_sky_types or (
             obs_type == ObservationType.ENGINEERING and
-            data['flipmirror_position'] == FlipMirrorPosition.DOWN and
-            data['shutter_state'] == ShutterState.OPEN)
+            data['flipmirror_status'] == FlipMirrorStatus.DOWN and
+            data['shutter_status'] == ShutterStatus.OPEN)
 
         if on_sky:
             header_telescope = _clean_header(
@@ -477,23 +476,22 @@ def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
     # Create HIERARCH ESO INS SHUT ST
     shutter = header_df.loc['HIERARCH ESO INS SHUT STATUS']
     header_df.loc['HIERARCH ESO INS SHUT ST'] = (
-        shutter.value == ShutterState.OPEN, shutter.comment, 'dynamic')
+        shutter.value == ShutterStatus.OPEN, shutter.comment, 'dynamic')
 
     # Create HIERARCH ESO INS SHUT ST
     flipmirror = header_df.loc['HIERARCH ESO INS FLIP STATUS']
     header_df.loc['HIERARCH ESO INS FLIP ST'] = (
-        flipmirror.value == FlipMirrorPosition.UP, flipmirror.comment,
-        'dynamic')
+        flipmirror.value == FlipMirrorStatus.UP, flipmirror.comment, 'dynamic')
 
     # Create HIERARCH ESO INS LASER ST
     laser = header_df.loc['HIERARCH ESO INS LASER STATUS']
-    header_df.loc['HIERARCH ESO INS LASER ST'] = (laser.value == LaserState.ON,
-                                                  laser.comment, 'dynamic')
+    header_df.loc['HIERARCH ESO INS LASER ST'] = (
+        laser.value == LaserStatus.ON, laser.comment, 'dynamic')
 
     # Create HIERARCH ESO INS TUNGSTEN ST
     tungsten = header_df.loc['HIERARCH ESO INS TUNGSTEN STATUS']
     header_df.loc['HIERARCH ESO INS TUNGSTEN ST'] = (
-        tungsten.value == TungstenState.ON, tungsten.comment, 'dynamic')
+        tungsten.value == TungstenStatus.ON, tungsten.comment, 'dynamic')
 
     # Update MJD-OBS
     header_df.loc['MJD-OBS', 'value'] = round(astro_time_obs.mjd, 8)
@@ -559,13 +557,13 @@ def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
 
         coord = None
 
-    roi = ROI(header_df.loc['HIERARCH ESO DET WIN1 STRX', 'value'] - 1 -
+    roi = ROI(x=header_df.loc['HIERARCH ESO DET WIN1 STRX', 'value'] - 1 -
               header_df.loc['HIERARCH ESO DET OUT1 PRSCX', 'value'],
-              header_df.loc['HIERARCH ESO DET WIN1 STRY', 'value'] - 1 -
+              y=header_df.loc['HIERARCH ESO DET WIN1 STRY', 'value'] - 1 -
               header_df.loc['HIERARCH ESO DET OUT1 PRSCY', 'value'],
-              header_df.loc['HIERARCH ESO DET WIN1 NX', 'value'],
-              header_df.loc['HIERARCH ESO DET WIN1 NY',
-                            'value'])  # Note: FITS indexing starts at 1
+              width=header_df.loc['HIERARCH ESO DET WIN1 NX', 'value'],
+              height=header_df.loc['HIERARCH ESO DET WIN1 NY',
+                                   'value'])  # Note: FITS indexing starts at 1
 
     header_wcs = generate_wcs(coord, astro_time_obs, roi=roi)
 
@@ -592,7 +590,7 @@ def _header_to_string(header_df: pd.DataFrame, max_length: int = 45,
             return f'{f:.{float_length}f}'[0:float_length].ljust(
                 length['value'], ' ')
 
-    pd.set_option("display.colheader_justify", "left")
+    pd.set_option('display.colheader_justify', 'left')
     return header_df.fillna(
         value='<empty>').to_string(formatters=formatters,
                                    float_format=float_format)
@@ -629,7 +627,7 @@ def generate_wcs(coord: SkyCoord, time: Time, roi: ROI | None = None,
         cdelt2 = config.Camera.plate_scale / 3600
         # crota2 = parallactic_angle(coord, time) + config.ADC.max_disp_offset
         crota2 = 0
-        crota2_ = crota2 * np.pi / 180
+        crota2_rad = crota2 * np.pi / 180
 
         wcs_header.loc['CTYPE1'] = ('RA---TAN',
                                     'Right ascension, gnomonic projection',
@@ -652,10 +650,10 @@ def generate_wcs(coord: SkyCoord, time: Time, roi: ROI | None = None,
                                     'wcs')
 
         if method == 'CD':
-            cd11 = cdelt1 * np.cos(crota2_)
-            cd12 = -cdelt2 * np.sin(crota2_)
-            cd21 = cdelt1 * np.sin(crota2_)
-            cd22 = cdelt2 * np.cos(crota2_)
+            cd11 = cdelt1 * np.cos(crota2_rad)
+            cd12 = -cdelt2 * np.sin(crota2_rad)
+            cd21 = cdelt1 * np.sin(crota2_rad)
+            cd22 = cdelt2 * np.cos(crota2_rad)
 
             wcs_header.loc['CD1_1'] = (
                 cd11, 'Coordinate transformation matrix element', 'wcs')
@@ -666,10 +664,10 @@ def generate_wcs(coord: SkyCoord, time: Time, roi: ROI | None = None,
             wcs_header.loc['CD2_2'] = (
                 cd22, 'Coordinate transformation matrix element', 'wcs')
         elif method == 'PC':
-            pc11 = np.cos(crota2_)
-            pc12 = -np.sin(crota2_)
-            pc21 = np.sin(crota2_)
-            pc22 = np.cos(crota2_)
+            pc11 = np.cos(crota2_rad)
+            pc12 = -np.sin(crota2_rad)
+            pc21 = np.sin(crota2_rad)
+            pc22 = np.cos(crota2_rad)
 
             wcs_header.loc['CDELT1'] = (cdelt1, 'Coordinate scales', 'wcs')
             wcs_header.loc['CDELT2'] = (cdelt2, 'Coordinate scalse', 'wcs')
@@ -721,66 +719,19 @@ def parallactic_angle(coord: SkyCoord, time: Time) -> float:
     return parang
 
 
-def directory_summary_df(folder: Path) -> pd.DataFrame:
-    """
-    Creates a dataframe summarising the header content of all the fits files in a folder.
-
-    :param folder: path to the folder to be summarised
-    :return:
-    """
-
-    df = None
-
-    for image_filename in folder.rglob("*.fits"):
-
-        rprint(f'Opening {image_filename}')
-
-        with fits.open(image_filename) as hdul:
-            dic = {'filename': image_filename}
-
-            for k in hdul[0].header.cards:
-                dic[k[0]] = k[1]
-
-        if df is None:
-            df = pd.DataFrame([dic])
-        else:
-            df = pd.concat([df, pd.DataFrame([dic])], ignore_index=True,
-                           axis=0)
-
-    return df
-
-
-def get_exposure_times(
-    folder: Path | None = None,
-    exclude_types: list[ObservationType] = [ObservationType.DARK
-                                            ]) -> list[float]:
-    """
-    Get the list of exposure times in the folder pointed at by filepath. By default, DARK exposure times are ignored.
-
-    :param folder: path of the folder to scan.
-    :param exclude_types: exposure types to exclude from the scan.
-    :return: list of exposure times found.
-    """
-
-    if folder is None:
-        folder = config.FITS.science_data_storage / ktime.get_night_str()
+def get_exposure_times_for_darks() -> list[float]:
+    folder = config.FITS.science_data_storage / ktime.get_night_str()
 
     if not folder.exists():
         return []
 
-    directory_summary = directory_summary_df(folder)
+    exposure_times = []
+    for filename in folder.rglob('*.fits'):
+        header = fits.getheader(filename)
 
-    if directory_summary is None:
-        exposure_times = []
+        if header[
+                'ESO DPR TYPE'] in config.Calib.Darks.include_types and header[
+                    'EXPTIME'] not in exposure_times:
+            exposure_times.append(header['EXPTIME'])
 
-    else:
-        if exclude_types is not None:
-            for type_to_exclude in exclude_types:
-                # Handle the case where ESO OBS TYPE is undefined in all files
-                if 'ESO OBS TYPE' in directory_summary.keys():
-                    directory_summary = directory_summary[
-                        directory_summary['ESO OBS TYPE'] != type_to_exclude]
-
-        exposure_times = directory_summary['EXPTIME'].unique()
-
-    return exposure_times
+    return sorted(exposure_times)

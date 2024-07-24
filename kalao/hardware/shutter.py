@@ -18,7 +18,7 @@ from kalao.hardware import plc
 
 from opcua import Client, ua
 
-from kalao.definitions.enums import ReturnCode, ShutterState
+from kalao.definitions.enums import ReturnCode, ShutterStatus
 
 import config
 
@@ -29,7 +29,7 @@ class ShutterCommand(StrEnum):
 
 
 @plc.autoconnect
-def get_state(beck: Client = None) -> ShutterState:
+def get_status(beck: Client = None) -> ShutterStatus:
     """
     Query the single string status of the shutter.
 
@@ -46,14 +46,14 @@ def get_state(beck: Client = None) -> ShutterState:
 
         logger.error('shutter', f'{error_text} ({error_code})')
 
-        return ShutterState.ERROR
+        return ShutterStatus.ERROR
 
     else:
         if beck.get_node(f'{config.PLC.Node.SHUTTER}.bStatus_Closed_Shutter'
                          ).get_value():
-            return ShutterState.CLOSED
+            return ShutterStatus.CLOSED
         else:
-            return ShutterState.OPEN
+            return ShutterStatus.OPEN
 
 
 @plc.autoconnect
@@ -76,7 +76,7 @@ def init(beck: Client = None) -> ReturnCode:
     return ReturnCode.HW_INIT_SUCCESS
 
 
-def open(beck: Client = None) -> ShutterState:
+def open(beck: Client = None) -> ShutterStatus:
     """
     Open the shutter.
 
@@ -86,7 +86,7 @@ def open(beck: Client = None) -> ShutterState:
     return _switch(ShutterCommand.OPEN, beck=beck)
 
 
-def close(beck: Client = None) -> ShutterState:
+def close(beck: Client = None) -> ShutterStatus:
     """
     Close the shutter.
 
@@ -97,8 +97,8 @@ def close(beck: Client = None) -> ShutterState:
 
 
 @plc.autoconnect
-def _switch(action_name: ShutterCommand | ShutterState,
-            beck: Client = None) -> ShutterState:
+def _switch(action_name: ShutterCommand | ShutterStatus,
+            beck: Client = None) -> ShutterStatus:
     """
      Open or Close the shutter depending on action_name
 
@@ -106,9 +106,9 @@ def _switch(action_name: ShutterCommand | ShutterState,
     :return: status of shutter
     """
 
-    if action_name == ShutterState.OPEN:
+    if action_name == ShutterStatus.OPEN:
         action_name = ShutterCommand.OPEN
-    elif action_name == ShutterState.CLOSED:
+    elif action_name == ShutterStatus.CLOSED:
         action_name = ShutterCommand.CLOSE
 
     if action_name == ShutterCommand.OPEN:
@@ -124,9 +124,7 @@ def _switch(action_name: ShutterCommand | ShutterState,
 
     time.sleep(1)
 
-    state = get_state(beck=beck)
-
-    return state
+    return get_status(beck=beck)
 
 
 def get_switch_time() -> tuple[str, float]:
@@ -136,8 +134,8 @@ def get_switch_time() -> tuple[str, float]:
     :return:  switch_time a datetime object
     """
 
-    data = database.get_time_since_state('monitoring', 'shutter_state', '==',
-                                         get_state())
+    data = database.get_time_since_state('monitoring', 'shutter_status', '==',
+                                         get_status())
 
     if data.get('since') is None:
         return data['current']['value'], 0

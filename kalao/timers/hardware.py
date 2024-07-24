@@ -24,8 +24,8 @@ from kalao.utils import background
 import schedule
 from opcua import Client
 
-from kalao.definitions.enums import (IPPowerStatus, LaserState, LoopStatus,
-                                     RelayState, ShutterState)
+from kalao.definitions.enums import (IPPowerStatus, LaserStatus, LoopStatus,
+                                     RelayState, ShutterStatus)
 
 import config
 
@@ -51,7 +51,7 @@ def _check_shutteropen_inactive() -> None:
     # if switch_time long and no activity for given time close shutter
     # TODO ADD if tracking status IDLE, close
 
-    if shutter.get_state() == ShutterState.OPEN:
+    if shutter.get_status() == ShutterStatus.OPEN:
         logger.info('hardware_timer',
                     'Closing shutter due to inactivity timeout')
         shutter.close()
@@ -65,7 +65,7 @@ def _check_laseron_inactive() -> None:
     :return:
     """
 
-    if laser.get_state() != LaserState.OFF:
+    if laser.get_status() != LaserStatus.OFF:
         logger.info('hardware_timer',
                     'Turning off laser due to inactivity timeout')
         laser.disable()
@@ -83,7 +83,7 @@ def _check_dm_inactive() -> None:
 
     if euler.sun_elevation() > config.Hardware.dm_sun_min_elevation and (
         (bmc_display_fps is not None and bmc_display_fps.run_isrunning()) or
-            ippower.status(config.IPPower.Port.DM) == IPPowerStatus.ON):
+            ippower.get_status(config.IPPower.Port.DM) == IPPowerStatus.ON):
         logger.info('hardware_timer',
                     'Turning off DM due to inactivity timeout')
 
@@ -160,7 +160,7 @@ def _check_cooling_status() -> None:
         'coolant_temp_in']['warn_range'][0] + config.Cooling.heating_margin
     unit = database.definitions['monitoring']['metadata']['coolant_temp_in'][
         'unit']
-    coolant_temp = cooling.get_status()['coolant_temp_in']
+    coolant_temp = cooling.get_all_status()['coolant_temp_in']
 
     if coolant_temp < min_coolant_temp:
         if cooling.heater_status() != RelayState.ON:

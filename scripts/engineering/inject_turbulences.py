@@ -24,14 +24,14 @@ def run(args):
     exitCLI
     """
 
-    cp = subprocess.run(["milk"], input=input, encoding='utf8', stdout=PIPE,
+    cp = subprocess.run(['milk'], input=input, encoding='utf8', stdout=PIPE,
                         stderr=STDOUT)
 
-    print("=========================== STDOUT")
+    print('=========================== STDOUT')
 
     print(cp.stdout)
 
-    print("=========================== STDERR")
+    print('=========================== STDERR')
 
     print(cp.stderr)
 

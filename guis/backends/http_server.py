@@ -7,6 +7,7 @@ from datetime import datetime, time, timedelta
 from functools import partial
 
 from kalao.utils import ktime, report
+from kalao.utils.json import KalAOJSONDecoder, KalAOJSONEncoder
 from kalao.utils.rprint import rprint
 
 import pytz
@@ -14,7 +15,6 @@ from flask import Flask, jsonify, make_response, request
 from flask.json.provider import JSONProvider
 
 from guis.backends.abstract import name_to_url
-from guis.utils.json_coder import KalAOJSONDecoder, KalAOJSONEncoder
 
 import config
 
@@ -31,7 +31,7 @@ class KalAOProvider(JSONProvider):
 
     def loads(self, obj, **kwargs):
         if isinstance(obj, bytes):
-            return self.decoder.decode(obj.decode("utf-8"))
+            return self.decoder.decode(obj.decode('utf-8'))
         else:
             return self.decoder.decode(obj)
 
@@ -44,8 +44,8 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 
-@app.route("/night_report")
-@app.route("/night_report/<night>")
+@app.route('/night_report')
+@app.route('/night_report/<night>')
 def night_report(night=None):
     if night is None:
         since = ktime.get_start_of_night()
@@ -96,9 +96,9 @@ def serve(fun):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='KalAO - Server backend.')
-    parser.add_argument('--debug', action="store_true", dest="debug",
+    parser.add_argument('--debug', action='store_true', dest='debug',
                         help='Start Flask in debug mode')
-    parser.add_argument('--simulation', action="store_true", dest="simulation",
+    parser.add_argument('--simulation', action='store_true', dest='simulation',
                         help='Simulation mode')
 
     args = parser.parse_args()

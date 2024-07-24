@@ -1,6 +1,7 @@
 import time
 from pathlib import Path
 
+from PySide6.QtCore import QLocale
 from PySide6.QtGui import QPixmap, Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication, QSplashScreen
@@ -13,6 +14,8 @@ loader = QUiLoader()
 
 app = QApplication(['KalAO - AO tools'])
 app.setStyle('Fusion')
+
+QLocale.setDefault(QLocale(QLocale.English, QLocale.UnitedKingdom))
 
 pixmap = QPixmap(
     Path(__file__).absolute().parent.parent / 'logo/KalAO_logo_splash.png')
@@ -57,17 +60,17 @@ def cleanup():
 
 
 parser = argparse.ArgumentParser(description='KalAO - Main GUI.')
-parser.add_argument('--engineering', action="store_false", dest="onsky",
+parser.add_argument('--engineering', action='store_false', dest='onsky',
                     help='Engineering units')
-parser.add_argument('--expert', action="store_true", dest="expert",
+parser.add_argument('--expert', action='store_true', dest='expert',
                     help='Expert mode')
-parser.add_argument('--deadman', action="store_true", dest="deadman",
+parser.add_argument('--deadman', action='store_true', dest='deadman',
                     help='Deadman on')
 
 group = parser.add_mutually_exclusive_group()
-group.add_argument('--simulation', action="store_true", dest="simulation",
+group.add_argument('--simulation', action='store_true', dest='simulation',
                    help='Simulation mode')
-group.add_argument('--http', action="store_true", dest="http",
+group.add_argument('--http', action='store_true', dest='http',
                    help='HTTP mode')
 
 args = parser.parse_args()

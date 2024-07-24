@@ -168,5 +168,5 @@ def init(force_init: bool = True, beck: Client = None) -> ReturnCode:
     return ret_init
 
 
-def get_state(beck: Client = None) -> PLCStatus:
+def get_status(beck: Client = None) -> PLCStatus:
     return plc.motor_get_status(config.PLC.Node.CALIB_UNIT, beck=beck)

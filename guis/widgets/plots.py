@@ -80,7 +80,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
         # X Axis Settings
         self.axis_x = QDateTimeAxis()
         self.axis_x.setTickCount(13)
-        self.axis_x.setFormat("HH:mm")
+        self.axis_x.setFormat('HH:mm')
         self.axis_x.setRange(self.since_datetimeedit.dateTime(),
                              self.until_datetimeedit.dateTime())
         chart.addAxis(self.axis_x, Qt.AlignBottom)
@@ -202,10 +202,10 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
     @Slot(int)
     def on_autoupdate_checkbox_stateChanged(self, state):
-        self.autoupdate_df = None
-
         if Qt.CheckState(state) == Qt.Checked:
-            self.plot_button_container.setEnabled(False)
+            self.autoupdate_df = None
+
+            self.plot_button.setEnabledStack(False, 'autoupdate')
 
             self.autoupdate_timer.timeout.connect(
                 self.on_autoupdate_timer_timeout)
@@ -213,7 +213,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
             self.on_autoupdate_timer_timeout()
             self.autoupdate_timer.start()
         else:
-            self.plot_button_container.setEnabled(True)
+            self.plot_button.setEnabledStack(True, 'autoupdate')
 
             self.autoupdate_timer.stop()
 
@@ -442,13 +442,13 @@ class PlotsWidget(KWidget, BackendActionMixin):
         time_delta = min.secsTo(max)
 
         if time_delta > 86400 * 365:
-            self.axis_x.setFormat("HH:mm dd.MM.yy")
+            self.axis_x.setFormat('HH:mm dd.MM.yy')
         elif time_delta > 86400:
-            self.axis_x.setFormat("HH:mm dd.MM")
+            self.axis_x.setFormat('HH:mm dd.MM')
         elif time_delta > 3600:
-            self.axis_x.setFormat("HH:mm")
+            self.axis_x.setFormat('HH:mm')
         else:
-            self.axis_x.setFormat("HH:mm:ss")
+            self.axis_x.setFormat('HH:mm:ss')
 
     def y_range_changed(self, min, max):
         self.min_spinbox.setValue(min)
@@ -457,7 +457,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
     def hover_xy_to_str(self, series, x, y):
         if not np.isnan(x) and not np.isnan(y):
             x = QDateTime.fromMSecsSinceEpoch(
-                int(x)).toString("HH:mm:ss dd-MM-yy")
+                int(x)).toString('HH:mm:ss dd-MM-yy')
 
             if series is None:
                 self.hovered.emit(f'{y:.9g} at {x}')

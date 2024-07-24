@@ -16,8 +16,8 @@ from guis.utils.ui_loader import loadUi
 from guis.utils.widgets import KGraphicsView, KMainWindow, KMessageBox
 
 
-class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
-                        BackendActionMixin):
+class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
+                          BackendActionMixin):
     data_unit = ''
     data_scaling = 1
     data_precision = 2
@@ -39,7 +39,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         self.wfs_shape = wfs_shape
         self.dm_shape = dm_shape
 
-        loadUi('calibration.ui', self)
+        loadUi('ao_calibration.ui', self)
         self.resize(1200, 600)
 
         self.setWindowTitle(f'{conf.upper()} - {self.windowTitle()}')
@@ -110,7 +110,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         series.setPen(pen)
         series.setBrush(brush)
         series.setMarkerSize(3)
-        series.setName("Latency")
+        series.setName('Latency')
         series.setPointsVisible(True)
         chart.addSeries(series)
 
@@ -154,8 +154,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         self.tabWidget.setCurrentIndex(0)
 
-        self.center()
         self.show()
+        self.center()
 
     def step_pre(self, step):
         getattr(self, f'calibration_{step}_indicator').setStatus(
@@ -206,6 +206,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
                     self.calibration_textedit.appendHtml(
                         ascii2html.translate(data['stdout']))
+
                     horizontal_scrollbar = self.calibration_textedit.horizontalScrollBar(
                     )
                     horizontal_scrollbar.setValue(0)
@@ -226,7 +227,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             key = self.calibration_order[step_index + 1]
 
             if key == 'save_restore':
-                self.calibration_save_restore_frame.setEnabled(True)
+                self.calibration_save_restore_widget.setEnabled(True)
             else:
                 key = self.calibration_order[step_index + 1]
                 getattr(self, f'calibration_{key}_button').setEnabled(True)
@@ -238,7 +239,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         if step_index + 2 < len(self.calibration_order):
             for key in self.calibration_order[step_index + 2:]:
                 if key == 'save_restore':
-                    self.calibration_save_restore_frame.setEnabled(False)
+                    self.calibration_save_restore_widget.setEnabled(False)
                 else:
                     getattr(self,
                             f'calibration_{key}_button').setEnabled(False)
@@ -250,6 +251,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         return sucess
 
     def calibration_check_return(self, data):
+        self.calibration_textedit.clear()
         self.calibration_textedit.appendHtml(data['stdout'])
 
         if data['returncode'] != 0:
@@ -308,8 +310,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
     @Slot(bool)
     def on_refresh_button_clicked(self, checked):
-        self.modes_data = self.action_send(self.refresh_button,
-                                           self.backend.calibration_data,
+        self.modes_data = self.action_send(self.modes_widget,
+                                           self.backend.ao_calibration_data,
                                            conf=self.conf, loop=self.loop)
 
         self.update_modes_stats()
@@ -463,8 +465,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
     @Slot(bool)
     def on_reload_button_clicked(self, checked):
-        data = self.action_send(self.reload_button,
-                                self.backend.calibration_reload,
+        data = self.action_send(self.modes_widget,
+                                self.backend.ao_calibration_reload,
                                 conf=self.conf, loop=self.loop)
 
         self.calibration_check_return(data)
@@ -474,8 +476,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     ##### Latency tab
 
     def clear_latency(self):
-        self.latency_framerate_lineedit.setText('-- Hz')
-        self.latency_frames_lineedit.setText('-- frames')
+        self.latency_framerate_spinbox.setValue(np.nan)
+        self.latency_frames_spinbox.setValue(np.nan)
 
         self.latency_series.clear()
 
@@ -487,8 +489,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_calibration_prepare_button_clicked(self, checked):
         self.step_pre('prepare')
 
-        data = self.action_send(self.calibration_prepare_button,
-                                self.backend.calibration_prepare,
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_prepare,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('prepare', data)
@@ -503,9 +505,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         # Take measurement
 
-        data = self.action_send(self.calibration_mlat_button,
-                                self.backend.calibration_mlat, conf=self.conf,
-                                loop=self.loop)
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_mlat,
+                                conf=self.conf, loop=self.loop)
 
         # Display data
 
@@ -515,12 +517,12 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         framerateHz = self.consume_fps_param(data, f'mlat-{self.loop}',
                                              'out.framerateHz', force=True)
         if framerateHz is not None:
-            self.latency_framerate_lineedit.setText(f'{framerateHz:.2f} Hz')
+            self.latency_framerate_spinbox.setValue(framerateHz)
 
         latencyfr = self.consume_fps_param(data, f'mlat-{self.loop}',
                                            'out.latencyfr', force=True)
         if latencyfr is not None:
-            self.latency_frames_lineedit.setText(f'{latencyfr:.2f} frames')
+            self.latency_frames_spinbox.setValue(latencyfr)
 
         latency_data = data.get('hardwlatencypts')
         if latency_data is not None:
@@ -547,8 +549,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_calibration_mkDMpokemodes_button_clicked(self, checked):
         self.step_pre('mkDMpokemodes')
 
-        data = self.action_send(self.calibration_mkDMpokemodes_button,
-                                self.backend.calibration_mkDMpokemodes,
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_mkDMpokemodes,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('mkDMpokemodes', data)
@@ -557,8 +559,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_calibration_takeref_button_clicked(self, checked):
         self.step_pre('takeref')
 
-        data = self.action_send(self.calibration_takeref_button,
-                                self.backend.calibration_takeref,
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_takeref,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('takeref', data)
@@ -567,8 +569,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_calibration_acqlinResp_button_clicked(self, checked):
         self.step_pre('acqlinResp')
 
-        data = self.action_send(self.calibration_acqlinResp_button,
-                                self.backend.calibration_acqlinResp,
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_acqlinResp,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('acqlinResp', data)
@@ -577,8 +579,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_calibration_RMHdecode_button_clicked(self, checked):
         self.step_pre('RMHdecode')
 
-        data = self.action_send(self.calibration_RMHdecode_button,
-                                self.backend.calibration_RMHdecode,
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_RMHdecode,
                                 conf=self.conf, loop=self.loop)
 
         if not self.step_post('RMHdecode', data):
@@ -655,8 +657,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_calibration_RMmkmask_button_clicked(self, checked):
         self.step_pre('RMmkmask')
 
-        data = self.action_send(self.calibration_RMmkmask_button,
-                                self.backend.calibration_RMmkmask,
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_RMmkmask,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('RMmkmask', data)
@@ -665,8 +667,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_calibration_compCM_button_clicked(self, checked):
         self.step_pre('compCM')
 
-        data = self.action_send(self.calibration_compCM_button,
-                                self.backend.calibration_compCM,
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_compCM,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('compCM', data)
@@ -675,9 +677,9 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     def on_calibration_load_button_clicked(self, checked):
         self.step_pre('load')
 
-        data = self.action_send(self.calibration_load_button,
-                                self.backend.calibration_load, conf=self.conf,
-                                loop=self.loop)
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_load,
+                                conf=self.conf, loop=self.loop)
 
         self.step_post('load', data)
 
@@ -686,7 +688,7 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     @Slot(bool)
     def on_calibration_save_button_clicked(self, checked):
         data = self.action_send(
-            self.calibration_save_button, self.backend.calibration_save,
+            self.calibration_buttons_widget, self.backend.ao_calibration_save,
             conf=self.conf, loop=self.loop,
             comment=self.calibration_comment_lineedit.text())
 
@@ -697,8 +699,8 @@ class CalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
     @Slot(bool)
     def on_calibration_restore_button_clicked(self, checked):
-        data = self.action_send(self.calibration_restore_button,
-                                self.backend.calibration_reload,
+        data = self.action_send(self.calibration_buttons_widget,
+                                self.backend.ao_calibration_reload,
                                 conf=self.conf, loop=self.loop)
 
         if self.calibration_check_return(data):

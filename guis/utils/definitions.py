@@ -59,9 +59,9 @@ class Cuts(Enum):
 
 
 class PokeState(StrEnum):
-    FLAT = "No poke"
-    DOWN = "Poke down"
-    UP = "Poke up"
+    FLAT = 'No poke'
+    DOWN = 'Poke down'
+    UP = 'Poke up'
 
 
 class Logo:

@@ -1,13 +1,13 @@
 class SequencerException(Exception):
-    """Generic sequencer error."""
+    """Generic sequencer error"""
 
 
 class AbortRequested(SequencerException):
-    """An abort was requested."""
+    """An abort was requested"""
 
 
 class MissingKeyword(SequencerException):
-    """Missing keyword in function call."""
+    """Missing keyword in function call"""
 
 
 class LoopsNotClosed(SequencerException):
@@ -98,7 +98,7 @@ class FocusSequenceFailed(SequencerException):
 
 
 class CenteringException(SequencerException):
-    """Generic centering error."""
+    """Generic centering error"""
 
 
 class ManualCenteringTimeout(CenteringException):
@@ -121,15 +121,15 @@ class CenteringFluxWFSTooLow(CenteringException):
     """Flux on WFS is too low"""
 
 
-class CenteringOffsetingFailed(CenteringException):
-    """Offsetting to telescope failed"""
+class CenteringOffsettingFailed(CenteringException):
+    """Offsetting failed"""
 
 
 ##### Focusing
 
 
 class FocusingException(SequencerException):
-    """Generic focusing error."""
+    """Generic focusing error"""
 
 
 class FocusingAbortRequested(FocusingException):
@@ -158,3 +158,18 @@ class FocusingNoMinima(FocusingException):
 
 class FocusingSaturated(FocusingException):
     """Image saturated, can't estimate FWHM"""
+
+
+##### Sky flats
+
+
+class SkyFlatException(SequencerException):
+    """Generic sky flat error"""
+
+
+class SkyFlatExptimeTooLow(SkyFlatException):
+    """Exposure time too low"""
+
+
+class SkyFlatExptimeTooHigh(SkyFlatException):
+    """Exposure time too low"""

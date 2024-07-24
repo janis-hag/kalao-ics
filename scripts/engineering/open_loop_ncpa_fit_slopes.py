@@ -63,36 +63,36 @@ def run(args):
 
     plt.figure()
     plt.imshow(slopes, vmin=vmin, vmax=vmax, cmap='RdBu_r')
-    plt.title("Original slopes")
+    plt.title('Original slopes')
 
     plt.figure()
     plt.imshow(np.ma.masked_array(slopes, mask=mask | mask_additional),
                vmin=vmin, vmax=vmax, cmap='RdBu_r')
-    plt.title("Original slopes masked")
+    plt.title('Original slopes masked')
 
     plt.figure()
     plt.imshow(
         np.ma.masked_array(resulting_slopes, mask=mask | mask_additional),
         vmin=vmin, vmax=vmax, cmap='RdBu_r')
-    plt.title("Resulting slopes masked")
+    plt.title('Resulting slopes masked')
 
     plt.figure()
     plt.imshow(resulting_slopes, vmin=vmin, vmax=vmax, cmap='RdBu_r')
-    plt.title("Resulting slopes (full)")
+    plt.title('Resulting slopes (full)')
 
     plt.figure()
     plt.imshow(slopes - resulting_slopes, vmin=vmin, vmax=vmax, cmap='RdBu_r')
-    plt.title("Error")
+    plt.title('Error')
 
     plt.figure()
     plt.imshow(np.ma.masked_array(resulting_slopes, mask=mask), vmin=vmin,
                vmax=vmax, cmap='RdBu_r')
-    plt.title("Resulting slopes (as original)")
+    plt.title('Resulting slopes (as original)')
 
     plt.figure()
     plt.imshow(np.ma.masked_array(resulting_slopes_no_tt, mask=mask),
                vmin=vmin, vmax=vmax, cmap='RdBu_r')
-    plt.title("Resulting slopes (tip and tilt removed)")
+    plt.title('Resulting slopes (tip and tilt removed)')
 
     plt.show()
 

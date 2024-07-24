@@ -67,7 +67,7 @@ def gather_general() -> dict[str, Any]:
     data.update(rtc_gpu)
 
     # IPPower
-    ippower_status = ippower.status_all()
+    ippower_status = ippower.get_all_status()
     data.update(ippower_status)
 
     # Science camera status

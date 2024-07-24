@@ -28,7 +28,7 @@ class RelayCommand:
 
 
 @plc.autoconnect
-def get_status(beck: Client = None) -> dict[str, Any]:
+def get_all_status(beck: Client = None) -> dict[str, Any]:
     """
     Query status of the cooling system.
 
@@ -60,13 +60,6 @@ def get_status(beck: Client = None) -> dict[str, Any]:
 
 @plc.autoconnect
 def get_state(node: str, beck: Client = None) -> RelayState:
-    """
-    Open or Close the shutter depending on action_name
-
-    :param node: bClose_Shutter or
-    :return: position of flipmirror
-    """
-
     if beck.get_node(node).get_value():
         return RelayState.ON
     else:
@@ -76,12 +69,6 @@ def get_state(node: str, beck: Client = None) -> RelayState:
 @plc.autoconnect
 def switch(node: str, action_name: RelayCommand | RelayState,
            beck: Client = None) -> RelayState:
-    """
-     Open or Close the shutter depending on action_name
-
-    :param node: bClose_Shutter or
-    :return: position of flipmirror
-    """
 
     if action_name == RelayState.ON:
         action_name = RelayCommand.ON
@@ -102,9 +89,7 @@ def switch(node: str, action_name: RelayCommand | RelayState,
 
     time.sleep(1)
 
-    relay_status = get_state(node, beck=beck)
-
-    return relay_status
+    return get_state(node, beck=beck)
 
 
 def pump_on(beck: Client = None) -> RelayState:

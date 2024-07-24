@@ -6,10 +6,10 @@ from PySide6.QtCore import QByteArray, QEventLoop, QUrl
 from PySide6.QtNetwork import (QNetworkAccessManager, QNetworkReply,
                                QNetworkRequest)
 
+from kalao.utils.json import KalAOJSONDecoder, KalAOJSONEncoder
 from kalao.utils.rprint import rprint
 
 from guis.backends.abstract import AbstractBackend, name_to_url
-from guis.utils.json_coder import KalAOJSONDecoder, KalAOJSONEncoder
 
 import config
 
@@ -57,7 +57,7 @@ class MainBackend(AbstractBackend):
             if reply_type == 'application/octet-stream':
                 ret = pickle.loads(data)
             elif reply_type == 'application/json':
-                ret = self.decoder.decode(data.data().decode("utf-8"))
+                ret = self.decoder.decode(data.data().decode('utf-8'))
             else:
                 raise Exception(f'Unsupported MIME type {reply_type}')
         except Exception as e:

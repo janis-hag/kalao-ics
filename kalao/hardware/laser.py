@@ -13,12 +13,14 @@ import time
 from datetime import datetime, timezone
 from enum import StrEnum
 
+import numpy as np
+
 from kalao import database, logger
 from kalao.hardware import plc, wfs
 
 from opcua import Client, ua
 
-from kalao.definitions.enums import LaserState, ReturnCode
+from kalao.definitions.enums import LaserStatus, ReturnCode
 
 import config
 
@@ -31,19 +33,36 @@ class LaserCommand(StrEnum):
 
 
 @plc.autoconnect
-def get_state(beck: Client = None) -> LaserState:
-    if beck.get_node(f'{config.PLC.Node.LASER}.Status').get_value():
-        return LaserState.ON
-    else:
-        return LaserState.OFF
+def get_status(beck: Client = None) -> LaserStatus:
+    for retry in range(config.Laser.retries):
+        status = beck.get_node(f'{config.PLC.Node.LASER}.Status').get_value()
+
+        if status == True:
+            return LaserStatus.ON
+        elif status == False:
+            return LaserStatus.OFF
+        else:
+            time.sleep(config.Laser.retry_wait)
+            continue
+
+    return LaserStatus.ERROR
 
 
 @plc.autoconnect
 def get_power(beck: Client = None) -> float:
-    return beck.get_node(f'{config.PLC.Node.LASER}.Current').get_value()
+    for retry in range(config.Laser.retries):
+        power = beck.get_node(f'{config.PLC.Node.LASER}.Current').get_value()
+
+        if power < 0:
+            time.sleep(config.Laser.retry_wait)
+            continue
+
+        return power
+
+    return np.nan
 
 
-def disable(beck: Client = None) -> LaserState:
+def disable(beck: Client = None) -> LaserStatus:
     """
     Power off laser source
 
@@ -53,7 +72,7 @@ def disable(beck: Client = None) -> LaserState:
     return _switch(LaserCommand.DISABLE, beck=beck)
 
 
-def enable(beck: Client = None) -> LaserState:
+def enable(beck: Client = None) -> LaserStatus:
     """
     Power on laser source and set to default intensity.
     Disables EM gain on WFS camera.
@@ -64,7 +83,7 @@ def enable(beck: Client = None) -> LaserState:
     return _switch(LaserCommand.ENABLE, beck=beck)
 
 
-def lock(beck: Client = None) -> LaserState:
+def lock(beck: Client = None) -> LaserStatus:
     """
     Lock laser into software only control
 
@@ -74,7 +93,7 @@ def lock(beck: Client = None) -> LaserState:
     return _switch(LaserCommand.LOCK, beck=beck)
 
 
-def unlock(beck: Client = None) -> LaserState:
+def unlock(beck: Client = None) -> LaserStatus:
     """
     Lock laser into software only control
 
@@ -85,14 +104,8 @@ def unlock(beck: Client = None) -> LaserState:
 
 
 def get_switch_time() -> tuple[str, float]:
-    """
-    Looks up the time when the tungsten lamp as last been put into current state (ON/OFF/ERROR)
-
-    :return:  switch_time a datetime object
-    """
-
-    data = database.get_time_since_state('monitoring', 'laser_state', '==',
-                                         get_state())
+    data = database.get_time_since_state('monitoring', 'laser_status', '==',
+                                         get_status())
 
     if data.get('since') is None:
         return data['current']['value'], 0
@@ -121,7 +134,7 @@ def set_power(power: float, enable: bool = False,
         power = config.Laser.max_power
 
     previous_power = get_power(beck=beck)
-    previous_state = get_state(beck=beck)
+    previous_status = get_status(beck=beck)
 
     # Give new intensity value
     laser_setIntensity = beck.get_node(f'{config.PLC.Node.LASER}.setIntensity')
@@ -140,19 +153,19 @@ def set_power(power: float, enable: bool = False,
             ua.Variant(True,
                        laser_bSetIntensity.get_data_type_as_variant_type())))
 
-    if enable and previous_state != LaserState.ON:
+    if enable and previous_status != LaserStatus.ON:
         _switch(LaserCommand.ENABLE, beck=beck)
 
     if power != 0 and not math.isclose(
-            previous_power, power) and previous_state == LaserState.ON:
+            previous_power, power) and previous_status == LaserStatus.ON:
         time.sleep(config.Laser.switch_wait)
 
     return get_power(beck=beck)
 
 
 @plc.autoconnect
-def _switch(action_name: LaserCommand | LaserState,
-            beck: Client = None) -> LaserState:
+def _switch(action_name: LaserCommand | LaserStatus,
+            beck: Client = None) -> LaserStatus:
     """
      Enable or Disable the laser depending on action_name
 
@@ -160,9 +173,9 @@ def _switch(action_name: LaserCommand | LaserState,
     :return: status of laser
     """
 
-    if action_name == LaserState.ON:
+    if action_name == LaserStatus.ON:
         action_name = LaserCommand.ENABLE
-    elif action_name == LaserState.OFF:
+    elif action_name == LaserStatus.OFF:
         action_name = LaserCommand.DISABLE
 
     if action_name == LaserCommand.ENABLE:
@@ -175,7 +188,7 @@ def _switch(action_name: LaserCommand | LaserState,
     elif action_name == LaserCommand.UNLOCK:
         logger.info('laser', 'Unlocking laser')
 
-    previous_state = get_state()
+    previous_status = get_status()
 
     laser_switch = beck.get_node(f'{config.PLC.Node.LASER}.{action_name}')
     laser_switch.set_attribute(
@@ -183,12 +196,12 @@ def _switch(action_name: LaserCommand | LaserState,
         ua.DataValue(
             ua.Variant(True, laser_switch.get_data_type_as_variant_type())))
 
-    if (action_name == LaserCommand.ENABLE and previous_state
-            != LaserState.ON) or (action_name == LaserCommand.DISABLE and
-                                  previous_state != LaserState.OFF):
+    if (action_name == LaserCommand.ENABLE and previous_status
+            != LaserStatus.ON) or (action_name == LaserCommand.DISABLE and
+                                   previous_status != LaserStatus.OFF):
         time.sleep(config.Laser.switch_wait)
 
-    return get_state(beck=beck)
+    return get_status(beck=beck)
 
 
 def init() -> ReturnCode:

@@ -123,7 +123,7 @@ def start_acquisition() -> ReturnCode:
     logger.info('wfs', 'Starting WFS acquisition')
 
     # Prevent inactivity checks from turning WFS off immediately
-    database.store('obs', {'deadman_keepalive': 0})
+    database.store('obs', {'deadman_keepalive': -1})
     time.sleep(1)
 
     toolbox.set_tmux_value('kalaocam_ctrl', 'SetContinuousAcquisition')
@@ -232,27 +232,28 @@ def emgain_off() -> ReturnCode:
     try:
         toolbox.set_fps_value(config.FPS.NUVU, 'autogain_on', False)
         toolbox.set_fps_value(config.FPS.NUVU, 'autogain_setting', 0)
-    except Exception as err:
+    except Exception as exc:
         rprint(
             f'Can\'t turn off autogain, {config.FPS.NUVU} seems not to be running.'
         )
-        rprint(Exception, err)
+        rprint(Exception, exc)
         ret = ReturnCode.GENERIC_ERROR
 
     try:
         toolbox.set_fps_value(config.FPS.NUVU, 'emgain', 1)
-    except Exception as err:
+    except Exception as exc:
         rprint(
             f'Can\'t turn off emgain, {config.FPS.NUVU} seems not to be running.'
         )
-        rprint(Exception, err)
+        rprint(Exception, exc)
         ret = ReturnCode.GENERIC_ERROR
 
     try:
         toolbox.set_tmux_value('kalaocam_ctrl', 'SetEMCalibratedGain', 1)
-    except Exception as err:
-        rprint('Can\'t turn off emgain, nucu_ctrl seems not to be running.')
-        rprint(Exception, err)
+    except Exception as exc:
+        rprint(
+            'Can\'t turn off emgain, kalaocam_ctrl seems not to be running.')
+        rprint(Exception, exc)
         ret = ReturnCode.GENERIC_ERROR
 
     return ret

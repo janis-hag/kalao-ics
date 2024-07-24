@@ -220,6 +220,11 @@ def read_mongo_to_pandas(collection_name: str, keys: str | list | KeysView |
 
         data_df[key][document['timestamp']] = document['value']
 
+    if isinstance(keys, str):
+        keys = [keys]
+    elif keys is None:
+        keys = data_df.keys()
+
     # Construct the DataFrame
     df = pd.DataFrame(data_df, columns=keys)
     df.index.name = 'timestamp'
@@ -255,7 +260,7 @@ def store(collection_name: str, data: dict[str, Any],
         if key not in definitions[collection_name]['metadata']:
             raise KeyError(f'Inserting unknown key "{key}" in database')
 
-        if isinstance(data[key], Enum):
+        if isinstance(value, Enum):
             value = value.value
         elif isinstance(value, Path):
             value = str(value)
@@ -315,7 +320,7 @@ def get_time_since_state(collection_name: str, key: str, condition: str = '==',
                          value: str | int | float | None = None
                          ) -> dict[str, Any]:
     if condition not in condition_mapping:
-        raise Exception("Unsupported condition")
+        raise Exception('Unsupported condition')
 
     collection = _get_collection(collection_name)
 

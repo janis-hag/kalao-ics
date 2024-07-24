@@ -89,7 +89,7 @@ def wfs_frame(
 
             frame[psf_y_i - hwindow:psf_y_i + hwindow, psf_x_i -
                   hwindow:psf_x_i + hwindow] += kmath.gaussian_2d_rotated(
-                      y, x, mu_y, mu_x, sigma, sigma, 0, A, 0)
+                      x, y, mu_x, mu_y, sigma, sigma, 0, A, 0)
 
     # Reduce to final size with photon shot noise
     frame = rng.poisson(block_reduce(frame, upsampling,

@@ -20,7 +20,7 @@ from kalao.sequencer import commands, seq_utils
 from kalao.utils import background
 from kalao.utils.rprint import rprint
 
-from kalao.definitions.enums import ReturnCode, SequencerStatus, ShutterState
+from kalao.definitions.enums import ReturnCode, SequencerStatus, ShutterStatus
 from kalao.definitions.exceptions import (AbortRequested, CameraCancelFailed,
                                           SequencerException)
 
@@ -31,19 +31,18 @@ socketSeq = None
 
 
 def sig_handler(signal_received: int, frame: FrameType | None) -> None:
-    if signal_received == signal.SIGINT or signal_received == signal.SIGTERM:
-        rprint('\nSIGTERM or SIGINT or CTRL-C detected. Exiting.')
+    logger.info('sequencer', 'SIGTERM, SIGINT or CTRL-C received. Exiting.')
 
-        if conn is not None:
-            conn.close()
+    if conn is not None:
+        conn.close()
 
-        if socketSeq is not None:
-            socketSeq.close()
+    if socketSeq is not None:
+        socketSeq.close()
 
-        seq_utils.set_sequencer_status(SequencerStatus.OFF)
-        logger.info('sequencer', 'Sequencer server off')
+    seq_utils.set_sequencer_status(SequencerStatus.OFF)
+    logger.info('sequencer', 'Sequencer server off')
 
-        exit(0)
+    exit(0)
 
 
 def init() -> ReturnCode:
@@ -68,7 +67,7 @@ def init() -> ReturnCode:
         cooling.init,
     ]
 
-    background.launch('sequencer', init_list, config.SEQ.init_timeout)
+    background.launch('sequencer', init_list, config.Sequencer.init_timeout)
 
     return ReturnCode.SEQ_OK
 
@@ -85,7 +84,7 @@ def serve() -> ReturnCode:
     global conn, socketSeq
 
     socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socketSeq.bind((config.SEQ.ip, config.SEQ.port))
+    socketSeq.bind((config.Sequencer.host, config.Sequencer.port))
 
     th = None
 
@@ -99,7 +98,7 @@ def serve() -> ReturnCode:
 
         conn, address = socketSeq.accept()
 
-        command_raw = (conn.recv(4096)).decode("utf8")
+        command_raw = (conn.recv(4096)).decode('utf8')
 
         separator = command_raw[0]
         command_list = command_raw[1:].split(separator)
@@ -145,6 +144,7 @@ def serve() -> ReturnCode:
                 th = None
         else:
             if th is not None:
+                # Note and TODO: we should actually refuse the command if the sequencer is already executing one, but there is no way to signal it to the synchro
                 th.join()
 
             if 'alphacat' in args and 'deltacat' in args:
@@ -161,6 +161,7 @@ def serve() -> ReturnCode:
                 adc.configure(zenith_angle=zenith_angle, blocking=False)
 
             seq_utils.set_sequencer_status(SequencerStatus.SETUP)
+
             logger.info('sequencer', f'Starting {command}')
 
             th = Thread(target=execute_command, kwargs={
@@ -189,19 +190,19 @@ def cast_args(args: dict[str, Any]) -> ReturnCode:
 
     # Check for each key if the cast of the value is possible and cast it
     for k, v in args.items():
-        if k in config.SEQ.gop_arg_int:
+        if k in config.Sequencer.gop_arg_int:
             if v.isdigit():
                 args[k] = int(v)
             else:
                 logger.error('sequencer',
                              f'{k} value cannot be convert in int')
-        elif k in config.SEQ.gop_arg_float:
+        elif k in config.Sequencer.gop_arg_float:
             if v.replace('.', '', 1).isdigit():
                 args[k] = float(v)
             else:
                 logger.error('sequencer',
                              f'{k} value cannot be convert in float')
-        elif k in config.SEQ.gop_arg_string:
+        elif k in config.Sequencer.gop_arg_string:
             # If filterposition arg is not a digit, then he must be a name
             # Get the int id from the dict Id_filter
             # If filterposition arg is a digit, cast it in int
@@ -220,6 +221,9 @@ def cast_args(args: dict[str, Any]) -> ReturnCode:
                 args[k] = 'SDSS-' + v
             elif v == 'nd':
                 args[k] = 'ND1.5'
+
+        elif k == 'kao':
+            args[k] = v.upper()
 
     return ReturnCode.SEQ_OK
 
@@ -247,7 +251,7 @@ def execute_command(command: str, seq_args: dict[str, Any],
             logger.error('sequencer', f'{command} aborted')
 
             # Close shutter after exception
-            if shutter.close() != ShutterState.CLOSED:
+            if shutter.close() != ShutterStatus.CLOSED:
                 logger.error('sequencer',
                              'Failed to close the shutter after error')
 
@@ -261,7 +265,7 @@ def execute_command(command: str, seq_args: dict[str, Any],
                     f'Camera exposure cancellation failed in {command}')
 
         # Close shutter after exception
-        if shutter.close() != ShutterState.CLOSED:
+        if shutter.close() != ShutterStatus.CLOSED:
             logger.error('sequencer',
                          'Failed to close the shutter after error')
 
@@ -274,7 +278,7 @@ def execute_command(command: str, seq_args: dict[str, Any],
         logger.error('sequencer', f'"{e.__doc__}" happened during {command}')
 
         # Close shutter after exception
-        if shutter.close() != ShutterState.CLOSED:
+        if shutter.close() != ShutterStatus.CLOSED:
             logger.error('sequencer',
                          'Failed to close the shutter after error')
 
@@ -290,7 +294,7 @@ def execute_command(command: str, seq_args: dict[str, Any],
         rprint(''.join(traceback.format_exception(e)))
 
         # Close shutter after exception
-        if shutter.close() != ShutterState.CLOSED:
+        if shutter.close() != ShutterStatus.CLOSED:
             logger.error('sequencer',
                          'Failed to close the shutter after error')
 

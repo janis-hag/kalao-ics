@@ -4,7 +4,7 @@ from kalao.hardware import cooling, dm, hw_utils, shutter
 import dbus
 
 from kalao.definitions.enums import (IPPowerStatus, RelayState, ReturnCode,
-                                     ShutterState)
+                                     ShutterStatus)
 
 import config
 
@@ -12,7 +12,7 @@ import config
 # For documentation on the API
 
 
-def connect_dbus_logind(
+def _connect_dbus_logind(
 ) -> tuple[dbus.SystemBus | dbus.SessionBus, dbus.Interface]:
     bus = dbus.SystemBus()
 
@@ -25,7 +25,7 @@ def connect_dbus_logind(
 
 
 def power_off() -> None:
-    bus, manager = connect_dbus_logind()
+    bus, manager = _connect_dbus_logind()
 
     manager.PowerOff(False)
 
@@ -33,7 +33,7 @@ def power_off() -> None:
 
 
 def reboot() -> None:
-    bus, manager = connect_dbus_logind()
+    bus, manager = _connect_dbus_logind()
 
     manager.Reboot(False)
 
@@ -44,7 +44,7 @@ def shutdown_sequence() -> None:
     logger.info('rtc', 'Initiating shutdown sequence')
 
     # Close shutter
-    if shutter.close() != ShutterState.CLOSED:
+    if shutter.close() != ShutterStatus.CLOSED:
         logger.error('rtc', 'Failed to close shutter')
 
     # Shut down DM

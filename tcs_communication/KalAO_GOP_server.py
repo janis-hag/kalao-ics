@@ -34,10 +34,10 @@ def gop_server():
     # Initialise Gop (Geneva Observatory Protocol)
     gop = tcs_srv_gop.gop()
 
-    gop.processesRegistration(config.GOP.ip)
+    gop.processesRegistration(config.GOP.host)
 
     logger.info('gop', 'Initialize new gop connection. Wait for client ...')
-    gc = gop.initializeInetGopConnection(config.GOP.ip, config.GOP.port,
+    gc = gop.initializeInetGopConnection(config.GOP.host, config.GOP.port,
                                          config.GOP.verbosity)
     #
     # Infinite loop, waiting for command
@@ -60,7 +60,7 @@ def gop_server():
                     'gop',
                     'Initialize new gop connection. Wait for client ...')
                 # gc = gop.initializeGopConnection(socketName, verbosity)
-                gc = gop.initializeInetGopConnection(config.GOP.ip,
+                gc = gop.initializeInetGopConnection(config.GOP.host,
                                                      config.GOP.port,
                                                      config.GOP.verbosity)
                 break
@@ -89,7 +89,7 @@ def gop_server():
             if command in ['INSTRUMENTCHANGE', 'THE_END', 'OBCHANGE']:
                 database.store('obs', {'sequencer_on_target': False})
 
-            hostSeq, portSeq = (config.SEQ.ip, config.SEQ.port)
+            hostSeq, portSeq = (config.Sequencer.host, config.Sequencer.port)
             socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
             try:
@@ -145,7 +145,7 @@ def gop_server():
             gop.write(message)
 
     # in case of break, we disconnect all servers
-    logger.info('gop', f'{config.GOP.ip} close gop connection and exit')
+    logger.info('gop', f'{config.GOP.host} close gop connection and exit')
 
     gop.closeConnection()
 

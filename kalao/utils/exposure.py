@@ -85,7 +85,7 @@ def flat_exptime(target_adu: float, filter: str) -> float:
 def next_flat_exptime(target_adu: float, prev_img: np.ndarray,
                       prev_exptime: float, prev_filter: str,
                       next_filter: str) -> float:
-    prev_adu = prev_img.median()
+    prev_adu = np.median(prev_img)
 
     # Start with previous exposure time
     exptime = prev_exptime

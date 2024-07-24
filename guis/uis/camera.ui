@@ -170,7 +170,7 @@
      <item>
       <widget class="QPushButton" name="fits_viewer_button">
        <property name="text">
-        <string>Open detailed view</string>
+        <string>Open detailed view ...</string>
        </property>
       </widget>
      </item>
@@ -194,13 +194,13 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KGraphicsView</class>
-   <extends>QGraphicsView</extends>
+   <class>KLabel</class>
+   <extends>QLabel</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>
-   <class>KLabel</class>
-   <extends>QLabel</extends>
+   <class>KGraphicsView</class>
+   <extends>QGraphicsView</extends>
    <header>kalao</header>
   </customwidget>
   <customwidget>

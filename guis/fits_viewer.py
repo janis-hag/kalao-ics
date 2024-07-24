@@ -2,6 +2,7 @@ import argparse
 import signal
 from pathlib import Path
 
+from PySide6.QtCore import QLocale
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
@@ -24,6 +25,8 @@ loader = QUiLoader()
 
 app = QApplication(['KalAO - FITS viewer'])
 app.setQuitOnLastWindowClosed(True)
+
+QLocale.setDefault(QLocale(QLocale.English, QLocale.UnitedKingdom))
 
 # Windows
 

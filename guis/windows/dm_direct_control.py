@@ -42,7 +42,7 @@ class DMSpinBox(QDoubleSpinBox):
         color = self.colormap.table[round(d)]
         color = QColor(color).name()
 
-        self.setStyleSheet(f"background-color: {color};")
+        self.setStyleSheet(f'background-color: {color};')
 
     def setValue(self, val):
         self.change_color(val)

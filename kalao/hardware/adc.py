@@ -216,5 +216,5 @@ def init(node: str, force_init: bool = False,
     return ret_init
 
 
-def get_state(node, beck: Client = None) -> PLCStatus:
+def get_status(node, beck: Client = None) -> PLCStatus:
     return plc.motor_get_status(node, beck=beck)

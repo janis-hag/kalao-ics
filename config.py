@@ -43,13 +43,15 @@ def get_git_version(repository: Path) -> str:
 
 version = get_git_version(kalao_ics_path)
 
-git_repositories = [
-    Path('/home/kalao/kalao-ics'),
-    Path('/home/kalao/kalao-fli'),
-    Path('/home/kalao/kalao-camstack'),
-    Path('/home/kalao/kalao-cacao-workdir'),
-    Path('/home/kalao/kalao-cacao-src/milk/plugins/kalao-src'),
-]
+
+class Git:
+    repositories = [
+        Path('/home/kalao/kalao-ics'),
+        Path('/home/kalao/kalao-fli'),
+        Path('/home/kalao/kalao-camstack'),
+        Path('/home/kalao/kalao-cacao-workdir'),
+        Path('/home/kalao/kalao-cacao-src/milk/plugins/kalao-src'),
+    ]
 
 
 class IPPower:
@@ -129,13 +131,13 @@ class AO:
         'nuvu_acquire-1',
         'shwfs_process-1',
         'bmc_display-1',
-        # DM Loop
+        None,  # DM Loop
         'acquWFS-1',
         'wfs2cmodeval-1',
         'mfilt-1',
         'mvalC2dm-1',
         'DMch2disp-01',
-        # TTM Loop
+        None,  # TTM Loop
         'acquWFS-2',
         'wfs2cmodeval-2',
         'mfilt-2',
@@ -148,15 +150,17 @@ class AO:
         'nuvu_stream',
         'shwfs_slopes',
         'shwfs_flux',
+        None,
         'aol1_imWFS2',
         'aol1_modevalWFS',
         'aol1_modevalDM',
+        'dm01disp',
+        'bmc_commands_dm',
+        None,
         'aol2_imWFS2',
         'aol2_modevalWFS',
         'aol2_modevalDM',
-        'dm01disp',
         'dm02disp',
-        'bmc_commands_dm',
         'bmc_commands_ttm',
     ]
 
@@ -182,7 +186,7 @@ class TTM:
 
 
 class Camera:
-    ip = '127.0.0.1'
+    host = '127.0.0.1'
     port = 9080
 
     # Note: max exposure time is limited due to this timeout setting
@@ -309,6 +313,9 @@ class Laser:
     switch_wait = 10  # s
     position = 24.12  # mm
 
+    retries = 3  # -
+    retry_wait = 1  # s
+
 
 class Tungsten:
     switch_wait = 2  # s
@@ -317,18 +324,9 @@ class Tungsten:
     stabilisation_time = 300  # s
     stabilisation_poll_interval = 5  # s
 
-    flat_exptime_list = {
-        'clear': 300,  # s
-        'SDSS-g': 360,  # s
-        'SDSS-r': 480,  # s
-        'SDSS-i': 420,  # s
-        'SDSS-z': 420,  # s
-        'ND1.5': 300,  # s
-    }
-
 
 class PLC:
-    ip = '10.10.132.121'
+    host = '10.10.132.121'
     port = 4840
     disabled = []
 
@@ -339,8 +337,8 @@ class PLC:
     coolant_temp_out_offset = -1.7  # °C, 19 - 20.3
 
     class Node:
-        ADC1 = 'ns=4;s=MAIN.ADC1_Newport_PR50PP.motor'
-        ADC2 = 'ns=4;s=MAIN.ADC2_Newport_PR50PP.motor'
+        ADC1 = 'ns=4;s=MAIN.ADC1_Newport_PR50PP'
+        ADC2 = 'ns=4;s=MAIN.ADC2_Newport_PR50PP'
         CALIB_UNIT = 'ns=4;s=MAIN.Linear_Standa_8MT'
         FLIP_MIRROR = 'ns=4;s=MAIN.Flip'
         SHUTTER = 'ns=4;s=MAIN.Shutter'
@@ -371,8 +369,8 @@ class PLC:
     init_poll_interval = 1  # s
 
 
-class SEQ:
-    ip = '127.0.0.1'
+class Sequencer:
+    host = '127.0.0.1'
     port = 5005
     gop_arg_int = ['nbframes']
     gop_arg_float = ['texp', 'intensity', 'mv']
@@ -414,13 +412,19 @@ class FITS:
     max_length_without_HIERARCH = 8
 
     on_sky_types = [
-        ObservationType.TARGET, ObservationType.SKY_FLAT, ObservationType.FOCUS
+        ObservationType.TARGET, ObservationType.TARGET_CENTERING,
+        ObservationType.FOCUS, ObservationType.SKY_FLAT
     ]
 
     base_header = {
         ObservationType.TARGET: {
             'HIERARCH ESO DPR CATG': 'SCIENCE',
             'HIERARCH ESO DPR TYPE': 'OBJECT',
+        },
+        ObservationType.BIAS: {
+            'HIERARCH ESO DPR CATG': 'CALIB',
+            'HIERARCH ESO DPR TYPE': 'BIAS',
+            'HIERARCH ESO OBS PROG ID': '199',
         },
         ObservationType.DARK: {
             'HIERARCH ESO DPR CATG': 'CALIB',
@@ -583,9 +587,32 @@ class Calib:
         min_exptime = 1  # s
         max_exptime = 300  # s
 
+        tungsten_exptime_list = {
+            'clear': 300,  # s
+            'SDSS-g': 360,  # s
+            'SDSS-r': 480,  # s
+            'SDSS-i': 420,  # s
+            'SDSS-z': 420,  # s
+            'ND1.5': 300,  # s
+        }
+
+        sky_evening_filters_order = [
+            'SDSS-z',
+            'SDSS-i',
+            'SDSS-r',
+            'SDSS-g',
+            'clear',
+            'ND1.5',
+        ]
+
     class Darks:
         # How many darks to make for every exposure time
         dark_number = 5  # -
+
+        include_types = [
+            ObservationType.TARGET, ObservationType.SKY_FLAT,
+            ObservationType.LAMP_FLAT
+        ]
 
     class AO:
         class DM:
@@ -607,7 +634,7 @@ class Euler:
 
 
 class GOP:
-    ip = 'kalaortc01'  # 10.10.132.120
+    host = 'kalaortc01'  # 10.10.132.120
     port = 18234
     verbosity = 0
 
@@ -707,7 +734,7 @@ class Monitoring:
 
 
 class ETCS:
-    ip = '10.10.132.102'
+    host = '10.10.132.102'
     port = 10002
     token = 'ETCS_API_TOKEN_2023'
     request_timeout = 120  # s
@@ -777,6 +804,7 @@ class GUI:
     refreshrate_data = 1  # /s
     refreshrate_logs = 1  # /s
     refreshrate_focus = 1  # /s
+    refreshrate_calibration_poses = 1  # /s
     refreshrate_monitoring = 0.1  # /s
 
     http_host = '10.10.132.120'  # kalaortc01

@@ -69,17 +69,17 @@ telescope_azimut:
   group: Telescope
 
 # Hardware
-shutter_state:
-  short: Shutter state
-  long: Shutter state
+shutter_status:
+  short: Shutter status
+  long: Shutter status
   unit:
   group: Hardware
   fits_keyword: HIERARCH ESO INS SHUT STATUS
   alarm_values: [ ERROR ]
 
-flipmirror_position:
-  short: Flip mirror position
-  long: Flip mirror position
+flipmirror_status:
+  short: Flip mirror status
+  long: Flip mirror status
   unit:
   group: Hardware
   fits_keyword: HIERARCH ESO INS FLIP STATUS
@@ -94,16 +94,16 @@ calibunit_position:
   fits_keyword: HIERARCH ESO INS CALIB POS
   alarm_values: [ .nan ]
 
-calibunit_state:
-  short: Calib. Unit state
-  long: Calibration Unit state
+calibunit_status:
+  short: Calib. Unit status
+  long: Calibration Unit status
   unit:
   group: Hardware
   alarm_values: [ ERROR ]
 
-laser_state:
-  short: Laser state
-  long: Laser calibration lamp state
+laser_status:
+  short: Laser status
+  long: Laser calibration lamp status
   unit:
   group: Lamps
   fits_keyword: HIERARCH ESO INS LASER STATUS
@@ -118,9 +118,9 @@ laser_power:
   fits_keyword: HIERARCH ESO INS LASER POWER
   alarm_values: [ .nan ]
 
-tungsten_state:
-  short: Tungsten state
-  long: Tungsten calibration lamp state
+tungsten_status:
+  short: Tungsten status
+  long: Tungsten calibration lamp status
   unit:
   group: Lamps
   fits_keyword: HIERARCH ESO INS TUNGSTEN STATUS
@@ -135,9 +135,9 @@ adc1_angle:
   fits_keyword: HIERARCH ESO INS ADC1 ANGLE
   alarm_values: [ .nan ]
 
-adc1_state:
-  short: ADC1 state
-  long: State of first ADC prism
+adc1_status:
+  short: ADC1 status
+  long: Status of first ADC prism
   unit:
   group: Hardware
   alarm_values: [ ERROR, NOT_ENABLED, NOT_INITIALISED ]
@@ -151,9 +151,9 @@ adc2_angle:
   fits_keyword: HIERARCH ESO INS ADC2 ANGLE
   alarm_values: [ .nan ]
 
-adc2_state:
-  short: ADC2 state
-  long: State of second ADC prism
+adc2_status:
+  short: ADC2 status
+  long: Status of second ADC prism
   unit:
   group: Hardware
   alarm_values: [ ERROR, NOT_ENABLED, NOT_INITIALISED ]

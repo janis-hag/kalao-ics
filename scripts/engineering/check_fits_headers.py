@@ -5,9 +5,9 @@ import pandas as pd
 from kalao.hardware import camera
 from kalao.utils import fits_handling
 
-from kalao.definitions.enums import (FlipMirrorPosition, LaserState,
-                                     ObservationType, ShutterState,
-                                     TungstenState)
+from kalao.definitions.enums import (FlipMirrorStatus, LaserStatus,
+                                     ObservationType, ShutterStatus,
+                                     TungstenStatus)
 
 import config
 
@@ -20,7 +20,7 @@ def run(args):
             camera_header = fits_handling._header_from_fits_file(
                 '/tmp/camera_fake.fits')
         else:
-            print("[ERROR] Failed to get empty file from FLI camera.")
+            print('[ERROR] Failed to get empty file from FLI camera.')
             camera_header = fits_handling._header_empty()
     else:
         camera_header = fits_handling._header_from_fits_file(args.fits)
@@ -35,12 +35,12 @@ def run(args):
 
     df.loc['RA', 'value'] = 0
     df.loc['DEC', 'value'] = 0
-    df.loc['HIERARCH ESO INS SHUT STATUS', 'value'] = ShutterState.OPEN.value
+    df.loc['HIERARCH ESO INS SHUT STATUS', 'value'] = ShutterStatus.OPEN.value
     df.loc['HIERARCH ESO INS FLIP STATUS',
-           'value'] = FlipMirrorPosition.DOWN.value
-    df.loc['HIERARCH ESO INS LASER STATUS', 'value'] = LaserState.OFF.value
+           'value'] = FlipMirrorStatus.DOWN.value
+    df.loc['HIERARCH ESO INS LASER STATUS', 'value'] = LaserStatus.OFF.value
     df.loc['HIERARCH ESO INS TUNGSTEN STATUS',
-           'value'] = TungstenState.OFF.value
+           'value'] = TungstenStatus.OFF.value
 
     df = fits_handling._dynamic_cards_update(
         df, ObservationType.TARGET, True, 'KALAO.1970-01-01T00:00:00.000.fits')

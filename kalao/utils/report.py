@@ -164,7 +164,7 @@ def generate(since: datetime, until: datetime, short: bool = False,
               f'Generated: {datetime.now(timezone.utc).strftime(fmt)} UTC',
               type=type)
 
-        for repo in config.git_repositories:
+        for repo in config.Git.repositories:
             if '-dirty' in config.get_git_version(repo):
                 print(
                     str_io,
@@ -429,7 +429,7 @@ def generate(since: datetime, until: datetime, short: bool = False,
                 continue
 
             logs_stats.append({
-                'key': key.removesuffix('_log').replace("_", " ").upper(),
+                'key': key.removesuffix('_log').replace('_', ' ').upper(),
                 'infos': infos,
                 'warnings': warnings,
                 'errors': errors

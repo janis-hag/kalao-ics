@@ -37,6 +37,29 @@ def get(
         return bool(int(value))
 
 
+def mget(names: dict[str, type]) -> dict[str, str | int | float | bool | None]:
+    keys = list(names.keys())
+
+    values = client.mget(keys)
+
+    mapping = {}
+    for i, key in enumerate(keys):
+        value = values[i]
+
+        if value is None:
+            mapping[key] = None
+        elif type is str:
+            mapping[key] = value
+        elif type is int:
+            mapping[key] = int(value)
+        elif type is float:
+            mapping[key] = float(value)
+        elif type is bool:
+            mapping[key] = bool(int(value))
+
+    return mapping
+
+
 def set(name: str, value: str | int | float | bool) -> bool:
     if isinstance(value, bool):
         value = int(value)

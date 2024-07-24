@@ -3,6 +3,7 @@ from enum import Flag, IntEnum, StrEnum, auto
 
 class ObservationType(StrEnum):
     TARGET = 'K_TRGOBS'
+    BIAS = 'K_BIAS'
     DARK = 'K_DARK'
     SKY_FLAT = 'K_SKYFLT'
     LAMP_FLAT = 'K_LMPFLT'
@@ -56,13 +57,14 @@ class SequencerStatus(StrEnum):
     OFF = 'OFF'
     INITIALISING = 'INITIALISING'
     WAITING = 'WAITING'
-    SETUP = 'SETUP'
-    WAITLAMP = 'WAITLAMP'
     BUSY = 'BUSY'
-    EXP = 'EXP'
+    SETUP = 'SETUP'
     CENTERING = 'CENTERING'
     FOCUSING = 'FOCUSING'
-    DARKS = 'DARKS'
+    EXPOSING = 'EXPOSING'
+    CALIBRATIONS = 'CALIBRATIONS'
+    WAIT_LAMP = 'WAIT_LAMP'
+    WAIT_TRACKING = 'WAIT_TRACKING'
     ABORTING = 'ABORTING'
     ABORTING_ERROR = 'ABORTING_ERROR'
 
@@ -91,7 +93,6 @@ class CameraStatus(StrEnum):
     WAITING_TRIGGER = 'waiting-trigger'
     EXPOSING = 'exposing'
     READING_CCD = 'reading-ccd'
-    UNEXPECTED = 'unexpected'
     ERROR = 'error'
 
 
@@ -102,14 +103,14 @@ class CalibUnitPositionName(StrEnum):
     ERROR = 'Error'
 
 
-class FlipMirrorPosition(StrEnum):
+class FlipMirrorStatus(StrEnum):
     UP = 'UP'
     DOWN = 'DOWN'
     UNKNOWN = 'UNKNOWN'
     ERROR = 'ERROR'
 
 
-class ShutterState(StrEnum):
+class ShutterStatus(StrEnum):
     OPEN = 'OPEN'
     CLOSED = 'CLOSED'
     ERROR = 'ERROR'
@@ -120,13 +121,13 @@ class FilterWheelStatus:
     ERROR_NAME = 'error'
 
 
-class TungstenState(StrEnum):
+class TungstenStatus(StrEnum):
     ON = 'ON'
     OFF = 'OFF'
     ERROR = 'ERROR'
 
 
-class LaserState(StrEnum):
+class LaserStatus(StrEnum):
     ON = 'ON'
     OFF = 'OFF'
     ERROR = 'ERROR'

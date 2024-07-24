@@ -82,7 +82,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         series = self.modalgains_series = QLineSeries()
         series.setPen(pen)
         series.setMarkerSize(chart.point_size)
-        series.setName("Modal gains")
+        series.setName('Modal gains')
         series.setPointsVisible(True)
         series.pressed.connect(self.on_modalgains_pressed)
         series.released.connect(self.on_modalgains_released)
@@ -93,7 +93,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         # X Axis Settings
         axis_x = self.modalgains_axis_x = QValueAxis()
-        axis_x.setLabelFormat("%.0f")
+        axis_x.setLabelFormat('%.0f')
         axis_x.setTickAnchor(0)
         axis_x.setTickInterval(10)
         axis_x.setTickType(QValueAxis.TicksDynamic)
@@ -130,7 +130,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         # Serie
         series = self.modes_series = QBarSeries()
-        series.setName("Mode Coefficients")
+        series.setName('Mode Coefficients')
         chart.addSeries(series)
 
         series_line = self.modes_series_line = QLineSeries()
@@ -142,7 +142,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         # X Axis Settings
         axis_x = self.modes_axis_x = QValueAxis()
-        axis_x.setLabelFormat("%.0f")
+        axis_x.setLabelFormat('%.0f')
         axis_x.setTickAnchor(0)
         axis_x.setTickInterval(10)
         axis_x.setTickType(QValueAxis.TicksDynamic)
@@ -173,7 +173,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         series = self.tip_spectrum_series = QLineSeries()
         series.setPen(pen)
-        series.setName("Tip Spectrum")
+        series.setName('Tip Spectrum')
         chart.addSeries(series)
 
         if config.GUI.opengl_charts:
@@ -208,7 +208,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         series = self.tilt_spectrum_series = QLineSeries()
         series.setPen(pen)
-        series.setName("Tilt Spectrum")
+        series.setName('Tilt Spectrum')
         chart.addSeries(series)
 
         if config.GUI.opengl_charts:
@@ -241,6 +241,10 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def all_updated(self, data):
         # DM Loop
 
+        status = self.consume_fps_status(data, config.FPS.DMLOOP)
+        if status is not None:
+            self.dmloop_groupbox.setEnabled('C' in status)
+
         self.data_to_widget(
             self.consume_dict(data, config.FPS.DMLOOP, 'loopON'),
             self.dmloop_on_checkbox)
@@ -255,6 +259,10 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.dmloop_limit_spinbox)
 
         # TTM Loop
+
+        status = self.consume_fps_status(data, config.FPS.TTMLOOP)
+        if status is not None:
+            self.ttmloop_groupbox.setEnabled('C' in status)
 
         self.data_to_widget(
             self.consume_dict(data, config.FPS.TTMLOOP, 'loopON'),
@@ -271,6 +279,10 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         # Wavefront Sensor
 
+        status = self.consume_fps_status(data, config.FPS.NUVU)
+        if status is not None:
+            self.wfs_groupbox.setEnabled('C' in status)
+
         self.data_to_widget(
             self.consume_shm_keyword(data, config.SHM.NUVU_RAW, 'EMGAIN'),
             self.wfs_emgain_spinbox)
@@ -285,6 +297,10 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
             self.wfs_autogain_setting_combobox)
 
         # Deformable Mirror
+
+        status = self.consume_fps_status(data, config.FPS.BMC)
+        if status is not None:
+            self.dm_groupbox.setEnabled('C' in status)
 
         max_stroke = self.consume_fps_param(data, config.FPS.BMC, 'max_stroke')
         if max_stroke is not None:
@@ -347,53 +363,54 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     @Slot(int)
     def on_dmloop_on_checkbox_stateChanged(self, state):
-        self.action_send(self.dmloop_on_checkbox, self.backend.loops_dm_on,
+        self.action_send(self.dmloop_on_checkbox, self.backend.ao_dmloop_on,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
     def on_dmloop_gain_spinbox_valueChanged(self, d):
-        self.action_send(self.dmloop_gain_spinbox, self.backend.loops_dm_gain,
+        self.action_send(self.dmloop_gain_spinbox, self.backend.ao_dmloop_gain,
                          gain=d)
 
     @Slot(float)
     def on_dmloop_mult_spinbox_valueChanged(self, d):
-        self.action_send(self.dmloop_mult_spinbox, self.backend.loops_dm_mult,
+        self.action_send(self.dmloop_mult_spinbox, self.backend.ao_dmloop_mult,
                          mult=d)
 
     @Slot(float)
     def on_dmloop_limit_spinbox_valueChanged(self, d):
         self.action_send(self.dmloop_limit_spinbox,
-                         self.backend.loops_dm_limit, limit=d)
+                         self.backend.ao_dmloop_limit, limit=d)
 
     @Slot(bool)
     def on_dmloop_zero_button_clicked(self, checked):
-        self.action_send(self.dmloop_zero_button, self.backend.loops_dm_zero)
+        self.action_send(self.dmloop_zero_button, self.backend.ao_dmloop_zero)
 
     # TTM Loop
 
     @Slot(int)
     def on_ttmloop_on_checkbox_stateChanged(self, state):
-        self.action_send(self.ttmloop_on_checkbox, self.backend.loops_ttm_on,
+        self.action_send(self.ttmloop_on_checkbox, self.backend.ao_ttmloop_on,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(float)
     def on_ttmloop_gain_spinbox_valueChanged(self, d):
         self.action_send(self.ttmloop_gain_spinbox,
-                         self.backend.loops_ttm_gain, gain=d)
+                         self.backend.ao_ttmloop_gain, gain=d)
 
     @Slot(float)
     def on_ttmloop_mult_spinbox_valueChanged(self, d):
         self.action_send(self.ttmloop_mult_spinbox,
-                         self.backend.loops_ttm_mult, mult=d)
+                         self.backend.ao_ttmloop_mult, mult=d)
 
     @Slot(float)
     def on_ttmloop_limit_spinbox_valueChanged(self, d):
         self.action_send(self.ttmloop_limit_spinbox,
-                         self.backend.loops_ttm_limit, limit=d)
+                         self.backend.ao_ttmloop_limit, limit=d)
 
     @Slot(bool)
     def on_ttmloop_zero_button_clicked(self, checked):
-        self.action_send(self.ttmloop_zero_button, self.backend.loops_ttm_zero)
+        self.action_send(self.ttmloop_zero_button,
+                         self.backend.ao_ttmloop_zero)
 
     # Wavefront Sensor
 
@@ -476,7 +493,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         for point in self.modalgains_series.points():
             modalgains.append(point.y())
 
-        self.action_send([], self.backend.loops_dm_modalgains,
+        self.action_send([], self.backend.ao_dmloop_modalgains,
                          modalgains=np.array(modalgains))
 
     def hover_xy_to_str_modalgains(self, series, x, y):
@@ -525,7 +542,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         self.display_modalgains(modalgains)
 
-        self.action_send([], self.backend.loops_dm_modalgains,
+        self.action_send([], self.backend.ao_dmloop_modalgains,
                          modalgains=modalgains)
 
     def display_modalgains(self, modalgains):

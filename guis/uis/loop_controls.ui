@@ -18,6 +18,9 @@
     <layout class="QVBoxLayout" name="controls_layout">
      <item>
       <widget class="QGroupBox" name="dmloop_groupbox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="title">
         <string>Deformable Mirror Loop</string>
        </property>
@@ -117,6 +120,9 @@
      </item>
      <item>
       <widget class="QGroupBox" name="ttmloop_groupbox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="title">
         <string>Tip-Tilt Mirror Loop</string>
        </property>
@@ -216,6 +222,9 @@
      </item>
      <item>
       <widget class="QGroupBox" name="wfs_groupbox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="title">
         <string>Wavefront Sensor (Nüvü)</string>
        </property>
@@ -312,6 +321,9 @@
      </item>
      <item>
       <widget class="QGroupBox" name="dm_groupbox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="title">
         <string>Deformable Mirror (Boston Micromachines Corporation)</string>
        </property>

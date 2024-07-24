@@ -64,7 +64,7 @@ def camera_to_ttm(dx: float, dy: float, gain: float = 1,
     new_tip = tip + dx * config.Offsets.camera_x_to_ttm_tip * gain
     new_tilt = tilt + dy * config.Offsets.camera_y_to_ttm_tilt * gain
 
-    new_tip, new_tilt = check_ttm_saturation(new_tip, new_tilt)
+    new_tip, new_tilt = _check_ttm_saturation(new_tip, new_tilt)
 
     # logger.info(
     #     'ttm',
@@ -91,7 +91,7 @@ def wfs_to_ttm(dx: float, dy: float, gain: float = 1,
     new_tip = tip + dy * config.Offsets.wfs_y_to_ttm_tip * gain
     new_tilt = tilt + dx * config.Offsets.wfs_x_to_ttm_tilt * gain
 
-    new_tip, new_tilt = check_ttm_saturation(new_tip, new_tilt)
+    new_tip, new_tilt = _check_ttm_saturation(new_tip, new_tilt)
 
     # logger.info(
     #     'ttm',
@@ -105,7 +105,7 @@ def wfs_to_ttm(dx: float, dy: float, gain: float = 1,
     return ReturnCode.OK
 
 
-def check_ttm_saturation(tip: float, tilt: float) -> tuple[float, float]:
+def _check_ttm_saturation(tip: float, tilt: float) -> tuple[float, float]:
     if tip > 2.45:
         logger.warn('ttm', 'TTM saturated, limiting tip to 2.45')
         tip = 2.45

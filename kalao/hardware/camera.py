@@ -16,7 +16,6 @@ from typing import Any
 import numpy as np
 
 from kalao import logger
-from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import fits_handling
 
 import requests
@@ -24,8 +23,7 @@ import requests.exceptions
 
 from kalao.definitions.dataclasses import ROI
 from kalao.definitions.enums import (CameraServerStatus, CameraStatus,
-                                     ObservationType, ReturnCode,
-                                     SequencerStatus)
+                                     ObservationType, ReturnCode)
 
 import config
 
@@ -92,7 +90,6 @@ def take_image(filepath: str | Path | None = None,
         return None
 
 
-@with_sequencer_status(SequencerStatus.EXP)
 def take_science_image(obs_type: ObservationType, exptime: float | None = None,
                        filepath: str | Path | None = None, nbframes: int |
                        None = None, roi_size: int | None = None,
@@ -114,8 +111,9 @@ def take_science_image(obs_type: ObservationType, exptime: float | None = None,
     if roi_size is None or roi_size == 1024:
         roi = None
     else:
-        roi = ROI(config.Camera.center_x - roi_size//2,
-                  config.Camera.center_y - roi_size//2, roi_size, roi_size)
+        roi = ROI(x=config.Camera.center_x - roi_size//2,
+                  y=config.Camera.center_y - roi_size//2, width=roi_size,
+                  height=roi_size)
 
     if filepath is None:
         # Generate filename including path
@@ -166,6 +164,12 @@ def get_exposure_status() -> dict[str, float]:
         }
 
 
+def set_exposure_time(exptime) -> ReturnCode:
+    params = {'exptime': exptime}
+    ret, _ = _send_request('/exposureTime', params)
+    return ret
+
+
 def get_temperatures() -> dict[str, float]:
     """
     Gets CCD and heatsink temperatures from the camera.
@@ -202,7 +206,7 @@ def _send_request(endpoint: str,
         elif key == 'filepath':
             params[key] = str(value)
 
-    url = f'http://{config.Camera.ip}:{config.Camera.port}{endpoint}'
+    url = f'http://{config.Camera.host}:{config.Camera.port}{endpoint}'
 
     try:
         if params == {}:
@@ -228,11 +232,11 @@ def _send_request(endpoint: str,
         text = ''
 
         if isinstance(data, dict):
-            if data.get('error_text') is not None:
-                text += f' {data.get("error_text")}'
+            if 'error_text' in data:
+                text += f' {data["error_text"]}'
 
-            if data.get('error_status') is not None:
-                text += f' (status = {data.get("error_status")})'
+            if 'error_status' in data:
+                text += f' (status = {data["error_status"]}, {data["error_status_text"]})'
         else:
             text = f' {data}'
 
@@ -252,7 +256,7 @@ def server_status() -> CameraServerStatus:
     """
     try:
         r = requests.get(
-            f'http://{config.Camera.ip}:{config.Camera.port}/ping')
+            f'http://{config.Camera.host}:{config.Camera.port}/ping')
         r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return CameraServerStatus.DOWN

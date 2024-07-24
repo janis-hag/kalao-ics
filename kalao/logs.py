@@ -101,4 +101,5 @@ def process_entry(entry: dict) -> LogEntry | None:
         elif 'WARNING' in message:
             level = LogLevel.WARNING
 
-        return LogEntry(level, timestamp, origin, message)
+        return LogEntry(level=level, timestamp=timestamp, origin=origin,
+                        message=message)

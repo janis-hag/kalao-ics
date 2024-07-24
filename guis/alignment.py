@@ -3,7 +3,7 @@ import signal
 
 import numpy as np
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QLocale, QTimer
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
@@ -22,7 +22,7 @@ def sig_handler(signal_received, frame):
 
 
 parser = argparse.ArgumentParser(description='KalAO - Alignment Tools.')
-parser.add_argument('--simulation', action="store_true", dest="simulation",
+parser.add_argument('--simulation', action='store_true', dest="simulation",
                     help='Simulation mode')
 
 args = parser.parse_args()
@@ -40,6 +40,8 @@ loader = QUiLoader()
 
 app = QApplication(['KalAO - Alignment tools'])
 app.setQuitOnLastWindowClosed(True)
+
+QLocale.setDefault(QLocale(QLocale.English, QLocale.UnitedKingdom))
 
 # Windows
 

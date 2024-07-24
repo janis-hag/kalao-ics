@@ -14,20 +14,23 @@ from kalao import database
 from kalao.hardware import adc
 from kalao.interfaces import fake_data
 from kalao.utils import kmath, kstring, ktools, zernike
+from kalao.utils.json import KalAOJSONEncoder
 from kalao.utils.rprint import rprint
 
 from guis.backends.abstract import AbstractBackend, emit, timeit
 from guis.utils import lorem
 
-from kalao.definitions.dataclasses import LogEntry
+from kalao.definitions.dataclasses import CalibrationPose, LogEntry
 from kalao.definitions.enums import (CameraServerStatus, CameraStatus,
-                                     FlipMirrorPosition, IPPowerStatus,
-                                     LaserState, LogLevel, PLCStatus,
-                                     RelayState, SequencerStatus,
-                                     ServiceAction, ShutterState,
-                                     TungstenState)
+                                     FlipMirrorStatus, IPPowerStatus,
+                                     LaserStatus, LogLevel, ObservationType,
+                                     PLCStatus, RelayState, SequencerStatus,
+                                     ServiceAction, ShutterStatus,
+                                     TungstenStatus)
 
 import config
+
+encoder = KalAOJSONEncoder()
 
 
 class FakeSHMFPSBackend(AbstractBackend):
@@ -58,11 +61,11 @@ class FakeSHMFPSBackend(AbstractBackend):
 
         data[shm_name]['keywords'] = keywords
 
-    def _update_shm_state(self, data, shm_name):
+    def _update_shm_status(self, data, shm_name):
         if shm_name not in data:
             data[shm_name] = {}
 
-        data[shm_name]['state'] = 'E'
+        data[shm_name]['status'] = 'E'
 
     def _update_shm_md(self, data, shm_name):
         if shm_name not in data:
@@ -81,11 +84,11 @@ class FakeSHMFPSBackend(AbstractBackend):
 
         data[fps_name][param_name] = param
 
-    def _update_fps_state(self, data, fps_name):
+    def _update_fps_status(self, data, fps_name):
         if fps_name not in data:
             data[fps_name] = {}
 
-        data[fps_name]['state'] = 'CR'
+        data[fps_name]['status'] = 'CR'
 
     def _update_dict(self, data, key, dict):
         if key not in data:
@@ -189,27 +192,27 @@ class MainBackend(FakeSHMFPSBackend):
                 True,
             'ttm_offloading':
                 True,
-            'shutter_state':
-                ShutterState.OPEN,
-            'flipmirror_position':
-                FlipMirrorPosition.DOWN,
+            'shutter_status':
+                ShutterStatus.OPEN,
+            'flipmirror_status':
+                FlipMirrorStatus.DOWN,
             'calibunit_position':
                 config.PLC.initial_state[config.PLC.Node.CALIB_UNIT],
-            'calibunit_state':
+            'calibunit_status':
                 PLCStatus.STANDING,
-            'laser_state':
-                LaserState.OFF,
+            'laser_status':
+                LaserStatus.OFF,
             'laser_power':
                 0,
-            'tungsten_state':
-                TungstenState.OFF,
+            'tungsten_status':
+                TungstenStatus.OFF,
             'adc1_angle':
                 config.PLC.initial_state[config.PLC.Node.ADC1],
-            'adc1_state':
+            'adc1_status':
                 PLCStatus.STANDING,
             'adc2_angle':
                 config.PLC.initial_state[config.PLC.Node.ADC2],
-            'adc2_state':
+            'adc2_status':
                 PLCStatus.STANDING,
             'filterwheel_filter_position':
                 4,
@@ -261,6 +264,8 @@ class MainBackend(FakeSHMFPSBackend):
                                           datetime.now(timezone.utc)),
             'focusing-step':
                 0,
+            'sequencer_status':
+                SequencerStatus.WAITING.value,
         })
 
         self._update_fli_service()
@@ -346,15 +351,15 @@ class MainBackend(FakeSHMFPSBackend):
     def streams_all(self):
         data = {}
 
-        if self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP:
+        if self.internal_state['flipmirror_status'] == FlipMirrorStatus.UP:
             illumination = 'laser'
-            if self.internal_state['laser_state'] == LaserState.OFF:
+            if self.internal_state['laser_status'] == LaserStatus.OFF:
                 flux = 0
             else:
                 flux = self.internal_state['laser_power'] / 8 * 2**16
         else:
             illumination = 'telescope'
-            if self.internal_state['shutter_state'] == ShutterState.OPEN:
+            if self.internal_state['shutter_status'] == ShutterStatus.OPEN:
                 flux = 5000
             else:
                 flux = 0
@@ -410,15 +415,15 @@ class MainBackend(FakeSHMFPSBackend):
     def camera_image(self):
         data = {}
 
-        if self.internal_state['flipmirror_position'] == FlipMirrorPosition.UP:
+        if self.internal_state['flipmirror_status'] == FlipMirrorStatus.UP:
             illumination = 'laser'
-            if self.internal_state['laser_state'] == LaserState.OFF:
+            if self.internal_state['laser_status'] == LaserStatus.OFF:
                 flux = 0
             else:
                 flux = self.internal_state['laser_power'] / 8 * 2**16
         else:
             illumination = 'telescope'
-            if self.internal_state['shutter_state'] == ShutterState.OPEN:
+            if self.internal_state['shutter_status'] == ShutterStatus.OPEN:
                 flux = 10000
             else:
                 flux = 0
@@ -439,7 +444,7 @@ class MainBackend(FakeSHMFPSBackend):
         hdu.header.set(
             'DATE',
             datetime.now(timezone.utc).replace(tzinfo=None).isoformat(
-                timespec="milliseconds"))
+                timespec='milliseconds'))
         hdu.header.set('HIERARCH ESO DET OUT1 PRSCX', 0)
         hdu.header.set('HIERARCH ESO DET OUT1 PRSCY', 0)
         hdu.header.set('HIERARCH ESO DET WIN1 STRX', config.Camera.center_x -
@@ -529,7 +534,7 @@ class MainBackend(FakeSHMFPSBackend):
         self._update_dict(
             data, 'memory', {
                 'sequencer_status':
-                    SequencerStatus.BUSY.value,
+                    self.internal_state['sequencer_status'],
                 'centering_manual_flag':
                     False,
                 'adc_synchronisation':
@@ -547,28 +552,28 @@ class MainBackend(FakeSHMFPSBackend):
 
         self._update_dict(
             data, 'hw', {
-                'shutter_state':
-                    self.internal_state['shutter_state'],
-                'flipmirror_position':
-                    self.internal_state['flipmirror_position'],
+                'shutter_status':
+                    self.internal_state['shutter_status'],
+                'flipmirror_status':
+                    self.internal_state['flipmirror_status'],
                 'calibunit_position':
                     self.internal_state['calibunit_position'],
-                'calibunit_state':
-                    self.internal_state['calibunit_state'],
-                'laser_state':
-                    self.internal_state['laser_state'],
+                'calibunit_status':
+                    self.internal_state['calibunit_status'],
+                'laser_status':
+                    self.internal_state['laser_status'],
                 'laser_power':
                     self.internal_state['laser_power'],
-                'tungsten_state':
-                    self.internal_state['tungsten_state'],
+                'tungsten_status':
+                    self.internal_state['tungsten_status'],
                 'adc1_angle':
                     self.internal_state['adc1_angle'],
-                'adc1_state':
-                    self.internal_state['adc1_state'],
+                'adc1_status':
+                    self.internal_state['adc1_status'],
                 'adc2_angle':
                     self.internal_state['adc2_angle'],
-                'adc2_state':
-                    self.internal_state['adc2_state'],
+                'adc2_status':
+                    self.internal_state['adc2_status'],
                 'adc_angle':
                     self.internal_state['adc_angle'],
                 'adc_offset':
@@ -664,10 +669,16 @@ class MainBackend(FakeSHMFPSBackend):
         })
 
         for proc in config.AO.processes:
-            self._update_fps_state(data, proc)
+            if proc is None:
+                continue
+
+            self._update_fps_status(data, proc)
 
         for stream in config.AO.streams:
-            self._update_shm_state(data, stream)
+            if stream is None:
+                continue
+
+            self._update_shm_status(data, stream)
             self._update_shm_md(data, stream)
 
         fs = 1.8e3
@@ -753,7 +764,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     @emit
     @timeit
-    def focus_sequence(self):
+    def focusing_sequence_fits(self):
         data = {}
 
         if self.internal_state['focusing-step'] == config.Focusing.steps:
@@ -819,7 +830,40 @@ class MainBackend(FakeSHMFPSBackend):
             hdul[0].header.set('HIERARCH KAO FOC BEST STAR FWHM', best_fwhm)
             hdul[0].header.set('HIERARCH KAO FOC SUCCESS', True)
 
+            self.internal_state[
+                'sequencer_status'] = SequencerStatus.WAITING.value
+
         self._update_fits_full(data, config.FITS.last_focus_sequence, hdul)
+
+        return data
+
+    @emit
+    @timeit
+    def calibration_sequence(self):
+        data = {}
+
+        calib_list = []
+
+        for i in range(5):
+            calib_list.append(
+                CalibrationPose(type=ObservationType.BIAS, filter=None,
+                                exposure_time=0.001))
+
+        for j in range(3):
+            for i in range(5):
+                calib_list.append(
+                    CalibrationPose(type=ObservationType.DARK, filter=None,
+                                    exposure_time=10 * (j+1)))
+
+        for f in config.Calib.Flats.default_flat_list:
+            calib_list.append(
+                CalibrationPose(
+                    type=ObservationType.LAMP_FLAT, filter=f,
+                    exposure_time=config.Calib.Flats.tungsten_exptime_list[f]))
+
+        self._update_dict(data, 'memory', {
+            'calibration_poses_list': encoder.encode(calib_list)
+        })
 
         return data
 
@@ -862,7 +906,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return df
 
-    def calibration_data(self, *, conf, loop):
+    def ao_calibration_data(self, *, conf, loop):
         if loop == 1:
             wfsref = np.zeros((11, 22))
             wfsrefc = wfsref
@@ -972,19 +1016,19 @@ class MainBackend(FakeSHMFPSBackend):
             }
         }
 
-    def calibration_reload(self, *, conf, loop):
+    def ao_calibration_reload(self, *, conf, loop):
         return {
             'returncode': 0,
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def calibration_prepare(self, *, conf, loop):
+    def ao_calibration_prepare(self, *, conf, loop):
         return {
             'returncode': 0,
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def calibration_mlat(self, *, conf, loop):
+    def ao_calibration_mlat(self, *, conf, loop):
         time.sleep(1)
 
         data = {
@@ -1017,7 +1061,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    def calibration_mkDMpokemodes(self, *, conf, loop):
+    def ao_calibration_mkDMpokemodes(self, *, conf, loop):
         time.sleep(1)
 
         return {
@@ -1025,7 +1069,7 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def calibration_takeref(self, *, conf, loop):
+    def ao_calibration_takeref(self, *, conf, loop):
         time.sleep(1)
 
         return {
@@ -1033,7 +1077,7 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def calibration_acqlinResp(self, *, conf, loop):
+    def ao_calibration_acqlinResp(self, *, conf, loop):
         time.sleep(1)
 
         return {
@@ -1041,7 +1085,7 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def calibration_RMHdecode(self, *, conf, loop):
+    def ao_calibration_RMHdecode(self, *, conf, loop):
         time.sleep(1)
 
         data = {
@@ -1070,7 +1114,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    def calibration_RMmkmask(self, *, conf, loop):
+    def ao_calibration_RMmkmask(self, *, conf, loop):
         time.sleep(1)
 
         return {
@@ -1078,7 +1122,7 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def calibration_compCM(self, *, conf, loop):
+    def ao_calibration_compCM(self, *, conf, loop):
         time.sleep(1)
 
         return {
@@ -1086,13 +1130,13 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def calibration_load(self, *, conf, loop):
+    def ao_calibration_load(self, *, conf, loop):
         return {
             'returncode': 0,
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def calibration_save(self, *, conf, loop, comment):
+    def ao_calibration_save(self, *, conf, loop, comment):
         return {
             'returncode': 0,
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
@@ -1100,54 +1144,54 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### Science Camera
 
-    def centering_manual(self, *, dx, dy):
+    def centering_manual_offsets(self, *, dx, dy):
         rprint(f'Centering manually ({dx}, {dy}) (virtually)')
 
-    def centering_validate(self):
+    def centering_manual_validate(self):
         rprint('Validated manual centering (virtually)')
 
     ##### Loop controls
 
     # DM Loop
 
-    def loops_dm_on(self, *, state):
+    def ao_dmloop_on(self, *, state):
         self.internal_state['dmloop_on'] = state
         rprint(f'Set DM loop to {state} (virtually)')
 
-    def loops_dm_gain(self, *, gain):
+    def ao_dmloop_gain(self, *, gain):
         self.internal_state['dmloop_gain'] = gain
         rprint(f'Set DM gain to {gain} (virtually)')
 
-    def loops_dm_mult(self, *, mult):
+    def ao_dmloop_mult(self, *, mult):
         self.internal_state['dmloop_mult'] = mult
         rprint(f'Set DM mult to {mult} (virtually)')
 
-    def loops_dm_limit(self, *, limit):
+    def ao_dmloop_limit(self, *, limit):
         self.internal_state['dmloop_limit'] = limit
         rprint(f'Set DM limit to {limit} (virtually)')
 
-    def loops_dm_zero(self):
+    def ao_dmloop_zero(self):
         rprint('DM loop zeroed (virtually)')
 
     # TTM Loop
 
-    def loops_ttm_on(self, *, state):
+    def ao_ttmloop_on(self, *, state):
         self.internal_state['ttmloop_on'] = state
         rprint(f'Set TTM loop to {state} (virtually)')
 
-    def loops_ttm_gain(self, *, gain):
+    def ao_ttmloop_gain(self, *, gain):
         self.internal_state['ttmloop_gain'] = gain
         rprint(f'Set TTM gain to {gain} (virtually)')
 
-    def loops_ttm_mult(self, *, mult):
+    def ao_ttmloop_mult(self, *, mult):
         self.internal_state['ttmloop_mult'] = mult
         rprint(f'Set TTM mult to {mult} (virtually)')
 
-    def loops_ttm_limit(self, *, limit):
+    def ao_ttmloop_limit(self, *, limit):
         self.internal_state['ttmloop_limit'] = limit
         rprint(f'Set TTM limit to {limit} (virtually)')
 
-    def loops_ttm_zero(self):
+    def ao_ttmloop_zero(self):
         rprint('TTM loop zeroed (virtually)')
 
     # Wavefront Sensor
@@ -1209,159 +1253,161 @@ class MainBackend(FakeSHMFPSBackend):
 
     # Modal gains
 
-    def loops_dm_modalgains(self, *, modalgains):
+    def ao_dmloop_modalgains(self, *, modalgains):
         self.internal_state[config.SHM.MODALGAINS] = modalgains
         rprint(f'Set Modal Gains to {modalgains} (virtually)')
 
     ##### Engineering
 
-    def plc_shutter_state(self, *, state):
-        self.internal_state['shutter_state'] = ShutterState(state)
-        rprint(f'Set Shutter state to {state} (virtually)')
+    # PLC / Misc. hardware
 
-    def plc_shutter_init(self):
+    def hardware_shutter_status(self, *, status):
+        self.internal_state['shutter_status'] = ShutterStatus(status)
+        rprint(f'Set Shutter status to {status} (virtually)')
+
+    def hardware_shutter_init(self):
         rprint('Init Shutter (virtually)')
 
-    def plc_flipmirror_position(self, *, position):
-        self.internal_state['flipmirror_position'] = FlipMirrorPosition(
-            position)
-        rprint(f'Set Flip Mirror position to {position} (virtually)')
+    def hardware_flipmirror_status(self, *, status):
+        self.internal_state['flipmirror_status'] = FlipMirrorStatus(status)
+        rprint(f'Set Flip Mirror status to {status} (virtually)')
 
-    def plc_flipmirror_init(self):
+    def hardware_flipmirror_init(self):
         rprint('Init Flip Mirror (virtually)')
 
-    def plc_calibunit_position(self, *, position):
+    def hardware_calibunit_position(self, *, position):
         self._fake_motor_move(position, 'calibunit_position',
-                              'calibunit_state', config.CalibUnit.velocity)
+                              'calibunit_status', config.CalibUnit.velocity)
         rprint(f'Set Calibration Unit position to {position} (virtually)')
 
-    def plc_calibunit_init(self):
-        self._fake_motor_move(0, 'calibunit_position', 'calibunit_state',
+    def hardware_calibunit_init(self):
+        self._fake_motor_move(0, 'calibunit_position', 'calibunit_status',
                               config.CalibUnit.velocity)
         self._fake_motor_move(
             config.PLC.initial_state[config.PLC.Node.CALIB_UNIT],
-            'calibunit_position', 'calibunit_state', config.CalibUnit.velocity)
+            'calibunit_position', 'calibunit_status',
+            config.CalibUnit.velocity)
         rprint('Init Calibration Unit (virtually)')
 
-    def plc_calibunit_stop(self):
+    def hardware_calibunit_stop(self):
         rprint('Stopped Calibration Unit (virtually)')
 
-    def plc_calibunit_laser(self):
+    def hardware_calibunit_laser(self):
         self._fake_motor_move(config.Laser.position, 'calibunit_position',
-                              'calibunit_state', config.CalibUnit.velocity)
+                              'calibunit_status', config.CalibUnit.velocity)
         rprint('Moved Calibration Unit to Laser position (virtually)')
 
-    def plc_calibunit_tungsten(self):
+    def hardware_calibunit_tungsten(self):
         self._fake_motor_move(config.Tungsten.position, 'calibunit_position',
-                              'calibunit_state', config.CalibUnit.velocity)
+                              'calibunit_status', config.CalibUnit.velocity)
         rprint('Moved Calibration Unit to Tungsten position (virtually)')
 
-    def plc_tungsten_state(self, *, state):
-        if state:
-            self.internal_state['tungsten_state'] = TungstenState.ON
+    def hardware_tungsten_status(self, *, status):
+        if status:
+            self.internal_state['tungsten_status'] = TungstenStatus.ON
         else:
-            self.internal_state['tungsten_state'] = TungstenState.OFF
+            self.internal_state['tungsten_status'] = TungstenStatus.OFF
 
-        rprint(f'Set Tungsten state to {state} (virtually)')
+        rprint(f'Set Tungsten status to {status} (virtually)')
 
-    def plc_tungsten_init(self):
+    def hardware_tungsten_init(self):
         rprint('Init Tungsten (virtually)')
 
-    def plc_laser_state(self, *, state):
-        if state:
-            self.internal_state['laser_state'] = LaserState.ON
+    def hardware_laser_status(self, *, status):
+        if status:
+            self.internal_state['laser_status'] = LaserStatus.ON
         else:
-            self.internal_state['laser_state'] = LaserState.OFF
+            self.internal_state['laser_status'] = LaserStatus.OFF
 
-        rprint(f'Set Laser state to {state} (virtually)')
+        rprint(f'Set Laser status to {status} (virtually)')
 
-    def plc_laser_power(self, *, power):
+    def hardware_laser_power(self, *, power):
         self.internal_state['laser_power'] = power
         rprint(f'Set Laser power to {power} (virtually)')
 
-    def plc_laser_init(self):
+    def hardware_laser_init(self):
         rprint('Init Laser (virtually)')
 
-    def plc_lamps_off(self):
-        self.internal_state['tungsten_state'] = TungstenState.OFF
-        self.internal_state['laser_state'] = LaserState.OFF
+    def hardware_lamps_off(self):
+        self.internal_state['tungsten_status'] = TungstenStatus.OFF
+        self.internal_state['laser_status'] = LaserStatus.OFF
         rprint('Lamps off (virtually)')
 
-    def plc_filterwheel_filter(self, *, filter):
+    def hardware_filterwheel_filter(self, *, filter):
         self.internal_state[
             'filterwheel_filter_position'] = config.FilterWheel.position_list.index(
                 filter)
         self.internal_state['filterwheel_filter_name'] = filter
         rprint(f'Set Filter Wheel filter to {filter} (virtually)')
 
-    def plc_filterwheel_init(self):
+    def hardware_filterwheel_init(self):
         rprint('Init Filter Wheel (virtually)')
 
-    def plc_adc1_angle(self, *, position):
-        self._fake_motor_move(position, 'adc1_angle', 'adc1_state',
+    def hardware_adc1_angle(self, *, position):
+        self._fake_motor_move(position, 'adc1_angle', 'adc1_status',
                               config.ADC.velocity)
         rprint(f'Set ADC1 position to {position} (virtually)')
 
-    def plc_adc1_init(self):
-        self._fake_motor_move(0, 'adc1_angle', 'adc1_state',
+    def hardware_adc1_init(self):
+        self._fake_motor_move(0, 'adc1_angle', 'adc1_status',
                               config.ADC.velocity)
         self._fake_motor_move(config.PLC.initial_state[config.PLC.Node.ADC1],
-                              'adc1_angle', 'adc1_state', config.ADC.velocity)
+                              'adc1_angle', 'adc1_status', config.ADC.velocity)
         rprint('Init ADC1 (virtually)')
 
-    def plc_adc1_stop(self):
+    def hardware_adc1_stop(self):
         rprint('Stopped ADC1 (virtually)')
 
-    def plc_adc2_angle(self, *, position):
-        self._fake_motor_move(position, 'adc2_angle', 'adc2_state',
+    def hardware_adc2_angle(self, *, position):
+        self._fake_motor_move(position, 'adc2_angle', 'adc2_status',
                               config.ADC.velocity)
         rprint(f'Set ADC2 position to {position} (virtually)')
 
-    def plc_adc2_init(self):
-        self._fake_motor_move(0, 'adc2_angle', 'adc2_state',
+    def hardware_adc2_init(self):
+        self._fake_motor_move(0, 'adc2_angle', 'adc2_status',
                               config.ADC.velocity)
         self._fake_motor_move(config.PLC.initial_state[config.PLC.Node.ADC2],
-                              'adc2_angle', 'adc2_state', config.ADC.velocity)
+                              'adc2_angle', 'adc2_status', config.ADC.velocity)
         rprint('Init ADC2 (virtually)')
 
-    def plc_adc2_stop(self):
+    def hardware_adc2_stop(self):
         rprint('Stopped ADC2 (virtually)')
 
-    def plc_adc_zerodisp(self):
+    def hardware_adc_zerodisp(self):
         # TODO
         rprint('Set ADC to zero dispersion (virtually)')
 
-    def plc_adc_maxdisp(self):
+    def hardware_adc_maxdisp(self):
         # TODO
         rprint('Set ADC to maximum dispersion (virtually)')
 
-    def plc_adc_angleoffset(self, *, angle, offset):
+    def hardware_adc_angleoffset(self, *, angle, offset):
         # TODO
         rprint(f'Set ADC to angle {angle}° and offset {offset}° (virtually)')
 
-    def plc_pump_state(self, *, state):
-        if state:
+    def hardware_pump_status(self, *, status):
+        if status:
             self.internal_state['pump_status'] = RelayState.ON
         else:
             self.internal_state['pump_status'] = RelayState.OFF
 
-        rprint(f'Set Pump to {state} (virtually)')
+        rprint(f'Set Pump to {status} (virtually)')
 
-    def plc_fan_state(self, *, state):
-        if state:
+    def hardware_fan_status(self, *, status):
+        if status:
             self.internal_state['heatexchanger_fan_status'] = RelayState.ON
         else:
             self.internal_state['heatexchanger_fan_status'] = RelayState.OFF
 
-        rprint(f'Set Fan to {state} (virtually)')
+        rprint(f'Set Fan to {status} (virtually)')
 
-    def plc_heater_state(self, *, state):
-        if state:
+    def hardware_heater_status(self, *, status):
+        if status:
             self.internal_state['heater_status'] = RelayState.ON
         else:
             self.internal_state['heater_status'] = RelayState.OFF
 
-        rprint(f'Set Heater to {state} (virtually)')
+        rprint(f'Set Heater to {status} (virtually)')
 
     def _fake_motor_move(self, position, position_key, state_key, velocity):
         self.internal_state[state_key] = PLCStatus.MOVING
@@ -1379,9 +1425,15 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state[state_key] = PLCStatus.STANDING
         self.internal_state[position_key] = position
 
+    # Camera
+
+    def camera_exptime(self, *, exposure_time):
+        self.internal_state['fli-exposure_time'] = exposure_time
+        rprint(f'Set exposure time to {exposure_time} s (virtually)')
+
     def camera_take(self, *, exposure_time, frames, roi_size):
         rprint(
-            f'Started FLI with {frames} exposure(s) of size {roi_size}x{roi_size} and of exposure time {exposure_time} s (virtually)'
+            f'Started camera with {frames} exposure(s) of size {roi_size}x{roi_size} and of exposure time {exposure_time} s (virtually)'
         )
 
         self.internal_state['camera_status'] = CameraStatus.EXPOSING
@@ -1402,11 +1454,17 @@ class MainBackend(FakeSHMFPSBackend):
 
             self.internal_state['fli-remaining_frames'] -= 1
 
+        self.internal_state['camera_status'] = CameraStatus.READING_CCD
+
+        time.sleep(1)
+
         self.internal_state['camera_status'] = CameraStatus.IDLE
 
     def camera_cancel(self):
         self.internal_state['fli-remaining_time'] = 0
-        rprint('Canceled FLI exposure (virtually)')
+        rprint('Canceled camera exposure (virtually)')
+
+    # Wavefront Sensor
 
     def wfs_acquisition_start(self):
         self.internal_state['wfs_acquisition_running'] = True
@@ -1416,6 +1474,8 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state['wfs_acquisition_running'] = False
         rprint('Stopped Nüvü acquisition (virtually)')
 
+    # Deformable Mirror
+
     def dm_on(self):
         self.internal_state['ippower_dm_status'] = IPPowerStatus.ON
         rprint('Turned on DM (virtually)')
@@ -1423,6 +1483,8 @@ class MainBackend(FakeSHMFPSBackend):
     def dm_off(self):
         self.internal_state['ippower_dm_status'] = IPPowerStatus.OFF
         rprint('Turned off DM (virtually)')
+
+    # IPPower
 
     def ippower_rtc_on(self):
         self.internal_state['ippower_rtc_status'] = IPPowerStatus.ON
@@ -1448,8 +1510,7 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_state['ippower_dm_status'] = IPPowerStatus.OFF
         rprint('Powering off DM (virtually)')
 
-    def centering_laser(self):
-        rprint('Laser centering launched (virtually)')
+    # Services
 
     def services_action(self, *, unit, action):
         if action == ServiceAction.START and self.internal_state[unit][
@@ -1509,10 +1570,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Sent {action} to {unit} (virtually)')
 
-    def deadman(self, *, count):
-        rprint('Dead-man triggered (virtually)')
-
-    ##### DM channels
+    # DM channels
 
     def channels_resetall(self, *, dm_number):
         if dm_number == config.AO.DM_loop_number:
@@ -1540,20 +1598,53 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Resetted channel {channel} of DM {dm_number} (virtually)')
 
-    ##### DM & TTM control
+    # DM & TTM control
 
     def dm_pattern(self, *, pattern):
         self.internal_state[config.SHM.DM_USER_CONTROLLED] = pattern
         rprint(f'Set DM to {pattern} (virtually)')
 
-    def ttm_position(self, *, array):
+    def ttm_position(self, *, tip, tilt):
+        array = np.array([tip, tilt])
         self.internal_state[config.SHM.TTM_USER_CONTROLLED] = array
         rprint(f'Set TTM to {array} (virtually)')
 
-    ##### Focusing
+    # Centering
 
-    def focus_autofocus(self):
+    def centering_star(self):
+        rprint('Star centering launched (virtually)')
+
+    def centering_laser(self):
+        rprint('Laser centering launched (virtually)')
+
+    def centering_spiral(self):
+        rprint('Spiral search launched (virtually)')
+
+    # Focusing
+
+    def focusing_autofocus(self):
         rprint('Autofocus launched (virtually)')
+
+    def focusing_sequence(self):
+        self.internal_state['focusing-step'] = 0
+        self.internal_state['sequencer_status'] = SequencerStatus.FOCUSING.value
+        rprint('Focus sequence launched (virtually)')
+
+    # Dead-man
+
+    def deadman(self, *, count):
+        rprint('Dead-man triggered (virtually)')
+
+    # Instrument / RTC
+
+    def instrument_shutdown(self):
+        rprint('Shutdown sequence initiated (virtually)')
+
+    def rtc_poweroff(self):
+        rprint('RTC power off initiated (virtually)')
+
+    def rtc_reboot(self):
+        rprint('RTC reboot initiated (virtually)')
 
     ##### Logs
 
@@ -1608,15 +1699,5 @@ class MainBackend(FakeSHMFPSBackend):
         if log != '':
             message = f'{log} | {message}'
 
-        return LogEntry(level, timestamp, origin, message)
-
-    ##### Instrument / RTC
-
-    def instrument_shutdown(self):
-        rprint('Shutdown sequence initiated (virtually)')
-
-    def rtc_poweroff(self):
-        rprint('RTC power off initiated (virtually)')
-
-    def rtc_reboot(self):
-        rprint('RTC reboot initiated (virtually)')
+        return LogEntry(level=level, timestamp=timestamp, origin=origin,
+                        message=message)

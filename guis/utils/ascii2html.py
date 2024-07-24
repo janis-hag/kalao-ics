@@ -374,7 +374,7 @@ stylesheet = \
         .strikethrough {
             text-decoration: line-through;
         }
-        .strikethrough {
+        .overline {
             text-decoration: overline;
         }
         

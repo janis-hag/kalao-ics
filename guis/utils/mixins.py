@@ -215,11 +215,9 @@ class BackendActionMixin:
         if not isinstance(widget_list, list):
             widget_list = [widget_list]
 
-        if len(widget_list) > 0:
-            widget_list[0].clearFocus()
-
         for widget in widget_list:
-            widget.setEnabled(False)
+            widget.clearFocus()
+            widget.setEnabledStack(False, f'action_{fun.__name__}')
 
         loop = QEventLoop()
         worker = BackendWorker(fun, **kwargs)
@@ -231,14 +229,16 @@ class BackendActionMixin:
         QGuiApplication.restoreOverrideCursor()
 
         for widget in widget_list:
-            widget.setEnabled(True)
+            widget.setEnabledStack(True, f'action_{fun.__name__}')
 
         if worker.exception is not None:
             msgbox = KMessageBox(self)
             msgbox.setIcon(QMessageBox.Critical)
             msgbox.setText('<b>An error occured!</b>')
             msgbox.setInformativeText(
-                'An error occurred during action, please check the logs.')
+                f'An error occurred during call to "{fun.__name__}".')
+            msgbox.setDetailedText(''.join(
+                traceback.format_exception(worker.exception)))
             msgbox.setModal(True)
             msgbox.show()
 
@@ -293,16 +293,16 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_shm_state(self, data, shm_name, default=None, force=False):
+    def consume_shm_status(self, data, shm_name, default=None, force=False):
         try:
             if shm_name not in self.data_cache:
                 self.data_cache[shm_name] = {}
 
-            value = data[shm_name]['state']
-            prev = self.data_cache[shm_name].get('state', None)
+            value = data[shm_name]['status']
+            prev = self.data_cache[shm_name].get('status', None)
 
             if value != prev or force:
-                self.data_cache[shm_name]['state'] = value
+                self.data_cache[shm_name]['status'] = value
                 return value
             else:
                 return default
@@ -342,16 +342,16 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_fps_state(self, data, fps_name, default=None, force=False):
+    def consume_fps_status(self, data, fps_name, default=None, force=False):
         try:
             if fps_name not in self.data_cache:
                 self.data_cache[fps_name] = {}
 
-            value = data[fps_name]['state']
-            prev = self.data_cache[fps_name].get('state', None)
+            value = data[fps_name]['status']
+            prev = self.data_cache[fps_name].get('status', None)
 
             if value != prev or force:
-                self.data_cache[fps_name]['state'] = value
+                self.data_cache[fps_name]['status'] = value
                 return value
             else:
                 return default

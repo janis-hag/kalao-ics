@@ -176,7 +176,7 @@ class ColormapLabel(QLabel):
 
 
 def show_colormap(colormap):
-    if not hasattr(show_colormap, "pos_y"):
+    if not hasattr(show_colormap, 'pos_y'):
         show_colormap.pos_y = 100
         show_colormap.labels = []
 

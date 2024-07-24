@@ -6,7 +6,7 @@ from kalao.hardware import (adc, calibunit, cooling, environment, filterwheel,
 
 from opcua import Client
 
-from kalao.definitions.enums import LaserState, ReturnCode, TungstenState
+from kalao.definitions.enums import LaserStatus, ReturnCode, TungstenStatus
 
 import config
 
@@ -21,13 +21,13 @@ def lamps_off() -> ReturnCode:
     laser_status = laser.disable()
     tungsten_status = tungsten.off()
 
-    if tungsten_status == TungstenState.OFF and laser_status == LaserState.OFF:
+    if tungsten_status == TungstenStatus.OFF and laser_status == LaserStatus.OFF:
         return ReturnCode.OK
 
-    if tungsten_status != TungstenState.OFF:
+    if tungsten_status != TungstenStatus.OFF:
         logger.warn('tungsten', 'Tungsten lamp did not turn off')
 
-    if laser_status != LaserState.OFF:
+    if laser_status != LaserStatus.OFF:
         logger.warn('laser', 'Laser lamp did not turn off')
 
     return ReturnCode.GENERIC_ERROR
@@ -41,11 +41,6 @@ def get_all_status(filter_from_memory: bool = False,
     :return: device status dictionary
     """
 
-    # TODO check if all initialised
-
-    environment_readings = environment.get_readings(beck=beck)
-    cooling_system = cooling.get_status(beck=beck)
-
     filter_position = filterwheel.get_filter(type=int,
                                              from_memory=filter_from_memory)
     filter_name = filterwheel.translate_to_filter_name(filter_position)
@@ -57,29 +52,19 @@ def get_all_status(filter_from_memory: bool = False,
         adc1_angle, adc2_angle)
 
     return {
-        'shutter_state': shutter.get_state(beck=beck),
-        'flipmirror_position': flipmirror.get_position(beck=beck),
+        'shutter_status': shutter.get_status(beck=beck),
+        'flipmirror_status': flipmirror.get_status(beck=beck),
         'calibunit_position': calibunit.get_position(beck=beck),
-        'calibunit_state': calibunit.get_state(beck=beck),
-        'laser_state': laser.get_state(beck=beck),
+        'calibunit_status': calibunit.get_status(beck=beck),
+        'laser_status': laser.get_status(beck=beck),
         'laser_power': laser.get_power(beck=beck),
-        'tungsten_state': tungsten.get_state(beck=beck),
+        'tungsten_status': tungsten.get_status(beck=beck),
         'adc1_angle': adc1_angle,
-        'adc1_state': adc.get_state(config.PLC.Node.ADC1, beck=beck),
+        'adc1_status': adc.get_status(config.PLC.Node.ADC1, beck=beck),
         'adc2_angle': adc2_angle,
-        'adc2_state': adc.get_state(config.PLC.Node.ADC2, beck=beck),
+        'adc2_status': adc.get_status(config.PLC.Node.ADC2, beck=beck),
         'adc_angle': adc_angle,
         'adc_offset': adc_offset,
         'filterwheel_filter_position': filter_position,
         'filterwheel_filter_name': filter_name,
-        'coolant_temp_in': cooling_system['coolant_temp_in'],
-        'coolant_temp_out': cooling_system['coolant_temp_out'],
-        'pump_status': cooling_system['pump_status'],
-        'pump_temp': cooling_system['pump_temp'],
-        'heater_status': cooling_system['heater_status'],
-        'heatexchanger_fan_status': cooling_system['heatexchanger_fan_status'],
-        'coolant_flowrate': cooling_system['coolant_flowrate'],
-        'bench_air_temp': environment_readings['bench_air_temp'],
-        'bench_board_temp': environment_readings['bench_board_temp'],
-        'bench_air_hygro': environment_readings['bench_air_hygro'],
-    }
+    } | cooling.get_all_status(beck=beck) | environment.get_readings(beck=beck)

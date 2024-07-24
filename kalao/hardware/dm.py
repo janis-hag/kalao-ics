@@ -12,11 +12,11 @@ import config
 def on() -> ReturnCode:
     logger.info('wfs', 'Turning on DM')
 
-    if ippower.status(config.IPPower.Port.DM) == IPPowerStatus.OFF:
+    if ippower.get_status(config.IPPower.Port.DM) == IPPowerStatus.OFF:
         logger.info('dm', 'Powering on DM ippower')
 
         # Prevent inactivity checks from turning DM off immediately
-        database.store('obs', {'deadman_keepalive': 0})
+        database.store('obs', {'deadman_keepalive': -1})
         time.sleep(1)
 
         ret = ippower.switch(config.IPPower.Port.DM, IPPowerStatus.ON)
@@ -34,7 +34,7 @@ def on() -> ReturnCode:
             logger.info('dm', f'Starting {config.FPS.BMC}')
 
             # Prevent inactivity checks from turning DM off immediately
-            database.store('obs', {'deadman_keepalive': 0})
+            database.store('obs', {'deadman_keepalive': -1})
             time.sleep(1)
 
             bmc_display_fps.run_start()

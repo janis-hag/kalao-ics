@@ -6,15 +6,13 @@ import pandas as pd
 
 from astropy.io import fits
 
-from kalao import database, logger
+from kalao import database, logger, memory
 from kalao.hardware import camera, filterwheel
 from kalao.interfaces import etcs
 from kalao.sequencer import seq_utils
-from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import fits_handling, starfinder
 
-from kalao.definitions.enums import (ObservationType, ReturnCode,
-                                     SequencerStatus)
+from kalao.definitions.enums import ObservationType, ReturnCode
 from kalao.definitions.exceptions import (AbortRequested,
                                           CameraTakeImageFailed,
                                           FocusingException,
@@ -26,14 +24,16 @@ from kalao.definitions.exceptions import (AbortRequested,
 import config
 
 
-@with_sequencer_status(SequencerStatus.FOCUSING)
-def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
+def focus_sequence(exptime: float | None = None,
+                   steps: int = config.Focusing.steps,
                    step_size: float = config.Focusing.step_size,
                    window_size: int = config.Focusing.window_size
                    ) -> ReturnCode:
     """
     Starts a sequence to find best telescope M2 focus position.
     """
+
+    memory.set('focusing_step', 0)
 
     filepath = fits_handling.get_focus_sequence_filepath()
 
@@ -66,6 +66,8 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
                 # Check if an abort was requested
                 if seq_utils.is_aborting():
                     raise AbortRequested
+
+                memory.set('focusing_step', step + 1)
 
                 etcs.set_focus(m2_position)
 
@@ -204,8 +206,8 @@ def focus_sequence(exptime: float, steps: int = config.Focusing.steps,
     if (time.time() - int(temps['tunix'])) < config.ETCS.max_age:
         logger.info('focusing', 'Updated autofocusing model')
 
-        f0, f1 = update_autofocus_model(best_focus, temps['temttb'],
-                                        temps['temtth'])
+        f0, f1 = _update_autofocus_model(best_focus, temps['temttb'],
+                                         temps['temtth'])
 
         database.store(
             'obs', {
@@ -255,8 +257,8 @@ def autofocus() -> ReturnCode:
     return ReturnCode.FOCUSING_OK
 
 
-def update_autofocus_model(focus: float, temttb: float,
-                           temtth: float) -> tuple[float, float]:
+def _update_autofocus_model(focus: float, temttb: float,
+                            temtth: float) -> tuple[float, float]:
     f1 = config.Focusing.autofocus_f1
     f0 = focus - f1 * (temttb-1.2+temtth) / 2
 

@@ -4,6 +4,9 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
+from kalao.definitions.dataclasses import CalibrationPose
+from kalao.definitions.enums import ObservationType
+
 
 class KalAOJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -28,6 +31,26 @@ class KalAOJSONEncoder(json.JSONEncoder):
                     'data': obj.tolist(),
                     'shape': list(obj.shape)
                 }
+
+        elif isinstance(obj, CalibrationPose):
+            return {
+                '_type': 'CalibrationPose',
+                'type': {
+                    '_type': 'ObservationType',
+                    'value': obj.type.value
+                },
+                'filter': obj.filter,
+                'exposure_time': obj.exposure_time,
+                'median': obj.median,
+                'status': obj.status,
+                'error_text': obj.error_text
+            }
+
+        elif isinstance(obj, ObservationType):
+            return {
+                '_type': 'ObservationType',
+                'value': obj.value,
+            }
 
         else:
             return json.JSONEncoder.default(self, obj)
@@ -55,6 +78,16 @@ class KalAOJSONDecoder(json.JSONDecoder):
                 return np.ma.array(obj['data'], mask=obj['mask'],
                                    fill_value=obj['fill_value']).reshape(
                                        obj['shape'])
+
+            case 'CalibrationPose':
+                return CalibrationPose(type=obj['type'], filter=obj['filter'],
+                                       exposure_time=obj['exposure_time'],
+                                       median=obj['median'],
+                                       status=obj['status'],
+                                       error_text=obj['error_text'])
+
+            case 'ObservationType':
+                return ObservationType(obj['value'])
 
             case _:
                 return obj

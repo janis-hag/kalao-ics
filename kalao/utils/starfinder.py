@@ -166,11 +166,12 @@ def _star_gaussian_fit(X: np.ndarray, Y: np.ndarray, img: np.ndarray,
     x_mean = res.x[0]
     y_mean = res.x[1]
     fwhm_w = res.x[2] * kmath.SIGMA_TO_FWHM
-    fwhm_y = res.x[3] * kmath.SIGMA_TO_FWHM
+    fwhm_h = res.x[3] * kmath.SIGMA_TO_FWHM
     fwhm_angle = res.x[4] * 180 / np.pi
     peak = res.x[5]
 
-    return Star(x_mean, y_mean, peak, fwhm_w, fwhm_y, fwhm_angle)
+    return Star(x=x_mean, y=y_mean, peak=peak, fwhm_w=fwhm_w, fwhm_h=fwhm_h,
+                fwhm_angle=fwhm_angle)
 
 
 def _star_moments(X: np.ndarray, Y: np.ndarray, img: np.ndarray) -> Star:
@@ -187,10 +188,11 @@ def _star_moments(X: np.ndarray, Y: np.ndarray, img: np.ndarray) -> Star:
         np.array([[x_var, xy_cov], [xy_cov, y_var]]))
 
     fwhm_w = np.sqrt(eigenvalues[0]) * kmath.SIGMA_TO_FWHM
-    fwhm_y = np.sqrt(eigenvalues[1]) * kmath.SIGMA_TO_FWHM
+    fwhm_h = np.sqrt(eigenvalues[1]) * kmath.SIGMA_TO_FWHM
     fwhm_angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0,
                                                              0]) * 180 / np.pi
-    fwhm = np.sqrt(fwhm_w * fwhm_y)
+    fwhm = np.sqrt(fwhm_w * fwhm_h)
     peak = 2 * flux / (np.pi * (fwhm / 2)**2)
 
-    return Star(x_mean, y_mean, peak, fwhm_w, fwhm_y, fwhm_angle)
+    return Star(x=x_mean, y=y_mean, peak=peak, fwhm_w=fwhm_w, fwhm_h=fwhm_h,
+                fwhm_angle=fwhm_angle)

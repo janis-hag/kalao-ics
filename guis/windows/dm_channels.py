@@ -48,9 +48,9 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.data_unit = ' mrad'
             self.data_precision = 2
             self.title_label.setText(self.title_label.text().replace(
-                "Deformable Mirror", "Tip-Tilt Mirror"))
+                'Deformable Mirror', 'Tip-Tilt Mirror'))
             self.setWindowTitle(self.windowTitle().replace(
-                "Deformable Mirror", "Tip-Tilt Mirror"))
+                'Deformable Mirror', 'Tip-Tilt Mirror'))
 
             prefix = 'TTM_'
             self.disp_stream = config.SHM.TTM
@@ -73,7 +73,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.stroke_label_commands.updateText(min=np.nan, max=np.nan, unit='')
 
         view_list = [self.dm_view]
-        self.reset_buttons = {}
+        self.reset_buttons = []
         for i in range(0, 12):
             view = getattr(self, f'view_{i:02d}')
             view.hovered.connect(self.hover_xyv_to_str)
@@ -87,7 +87,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             stroke_label.updateText(min=np.nan, max=np.nan,
                                     unit=self.data_unit)
 
-            self.reset_buttons[i] = reset_button
+            self.reset_buttons.append(reset_button)
             view_list.append(view)
 
         self.init_minmax(view_list, symetric=True)
@@ -145,7 +145,8 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     @Slot(bool)
     def on_reset_all_button_clicked(self, checked):
-        self.action_send(self.reset_all_button, self.backend.channels_resetall,
+        self.action_send(self.reset_buttons + [self.reset_all_button],
+                         self.backend.channels_resetall,
                          dm_number=self.dm_number)
 
     def hover_xyv_to_str_commands(self, x, y, v):

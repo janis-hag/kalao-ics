@@ -11,10 +11,10 @@ datasets specific for the KalAO flask graphic user interface (GUI).
 """
 
 from datetime import datetime, timezone
-from typing import Any
 
-from kalao import database
+from kalao import database, memory
 from kalao.hardware import camera, tungsten
+from kalao.sequencer import centering
 
 from kalao.definitions.enums import SequencerStatus
 
@@ -28,68 +28,62 @@ def kalao_status() -> str:
     :return: status_string to send to the Euler telescope
     """
 
-    sequencer_status = database.get_last('obs', 'sequencer_status')
-    sequencer_status_value = sequencer_status['value']
+    sequencer_mapping = memory.mget({
+        'sequencer_status': str,
+        'sequencer_status_timestamp': int
+    })
 
-    if not sequencer_status_value:
+    sequencer_status = sequencer_mapping['sequencer_status']
+    exposure_status = camera.get_exposure_status()
+
+    if sequencer_status is None:
         # If the status is not set, assume that the sequencer is down
         status_string = '|status|ERROR|0|DOWN'
-    elif sequencer_status_value == SequencerStatus.WAITING:
-        status_string = f'|status|WAITING|path|{_last_filepath_archived()}'
-    elif sequencer_status_value == SequencerStatus.ERROR:
+
+    elif sequencer_status == SequencerStatus.WAITING:
+        last_filepath_archived = database.get_last_value(
+            'obs', 'camera_image_path')
+        status_string = f'|status|WAITING|path|{last_filepath_archived}'
+
+    elif sequencer_status == SequencerStatus.ERROR:
         status_string = '|status|ERROR'
-    elif sequencer_status_value == SequencerStatus.WAITLAMP:
-        status_string = f'|status|BUSY|{get_elapsed_time(sequencer_status):.0f}'
-    elif sequencer_status_value == SequencerStatus.EXP:
-        exposure_status = camera.get_exposure_status()
-        elapsed_time = exposure_status["exposure_time"] - exposure_status[
-            "remaining_time"]
-        requested_time = exposure_status["exposure_time"]
-        status_string = f'|status|BUSY|elapsed_time|{elapsed_time:.0f}|requested_time|{requested_time:.0f}'
+
+    elif sequencer_status == SequencerStatus.WAIT_LAMP:
+        state, switch_time = tungsten.get_switch_time()
+        status_string = f'|status|BUSY|elapsed_time|{switch_time:.0f}/{config.Tungsten.stabilisation_time:.0f}|requested_time|WAIT_LAMP'
+
+    elif sequencer_status == SequencerStatus.FOCUSING:
+        focusing_step = memory.get('focusing_step', type=int, default=0)
+        status_string = f'|status|BUSY|elapsed_time|STEP {focusing_step}/{config.Focusing.steps}|requested_time|FOCUSING'
+
+    elif sequencer_status == SequencerStatus.CENTERING:
+        centering_manual_flag = centering.get_manual_centering_flag()
+        if centering_manual_flag:
+            status_string = '|status|BUSY|elapsed_time|MANUAL|requested_time|CENTERING'
+        else:
+            centering_step = memory.get('centering_step', type=int, default=0)
+            status_string = f'|status|BUSY|elapsed_time|STEP {centering_step}|requested_time|CENTERING'
+
+    elif sequencer_status == SequencerStatus.CALIBRATIONS:
+        calibration_poses_step = memory.get('calibration_poses_step', type=int,
+                                            default=0)
+        status_string = f'|status|BUSY|elapsed_time|STEP {calibration_poses_step}|requested_time|CALIBRATIONS'
+
+    elif sequencer_status == SequencerStatus.EXPOSING:
+        elapsed_time = exposure_status['exposure_time'] - exposure_status[
+            'remaining_time']
+        exposure_time = exposure_status['exposure_time']
+        status_string = f'|status|BUSY|elapsed_time|{elapsed_time:.0f}|requested_time|{exposure_time:.0f}'
+
     else:
-        status_string = f'|status|BUSY|elapsed_time|{get_elapsed_time(sequencer_status):.0f}|requested_time|{sequencer_status_value}'
+        if exposure_status['remaining_time'] > 0:
+            elapsed_time = exposure_status['exposure_time'] - exposure_status[
+                'remaining_time']
+            exposure_time = exposure_status['exposure_time']
+            status_string = f'|status|BUSY|elapsed_time|{elapsed_time:.0f}/{exposure_time}|requested_time|{sequencer_status}'
+        else:
+            elapsed_time = datetime.now(timezone.utc).timestamp(
+            ) - sequencer_mapping['sequencer_status_timestamp']
+            status_string = f'|status|BUSY|elapsed_time|{elapsed_time:.0f}|requested_time|{sequencer_status}'
 
     return status_string
-
-
-def get_elapsed_time(sequencer_status: dict[str, Any]) -> float:
-    """
-    Get the elapsed time since the current operation has started.
-
-    :param: sequencer_status
-    :return: Time in seconds
-    """
-
-    sequencer_status_value = sequencer_status.get('value')
-    sequencer_status_time = sequencer_status.get('timestamp')
-
-    if sequencer_status_value == SequencerStatus.WAITLAMP:
-        state, switch_time = tungsten.get_switch_time()
-        elapsed_time = config.Tungsten.stabilisation_time - switch_time
-
-    else:
-        expected_time = 0
-
-        if sequencer_status_value == SequencerStatus.INITIALISING:
-            expected_time = config.SEQ.init_duration
-
-        elif sequencer_status_value == SequencerStatus.SETUP:
-            k_type = database.get_last_value('obs', 'sequencer_obs_type')
-
-            if k_type in config.SEQ.timings:
-                expected_time = config.SEQ.timings[k_type]
-
-        elapsed_time = expected_time - (datetime.now(timezone.utc) -
-                                        sequencer_status_time).total_seconds()
-
-    return elapsed_time
-
-
-def _last_filepath_archived() -> str:
-    """
-    Query the file path of the last saved image in the KalAO-ICS mongo database.
-
-    :return: Image file path (str)
-    """
-
-    return database.get_last_value('obs', 'camera_image_path')

@@ -48,7 +48,7 @@ def switch(power_port: str | int, state: IPPowerStatus) -> IPPowerStatus:
     return IPPowerStatus.ERROR
 
 
-def status(power_port: str | int) -> IPPowerStatus:
+def get_status(power_port: str | int) -> IPPowerStatus:
     """
     Check the ippower status of the power.
 
@@ -61,7 +61,7 @@ def status(power_port: str | int) -> IPPowerStatus:
     return _get_port_status_from_req(req, power_port)
 
 
-def status_all() -> dict[str, IPPowerStatus]:
+def get_all_status() -> dict[str, IPPowerStatus]:
     req = _send_request()
 
     data = {}
@@ -136,9 +136,13 @@ def init() -> ReturnCode:
 
     # Powering up the bench
     if switch(config.IPPower.Port.Bench, IPPowerStatus.ON) == IPPowerStatus.ON:
-        return ReturnCode.IPPOWER_OK
+        ret_init = ReturnCode.IPPOWER_OK
     else:
-        return ReturnCode.IPPOWER_ERROR
+        ret_init = ReturnCode.IPPOWER_ERROR
+
+    logger.info('ippower', 'IPPowers initialised')
+
+    return ret_init
 
 
 def _send_request(params: dict = {}) -> requests.Response | None:

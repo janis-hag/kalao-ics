@@ -15,8 +15,6 @@ blue="\033[34m"
 purple="\033[35m"
 default="\033[0m"
 
-fake=false
-
 make_symlink() {
     source=$1
     dest=$2
@@ -30,12 +28,12 @@ make_symlink() {
     then
         echo -e "NOT A   ${red}symlink$default    $blue$source$default -> $purple$dest$default"
     else
-        if ! $fake
+        if ! $dry_run
         then
             ln -s $source $dest
         fi
         echo -e "CREATED ${yellow}symlink$default    $blue$source$default -> $purple$dest$default"
-     fi
+    fi
 }
 
 install_symlinks() {
@@ -43,14 +41,15 @@ install_symlinks() {
 
     for file in $files
     do
-        source="`pwd`/$file"
+        source="$(pwd)/$file"
         dest=$(sed 's/_//' <(echo "$HOME/.$file"))
         make_symlink $source $dest
     done
 }
 
 dry_run=false
-while getopts ":fn" opt; do
+
+while getopts ":d" opt; do
   case $opt in
     d)
       dry_run=true >&2
@@ -65,5 +64,8 @@ while getopts ":fn" opt; do
       ;;
   esac
 done
+
+# First, ensure we are in the script directory
+pushd "$(dirname -- "$(readlink -f -- "$0")")"
 
 install_symlinks
