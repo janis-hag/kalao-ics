@@ -166,14 +166,14 @@ def _check_cooling_status() -> None:
         if cooling.heater_status() != RelayState.ON:
             logger.info(
                 'hardware_timer',
-                f'Coolant temperature too low ({coolant_temp} {unit}), starting heater'
+                f'Coolant temperature too low ({coolant_temp:.2f} {unit}), starting heater'
             )
             cooling.heater_on()
 
         if cooling.heatexchanger_fan_status() != RelayState.OFF:
             logger.info(
                 'hardware_timer',
-                f'Coolant temperature too low ({coolant_temp} {unit}), stopping heat exchanger fan'
+                f'Coolant temperature too low ({coolant_temp:.2f} {unit}), stopping heat exchanger fan'
             )
             cooling.heatexchanger_fan_off()
 
@@ -181,14 +181,14 @@ def _check_cooling_status() -> None:
         if cooling.heater_status() != RelayState.OFF:
             logger.info(
                 'hardware_timer',
-                f'Coolant temperature high enough ({coolant_temp} {unit}), stopping heater'
+                f'Coolant temperature high enough ({coolant_temp:.2f} {unit}), stopping heater'
             )
             cooling.heater_off()
 
         if cooling.heatexchanger_fan_status() != RelayState.ON:
             logger.info(
                 'hardware_timer',
-                f'Coolant temperature high enough ({coolant_temp} {unit}), starting heat exchanger fan'
+                f'Coolant temperature high enough ({coolant_temp:.2f} {unit}), starting heat exchanger fan'
             )
             cooling.heatexchanger_fan_on()
 

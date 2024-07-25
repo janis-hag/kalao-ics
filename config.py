@@ -328,7 +328,6 @@ class Tungsten:
 class PLC:
     host = '10.10.132.121'
     port = 4840
-    disabled = []
 
     # Calibration of the temperature sensors
     bench_air_temp_offset = -4.5  # °C, 19 - 23.5
@@ -372,25 +371,14 @@ class PLC:
 class Sequencer:
     host = '127.0.0.1'
     port = 5005
-    gop_arg_int = ['nbframes']
+    gop_arg_int = ['nbframes', 'nbPic']
     gop_arg_float = ['texp', 'intensity', 'mv']
-    gop_arg_string = ['filepath', 'filterposition']
-    init_duration = 120
 
     init_timeout = 500  # s
 
     # Pointing can be long when instrument change happens
     pointing_poll_interval = 2  # s
     pointing_timeout = 210  # s
-
-    # Setup time to report to EDP
-    timings = {
-        'K_DARK': 15,  # s
-        'K_LMPFLT': 15,  # s
-        'K_SKYFLT': 20,  # s
-        'K_TRGOBS': 20,  # s
-        'K_FOCUS': 20,  # s
-    }
 
 
 class FITS:

@@ -38,7 +38,7 @@ def move_to_tungsten_position() -> float:
     else:
         logger.error(
             'calibunit',
-            f'Calibration unit position requested {config.Tungsten.position} but moved to {new_position}'
+            f'Calibration unit position requested {config.Tungsten.position:.2f} but moved to {new_position:.2f}'
         )
         return np.nan
 
@@ -58,7 +58,7 @@ def move_to_laser_position() -> float:
     else:
         logger.error(
             'calibunit',
-            f'Calibration unit position requested {config.Laser.position} but moved to {new_position}'
+            f'Calibration unit position requested {config.Laser.position:.2f} but moved to {new_position:.2f}'
         )
         return np.nan
 
@@ -72,28 +72,29 @@ def move(position: float, velocity: float = config.CalibUnit.velocity,
     if position < config.CalibUnit.position_min:
         logger.warn(
             'calibunit',
-            f'Position {position} mm lower than minimal position {config.CalibUnit.position_min} mm, clipping.'
+            f'Position {position:.2f} mm lower than minimal position {config.CalibUnit.position_min:.2f} mm, clipping.'
         )
         position = config.CalibUnit.position_min
 
     elif position > config.CalibUnit.position_max:
         logger.warn(
             'calibunit',
-            f'Position {position} mm higher than maximal position {config.CalibUnit.position_max} mm, clipping.'
+            f'Position {position:.2f} mm higher than maximal position {config.CalibUnit.position_max:.2f} mm, clipping.'
         )
         position = config.CalibUnit.position_max
 
     logger.info(
         'calibunit',
-        f'Moving calibration unit to position {position} mm at {velocity} mm/s'
+        f'Moving calibration unit to position {position:.2f} mm at {velocity:.2f} mm/s'
     )
 
     new_position = plc.motor_move(config.PLC.Node.CALIB_UNIT, position,
                                   velocity, blocking, beck=beck)
 
     if blocking:
-        logger.info('calibunit',
-                    f'Moved calibration unit to position {new_position} mm')
+        logger.info(
+            'calibunit',
+            f'Moved calibration unit to position {new_position:.2f} mm')
 
     return new_position
 

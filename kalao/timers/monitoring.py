@@ -17,7 +17,7 @@ from typing import Any, Callable
 
 import numpy as np
 
-from kalao import database, euler, ippower, logger
+from kalao import database, euler, ippower, logger, memory
 from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import adc, camera, hw_utils, ttm
 from kalao.rtc import gpu, sensors
@@ -25,6 +25,7 @@ from kalao.utils import kstring
 
 import schedule
 
+from kalao.definitions.dataclasses import Alarm
 from kalao.definitions.enums import AlarmLevel, CameraServerStatus, LoopStatus
 
 import config
@@ -192,7 +193,7 @@ def gather_ao() -> dict[str, Any]:
     return data
 
 
-def check_alarms(key: str, value: Any) -> [str, str, Any]:
+def check_alarms(key: str, value: Any) -> Alarm:
     metadata = database.definitions['monitoring']['metadata'][key]
 
     alarm_values = metadata.get('alarm_values', [])
@@ -200,7 +201,7 @@ def check_alarms(key: str, value: Any) -> [str, str, Any]:
 
     if value in alarm_values or (is_numeric and np.isnan(value) and
                                  np.isnan(alarm_values).any()):
-        return AlarmLevel.ALARM, '==', value
+        return Alarm(level=AlarmLevel.ALARM, condition='==', threshold=value)
     elif is_numeric:
         alarm_range = metadata.get('alarm_range', [np.nan, np.nan])
         warn_range = metadata.get('warn_range', [np.nan, np.nan])
@@ -211,20 +212,26 @@ def check_alarms(key: str, value: Any) -> [str, str, Any]:
         warn_max = warn_range[1]
 
         if value > alarm_max:
-            return AlarmLevel.ALARM, '>', alarm_max
+            return Alarm(level=AlarmLevel.ALARM, condition='>',
+                         threshold=alarm_max)
         elif value < alarm_min:
-            return AlarmLevel.ALARM, '<', alarm_min
+            return Alarm(level=AlarmLevel.ALARM, condition='<',
+                         threshold=alarm_min)
         elif value > warn_max:
-            return AlarmLevel.WARNING, '>', warn_max
+            return Alarm(level=AlarmLevel.WARNING, condition='>',
+                         threshold=warn_max)
         elif value < warn_min:
-            return AlarmLevel.ALARM.WARNING, '<', warn_min
+            return Alarm(level=AlarmLevel.WARNING, condition='<',
+                         threshold=warn_min)
         else:
-            return AlarmLevel.OK, '', None
+            return Alarm(level=AlarmLevel.OK, condition='', threshold=np.nan)
     else:
-        return AlarmLevel.OK, '', None
+        return Alarm(level=AlarmLevel.OK, condition='', threshold=np.nan)
 
 
 def _update_general() -> None:
+    alarms_number = 0
+
     data = gather_general()
 
     if ao_job is None:
@@ -234,7 +241,16 @@ def _update_general() -> None:
 
     for key in data.keys():
         data[key] = _round(key, data[key])
-        _check_and_log(key, data[key], timestamp)
+
+        alarm = check_alarms(key, data[key])
+
+        if alarm.level == AlarmLevel.ALARM:
+            alarms_number += 1
+
+        if config.Monitoring.alarms_repetition_rate is not None:
+            _log(key, data[key], timestamp, alarm)
+
+    memory.set('monitoring_alarms_number', alarms_number)
 
     if data != {}:
         database.store('monitoring', data, timestamp=timestamp)
@@ -250,7 +266,11 @@ def _update_ao() -> None:
 
     for key in data.keys():
         data[key] = _round(key, data[key])
-        _check_and_log(key, data[key], timestamp)
+
+        alarm = check_alarms(key, data[key])
+
+        if config.Monitoring.alarms_repetition_rate is not None:
+            _log(key, data[key], timestamp, alarm)
 
     if data != {}:
         database.store('monitoring', data, timestamp=timestamp)
@@ -274,59 +294,56 @@ def _round(key: str, value: Any):
         return round(value, rounding)
 
 
-def _check_and_log(key: str, value: Any, timestamp: datetime) -> None:
-    if config.Monitoring.alarms_repetition_rate is None:
-        return
-
+def _log(key: str, value: Any, timestamp: datetime, alarm: Alarm) -> None:
     metadata = database.definitions['monitoring']['metadata'][key]
 
-    level, condition, threshold = check_alarms(key, value)
+    if alarm.level == AlarmLevel.OK:
+        return
 
-    if level != '':
-        unit = kstring.get_unit_string(metadata)
+    unit = kstring.get_unit_string(metadata)
 
-        if level == AlarmLevel.ALARM:
-            log_func = logger.error
-        elif level == AlarmLevel.WARNING:
-            log_func = logger.warn
+    if alarm.level == AlarmLevel.ALARM:
+        log_func = logger.error
+    elif alarm.level == AlarmLevel.WARNING:
+        log_func = logger.warn
 
-        if condition == '>':
-            verb = 'over'
-        elif condition == '<':
-            verb = 'under'
+    if alarm.condition == '>':
+        verb = 'over'
+    elif alarm.condition == '<':
+        verb = 'under'
 
-        data = database.get_time_since_state('monitoring', key, condition,
-                                             threshold)
+    data = database.get_time_since_state('monitoring', key, alarm.condition,
+                                         alarm.threshold)
 
-        if data.get('since') is None:
-            since = 0  # s
-        else:
-            since = (timestamp - data['since']['timestamp']).total_seconds()
+    if data.get('since') is None:
+        since = 0  # s
+    else:
+        since = (timestamp - data['since']['timestamp']).total_seconds()
 
-            last = (data['current']['timestamp'] -
-                    data['since']['timestamp']).total_seconds()
+        last = (data['current']['timestamp'] -
+                data['since']['timestamp']).total_seconds()
 
-            if last // config.Monitoring.alarms_repetition_rate == since // config.Monitoring.alarms_repetition_rate:
-                return
+        if last // config.Monitoring.alarms_repetition_rate == since // config.Monitoring.alarms_repetition_rate:
+            return
 
-        hr, min, sec = _sec_to_hms(since)
+    hr, min, sec = _sec_to_hms(since)
 
-        since_str = f'{sec:.0f}s'
+    since_str = f'{sec:.0f}s'
 
-        if min != 0 or hr != 0:
-            since_str = f'{min:d}m ' + since_str
+    if min != 0 or hr != 0:
+        since_str = f'{min:d}m ' + since_str
 
-        if hr != 0:
-            since_str = f'{hr:d}h ' + since_str
+    if hr != 0:
+        since_str = f'{hr:d}h ' + since_str
 
-        if condition == '==':
-            log_func('monitoring_timer',
-                     f'{key} = {value}{unit} (since {since_str})')
-        else:
-            log_func(
-                'monitoring_timer',
-                f'{key} = {value}{unit} {verb} {level} threshold of {threshold}{unit} (since {since_str})'
-            )
+    if alarm.condition == '==':
+        log_func('monitoring_timer',
+                 f'{key} = {value}{unit} (since {since_str})')
+    else:
+        log_func(
+            'monitoring_timer',
+            f'{key} = {value}{unit} {verb} {alarm.level} threshold of {alarm.threshold}{unit} (since {since_str})'
+        )
 
 
 def _sec_to_hms(sec: float, decimal: int = 0) -> tuple[int, int, float | int]:

@@ -12,7 +12,7 @@ red="\033[31m"
 green="\033[32m"
 yellow="\033[33m"
 blue="\033[34m"
-purple="\033[35m"
+magenta="\033[35m"
 default="\033[0m"
 
 make_symlink() {
@@ -20,19 +20,19 @@ make_symlink() {
     dest=$2
     if [ $source -ef $dest ]
     then
-        echo -e "GOOD    ${green}symlink$default    $blue$source$default -> $purple$dest$default"
+        echo -e "GOOD    ${green}symlink$default    $blue$source$default -> $magenta$dest$default"
     elif [ -L $dest ]
     then
-        echo -e "BAD     ${red}symlink$default    $blue$source$default -> $purple$dest$default"
+        echo -e "BAD     ${red}symlink$default    $blue$source$default -> $magenta$dest$default"
     elif [ -e $dest ]
     then
-        echo -e "NOT A   ${red}symlink$default    $blue$source$default -> $purple$dest$default"
+        echo -e "NOT A   ${red}symlink$default    $blue$source$default -> $magenta$dest$default"
     else
         if ! $dry_run
         then
             ln -s $source $dest
         fi
-        echo -e "CREATED ${yellow}symlink$default    $blue$source$default -> $purple$dest$default"
+        echo -e "CREATED ${yellow}symlink$default    $blue$source$default -> $magenta$dest$default"
     fi
 }
 
@@ -66,6 +66,8 @@ while getopts ":d" opt; do
 done
 
 # First, ensure we are in the script directory
-pushd "$(dirname -- "$(readlink -f -- "$0")")"
+pushd "$(dirname -- "$(readlink -f -- "$0")")" > /dev/null
 
 install_symlinks
+
+popd > /dev/null

@@ -162,14 +162,13 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                     f'{timestamp_text} (outdated){lineedit.ranges}')
                 outdated += 1
             else:
-                level, _, _ = monitoring.check_alarms(lineedit.key,
-                                                      lineedit.value)
+                alarm = monitoring.check_alarms(lineedit.key, lineedit.value)
 
-                if level == AlarmLevel.ALARM:
+                if alarm.level == AlarmLevel.ALARM:
                     lineedit.setStyleSheet(
                         f'background-color: {Color.RED.name()};')
                     alarms += 1
-                elif level == AlarmLevel.WARNING:
+                elif alarm.level == AlarmLevel.WARNING:
                     lineedit.setStyleSheet(
                         f'background-color: {Color.ORANGE.name()};')
                     warnings += 1

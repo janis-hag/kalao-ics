@@ -45,7 +45,7 @@ class MainBackend(AbstractBackend):
             reply = manager.post(request,
                                  QByteArray(self.encoder.encode(kwargs)))
 
-        loop.exec()
+        loop.exec(QEventLoop.ExcludeUserInputEvents)
 
         if reply.error() != QNetworkReply.NoError:
             rprint(f'[ERROR] {reply.errorString()}.')

@@ -202,18 +202,6 @@ def cast_args(args: dict[str, Any]) -> ReturnCode:
             else:
                 logger.error('sequencer',
                              f'{k} value cannot be convert in float')
-        elif k in config.Sequencer.gop_arg_string:
-            # If filterposition arg is not a digit, then he must be a name
-            # Get the int id from the dict Id_filter
-            # If filterposition arg is a digit, cast it in int
-            if k == 'filterposition' and not v.isdigit():
-                args[k] = filterwheel.translate_to_filter_position(v)
-            elif k == 'filterposition' and v.isdigit():
-                args[k] = int(v)
-        # else:
-        #     ignored_args[k] = v
-        #     logger.error('sequencer', f'{k} not in arg list')
-        #     return 1
 
         if k == 'kalfilter' and isinstance(v, str):
             v = v.lower()

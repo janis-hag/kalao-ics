@@ -24,6 +24,11 @@ from kalao.definitions.enums import PLCStatus, ReturnCode
 
 import config
 
+_name = {
+    config.PLC.Node.ADC1: 'ADC1',
+    config.PLC.Node.ADC2: 'ADC2',
+}
+
 
 class ADCCommand():
     MAX_DISP = 0
@@ -147,27 +152,30 @@ def _compute_angle_and_offset(angle_adc1: float,
 
 def rotate(node: str, position: float, velocity: float = config.ADC.velocity,
            blocking: bool = True, beck: Client = None) -> float:
-    logger.info('adc',
-                f'Moving ADC {node} to position {position}° at {velocity}°/s')
+    logger.info(
+        'adc',
+        f'Moving {_name[node]} to position {position:.2f}° at {velocity:.2f}°/s'
+    )
 
     new_position = plc.motor_move(node, position, velocity, blocking,
                                   beck=beck)
 
     if blocking:
-        logger.info('adc', f'Moved ADC {node} to position {new_position}°')
+        logger.info('adc',
+                    f'Moved {_name[node]} to position {new_position:.2f}°')
 
     return new_position
 
 
 @plc.autoconnect
 def stop(node: str, beck: Client = None) -> None:
-    logger.info('adc', f'Stopping ADC {node}')
+    logger.info('adc', f'Stopping {_name[node]}')
     plc.motor_send_stop(node, beck=beck)
 
 
 @plc.autoconnect
 def wait(node: str, beck: Client = None) -> int:
-    plc.wait_loop(f'Waiting for ADC {node} rotation',
+    plc.wait_loop(f'Waiting for {_name[node]} rotation',
                   lambda: is_moving(node, beck=beck), 5)
 
     return 0
@@ -201,14 +209,14 @@ def init(node: str, force_init: bool = False,
     """
     Initialise the ADC motor.
     """
-    logger.info('adc', f'Initialising ADC {node}')
+    logger.info('adc', f'Initialising {_name[node]}')
 
     ret_init = plc.motor_init(node, force_init, beck=beck)
 
     if ret_init != ReturnCode.HW_INIT_SUCCESS:
-        logger.error('adc', f'ADC {node} initialisation failed')
+        logger.error('adc', f'{_name[node]} initialisation failed')
     else:
-        logger.info('adc', f'ADC {node} initialised')
+        logger.info('adc', f'{_name[node]} initialised')
 
         if node in config.PLC.initial_state:
             rotate(node, config.PLC.initial_state[node], beck=beck)

@@ -567,19 +567,19 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         heatexchanger_fan_status = self.consume_dict(
             data, 'hw', 'heatexchanger_fan_status')
         if heatexchanger_fan_status is not None:
-            with QSignalBlocker(self.fan_checkbox):
-                self.fan_checkbox.setChecked(
+            with QSignalBlocker(self.heatexchanger_fan_checkbox):
+                self.heatexchanger_fan_checkbox.setChecked(
                     heatexchanger_fan_status == RelayState.ON)
 
             if heatexchanger_fan_status == RelayState.ON:
-                self.fan_indicator.setStatus(Color.GREEN,
-                                             heatexchanger_fan_status.name)
+                self.heatexchanger_fan_indicator.setStatus(
+                    Color.GREEN, heatexchanger_fan_status.name)
             elif heatexchanger_fan_status == RelayState.OFF:
-                self.fan_indicator.setStatus(Color.BLACK,
-                                             heatexchanger_fan_status.name)
+                self.heatexchanger_fan_indicator.setStatus(
+                    Color.BLACK, heatexchanger_fan_status.name)
             else:
-                self.fan_indicator.setStatus(Color.RED,
-                                             heatexchanger_fan_status.name)
+                self.heatexchanger_fan_indicator.setStatus(
+                    Color.RED, heatexchanger_fan_status.name)
 
         heater_status = self.consume_dict(data, 'hw', 'heater_status')
         if heater_status is not None:
@@ -1032,8 +1032,9 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)
-    def on_fan_checkbox_stateChanged(self, state):
-        self.action_send(self.fan_checkbox, self.backend.hardware_fan_status,
+    def on_heatexchanger_fan_checkbox_stateChanged(self, state):
+        self.action_send(self.heatexchanger_fan_checkbox,
+                         self.backend.hardware_fan_status,
                          state=Qt.CheckState(state) == Qt.Checked)
 
     @Slot(int)

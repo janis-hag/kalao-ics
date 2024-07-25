@@ -536,7 +536,7 @@
            </widget>
           </item>
           <item>
-           <widget class="KStatusIndicator" name="fan_indicator">
+           <widget class="KStatusIndicator" name="heatexchanger_fan_indicator">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -561,7 +561,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="fan_checkbox">
+           <widget class="QCheckBox" name="heatexchanger_fan_checkbox">
             <property name="text">
              <string/>
             </property>

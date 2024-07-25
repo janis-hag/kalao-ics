@@ -37,9 +37,9 @@ def get_status(beck: Client = None) -> LaserStatus:
     for retry in range(config.Laser.retries):
         status = beck.get_node(f'{config.PLC.Node.LASER}.Status').get_value()
 
-        if status == True:
+        if status == 1:
             return LaserStatus.ON
-        elif status == False:
+        elif status == 0:
             return LaserStatus.OFF
         else:
             time.sleep(config.Laser.retry_wait)

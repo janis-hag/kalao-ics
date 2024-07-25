@@ -266,11 +266,11 @@ def generate(since: datetime, until: datetime, short: bool = False,
                 points = len(data[key])
 
                 for row in data[key]:
-                    level, _, _ = monitoring.check_alarms(key, row['value'])
+                    alarm = monitoring.check_alarms(key, row['value'])
 
-                    if level == AlarmLevel.ALARM:
+                    if alarm.level == AlarmLevel.ALARM:
                         alarms += 1
-                    elif level == AlarmLevel.WARNING:
+                    elif alarm.level == AlarmLevel.WARNING:
                         warnings += 1
 
             if short and alarms == 0 and warnings == 0:

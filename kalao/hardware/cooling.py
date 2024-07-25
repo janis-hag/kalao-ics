@@ -21,6 +21,12 @@ from kalao.definitions.enums import RelayState, ReturnCode
 
 import config
 
+_name = {
+    config.PLC.Node.PUMP: 'pump',
+    config.PLC.Node.HEAT_EXCHANGER_FAN: 'heat exchanger fan',
+    config.PLC.Node.HEATER: 'heater',
+}
+
 
 class RelayCommand:
     OFF = False
@@ -76,9 +82,9 @@ def switch(node: str, action_name: RelayCommand | RelayState,
         action_name = RelayCommand.OFF
 
     if action_name == RelayCommand.ON:
-        logger.info('cooling', f'Switching on {node}')
+        logger.info('cooling', f'Switching on {_name[node]}')
     elif action_name == RelayCommand.OFF:
-        logger.info('cooling', f'Switching off {node}')
+        logger.info('cooling', f'Switching off {_name[node]}')
 
     relay_switch = beck.get_node(node)
     relay_switch.set_attribute(

@@ -3,7 +3,7 @@ from datetime import datetime
 
 import numpy as np
 
-from kalao.definitions.enums import LogLevel, ObservationType
+from kalao.definitions.enums import AlarmLevel, LogLevel, ObservationType
 
 
 @dataclass(frozen=True)
@@ -45,3 +45,10 @@ class CalibrationPose:
     median: float = np.nan
     status: str = 'IDLE'
     error_text: str = ''
+
+
+@dataclass(frozen=True)
+class Alarm:
+    level: AlarmLevel
+    condition: str
+    threshold: float

@@ -30,7 +30,7 @@ def kalao_status() -> str:
 
     sequencer_mapping = memory.mget({
         'sequencer_status': str,
-        'sequencer_status_timestamp': int
+        'sequencer_status_timestamp': float
     })
 
     sequencer_status = sequencer_mapping['sequencer_status']

@@ -45,6 +45,7 @@ def mget(names: dict[str, type]) -> dict[str, str | int | float | bool | None]:
     mapping = {}
     for i, key in enumerate(keys):
         value = values[i]
+        type = names[key]
 
         if value is None:
             mapping[key] = None

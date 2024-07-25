@@ -51,7 +51,9 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.statusBar().addPermanentWidget(self.last_update_label)
 
         self.expert_checkbox = QCheckBox('Expert Mode', parent=self)
-        self.expert_checkbox.setChecked(True)  # Default layout correspond to checked state, needed for next call to work properly
+        self.expert_checkbox.setChecked(
+            True
+        )  # Default layout correspond to checked state, needed for next call to work properly
         self.expert_checkbox.stateChanged.connect(
             self.on_expert_checkbox_stateChanged)
         self.statusBar().addPermanentWidget(self.expert_checkbox)
