@@ -1,9 +1,9 @@
 import argparse
 from datetime import date, datetime, time, timedelta
 
-from kalao.utils import ktime, report
-
 import pytz
+
+from kalao.utils import ktime, report
 
 from kalao.definitions.enums import ReportType
 

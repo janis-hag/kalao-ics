@@ -1,6 +1,6 @@
-from kalao.utils import zernike
-
 import matplotlib.pyplot as plt
+
+from kalao.utils import zernike
 
 coeffs = [1, 0.5, 4, 0.2, -0.4, -2]
 

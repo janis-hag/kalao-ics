@@ -5,10 +5,10 @@ import numpy as np
 
 from astropy.io import fits
 
-from kalao.utils import kmath, starfinder
-
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+
+from kalao.utils import kmath, starfinder
 
 if len(sys.argv) == 1:
     rng = np.random.default_rng()

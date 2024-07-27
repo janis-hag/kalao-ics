@@ -12,9 +12,9 @@ camera.py is part of the KalAO Instrument Control Software
 import time
 from typing import TypeVar
 
-from kalao import logger, memory
-
 from microscope.filterwheels import thorlabs
+
+from kalao import logger, memory
 
 from kalao.definitions.enums import FilterWheelStatus, ReturnCode
 

@@ -11,19 +11,21 @@ monitoring.py is part of the KalAO Instrument Control Software
 import math
 import signal
 import threading
+import traceback
 from datetime import datetime, timezone
 from types import FrameType
 from typing import Any, Callable
 
 import numpy as np
 
+import schedule
+
 from kalao import database, euler, ippower, logger, memory
 from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import adc, camera, hw_utils, ttm
 from kalao.rtc import gpu, sensors
 from kalao.utils import kstring
-
-import schedule
+from kalao.utils.rprint import rprint
 
 from kalao.definitions.dataclasses import Alarm
 from kalao.definitions.enums import AlarmLevel, CameraServerStatus, LoopStatus
@@ -55,49 +57,72 @@ def _update_ao_job(ao_on: bool | None = None) -> None:
 
 def gather_general() -> dict[str, Any]:
     data = {}
+    exception_list = []
 
     # Get monitoring from plc and store
-    hw_values = hw_utils.get_all_status()
-    data.update(hw_values)
+    try:
+        hw_values = hw_utils.get_all_status()
+        data.update(hw_values)
+    except Exception as exc:
+        exception_list.append(exc)
 
     # Get RTC data
-    rtc_sensors = sensors.status()
-    data.update(rtc_sensors)
+    try:
+        rtc_sensors = sensors.status()
+        data.update(rtc_sensors)
+    except Exception as exc:
+        exception_list.append(exc)
 
-    rtc_gpu = gpu.status()
-    data.update(rtc_gpu)
+    try:
+        rtc_gpu = gpu.status()
+        data.update(rtc_gpu)
+    except Exception as exc:
+        exception_list.append(exc)
 
     # IPPower
-    ippower_status = ippower.get_all_status()
-    data.update(ippower_status)
+    try:
+        ippower_status = ippower.get_all_status()
+        data.update(ippower_status)
+    except Exception as exc:
+        exception_list.append(exc)
 
     # Science camera status
-    camera_server_status = camera.server_status()
-    data.update({'camera_server_status': camera_server_status})
+    try:
+        camera_server_status = camera.server_status()
+        data.update({'camera_server_status': camera_server_status})
 
-    if camera_server_status == CameraServerStatus.UP:
-        camera_data = {}
+        if camera_server_status == CameraServerStatus.UP:
+            camera_data = {}
 
-        camera_data['camera_status'] = camera.get_camera_status()
+            camera_data['camera_status'] = camera.get_camera_status()
 
-        camera_temperatures = camera.get_temperatures()
-        camera_data['camera_ccd_temp'] = camera_temperatures['ccd']
-        camera_data['camera_heatsink_temp'] = camera_temperatures['heatsink']
+            camera_temperatures = camera.get_temperatures()
+            camera_data['camera_ccd_temp'] = camera_temperatures['ccd']
+            camera_data['camera_heatsink_temp'] = camera_temperatures[
+                'heatsink']
 
-        data.update(camera_data)
+            data.update(camera_data)
+    except Exception as exc:
+        exception_list.append(exc)
 
     # Telescope
-    telescope = euler.telescope_coord_altaz()
-    telescope_status = {
-        'telescope_altitude': telescope.alt.deg,
-        'telescope_azimut': telescope.az.deg
-    }
-    data.update(telescope_status)
+    try:
+        telescope = euler.telescope_coord_altaz()
+        telescope_status = {
+            'telescope_altitude': telescope.alt.deg,
+            'telescope_azimut': telescope.az.deg
+        }
+        data.update(telescope_status)
+    except Exception as exc:
+        exception_list.append(exc)
 
     # In-memory config
 
-    data['ttm_offloading'] = ttm.get_offloading()
-    data['adc_synchronisation'] = adc.get_synchronisation()
+    try:
+        data['ttm_offloading'] = ttm.get_offloading()
+        data['adc_synchronisation'] = adc.get_synchronisation()
+    except Exception as exc:
+        exception_list.append(exc)
 
     # Nuvu (camstack) stream
     nuvu_raw_shm = toolbox.get_shm(config.SHM.NUVU_RAW)
@@ -110,6 +135,15 @@ def gather_general() -> dict[str, Any]:
         data['wfs_powersupply_temp'] = stream_keywords.get('T_PSU', np.nan)
         data['wfs_fpga_temp'] = stream_keywords.get('T_FPGA', np.nan)
         data['wfs_heatsink_temp'] = stream_keywords.get('T_HSINK', np.nan)
+
+    if len(exception_list) > 0:
+        logger.error(
+            'monitoring_timer',
+            f'{len(exception_list)} exceptions occurred during general data gathering'
+        )
+
+        for exc in exception_list:
+            rprint(''.join(traceback.format_exception(exc)))
 
     return data
 

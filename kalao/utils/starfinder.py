@@ -15,10 +15,10 @@ import scipy.optimize
 
 from astropy.stats import sigma_clipped_stats
 
-from kalao.utils import kmath
-
 import skimage.feature
 import skimage.filters
+
+from kalao.utils import kmath
 
 from kalao.definitions.dataclasses import Star
 

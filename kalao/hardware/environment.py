@@ -1,6 +1,6 @@
-from kalao.hardware import plc
-
 from opcua import Client
+
+from kalao.hardware import plc
 
 import config
 

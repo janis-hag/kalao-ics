@@ -21,12 +21,12 @@ from astropy.coordinates import Angle, SkyCoord
 from astropy.io import fits
 from astropy.time import Time
 
+import yaml
+from unidecode import unidecode
+
 from kalao import database, euler, logger
 from kalao.timers import monitoring
 from kalao.utils import kstring, ktime
-
-import yaml
-from unidecode import unidecode
 
 from kalao.definitions.dataclasses import ROI
 from kalao.definitions.enums import (FlipMirrorStatus, LaserStatus,

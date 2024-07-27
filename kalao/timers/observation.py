@@ -11,12 +11,12 @@ import threading
 import time
 from typing import Callable
 
+import schedule
+
 from kalao import euler, logger
 from kalao.cacao import aocontrol
 from kalao.hardware import adc, camera, ttm, wfs
 from kalao.sequencer import seq_utils
-
-import schedule
 
 from kalao.definitions.enums import LoopStatus, SequencerStatus
 

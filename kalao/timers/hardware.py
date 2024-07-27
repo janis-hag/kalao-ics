@@ -15,14 +15,14 @@ from typing import Callable
 
 import numpy as np
 
+import schedule
+from opcua import Client
+
 from kalao import database, euler, ippower, logger
 from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import (adc, calibunit, cooling, dm, filterwheel,
                             flipmirror, laser, plc, shutter, tungsten, wfs)
 from kalao.utils import background
-
-import schedule
-from opcua import Client
 
 from kalao.definitions.enums import (IPPowerStatus, LaserStatus, LoopStatus,
                                      RelayState, ShutterStatus)

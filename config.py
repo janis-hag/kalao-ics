@@ -171,17 +171,18 @@ class DM:
     # 2 * 4.4 / 1200 / 1000 * 180/np.pi * 3600 = 1.51 arcsec / mrad
     plate_scale = 0.688  # arcsec / um
 
+    shape = (12, 12)
+
 
 class TTM:
     # Should be 2 * 20 / 1200 / 1000 * 180/np.pi * 3600 = 6.88 arcsec / mrad
     plate_scale = 6.88  # arcsec / mrad
 
     # Recommended: 0.5 * 5 * 0.05 (10% of TTM range)
-    offload_threshold = 0.25  # mrad
+    offload_threshold = 0  # mrad
     offload_gain = 0.05  # -
     offload_interval = 1  # s
 
-    # Recommended: 0.5 * 5 * 0.25 (25% of TTM range)
     max_tel_offload = 0.05  # arcsec
 
 

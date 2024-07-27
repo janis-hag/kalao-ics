@@ -9,6 +9,32 @@ from kalao.definitions.enums import ReturnCode
 import config
 
 
+def get_tiptilt(shm_name: str = config.SHM.TTM) -> tuple[float, float]:
+    ttm_shm = toolbox.get_shm(shm_name)
+
+    if ttm_shm is None:
+        logger.error('ttm',
+                     f'Can\'t get TTM tip and tilt, {shm_name} is missing')
+        return np.nan, np.nan
+
+    tip, tilt = ttm_shm.get_data(check=False)
+
+    return tip, tilt
+
+
+def set_tiptilt(shm_name: str, tip: float, tilt: float) -> tuple[float, float]:
+    ttm_shm = toolbox.get_shm(shm_name)
+
+    if ttm_shm is None:
+        logger.error('ttm',
+                     f'Can\'t set TTM tip and tilt, {shm_name} is missing')
+        return np.nan, np.nan
+
+    ttm_shm.set_data(np.array([tip, tilt]), True)
+
+    return tip, tilt
+
+
 def get_offloading() -> bool:
     return memory.get('ttm_offloading', type=bool, default=True)
 
@@ -65,3 +91,21 @@ def offload_to_telescope(gain: float = config.TTM.offload_gain,
         etcs.send_altaz_offset(alt_offload, az_offload)
 
     return ReturnCode.OK
+
+
+def check_saturation(tip: float, tilt: float) -> tuple[float, float]:
+    if tip > 2.45:
+        logger.warn('ttm', 'TTM saturated, limiting tip to 2.45')
+        tip = 2.45
+    elif tip < -2.45:
+        logger.warn('ttm', 'TTM saturated, limiting tip to -2.45')
+        tip = -2.45
+
+    if tilt > 2.45:
+        logger.warn('ttm', 'TTM saturated, limiting tilt to 2.45')
+        tilt = 2.45
+    elif tilt < -2.45:
+        logger.warn('ttm', 'TTM saturated, limiting tilt to -2.45')
+        tilt = -2.45
+
+    return tip, tilt

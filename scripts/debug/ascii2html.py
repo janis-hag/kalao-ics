@@ -1,4 +1,4 @@
-from guis.utils import ascii2html
+from kalao.guis.utils import ascii2html
 
 str = \
 """

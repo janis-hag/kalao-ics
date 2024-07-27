@@ -14,13 +14,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from kalao.utils.rprint import rprint
-
 import yaml
 from bson.codec_options import CodecOptions
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import BulkWriteError
+
+from kalao.utils.rprint import rprint
 
 from kalao.definitions.enums import LogLevel, ReturnCode
 
@@ -28,13 +28,13 @@ import config
 
 definitions = {
     'obs': {
-        'path': config.kalao_ics_path / 'definitions/db_obs.yml'
+        'path': config.kalao_ics_path / 'definitions/db_obs.yaml'
     },
     'monitoring': {
-        'path': config.kalao_ics_path / 'definitions/db_monitoring.yml'
+        'path': config.kalao_ics_path / 'definitions/db_monitoring.yaml'
     },
     'logs': {
-        'path': config.kalao_ics_path / 'definitions/db_logs.yml'
+        'path': config.kalao_ics_path / 'definitions/db_logs.yaml'
     },
 }
 

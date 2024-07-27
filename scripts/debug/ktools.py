@@ -1,6 +1,6 @@
-from kalao.utils import ktools
-
 import matplotlib.pyplot as plt
+
+from kalao.utils import ktools
 
 print('Subapertures idempotence')
 for i in range(121):

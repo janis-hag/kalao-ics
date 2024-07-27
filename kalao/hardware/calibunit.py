@@ -12,10 +12,10 @@ import math
 
 import numpy as np
 
+from opcua import Client
+
 from kalao import logger
 from kalao.hardware import plc
-
-from opcua import Client
 
 from kalao.definitions.enums import (CalibUnitPositionName, PLCStatus,
                                      ReturnCode)
@@ -147,15 +147,15 @@ def is_moving(beck: Client = None) -> bool:
 
 
 @plc.autoconnect
-def init(force_init: bool = True, beck: Client = None) -> ReturnCode:
+def init(force_init: bool = False, beck: Client = None) -> ReturnCode:
     '''
     Initialise the calibration unit.
     '''
 
     logger.info('calibunit', 'Initialising calibration unit')
 
-    ret_init = plc.motor_init(config.PLC.Node.CALIB_UNIT, force_init,
-                              beck=beck)
+    ret_init = plc.motor_init(config.PLC.Node.CALIB_UNIT,
+                              force_init=force_init, beck=beck)
 
     if ret_init != ReturnCode.HW_INIT_SUCCESS:
         logger.error('calibunit', 'Calibration unit initialisation failed')

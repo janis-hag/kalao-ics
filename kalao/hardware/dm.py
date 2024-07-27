@@ -1,5 +1,7 @@
 import time
 
+import numpy as np
+
 from kalao import database, ippower, logger
 from kalao.cacao import toolbox
 from kalao.cacao.aocontrol import reset_dm
@@ -73,3 +75,15 @@ def off() -> ReturnCode:
         return ReturnCode.OK
     else:
         return ReturnCode.GENERIC_ERROR
+
+
+def set_pattern(shm_name: str, pattern: np.array) -> np.array:
+    dm_shm = toolbox.get_shm(shm_name)
+
+    if dm_shm is None:
+        logger.error('dm', f'Can\'t set DM pattern, {shm_name} is missing')
+        return np.full(config.DM.shape, np.nan)
+
+    dm_shm.set_data(pattern, True)
+
+    return pattern

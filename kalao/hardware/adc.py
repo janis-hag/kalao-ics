@@ -14,11 +14,11 @@ import time
 import numpy as np
 from scipy.optimize import minimize_scalar
 
+from opcua import Client
+
 from kalao import euler, logger, memory
 from kalao.hardware import filterwheel, plc
 from kalao.utils import atmosphere
-
-from opcua import Client
 
 from kalao.definitions.enums import PLCStatus, ReturnCode
 
@@ -30,7 +30,7 @@ _name = {
 }
 
 
-class ADCCommand():
+class ADCCommand:
     MAX_DISP = 0
     ZERO_DISP = 180
 
@@ -48,14 +48,18 @@ def get_optimal_adc_angle(zenith_angle: float, wavelength: float, T: float,
     if res.success and res.fun < 1e-2:
         return res.x
     else:
-        return 0
+        logger.error(
+            'adc',
+            f'Failed to compute ADC angle for zenith angle of {zenith_angle:.1f}'
+        )
+        return ADCCommand.ZERO_DISP
 
 
 def configure(zenith_angle: float | None = None,
               override_threshold: bool = False, blocking: bool = True,
-              beck: Client = None) -> int:
+              beck: Client = None) -> ReturnCode:
     if not get_synchronisation():
-        return 0
+        return ReturnCode.OK
 
     filter_name = filterwheel.get_filter(type=str, from_memory=True)
 
@@ -80,7 +84,7 @@ def configure(zenith_angle: float | None = None,
     elif isinstance(wavelength, float):
         angle = get_optimal_adc_angle(zenith_angle, wavelength, T, P, H)
     else:
-        raise Exception(f'Unexpected type {type(wavelength)} for wavelength')
+        raise TypeError(f'Unexpected type {type(wavelength)} for wavelength')
 
     current_angle = get_angle()
 
@@ -88,7 +92,7 @@ def configure(zenith_angle: float | None = None,
             angle - current_angle) > config.ADC.angle_threshold:
         set_angle(angle, blocking=blocking, beck=beck)
 
-    return 0
+    return ReturnCode.OK
 
 
 def set_max_disp(beck: Client = None) -> float:
@@ -211,7 +215,7 @@ def init(node: str, force_init: bool = False,
     """
     logger.info('adc', f'Initialising {_name[node]}')
 
-    ret_init = plc.motor_init(node, force_init, beck=beck)
+    ret_init = plc.motor_init(node, force_init=force_init, beck=beck)
 
     if ret_init != ReturnCode.HW_INIT_SUCCESS:
         logger.error('adc', f'{_name[node]} initialisation failed')

@@ -16,6 +16,8 @@ import numpy as np
 
 from astropy.io import fits
 
+import pytz
+
 from kalao import database, logger, memory
 from kalao.cacao import aocontrol
 from kalao.hardware import (adc, calibunit, camera, dm, filterwheel,
@@ -25,8 +27,6 @@ from kalao.sequencer import centering, focusing, seq_utils
 from kalao.sequencer.seq_utils import with_sequencer_status
 from kalao.utils import exposure, fits_handling
 from kalao.utils.json import KalAOJSONEncoder
-
-import pytz
 
 from kalao.definitions.dataclasses import CalibrationPose
 from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
@@ -472,7 +472,7 @@ def _center_on_target(exptime, adaptiveoptics_mode):
         raise CenteringFailed
 
 
-def _run_calibs(calib_list: list[CalibrationPose, ...]) -> ReturnCode:
+def _run_calibs(calib_list: list[CalibrationPose]) -> ReturnCode:
     seq_utils.set_sequencer_status(SequencerStatus.CALIBRATIONS,
                                    check_abort=True)
     memory.mset({

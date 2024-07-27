@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
-from kalao.utils import kstring
-
 from systemd import journal
+
+from kalao.utils import kstring
 
 from kalao.definitions.dataclasses import LogEntry
 from kalao.definitions.enums import LogLevel

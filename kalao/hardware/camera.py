@@ -15,11 +15,11 @@ from typing import Any
 
 import numpy as np
 
-from kalao import logger
-from kalao.utils import fits_handling
-
 import requests
 import requests.exceptions
+
+from kalao import logger
+from kalao.utils import fits_handling
 
 from kalao.definitions.dataclasses import ROI
 from kalao.definitions.enums import (CameraServerStatus, CameraStatus,

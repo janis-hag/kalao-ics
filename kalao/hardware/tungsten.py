@@ -13,10 +13,10 @@ tungsten.py is part of the KalAO Instrument Control Software
 import time
 from datetime import datetime, timezone
 
+from opcua import Client, ua
+
 from kalao import database, logger
 from kalao.hardware import plc
-
-from opcua import Client, ua
 
 from kalao.definitions.enums import IntEnum, ReturnCode, TungstenStatus
 

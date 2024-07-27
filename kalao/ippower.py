@@ -3,9 +3,9 @@
 """
 @author: Nathanaël Restori
 """
-from kalao import logger
-
 import requests
+
+from kalao import logger
 
 from kalao.definitions.enums import IPPowerStatus, ReturnCode
 

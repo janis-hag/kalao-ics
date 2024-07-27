@@ -12,10 +12,10 @@ cooling.py is part of the KalAO Instrument Control Software
 import time
 from typing import Any
 
+from opcua import Client, ua
+
 from kalao import logger
 from kalao.hardware import plc
-
-from opcua import Client, ua
 
 from kalao.definitions.enums import RelayState, ReturnCode
 

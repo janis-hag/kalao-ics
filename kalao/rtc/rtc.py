@@ -1,7 +1,7 @@
+import dbus
+
 from kalao import ippower, logger
 from kalao.hardware import cooling, dm, hw_utils, shutter
-
-import dbus
 
 from kalao.definitions.enums import (IPPowerStatus, RelayState, ReturnCode,
                                      ShutterStatus)

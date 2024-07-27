@@ -3,11 +3,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import libtmux
+
 from kalao import database, logger
 from kalao.cacao import toolbox
 from kalao.utils.rprint import rprint
-
-import libtmux
 
 from kalao.definitions.enums import ReturnCode
 

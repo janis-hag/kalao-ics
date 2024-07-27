@@ -3,10 +3,10 @@ import time
 from datetime import timedelta
 from typing import Callable
 
+import schedule
+
 from kalao import email, logger
 from kalao.utils import ktime, report
-
-import schedule
 
 from kalao.definitions.enums import ReportType
 

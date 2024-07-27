@@ -20,19 +20,19 @@ make_symlink() {
     dest=$2
     if [ $source -ef $dest ]
     then
-        echo -e "GOOD    ${green}symlink$default    $blue$source$default -> $magenta$dest$default"
+        echo -e "${green}GOOD   $default symlink    $magenta$dest$default → $blue$source$default"
     elif [ -L $dest ]
     then
-        echo -e "BAD     ${red}symlink$default    $blue$source$default -> $magenta$dest$default"
+        echo -e "${red}BAD    $default symlink    $magenta$dest$default → $blue$source$default"
     elif [ -e $dest ]
     then
-        echo -e "NOT A   ${red}symlink$default    $blue$source$default -> $magenta$dest$default"
+        echo -e "${red}NOT A  $default symlink    $magenta$dest$default → $blue$source$default"
     else
         if ! $dry_run
         then
             ln -s $source $dest
         fi
-        echo -e "CREATED ${yellow}symlink$default    $blue$source$default -> $magenta$dest$default"
+        echo -e "${yellow}CREATED$default symlink    $magenta$dest$default → $blue$source$default"
     fi
 }
 

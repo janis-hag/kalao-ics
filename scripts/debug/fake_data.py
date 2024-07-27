@@ -1,8 +1,8 @@
 import time
 
-from kalao.interfaces import fake_data
-
 import matplotlib.pyplot as plt
+
+from kalao.interfaces import fake_data
 
 start = time.monotonic()
 dm_data = fake_data.dmdisp()

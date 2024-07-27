@@ -1,10 +1,10 @@
 from typing import Any
 
+from opcua import Client
+
 from kalao import logger
 from kalao.hardware import (adc, calibunit, cooling, environment, filterwheel,
                             flipmirror, laser, plc, shutter, tungsten)
-
-from opcua import Client
 
 from kalao.definitions.enums import LaserStatus, ReturnCode, TungstenStatus
 

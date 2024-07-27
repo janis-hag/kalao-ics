@@ -5,10 +5,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from kalao import logger
-
 import requests
 import requests.exceptions
+
+from kalao import logger
 
 from kalao.definitions.enums import ETCSServerStatus, ReturnCode
 

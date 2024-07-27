@@ -5,9 +5,9 @@ import numpy as np
 
 from astropy.io import fits
 
-from kalao.utils import kmath, ktools, zernike
-
 import matplotlib.pyplot as plt
+
+from kalao.utils import kmath, ktools, zernike
 
 import config
 

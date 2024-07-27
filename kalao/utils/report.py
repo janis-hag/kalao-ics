@@ -3,13 +3,13 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from kalao import database
-from kalao.timers import monitoring
-from kalao.utils import ktime
-
 import pytz
 from pymongo import DESCENDING
 from systemd import journal
+
+from kalao import database
+from kalao.timers import monitoring
+from kalao.utils import ktime
 
 from kalao.definitions.enums import AlarmLevel, LogLevel, ReportType
 
@@ -161,7 +161,7 @@ def generate(since: datetime, until: datetime, short: bool = False,
         else:
             print(str_io, 'Report mode: long.', type=type)
         print(str_io,
-              f'Generated: {datetime.now(timezone.utc).strftime(fmt)} UTC',
+              f'Generated: {datetime.now(timezone.utc):{fmt}} UTC',
               type=type)
 
         for repo in config.Git.repositories:
@@ -181,8 +181,8 @@ def generate(since: datetime, until: datetime, short: bool = False,
 
         sizes = [5, 19, 19, 19]
         table_header(str_io, [
-            '', 'UTC', f'CH/GVA ({since.astimezone(tz_ch).strftime("%z")})',
-            f'CL/LSO ({since.astimezone(tz_cl).strftime("%z")})'
+            '', 'UTC', f'CH/GVA ({since.astimezone(tz_ch):%z})',
+            f'CL/LSO ({since.astimezone(tz_cl):%z})'
         ], sizes, type=type)
         table_row(str_io, [
             'Since',

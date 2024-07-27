@@ -31,7 +31,8 @@ docstring-code-format = true
 "cacao" = ["pyMilk", "CacaoProcessTools"]
 "graphic" = ["PySide6"]
 "kalao" = ["kalao"]
-"definitions" = ["kalao.definitions"]
+"kguis" = ["kalao.guis"]
+"kdefinitions" = ["kalao.definitions"]
 "config" = ["config"]
 
 [lint.isort]
@@ -44,10 +45,11 @@ section-order = [
     "astro",
     "cacao",
     "graphic",
-    "kalao",
     "third-party",
     "first-party",
     "local-folder",
-    "definitions",
+    "kalao",
+    "kguis",
+    "kdefinitions",
     "config"
 ]

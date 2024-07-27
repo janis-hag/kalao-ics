@@ -15,10 +15,10 @@ from enum import StrEnum
 
 import numpy as np
 
+from opcua import Client, ua
+
 from kalao import database, logger
 from kalao.hardware import plc, wfs
-
-from opcua import Client, ua
 
 from kalao.definitions.enums import LaserStatus, ReturnCode
 

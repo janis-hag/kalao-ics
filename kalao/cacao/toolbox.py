@@ -14,10 +14,10 @@ import numpy as np
 
 from astropy.io import fits
 
-from kalao import logger
-
 import libtmux
 import libtmux.exc
+
+from kalao import logger
 
 from kalao.definitions.enums import ReturnCode
 

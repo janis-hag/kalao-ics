@@ -9,8 +9,8 @@ import numpy as np
 
 
 # Owens 1967 formula
-def air_refractive_index_OWENS(lambda0_: float, T: float, P: float,
-                               H: float) -> float:
+def air_refractivity_OWENS(lambda0_: float, T: float, P: float,
+                           H: float) -> float:
     sig = 1. / (lambda0_*1e6)
     P = P / 100
     t = T - 273.15
@@ -24,30 +24,29 @@ def air_refractive_index_OWENS(lambda0_: float, T: float, P: float,
         1 + Pw * (1 + 3.70e-4*Pw) *
         (-2.37321e-3 + 2.23366/T - 710.792 / T**2 + 7.75141e4 / T**3))
 
-    n = (2371.34 + 683939.7 / (130. - sig**2) + 4547.3 /
+    N = (2371.34 + 683939.7 / (130. - sig**2) + 4547.3 /
          (38.9 - sig**2)) * Ds + (6487.31 + 58.058 * sig**2 -
                                   0.71150 * sig**4 + 0.08851 * sig**6) * Dw
 
-    return 1 + n*1e-8
+    return N * 1e-8
 
 
 # Edlen 1966 formula
-def air_refractive_index_EDLEN(lambda0_: float, T: float, P: float,
-                               _) -> float:
+def air_refractivity_EDLEN(lambda0_: float, T: float, P: float, _) -> float:
     sig = 1. / (lambda0_*1e6)
     p = P / 101325 * 760
     t = T - 273.15
 
-    n = 8342.13 + 2406030 / (130. - sig**2) + 15997. / (38.9 - sig**2)
-    n *= 0.00138823 * p / (1 + 0.003671*t)
+    N = 8342.13 + 2406030 / (130. - sig**2) + 15997. / (38.9 - sig**2)
+    N *= 0.00138823 * p / (1 + 0.003671*t)
 
-    return 1 + n*1e-8
+    return N * 1e-8
 
 
 def air_dispersion(
     zenith_angle: float, wavelength: float, T: float, P: float, H: float,
-    air_refractive_index: Callable[[float, float, float, float],
-                                   float] = air_refractive_index_EDLEN
+    air_refractivity: Callable[[float, float, float, float],
+                               float] = air_refractivity_EDLEN
 ) -> float:
-    return np.tan(zenith_angle * np.pi / 180) * air_refractive_index(
-        wavelength, T, P, H) * 180 / np.pi * 3600
+    return np.tan(zenith_angle * np.pi / 180) * (
+        1 + air_refractivity(wavelength, T, P, H)) * 180 / np.pi * 3600

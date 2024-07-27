@@ -14,10 +14,10 @@ This server is the communication interface between the Euler telescope software 
 import socket
 import time
 
+from tcs_communication.pygop import tcs_srv_gop
+
 from kalao import database, logger
 from kalao.interfaces import edp
-
-from tcs_communication.pygop import tcs_srv_gop
 
 import config
 
