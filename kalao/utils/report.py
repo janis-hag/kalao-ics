@@ -160,8 +160,7 @@ def generate(since: datetime, until: datetime, short: bool = False,
                 type=type)
         else:
             print(str_io, 'Report mode: long.', type=type)
-        print(str_io,
-              f'Generated: {datetime.now(timezone.utc):{fmt}} UTC',
+        print(str_io, f'Generated: {datetime.now(timezone.utc):{fmt}} UTC',
               type=type)
 
         for repo in config.Git.repositories:

@@ -1,25 +1,33 @@
+from typing import Any
+
 import numpy as np
 from scipy import ndimage
 
+from PySide6.QtCore import Slot
 from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import QWidget
 
+from compiled.ui_alignment import Ui_AlignmentWindow
+from compiled.ui_alignment_subwindow import Ui_AlignmentSubwindow
+
 from kalao.utils import ktools
 
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import HORI, VERT, Color, PokeState
 from kalao.guis.utils.mixins import BackendDataMixin
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KMainWindow
+from kalao.guis.widgets.wfs import WFSWidget
 
 import config
 
 
 class AlignmentSubwindow(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        loadUi('alignment_subwindow.ui', self)
+        self.ui = Ui_AlignmentSubwindow()
+        self.ui.setupUi(self)
 
 
 class AlignmentWindow(KMainWindow, BackendDataMixin):
@@ -41,36 +49,35 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
     left_subaps = [23, 44, 55, 66, 89]
     right_subaps = [31, 54, 65, 76, 97]
 
-    def __init__(self, backend, wfs):
+    def __init__(self, backend: AbstractBackend, wfs: WFSWidget) -> None:
         super().__init__()
 
         self.backend = backend
 
-        loadUi('alignment.ui', self)
+        self.ui = Ui_AlignmentWindow()
+        self.ui.setupUi(self)
 
         for state in PokeState:
-            self.states_combobox.addItem(state, state)
+            self.ui.states_combobox.addItem(state, state)
 
-        self.poke_spinbox.valueChanged.connect(self.poke_amplitude_changed)
-        self.states_combobox.currentIndexChanged.connect(
-            self.poke_state_changed)
+        self.on_poke_spinbox_valueChanged(self.ui.poke_spinbox.value())
+        self.on_states_combobox_currentIndexChanged(
+            self.ui.states_combobox.currentIndex())
 
-        self.poke_amplitude_changed(self.poke_spinbox.value())
-        self.poke_state_changed(self.states_combobox.currentIndex())
-
-        pen_yellow = QPen(Color.YELLOW, 1, Qt.SolidLine, Qt.SquareCap,
-                          Qt.MiterJoin)
+        pen_yellow = QPen(Color.YELLOW, 1, Qt.PenStyle.SolidLine,
+                          Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen_yellow.setCosmetic(True)
 
-        pen_blue = QPen(Color.BLUE, 1, Qt.SolidLine, Qt.SquareCap,
-                        Qt.MiterJoin)
+        pen_blue = QPen(Color.BLUE, 1, Qt.PenStyle.SolidLine,
+                        Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen_blue.setCosmetic(True)
 
-        pen_green = QPen(Color.GREEN, 1, Qt.SolidLine, Qt.SquareCap,
-                         Qt.MiterJoin)
+        pen_green = QPen(Color.GREEN, 1, Qt.PenStyle.SolidLine,
+                         Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen_green.setCosmetic(True)
 
-        pen_red = QPen(Color.RED, 1, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen_red = QPen(Color.RED, 1, Qt.PenStyle.SolidLine,
+                       Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen_red.setCosmetic(True)
 
         for subap in self.top_subaps + self.bottom_subaps + self.left_subaps + self.right_subaps:
@@ -82,7 +89,7 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
             subwindow.subap_indexes = ktools.get_subapertures_around_actuator(
                 actuator)
 
-            groupbox = getattr(self, f'groupbox_{j+1}')
+            groupbox = getattr(self.ui, f'groupbox_{j+1}')
             groupbox.layout().addWidget(subwindow, 0, 0)
             groupbox.setTitle(f'Actuator {actuator}')
 
@@ -121,7 +128,7 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
 
         backend.streams_all_updated.connect(self.streams_all_updated)
 
-    def streams_all_updated(self, data):
+    def streams_all_updated(self, data: dict[str, Any]) -> None:
         dxs = [0] * 4
         dys = [0] * 4
         rs = [0] * 4
@@ -149,8 +156,8 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
         for subap in self.bottom_subaps:
             right_flux += subapertures[PokeState.FLAT][subap].sum()
 
-        self.tb_ratio_label.updateText(tb_ratio=top_flux / bottom_flux)
-        self.lr_ratio_label.updateText(lr_ratio=left_flux / right_flux)
+        self.ui.tb_ratio_label.updateText(tb_ratio=top_flux / bottom_flux)
+        self.ui.lr_ratio_label.updateText(lr_ratio=left_flux / right_flux)
 
         for j, subwindow in enumerate(self.subwindows):
             for i, view in enumerate(subwindow.views):
@@ -194,10 +201,12 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
             rs[i] += 0.5 * np.sqrt(dys[i]**2 + dxs[i]**2)
             phis[i] += np.arctan2(dys[i], dxs[i]) * 180 / np.pi
 
-        self.average_label.updateText(rs=rs, phis=phis)
+        self.ui.average_label.updateText(rs=rs, phis=phis)
 
-    def poke_state_changed(self, index):
-        self.display = self.states_combobox.currentData()
+    @Slot(int)
+    def on_states_combobox_currentIndexChanged(self, index: int) -> None:
+        self.display = self.ui.states_combobox.currentData()
 
-    def poke_amplitude_changed(self, d):
+    @Slot(float)
+    def on_poke_spinbox_valueChanged(self, d: float) -> None:
         self.poke_amplitude = d

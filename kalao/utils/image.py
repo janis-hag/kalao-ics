@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 import numpy as np
 
 
@@ -58,25 +60,33 @@ class AbstractScale():
     def __str__(self) -> str:
         return self.__name__
 
+    @abstractmethod
+    def scale(self, img: np.ndarray | float) -> np.ndarray | float:
+        pass
+
+    @abstractmethod
+    def inverse(self, img: np.ndarray | float) -> np.ndarray | float:
+        pass
+
 
 class LinearScale(AbstractScale):
     __name__ = 'Linear'
 
-    def scale(self, img: np.ndarray) -> np.ndarray:
+    def scale(self, img: np.ndarray | float) -> np.ndarray | float:
         return img
 
-    def inverse(self, img: np.ndarray) -> np.ndarray:
+    def inverse(self, img: np.ndarray | float) -> np.ndarray | float:
         return img
 
 
 class LogScale(AbstractScale):
     __name__ = 'Logarithmic'
 
-    def scale(self, img: np.ndarray) -> np.ndarray:
+    def scale(self, img: np.ndarray | float) -> np.ndarray | float:
         return self.delta / np.log(self.delta + 1) * np.log(img - self.min +
                                                             1) + self.min
 
-    def inverse(self, img: np.ndarray) -> np.ndarray:
+    def inverse(self, img: np.ndarray | float) -> np.ndarray | float:
         return np.exp(np.log(self.delta + 1) / self.delta *
                       (img - self.min)) + self.min - 1
 
@@ -84,20 +94,20 @@ class LogScale(AbstractScale):
 class SquareRootScale(AbstractScale):
     __name__ = 'Square Root'
 
-    def scale(self, img: np.ndarray) -> np.ndarray:
+    def scale(self, img: np.ndarray | float) -> np.ndarray | float:
         return np.sqrt(self.delta) * np.sqrt(img - self.min) + self.min
 
-    def inverse(self, img: np.ndarray) -> np.ndarray:
+    def inverse(self, img: np.ndarray | float) -> np.ndarray | float:
         return ((img - self.min) / np.sqrt(self.delta))**2 + self.min
 
 
 class SquaredScale(AbstractScale):
     __name__ = 'Squared'
 
-    def scale(self, img: np.ndarray) -> np.ndarray:
+    def scale(self, img: np.ndarray | float) -> np.ndarray | float:
         return (img - self.min)**2 / self.delta + self.min
 
-    def inverse(self, img: np.ndarray) -> np.ndarray:
+    def inverse(self, img: np.ndarray | float) -> np.ndarray | float:
         return np.sqrt(self.delta * (img - self.min)) + self.min
 
 
@@ -108,8 +118,9 @@ class AbstractCut():
     def __init__(self) -> None:
         pass
 
+    @abstractmethod
     def cut(self, img: np.ndarray) -> tuple[float, float]:
-        return img.min(), img.max()
+        pass
 
     def img_cut(self, img):
         low, high = self.cut(img)
@@ -140,7 +151,7 @@ class PercentileCut(AbstractCut):
     def __str__(self) -> str:
         return f'Percentile, {self.percentile:g}% – {100-self.percentile:g}%'
 
-    def cut(self, img: np.ndarray) -> tuple[float, float]:
+    def cut(self, img: np.ndarray) -> tuple[np.floating, np.floating]:
         return np.percentile(img, self.percentile), np.percentile(
             img, 100 - self.percentile)
 

@@ -1,16 +1,17 @@
 from enum import Flag, IntEnum, StrEnum, auto
 
 
-class ObservationType(StrEnum):
-    TARGET = 'K_TRGOBS'
-    BIAS = 'K_BIAS'
-    DARK = 'K_DARK'
-    SKY_FLAT = 'K_SKYFLT'
-    LAMP_FLAT = 'K_LMPFLT'
-    FOCUS = 'K_FOCUS'
-    TARGET_CENTERING = 'K_TRGCEN'
-    LASER_CENTERING = 'K_LSRCEN'
-    ENGINEERING = 'K_ENGIN'
+class TemplateID(StrEnum):
+    TARGET_OBSERVATION = 'KAO_TRGOBS'
+    BIAS = 'KAO_BIAS'
+    DARK = 'KAO_DARK'
+    SKY_FLAT = 'KAO_SKYFLT'
+    LAMP_FLAT = 'KAO_LMPFLT'
+    FOCUS = 'KAO_FOCUS'
+    TARGET_CENTERING = 'KAO_TRGCEN'
+    LASER_CENTERING = 'KAO_LSRCEN'
+    ENGINEERING = 'KAO_ENGIN'
+    SELF_TEST = 'KAO_SLFTST'
 
 
 class CenteringMode(StrEnum):
@@ -57,7 +58,6 @@ class SequencerStatus(StrEnum):
     OFF = 'OFF'
     INITIALISING = 'INITIALISING'
     WAITING = 'WAITING'
-    BUSY = 'BUSY'
     SETUP = 'SETUP'
     CENTERING = 'CENTERING'
     FOCUSING = 'FOCUSING'
@@ -93,6 +93,7 @@ class CameraStatus(StrEnum):
     WAITING_TRIGGER = 'waiting-trigger'
     EXPOSING = 'exposing'
     READING_CCD = 'reading-ccd'
+    SERVER_UNREACHABLE = 'server-unreachable'
     ERROR = 'error'
 
 
@@ -173,11 +174,11 @@ class ReturnCode(IntEnum):
     CENTERING_ERROR = auto()
 
     CAMERA_OK = OK
-    CAMERA_SERVER_DOWN = auto()
+    CAMERA_SERVER_UNREACHABLE = auto()
     CAMERA_ERROR = auto()
 
     ETCS_OK = OK
-    ETCS_SERVER_DOWN = auto()
+    ETCS_SERVER_UNREACHABLE = auto()
     ETCS_ERROR = auto()
 
     HW_INIT_SUCCESS = OK

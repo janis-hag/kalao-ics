@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 from signal import SIGINT, signal
 from sys import exit
+from types import FrameType
 
 import numpy as np
 
@@ -32,7 +33,7 @@ PEAK_VALUE = 0
 COEFF = 1
 
 
-def sig_handler(signal_received, frame):
+def sig_handler(signum: int, frame: FrameType | None) -> None:
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
     ret = toolbox.zero_stream(config.SHM.DM_NCPA)
@@ -61,7 +62,7 @@ def take_and_measure(args):
 
 
 def display_and_measure(output_shm, zernike_coeffs, args):
-    if args.open:
+    if args.open_loop:
         pattern = zernike.generate_pattern(zernike_coeffs, output_shm.shape)
     else:
         pattern = zernike.generate_slopes(zernike_coeffs, output_shm.shape)
@@ -73,7 +74,7 @@ def display_and_measure(output_shm, zernike_coeffs, args):
 
 
 def run(args):
-    if args.open:
+    if args.open_loop:
         # Open DM stream
         output_shm = toolbox.get_shm(config.SHM.DM_NCPA)
         if output_shm is None:
@@ -90,6 +91,12 @@ def run(args):
         output_shm = toolbox.get_shm(config.SHM.WFS_REF)
         if output_shm is None:
             print(f'{config.SHM.WFS_REF} missing')
+            exit()
+
+        # Open DM stream
+        dm_shm = toolbox.get_shm(config.SHM.DM)
+        if dm_shm is None:
+            print(f'{config.SHM.DM} missing')
             exit()
 
         loop_status = aocontrol.close_loop(config.AO.DM_loop_number,
@@ -220,7 +227,7 @@ def run(args):
 
     np.savetxt(folder / 'zernike_coeffs.txt', zernike_coeffs)
 
-    if args.open:
+    if args.open_loop:
         laser.set_power(config.WFS.laser_calib_power, enable=True)
         wfs.set_exptime(config.WFS.laser_calib_exptime)
         wfs.set_emgain(config.WFS.laser_calib_emgain)
@@ -245,19 +252,30 @@ def run(args):
         fits.PrimaryHDU(slopes.astype(np.float32)).writeto(
             folder / 'slopes_median.fits')
     else:
-        toolbox.save_stream_to_fits(output_shm, f'{folder}/wfsref.fits')
+        toolbox.save_stream_to_fits(output_shm, f'{folder}/slopes.fits')
 
-        slopes = zernike.generate_slopes(zernike_coeffs, output_shm.shape)
+        print('Averaging DM')
+        dm = []
 
+        for i in range(args.slopes_avg):
+            print(ANSI.UP + ANSI.CLEAR +
+                  f'Averaging DM {i + 1}/{args.slopes_avg}')
+            dm.append(dm_shm.get_data(check=True))
+
+        dm = np.array(dm)
+        fits.PrimaryHDU(dm.astype(np.float32)).writeto(folder / 'dm_cube.fits')
+
+        slopes = np.median(dm, axis=0)
         fits.PrimaryHDU(slopes.astype(np.float32)).writeto(folder /
-                                                           'slopes.fits')
+                                                           'dm_median.fits')
 
     print('Results written')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run NCPA optimisation.')
-    parser.add_argument('--closed-loop', action='store_false', dest='open',
+    parser.add_argument('--closed-loop', action='store_false',
+                        dest='open_loop',
                         help='Run the optimization in closed loop')
     parser.add_argument('--exptime', action='store', dest='exptime',
                         type=float, default=config.Camera.laser_calib_exptime,

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=KalAO GUI
+Version=1.0
+Type=Application
+Terminal=false
+Icon=KalAO
+Comment=KalAO Graphical User Interface
+StartupNotify=true

@@ -134,7 +134,7 @@ def generate_slopes_mask(shape):
 
 
 def generate_pattern(
-    coeffs: np.ndarray, shape: tuple[int, int],
+    coeffs: np.ndarray | list, shape: tuple[int, int],
     indices_inverse: Callable[[int], tuple[int,
                                            int]] = Zernike.standard_inverse
 ) -> np.ndarray:

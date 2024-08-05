@@ -48,6 +48,7 @@ cryptography
 isort
 yapf
 mypy
+ruff
 
 # Performances
 pyarrow

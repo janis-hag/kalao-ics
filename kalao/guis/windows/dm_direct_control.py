@@ -6,20 +6,23 @@ from astropy.io import fits
 
 from PySide6.QtCore import QSignalBlocker, Slot
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QDoubleSpinBox, QFileDialog, QLabel, QMessageBox
+from PySide6.QtWidgets import (QDoubleSpinBox, QFileDialog, QLabel,
+                               QMessageBox, QWidget)
+
+from compiled.ui_dm_direct_control import Ui_DMDirectControlWindow
 
 from kalao.utils import ktools, zernike
 
-from kalao.guis.utils.colormaps import CoolWarm
+from kalao.guis.backends.abstract import AbstractBackend
+from kalao.guis.utils.colormaps import Colormap, CoolWarm
 from kalao.guis.utils.mixins import BackendActionMixin
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KMainWindow, KMessageBox
 
 import config
 
 
 class DMSpinBox(QDoubleSpinBox):
-    def __init__(self, colormap):
+    def __init__(self, colormap: Colormap) -> None:
         super().__init__()
 
         self.colormap = colormap
@@ -34,10 +37,10 @@ class DMSpinBox(QDoubleSpinBox):
 
         self.change_color(self.value())
 
-    def heightForWidth(self, w):
+    def heightForWidth(self, w: int) -> int:
         return w
 
-    def change_color(self, d):
+    def change_color(self, d: float) -> None:
         d = 255 * (d - self.minimum()) / (self.maximum() - self.minimum())
         d = np.clip(d, 0, 255)
 
@@ -46,7 +49,7 @@ class DMSpinBox(QDoubleSpinBox):
 
         self.setStyleSheet(f'background-color: {color};')
 
-    def setValue(self, val):
+    def setValue(self, val: float) -> None:
         self.change_color(val)
         super().setValue(val)
 
@@ -55,22 +58,25 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
     colormap = CoolWarm()
     zernike_indices = list(range(15))
 
-    def __init__(self, backend, parent=None):
+    def __init__(self, backend: AbstractBackend,
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
 
-        loadUi('dm_direct_control.ui', self)
+        self.ui = Ui_DMDirectControlWindow()
+        self.ui.setupUi(self)
+
         self.resize(400, 800)
 
         self.actuators_spinboxes = {}
         for i in range(140):
             x, y = ktools.get_actuator_2d(i)
             spinbox = DMSpinBox(self.colormap)
-            self.actuator_grid.addWidget(spinbox, x, y)
+            self.ui.actuator_grid.addWidget(spinbox, x, y)
 
             spinbox.valueChanged.connect(
-                lambda d, i=i: self.on_actuator_spinbox_valueChanged(d, i))
+                lambda d, _i=i: self.on_actuator_spinbox_valueChanged(d, _i))
 
             self.actuators_spinboxes[i] = spinbox
 
@@ -85,21 +91,21 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
             spinbox.setMaximum(1.75)
             spinbox.setSingleStep(0.05)
             spinbox.setSuffix(' µm')
-            self.zernike_groupbox.layout().addRow(label, spinbox)
+            self.ui.zernike_groupbox.layout().addRow(label, spinbox)
 
             spinbox.valueChanged.connect(self.on_zernike_spinbox_valueChanged)
 
             self.zernike_spinboxes[i] = spinbox
 
         self.error_dialog = KMessageBox(self)
-        self.error_dialog.setIcon(QMessageBox.Critical)
+        self.error_dialog.setIcon(QMessageBox.Icon.Critical)
         self.error_dialog.setModal(True)
 
         self.show()
         self.center()
         self.setFixedSize(self.size())
 
-    def on_actuator_spinbox_valueChanged(self, d, i):
+    def on_actuator_spinbox_valueChanged(self, d: float, i: int) -> None:
         self.actuators_spinboxes[i].change_color(d)
 
         pattern = np.zeros(config.DM.shape)
@@ -111,9 +117,9 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
         self.action_send([], self.backend.dm_pattern, pattern=pattern)
 
     @Slot(bool)
-    def on_reset_button_clicked(self, checked):
-        with QSignalBlocker(self.all_slider):
-            self.all_slider.setValue(0)
+    def on_reset_button_clicked(self, checked: bool) -> None:
+        with QSignalBlocker(self.ui.all_slider):
+            self.ui.all_slider.setValue(0)
 
         for s in self.actuators_spinboxes.values():
             with QSignalBlocker(s):
@@ -125,12 +131,12 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
                          pattern=np.zeros(config.DM.shape))
 
     @Slot(bool)
-    def on_load_button_clicked(self, checked):
+    def on_load_button_clicked(self, checked: bool) -> None:
         dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         dialog.setNameFilter(
             'All (*.fits *.csv);;Images (*.fits);;Text files (*.csv)')
-        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
 
         self.error_dialog.setText('<b>Loading failed!</b>')
 
@@ -195,12 +201,12 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
             self.error_dialog.show()
 
     @Slot(bool)
-    def on_save_button_clicked(self, checked):
+    def on_save_button_clicked(self, checked: bool) -> None:
         dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.AnyFile)
+        dialog.setFileMode(QFileDialog.FileMode.AnyFile)
         dialog.setNameFilter(
             'All (*.fits *.csv);;Images (*.fits);;Text files (*.csv)')
-        dialog.setAcceptMode(QFileDialog.AcceptSave)
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
 
         self.error_dialog.setText('<b>Saving failed!</b>')
 
@@ -243,7 +249,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
                 'Can\'t write file, permission refused.')
             self.error_dialog.show()
 
-    def set_spinboxes_to_pattern(self, pattern):
+    def set_spinboxes_to_pattern(self, pattern: np.ndarray[float]) -> None:
         for i, spinbox in self.actuators_spinboxes.items():
             x, y = ktools.get_actuator_2d(i)
 
@@ -251,7 +257,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
                 spinbox.setValue(pattern[x, y])
 
     @Slot(int)
-    def on_all_slider_valueChanged(self, value):
+    def on_all_slider_valueChanged(self, value: int) -> None:
         self.reset_all_sides_boxes()
 
         pattern = np.full(config.DM.shape, value / 100)
@@ -259,51 +265,51 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
         self.set_spinboxes_to_pattern(pattern)
         self.action_send([], self.backend.dm_pattern, pattern=pattern)
 
-    def on_zernike_spinbox_valueChanged(self, d):
+    def on_zernike_spinbox_valueChanged(self, d: float) -> None:
         self.compute_all()
 
     @Slot(float)
-    def on_checkerboard_amplitude_spinbox_valueChanged(self, d):
+    def on_checkerboard_amplitude_spinbox_valueChanged(self, d: float) -> None:
         self.compute_all()
 
     @Slot(float)
-    def on_checkerboard_period_spinbox_valueChanged(self, d):
+    def on_checkerboard_period_spinbox_valueChanged(self, d: float) -> None:
         self.compute_all()
 
     @Slot(float)
-    def on_grating_amplitude_spinbox_valueChanged(self, d):
+    def on_grating_amplitude_spinbox_valueChanged(self, d: float) -> None:
         self.compute_all()
 
     @Slot(float)
-    def on_grating_period_spinbox_valueChanged(self, d):
+    def on_grating_period_spinbox_valueChanged(self, d: float) -> None:
         self.compute_all()
 
     @Slot(float)
-    def on_grating_angle_spinbox_valueChanged(self, d):
+    def on_grating_angle_spinbox_valueChanged(self, d: float) -> None:
         self.compute_all()
 
-    def reset_all_sides_boxes(self):
+    def reset_all_sides_boxes(self) -> None:
         for s in self.zernike_spinboxes.values():
             with QSignalBlocker(s):
                 s.setValue(0)
 
-        with QSignalBlocker(self.checkerboard_amplitude_spinbox):
-            self.checkerboard_amplitude_spinbox.setValue(0)
+        with QSignalBlocker(self.ui.checkerboard_amplitude_spinbox):
+            self.ui.checkerboard_amplitude_spinbox.setValue(0)
 
-        with QSignalBlocker(self.checkerboard_period_spinbox):
-            self.checkerboard_period_spinbox.setValue(2)
+        with QSignalBlocker(self.ui.checkerboard_period_spinbox):
+            self.ui.checkerboard_period_spinbox.setValue(2)
 
-        with QSignalBlocker(self.grating_amplitude_spinbox):
-            self.grating_amplitude_spinbox.setValue(0)
+        with QSignalBlocker(self.ui.grating_amplitude_spinbox):
+            self.ui.grating_amplitude_spinbox.setValue(0)
 
-        with QSignalBlocker(self.grating_period_spinbox):
-            self.grating_period_spinbox.setValue(2)
+        with QSignalBlocker(self.ui.grating_period_spinbox):
+            self.ui.grating_period_spinbox.setValue(2)
 
-        with QSignalBlocker(self.grating_angle_spinbox):
-            self.grating_angle_spinbox.setValue(0)
+        with QSignalBlocker(self.ui.grating_angle_spinbox):
+            self.ui.grating_angle_spinbox.setValue(0)
 
-    def compute_all(self):
-        pattern = np.zeros(config.DM.shape)
+    def compute_all(self) -> None:
+        pattern = np.zeros(config.DM.shape, dtype=float)
 
         pattern += self.compute_zernike()
         pattern += self.compute_checkerboard()
@@ -312,7 +318,7 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
         self.set_spinboxes_to_pattern(pattern)
         self.action_send([], self.backend.dm_pattern, pattern=pattern)
 
-    def compute_zernike(self):
+    def compute_zernike(self) -> np.ndarray:
         coeffs = np.zeros(max(self.zernike_indices) + 1)
 
         for i in self.zernike_indices:
@@ -320,9 +326,9 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
 
         return zernike.generate_pattern(coeffs, config.DM.shape)
 
-    def compute_checkerboard(self):
-        amplitude = self.checkerboard_amplitude_spinbox.value()
-        period = self.checkerboard_period_spinbox.value() // 2
+    def compute_checkerboard(self) -> np.ndarray:
+        amplitude = self.ui.checkerboard_amplitude_spinbox.value()
+        period = self.ui.checkerboard_period_spinbox.value() // 2
 
         pattern = np.zeros(config.DM.shape)
         for i in range(12):
@@ -332,10 +338,10 @@ class DMDirectControlWindow(KMainWindow, BackendActionMixin):
 
         return pattern
 
-    def compute_grating(self):
-        amplitude = self.grating_amplitude_spinbox.value()
-        period = 2 * np.pi / self.grating_period_spinbox.value()
-        angle = self.grating_angle_spinbox.value() * np.pi / 180
+    def compute_grating(self) -> np.ndarray:
+        amplitude = self.ui.grating_amplitude_spinbox.value()
+        period = 2 * np.pi / self.ui.grating_period_spinbox.value()
+        angle = self.ui.grating_angle_spinbox.value() * np.pi / 180
 
         pattern = np.zeros(config.DM.shape)
         for i in range(12):

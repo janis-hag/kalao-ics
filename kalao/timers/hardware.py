@@ -7,10 +7,10 @@
 """
 Timer to verify KalAO bench health (KalAO-ICS).
 """
+import functools
 import threading
 import time
 from datetime import datetime, timezone
-from functools import partial
 from typing import Callable
 
 import numpy as np
@@ -211,9 +211,9 @@ def _check_plc() -> None:
     logger.info('hardware_timer', 'Doing daily PLC housekeeping')
 
     func_list = [
-        partial(calibunit.init, force_init=True),
-        partial(adc.init, config.PLC.Node.ADC1, force_init=True),
-        partial(adc.init, config.PLC.Node.ADC2, force_init=True),
+        functools.partial(calibunit.init, force_init=True),
+        functools.partial(adc.init, config.PLC.Node.ADC1, force_init=True),
+        functools.partial(adc.init, config.PLC.Node.ADC2, force_init=True),
         shutter.init,
         flipmirror.init,
         tungsten.init,

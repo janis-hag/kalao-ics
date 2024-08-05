@@ -1,48 +1,68 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import functools
+import logging
+import os
 import signal
-import socket
+import threading
 import traceback
-from functools import partial
-from itertools import zip_longest
-from threading import Thread
+from datetime import datetime, timezone
 from types import FrameType
-from typing import Any
+from typing import Any, Callable
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
-from kalao import database, euler, ippower, logger, services
-from kalao.hardware import (adc, calibunit, cooling, filterwheel, flipmirror,
-                            laser, shutter, tungsten)
-from kalao.sequencer import commands, seq_utils
+from flask import Flask, Response, jsonify, request
+
+from kalao import database, euler, ippower, logger, memory, services
+from kalao.hardware import (adc, calibunit, camera, cooling, filterwheel,
+                            flipmirror, laser, shutter, tungsten)
+from kalao.sequencer import centering, seq_utils, templates
 from kalao.utils import background
 from kalao.utils.rprint import rprint
 
-from kalao.definitions.enums import ReturnCode, SequencerStatus, ShutterStatus
-from kalao.definitions.exceptions import (AbortRequested, CameraCancelFailed,
+from kalao.definitions.dataclasses import Template
+from kalao.definitions.enums import (ReturnCode, SequencerStatus,
+                                     ShutterStatus, TemplateID)
+from kalao.definitions.exceptions import (AbortRequested, MissingKeyword,
                                           SequencerException)
 
 import config
 
-conn = None
-socketSeq = None
+sigint_handler = None
+sigterm_handler = None
+
+app = Flask(__name__)
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 
-def sig_handler(signal_received: int, frame: FrameType | None) -> None:
-    logger.info('sequencer', 'SIGTERM, SIGINT or CTRL-C received. Exiting.')
+def sig_handler(signum: int, frame: FrameType | None) -> None:
+    logger.info('sequencer', 'SIGTERM, SIGINT or CTRL-C received, exiting.')
 
-    if conn is not None:
-        conn.close()
+    abort()
 
-    if socketSeq is not None:
-        socketSeq.close()
+    memory.unlock('sequencer_lock', force=True)
 
     seq_utils.set_sequencer_status(SequencerStatus.OFF)
     logger.info('sequencer', 'Sequencer server off')
 
-    exit(0)
+    if signum == signal.SIGINT:
+        handler = sigint_handler
+    elif signum == signal.SIGTERM:
+        handler = sigterm_handler
+    else:
+        handler = None
+
+    if handler is None:
+        pass
+    elif callable(handler):
+        handler(signum, frame)
+    elif handler == signal.SIG_DFL:
+        signal.signal(signum, signal.SIG_DFL)
+        os.kill(os.getpid(), signum)
 
 
 def init() -> ReturnCode:
@@ -57,8 +77,8 @@ def init() -> ReturnCode:
         ippower.init,
         services.init,
         calibunit.init,
-        partial(adc.init, config.PLC.Node.ADC1),
-        partial(adc.init, config.PLC.Node.ADC2),
+        functools.partial(adc.init, config.PLC.Node.ADC1),
+        functools.partial(adc.init, config.PLC.Node.ADC2),
         shutter.init,
         flipmirror.init,
         tungsten.init,
@@ -72,50 +92,96 @@ def init() -> ReturnCode:
     return ReturnCode.SEQ_OK
 
 
-def serve() -> ReturnCode:
-    """
-    receive commands in string form through a socket.
-    format them into a dictionary.
-    create a thread to execute the command.
+@app.after_request
+def after_request(response: Response) -> Response:
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers[
+        'Access-Control-Allow-Methods'] = 'GET, POST, DELETE, PUT, PATCH'
+    response.headers[
+        'Access-Control-Allow-Headers'] = 'Accept, Content-Type, Authorization'
+    response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    return response
 
-    :return:
-    """
 
-    global conn, socketSeq
+@app.route('/ping')
+def ping() -> str:
+    return 'Pong'
 
-    socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socketSeq.bind((config.Sequencer.host, config.Sequencer.port))
 
-    th = None
+@app.route('/status')
+def status() -> Response:
+    status = {
+        'status': 'TEST',
+        'nexp': 1,
+        'nexp_tot': 1,
+        'elapsed_time': 0,
+        'exposure_time': 5,
+    }
 
-    seq_utils.set_sequencer_status(SequencerStatus.WAITING)
-    logger.info('sequencer', 'Server on')
+    return jsonify(status)
 
-    while True:
-        socketSeq.listen()
-        # Do NOT update sequencer_status
-        logger.info('sequencer', 'Waiting on connection')
 
-        conn, address = socketSeq.accept()
+@app.route('/on_target', methods=['POST'])
+def on_target() -> str:
+    args = request.json
 
-        command_raw = (conn.recv(4096)).decode('utf8')
+    database.store('obs', {
+        'tcs_header_path': args['tcs_header_path'],
+        'sequencer_on_target': True
+    })
 
-        separator = command_raw[0]
-        command_list = command_raw[1:].split(separator)
+    return 'OK'
 
-        command = command_list[0]
-        arguments = command_list[1:]
 
-        seq_utils.set_sequencer_status(SequencerStatus.BUSY)
-        logger.info('sequencer',
-                    f'command=> {command} < arg={" ".join(arguments)}')
+@app.route('/abort', methods=['POST'])
+def abort() -> str:
+    if not memory.locked('sequencer_lock'):
+        return 'Nothing to abort'
 
-        if command == 'exit':
-            break
+    seq_utils.set_sequencer_status(SequencerStatus.ABORTING)
+    logger.info('sequencer', 'Received an abort request, aborting sequence.')
 
-        # Transform list of arg to a dict
-        # from: ['xxx', 'yyy', ... ] -> to: {'xxx': 'yyy', ... }
-        args = dict(zip_longest(*[iter(arguments)] * 2, fillvalue=""))
+    centering.invalidate_manual_centering()
+
+    if camera.cancel() != ReturnCode.OK:
+        logger.error('sequencer', 'Failed to send cancel order to camera.')
+
+    return 'Abort executed'
+
+
+@app.route('/observation_block', methods=['POST'])
+def observation_block() -> str | tuple[str, int]:
+    # Parse json first
+    args = request.json
+
+    lock_secret = memory.lock('sequencer_lock')
+    if lock_secret is None:
+        return 'A sequence is already running', 409
+
+    try:
+        th = threading.Thread(target=_execute_observation_block, kwargs={})
+        th.start()
+
+        return 'Observation block launched'
+
+    except Exception:
+        memory.unlock('sequencer_lock', lock_secret)
+        return 'An exception occurred', 500
+
+
+@app.route('/template/<id>', methods=['POST'])
+def template(id: str) -> str | tuple[str, int]:
+    if not hasattr(templates, id) or id.startswith('_'):
+        return 'Unknown template', 404
+
+    # Parse json first
+    args = request.json
+
+    lock_secret = memory.lock('sequencer_lock')
+    if lock_secret is None:
+        return 'A sequence is already running', 409
+
+    try:
         if 'type' in args:
             database.store(
                 'obs', {
@@ -125,176 +191,114 @@ def serve() -> ReturnCode:
         else:
             database.store('obs', {'sequencer_command_received': args})
 
-        # try to cast every values of args dict in type needed
-        check = cast_args(args)
-        if check != 0:
-            seq_utils.set_sequencer_status(SequencerStatus.ERROR)
-            logger.error('sequencer', 'Casting of args went wrong')
-            continue
+        if 'alphacat' in args and 'deltacat' in args:
+            coord = SkyCoord(ra=args['alphacat'], dec=args['deltacat'],
+                             unit=(u.hourangle, u.deg), frame='fk5')
 
-        # If abort command, start abort func and stop last command
-        if 'ABORT' in command:
-            seq_utils.set_sequencer_status(SequencerStatus.ABORTING)
-            logger.info('sequencer', f'Received {command}. Aborting sequence.')
-
-            execute_command(command, args, update_status=False)
-
-            if th is not None:
-                th.join()
-                th = None
-        else:
-            if th is not None:
-                # Note and TODO: we should actually refuse the command if the sequencer is already executing one, but there is no way to signal it to the synchro
-                th.join()
-
-            if 'alphacat' in args and 'deltacat' in args:
-                coord = SkyCoord(ra=args['alphacat'], dec=args['deltacat'],
-                                 unit=(u.hourangle, u.deg), frame='icrs')
-
-                database.store('obs', {
-                    'target_ra': coord.ra.deg,
-                    'target_dec': coord.dec.deg
-                })
-
-                # Pre-configure ADCs
-                zenith_angle = euler.telescope_zenith_angle(coord)
-                adc.configure(zenith_angle=zenith_angle, blocking=False)
-
-            seq_utils.set_sequencer_status(SequencerStatus.SETUP)
-
-            logger.info('sequencer', f'Starting {command}')
-
-            th = Thread(target=execute_command, kwargs={
-                'command': command,
-                'seq_args': args
+            database.store('obs', {
+                'target_ra': coord.ra.deg,
+                'target_dec': coord.dec.deg
             })
-            th.start()
 
-    # in case of break, we disconnect the socket
-    conn.close()
-    socketSeq.close()
-    seq_utils.set_sequencer_status(SequencerStatus.OFF)
-    logger.info('sequencer', 'Sequencer server off')
+            # Pre-configure ADCs
+            zenith_angle = euler.telescope_zenith_angle(coord)
+            adc.configure(zenith_angle=zenith_angle, blocking=False)
 
-    return ReturnCode.SEQ_OK
+        logger.info('sequencer', f'Starting {id}')
 
+        th = threading.Thread(
+            target=_execute_template, kwargs={
+                'id': id,
+                'func': getattr(templates, id),
+                'args': args,
+                'lock_secret': lock_secret
+            })
+        th.start()
 
-def cast_args(args: dict[str, Any]) -> ReturnCode:
-    """
-    Modifies the dictionary received in parameter by trying to cast the values in the required type.
-    The required types are stored in the configuration file.
+        return 'Template launched'
 
-    :param args: dict with keys: param name, values: param in
-    :return: 0 if there was no error and 1 otherwise
-    """
-
-    # Check for each key if the cast of the value is possible and cast it
-    for k, v in args.items():
-        if k in config.Sequencer.gop_arg_int:
-            if v.isdigit():
-                args[k] = int(v)
-            else:
-                logger.error('sequencer',
-                             f'{k} value cannot be convert in int')
-        elif k in config.Sequencer.gop_arg_float:
-            if v.replace('.', '', 1).isdigit():
-                args[k] = float(v)
-            else:
-                logger.error('sequencer',
-                             f'{k} value cannot be convert in float')
-
-        if k == 'kalfilter' and isinstance(v, str):
-            v = v.lower()
-            if v in ['g', 'r', 'i', 'z']:
-                args[k] = 'SDSS-' + v
-            elif v == 'nd':
-                args[k] = 'ND1.5'
-
-        elif k == 'kao':
-            args[k] = v.upper()
-
-    return ReturnCode.SEQ_OK
+    except Exception:
+        memory.unlock('sequencer_lock', lock_secret)
+        return 'An exception occurred', 500
 
 
-def execute_command(command: str, seq_args: dict[str, Any],
-                    update_status: bool = True) -> ReturnCode:
+def _execute_observation_block(templates_list: list) -> ReturnCode:
+    return ReturnCode.OK
+
+
+def _execute_template(id: str, func: Callable, args: dict[str, Any],
+                      lock_secret: str | None = None,
+                      update_status: bool = True) -> ReturnCode:
     try:
-        commands.commands[command](**seq_args)
+        template = Template(id=TemplateID(id),
+                            start=datetime.now(timezone.utc))
+
+        # TODO: remove some after EULER-J
+        if id == TemplateID.FOCUS:
+            template.nexp = config.Focusing.nexp
+        elif id == TemplateID.TARGET_OBSERVATION:
+            template.nexp = 1
+        elif 'nbPic' in args:
+            template.nexp = args['nbPic']
+
+        seq_utils.set_sequencer_status(SequencerStatus.SETUP)
+
+        template.to_memory()
+
+        func(template, **args)
 
     except AbortRequested:
         status = seq_utils.get_sequencer_status()
 
         if status == SequencerStatus.ABORTING:
-            if update_status:
-                seq_utils.set_sequencer_status(SequencerStatus.WAITING)
+            logger.info('sequencer', f'{id} aborted on request')
 
-            logger.info('sequencer', f'{command} aborted on request')
-
-            return ReturnCode.SEQ_OK
+            ret = ReturnCode.SEQ_OK
 
         else:
-            if update_status:
-                seq_utils.set_sequencer_status(SequencerStatus.ERROR)
+            logger.error('sequencer', f'{id} aborted')
 
-            logger.error('sequencer', f'{command} aborted')
-
-            # Close shutter after exception
-            if shutter.close() != ShutterStatus.CLOSED:
-                logger.error('sequencer',
-                             'Failed to close the shutter after error')
-
-            return ReturnCode.SEQ_ERROR
-
-    except CameraCancelFailed:
-        if update_status:
-            seq_utils.set_sequencer_status(SequencerStatus.WAITING)
-
-        logger.info('sequencer',
-                    f'Camera exposure cancellation failed in {command}')
-
-        # Close shutter after exception
-        if shutter.close() != ShutterStatus.CLOSED:
-            logger.error('sequencer',
-                         'Failed to close the shutter after error')
-
-        return ReturnCode.SEQ_ERROR
+            ret = ReturnCode.SEQ_ERROR
 
     except SequencerException as e:
         if update_status:
             seq_utils.set_sequencer_status(SequencerStatus.ERROR)
 
-        logger.error('sequencer', f'"{e.__doc__}" happened during {command}')
-
-        # Close shutter after exception
-        if shutter.close() != ShutterStatus.CLOSED:
+        if isinstance(e, MissingKeyword):
             logger.error('sequencer',
-                         'Failed to close the shutter after error')
+                         f'"{e.__doc__} ({e.args[0]})" happened during {id}')
+        else:
+            logger.error('sequencer', f'"{e.__doc__}" happened during {id}')
 
-        return ReturnCode.SEQ_ERROR
+        ret = ReturnCode.SEQ_ERROR
 
     except Exception as e:
-        if update_status:
-            seq_utils.set_sequencer_status(SequencerStatus.ERROR)
 
-        logger.error('sequencer',
-                     f'Unknown exception occurred during {command}')
+        logger.error('sequencer', f'Unknown exception occurred during {id}')
 
         rprint(''.join(traceback.format_exception(e)))
 
-        # Close shutter after exception
-        if shutter.close() != ShutterStatus.CLOSED:
-            logger.error('sequencer',
-                         'Failed to close the shutter after error')
-
-        return ReturnCode.SEQ_ERROR
+        ret = ReturnCode.SEQ_ERROR
 
     else:
-        if update_status:
+        logger.info('sequencer', f'{id} ended')
+
+        ret = ReturnCode.SEQ_OK
+
+    # Close shutter in case there was an error
+    if ret == ReturnCode.SEQ_ERROR and shutter.close() != ShutterStatus.CLOSED:
+        logger.error('sequencer', 'Failed to close the shutter after error')
+
+    if update_status:
+        if ret == ReturnCode.SEQ_ERROR:
+            seq_utils.set_sequencer_status(SequencerStatus.ERROR)
+        else:
             seq_utils.set_sequencer_status(SequencerStatus.WAITING)
 
-        logger.info('sequencer', f'{command} ended')
+    if lock_secret is not None:
+        memory.unlock('sequencer_lock', lock_secret)
 
-        return ReturnCode.SEQ_OK
+    return ret
 
 
 if __name__ == '__main__':
@@ -304,4 +308,11 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, sig_handler)
 
     init()
-    serve()
+
+    memory.unlock('sequencer_lock', force=True)
+
+    seq_utils.set_sequencer_status(SequencerStatus.WAITING)
+    logger.info('sequencer', 'Server on')
+
+    app.run(host='0.0.0.0', port=config.Sequencer.port, threaded=True,
+            debug=False)

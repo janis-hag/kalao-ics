@@ -1,7 +1,7 @@
 import random
 import time
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -17,15 +17,15 @@ from kalao.utils import kmath, kstring, ktools, zernike
 from kalao.utils.json import KalAOJSONEncoder
 from kalao.utils.rprint import rprint
 
-from kalao.guis.backends.abstract import AbstractBackend, emit, timeit
+from kalao.guis.backends.abstract import FakeSHMFPSBackend, emit, timeit
 from kalao.guis.utils import lorem
 
-from kalao.definitions.dataclasses import CalibrationPose, LogEntry
+from kalao.definitions.dataclasses import CalibrationPose, LogEntry, Template
 from kalao.definitions.enums import (CameraServerStatus, CameraStatus,
                                      FlipMirrorStatus, IPPowerStatus,
-                                     LaserStatus, LogLevel, ObservationType,
-                                     PLCStatus, RelayState, SequencerStatus,
-                                     ServiceAction, ShutterStatus,
+                                     LaserStatus, LogLevel, PLCStatus,
+                                     RelayState, SequencerStatus,
+                                     ServiceAction, ShutterStatus, TemplateID,
                                      TungstenStatus)
 
 import config
@@ -33,111 +33,11 @@ import config
 encoder = KalAOJSONEncoder()
 
 
-class FakeSHMFPSBackend(AbstractBackend):
-    def __init__(self):
-        super().__init__()
-
-        self.internal_state = {}
-
-    def _update_shm(self, data, shm_name, stream_data, key=None):
-        if key is None:
-            key = shm_name
-
-        if key not in data:
-            data[key] = {}
-
-        cnt0 = self.internal_state.get(f'{shm_name}-cnt0', -1) + 1
-
-        data[key].update({
-            'cnt0': cnt0,
-            'data': stream_data,
-        })
-
-        self.internal_state[f'{shm_name}-cnt0'] = cnt0
-
-    def _update_shm_keywords(self, data, shm_name, keywords):
-        if shm_name not in data:
-            data[shm_name] = {}
-
-        data[shm_name]['keywords'] = keywords
-
-    def _update_shm_status(self, data, shm_name):
-        if shm_name not in data:
-            data[shm_name] = {}
-
-        data[shm_name]['status'] = 'E'
-
-    def _update_shm_md(self, data, shm_name):
-        if shm_name not in data:
-            data[shm_name] = {}
-
-        data[shm_name]['md'] = {
-            'shape': (12, 12),
-            'cnt0': 123,
-            'creationtime': datetime.fromtimestamp(0),
-            'acqtime': datetime.now(),
-        }
-
-    def _update_fps_param(self, data, fps_name, param_name, param):
-        if fps_name not in data:
-            data[fps_name] = {}
-
-        data[fps_name][param_name] = param
-
-    def _update_fps_status(self, data, fps_name):
-        if fps_name not in data:
-            data[fps_name] = {}
-
-        data[fps_name]['status'] = 'CR'
-
-    def _update_dict(self, data, key, dict):
-        if key not in data:
-            data[key] = {}
-
-        data[key].update(dict)
-
-    def _update_db(self, data, collection, db_data):
-        if collection not in data:
-            data[collection] = {}
-
-        data[collection].update(db_data)
-
-    def _update_fits(self, data, fits_file, array):
-        if not isinstance(fits_file, Path):
-            fits_file = Path(fits_file)
-
-        key = fits_file.stem
-
-        data[key] = {'mtime': datetime.now(timezone.utc), 'data': array}
-
-    def _update_fits_full(self, data, fits_file, hdul):
-        if not isinstance(fits_file, Path):
-            fits_file = Path(fits_file)
-
-        key = fits_file.stem
-
-        data[key] = {'mtime': datetime.now(timezone.utc), 'hdul': hdul}
-
-        if fits_file == config.FITS.last_image_all:
-            data[key]['mtime'] = self.internal_state.get('fli-mtime')
-
-    def _update_fits_mtime(self, data, fits_file, mtime):
-        if not isinstance(fits_file, Path):
-            fits_file = Path(fits_file)
-
-        key = fits_file.stem
-
-        if key not in data:
-            data[key] = {}
-
-        data[key]['mtime'] = mtime
-
-
 class MainBackend(FakeSHMFPSBackend):
     last_camera_update = 0
     first = True
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         for i in range(12):
@@ -285,49 +185,48 @@ class MainBackend(FakeSHMFPSBackend):
         self.internal_timer.timeout.connect(self._internal_update)
         self.internal_timer.start()
 
-    def _get_dm01disp(self):
+    def _get_dm01disp(self) -> np.ndarray:
         dm01disp = zernike.generate_pattern([0], (12, 12))
         for i in range(12):
             dm01disp += self.internal_state[f'dm01disp{i:02d}']
         return dm01disp
 
-    def _get_dm02disp(self):
+    def _get_dm02disp(self) -> np.ndarray:
         dm02disp = np.zeros((2, ))
         for i in range(12):
             dm02disp += self.internal_state[f'dm02disp{i:02d}']
         return dm02disp
 
-    def _update_wfs(self):
+    def _update_wfs(self) -> None:
         if not self.internal_state[
                 'wfs_acquisition_running'] or self.internal_state[
                     'kalao_nuvu.service'][0] != 'active':
             self.internal_state['wfs_framerate'] = 0
         elif self.internal_state['wfs_exposuretime'] < config.WFS.readouttime:
-            self.internal_state['nuvu-maqtime'] = datetime.now(
-                timezone.utc).timestamp() * 1e6
+            self.internal_state['nuvu-maqtime'] = time.time() * 1e6
             self.internal_state['wfs_framerate'] = 1000 / config.WFS.readouttime
         else:
-            self.internal_state['nuvu-maqtime'] = datetime.now(
-                timezone.utc).timestamp() * 1e6
+            self.internal_state['nuvu-maqtime'] = time.time() * 1e6
             self.internal_state['wfs_framerate'] = 1000 / self.internal_state[
                 'wfs_exposuretime']
 
-    def _update_fli_service(self):
+    def _update_fli_service(self) -> None:
         if self.internal_state['kalao_fli.service'][0] == 'active':
             self.internal_state['camera_server_status'] = CameraServerStatus.UP
             self.internal_state['camera_status'] = CameraStatus.IDLE
         else:
             self.internal_state[
                 'camera_server_status'] = CameraServerStatus.DOWN
-            self.internal_state['camera_status'] = CameraStatus.ERROR
+            self.internal_state[
+                'camera_status'] = CameraStatus.SERVER_UNREACHABLE
 
-    def _update_nuvu_service(self):
+    def _update_nuvu_service(self) -> None:
         if self.internal_state['kalao_nuvu.service'][0] == 'active':
             self.internal_state['wfs_acquisition_running'] = True
         else:
             self.internal_state['wfs_acquisition_running'] = False
 
-    def _internal_update(self):
+    def _internal_update(self) -> None:
         if time.monotonic() - self.last_camera_update > 5:
             self.internal_state['fli-mtime'] = datetime.now(timezone.utc)
             self.last_camera_update = time.monotonic()
@@ -343,12 +242,12 @@ class MainBackend(FakeSHMFPSBackend):
             self.internal_state[config.SHM.TTM_LOOP] = -self.internal_state[
                 'ttmloop_gain'] * self.internal_state[config.SHM.TTM_CENTERING]
 
-    def version(self):
+    def version(self) -> str:
         return config.version
 
     @emit
     @timeit
-    def streams_all(self):
+    def streams_all(self) -> dict[str, Any]:
         data = {}
 
         if self.internal_state['flipmirror_status'] == FlipMirrorStatus.UP:
@@ -412,7 +311,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     @emit
     @timeit
-    def camera_image(self):
+    def camera_image(self) -> dict[str, Any]:
         data = {}
 
         if self.internal_state['flipmirror_status'] == FlipMirrorStatus.UP:
@@ -465,7 +364,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     @emit
     @timeit
-    def all(self):
+    def all(self) -> dict[str, Any]:
         data = {}
 
         self._update_fits_mtime(data, config.FITS.last_image_all,
@@ -537,6 +436,8 @@ class MainBackend(FakeSHMFPSBackend):
                     self.internal_state['sequencer_status'],
                 'centering_manual_flag':
                     False,
+                'centering_timeout':
+                    0,
                 'adc_synchronisation':
                     self.internal_state['adc_synchronisation'],
                 'ttm_offloading':
@@ -630,8 +531,6 @@ class MainBackend(FakeSHMFPSBackend):
 
         self._update_dict(
             data, 'camera', {
-                'camera_server_status':
-                    self.internal_state['camera_server_status'],
                 'camera_status':
                     self.internal_state['camera_status'],
                 'exposure_time':
@@ -658,33 +557,35 @@ class MainBackend(FakeSHMFPSBackend):
                     self.internal_state['ippower_dm_status'],
             })
 
-        self._update_dict(data, 'tmux', {
-            'tmux_sessions': ['kalaocam_ctrl', 'nuvu_fgrab'] +
-                             config.AO.processes
-        })
+        tmux_sessions = ['kalaocam_ctrl', 'nuvu_fgrab']
+        if self.internal_state['kalao_cacao.service'][0] == 'active':
+            tmux_sessions += config.AO.processes
+
+        self._update_dict(data, 'tmux', {'tmux_sessions': tmux_sessions})
 
         self._update_dict(data, 'pgrep', {
             'kalaocam_ctrl': 0,
             'nuvu_fgrab': 0,
         })
 
+        status = 'CR' if self.internal_state['kalao_cacao.service'][
+            0] == 'active' else 'M'
         for proc in config.AO.processes:
             if proc is None:
                 continue
 
-            self._update_fps_status(data, proc)
+            self._update_fps_md(data, proc, {'status': status})
 
         for stream in config.AO.streams:
             if stream is None:
                 continue
 
-            self._update_shm_status(data, stream)
             self._update_shm_md(data, stream)
 
+        time_span = 2
         fs = 1.8e3
         noise_power = 0.001 * fs / 2
-        timestamps = datetime.now(
-            timezone.utc).timestamp() + np.arange(10 * fs) / fs
+        timestamps = time.time() - time_span + np.arange(time_span * fs) / fs
         tip = 2 * np.sqrt(2) * np.sin(2 * np.pi * 10 * timestamps)
         tip += np.random.normal(scale=np.sqrt(noise_power),
                                 size=timestamps.shape)
@@ -692,15 +593,30 @@ class MainBackend(FakeSHMFPSBackend):
         tilt += np.random.normal(scale=np.sqrt(noise_power),
                                  size=timestamps.shape)
 
+        timestamp_offset = np.float32(time.time())
+
         self._update_shm(
             data, config.SHM.TELEMETRY_TTM,
-            np.roll(np.vstack([timestamps, tip, tilt]), 9, axis=1))
+            np.roll(
+                np.vstack([
+                    np.full(timestamps.shape, timestamp_offset),
+                    timestamps - timestamp_offset,
+                    tip,
+                    tilt,
+                    np.random.normal(loc=1024, scale=16,
+                                     size=timestamps.shape),
+                    np.random.normal(loc=1280, scale=16,
+                                     size=timestamps.shape),
+                    np.random.normal(loc=0, scale=0.01, size=timestamps.shape),
+                    np.random.normal(loc=0, scale=0.01, size=timestamps.shape),
+                    np.random.normal(loc=0, scale=0.01, size=timestamps.shape),
+                ]), 9, axis=1))
 
         return data
 
     @emit
     @timeit
-    def monitoring(self):
+    def monitoring(self) -> dict[str, Any]:
         data = {}
 
         monitoring_dt = datetime.now(timezone.utc)
@@ -730,7 +646,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     @emit
     @timeit
-    def streams_channels_dm(self):
+    def streams_channels_dm(self) -> dict[str, Any]:
         data = {}
 
         dm01disp = self._get_dm01disp()
@@ -747,7 +663,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     @emit
     @timeit
-    def streams_channels_ttm(self):
+    def streams_channels_ttm(self) -> dict[str, Any]:
         data = {}
 
         dm02disp = self._get_dm02disp()
@@ -764,13 +680,13 @@ class MainBackend(FakeSHMFPSBackend):
 
     @emit
     @timeit
-    def focusing_sequence_fits(self):
+    def focusing_sequence_fits(self) -> dict[str, Any]:
         data = {}
 
-        if self.internal_state['focusing-step'] == config.Focusing.steps:
+        if self.internal_state['focusing-step'] == config.Focusing.nexp:
             return data
 
-        self.internal_state['focusing-step'] %= config.Focusing.steps
+        self.internal_state['focusing-step'] %= config.Focusing.nexp
         self.internal_state['focusing-step'] += 1
 
         i = self.internal_state['focusing-step'] - 1
@@ -789,7 +705,7 @@ class MainBackend(FakeSHMFPSBackend):
         X, Y = np.meshgrid(x, y)
 
         focus = config.Focusing.autofocus_f0 + (
-            i - config.Focusing.steps / 2) * config.Focusing.step_size
+            i - config.Focusing.nexp / 2) * config.Focusing.step_size
         x_star = config.Focusing.window_size / 2
         y_star = config.Focusing.window_size / 2
         peak = 100
@@ -825,7 +741,7 @@ class MainBackend(FakeSHMFPSBackend):
             hdul[0].header.set('HIERARCH KAO FOC FIT LIN', b)
             hdul[0].header.set('HIERARCH KAO FOC FIT CONST', c)
 
-        if i == config.Focusing.steps - 1:
+        if i == config.Focusing.nexp - 1:
             hdul[0].header.set('HIERARCH KAO FOC BEST M2 POS', best_focus)
             hdul[0].header.set('HIERARCH KAO FOC BEST STAR FWHM', best_fwhm)
             hdul[0].header.set('HIERARCH KAO FOC SUCCESS', True)
@@ -839,27 +755,28 @@ class MainBackend(FakeSHMFPSBackend):
 
     @emit
     @timeit
-    def calibration_sequence(self):
+    def calibration_sequence(self) -> dict[str, Any]:
         data = {}
 
         calib_list = []
 
-        for i in range(5):
+        template = Template(id=TemplateID.BIAS, start=None, nexp=5)
+        for expno in range(template.nexp):
             calib_list.append(
-                CalibrationPose(type=ObservationType.BIAS, filter=None,
+                CalibrationPose(template=template, filter=None,
                                 exposure_time=0.001))
 
-        for j in range(3):
-            for i in range(5):
-                calib_list.append(
-                    CalibrationPose(type=ObservationType.DARK, filter=None,
-                                    exposure_time=10 * (j+1)))
-
-        for f in config.Calib.Flats.default_flat_list:
-            calib_list.append(
-                CalibrationPose(
-                    type=ObservationType.LAMP_FLAT, filter=f,
-                    exposure_time=config.Calib.Flats.tungsten_exptime_list[f]))
+        # for j in range(3):
+        #     for i in range(5):
+        #         calib_list.append(
+        #             CalibrationPose(type=TemplateID.DARK, filter=None,
+        #                             exposure_time=10 * (j+1)))
+        #
+        # for f in config.Calib.Flats.default_flat_list:
+        #     calib_list.append(
+        #         CalibrationPose(
+        #             type=TemplateID.LAMP_FLAT, filter=f,
+        #             exposure_time=config.Calib.Flats.tungsten_exptime_list[f]))
 
         self._update_dict(data, 'memory', {
             'calibration_poses_list': encoder.encode(calib_list)
@@ -867,7 +784,12 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    def plots_data_db(self, *, since, until, monitoring_keys, obs_keys):
+    def sequencer_abort(self) -> None:
+        rprint('Aborted sequence (virtually)')
+
+    def plots_data_db(self, *, since: datetime, until: datetime,
+                      monitoring_keys: list[str],
+                      obs_keys: list[str]) -> dict[str, Any]:
         now = datetime.now(timezone.utc)
         if until > now:
             until = now
@@ -884,7 +806,7 @@ class MainBackend(FakeSHMFPSBackend):
                     obs_keys, pd.date_range(since, until, freq='300s')),
         }
 
-    def plots_data_live(self):
+    def plots_data_live(self) -> dict[str, Any]:
         data = {}
         data['timestamp'] = datetime.now(timezone.utc)
         for key in database.definitions['monitoring']['metadata'].keys():
@@ -892,7 +814,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    def _generate_plots_data(self, keys, timestamps):
+    def _generate_plots_data(self, keys, timestamps) -> pd.DataFrame:
         data = {}
         for key in keys:
             data[key] = {
@@ -906,7 +828,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         return df
 
-    def ao_calibration_data(self, *, conf, loop):
+    def ao_calibration_data(self, *, conf: str, loop: int) -> dict[str, Any]:
         if loop == 1:
             wfsref = np.zeros((11, 22))
             wfsrefc = wfsref
@@ -953,7 +875,7 @@ class MainBackend(FakeSHMFPSBackend):
             CMmodesWFS.append(
                 zernike.generate_pattern([0, 5, 0], (12, 12)) * wfsmask)
             CMmodesWFS.append(
-                zernike.generate_pattern([0, 5, 1], (12, 12)) * wfsmask)
+                zernike.generate_pattern([0, 0, 5], (12, 12)) * wfsmask)
 
             CMmodesDM.append([
                 [1, 0],
@@ -1016,19 +938,20 @@ class MainBackend(FakeSHMFPSBackend):
             }
         }
 
-    def ao_calibration_reload(self, *, conf, loop):
+    def ao_calibration_reload(self, *, conf: str, loop: int) -> dict[str, Any]:
         return {
             'returncode': 0,
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def ao_calibration_prepare(self, *, conf, loop):
+    def ao_calibration_prepare(self, *, conf: str,
+                               loop: int) -> dict[str, Any]:
         return {
             'returncode': 0,
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def ao_calibration_mlat(self, *, conf, loop):
+    def ao_calibration_mlat(self, *, conf: str, loop: int) -> dict[str, Any]:
         time.sleep(1)
 
         data = {
@@ -1061,7 +984,8 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    def ao_calibration_mkDMpokemodes(self, *, conf, loop):
+    def ao_calibration_mkDMpokemodes(self, *, conf: str,
+                                     loop: int) -> dict[str, Any]:
         time.sleep(1)
 
         return {
@@ -1069,7 +993,8 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def ao_calibration_takeref(self, *, conf, loop):
+    def ao_calibration_takeref(self, *, conf: str,
+                               loop: int) -> dict[str, Any]:
         time.sleep(1)
 
         return {
@@ -1077,7 +1002,8 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def ao_calibration_acqlinResp(self, *, conf, loop):
+    def ao_calibration_acqlinResp(self, *, conf: str,
+                                  loop: int) -> dict[str, Any]:
         time.sleep(1)
 
         return {
@@ -1085,7 +1011,8 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def ao_calibration_RMHdecode(self, *, conf, loop):
+    def ao_calibration_RMHdecode(self, *, conf: str,
+                                 loop: int) -> dict[str, Any]:
         time.sleep(1)
 
         data = {
@@ -1114,7 +1041,8 @@ class MainBackend(FakeSHMFPSBackend):
 
         return data
 
-    def ao_calibration_RMmkmask(self, *, conf, loop):
+    def ao_calibration_RMmkmask(self, *, conf: str,
+                                loop: int) -> dict[str, Any]:
         time.sleep(1)
 
         return {
@@ -1122,7 +1050,7 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def ao_calibration_compCM(self, *, conf, loop):
+    def ao_calibration_compCM(self, *, conf: str, loop: int) -> dict[str, Any]:
         time.sleep(1)
 
         return {
@@ -1130,13 +1058,14 @@ class MainBackend(FakeSHMFPSBackend):
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def ao_calibration_load(self, *, conf, loop):
+    def ao_calibration_load(self, *, conf: str, loop: int) -> dict[str, Any]:
         return {
             'returncode': 0,
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
         }
 
-    def ao_calibration_save(self, *, conf, loop, comment):
+    def ao_calibration_save(self, *, conf: str, loop: int,
+                            comment: str) -> dict[str, Any]:
         return {
             'returncode': 0,
             'stdout': lorem.get_paragraphs(20, 3, 10).replace('\n', '\n\n')
@@ -1144,67 +1073,67 @@ class MainBackend(FakeSHMFPSBackend):
 
     ##### Science Camera
 
-    def centering_manual_offsets(self, *, dx, dy):
+    def centering_manual_offsets(self, *, dx: float, dy: float) -> None:
         rprint(f'Centering manually ({dx}, {dy}) (virtually)')
 
-    def centering_manual_validate(self):
+    def centering_manual_validate(self) -> None:
         rprint('Validated manual centering (virtually)')
 
     ##### Loop controls
 
     # DM Loop
 
-    def ao_dmloop_on(self, *, state):
+    def ao_dmloop_on(self, *, state: bool) -> None:
         self.internal_state['dmloop_on'] = state
         rprint(f'Set DM loop to {state} (virtually)')
 
-    def ao_dmloop_gain(self, *, gain):
+    def ao_dmloop_gain(self, *, gain: float) -> None:
         self.internal_state['dmloop_gain'] = gain
         rprint(f'Set DM gain to {gain} (virtually)')
 
-    def ao_dmloop_mult(self, *, mult):
+    def ao_dmloop_mult(self, *, mult: float) -> None:
         self.internal_state['dmloop_mult'] = mult
         rprint(f'Set DM mult to {mult} (virtually)')
 
-    def ao_dmloop_limit(self, *, limit):
+    def ao_dmloop_limit(self, *, limit: float) -> None:
         self.internal_state['dmloop_limit'] = limit
         rprint(f'Set DM limit to {limit} (virtually)')
 
-    def ao_dmloop_zero(self):
+    def ao_dmloop_zero(self) -> None:
         rprint('DM loop zeroed (virtually)')
 
     # TTM Loop
 
-    def ao_ttmloop_on(self, *, state):
+    def ao_ttmloop_on(self, *, state: bool) -> None:
         self.internal_state['ttmloop_on'] = state
         rprint(f'Set TTM loop to {state} (virtually)')
 
-    def ao_ttmloop_gain(self, *, gain):
+    def ao_ttmloop_gain(self, *, gain: float) -> None:
         self.internal_state['ttmloop_gain'] = gain
         rprint(f'Set TTM gain to {gain} (virtually)')
 
-    def ao_ttmloop_mult(self, *, mult):
+    def ao_ttmloop_mult(self, *, mult: float) -> None:
         self.internal_state['ttmloop_mult'] = mult
         rprint(f'Set TTM mult to {mult} (virtually)')
 
-    def ao_ttmloop_limit(self, *, limit):
+    def ao_ttmloop_limit(self, *, limit: float) -> None:
         self.internal_state['ttmloop_limit'] = limit
         rprint(f'Set TTM limit to {limit} (virtually)')
 
-    def ao_ttmloop_zero(self):
+    def ao_ttmloop_zero(self) -> None:
         rprint('TTM loop zeroed (virtually)')
 
     # Wavefront Sensor
 
-    def wfs_emgain(self, *, emgain):
+    def wfs_emgain(self, *, emgain: int) -> None:
         self.internal_state['wfs_emgain'] = emgain
         rprint(f'Set Nüvü EM Gain to {emgain} (virtually)')
 
-    def wfs_exposuretime(self, *, exposuretime):
+    def wfs_exposuretime(self, *, exposuretime: float) -> None:
         self.internal_state['wfs_exposuretime'] = exposuretime
         rprint(f'Set Nüvü Exposure Time to {exposuretime} (virtually)')
 
-    def wfs_autogain_on(self, *, state):
+    def wfs_autogain_on(self, *, state: bool) -> None:
         self.internal_state['wfs_autogain_on'] = state
 
         if state:
@@ -1216,7 +1145,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Set Nüvü Auto-gain to {state} (virtually)')
 
-    def wfs_autogain_setting(self, *, setting):
+    def wfs_autogain_setting(self, *, setting: int) -> None:
         self.internal_state['wfs_autogain_setting'] = setting
 
         if self.internal_state['wfs_autogain_on']:
@@ -1229,31 +1158,31 @@ class MainBackend(FakeSHMFPSBackend):
 
     # Deformable Mirror
 
-    def dm_maxstroke(self, *, stroke):
+    def dm_maxstroke(self, *, stroke: float) -> None:
         self.internal_state['dm_max_stroke'] = stroke
         rprint(f'Set BMC Max Stroke to {stroke} (virtually)')
 
-    def dm_strokemode(self, *, mode):
+    def dm_strokemode(self, *, mode: int) -> None:
         self.internal_state['dm_stroke_mode'] = mode
         rprint(f'Set BMC Stroke Mode to {mode} (virtually)')
 
-    def dm_targetstroke(self, *, target):
+    def dm_targetstroke(self, *, target: float) -> None:
         self.internal_state['dm_target_stroke'] = target
         rprint(f'Set BMC Target Stroke to {target} (virtually)')
 
     # Observation
 
-    def adc_synchronisation(self, *, state):
+    def adc_synchronisation(self, *, state: bool) -> None:
         self.internal_state['adc_synchronisation'] = state
         rprint(f'Set ADC Synchronization to {state} (virtually)')
 
-    def ttm_offloading(self, *, state):
+    def ttm_offloading(self, *, state: bool) -> None:
         self.internal_state['ttm_offloading'] = state
         rprint(f'Set TTM Offloading to {state} (virtually)')
 
     # Modal gains
 
-    def ao_dmloop_modalgains(self, *, modalgains):
+    def ao_dmloop_modalgains(self, *, modalgains: np.ndarray) -> None:
         self.internal_state[config.SHM.MODALGAINS] = modalgains
         rprint(f'Set Modal Gains to {modalgains} (virtually)')
 
@@ -1261,26 +1190,26 @@ class MainBackend(FakeSHMFPSBackend):
 
     # PLC / Misc. hardware
 
-    def hardware_shutter_status(self, *, status):
+    def hardware_shutter_status(self, *, status: str) -> None:
         self.internal_state['shutter_status'] = ShutterStatus(status)
         rprint(f'Set Shutter status to {status} (virtually)')
 
-    def hardware_shutter_init(self):
+    def hardware_shutter_init(self) -> None:
         rprint('Init Shutter (virtually)')
 
-    def hardware_flipmirror_status(self, *, status):
+    def hardware_flipmirror_status(self, *, status: str) -> None:
         self.internal_state['flipmirror_status'] = FlipMirrorStatus(status)
         rprint(f'Set Flip Mirror status to {status} (virtually)')
 
-    def hardware_flipmirror_init(self):
+    def hardware_flipmirror_init(self) -> None:
         rprint('Init Flip Mirror (virtually)')
 
-    def hardware_calibunit_position(self, *, position):
+    def hardware_calibunit_position(self, *, position: float) -> None:
         self._fake_motor_move(position, 'calibunit_position',
                               'calibunit_status', config.CalibUnit.velocity)
         rprint(f'Set Calibration Unit position to {position} (virtually)')
 
-    def hardware_calibunit_init(self):
+    def hardware_calibunit_init(self) -> None:
         self._fake_motor_move(0, 'calibunit_position', 'calibunit_status',
                               config.CalibUnit.velocity)
         self._fake_motor_move(
@@ -1289,20 +1218,20 @@ class MainBackend(FakeSHMFPSBackend):
             config.CalibUnit.velocity)
         rprint('Init Calibration Unit (virtually)')
 
-    def hardware_calibunit_stop(self):
+    def hardware_calibunit_stop(self) -> None:
         rprint('Stopped Calibration Unit (virtually)')
 
-    def hardware_calibunit_laser(self):
+    def hardware_calibunit_laser(self) -> None:
         self._fake_motor_move(config.Laser.position, 'calibunit_position',
                               'calibunit_status', config.CalibUnit.velocity)
         rprint('Moved Calibration Unit to Laser position (virtually)')
 
-    def hardware_calibunit_tungsten(self):
+    def hardware_calibunit_tungsten(self) -> None:
         self._fake_motor_move(config.Tungsten.position, 'calibunit_position',
                               'calibunit_status', config.CalibUnit.velocity)
         rprint('Moved Calibration Unit to Tungsten position (virtually)')
 
-    def hardware_tungsten_status(self, *, status):
+    def hardware_tungsten_status(self, *, status: bool) -> None:
         if status:
             self.internal_state['tungsten_status'] = TungstenStatus.ON
         else:
@@ -1310,10 +1239,10 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Set Tungsten status to {status} (virtually)')
 
-    def hardware_tungsten_init(self):
+    def hardware_tungsten_init(self) -> None:
         rprint('Init Tungsten (virtually)')
 
-    def hardware_laser_status(self, *, status):
+    def hardware_laser_status(self, *, status: bool) -> None:
         if status:
             self.internal_state['laser_status'] = LaserStatus.ON
         else:
@@ -1321,71 +1250,71 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Set Laser status to {status} (virtually)')
 
-    def hardware_laser_power(self, *, power):
+    def hardware_laser_power(self, *, power: float) -> None:
         self.internal_state['laser_power'] = power
         rprint(f'Set Laser power to {power} (virtually)')
 
-    def hardware_laser_init(self):
+    def hardware_laser_init(self) -> None:
         rprint('Init Laser (virtually)')
 
-    def hardware_lamps_off(self):
+    def hardware_lamps_off(self) -> None:
         self.internal_state['tungsten_status'] = TungstenStatus.OFF
         self.internal_state['laser_status'] = LaserStatus.OFF
         rprint('Lamps off (virtually)')
 
-    def hardware_filterwheel_filter(self, *, filter):
+    def hardware_filterwheel_filter(self, *, filter: str) -> None:
         self.internal_state[
             'filterwheel_filter_position'] = config.FilterWheel.position_list.index(
                 filter)
         self.internal_state['filterwheel_filter_name'] = filter
         rprint(f'Set Filter Wheel filter to {filter} (virtually)')
 
-    def hardware_filterwheel_init(self):
+    def hardware_filterwheel_init(self) -> None:
         rprint('Init Filter Wheel (virtually)')
 
-    def hardware_adc1_angle(self, *, position):
+    def hardware_adc1_angle(self, *, position: float) -> None:
         self._fake_motor_move(position, 'adc1_angle', 'adc1_status',
                               config.ADC.velocity)
         rprint(f'Set ADC1 position to {position} (virtually)')
 
-    def hardware_adc1_init(self):
+    def hardware_adc1_init(self) -> None:
         self._fake_motor_move(0, 'adc1_angle', 'adc1_status',
                               config.ADC.velocity)
         self._fake_motor_move(config.PLC.initial_state[config.PLC.Node.ADC1],
                               'adc1_angle', 'adc1_status', config.ADC.velocity)
         rprint('Init ADC1 (virtually)')
 
-    def hardware_adc1_stop(self):
+    def hardware_adc1_stop(self) -> None:
         rprint('Stopped ADC1 (virtually)')
 
-    def hardware_adc2_angle(self, *, position):
+    def hardware_adc2_angle(self, *, position: float) -> None:
         self._fake_motor_move(position, 'adc2_angle', 'adc2_status',
                               config.ADC.velocity)
         rprint(f'Set ADC2 position to {position} (virtually)')
 
-    def hardware_adc2_init(self):
+    def hardware_adc2_init(self) -> None:
         self._fake_motor_move(0, 'adc2_angle', 'adc2_status',
                               config.ADC.velocity)
         self._fake_motor_move(config.PLC.initial_state[config.PLC.Node.ADC2],
                               'adc2_angle', 'adc2_status', config.ADC.velocity)
         rprint('Init ADC2 (virtually)')
 
-    def hardware_adc2_stop(self):
+    def hardware_adc2_stop(self) -> None:
         rprint('Stopped ADC2 (virtually)')
 
-    def hardware_adc_zerodisp(self):
+    def hardware_adc_zerodisp(self) -> None:
         # TODO
         rprint('Set ADC to zero dispersion (virtually)')
 
-    def hardware_adc_maxdisp(self):
+    def hardware_adc_maxdisp(self) -> None:
         # TODO
         rprint('Set ADC to maximum dispersion (virtually)')
 
-    def hardware_adc_angleoffset(self, *, angle, offset):
+    def hardware_adc_angleoffset(self, *, angle: float, offset: float) -> None:
         # TODO
         rprint(f'Set ADC to angle {angle}° and offset {offset}° (virtually)')
 
-    def hardware_pump_status(self, *, status):
+    def hardware_pump_status(self, *, status: bool) -> None:
         if status:
             self.internal_state['pump_status'] = RelayState.ON
         else:
@@ -1393,7 +1322,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Set Pump to {status} (virtually)')
 
-    def hardware_fan_status(self, *, status):
+    def hardware_fan_status(self, *, status: bool) -> None:
         if status:
             self.internal_state['heatexchanger_fan_status'] = RelayState.ON
         else:
@@ -1401,7 +1330,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Set Fan to {status} (virtually)')
 
-    def hardware_heater_status(self, *, status):
+    def hardware_heater_status(self, *, status: bool) -> None:
         if status:
             self.internal_state['heater_status'] = RelayState.ON
         else:
@@ -1409,7 +1338,8 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Set Heater to {status} (virtually)')
 
-    def _fake_motor_move(self, position, position_key, state_key, velocity):
+    def _fake_motor_move(self, position, position_key, state_key,
+                         velocity) -> None:
         self.internal_state[state_key] = PLCStatus.MOVING
 
         if position - self.internal_state[position_key] > 0:
@@ -1427,11 +1357,12 @@ class MainBackend(FakeSHMFPSBackend):
 
     # Camera
 
-    def camera_exptime(self, *, exposure_time):
+    def camera_exptime(self, *, exposure_time: float) -> None:
         self.internal_state['fli-exposure_time'] = exposure_time
         rprint(f'Set exposure time to {exposure_time} s (virtually)')
 
-    def camera_take(self, *, exposure_time, frames, roi_size):
+    def camera_take(self, *, exposure_time: float, frames: int,
+                    roi_size: int) -> None:
         rprint(
             f'Started camera with {frames} exposure(s) of size {roi_size}x{roi_size} and of exposure time {exposure_time} s (virtually)'
         )
@@ -1460,59 +1391,59 @@ class MainBackend(FakeSHMFPSBackend):
 
         self.internal_state['camera_status'] = CameraStatus.IDLE
 
-    def camera_cancel(self):
+    def camera_cancel(self) -> None:
         self.internal_state['fli-remaining_time'] = 0
         rprint('Canceled camera exposure (virtually)')
 
     # Wavefront Sensor
 
-    def wfs_acquisition_start(self):
+    def wfs_acquisition_start(self) -> None:
         self.internal_state['wfs_acquisition_running'] = True
         rprint('Started Nüvü acquisition (virtually)')
 
-    def wfs_acquisition_stop(self):
+    def wfs_acquisition_stop(self) -> None:
         self.internal_state['wfs_acquisition_running'] = False
         rprint('Stopped Nüvü acquisition (virtually)')
 
     # Deformable Mirror
 
-    def dm_on(self):
+    def dm_on(self) -> None:
         self.internal_state['ippower_dm_status'] = IPPowerStatus.ON
         rprint('Turned on DM (virtually)')
 
-    def dm_off(self):
+    def dm_off(self) -> None:
         self.internal_state['ippower_dm_status'] = IPPowerStatus.OFF
         rprint('Turned off DM (virtually)')
 
     # IPPower
 
-    def ippower_rtc_on(self):
+    def ippower_rtc_on(self) -> None:
         self.internal_state['ippower_rtc_status'] = IPPowerStatus.ON
         rprint('Powering on RTC (virtually)')
 
-    def ippower_rtc_off(self):
+    def ippower_rtc_off(self) -> None:
         self.internal_state['ippower_rtc_status'] = IPPowerStatus.OFF
         rprint('Powering off RTC (virtually)')
 
-    def ippower_bench_on(self):
+    def ippower_bench_on(self) -> None:
         self.internal_state['ippower_bench_status'] = IPPowerStatus.ON
         rprint('Powering on Bench (virtually)')
 
-    def ippower_bench_off(self):
+    def ippower_bench_off(self) -> None:
         self.internal_state['ippower_bench_status'] = IPPowerStatus.OFF
         rprint('Powering off Bench (virtually)')
 
-    def ippower_dm_on(self):
+    def ippower_dm_on(self) -> None:
         self.internal_state['ippower_dm_status'] = IPPowerStatus.ON
         rprint('Powering on DM (virtually)')
 
-    def ippower_dm_off(self):
+    def ippower_dm_off(self) -> None:
         self.internal_state['ippower_dm_status'] = IPPowerStatus.OFF
         rprint('Powering off DM (virtually)')
 
     # Services
 
-    def services_action(self, *, unit, action):
+    def services_action(self, *, unit: str, action: str) -> None:
         if action == ServiceAction.START and self.internal_state[unit][
                 0] == 'inactive':
             self.internal_state[unit] = ('activating', '',
@@ -1572,7 +1503,7 @@ class MainBackend(FakeSHMFPSBackend):
 
     # DM channels
 
-    def channels_resetall(self, *, dm_number):
+    def channels_resetall(self, *, dm_number: int) -> None:
         if dm_number == config.AO.DM_loop_number:
             for i in range(12):
                 self.internal_state[
@@ -1586,7 +1517,7 @@ class MainBackend(FakeSHMFPSBackend):
 
         rprint(f'Resetted DM {dm_number} (virtually)')
 
-    def channels_reset(self, *, dm_number, channel):
+    def channels_reset(self, *, dm_number: int, channel: int) -> None:
         if dm_number == config.AO.DM_loop_number:
             self.internal_state[
                 f'dm01disp{channel:02d}'] = zernike.generate_pattern([0],
@@ -1600,63 +1531,56 @@ class MainBackend(FakeSHMFPSBackend):
 
     # DM & TTM control
 
-    def dm_pattern(self, *, pattern):
+    def dm_pattern(self, *, pattern: np.ndarray) -> None:
         self.internal_state[config.SHM.DM_USER_CONTROLLED] = pattern
         rprint(f'Set DM to {pattern} (virtually)')
 
-    def ttm_position(self, *, tip, tilt):
+    def ttm_position(self, *, tip: float, tilt: float) -> None:
         array = np.array([tip, tilt])
         self.internal_state[config.SHM.TTM_USER_CONTROLLED] = array
         rprint(f'Set TTM to {array} (virtually)')
 
     # Centering
 
-    def centering_star(self):
+    def centering_star(self) -> None:
         rprint('Star centering launched (virtually)')
 
-    def centering_laser(self):
+    def centering_laser(self) -> None:
         rprint('Laser centering launched (virtually)')
 
-    def centering_spiral(self):
+    def centering_spiral(self) -> None:
         rprint('Spiral search launched (virtually)')
 
     # Focusing
 
-    def focusing_autofocus(self):
+    def focusing_autofocus(self) -> None:
         rprint('Autofocus launched (virtually)')
 
-    def focusing_sequence(self):
+    def focusing_sequence(self) -> None:
         self.internal_state['focusing-step'] = 0
         self.internal_state['sequencer_status'] = SequencerStatus.FOCUSING.value
         rprint('Focus sequence launched (virtually)')
 
     # Dead-man
 
-    def deadman(self, *, count):
+    def deadman(self, *, count: int) -> None:
         rprint('Dead-man triggered (virtually)')
 
     # Instrument / RTC
 
-    def instrument_shutdown(self):
+    def instrument_shutdown(self) -> None:
         rprint('Shutdown sequence initiated (virtually)')
 
-    def rtc_poweroff(self):
+    def rtc_poweroff(self) -> None:
         rprint('RTC power off initiated (virtually)')
 
-    def rtc_reboot(self):
+    def rtc_reboot(self) -> None:
         rprint('RTC reboot initiated (virtually)')
 
     ##### Logs
 
-    def logs_init(self):
-        logs = []
-
-        for _ in range(config.GUI.logs_initial_entries):
-            logs.append(self._generate_log())
-
-        return logs
-
-    def logs_new(self):
+    def logs(self, *, timestamp: datetime = None, cursor: str = None,
+             lines: int = None) -> list[LogEntry]:
         logs = []
 
         for _ in range(10):
@@ -1664,7 +1588,8 @@ class MainBackend(FakeSHMFPSBackend):
 
         return logs
 
-    def logs_between(self, *, since, until):
+    def logs_between(self, *, since: datetime,
+                     until: datetime) -> list[LogEntry]:
         logs = []
 
         timestamps = pd.date_range(since, until, freq='60s')
@@ -1674,30 +1599,22 @@ class MainBackend(FakeSHMFPSBackend):
 
         return logs
 
-    def _generate_log(self, timestamp=None):
+    def _generate_log(self, timestamp: datetime = None) -> LogEntry:
         if timestamp is None:
-            timestamp = datetime.now().strftime('%y-%m-%d %H:%M:%S')
-        else:
-            timestamp = timestamp.strftime('%y-%m-%d %H:%M:%S')
+            timestamp = datetime.now(timezone.utc)
 
         origin = random.choice(self.logs_services)
 
         message = lorem.get_sentence(8)
 
-        level = random.random()
-        if level <= 0.001:
-            level = LogLevel.ERROR
-            message = '[ERROR] ' + message
-        elif level <= 0.011:
-            level = LogLevel.WARNING
-            message = '[WARNING] ' + message
-        else:
-            level = LogLevel.INFO
-            message = '[INFO] ' + message
+        level = random.choices([
+            LogLevel.ERROR, LogLevel.WARNING, LogLevel.INFO
+        ], [1, 10, 1000])[0]
+        message = f'[{level.value}] {message}'
 
         log = random.choice(self.logs_logs)
         if log != '':
             message = f'{log} | {message}'
 
-        return LogEntry(level=level, timestamp=timestamp, origin=origin,
-                        message=message)
+        return LogEntry(cursor='', level=level, timestamp=timestamp,
+                        origin=origin, message=message)

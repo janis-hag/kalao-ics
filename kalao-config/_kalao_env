@@ -6,12 +6,12 @@ mkdir -p $MILK_SHM_DIR
 
 export MILKCLI_ADD_LIBS="cacaoKalAONuvu,cacaoKalAOSHWFS,cacaoKalAOBMC,cacaoKalAOTelemetry"
 
-export MILK_ROOT=${HOME}/kalao-cacao-src/milk
+export MILK_ROOT=/home/kalao/kalao-cacao-src/milk
 export MILK_INSTALLDIR=/usr/local/milk
 export PATH=${PATH}:${MILK_INSTALLDIR}/bin
 export PKG_CONFIG_PATH=${PKG_CONFIG_PATH:-}:${MILK_INSTALLDIR}/lib/pkgconfig
 
-export SCEXAO_HW=${HOME}/kalao-edtdriver
+export SCEXAO_HW=/home/kalao/kalao-edtdriver
 export PATH=${SCEXAO_HW}/bin:${PATH}
 
 export PATH=/home/kalao/.local/bin:${PATH}

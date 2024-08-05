@@ -36,11 +36,11 @@ def set_tiptilt(shm_name: str, tip: float, tilt: float) -> tuple[float, float]:
 
 
 def get_offloading() -> bool:
-    return memory.get('ttm_offloading', type=bool, default=True)
+    return memory.hget('ttm', 'offloading', type=bool, default=True)
 
 
 def set_offloading(state: bool) -> None:
-    memory.set('ttm_offloading', state)
+    memory.hset('ttm', 'offloading', state)
 
 
 def offload_to_telescope(gain: float = config.TTM.offload_gain,

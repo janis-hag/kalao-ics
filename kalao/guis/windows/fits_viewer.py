@@ -1,24 +1,31 @@
 import math
 from datetime import datetime, timezone
 from enum import StrEnum
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 
 from astropy.io import fits
 
-from PySide6.QtCore import (QAbstractTableModel, QMargins, QMarginsF, QPointF,
-                            QRectF, QSignalBlocker, QSortFilterProxyModel,
-                            Slot)
-from PySide6.QtGui import QAction, QActionGroup, QPen, Qt
-from PySide6.QtWidgets import QHeaderView, QMessageBox
+from PySide6.QtCore import (QAbstractTableModel, QMargins, QMarginsF,
+                            QModelIndex, QObject, QPointF, QRectF,
+                            QSignalBlocker, QSortFilterProxyModel, QTimer,
+                            QUrl, Slot)
+from PySide6.QtGui import (QAction, QActionGroup, QCloseEvent, QIcon, QPen,
+                           QShowEvent, Qt)
+from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
+from PySide6.QtWidgets import QHeaderView, QMessageBox, QSizePolicy, QWidget
+
+from compiled.ui_fits_viewer import Ui_FITSViewerWindow
 
 from kalao.utils import image, starfinder
 
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color, Cuts, Scale
 from kalao.guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
                                      MinMaxMixin, SceneHoverMixin)
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KMainWindow, KMessageBox
 
 import config
@@ -31,17 +38,23 @@ class FollowMode(StrEnum):
 
 
 class FITSCardsModel(QAbstractTableModel):
-    def __init__(self, parent):
+    _columns = [
+        'Keyword',
+        'Value',
+        'Comment',
+    ]
+
+    def __init__(self, parent: QObject) -> None:
         super().__init__(parent)
         self._data = []
 
-    def rowCount(self, parent):
+    def rowCount(self, parent: QModelIndex) -> int:
         return len(self._data)
 
-    def columnCount(self, parent):
-        return 3
+    def columnCount(self, parent: QModelIndex) -> int:
+        return len(self._columns)
 
-    def data(self, index, role):
+    def data(self, index: QModelIndex, role: int) -> Any:
         row = index.row()
         col = index.column()
 
@@ -50,17 +63,12 @@ class FITSCardsModel(QAbstractTableModel):
 
         return None
 
-    def headerData(self, section, orientation, role):
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            match section:
-                case 0:
-                    return 'Keyword'
-                case 1:
-                    return 'Value'
-                case 2:
-                    return 'Comment'
+    def headerData(self, section: int, orientation: Qt.Orientation,
+                   role: int) -> str:
+        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
+            return self._columns[section]
 
-    def update_data(self, header):
+    def update_data(self, header: fits.Header) -> None:
         self.layoutAboutToBeChanged.emit()
 
         self._data = []
@@ -123,71 +131,130 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     keywords_table_size = 300
 
-    def __init__(self, backend, hdul=None, file=None, on_sky_unit=False,
-                 parent=None):
+    def __init__(self, backend: AbstractBackend, hdul: fits.HDUList = None,
+                 file: Path = None, on_sky_unit: bool = False,
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
         self.hdul = hdul
         self.file = file
 
-        loadUi('fits_viewer.ui', self)
+        self.ui = Ui_FITSViewerWindow()
+        self.ui.setupUi(self)
 
-        self.exit_manual_centering_button.setVisible(False)
+        # Manual centering notification
 
-        self.keywords_widget.setVisible(False)
-        self.splitter.handle(1).setEnabled(False)
+        self.player = QMediaPlayer()
+        self.audio_output = QAudioOutput()
+        self.audio_output.setDevice(QMediaDevices.defaultAudioOutput())
+        self.audio_output.setVolume(1.0)
+        self.player.setAudioOutput(self.audio_output)
+        self.player.setSource(
+            QUrl('qrc:/assets/sounds/alarm-clock-elapsed.oga'))
+
+        self.centering_timer = QTimer(self)
+        self.centering_timer.setInterval(
+            int(config.GUI.manual_centering_alarm_interval * 1000))
+        self.centering_timer.timeout.connect(self.centering_notification)
+
+        self.ui.centering_widget.setSizePolicy(QSizePolicy.Policy.Preferred,
+                                               QSizePolicy.Policy.Ignored)
+
+        self.ui.centering_volume_button.setChecked(True)
+
+        # Keywords
+
+        self.ui.keywords_widget.setVisible(False)
+        self.ui.keywords_splitter.handle(1).setEnabled(False)
+
+        self.keywords_model = FITSCardsModel(self)
+        self.keywords_proxymodel = QSortFilterProxyModel(self)
+        self.keywords_proxymodel.setSourceModel(self.keywords_model)
+        self.ui.keywords_table.setModel(self.keywords_proxymodel)
+
+        horizontal_header = self.ui.keywords_table.horizontalHeader()
+        horizontal_header.setSectionResizeMode(
+            0, QHeaderView.ResizeMode.ResizeToContents)
+        horizontal_header.setSectionResizeMode(
+            1, QHeaderView.ResizeMode.ResizeToContents)
+
+        horizontal_header.setSortIndicatorClearable(True)
+        horizontal_header.setSortIndicator(-1, Qt.SortOrder.AscendingOrder)
+
+        for column_name in self.keywords_model._columns:
+            with QSignalBlocker(self.ui.keywords_columns_combobox):
+                self.ui.keywords_columns_combobox.addItem(column_name)
+
+        # Base
 
         self.resize(1400, 600)
 
-        self.init_minmax([self.image_view, self.zoom_view, self.colorbar])
+        self.init_minmax([
+            self.ui.image_view, self.ui.zoom_view, self.ui.colorbar
+        ])
 
-        self.image_view.setView(self.image_info['shape'])
+        self.ui.image_view.setView(self.image_info['shape'])
 
         margins = QMarginsF(10, 10, 40, 30)
-        self.zoom_view.setMargins(margins)
-        self.image_view.setMargins(margins)
+        self.ui.zoom_view.setMargins(margins)
+        self.ui.image_view.setMargins(margins)
 
-        pen = QPen(Color.PURPLE, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        # Zoom indicator
+
+        pen = QPen(Color.PURPLE, 1.5, Qt.PenStyle.SolidLine,
+                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
 
-        self.zoom_window = self.image_view.scene().addRect(-1, -1, 0, 0, pen)
+        self.zoom_window = self.ui.image_view.scene().addRect(
+            -1, -1, 0, 0, pen)
         self.zoom_window.setZValue(1)
 
-        pen = QPen(Color.BLUE, 1.5, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        # WFS Field of view
+
+        pen = QPen(Color.BLUE, 1.5, Qt.PenStyle.SolidLine,
+                   Qt.PenCapStyle.FlatCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
 
-        self.wfs_fov = self.image_view.scene().addEllipse(
+        self.wfs_fov = self.ui.image_view.scene().addEllipse(
             self.data_center_x - self.WFS_fov / 2, self.data_center_y -
             self.WFS_fov / 2, self.WFS_fov, self.WFS_fov, pen)
         self.wfs_fov.setZValue(1)
         self.wfs_fov.setVisible(False)
 
-        pen = QPen(Color.GREEN, 1.5, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        # Manual centering crosses
+
+        pen = QPen(Color.GREEN, 1.5, Qt.PenStyle.SolidLine,
+                   Qt.PenCapStyle.FlatCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
 
-        self.vertical_line = self.image_view.scene().addLine(-1, -1, 0, 0, pen)
+        self.vertical_line = self.ui.image_view.scene().addLine(
+            -1, -1, 0, 0, pen)
         self.vertical_line.setZValue(1)
         self.vertical_line.setVisible(False)
 
-        self.horizontal_line = self.image_view.scene().addLine(
+        self.horizontal_line = self.ui.image_view.scene().addLine(
             -1, -1, 0, 0, pen)
         self.horizontal_line.setZValue(1)
         self.horizontal_line.setVisible(False)
 
-        self.zoom_vertical_line = self.zoom_view.scene().addLine(
+        self.zoom_vertical_line = self.ui.zoom_view.scene().addLine(
             -1, -1, 0, 0, pen)
         self.zoom_vertical_line.setZValue(1)
         self.zoom_vertical_line.setVisible(False)
 
-        self.zoom_horizontal_line = self.zoom_view.scene().addLine(
+        self.zoom_horizontal_line = self.ui.zoom_view.scene().addLine(
             -1, -1, 0, 0, pen)
         self.zoom_horizontal_line.setZValue(1)
         self.zoom_horizontal_line.setVisible(False)
 
-        self.stars_itemgroup = self.image_view.scene().createItemGroup([])
+        # Stars detection
 
-        self.colormap_actiongroup = QActionGroup(self.colormap_menu)
+        self.stars_itemgroup = self.ui.image_view.scene().createItemGroup([])
+
+        # Colormap menu
+
+        self.colormap_actiongroup = QActionGroup(self.ui.colormap_menu)
         self.colormap_actiongroup.setExclusive(True)
         self.colormap_actiongroup.triggered.connect(
             self.on_colormap_actiongroup_triggered)
@@ -196,13 +263,15 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             action = QAction(colormap.__name__)
             action.setCheckable(True)
             action.data = colormap()
-            self.colormap_menu.addAction(action)
+            self.ui.colormap_menu.addAction(action)
             self.colormap_actiongroup.addAction(action)
 
             if colormap.__name__ == 'BlackBody':
                 action.trigger()
 
-        self.scale_actiongroup = QActionGroup(self.scale_menu)
+        # Scale menu
+
+        self.scale_actiongroup = QActionGroup(self.ui.scale_menu)
         self.scale_actiongroup.setExclusive(True)
         self.scale_actiongroup.triggered.connect(
             self.on_scale_actiongroup_triggered)
@@ -211,13 +280,15 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             action = QAction(str(scale.value()))
             action.setCheckable(True)
             action.data = scale.value
-            self.scale_menu.addAction(action)
+            self.ui.scale_menu.addAction(action)
             self.scale_actiongroup.addAction(action)
 
             if scale == Scale.LOG:
                 action.trigger()
 
-        self.cuts_actiongroup = QActionGroup(self.cuts_menu)
+        # Cuts menu
+
+        self.cuts_actiongroup = QActionGroup(self.ui.cuts_menu)
         self.cuts_actiongroup.setExclusive(True)
         self.cuts_actiongroup.triggered.connect(
             self.on_cuts_actiongroup_triggered)
@@ -226,13 +297,15 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             action = QAction(str(cuts.value))
             action.setCheckable(True)
             action.data = cuts.value
-            self.cuts_menu.addAction(action)
+            self.ui.cuts_menu.addAction(action)
             self.cuts_actiongroup.addAction(action)
 
             if cuts == Cuts.MINMAX:
                 action.trigger()
 
-        self.zoomwindow_actiongroup = QActionGroup(self.zoomwindow_menu)
+        # Zoom window menu
+
+        self.zoomwindow_actiongroup = QActionGroup(self.ui.zoomwindow_menu)
         self.zoomwindow_actiongroup.setExclusive(True)
         self.zoomwindow_actiongroup.triggered.connect(
             self.on_zoomwindow_actiongroup_triggered)
@@ -241,47 +314,40 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             action = QAction(mode.value)
             action.setCheckable(True)
             action.data = mode.value
-            self.zoomwindow_menu.addAction(action)
+            self.ui.zoomwindow_menu.addAction(action)
             self.zoomwindow_actiongroup.addAction(action)
 
             if mode == FollowMode.FIXED:
                 action.trigger()
 
-        self.image_view.hovered.connect(self.hover_xyv_to_str_camera)
-        self.zoom_view.hovered.connect(self.hover_xyv_to_str_zoom)
+        # Connect signals
 
-        self.image_view.scene().clicked.connect(self.camera_clicked)
-        self.image_view.scene().dragged.connect(self.camera_dragged)
-        self.image_view.scene().scrolled.connect(self.camera_scrolled)
+        self.ui.image_view.hovered.connect(self.hover_xyv_to_str_camera)
+        self.ui.zoom_view.hovered.connect(self.hover_xyv_to_str_zoom)
 
-        self.zoom_view.scene().clicked.connect(self.zoom_clicked)
-        self.zoom_view.scene().scrolled.connect(self.zoom_scrolled)
+        self.ui.image_view.scene().clicked.connect(self.camera_clicked)
+        self.ui.image_view.scene().dragged.connect(self.camera_dragged)
+        self.ui.image_view.scene().scrolled.connect(self.camera_scrolled)
 
-        self.onsky_checkbox.setChecked(on_sky_unit)
-        self.on_onsky_checkbox_stateChanged(self.onsky_checkbox.checkState())
+        self.ui.zoom_view.scene().clicked.connect(self.zoom_clicked)
+        self.ui.zoom_view.scene().scrolled.connect(self.zoom_scrolled)
+
+        self.ui.onsky_checkbox.setChecked(on_sky_unit)
+        self.on_onsky_checkbox_stateChanged(
+            self.ui.onsky_checkbox.checkState())
 
         self.hovered.connect(self.info_to_statusbar)
 
+        # Open file vs live view
+
         if self.file is None:
-            backend.camera_image_updated.connect(self.camera_image_updated,
-                                                 Qt.UniqueConnection)
+            backend.camera_image_updated.connect(
+                self.camera_image_updated, Qt.ConnectionType.UniqueConnection)
         else:
             self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
             hdul = fits.open(self.file)
 
-            self.centering_menu.setEnabled(False)
-
-        self.model = FITSCardsModel(self)
-        self.proxymodel = QSortFilterProxyModel(self)
-        self.proxymodel.setSourceModel(self.model)
-        self.keywords_table.setModel(self.proxymodel)
-
-        horizontal_header = self.keywords_table.horizontalHeader()
-        horizontal_header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        horizontal_header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-
-        horizontal_header.setSortIndicatorClearable(True)
-        horizontal_header.setSortIndicator(-1, Qt.AscendingOrder)
+            self.ui.centering_menu.setEnabled(False)
 
         if hdul is not None:
             self.update_image(hdul)
@@ -289,65 +355,101 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.show()
         self.center()
 
-    def camera_image_updated(self, data):
+    def all_updated(self, data: dict[str, Any]) -> None:
+        centering_timeout = self.consume_dict(data, 'memory',
+                                              'centering_timeout', force=True)
+        if centering_timeout is not None:
+            time_left = centering_timeout - self.consume_metadata(
+                data, 'timestamp')
+            if time_left < 0:
+                time_left = 0
+            self.ui.centering_timeout_label.updateText(
+                centering_timeout=time_left)
+
+    def camera_image_updated(self, data: dict[str, Any]) -> None:
         hdul = self.consume_fits_full(data, config.FITS.last_image_all)
 
         if hdul is not None:
             self.update_image(hdul)
 
-    def on_colormap_actiongroup_triggered(self, action):
-        self.image_view.updateColormap(action.data)
-        self.zoom_view.updateColormap(action.data)
-        self.colorbar.setColormap(action.data)
+    def on_colormap_actiongroup_triggered(self, action: QAction) -> None:
+        self.ui.image_view.updateColormap(action.data)
+        self.ui.zoom_view.updateColormap(action.data)
+        self.ui.colorbar.setColormap(action.data)
 
-    def on_scale_actiongroup_triggered(self, action):
-        self.image_view.updateScale(action.data)
-        self.zoom_view.updateScale(action.data)
-        self.colorbar.updateScale(action.data)
+    def on_scale_actiongroup_triggered(self, action: QAction) -> None:
+        self.ui.image_view.updateScale(action.data)
+        self.ui.zoom_view.updateScale(action.data)
+        self.ui.colorbar.updateScale(action.data)
 
-    def on_cuts_actiongroup_triggered(self, action):
-        self.autoscale_button.setChecked(True)
+    def on_cuts_actiongroup_triggered(self, action: QAction) -> None:
+        self.ui.autoscale_button.setChecked(True)
         self.update_image_view()
 
-    def on_zoomwindow_actiongroup_triggered(self, action):
+    def on_zoomwindow_actiongroup_triggered(self, action: QAction) -> None:
         if self.zoomwindow_actiongroup.checkedAction().data == FollowMode.STAR:
             self.update_zoom_view()
 
     @Slot(int)
-    def on_frame_spinbox_valueChanged(self, i):
-        with QSignalBlocker(self.frame_slider):
-            self.frame_slider.setValue(i)
+    def on_frame_spinbox_valueChanged(self, i: int) -> None:
+        with QSignalBlocker(self.ui.frame_slider):
+            self.ui.frame_slider.setValue(i)
 
-        self.img = self.hdul[0].data[self.frame_spinbox.value() - 1, :, :]
+        self.img = self.hdul[0].data[self.ui.frame_spinbox.value() - 1, :, :]
 
         self.update_image_view()
 
     @Slot(int)
-    def on_frame_slider_valueChanged(self, i):
-        with QSignalBlocker(self.frame_spinbox):
-            self.frame_spinbox.setValue(i)
+    def on_frame_slider_valueChanged(self, value: int) -> None:
+        with QSignalBlocker(self.ui.frame_spinbox):
+            self.ui.frame_spinbox.setValue(value)
 
-        self.img = self.hdul[0].data[self.frame_spinbox.value() - 1, :, :]
+        self.img = self.hdul[0].data[self.ui.frame_spinbox.value() - 1, :, :]
 
         self.update_image_view()
 
     @Slot(bool)
-    def on_enter_manual_centering_action_triggered(self, checked=None):
+    def on_enter_manual_centering_action_triggered(self,
+                                                   checked: bool) -> None:
         self.enter_manual_centering(requested_by_user=True)
 
     @Slot(bool)
-    def on_exit_manual_centering_button_clicked(self, checked=None):
+    def on_centering_exit_button_clicked(self, checked: bool) -> None:
         self.exit_manual_centering(requested_by_user=True)
 
-    def enter_manual_centering(self, requested_by_user=False):
+    @Slot(bool)
+    def on_centering_abort_button_clicked(self, checked: bool) -> None:
+        self.action_send([
+            self.ui.centering_exit_button, self.ui.centering_abort_button
+        ], self.backend.sequencer_abort)
+
+    @Slot(bool)
+    def on_centering_volume_button_toggled(self, checked: bool) -> None:
+        if checked:
+            self.ui.centering_volume_button.setIcon(
+                QIcon(':/assets/icons/audio-volume-muted.svg'))
+            self.centering_timer.stop()
+        else:
+            self.ui.centering_volume_button.setIcon(
+                QIcon(':/assets/icons/audio-volume-high.svg'))
+            QTimer.singleShot(0, self.centering_notification)
+            self.centering_timer.start()
+
+    def centering_notification(self) -> None:
+        self.player.play()
+
+    def enter_manual_centering(self, requested_by_user: bool = False) -> None:
         # If KalAO ICS request centering while user activated centering mode, switch the flag
         if self.centering and not requested_by_user:
             self.centering_requested_by_user = False
+            self.backend.all_updated.connect(
+                self.all_updated, Qt.ConnectionType.UniqueConnection)
             return
 
         if not self.centering:
-            self.enter_manual_centering_action.setEnabled(False)
-            self.exit_manual_centering_button.setVisible(True)
+            self.ui.enter_manual_centering_action.setEnabled(False)
+            self.ui.centering_widget.setSizePolicy(
+                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
             self.wfs_fov.setVisible(True)
 
@@ -368,7 +470,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
             if not requested_by_user:
                 msgbox = KMessageBox(self)
-                msgbox.setIcon(QMessageBox.Information)
+                msgbox.setIcon(QMessageBox.Icon.Information)
                 msgbox.setText('<b>Manual centering needed!</b>')
                 msgbox.setInformativeText(
                     'Manual centering has been requested.\n\nClick on a star to center it.\n\nValidate using the "Validate Manual Centering" button.'
@@ -376,13 +478,24 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 msgbox.setModal(False)
                 msgbox.show()
 
+                self.ui.centering_volume_button.setChecked(False)
+
+                self.ui.centering_timeout_label.updateText(
+                    centering_timeout=np.nan)
+                self.backend.all_updated.connect(
+                    self.all_updated, Qt.ConnectionType.UniqueConnection)
+            else:
+                self.ui.centering_timeout_label.updateText(
+                    centering_timeout=np.nan)
+
             self.centering = True
             self.centering_requested_by_user = requested_by_user
 
-    def exit_manual_centering(self, requested_by_user=False):
+    def exit_manual_centering(self, requested_by_user: bool = False) -> None:
         if self.centering:
-            self.enter_manual_centering_action.setEnabled(True)
-            self.exit_manual_centering_button.setVisible(False)
+            self.ui.enter_manual_centering_action.setEnabled(True)
+            self.ui.centering_widget.setSizePolicy(
+                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Ignored)
 
             self.wfs_fov.setVisible(False)
 
@@ -401,12 +514,21 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
             # Update centering flag only if centering requested KalAO ICS and validation was by user
             if not self.centering_requested_by_user and requested_by_user:
-                self.action_send(self.exit_manual_centering_button,
-                                 self.backend.centering_manual_validate)
+                self.action_send([
+                    self.ui.centering_exit_button,
+                    self.ui.centering_abort_button
+                ], self.backend.centering_manual_validate)
+
+            self.ui.centering_volume_button.setChecked(True)
+
+            try:
+                self.backend.all_updated.disconnect(self.all_updated)
+            except RuntimeError:
+                pass
 
             self.centering = False
 
-    def hover_xyv_to_str_camera(self, x, y, v):
+    def hover_xyv_to_str_camera(self, x: float, y: float, v: float) -> None:
         if not np.isnan(x) and not np.isnan(y):
             x = int(x)
             y = int(y)
@@ -442,7 +564,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
             self.hovered.emit('')
 
-    def hover_xyv_to_str_zoom(self, x, y, v):
+    def hover_xyv_to_str_zoom(self, x: float, y: float, v: float) -> None:
         if not np.isnan(x) and not np.isnan(y):
             x = int(x)
             y = int(y)
@@ -453,7 +575,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         else:
             self.hovered.emit('')
 
-    def camera_clicked(self, x, y):
+    def camera_clicked(self, x: float, y: float) -> None:
         if not 0 <= x < self.img_width or not 0 <= y < self.img_height:
             return
 
@@ -471,7 +593,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.update_zoom_view()
 
-    def camera_dragged(self, x, y, dx, dy):
+    def camera_dragged(self, x: float, y: float, dx: float, dy: float) -> None:
         if not 0 <= x < self.img_width or not 0 <= y < self.img_height:
             return
 
@@ -480,7 +602,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.update_zoom_view()
 
-    def camera_scrolled(self, x, y, z):
+    def camera_scrolled(self, x: float, y: float, z: float) -> None:
         if not 0 <= x < self.img_width or not 0 <= y < self.img_height:
             return
 
@@ -502,7 +624,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.update_zoom_view()
 
-    def zoom_clicked(self, x, y):
+    def zoom_clicked(self, x: float, y: float) -> None:
         if self.zoomwindow_actiongroup.checkedAction(
         ).data != FollowMode.FIXED:
             return
@@ -515,7 +637,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.update_zoom_view()
 
-    def zoom_scrolled(self, x, y, z):
+    def zoom_scrolled(self, x: float, y: float, z: float) -> None:
         hw = self.zoom_half_width
         hh = self.zoom_half_height
 
@@ -549,7 +671,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.update_zoom_view()
 
-    def update_image(self, hdul):
+    def update_image(self, hdul: fits.HDUList) -> None:
         if hdul is None:
             return
 
@@ -559,41 +681,41 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             return
 
         elif len(hdul[0].data.shape) == 2:
-            self.frame_label.setEnabled(False)
+            self.ui.frame_label.setEnabled(False)
 
-            with QSignalBlocker(self.frame_spinbox):
-                self.frame_spinbox.setMaximum(1)
-                self.frame_spinbox.setValue(1)
-                self.frame_spinbox.setEnabled(False)
+            with QSignalBlocker(self.ui.frame_spinbox):
+                self.ui.frame_spinbox.setMaximum(1)
+                self.ui.frame_spinbox.setValue(1)
+                self.ui.frame_spinbox.setEnabled(False)
 
-            with QSignalBlocker(self.frame_slider):
-                self.frame_slider.setMaximum(1)
-                self.frame_slider.setValue(1)
-                self.frame_slider.setEnabled(False)
+            with QSignalBlocker(self.ui.frame_slider):
+                self.ui.frame_slider.setMaximum(1)
+                self.ui.frame_slider.setValue(1)
+                self.ui.frame_slider.setEnabled(False)
 
             self.img = hdul[0].data
 
         elif len(hdul[0].data.shape) == 3:
-            on_last = self.frame_spinbox.value() == self.frame_spinbox.maximum(
-            )
+            on_last = self.ui.frame_spinbox.value(
+            ) == self.ui.frame_spinbox.maximum()
 
-            self.frame_label.setEnabled(True)
+            self.ui.frame_label.setEnabled(True)
 
-            with QSignalBlocker(self.frame_spinbox):
-                self.frame_spinbox.setMaximum(hdul[0].data.shape[0])
-                self.frame_slider.setEnabled(True)
-
-                if on_last:
-                    self.frame_spinbox.setValue(hdul[0].data.shape[0])
-
-            with QSignalBlocker(self.frame_slider):
-                self.frame_slider.setMaximum(hdul[0].data.shape[0])
-                self.frame_slider.setEnabled(True)
+            with QSignalBlocker(self.ui.frame_spinbox):
+                self.ui.frame_spinbox.setMaximum(hdul[0].data.shape[0])
+                self.ui.frame_spinbox.setEnabled(True)
 
                 if on_last:
-                    self.frame_slider.setValue(hdul[0].data.shape[0])
+                    self.ui.frame_spinbox.setValue(hdul[0].data.shape[0])
 
-            self.img = hdul[0].data[self.frame_spinbox.value() - 1, :, :]
+            with QSignalBlocker(self.ui.frame_slider):
+                self.ui.frame_slider.setMaximum(hdul[0].data.shape[0])
+                self.ui.frame_slider.setEnabled(True)
+
+                if on_last:
+                    self.ui.frame_slider.setValue(hdul[0].data.shape[0])
+
+            self.img = hdul[0].data[self.ui.frame_spinbox.value() - 1, :, :]
 
         else:
             raise Exception('Unexpected shape for camera image')
@@ -667,12 +789,13 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.star_fwhm = self.stars[0].fwhm
 
         for item in self.stars_itemgroup.childItems():
-            self.image_view.scene().removeItem(item)
+            self.ui.image_view.scene().removeItem(item)
 
-        pen = QPen(Color.GREEN, 1.5, Qt.SolidLine, Qt.FlatCap, Qt.MiterJoin)
+        pen = QPen(Color.GREEN, 1.5, Qt.PenStyle.SolidLine,
+                   Qt.PenCapStyle.FlatCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
         for star in self.stars:
-            ellipse_item = self.image_view.scene().addEllipse(
+            ellipse_item = self.ui.image_view.scene().addEllipse(
                 star.x - star.fwhm_w / 2, star.y - star.fwhm_h / 2,
                 star.fwhm_w, star.fwhm_h, pen)
             ellipse_item.setTransformOriginPoint(QPointF(star.x, star.y))
@@ -695,7 +818,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.update_labels()
         self.update_ticks()
 
-    def update_image_view(self):
+    def update_image_view(self) -> None:
         if self.img is None:
             return
 
@@ -705,15 +828,16 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.saturation = self.img.max() / self.image_info['max']
 
-        self.image_view.setImage(self.img, img_min, img_max,
-                                 self.scale_actiongroup.checkedAction().data)
+        self.ui.image_view.setImage(
+            self.img, img_min, img_max,
+            self.scale_actiongroup.checkedAction().data)
 
-        self.colorbar.setTrueMinMax(self.img.min(), self.img.max())
-        self.colorbar.updateMinMax(img_min, img_max)
+        self.ui.colorbar.setTrueMinMax(self.img.min(), self.img.max())
+        self.ui.colorbar.updateMinMax(img_min, img_max)
 
         self.update_zoom_view()
 
-    def update_zoom_view(self):
+    def update_zoom_view(self) -> None:
         if self.zoomwindow_actiongroup.checkedAction(
         ).data == FollowMode.STAR and not np.isnan([self.star_x, self.star_y
                                                     ]).any():
@@ -725,14 +849,14 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         hw = self.zoom_half_width = self.img_width // self.zoom_level // 2
         hh = self.zoom_half_height = self.img_height // self.zoom_level // 2
 
-        with QSignalBlocker(self.x_spinbox):
-            self.x_spinbox.setValue(x - self.data_center_x)
+        with QSignalBlocker(self.ui.x_spinbox):
+            self.ui.x_spinbox.setValue(x - self.data_center_x)
 
-        with QSignalBlocker(self.y_spinbox):
-            self.y_spinbox.setValue(y - self.data_center_y)
+        with QSignalBlocker(self.ui.y_spinbox):
+            self.ui.y_spinbox.setValue(y - self.data_center_y)
 
-        with QSignalBlocker(self.zoom_spinbox):
-            self.zoom_spinbox.setValue(self.zoom_level)
+        with QSignalBlocker(self.ui.zoom_spinbox):
+            self.ui.zoom_spinbox.setValue(self.zoom_level)
             self.update_zoom_spinbox_suffix()
 
         x = round(x)
@@ -747,51 +871,53 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         offset_x = max(x - hw, 0)
         offset_y = max(y - hh, 0)
 
-        self.zoom_view.setImage(zoom, self.min_spinbox.value(),
-                                self.max_spinbox.value(),
-                                self.scale_actiongroup.checkedAction().data,
-                                view=QRectF(x - hw, y - hh, 2 * hw, 2 * hh),
-                                offset=QPointF(offset_x, offset_y))
+        self.ui.zoom_view.setImage(zoom, self.ui.min_spinbox.value(),
+                                   self.ui.max_spinbox.value(),
+                                   self.scale_actiongroup.checkedAction().data,
+                                   view=QRectF(x - hw, y - hh, 2 * hw, 2 * hh),
+                                   offset=QPointF(offset_x, offset_y))
 
-    def update_labels(self):
+    def update_labels(self) -> None:
         if self.timestamp is None:
-            self.timestamp_label.updateText(timestamp='--')
+            self.ui.timestamp_label.updateText(timestamp='--')
         else:
-            self.timestamp_label.updateText(
+            self.ui.timestamp_label.updateText(
                 timestamp=self.timestamp.strftime('%H:%M:%S %d-%m-%Y'))
 
-        self.star_x_label.updateText(
+        self.ui.star_x_label.updateText(
             x=(self.star_x - self.data_center_x) * self.axis_scaling,
             axis_unit=self.axis_unit,
             axis_precision=self.axis_precision + 1,
         )
 
-        self.star_y_label.updateText(
+        self.ui.star_y_label.updateText(
             y=(self.star_y - self.data_center_y) * self.axis_scaling,
             axis_unit=self.axis_unit,
             axis_precision=self.axis_precision + 1,
         )
 
-        self.star_fwhm_label.updateText(
+        self.ui.star_fwhm_label.updateText(
             fwhm=self.star_fwhm * self.axis_scaling,
             axis_unit=self.axis_unit,
             axis_precision=self.axis_precision + 1,
         )
 
-        self.star_peak_label.updateText(
+        self.ui.star_peak_label.updateText(
             peak=self.star_peak * self.data_scaling,
             data_unit=self.data_unit,
             data_precision=self.data_precision,
         )
 
         if self.saturation >= 1:
-            self.saturation_label.setText('Saturated !')
-            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+            self.ui.saturation_label.setText('Saturated !')
+            self.ui.saturation_label.setStyleSheet(
+                f'color: {Color.RED.name()};')
         else:
-            self.saturation_label.updateText(saturation=self.saturation * 100)
-            self.saturation_label.setStyleSheet('')
+            self.ui.saturation_label.updateText(saturation=self.saturation *
+                                                100)
+            self.ui.saturation_label.setStyleSheet('')
 
-    def update_ticks(self):
+    def update_ticks(self) -> None:
         ticks_x = []
         ticks_y = []
 
@@ -805,18 +931,18 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             tick_pos = y + self.data_center_y
             ticks_y.append((tick_pos, tick_label))
 
-        self.image_view.setTickParams(0, 5, 5, 10, ticks_x, ticks_y)
+        self.ui.image_view.setTickParams(0, 5, 5, 10, ticks_x, ticks_y)
 
-    def update_zoom_spinbox_suffix(self):
+    def update_zoom_spinbox_suffix(self) -> None:
         size_x = 2 * self.zoom_half_width * self.axis_scaling
         size_y = 2 * self.zoom_half_height * self.axis_scaling
-        self.zoom_spinbox.setSuffix(
+        self.ui.zoom_spinbox.setSuffix(
             f'x ({size_x:.{self.axis_precision}f}{self.axis_unit} x {size_y:.{self.axis_precision}f}{self.axis_unit})'
         )
 
     @Slot(int)
-    def on_onsky_checkbox_stateChanged(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
+    def on_onsky_checkbox_stateChanged(self, state: Qt.CheckState) -> None:
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
             self.axis_unit = '"'
             self.axis_precision = 1
             self.axis_scaling = config.Camera.plate_scale
@@ -828,83 +954,88 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.update_labels()
         self.update_zoom_spinbox_suffix()
 
-        self.x_spinbox.setScale(self.axis_scaling, self.axis_precision)
-        self.y_spinbox.setScale(self.axis_scaling, self.axis_precision)
-        self.x_spinbox.setSuffix(self.axis_unit)
-        self.y_spinbox.setSuffix(self.axis_unit)
+        self.ui.x_spinbox.setScale(self.axis_scaling, self.axis_precision)
+        self.ui.y_spinbox.setScale(self.axis_scaling, self.axis_precision)
+        self.ui.x_spinbox.setSuffix(self.axis_unit)
+        self.ui.y_spinbox.setSuffix(self.axis_unit)
 
         self.update_ticks()
 
-    def update_keywords_table(self, header):
-        self.model.update_data(header)
+    def update_keywords_table(self, header: fits.Header) -> None:
+        self.keywords_model.update_data(header)
 
     @Slot(bool)
-    def on_keywords_toolbutton_clicked(self, checked):
+    def on_keywords_toolbutton_clicked(self, checked: bool) -> None:
         if checked:
-            sizes = self.splitter.sizes()
+            sizes = self.ui.keywords_splitter.sizes()
 
-            self.keywords_toolbutton.setArrowType(Qt.DownArrow)
-            self.keywords_widget.setVisible(True)
+            self.ui.keywords_toolbutton.setArrowType(Qt.ArrowType.DownArrow)
+            self.ui.keywords_widget.setVisible(True)
             self.resize(self.size().grownBy(
                 QMargins(0, 0, 0, self.keywords_table_size)))
 
-            self.splitter.setSizes([
+            self.ui.keywords_splitter.setSizes([
                 sizes[0], sizes[1] + self.keywords_table_size
             ])
 
-            self.splitter.handle(1).setEnabled(True)
+            self.ui.keywords_splitter.handle(1).setEnabled(True)
         else:
-            sizes = self.splitter.sizes()
+            sizes = self.ui.keywords_splitter.sizes()
             self.keywords_table_size = sizes[
-                1] - self.keywords_button_widget.height()
+                1] - self.ui.keywords_button_widget.height()
 
-            self.keywords_toolbutton.setArrowType(Qt.RightArrow)
-            self.keywords_widget.setVisible(False)
+            self.ui.keywords_toolbutton.setArrowType(Qt.ArrowType.RightArrow)
+            self.ui.keywords_widget.setVisible(False)
 
             self.resize(self.size().grownBy(
                 QMargins(0, 0, 0, -self.keywords_table_size)))
-            self.splitter.setSizes([
-                sizes[0], self.keywords_button_widget.height()
+            self.ui.keywords_splitter.setSizes([
+                sizes[0], self.ui.keywords_button_widget.height()
             ])
 
-            self.splitter.handle(1).setEnabled(False)
+            self.ui.keywords_splitter.handle(1).setEnabled(False)
 
     @Slot(str)
-    def on_keywords_filter_lineedit_textEdited(self, text):
+    def on_keywords_filter_lineedit_textEdited(self, text: str) -> None:
         self.filter_keywords()
 
     @Slot(int)
-    def on_keywords_columns_combobox_currentIndexChanged(self, index):
+    def on_keywords_columns_combobox_currentIndexChanged(self,
+                                                         index: int) -> None:
         self.filter_keywords()
 
     @Slot(int)
-    def on_keywords_casesensitive_checkbox_stateChanged(self, state):
+    def on_keywords_casesensitive_checkbox_stateChanged(
+            self, state: Qt.CheckState) -> None:
         self.filter_keywords()
 
     def filter_keywords(self):
-        text = self.keywords_filter_lineedit.text()
+        text = self.ui.keywords_filter_lineedit.text()
 
         if text == '':
-            self.proxymodel.setFilterRegularExpression('')
+            self.keywords_proxymodel.setFilterRegularExpression('')
         else:
-            if self.keywords_casesensitive_checkbox.isChecked():
-                case_senstitivity = Qt.CaseSensitive
+            if self.ui.keywords_casesensitive_checkbox.isChecked():
+                case_senstitivity = Qt.CaseSensitivity.CaseSensitive
             else:
-                case_senstitivity = Qt.CaseInsensitive
+                case_senstitivity = Qt.CaseSensitivity.CaseInsensitive
 
-            self.proxymodel.setFilterKeyColumn(
-                self.keywords_columns_combobox.currentIndex() - 1)
-            self.proxymodel.setFilterCaseSensitivity(case_senstitivity)
-            self.proxymodel.setFilterFixedString(text)
+            self.keywords_proxymodel.setFilterKeyColumn(
+                self.ui.keywords_columns_combobox.currentIndex() - 1)
+            self.keywords_proxymodel.setFilterCaseSensitivity(
+                case_senstitivity)
+            self.keywords_proxymodel.setFilterFixedString(text)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         if self.file is None:
             self.backend.camera_image_updated.disconnect(
                 self.camera_image_updated)
-            event.accept()
 
-    def showEvent(self, event):
+        return super().closeEvent(event)
+
+    def showEvent(self, event: QShowEvent) -> None:
         if self.file is None:
             self.backend.camera_image_updated.connect(
-                self.camera_image_updated, Qt.UniqueConnection)
-        event.accept()
+                self.camera_image_updated, Qt.ConnectionType.UniqueConnection)
+
+        return super().showEvent(event)

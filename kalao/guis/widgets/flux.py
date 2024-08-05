@@ -1,14 +1,19 @@
+from typing import Any
+
 import numpy as np
 
 from PySide6.QtGui import Qt
+from PySide6.QtWidgets import QWidget
+
+from compiled.ui_flux import Ui_FluxWidget
 
 from kalao.utils import ktools
 
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import (BackendDataMixin, MinMaxMixin,
                                      SceneHoverMixin)
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KWidget
 
 import config
@@ -30,25 +35,28 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     img = None
     masked = False
 
-    def __init__(self, backend, parent=None):
+    def __init__(self, backend: AbstractBackend,
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
         self.mask = ktools.generate_flux_mask_from_subaps(
             config.WFS.masked_subaps)
 
-        loadUi('flux.ui', self)
+        self.ui = Ui_FluxWidget()
+        self.ui.setupUi(self)
+
         self.resize(600, 400)
 
-        self.init_minmax(self.flux_view)
+        self.init_minmax(self.ui.flux_view)
 
         self.update_labels()
-        self.change_colormap(Qt.Unchecked)
+        self.change_colormap(Qt.CheckState.Unchecked)
 
-        self.flux_view.hovered.connect(self.hover_xyv_to_str)
+        self.ui.flux_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_all_updated.connect(self.streams_all_updated)
 
-    def streams_all_updated(self, data):
+    def streams_all_updated(self, data: dict[str, Any]) -> None:
         img = self.consume_shm(data, config.SHM.FLUX)
 
         if img is not None:
@@ -67,7 +75,7 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         if flux_avg is not None or flux_brightest is not None:
             self.update_labels()
 
-    def update_view(self):
+    def update_view(self) -> None:
         if self.img is None:
             return
 
@@ -81,29 +89,31 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.saturation = img.max() / self.image_info['max']
 
-        self.flux_view.setImage(img, img_min, img_max)
+        self.ui.flux_view.setImage(img, img_min, img_max)
 
-    def update_labels(self):
-        self.flux_avg_label.updateText(
+    def update_labels(self) -> None:
+        self.ui.flux_avg_label.updateText(
             flux_avg=self.flux_avg * self.data_scaling, unit=self.data_unit)
-        self.flux_brightest_label.updateText(
+        self.ui.flux_brightest_label.updateText(
             flux_brightest=self.flux_brightest * self.data_scaling,
             unit=self.data_unit)
 
         if self.saturation >= 1:
-            self.saturation_label.setText('Saturated !')
-            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+            self.ui.saturation_label.setText('Saturated !')
+            self.ui.saturation_label.setStyleSheet(
+                f'color: {Color.RED.name()};')
         else:
-            self.saturation_label.updateText(saturation=self.saturation * 100)
-            self.saturation_label.setStyleSheet('')
+            self.ui.saturation_label.updateText(saturation=self.saturation *
+                                                100)
+            self.ui.saturation_label.setStyleSheet('')
 
-    def change_colormap(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
-            self.flux_view.updateColormap(
+    def change_colormap(self, state: Qt.CheckState) -> None:
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
+            self.ui.flux_view.updateColormap(
                 colormaps.GrayscaleSaturationTransparent())
         else:
-            self.flux_view.updateColormap(colormaps.BlackBodyTransparent())
+            self.ui.flux_view.updateColormap(colormaps.BlackBodyTransparent())
 
-    def change_mask(self, state):
-        self.masked = Qt.CheckState(state) == Qt.Checked
+    def change_mask(self, state: Qt.CheckState) -> None:
+        self.masked = Qt.CheckState(state) == Qt.CheckState.Checked
         self.update_view()

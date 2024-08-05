@@ -78,10 +78,6 @@ class CameraTakeImageFailed(SequencerException):
     """Failed to take image"""
 
 
-class CameraCancelFailed(SequencerException):
-    """Failed to cancel camera exposure"""
-
-
 class ADCConfigureFailed(SequencerException):
     """Failed to configure ADC"""
 

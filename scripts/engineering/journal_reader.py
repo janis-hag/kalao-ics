@@ -34,7 +34,7 @@ def format_entry(entry):
         style_message = ANSI.BOLD + ANSI.BRIGHT_YELLOW,
 
     print(
-        f'{style_timestamp}{entry.timestamp}{style_end} {style_origin}{entry.origin:>17s}{style_end}: {style_message}{entry.message}{style_end}'
+        f'{style_timestamp}{entry.timestamp.astimezone():%y-%m-%d %H:%M:%S}{style_end} {style_origin}{entry.origin:>17s}{style_end}: {style_message}{entry.message}{style_end}'
     )
 
 

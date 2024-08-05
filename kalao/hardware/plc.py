@@ -26,16 +26,13 @@ def connect(host: str = config.PLC.host,
             port: int = config.PLC.port) -> Client:
     beck = Client(f'opc.tcp://{host}:{port}')
     beck.connect()
-    # root = beck.get_root_node()
-    # objects = beck.get_objects_node()
-    # child = objects.get_children()
+
     return beck
 
 
-def autoconnect(fun: Callable) -> Any:
+def autoconnect(fun: Callable) -> Callable:
     @wraps(fun)
-    def wrapper(*args: tuple[Any, ...], beck: Client = None,
-                **kwargs: dict[str, Any]) -> Any:
+    def wrapper(*args: Any, beck: Client | None = None, **kwargs: Any) -> Any:
         ret = None
         exception = None
 
@@ -62,7 +59,7 @@ def autoconnect(fun: Callable) -> Any:
 
 
 def motor_send_execute(node: str, beck: Client) -> None:
-    motor_bExecute = beck.get_node(f"{node}.ctrl.bExecute")
+    motor_bExecute = beck.get_node(f'{node}.ctrl.bExecute')
 
     motor_bExecute.set_attribute(
         ua.AttributeIds.Value,
@@ -71,7 +68,7 @@ def motor_send_execute(node: str, beck: Client) -> None:
 
 
 def motor_send_init(node: str, beck: Client) -> None:
-    motor_nCommand = beck.get_node(f"{node}.ctrl.nCommand")
+    motor_nCommand = beck.get_node(f'{node}.ctrl.nCommand')
 
     motor_nCommand.set_attribute(
         ua.AttributeIds.Value,
@@ -84,7 +81,7 @@ def motor_send_init(node: str, beck: Client) -> None:
 
 
 def motor_send_stop(node: str, beck: Client) -> None:
-    motor_bStop = beck.get_node(f"{node}.ctrl.bStop")
+    motor_bStop = beck.get_node(f'{node}.ctrl.bStop')
 
     motor_bStop.set_attribute(
         ua.AttributeIds.Value,
@@ -96,8 +93,8 @@ def motor_send_stop(node: str, beck: Client) -> None:
 def motor_init(node: str, force_init: bool = True,
                beck: Client = None) -> ReturnCode:
     # Check if enabled, if not do enable
-    if not beck.get_node(f"{node}.stat.bEnabled").get_value() or force_init:
-        motor_bEnable = beck.get_node(f"{node}.ctrl.bEnable")
+    if not beck.get_node(f'{node}.stat.bEnabled').get_value() or force_init:
+        motor_bEnable = beck.get_node(f'{node}.ctrl.bEnable')
 
         motor_bEnable.set_attribute(
             ua.AttributeIds.Value,
@@ -105,11 +102,11 @@ def motor_init(node: str, force_init: bool = True,
                 ua.Variant(True,
                            motor_bEnable.get_data_type_as_variant_type())))
 
-        if not beck.get_node(f"{node}.stat.bEnabled").get_value():
+        if not beck.get_node(f'{node}.stat.bEnabled').get_value():
             return ReturnCode.HW_INIT_FAILED
 
     # Check if init, if not do init
-    if not beck.get_node(f"{node}.stat.bInitialised").get_value() or force_init:
+    if not beck.get_node(f'{node}.stat.bInitialised').get_value() or force_init:
         motor_send_init(node, beck=beck)
 
         time.sleep(config.PLC.init_poll_interval)
@@ -118,7 +115,7 @@ def motor_init(node: str, force_init: bool = True,
                 node, beck=beck) == PLCStatus.INITIALISING,
             config.PLC.init_poll_interval)
 
-        if not beck.get_node(f"{node}.stat.bInitialised").get_value():
+        if not beck.get_node(f'{node}.stat.bInitialised').get_value():
             return ReturnCode.HW_INIT_FAILED
 
     return ReturnCode.HW_INIT_SUCCESS
@@ -127,15 +124,15 @@ def motor_init(node: str, force_init: bool = True,
 @autoconnect
 def motor_move(node: str, position: float, velocity: float, blocking: bool,
                beck: Client = None) -> float:
-    motor_nCommand = beck.get_node(f"{node}.ctrl.nCommand")
+    motor_nCommand = beck.get_node(f'{node}.ctrl.nCommand')
 
     # Check if initialised
     init_result = motor_init(node, force_init=False, beck=beck)
-    if not init_result == 0:
-        return init_result
+    if init_result != 0:
+        return np.nan
 
     # Set velocity
-    motor_lrVelocity = beck.get_node(f"{node}.ctrl.lrVelocity")
+    motor_lrVelocity = beck.get_node(f'{node}.ctrl.lrVelocity')
 
     motor_lrVelocity.set_attribute(
         ua.AttributeIds.Value,
@@ -144,7 +141,7 @@ def motor_move(node: str, position: float, velocity: float, blocking: bool,
                        motor_lrVelocity.get_data_type_as_variant_type())))
 
     # Set target position
-    motor_lrPosition = beck.get_node(f"{node}.ctrl.lrPosition")
+    motor_lrPosition = beck.get_node(f'{node}.ctrl.lrPosition')
 
     motor_lrPosition.set_attribute(
         ua.AttributeIds.Value,
@@ -221,7 +218,7 @@ def get_error(node: str, beck: Client = None) -> tuple[int, str]:
 
 def wait_loop(message: str, test: Callable[[], bool],
               wait_time: float) -> None:
-    #rprint(f"{message} ", end='', flush=True)
+    #rprint(f'{message} ', end='', flush=True)
     while test():
         #rprint('.', end='', flush=True)
         time.sleep(wait_time)

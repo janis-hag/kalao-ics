@@ -1,3 +1,6 @@
+from functools import wraps
+from typing import Any, Callable
+
 import dbus
 
 from kalao import ippower, logger
@@ -12,32 +15,62 @@ import config
 # For documentation on the API
 
 
-def _connect_dbus_logind(
-) -> tuple[dbus.SystemBus | dbus.SessionBus, dbus.Interface]:
-    bus = dbus.SystemBus()
+class Logind:
+    def _connect_to_system_bus(self):
+        self._system_bus = dbus.SystemBus()
+        self._system_logind = self._system_bus.get_object(
+            'org.freedesktop.login1', '/org/freedesktop/login1')
+        self._system_manager = dbus.Interface(
+            self._system_logind, 'org.freedesktop.login1.Manager')
 
-    logind = bus.get_object('org.freedesktop.login1',
-                            '/org/freedesktop/login1')
+    def manager(self) -> dbus.Interface:
+        if not hasattr(self, '_system_manager'):
+            self._connect_to_system_bus()
 
-    manager = dbus.Interface(logind, 'org.freedesktop.login1.Manager')
+        return self._system_manager
 
-    return bus, manager
-
-
-def power_off() -> None:
-    bus, manager = _connect_dbus_logind()
-
-    manager.PowerOff(False)
-
-    bus.close()
+    def close(self) -> None:
+        if hasattr(self, '_system_bus'):
+            self._system_bus.close()
 
 
-def reboot() -> None:
-    bus, manager = _connect_dbus_logind()
+def autoconnect(fun: Callable) -> Callable:
+    @wraps(fun)
+    def wrapper(*args: Any, system: bool = False, logind: Logind | None,
+                **kwargs: Any) -> Any:
+        ret = None
+        exception = None
 
-    manager.Reboot(False)
+        if logind is None:
+            disconnect_on_exit = True
+            logind = Logind()
+        else:
+            disconnect_on_exit = False
 
-    bus.close()
+        try:
+            ret = fun(*args, logind=logind, **kwargs)
+        except Exception as e:
+            exception = e
+
+        if disconnect_on_exit:
+            logind.close()
+
+        if exception is not None:
+            raise exception
+
+        return ret
+
+    return wrapper
+
+
+@autoconnect
+def power_off(logind: Logind = None) -> None:
+    logind.manager().PowerOff(False)
+
+
+@autoconnect
+def reboot(logind: Logind = None) -> None:
+    logind.manager().Reboot(False)
 
 
 def shutdown_sequence() -> None:

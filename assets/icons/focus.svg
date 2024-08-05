@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 22 22"
+   version="1.1"
+   id="svg8"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs3051">
+    <style
+       type="text/css"
+       id="current-color-scheme">
+      .ColorScheme-Text {
+        color:#232629;
+      }
+      .ColorScheme-Accent {
+        color:#3daee9;
+      }
+      </style>
+  </defs>
+  <path
+     style="fill:currentColor;fill-opacity:1;stroke:none"
+     d="m 1,2 c 0.00546,7.1213977 3.3483188,13.255412 8,14.679688 V 15.636719 C 4.9081035,14.185965 2.0039651,8.5284048 2,2 Z m 19,0 c -0.0051,6.5269425 -2.909018,12.182384 -7,13.632812 v 1.0625 C 17.655512,15.269858 20.999485,9.1272681 21,2 Z"
+     class="ColorScheme-Text"
+     id="path4" />
+  <path
+     style="fill:currentColor;fill-opacity:1;stroke:none"
+     d="M 11 14 A 2.5 2.5 0 0 0 8.5 16.5 A 2.5 2.5 0 0 0 11 19 A 2.5 2.5 0 0 0 13.5 16.5 A 2.5 2.5 0 0 0 11 14 z M 11 15 A 1.5 1.5 0 0 1 12.5 16.5 A 1.5 1.5 0 0 1 11 18 A 1.5 1.5 0 0 1 9.5 16.5 A 1.5 1.5 0 0 1 11 15 z "
+     class="ColorScheme-Accent"
+     id="path6" />
+</svg>

@@ -89,10 +89,10 @@ def set_filter(filter: Filter) -> Filter:
             name_act = translate_to_filter_name(position_act)
 
             if position_act == position:
-                memory.set('filterwheel_filter_position', position)
+                memory.hset('filterwheel', 'filter_position', position)
                 return _return_filter(position, filter)
             else:
-                memory.set('filterwheel_filter_position', position_act)
+                memory.hset('filterwheel', 'filter_position', position_act)
                 logger.error(
                     'filterwheel',
                     f'Filter position expected {position} ({name}), but got {position_act} ({name_act})'
@@ -109,7 +109,7 @@ def set_filter(filter: Filter) -> Filter:
 
 def get_filter(type: Filter | type = str, from_memory: bool = False) -> Filter:
     if from_memory:
-        name = memory.get('filterwheel_filter_position', type=int)
+        name = memory.hget('filterwheel', 'filter_position', type=int)
 
         if name is not None:
             return _return_filter(name, type)
@@ -120,7 +120,7 @@ def get_filter(type: Filter | type = str, from_memory: bool = False) -> Filter:
                 com=config.FilterWheel.device_port)
             position = fw.get_position()
 
-            memory.set('filterwheel_filter_position', position)
+            memory.hset('filterwheel', 'filter_position', position)
             return _return_filter(position, type)
 
         except (thorlabs.serial.SerialException, ValueError) as e:

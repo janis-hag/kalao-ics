@@ -1,15 +1,20 @@
+from typing import Any
+
 import numpy as np
 
 from PySide6.QtGui import QPen, Qt
+from PySide6.QtWidgets import QWidget
+
+from compiled.ui_wfs import Ui_WFSWidget
 
 from kalao.utils import ktools
 from kalao.utils.image import LogScale
 
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import (BackendDataMixin, MinMaxMixin,
                                      SceneHoverMixin)
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KWidget
 
 import config
@@ -29,17 +34,20 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     saturation = np.nan
 
-    def __init__(self, backend, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, backend: AbstractBackend,
+                 parent: QWidget = None) -> None:
+        super().__init__(parent=parent)
 
         self.backend = backend
 
-        loadUi('wfs.ui', self)
+        self.ui = Ui_WFSWidget()
+        self.ui.setupUi(self)
+
         self.resize(600, 400)
 
-        self.init_minmax(self.wfs_view)
+        self.init_minmax(self.ui.wfs_view)
 
-        self.change_colormap(Qt.Unchecked)
+        self.change_colormap(Qt.CheckState.Unchecked)
 
         if self.image_info['shape'] == (128, 128):
             self.subaps_size = 10
@@ -60,10 +68,11 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             else:
                 color = Color.BLUE
 
-            pen = QPen(color, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+            pen = QPen(color, 1.5, Qt.PenStyle.SolidLine,
+                       Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
             pen.setCosmetic(True)
 
-            roi = self.wfs_view.scene().addRect(
+            roi = self.ui.wfs_view.scene().addRect(
                 self.subaps_pitch * k + self.subaps_offset,
                 self.subaps_pitch * j + self.subaps_offset, self.subaps_size,
                 self.subaps_size, pen)
@@ -74,22 +83,22 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         for i in list(range(140)):
             j, k = ktools.get_actuator_2d(i)
 
-            pen = QPen(Color.DARK_GREY, 1.5, Qt.SolidLine, Qt.SquareCap,
-                       Qt.MiterJoin)
+            pen = QPen(Color.DARK_GREY, 1.5, Qt.PenStyle.SolidLine,
+                       Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
             pen.setCosmetic(True)
 
-            roi = self.wfs_view.scene().addEllipse(
+            roi = self.ui.wfs_view.scene().addEllipse(
                 self.subaps_pitch * k + self.subaps_offset - 1,
                 self.subaps_pitch * j + self.subaps_offset - 1, 1, 1, pen)
             roi.setZValue(1)
             self.actuators[i] = roi
 
-        self.wfs_view.setView(self.image_info['shape'])
+        self.ui.wfs_view.setView(self.image_info['shape'])
 
-        self.wfs_view.hovered.connect(self.hover_xyv_to_str)
+        self.ui.wfs_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_all_updated.connect(self.streams_all_updated)
 
-    def streams_all_updated(self, data):
+    def streams_all_updated(self, data: dict[str, Any]) -> None:
         img = self.consume_shm(data, config.SHM.NUVU)
 
         if img is not None:
@@ -98,27 +107,30 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             # Do not check min due to bias subtraction
             self.saturation = img.max() / self.image_info['max']
 
-            self.wfs_view.setImage(img, img_min, img_max, scale=LogScale)
+            self.ui.wfs_view.setImage(img, img_min, img_max, scale=LogScale)
 
             self.update_labels()
 
-    def update_labels(self):
+    def update_labels(self) -> None:
         if self.saturation >= 1:
-            self.saturation_label.setText('Saturated !')
-            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+            self.ui.saturation_label.setText('Saturated !')
+            self.ui.saturation_label.setStyleSheet(
+                f'color: {Color.RED.name()};')
         else:
-            self.saturation_label.updateText(saturation=self.saturation * 100)
-            self.saturation_label.setStyleSheet('')
+            self.ui.saturation_label.updateText(saturation=self.saturation *
+                                                100)
+            self.ui.saturation_label.setStyleSheet('')
 
-    def change_colormap(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
-            self.wfs_view.updateColormap(
+    def change_colormap(self, state: Qt.CheckState) -> None:
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
+            self.ui.wfs_view.updateColormap(
                 colormaps.GrayscaleSaturationTransparent())
         else:
-            self.wfs_view.updateColormap(colormaps.BlackBody())
+            self.ui.wfs_view.updateColormap(colormaps.BlackBody())
 
-    def hover_xyv_to_str(self, x, y, v):
-        pen = QPen(Color.GREEN, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+    def hover_xyv_to_str(self, x: float, y: float, v: float) -> None:
+        pen = QPen(Color.GREEN, 1.5, Qt.PenStyle.SolidLine,
+                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
 
         if not np.isnan(x) and not np.isnan(y):
@@ -166,7 +178,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.reset_actuator_highlight()
             self.hovered.emit('')
 
-    def reset_subaperture_highlight(self):
+    def reset_subaperture_highlight(self) -> None:
         if self.subap_current is not None:
             self.subapertures[self.subap_current].setPen(
                 self.subap_previous_pen)
@@ -174,7 +186,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.subap_current = None
             self.subap_previous_pen = None
 
-    def reset_actuator_highlight(self):
+    def reset_actuator_highlight(self) -> None:
         if self.act_current is not None:
             self.actuators[self.act_current].setPen(self.act_previous_pen)
 

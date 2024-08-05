@@ -1,6 +1,6 @@
+import functools
 import pickle
-import traceback
-from functools import partial
+from typing import Any
 
 from PySide6.QtCore import QByteArray, QEventLoop, QUrl
 from PySide6.QtNetwork import (QNetworkAccessManager, QNetworkReply,
@@ -18,20 +18,25 @@ class MainBackend(AbstractBackend):
     encoder = KalAOJSONEncoder()
     decoder = KalAOJSONDecoder()
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def __getattr__(self, path):
-        return partial(self.forward, path)
+        for key, item in sorted(vars(AbstractBackend).items()):
+            if callable(item) and not key.startswith('_') and not key.endswith(
+                    '_updated'):
+                func = functools.partial(self._forward, key)
+                func.__name__ = key
 
-    def forward(self, path, **kwargs):
+                self.__dict__[key] = func
+
+    def _forward(self, path: str, **kwargs: Any) -> Any:
         url = name_to_url(path)
 
         request = QNetworkRequest()
         request.setUrl(
-            QUrl(
-                f'http://{config.GUI.http_host}:{config.GUI.http_port}{url}?response_type={config.GUI.http_dataformat}'
-            ))
+            QUrl(f'http://{config.GUI.http_host}:{config.GUI.http_port}{url}'))
+        request.setRawHeader(b'Accept', config.GUI.http_dataformat.encode())
+        request.setTransferTimeout(int(config.GUI.http_request_timeout * 1000))
 
         loop = QEventLoop()
         manager = QNetworkAccessManager()
@@ -40,30 +45,27 @@ class MainBackend(AbstractBackend):
         if len(kwargs) == 0:
             reply = manager.get(request)
         else:
-            request.setHeader(QNetworkRequest.ContentTypeHeader,
+            request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader,
                               'application/json')
-            reply = manager.post(request,
-                                 QByteArray(self.encoder.encode(kwargs)))
+            reply = manager.post(
+                request, QByteArray(self.encoder.encode(kwargs).encode()))
 
-        loop.exec(QEventLoop.ExcludeUserInputEvents)
+        # loop.exec(QEventLoop.ExcludeUserInputEvents)
+        loop.exec()
 
-        if reply.error() != QNetworkReply.NoError:
+        if reply.error() != QNetworkReply.NetworkError.NoError:
             rprint(f'[ERROR] {reply.errorString()}.')
-            return None
+            raise Exception(f'[ERROR] {reply.errorString()}.')
 
-        try:
-            data = reply.readAll()
-            reply_type = reply.header(QNetworkRequest.ContentTypeHeader)
-            if reply_type == 'application/octet-stream':
-                ret = pickle.loads(data)
-            elif reply_type == 'application/json':
-                ret = self.decoder.decode(data.data().decode('utf-8'))
-            else:
-                raise Exception(f'Unsupported MIME type {reply_type}')
-        except Exception as e:
-            rprint(f'[ERROR] An error occurred during data loading of {url}.')
-            rprint(''.join(traceback.format_exception(e)))
-            return None
+        data = reply.readAll()
+        reply_type = reply.header(
+            QNetworkRequest.KnownHeaders.ContentTypeHeader)
+        if reply_type == 'application/octet-stream':
+            ret = pickle.loads(data.data())
+        elif reply_type == 'application/json':
+            ret = self.decoder.decode(data.data().decode('utf-8'))
+        else:
+            raise Exception(f'Unsupported MIME type {reply_type}')
 
         signal = path + '_updated'
 

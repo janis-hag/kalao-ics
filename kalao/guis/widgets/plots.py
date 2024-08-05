@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -7,14 +8,16 @@ from PySide6.QtCharts import QChartView, QDateTimeAxis, QLineSeries, QValueAxis
 from PySide6.QtCore import (QDateTime, QEvent, QObject, QPointF, QTimer,
                             Signal, Slot)
 from PySide6.QtGui import QPen, Qt
-from PySide6.QtWidgets import QMessageBox, QTreeWidgetItem
+from PySide6.QtWidgets import QMessageBox, QTreeWidgetItem, QWidget
+
+from compiled.ui_plots import Ui_PlotsWidget
 
 from kalao import database
 from kalao.utils import kstring, ktime
 
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color, ColorPalette
 from kalao.guis.utils.mixins import BackendActionMixin
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KMessageBox, KWidget
 
 import config
@@ -25,20 +28,23 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
     activeToolTip = None
 
-    def __init__(self, backend, parent=None):
+    def __init__(self, backend: AbstractBackend,
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
 
-        loadUi('plots.ui', self)
+        self.ui = Ui_PlotsWidget()
+        self.ui.setupUi(self)
+
         self.resize(600, 400)
 
         self.groups = {}
         self.items = {}
 
         for collection_name, item_list in [('monitoring',
-                                            self.monitoring_treeview),
-                                           ('obs', self.obs_treeview)]:
+                                            self.ui.monitoring_treeview),
+                                           ('obs', self.ui.obs_treeview)]:
             for k, v in sorted(
                     database.definitions[collection_name]['metadata'].items(),
                     key=lambda t:
@@ -47,8 +53,9 @@ class PlotsWidget(KWidget, BackendActionMixin):
                     continue
 
                 item = QTreeWidgetItem([v['short']])
-                item.setCheckState(0, Qt.Unchecked)
-                item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+                item.setCheckState(0, Qt.CheckState.Unchecked)
+                item.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                              Qt.ItemFlag.ItemIsEnabled)
                 item.setToolTip(0, v['long'])
                 item.key = k
 
@@ -61,29 +68,28 @@ class PlotsWidget(KWidget, BackendActionMixin):
                         group
                     ])
                     item_list.addTopLevelItem(group_item)
-                    group_item.setFlags(Qt.ItemIsUserCheckable |
-                                        Qt.ItemIsEnabled |
-                                        Qt.ItemIsAutoTristate)
+                    group_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                                        Qt.ItemFlag.ItemIsEnabled |
+                                        Qt.ItemFlag.ItemIsAutoTristate)
                     group_item.setExpanded(True)
                     group_item.key = group
+                    group_item.addChild(item)
                 else:
-                    group_item = self.groups[group_key]
-
-                group_item.addChild(item)
+                    self.groups[group_key].addChild(item)
 
                 self.items[f'{collection_name}/{k}'] = item
             item_list.installEventFilter(self)
 
         # Create Chart and set General Chart setting
-        chart = self.plots_view.chart()
+        chart = self.ui.plots_view.chart()
 
         # X Axis Settings
         self.axis_x = QDateTimeAxis()
         self.axis_x.setTickCount(13)
         self.axis_x.setFormat('HH:mm')
-        self.axis_x.setRange(self.since_datetimeedit.dateTime(),
-                             self.until_datetimeedit.dateTime())
-        chart.addAxis(self.axis_x, Qt.AlignBottom)
+        self.axis_x.setRange(self.ui.since_datetimeedit.dateTime(),
+                             self.ui.until_datetimeedit.dateTime())
+        chart.addAxis(self.axis_x, Qt.AlignmentFlag.AlignBottom)
 
         self.axis_x.rangeChanged.connect(self.x_range_changed)
 
@@ -91,23 +97,22 @@ class PlotsWidget(KWidget, BackendActionMixin):
         self.axis_y = QValueAxis()
         self.axis_y.setTickCount(20)
         self.axis_y.setRange(-1, 1)
-        chart.addAxis(self.axis_y, Qt.AlignLeft)
+        chart.addAxis(self.axis_y, Qt.AlignmentFlag.AlignLeft)
 
         self.axis_y.rangeChanged.connect(self.y_range_changed)
 
-        #chart.legend().hide()
-
         chart.hovered.connect(self.hover_xy_to_str)
 
-        self.plots_view.setRubberBand(QChartView.RectangleRubberBand)
+        self.ui.plots_view.setRubberBand(
+            QChartView.RubberBand.RectangleRubberBand)
 
         self.autoupdate_timer = QTimer(parent=self)
 
-        self.on_tonight_button_clicked(None)
+        self.on_tonight_button_clicked(False)
         self.on_autoupdate_database_button_toggled(
-            self.autoupdate_database_button.isChecked())
+            self.ui.autoupdate_database_button.isChecked())
 
-    def get_display_name(self, metadata):
+    def get_display_name(self, metadata: dict) -> str:
         unit = metadata.get('unit')
         if unit is None or unit == '':
             unit = ' [-]'
@@ -117,95 +122,98 @@ class PlotsWidget(KWidget, BackendActionMixin):
         return f'{metadata["short"]}{unit}'
 
     @Slot(bool)
-    def on_reset_all_button_clicked(self, checked):
-        for item in self.monitoring_treeview.findItems(
-                '', Qt.MatchContains | Qt.MatchRecursive):
-            item.setCheckState(0, Qt.Unchecked)
+    def on_clear_all_button_clicked(self, checked: bool) -> None:
+        for item in self.ui.monitoring_treeview.findItems(
+                '', Qt.MatchFlag.MatchContains | Qt.MatchFlag.MatchRecursive):
+            item.setCheckState(0, Qt.CheckState.Unchecked)
 
-        for item in self.obs_treeview.findItems(
-                '', Qt.MatchContains | Qt.MatchRecursive):
-            item.setCheckState(0, Qt.Unchecked)
-
-    @Slot(QDateTime)
-    def on_since_datetimeedit_dateTimeChanged(self, datetime):
-        self.until_datetimeedit.setMinimumDateTime(datetime)
-
-        self.axis_x.setRange(self.since_datetimeedit.dateTime(),
-                             self.until_datetimeedit.dateTime())
+        for item in self.ui.obs_treeview.findItems(
+                '', Qt.MatchFlag.MatchContains | Qt.MatchFlag.MatchRecursive):
+            item.setCheckState(0, Qt.CheckState.Unchecked)
 
     @Slot(QDateTime)
-    def on_until_datetimeedit_dateTimeChanged(self, datetime):
-        self.since_datetimeedit.setMaximumDateTime(datetime)
+    def on_since_datetimeedit_dateTimeChanged(self,
+                                              datetime: QDateTime) -> None:
+        self.ui.until_datetimeedit.setMinimumDateTime(datetime)
 
-        self.axis_x.setRange(self.since_datetimeedit.dateTime(),
-                             self.until_datetimeedit.dateTime())
+        self.axis_x.setRange(self.ui.since_datetimeedit.dateTime(),
+                             self.ui.until_datetimeedit.dateTime())
+
+    @Slot(QDateTime)
+    def on_until_datetimeedit_dateTimeChanged(self,
+                                              datetime: QDateTime) -> None:
+        self.ui.since_datetimeedit.setMaximumDateTime(datetime)
+
+        self.axis_x.setRange(self.ui.since_datetimeedit.dateTime(),
+                             self.ui.until_datetimeedit.dateTime())
 
     @Slot(float)
-    def on_min_spinbox_valueChanged(self, d):
-        self.max_spinbox.setMinimum(d)
+    def on_min_spinbox_valueChanged(self, d: float) -> None:
+        self.ui.max_spinbox.setMinimum(d)
         self.axis_y.setMin(d)
 
     @Slot(float)
-    def on_max_spinbox_valueChanged(self, d):
-        self.min_spinbox.setMaximum(d)
+    def on_max_spinbox_valueChanged(self, d: float) -> None:
+        self.ui.min_spinbox.setMaximum(d)
         self.axis_y.setMax(d)
 
     @Slot(bool)
-    def on_last_5minutes_button_clicked(self, checked):
+    def on_last_5minutes_button_clicked(self, checked: bool) -> None:
         until = QDateTime.currentDateTime()
         since = until.addSecs(-300)
 
-        self.since_datetimeedit.setDateTime(since)
-        self.until_datetimeedit.setDateTime(until)
+        self.ui.since_datetimeedit.setDateTime(since)
+        self.ui.until_datetimeedit.setDateTime(until)
 
     @Slot(bool)
-    def on_last_hour_button_clicked(self, checked):
+    def on_last_hour_button_clicked(self, checked: bool) -> None:
         until = QDateTime.currentDateTime()
         since = until.addSecs(-3600)
 
-        self.since_datetimeedit.setDateTime(since)
-        self.until_datetimeedit.setDateTime(until)
+        self.ui.since_datetimeedit.setDateTime(since)
+        self.ui.until_datetimeedit.setDateTime(until)
 
     @Slot(bool)
-    def on_last_day_button_clicked(self, checked):
+    def on_last_day_button_clicked(self, checked: bool) -> None:
         until = QDateTime.currentDateTime()
         since = until.addSecs(-86400)
 
-        self.since_datetimeedit.setDateTime(since)
-        self.until_datetimeedit.setDateTime(until)
+        self.ui.since_datetimeedit.setDateTime(since)
+        self.ui.until_datetimeedit.setDateTime(until)
 
     @Slot(bool)
-    def on_last_week_button_clicked(self, checked):
+    def on_last_week_button_clicked(self, checked: bool) -> None:
         until = QDateTime.currentDateTime()
-        since = until.addSecs(-604800)
+        since = until.addSecs(-86400 * 7)
 
-        self.since_datetimeedit.setDateTime(since)
-        self.until_datetimeedit.setDateTime(until)
+        self.ui.since_datetimeedit.setDateTime(since)
+        self.ui.until_datetimeedit.setDateTime(until)
 
     @Slot(bool)
-    def on_last_month_button_clicked(self, checked):
+    def on_last_month_button_clicked(self, checked: bool) -> None:
         until = QDateTime.currentDateTime()
-        since = until.addSecs(-18144000)
+        since = until.addSecs(-86400 * 30)
 
-        self.since_datetimeedit.setDateTime(since)
-        self.until_datetimeedit.setDateTime(until)
+        self.ui.since_datetimeedit.setDateTime(since)
+        self.ui.until_datetimeedit.setDateTime(until)
 
     @Slot(bool)
-    def on_tonight_button_clicked(self, checked):
+    def on_tonight_button_clicked(self, checked: bool) -> None:
         start_of_night = ktime.get_start_of_night(datetime.now(timezone.utc))
 
         since = QDateTime.fromSecsSinceEpoch(int(start_of_night.timestamp()))
         until = since.addSecs(86400)
 
-        self.since_datetimeedit.setDateTime(since)
-        self.until_datetimeedit.setDateTime(until)
+        self.ui.since_datetimeedit.setDateTime(since)
+        self.ui.until_datetimeedit.setDateTime(until)
 
     @Slot(int)
-    def on_autoupdate_checkbox_stateChanged(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
+    def on_autoupdate_checkbox_stateChanged(self,
+                                            state: Qt.CheckState) -> None:
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
             self.autoupdate_df = None
 
-            self.plot_button.setEnabledStack(False, 'autoupdate')
+            self.ui.plot_button.setEnabledStack(False, 'autoupdate')
 
             self.autoupdate_timer.timeout.connect(
                 self.on_autoupdate_timer_timeout)
@@ -213,44 +221,47 @@ class PlotsWidget(KWidget, BackendActionMixin):
             self.on_autoupdate_timer_timeout()
             self.autoupdate_timer.start()
         else:
-            self.plot_button.setEnabledStack(True, 'autoupdate')
+            self.ui.plot_button.setEnabledStack(True, 'autoupdate')
 
             self.autoupdate_timer.stop()
 
     @Slot(bool)
-    def on_autoupdate_database_button_toggled(self, checked):
+    def on_autoupdate_database_button_toggled(self, checked: bool) -> None:
         if checked:
             self.autoupdate_timer.setInterval(
                 int(1000 * config.Monitoring.update_interval))
-            self.autoupdate_refresh_rate_spinbox.setEnabled(False)
+            self.ui.autoupdate_refresh_rate_spinbox.setEnabled(False)
         else:
             self.autoupdate_timer.setInterval(
-                int(1000 * self.autoupdate_refresh_rate_spinbox.value()))
-            self.autoupdate_refresh_rate_spinbox.setEnabled(True)
+                int(1000 * self.ui.autoupdate_refresh_rate_spinbox.value()))
+            self.ui.autoupdate_refresh_rate_spinbox.setEnabled(True)
 
     @Slot(float)
-    def on_autoupdate_refresh_rate_spinbox_valueChanged(self, d):
+    def on_autoupdate_refresh_rate_spinbox_valueChanged(self,
+                                                        d: float) -> None:
         self.autoupdate_timer.setInterval(int(1000 * d))
 
-    def on_autoupdate_timer_timeout(self):
-        time_delta = self.until_datetimeedit.dateTime().msecsTo(
-            self.since_datetimeedit.dateTime())
+    def on_autoupdate_timer_timeout(self) -> None:
+        time_delta = self.ui.until_datetimeedit.dateTime().msecsTo(
+            self.ui.since_datetimeedit.dateTime())
 
         now = QDateTime.currentDateTime()
         prev = now.addMSecs(time_delta)
 
-        self.until_datetimeedit.setDateTime(now)
-        self.since_datetimeedit.setDateTime(prev)
+        self.ui.until_datetimeedit.setDateTime(now)
+        self.ui.since_datetimeedit.setDateTime(prev)
 
-        if self.autoupdate_database_button.isChecked():
-            self.on_plot_button_clicked(None)
+        if self.ui.autoupdate_database_button.isChecked():
+            self.on_plot_button_clicked(False)
         else:
             data = self.action_send([], self.backend.plots_data_live)
 
             monitoring_keys = []
-            for item in self.monitoring_treeview.findItems(
-                    '', Qt.MatchContains | Qt.MatchRecursive):
-                if item.checkState(0) == Qt.Checked and item.childCount() == 0:
+            for item in self.ui.monitoring_treeview.findItems(
+                    '',
+                    Qt.MatchFlag.MatchContains | Qt.MatchFlag.MatchRecursive):
+                if item.checkState(
+                        0) == Qt.CheckState.Checked and item.childCount() == 0:
                     monitoring_keys.append(item.key)
 
             timestamp = data['timestamp']
@@ -266,48 +277,50 @@ class PlotsWidget(KWidget, BackendActionMixin):
             self.plot_data({'monitoring': self.autoupdate_df[monitoring_keys]})
 
     @Slot(bool)
-    def on_plot_button_clicked(self, checked):
+    def on_plot_button_clicked(self, checked: bool) -> None:
         monitoring_keys = []
         obs_keys = []
 
-        for item in self.monitoring_treeview.findItems(
-                '', Qt.MatchContains | Qt.MatchRecursive):
-            if item.checkState(0) == Qt.Checked and item.childCount() == 0:
+        for item in self.ui.monitoring_treeview.findItems(
+                '', Qt.MatchFlag.MatchContains | Qt.MatchFlag.MatchRecursive):
+            if item.checkState(
+                    0) == Qt.CheckState.Checked and item.childCount() == 0:
                 monitoring_keys.append(item.key)
 
-        for item in self.obs_treeview.findItems(
-                '', Qt.MatchContains | Qt.MatchRecursive):
-            if item.checkState(0) == Qt.Checked and item.childCount() == 0:
+        for item in self.ui.obs_treeview.findItems(
+                '', Qt.MatchFlag.MatchContains | Qt.MatchFlag.MatchRecursive):
+            if item.checkState(
+                    0) == Qt.CheckState.Checked and item.childCount() == 0:
                 obs_keys.append(item.key)
 
         series_to_draw = len(monitoring_keys) + len(obs_keys)
 
         if series_to_draw == 0 and not self.autoupdate_timer.isActive():
             msgbox = KMessageBox(self)
-            msgbox.setIcon(QMessageBox.Critical)
+            msgbox.setIcon(QMessageBox.Icon.Critical)
             msgbox.setText('<b>No series selected!</b>')
             msgbox.setInformativeText('Please select at least one series.')
             msgbox.setModal(True)
             msgbox.show()
             return
 
-        since = self.since_datetimeedit.dateTime().toUTC().toPython().replace(
-            tzinfo=timezone.utc)
-        until = self.until_datetimeedit.dateTime().toUTC().toPython().replace(
-            tzinfo=timezone.utc)
+        since = self.ui.since_datetimeedit.dateTime().toUTC().toPython(
+        ).replace(tzinfo=timezone.utc)
+        until = self.ui.until_datetimeedit.dateTime().toUTC().toPython(
+        ).replace(tzinfo=timezone.utc)
 
         # Gather plots data
 
-        data = self.action_send(self.plot_button, self.backend.plots_data_db,
-                                since=since, until=until,
-                                monitoring_keys=monitoring_keys,
+        data = self.action_send(self.ui.plot_button,
+                                self.backend.plots_data_db, since=since,
+                                until=until, monitoring_keys=monitoring_keys,
                                 obs_keys=obs_keys)
 
         # Display plots
         self.plot_data(data)
 
-    def plot_data(self, data):
-        chart = self.plots_view.chart()
+    def plot_data(self, data: dict[str, Any]) -> None:
+        chart = self.ui.plots_view.chart()
 
         chart.removeAllSeries()
         self.series = {}
@@ -319,7 +332,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
 
         no_data = True
 
-        self.plots_view.resetHLines()
+        self.ui.plots_view.resetHLines()
 
         for collection_name, collection in data.items():
             if collection.empty:
@@ -335,8 +348,9 @@ class PlotsWidget(KWidget, BackendActionMixin):
                 metadata = database.definitions[collection_name]['metadata'][
                     series_name]
 
-                pen = QPen(ColorPalette[color_index], 1.25, Qt.SolidLine,
-                           Qt.SquareCap, Qt.MiterJoin)
+                pen = QPen(ColorPalette[color_index], 1.25,
+                           Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap,
+                           Qt.PenJoinStyle.MiterJoin)
 
                 series = self.series[series_name] = QLineSeries()
                 series.setName(self.get_display_name(metadata))
@@ -357,15 +371,15 @@ class PlotsWidget(KWidget, BackendActionMixin):
                     warn_max = warn_range[1]
 
                     if not np.isnan(error_min):
-                        self.plots_view.addHLine(error_min, Color.RED)
+                        self.ui.plots_view.addHLine(error_min, Color.RED)
                     if not np.isnan(error_max):
-                        self.plots_view.addHLine(error_max, Color.RED)
+                        self.ui.plots_view.addHLine(error_max, Color.RED)
                     if not np.isnan(warn_min):
-                        self.plots_view.addHLine(warn_min, Color.ORANGE)
+                        self.ui.plots_view.addHLine(warn_min, Color.ORANGE)
                     if not np.isnan(warn_max):
-                        self.plots_view.addHLine(warn_max, Color.ORANGE)
+                        self.ui.plots_view.addHLine(warn_max, Color.ORANGE)
                 else:
-                    self.plots_view.resetHLines()
+                    self.ui.plots_view.resetHLines()
 
                 for t, v in series_values.items():
                     timestamp_msec = int(t.timestamp() * 1000)
@@ -405,9 +419,9 @@ class PlotsWidget(KWidget, BackendActionMixin):
                 series.attachAxis(self.axis_y)
 
                 series.hovered.connect(
-                    lambda point, state, collection_name=collection_name,
-                    series_name=series_name: self.pointHoveredEvent(
-                        point, state, collection_name, series_name))
+                    lambda point, state, _collection_name=collection_name,
+                    _series_name=series_name: self.pointHoveredEvent(
+                        point, state, _collection_name, _series_name))
 
                 color_index = (color_index+1) % len(ColorPalette)
 
@@ -419,15 +433,15 @@ class PlotsWidget(KWidget, BackendActionMixin):
             plot_min -= 0.05 * delta
             plot_max += 0.05 * delta
 
-        self.axis_x.setRange(self.since_datetimeedit.dateTime().toUTC(),
-                             self.until_datetimeedit.dateTime().toUTC())
+        self.axis_x.setRange(self.ui.since_datetimeedit.dateTime().toUTC(),
+                             self.ui.until_datetimeedit.dateTime().toUTC())
         self.axis_y.setRange(plot_min, plot_max)
         self.axis_y.setTickCount(20)
         self.axis_y.applyNiceNumbers()
 
         if no_data and not self.autoupdate_timer.isActive():
             msgbox = KMessageBox(self)
-            msgbox.setIcon(QMessageBox.Critical)
+            msgbox.setIcon(QMessageBox.Icon.Critical)
             msgbox.setText('<b>No data!</b>')
             msgbox.setInformativeText(
                 'No data was found for the requested period of time and the requested series.'
@@ -435,9 +449,9 @@ class PlotsWidget(KWidget, BackendActionMixin):
             msgbox.setModal(True)
             msgbox.show()
 
-    def x_range_changed(self, min, max):
-        self.since_datetimeedit.setDateTime(min)
-        self.until_datetimeedit.setDateTime(max)
+    def x_range_changed(self, min: float, max: float) -> None:
+        self.ui.since_datetimeedit.setDateTime(min)
+        self.ui.until_datetimeedit.setDateTime(max)
 
         time_delta = min.secsTo(max)
 
@@ -450,11 +464,11 @@ class PlotsWidget(KWidget, BackendActionMixin):
         else:
             self.axis_x.setFormat('HH:mm:ss')
 
-    def y_range_changed(self, min, max):
-        self.min_spinbox.setValue(min)
-        self.max_spinbox.setValue(max)
+    def y_range_changed(self, min: float, max: float) -> None:
+        self.ui.min_spinbox.setValue(min)
+        self.ui.max_spinbox.setValue(max)
 
-    def hover_xy_to_str(self, series, x, y):
+    def hover_xy_to_str(self, series: QLineSeries, x: float, y: float) -> None:
         if not np.isnan(x) and not np.isnan(y):
             x = QDateTime.fromMSecsSinceEpoch(
                 int(x)).toString('HH:mm:ss dd-MM-yy')
@@ -477,24 +491,27 @@ class PlotsWidget(KWidget, BackendActionMixin):
         else:
             self.hovered.emit('')
 
-    def pointHoveredEvent(self, point, state, collection, series):
+    def pointHoveredEvent(self, point: QPointF, state: bool, collection: str,
+                          series: QLineSeries) -> None:
         self.current_collection = collection
         self.current_series = series
 
-        self.plots_view.chart().pointHoveredEvent(point, state,
-                                                  self.series[series])
+        self.ui.plots_view.chart().pointHoveredEvent(point, state,
+                                                     self.series[series])
 
     @Slot(QTreeWidgetItem, int)
-    def on_monitoring_treeview_itemEntered(self, item, column):
+    def on_monitoring_treeview_itemEntered(self, item: QTreeWidgetItem,
+                                           column: int) -> None:
         self.hovered.emit(item.toolTip(0))
 
     @Slot(QTreeWidgetItem, int)
-    def on_obs_treeview_itemEntered(self, item, column):
+    def on_obs_treeview_itemEntered(self, item: QTreeWidgetItem,
+                                    column: int) -> None:
         self.hovered.emit(item.toolTip(0))
 
-    def eventFilter(self, source, event):
+    def eventFilter(self, source: QObject, event: QEvent) -> bool:
         if isinstance(source,
-                      QTreeWidgetItem) and event.type() == QEvent.Leave:
+                      QTreeWidgetItem) and event.type() == QEvent.Type.Leave:
             self.hovered.emit('')
 
         return QObject.eventFilter(self, source, event)

@@ -9,7 +9,6 @@ camera.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
 import dataclasses
-import json
 from pathlib import Path
 from typing import Any
 
@@ -21,17 +20,17 @@ import requests.exceptions
 from kalao import logger
 from kalao.utils import fits_handling
 
-from kalao.definitions.dataclasses import ROI
+from kalao.definitions.dataclasses import ROI, Template
 from kalao.definitions.enums import (CameraServerStatus, CameraStatus,
-                                     ObservationType, ReturnCode)
+                                     ReturnCode, TemplateID)
 
 import config
 
 
-def take_fake(filepath: str | Path | None = None,
-              nbframes: int | None = None) -> Path | None:
+def get_test_image(filepath: str | Path = None, exptime: float | None = None,
+                   nbframes: int | None = None) -> Path | None:
     if filepath is None:
-        filepath = Path('/tmp/camera_fake.fits')
+        filepath = Path('/tmp/camera_test.fits')
     elif not isinstance(filepath, Path):
         filepath = Path(filepath)
 
@@ -40,9 +39,11 @@ def take_fake(filepath: str | Path | None = None,
 
     params = {
         'filepath': filepath,
+        'exptime': exptime,
         'nbframes': nbframes,
     }
-    ret, _ = _send_request('/fake', params)
+
+    ret, _ = _send_request('POST', '/testImage', params)
 
     if ret == ReturnCode.CAMERA_OK:
         return filepath
@@ -79,18 +80,15 @@ def take_image(filepath: str | Path | None = None,
     symlink.unlink(missing_ok=True)
     symlink.symlink_to(filepath)
 
-    ret, _ = _send_request('/acquire', params)
+    ret, _ = _send_request('POST', '/acquire', params)
 
     if ret == ReturnCode.CAMERA_OK:
-        if filepath.exists():
-            return filepath
-        else:
-            return None
+        return filepath
     else:
         return None
 
 
-def take_science_image(obs_type: ObservationType, exptime: float | None = None,
+def take_science_image(template: Template, exptime: float | None = None,
                        filepath: str | Path | None = None, nbframes: int |
                        None = None, roi_size: int | None = None,
                        comment: str | None = None) -> Path | None:
@@ -119,11 +117,17 @@ def take_science_image(obs_type: ObservationType, exptime: float | None = None,
         # Generate filename including path
         filepath = fits_handling.get_tmp_image_filepath()
 
-    filepath = take_image(filepath=filepath, exptime=exptime,
-                          nbframes=nbframes, roi=roi)
+    template.next_exposure()
+
+    if template.id == TemplateID.SELF_TEST:
+        filepath = get_test_image(filepath=filepath, exptime=exptime,
+                                  nbframes=nbframes)
+    else:
+        filepath = take_image(filepath=filepath, exptime=exptime,
+                              nbframes=nbframes, roi=roi)
 
     if filepath is not None:
-        final_filepath = fits_handling.save_image(filepath, obs_type,
+        final_filepath = fits_handling.save_image(filepath, template,
                                                   comment=comment)
 
         return final_filepath
@@ -136,22 +140,24 @@ def cancel(keepframe: bool | None = None) -> ReturnCode:
         'keepframe': keepframe,
     }
 
-    ret, _ = _send_request('/cancelExposure', params)
+    ret, _ = _send_request('POST', '/cancelExposure', params)
 
     return ret
 
 
 def get_camera_status() -> str:
-    ret, camera_status = _send_request('/cameraStatus')
+    ret, camera_status = _send_request('GET', '/cameraStatus')
 
     if ret == ReturnCode.CAMERA_OK:
         return camera_status['status']
+    elif ret == ReturnCode.CAMERA_SERVER_UNREACHABLE:
+        return CameraStatus.SERVER_UNREACHABLE
     else:
         return CameraStatus.ERROR
 
 
 def get_exposure_status() -> dict[str, float]:
-    ret, exposure_status = _send_request('/exposureStatus')
+    ret, exposure_status = _send_request('GET', '/exposureStatus')
 
     if ret == ReturnCode.CAMERA_OK:
         return exposure_status
@@ -166,7 +172,7 @@ def get_exposure_status() -> dict[str, float]:
 
 def set_exposure_time(exptime) -> ReturnCode:
     params = {'exptime': exptime}
-    ret, _ = _send_request('/exposureTime', params)
+    ret, _ = _send_request('POST', '/exposureTime', params)
     return ret
 
 
@@ -177,7 +183,7 @@ def get_temperatures() -> dict[str, float]:
     :return:
     """
 
-    ret, temperatures = _send_request('/temperature')
+    ret, temperatures = _send_request('GET', '/temperatures')
 
     if ret == ReturnCode.CAMERA_OK:
         return temperatures
@@ -193,59 +199,46 @@ def set_temperature(temperature: float) -> ReturnCode:
     :return:
     """
     params = {'temperature': temperature}
-    ret, _ = _send_request('/temperature', params)
+    ret, _ = _send_request('POST', '/temperature', params)
     return ret
 
 
-def _send_request(endpoint: str,
-                  params: dict[str, Any] = {}) -> tuple[ReturnCode, Any]:
-    # Clean params
-    for key, value in list(params.items()):
-        if value is None:
-            del params[key]
-        elif key == 'filepath':
-            params[key] = str(value)
+def _send_request(method: str, endpoint: str, params: dict[str, Any] |
+                  None = None) -> tuple[ReturnCode, Any]:
+    if params is not None:
+        # Clean params
+        for key, value in list(params.items()):
+            if value is None:
+                del params[key]
+            elif key == 'filepath':
+                params[key] = str(value)
 
-    url = f'http://{config.Camera.host}:{config.Camera.port}{endpoint}'
-
-    try:
-        if params == {}:
-            req = requests.get(url, timeout=config.Camera.request_timeout)
-        else:
-            req = requests.post(url, json=params,
-                                timeout=config.Camera.request_timeout)
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            'camera',
-            f'Camera server endpoint {endpoint} answered with a {e.__class__.__name__} exception.'
-        )
-        return ReturnCode.CAMERA_SERVER_DOWN, None
+    kwargs = {}
+    if method == 'POST' and params is not None:
+        kwargs['json'] = params
 
     try:
-        data = json.loads(req.text)
-    except Exception:
-        data = req.text
+        req = requests.request(
+            method,
+            f'http://{config.Camera.host}:{config.Camera.port}{endpoint}',
+            timeout=config.Camera.request_timeout, **kwargs)
 
-    if req.status_code == 200:
-        return ReturnCode.CAMERA_OK, data
-    else:
-        text = ''
+        req.raise_for_status()
 
-        if isinstance(data, dict):
-            if 'error_text' in data:
-                text += f' {data["error_text"]}'
-
-            if 'error_status' in data:
-                text += f' (status = {data["error_status"]}, {data["error_status_text"]})'
+        if req.headers['content-type'].startswith('application/json'):
+            return ReturnCode.CAMERA_OK, req.json()
         else:
-            text = f' {data}'
+            return ReturnCode.CAMERA_OK, req.text
 
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        return ReturnCode.CAMERA_SERVER_UNREACHABLE, None
+
+    except requests.exceptions.HTTPError:
         logger.error(
             'camera',
-            f'Camera server endpoint {endpoint} answered with an Error {req.status_code}.{text}'
+            f'Camera server endpoint {endpoint} answered with an Error {req.status_code}, {req.text}'
         )
-
-        return ReturnCode.CAMERA_ERROR, data
+        return ReturnCode.CAMERA_ERROR, None
 
 
 def server_status() -> CameraServerStatus:
@@ -257,10 +250,10 @@ def server_status() -> CameraServerStatus:
     try:
         r = requests.get(
             f'http://{config.Camera.host}:{config.Camera.port}/ping')
-        r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
+        r.raise_for_status()
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return CameraServerStatus.DOWN
-    except Exception:
+    except requests.exceptions.HTTPError:
         return CameraServerStatus.ERROR
     else:
         return CameraServerStatus.UP

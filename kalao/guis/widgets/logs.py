@@ -3,25 +3,29 @@ from datetime import timezone
 import numpy as np
 
 from PySide6.QtCore import QDateTime, QSignalBlocker, QTimer, Signal, Slot
-from PySide6.QtGui import QFontDatabase, Qt, QTextBlockUserData, QTextCursor
-from PySide6.QtWidgets import QTreeWidgetItem
+from PySide6.QtGui import (QFont, QResizeEvent, Qt, QTextBlockUserData,
+                           QTextCursor)
+from PySide6.QtWidgets import QTreeWidgetItem, QWidget
+
+from compiled.ui_logs import Ui_LogsWidget
 
 from kalao import database
 from kalao.utils import kstring
 
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import ascii2html
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import BackendActionMixin
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KWidget
 
+from kalao.definitions.dataclasses import LogEntry
 from kalao.definitions.enums import LogLevel
 
 import config
 
 
 class LogsData(QTextBlockUserData):
-    def __init__(self, data):
+    def __init__(self, data: LogEntry) -> None:
         super().__init__()
 
         self.data = data
@@ -32,18 +36,22 @@ class LogsWidget(KWidget, BackendActionMixin):
 
     max_entries = config.GUI.logs_max_entries
 
-    def __init__(self, backend, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    last_cursor = None
+
+    def __init__(self, backend: AbstractBackend,
+                 parent: QWidget = None) -> None:
+        super().__init__(parent)
 
         self.backend = backend
 
-        loadUi('logs.ui', self)
+        self.ui = Ui_LogsWidget()
+        self.ui.setupUi(self)
+
         self.resize(600, 400)
 
-        self.logs_textedit.setFont(
-            QFontDatabase.systemFont(QFontDatabase.FixedFont))
+        self.ui.logs_textedit.setFont(QFont('Roboto Mono'))
 
-        self.logs_textedit.document().setDefaultStyleSheet(
+        self.ui.logs_textedit.document().setDefaultStyleSheet(
             ascii2html.stylesheet + f"""
             .grey {{
                 color: {Color.GREY.name()};
@@ -66,17 +74,18 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.levels_items = {}
 
         levels = QTreeWidgetItem(['Levels'])
-        # levels.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsAutoTristate)
+        # levels.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsAutoTristate)
         # self.levels_items['toplevel'] = levels
 
         for level in LogLevel:
             child = QTreeWidgetItem([level.value])
-            child.setCheckState(0, Qt.Checked)
-            child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            child.setCheckState(0, Qt.CheckState.Checked)
+            child.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                           Qt.ItemFlag.ItemIsEnabled)
             levels.addChild(child)
             self.levels_items[level.value] = child
 
-        self.filters_tree.addTopLevelItem(levels)
+        self.ui.filters_tree.addTopLevelItem(levels)
         levels.setExpanded(True)
 
         #####
@@ -84,25 +93,27 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.services_items = {}
 
         services = QTreeWidgetItem(['Services'])
-        # services.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsAutoTristate)
+        # services.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsAutoTristate)
         # self.services_items['toplevel'] = services
 
         child = QTreeWidgetItem(['systemd'])
-        child.setCheckState(0, Qt.Checked)
-        child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        child.setCheckState(0, Qt.CheckState.Checked)
+        child.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                       Qt.ItemFlag.ItemIsEnabled)
         services.addChild(child)
         self.services_items['systemd'] = child
 
         for service in sorted(config.Systemd.services.values(),
-                              key=lambda x: x['unit']):
+                              key=lambda service: service['unit']):
             unit = kstring.get_service_name(service['unit'])
             child = QTreeWidgetItem([unit])
-            child.setCheckState(0, Qt.Checked)
-            child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            child.setCheckState(0, Qt.CheckState.Checked)
+            child.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                           Qt.ItemFlag.ItemIsEnabled)
             services.addChild(child)
             self.services_items[unit] = child
 
-        self.filters_tree.addTopLevelItem(services)
+        self.ui.filters_tree.addTopLevelItem(services)
         services.setExpanded(True)
 
         #####
@@ -110,24 +121,26 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.logs_items = {}
 
         logs = QTreeWidgetItem(['Logs'])
-        # logs.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | Qt.ItemIsAutoTristate)
+        # logs.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsAutoTristate)
         # self.logs_items['toplevel'] = logs
 
         child = QTreeWidgetItem(['<none>'])
-        child.setCheckState(0, Qt.Checked)
-        child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        child.setCheckState(0, Qt.CheckState.Checked)
+        child.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                       Qt.ItemFlag.ItemIsEnabled)
         logs.addChild(child)
         self.logs_items['<none>'] = child
 
         for key in sorted(database.definitions['logs']['metadata'].keys()):
             key = kstring.get_log_name(key)
             child = QTreeWidgetItem([key])
-            child.setCheckState(0, Qt.Checked)
-            child.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            child.setCheckState(0, Qt.CheckState.Checked)
+            child.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                           Qt.ItemFlag.ItemIsEnabled)
             logs.addChild(child)
             self.logs_items[key] = child
 
-        self.filters_tree.addTopLevelItem(logs)
+        self.ui.filters_tree.addTopLevelItem(logs)
         logs.setExpanded(True)
 
         #####
@@ -135,32 +148,30 @@ class LogsWidget(KWidget, BackendActionMixin):
         until = QDateTime.currentDateTime()
         since = until.addSecs(-3600)
 
-        self.since_datetimeedit.setDateTime(since)
-        self.until_datetimeedit.setDateTime(until)
+        self.ui.since_datetimeedit.setDateTime(since)
+        self.ui.until_datetimeedit.setDateTime(until)
 
         self.logs_timer = QTimer(parent=self)
         self.logs_timer.setInterval(int(1000 / config.GUI.refreshrate_logs))
         self.logs_timer.timeout.connect(self.get_logs_new)
 
-        QTimer.singleShot(0, self.get_logs_init)
+    def get_logs_init(self) -> None:
+        entries = self.backend.logs(lines=config.GUI.logs_initial_entries)
 
-    def get_logs_init(self):
-        entries = self.backend.logs_init()
-        if entries is not None:
-            for entry in entries:
-                self.add_log_entry(entry)
+        for entry in entries:
+            self.add_log_entry(entry)
 
-        self.on_acknowledge_button_clicked(None)
+        self.on_acknowledge_button_clicked(False)
 
         self.logs_timer.start()
 
-    def get_logs_new(self):
-        entries = self.backend.logs_new()
-        if entries is not None:
-            for entry in entries:
-                self.add_log_entry(entry)
+    def get_logs_new(self) -> None:
+        entries = self.backend.logs(cursor=self.last_cursor)
 
-    def add_log_entry(self, entry):
+        for entry in entries:
+            self.add_log_entry(entry)
+
+    def add_log_entry(self, entry: LogEntry) -> None:
         if entry is None:
             return
 
@@ -170,18 +181,19 @@ class LogsWidget(KWidget, BackendActionMixin):
         style_end = '</span>'
 
         if entry.level == LogLevel.ERROR:
-            self.errors_spinbox.setValue(self.errors_spinbox.value() + 1)
+            self.ui.errors_spinbox.setValue(self.ui.errors_spinbox.value() + 1)
 
-            self.logged.emit(self.warnings_spinbox.value(),
-                             self.errors_spinbox.value())
+            self.logged.emit(self.ui.warnings_spinbox.value(),
+                             self.ui.errors_spinbox.value())
 
             style_origin = '<span class="bold red">'
             style_message = '<span class="bold red">'
         elif entry.level == LogLevel.WARNING:
-            self.warnings_spinbox.setValue(self.warnings_spinbox.value() + 1)
+            self.ui.warnings_spinbox.setValue(
+                self.ui.warnings_spinbox.value() + 1)
 
-            self.logged.emit(self.warnings_spinbox.value(),
-                             self.errors_spinbox.value())
+            self.logged.emit(self.ui.warnings_spinbox.value(),
+                             self.ui.errors_spinbox.value())
 
             style_origin = '<span class="bold yellow">'
             style_message = '<span class="bold yellow">'
@@ -192,43 +204,47 @@ class LogsWidget(KWidget, BackendActionMixin):
         else:
             message = f'{message_splitted[0]:>17s} | {message_splitted[1]}'
 
-        self.logs_textedit.appendHtml(
-            f'{style_timestamp}{entry.timestamp}{style_end} {style_origin}{entry.origin:>17s}{style_end}: {style_message}{ascii2html.translate(message)}{style_end}'
+        self.ui.logs_textedit.appendHtml(
+            f'{style_timestamp}{entry.timestamp.astimezone():%y-%m-%d %H:%M:%S}{style_end} {style_origin}{entry.origin:>17s}{style_end}: {style_message}{ascii2html.translate(message)}{style_end}'
         )
 
-        block = self.logs_textedit.document().lastBlock()
+        block = self.ui.logs_textedit.document().lastBlock()
         block.setUserData(LogsData(entry))
 
         block.setVisible(self.entry_visible(entry))
 
-        while self.logs_textedit.document().blockCount() > self.max_entries:
-            cursor = QTextCursor(self.logs_textedit.document().firstBlock())
-            cursor.select(QTextCursor.BlockUnderCursor)
+        while self.ui.logs_textedit.document().blockCount() > self.max_entries:
+            cursor = QTextCursor(self.ui.logs_textedit.document().firstBlock())
+            cursor.select(QTextCursor.SelectionType.BlockUnderCursor)
             cursor.removeSelectedText()
             cursor.deleteChar()
 
-    @Slot(QDateTime)
-    def on_since_datetimeedit_dateTimeChanged(self, datetime):
-        self.until_datetimeedit.setMinimumDateTime(datetime)
+        self.last_cursor = entry.cursor
 
     @Slot(QDateTime)
-    def on_until_datetimeedit_dateTimeChanged(self, datetime):
-        self.since_datetimeedit.setMaximumDateTime(datetime)
+    def on_since_datetimeedit_dateTimeChanged(self,
+                                              datetime: QDateTime) -> None:
+        self.ui.until_datetimeedit.setMinimumDateTime(datetime)
+
+    @Slot(QDateTime)
+    def on_until_datetimeedit_dateTimeChanged(self,
+                                              datetime: QDateTime) -> None:
+        self.ui.since_datetimeedit.setMaximumDateTime(datetime)
 
     @Slot(bool)
-    def on_retieve_button_clicked(self, checked):
-        since = self.since_datetimeedit.dateTime().toUTC().toPython().replace(
-            tzinfo=timezone.utc)
-        until = self.until_datetimeedit.dateTime().toUTC().toPython().replace(
-            tzinfo=timezone.utc)
+    def on_retieve_button_clicked(self, checked: bool) -> None:
+        since = self.ui.since_datetimeedit.dateTime().toUTC().toPython(
+        ).replace(tzinfo=timezone.utc)
+        until = self.ui.until_datetimeedit.dateTime().toUTC().toPython(
+        ).replace(tzinfo=timezone.utc)
 
         self.logs_timer.stop()
 
-        entries = self.action_send(self.retieve_button,
+        entries = self.action_send(self.ui.retieve_button,
                                    self.backend.logs_between, since=since,
                                    until=until)
 
-        self.logs_textedit.clear()
+        self.ui.logs_textedit.clear()
 
         self.max_entries = np.inf
 
@@ -236,97 +252,99 @@ class LogsWidget(KWidget, BackendActionMixin):
             for entry in entries:
                 self.add_log_entry(entry)
 
-        self.on_acknowledge_button_clicked(None)
+        self.on_acknowledge_button_clicked(False)
 
     @Slot(bool)
-    def on_live_button_clicked(self, checked):
-        self.logs_textedit.clear()
+    def on_live_button_clicked(self, checked: bool) -> None:
+        self.ui.logs_textedit.clear()
 
         self.max_entries = config.GUI.logs_max_entries
 
-        self.logs_timer.start()
-
-        #TODO: retrieve a bit
+        QTimer.singleShot(0, self.get_logs_init)
 
     @Slot(QTreeWidgetItem, int)
-    def on_filters_tree_itemChanged(self, item, column):
+    def on_filters_tree_itemChanged(self, item: QTreeWidgetItem,
+                                    column: int) -> None:
         self.filter_logs()
 
     @Slot(bool)
-    def on_check_all_button_clicked(self, checked):
-        with QSignalBlocker(self.filters_tree):
+    def on_check_all_button_clicked(self, checked: bool) -> None:
+        with QSignalBlocker(self.ui.filters_tree):
             for item in self.levels_items.values():
-                item.setCheckState(0, Qt.Checked)
+                item.setCheckState(0, Qt.CheckState.Checked)
 
             for item in self.services_items.values():
-                item.setCheckState(0, Qt.Checked)
+                item.setCheckState(0, Qt.CheckState.Checked)
 
             for item in self.logs_items.values():
-                item.setCheckState(0, Qt.Checked)
+                item.setCheckState(0, Qt.CheckState.Checked)
 
         self.filter_logs()
 
     @Slot(bool)
-    def on_clear_levels_button_clicked(self, checked):
-        with QSignalBlocker(self.filters_tree):
+    def on_clear_levels_button_clicked(self, checked: bool) -> None:
+        with QSignalBlocker(self.ui.filters_tree):
             for item in self.levels_items.values():
-                item.setCheckState(0, Qt.Unchecked)
+                item.setCheckState(0, Qt.CheckState.Unchecked)
 
         self.filter_logs()
 
     @Slot(bool)
-    def on_clear_services_button_clicked(self, checked):
-        with QSignalBlocker(self.filters_tree):
+    def on_clear_services_button_clicked(self, checked: bool) -> None:
+        with QSignalBlocker(self.ui.filters_tree):
             for item in self.services_items.values():
-                item.setCheckState(0, Qt.Unchecked)
+                item.setCheckState(0, Qt.CheckState.Unchecked)
 
         self.filter_logs()
 
     @Slot(bool)
-    def on_clear_logs_button_clicked(self, checked):
-        with QSignalBlocker(self.filters_tree):
+    def on_clear_logs_button_clicked(self, checked: bool) -> None:
+        with QSignalBlocker(self.ui.filters_tree):
             for item in self.logs_items.values():
-                item.setCheckState(0, Qt.Unchecked)
+                item.setCheckState(0, Qt.CheckState.Unchecked)
 
         self.filter_logs()
 
-    def entry_visible(self, entry):
+    def entry_visible(self, entry: LogEntry) -> bool:
         try:
-            if self.levels_items[entry.level].checkState(0) != Qt.Checked:
+            if self.levels_items[entry.level].checkState(
+                    0) != Qt.CheckState.Checked:
                 return False
         except KeyError:
             pass
-            # if self.levels_items['toplevel'].checkState(0) != Qt.Checked:
+            # if self.levels_items['toplevel'].checkState(0) != Qt.CheckState.Checked:
             #     return False
 
         try:
-            if self.services_items[entry.origin].checkState(0) != Qt.Checked:
+            if self.services_items[entry.origin].checkState(
+                    0) != Qt.CheckState.Checked:
                 return False
         except KeyError:
             pass
-            # if self.services_items['toplevel'].checkState(0) != Qt.Checked:
+            # if self.services_items['toplevel'].checkState(0) != Qt.CheckState.Checked:
             #     return False
 
         message_splitted = entry.message.split(' | ', 1)
 
         if len(message_splitted) == 1:
-            if self.logs_items['<none>'].checkState(0) != Qt.Checked:
+            if self.logs_items['<none>'].checkState(
+                    0) != Qt.CheckState.Checked:
                 return False
         else:
             try:
                 if self.logs_items[message_splitted[0].strip()].checkState(
-                        0) != Qt.Checked:
+                        0) != Qt.CheckState.Checked:
                     return False
             except KeyError:
                 pass
-                # if self.logs_items['toplevel'].checkState(0) != Qt.Checked:
+                # if self.logs_items['toplevel'].checkState(0) != Qt.CheckState.Checked:
                 #     return False
 
         return True
 
-    def filter_logs(self):
-        block = self.logs_textedit.document().begin()
-        while block != self.logs_textedit.document().end():
+    def filter_logs(self) -> None:
+        block = self.ui.logs_textedit.document().begin()
+        while block != self.ui.logs_textedit.document().end():
             userdata = block.userData()
             if userdata is None:
                 break
@@ -335,29 +353,31 @@ class LogsWidget(KWidget, BackendActionMixin):
 
             block = block.next()
 
-        self.logs_textedit.update()
+        self.ui.logs_textedit.update()
 
-        self.logs_textedit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.logs_textedit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.ui.logs_textedit.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.ui.logs_textedit.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 
         self.reset_scrollbars()
 
     @Slot(bool)
-    def on_acknowledge_button_clicked(self, checked):
-        self.errors_spinbox.setValue(0)
-        self.warnings_spinbox.setValue(0)
+    def on_acknowledge_button_clicked(self, checked: bool) -> None:
+        self.ui.errors_spinbox.setValue(0)
+        self.ui.warnings_spinbox.setValue(0)
 
-        self.logged.emit(self.warnings_spinbox.value(),
-                         self.errors_spinbox.value())
+        self.logged.emit(self.ui.warnings_spinbox.value(),
+                         self.ui.errors_spinbox.value())
 
-    def reset_scrollbars(self):
-        horizontal_scrollbar = self.logs_textedit.horizontalScrollBar()
+    def reset_scrollbars(self) -> None:
+        horizontal_scrollbar = self.ui.logs_textedit.horizontalScrollBar()
         horizontal_scrollbar.setValue(0)
 
-        vertical_scrollbar = self.logs_textedit.verticalScrollBar()
+        vertical_scrollbar = self.ui.logs_textedit.verticalScrollBar()
         vertical_scrollbar.setValue(vertical_scrollbar.maximum())
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         self.reset_scrollbars()
 
         super().resizeEvent(event)

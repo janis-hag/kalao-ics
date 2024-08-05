@@ -1,20 +1,21 @@
 import argparse
+import functools
 import inspect
 import logging
 import pickle
 import traceback
-from datetime import datetime, time, timedelta
-from functools import partial
+from datetime import date, datetime, time, timedelta
+from typing import Any, Callable
 
 import pytz
-from flask import Flask, jsonify, make_response, request
+from flask import Flask, Response, jsonify, make_response, request
 from flask.json.provider import JSONProvider
 
 from kalao.utils import ktime, report
 from kalao.utils.json import KalAOJSONDecoder, KalAOJSONEncoder
 from kalao.utils.rprint import rprint
 
-from kalao.guis.backends.abstract import name_to_url
+from kalao.guis.backends.abstract import AbstractBackend, name_to_url
 
 import config
 
@@ -23,13 +24,13 @@ class KalAOProvider(JSONProvider):
     encoder = KalAOJSONEncoder()
     decoder = KalAOJSONDecoder()
 
-    def __init__(self, app):
+    def __init__(self, app: Flask) -> None:
         super().__init__(app)
 
-    def dumps(self, obj, **kwargs):
+    def dumps(self, obj: Any, **kwargs: Any) -> str:
         return self.encoder.encode(obj)
 
-    def loads(self, obj, **kwargs):
+    def loads(self, obj: Any, **kwargs: Any) -> Any:
         if isinstance(obj, bytes):
             return self.decoder.decode(obj.decode('utf-8'))
         else:
@@ -44,14 +45,19 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 
+@app.route('/ping')
+def ping() -> str:
+    return 'Pong'
+
+
 @app.route('/night_report')
 @app.route('/night_report/<night>')
-def night_report(night=None):
+def night_report(night: str | None = None) -> Response:
     if night is None:
         since = ktime.get_start_of_night()
         since = since - timedelta(days=1)
     else:
-        since = datetime.combine(night, time(12, 0, 0, 0))
+        since = datetime.combine(date.fromisoformat(night), time(12, 0, 0, 0))
         since = pytz.timezone('America/Santiago').localize(since)
 
     content = report.generate(since, since + timedelta(days=1), short=True)
@@ -62,22 +68,25 @@ def night_report(night=None):
     return response
 
 
-def serve(fun):
+def _serve(fun: Callable,
+           backend: AbstractBackend) -> tuple[str, int] | Response:
     try:
         if request.method == 'GET':
             ret = fun(backend)
         elif request.method == 'POST':
             ret = fun(backend, **request.json)
+        else:
+            ret = None
 
-        response_type = request.args.get('response_type', 'application/json')
+        response_type = request.headers.get('Accept', 'application/json')
 
-        if response_type == 'application/octet-stream':
+        if response_type.startswith('application/octet-stream'):
             content = pickle.dumps(ret)
 
             response = make_response(content)
-            response.headers['Content-Length'] = len(content)
+            response.headers['Content-Length'] = str(len(content))
             response.headers['Content-Type'] = 'application/octet-stream'
-        elif response_type == 'application/json':
+        elif response_type.startswith('application/json'):
             response = jsonify(ret)
         else:
             raise Exception(f'Unsupported MIME type {response_type}')
@@ -108,12 +117,14 @@ if __name__ == '__main__':
     else:
         import kalao.guis.backends.local as backends
 
+    backend = backends.MainBackend()
+
     errors = 0
 
-    for key, item in sorted(backends.MainBackend.__dict__.items()):
+    for key, item in sorted(vars(backends.MainBackend).items()):
         if callable(item) and not key.startswith('_'):
-            fun = partial(serve, item)
-            fun.__name__ = key
+            func = functools.partial(_serve, item, backend)
+            func.__name__ = key
 
             url = name_to_url(key)
 
@@ -134,18 +145,16 @@ if __name__ == '__main__':
             else:
                 methods = ['POST']
 
-            app.add_url_rule(url, view_func=fun, methods=methods)
+            app.add_url_rule(url, view_func=func, methods=methods)
 
             if args.debug:
                 rprint(
-                    f'Created route {url} with method(s) {", ".join(methods)}')
+                    f'[INFO] Created route {url} with method(s) {", ".join(methods)}'
+                )
 
     if errors != 0:
         rprint(f'[ERROR] {errors} errors found')
         exit()
-
-    global backend
-    backend = backends.MainBackend()
 
     app.run(host='0.0.0.0', port=config.GUI.http_port, threaded=True,
             debug=args.debug)

@@ -1,13 +1,16 @@
-from datetime import datetime, timezone
+from typing import Any
 
 import numpy as np
 
 from PySide6.QtCore import QEvent, QObject, Signal
 from PySide6.QtGui import Qt
+from PySide6.QtWidgets import QWidget
 
-from kalao.guis.utils.definitions import Color, Logo
+from compiled.ui_main import Ui_MainWidget
+
+from kalao.guis.backends.abstract import AbstractBackend
+from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import BackendDataMixin
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KWidget
 from kalao.guis.widgets.camera import CameraWidget
 from kalao.guis.widgets.dm import DMWidget
@@ -26,25 +29,25 @@ class MainWidget(KWidget, BackendDataMixin):
 
     activeToolTip = None
 
-    def __init__(self, backend, on_sky_unit=False, parent=None):
+    def __init__(self, backend: AbstractBackend, on_sky_unit: bool = False,
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
 
-        loadUi('main.ui', self)
+        self.ui = Ui_MainWidget()
+        self.ui.setupUi(self)
+
         self.resize(1300, 900)
 
-        self.logo_label.load(str(Logo.svg))
-        self.logo_label.renderer().setAspectRatioMode(Qt.KeepAspectRatio)
-
-        self.camera_exposure_time_spinbox.setValue(np.nan)
-        self.camera_remaining_time_spinbox.setValue(np.nan)
-        self.camera_remaining_frames_spinbox.setValue(-1)
-        self.camera_ccd_temperature_spinbox.setValue(np.nan)
-        self.wfs_emgain_spinbox.setValue(-1)
-        self.wfs_exposuretime_spinbox.setValue(np.nan)
-        self.wfs_framerate_spinbox.setValue(np.nan)
-        self.wfs_ccd_temperature_spinbox.setValue(np.nan)
+        self.ui.camera_exposure_time_spinbox.setValue(np.nan)
+        self.ui.camera_remaining_time_spinbox.setValue(np.nan)
+        self.ui.camera_remaining_frames_spinbox.setValue(-1)
+        self.ui.camera_ccd_temperature_spinbox.setValue(np.nan)
+        self.ui.wfs_emgain_spinbox.setValue(-1)
+        self.ui.wfs_exposuretime_spinbox.setValue(np.nan)
+        self.ui.wfs_framerate_spinbox.setValue(np.nan)
+        self.ui.wfs_ccd_temperature_spinbox.setValue(np.nan)
 
         self.wfs = WFSWidget(backend, parent=self)
         self.camera = CameraWidget(backend, parent=self)
@@ -53,64 +56,66 @@ class MainWidget(KWidget, BackendDataMixin):
         self.dm = DMWidget(backend, parent=self)
         self.ttm = TTMWidget(backend, parent=self)
 
-        self.wfs_frame.layout().addWidget(self.wfs)
-        self.camera_frame.layout().addWidget(self.camera)
-        self.dm_frame.layout().addWidget(self.dm)
-        self.slopes_frame.layout().addWidget(self.slopes)
-        self.flux_frame.layout().addWidget(self.flux)
-        self.ttm_frame.layout().addWidget(self.ttm)
+        self.ui.wfs_frame.layout().addWidget(self.wfs)
+        self.ui.camera_frame.layout().addWidget(self.camera)
+        self.ui.dm_frame.layout().addWidget(self.dm)
+        self.ui.slopes_frame.layout().addWidget(self.slopes)
+        self.ui.flux_frame.layout().addWidget(self.flux)
+        self.ui.ttm_frame.layout().addWidget(self.ttm)
 
         for indicator in [
-                self.dmloop_indicator, self.ttmloop_indicator,
-                self.cameras_status_indicator, self.wfs_acquisition_indicator,
-                self.wfs_autogain_indicator
+                self.ui.dmloop_indicator, self.ui.ttmloop_indicator,
+                self.ui.cameras_status_indicator,
+                self.ui.wfs_acquisition_indicator,
+                self.ui.wfs_autogain_indicator
         ]:
-            indicator.setCursor(Qt.WhatsThisCursor)
+            indicator.setCursor(Qt.CursorShape.WhatsThisCursor)
             indicator.installEventFilter(self)
 
         for widget in [self.camera, self.slopes, self.dm, self.ttm]:
-            self.onsky_checkbox.stateChanged.connect(widget.change_units)
-            widget.change_units(self.onsky_checkbox.checkState())
+            self.ui.onsky_checkbox.stateChanged.connect(widget.change_units)
+            widget.change_units(self.ui.onsky_checkbox.checkState())
 
         for widget in [self.wfs, self.camera, self.slopes, self.flux, self.dm]:
-            self.colormap_checkbox.stateChanged.connect(widget.change_colormap)
-            widget.change_colormap(self.colormap_checkbox.checkState())
+            self.ui.colormap_checkbox.stateChanged.connect(
+                widget.change_colormap)
+            widget.change_colormap(self.ui.colormap_checkbox.checkState())
 
         for widget in [self.slopes, self.flux, self.dm]:
-            self.masks_checkbox.stateChanged.connect(widget.change_mask)
-            widget.change_mask(self.masks_checkbox.checkState())
+            self.ui.masks_checkbox.stateChanged.connect(widget.change_mask)
+            widget.change_mask(self.ui.masks_checkbox.checkState())
 
-        self.onsky_checkbox.setChecked(on_sky_unit)
+        self.ui.onsky_checkbox.setChecked(on_sky_unit)
 
         backend.all_updated.connect(self.all_updated)
 
-    def all_updated(self, data):
+    def all_updated(self, data: dict[str, Any]) -> None:
         ### Instrument
 
         sequencer_status = self.consume_dict(data, 'memory',
                                              'sequencer_status')
         if sequencer_status is not None:
-            self.sequencer_lineedit.setText(sequencer_status)
+            self.ui.sequencer_lineedit.setText(sequencer_status)
 
         ### AO
 
         loopON = self.consume_fps_param(data, config.FPS.DMLOOP, 'loopON')
         if loopON is not None:
             if loopON is True:
-                self.dmloop_indicator.setStatus(Color.GREEN, loopON)
+                self.ui.dmloop_indicator.setStatus(Color.GREEN, loopON)
             elif loopON is False:
-                self.dmloop_indicator.setStatus(Color.BLACK, loopON)
+                self.ui.dmloop_indicator.setStatus(Color.BLACK, loopON)
             else:
-                self.dmloop_indicator.setStatus(Color.RED, loopON)
+                self.ui.dmloop_indicator.setStatus(Color.RED, loopON)
 
         loopON = self.consume_fps_param(data, config.FPS.TTMLOOP, 'loopON')
         if loopON is not None:
             if loopON is True:
-                self.ttmloop_indicator.setStatus(Color.GREEN, loopON)
+                self.ui.ttmloop_indicator.setStatus(Color.GREEN, loopON)
             elif loopON is False:
-                self.ttmloop_indicator.setStatus(Color.BLACK, loopON)
+                self.ui.ttmloop_indicator.setStatus(Color.BLACK, loopON)
             else:
-                self.ttmloop_indicator.setStatus(Color.RED, loopON)
+                self.ui.ttmloop_indicator.setStatus(Color.RED, loopON)
 
         ### Camera
 
@@ -119,91 +124,94 @@ class MainWidget(KWidget, BackendDataMixin):
             if camera_status in [
                     CameraStatus.EXPOSING, CameraStatus.READING_CCD
             ]:
-                self.cameras_status_indicator.setStatus(
+                self.ui.cameras_status_indicator.setStatus(
                     Color.GREEN, camera_status)
             elif camera_status in [
                     CameraStatus.IDLE, CameraStatus.WAITING_TRIGGER
             ]:
-                self.cameras_status_indicator.setStatus(
+                self.ui.cameras_status_indicator.setStatus(
                     Color.BLACK, camera_status)
             else:
-                self.cameras_status_indicator.setStatus(
+                self.ui.cameras_status_indicator.setStatus(
                     Color.RED, camera_status)
 
         exposure_time = self.consume_dict(data, 'camera', 'exposure_time')
         if exposure_time is not None:
-            self.camera_exposure_time_spinbox.setValue(exposure_time)
+            self.ui.camera_exposure_time_spinbox.setValue(exposure_time)
 
         remaining_time = self.consume_dict(data, 'camera', 'remaining_time')
         if remaining_time is not None:
-            self.camera_remaining_time_spinbox.setValue(remaining_time)
+            self.ui.camera_remaining_time_spinbox.setValue(remaining_time)
 
         remaining_frames = self.consume_dict(data, 'camera',
                                              'remaining_frames')
         if remaining_frames is not None:
-            self.camera_remaining_frames_spinbox.setValue(remaining_frames)
+            self.ui.camera_remaining_frames_spinbox.setValue(remaining_frames)
 
         ccd = self.consume_dict(data, 'camera', 'ccd')
         if ccd is not None:
-            self.camera_ccd_temperature_spinbox.setValue(ccd)
+            self.ui.camera_ccd_temperature_spinbox.setValue(ccd)
 
         ### WFS
 
         maqtime = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
                                            '_MAQTIME', force=True)
-        timestamp = self.consume_metadata(data, 'timestamp')
         if maqtime is not None:
-            maqtime = datetime.fromtimestamp(maqtime / 1e6, tz=timezone.utc)
-            time_since_last_frame = (timestamp - maqtime).total_seconds()
+            time_since_last_frame = self.consume_metadata(
+                data, 'timestamp') - maqtime/1e6
             if time_since_last_frame < config.WFS.acquisition_time_timeout:
-                self.wfs_acquisition_indicator.setStatus(
+                self.ui.wfs_acquisition_indicator.setStatus(
                     Color.GREEN, time_since_last_frame)
             else:
-                self.wfs_acquisition_indicator.setStatus(
+                self.ui.wfs_acquisition_indicator.setStatus(
                     Color.BLACK, time_since_last_frame)
 
         autogain_on = self.consume_fps_param(data, config.FPS.NUVU,
                                              'autogain_on')
         if autogain_on is not None:
             if autogain_on is True:
-                self.wfs_autogain_indicator.setStatus(Color.GREEN, autogain_on)
+                self.ui.wfs_autogain_indicator.setStatus(
+                    Color.GREEN, autogain_on)
             elif autogain_on is False:
-                self.wfs_autogain_indicator.setStatus(Color.BLACK, autogain_on)
+                self.ui.wfs_autogain_indicator.setStatus(
+                    Color.BLACK, autogain_on)
             else:
-                self.wfs_autogain_indicator.setStatus(Color.RED, autogain_on)
+                self.ui.wfs_autogain_indicator.setStatus(
+                    Color.RED, autogain_on)
 
         wfs_emgain = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
                                               'EMGAIN')
         if wfs_emgain is not None:
-            self.wfs_emgain_spinbox.setValue(wfs_emgain)
+            self.ui.wfs_emgain_spinbox.setValue(wfs_emgain)
 
         wfs_exposuretime = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
                                                     'EXPTIME')
         if wfs_exposuretime is not None:
-            self.wfs_exposuretime_spinbox.setValue(wfs_exposuretime)
+            self.ui.wfs_exposuretime_spinbox.setValue(wfs_exposuretime)
 
         wfs_framerate = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
                                                  'MFRATE')
         if wfs_framerate is not None:
-            self.wfs_framerate_spinbox.setValue(wfs_framerate)
+            self.ui.wfs_framerate_spinbox.setValue(wfs_framerate)
 
         wfs_ccd_temp = self.consume_shm_keyword(data, config.SHM.NUVU_RAW,
                                                 'T_CCD')
         if wfs_ccd_temp is not None:
-            self.wfs_ccd_temperature_spinbox.setValue(wfs_ccd_temp)
+            self.ui.wfs_ccd_temperature_spinbox.setValue(wfs_ccd_temp)
 
-    def eventFilter(self, source, event):
-        if event.type() == QEvent.ToolTip:
+    def eventFilter(self, source: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.ToolTip:
             # Disable tooltips
             return True
 
         if event.type(
-        ) == QEvent.ToolTipChange and source == self.activeToolTip:
+        ) == QEvent.Type.ToolTipChange and source == self.activeToolTip:
             self.hovered.emit(source.toolTip())
-        if event.type() == QEvent.Enter:
+        if event.type() == QEvent.Type.Enter:
             self.activeToolTip = source
             self.hovered.emit(source.toolTip())
-        elif event.type() == QEvent.Leave:
+        elif event.type() == QEvent.Type.Leave:
+            self.activeToolTip = None
             self.hovered.emit('')
 
         return QObject.eventFilter(self, source, event)

@@ -1,10 +1,10 @@
 import argparse
 import signal
+from types import FrameType
 
 import numpy as np
 
 from PySide6.QtCore import QLocale, QTimer
-from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 
 from kalao.guis.utils import colormaps
@@ -16,7 +16,7 @@ from kalao.guis.windows.alignment import AlignmentWindow
 import config
 
 
-def sig_handler(signal_received, frame):
+def sig_handler(signum: int, frame: FrameType | None) -> None:
     app.closeAllWindows()
     app.quit()
 
@@ -36,8 +36,6 @@ np.set_printoptions(nanstr='--')
 
 # Qt stuff
 
-loader = QUiLoader()
-
 app = QApplication(['KalAO - Alignment tools'])
 app.setQuitOnLastWindowClosed(True)
 
@@ -54,15 +52,15 @@ backend = AlignmentBackend()
 
 wfs = WFSWidget(backend)
 wfs.show()
-wfs.wfs_view.updateColormap(colormaps.Grayscale())
+wfs.ui.wfs_view.updateColormap(colormaps.Grayscale())
 
 slopes = SlopesWidget(backend)
 slopes.show()
-slopes.slopes_view.updateColormap(colormaps.GrayscaleTransparent())
+slopes.ui.slopes_view.updateColormap(colormaps.GrayscaleTransparent())
 
 flux = FluxWidget(backend)
 flux.show()
-flux.flux_view.updateColormap(colormaps.GrayscaleTransparent())
+flux.ui.flux_view.updateColormap(colormaps.GrayscaleTransparent())
 
 alignment = AlignmentWindow(backend, wfs)
 alignment.show()

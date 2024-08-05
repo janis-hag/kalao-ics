@@ -11,6 +11,14 @@
   value: ESO-LASILLA
   comment: Observatory
 
+- keyword: ARCFILE
+  value:
+  comment: Archive file name
+
+- keyword: OBJECT
+  value:
+  comment: Target description
+
 - keyword: HIERARCH ESO INS ID
   value: KALAO
   comment: Instrument ID
@@ -23,17 +31,33 @@
   value:
   comment: Instrument software ID
 
-- keyword: ARCFILE
+- keyword: HIERARCH ESO OBS PROG ID
   value:
-  comment: Archive file name
+  comment: Euler program identification
 
-- keyword: OBJECT
+- keyword: HIERARCH ESO OBS TPLNO
   value:
-  comment: Target description
+  comment: Template sequence number within OB
 
 - keyword: HIERARCH ESO TPL ID
   value:
   comment: Template ID
+
+- keyword: HIERARCH ESO TPL NAME
+  value:
+  comment: Template name
+
+- keyword: HIERARCH ESO TPL START
+  value:
+  comment: Template start time
+
+- keyword: HIERARCH ESO TPL NEXP
+  value:
+  comment: Number of exposures within template
+
+- keyword: HIERARCH ESO TPL EXPNO
+  value:
+  comment: Exposure number within template
 
 - keyword: HIERARCH ESO DPR CATG
   value:
@@ -46,10 +70,6 @@
 - keyword: HIERARCH ESO DPR TECH
   value: IMAGE
   comment: Observation technique
-
-- keyword: HIERARCH ESO OBS PROG ID
-  value:
-  comment: Euler program identification
 
 - keyword: MJD-OBS
   value:

@@ -1,17 +1,19 @@
 import traceback
 from pathlib import Path
+from typing import Any, Callable
 
 import numpy as np
 
 from PySide6.QtCore import (QEventLoop, QObject, QRunnable, QSignalBlocker,
                             QThreadPool, Signal, Slot)
 from PySide6.QtGui import QCursor, QGuiApplication, Qt
-from PySide6.QtWidgets import QCheckBox, QComboBox, QMessageBox
+from PySide6.QtWidgets import QCheckBox, QComboBox, QMessageBox, QWidget
 
+from kalao.utils.image import AbstractCut
 from kalao.utils.rprint import rprint
 
 from kalao.guis.utils.string_formatter import KalAOFormatter
-from kalao.guis.utils.widgets import KMessageBox
+from kalao.guis.utils.widgets import KImageViewer, KMessageBox
 
 
 class MinMaxMixin:
@@ -28,16 +30,17 @@ class MinMaxMixin:
     autoscale_min = -np.inf
     autoscale_max = np.inf
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.views = []
 
-    def init_minmax(self, view_list=[], symetric=False):
-        self.min_spinbox.setMaximum(self.max_spinbox.value())
-        self.max_spinbox.setMinimum(self.min_spinbox.value())
-        # self.min_spinbox.setReadOnly(self.autoscale_button.isChecked())
-        # self.max_spinbox.setReadOnly(self.autoscale_button.isChecked())
+    def init_minmax(self, view_list: list[KImageViewer] = [],
+                    symetric: bool = False) -> None:
+        self.ui.min_spinbox.setMaximum(self.ui.max_spinbox.value())
+        self.ui.max_spinbox.setMinimum(self.ui.min_spinbox.value())
+        # self.ui.min_spinbox.setReadOnly(self.autoscale_button.isChecked())
+        # self.ui.max_spinbox.setReadOnly(self.autoscale_button.isChecked())
 
         if not isinstance(view_list, list):
             view_list = [view_list]
@@ -50,83 +53,85 @@ class MinMaxMixin:
                                    self.data_precision)
 
     @Slot(float)
-    def on_min_spinbox_valueChanged(self, d):
-        self.autoscale_button.setChecked(False)
-        self.fullscale_button.setChecked(False)
+    def on_min_spinbox_valueChanged(self, d: float) -> None:
+        self.ui.autoscale_button.setChecked(False)
+        self.ui.fullscale_button.setChecked(False)
 
-        self.max_spinbox.setMinimum(d)
+        self.ui.max_spinbox.setMinimum(d)
 
         for view in self.views:
-            view.updateMinMax(self.min_spinbox.value(),
-                              self.max_spinbox.value())
+            view.updateMinMax(self.ui.min_spinbox.value(),
+                              self.ui.max_spinbox.value())
 
     @Slot(float)
-    def on_max_spinbox_valueChanged(self, d):
-        self.autoscale_button.setChecked(False)
-        self.fullscale_button.setChecked(False)
+    def on_max_spinbox_valueChanged(self, d: float) -> None:
+        self.ui.autoscale_button.setChecked(False)
+        self.ui.fullscale_button.setChecked(False)
 
-        self.min_spinbox.setMaximum(d)
+        self.ui.min_spinbox.setMaximum(d)
 
         for view in self.views:
-            view.updateMinMax(self.min_spinbox.value(),
-                              self.max_spinbox.value())
+            view.updateMinMax(self.ui.min_spinbox.value(),
+                              self.ui.max_spinbox.value())
 
     @Slot(bool)
-    def on_autoscale_button_toggled(self, checked):
-        # self.min_spinbox.setReadOnly(checked)
-        # self.max_spinbox.setReadOnly(checked)
+    def on_autoscale_button_toggled(self, checked: bool) -> None:
+        # self.ui.min_spinbox.setReadOnly(checked)
+        # self.ui.max_spinbox.setReadOnly(checked)
 
         if checked:
-            self.fullscale_button.setChecked(False)
+            self.ui.fullscale_button.setChecked(False)
 
             if not np.isinf(self.autoscale_min) and not np.isinf(
                     self.autoscale_max):
-                with QSignalBlocker(self.min_spinbox):
-                    self.min_spinbox.setMaximum(self.autoscale_max)
-                    self.min_spinbox.setValue(self.autoscale_min)
+                with QSignalBlocker(self.ui.min_spinbox):
+                    self.ui.min_spinbox.setMaximum(self.autoscale_max)
+                    self.ui.min_spinbox.setValue(self.autoscale_min)
 
-                with QSignalBlocker(self.max_spinbox):
-                    self.max_spinbox.setMinimum(self.autoscale_min)
-                    self.max_spinbox.setValue(self.autoscale_max)
+                with QSignalBlocker(self.ui.max_spinbox):
+                    self.ui.max_spinbox.setMinimum(self.autoscale_min)
+                    self.ui.max_spinbox.setValue(self.autoscale_max)
 
                 for view in self.views:
                     view.updateMinMax(self.autoscale_min, self.autoscale_max)
 
-        #     self.min_spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
-        #     self.max_spinbox.setButtonSymbols(QAbstractSpinBox.NoButtons)
+        #     self.ui.min_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        #     self.ui.max_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         # else:
-        #     self.min_spinbox.setButtonSymbols(QAbstractSpinBox.UpDownArrows)
-        #     self.max_spinbox.setButtonSymbols(QAbstractSpinBox.UpDownArrows)
+        #     self.ui.min_spinbox.setButtonSymbols(QAbstractSpinBox.UpDownArrows)
+        #     self.ui.max_spinbox.setButtonSymbols(QAbstractSpinBox.UpDownArrows)
 
     @Slot(bool)
-    def on_fullscale_button_toggled(self, checked):
+    def on_fullscale_button_toggled(self, checked: bool) -> None:
         if checked:
-            self.autoscale_button.setChecked(False)
+            self.ui.autoscale_button.setChecked(False)
 
-            with QSignalBlocker(self.min_spinbox):
-                self.min_spinbox.setMaximum(self.image_info['max'])
-                self.min_spinbox.setValue(self.image_info['min'])
+            with QSignalBlocker(self.ui.min_spinbox):
+                self.ui.min_spinbox.setMaximum(self.image_info['max'])
+                self.ui.min_spinbox.setValue(self.image_info['min'])
 
-            with QSignalBlocker(self.max_spinbox):
-                self.max_spinbox.setMinimum(self.image_info['min'])
-                self.max_spinbox.setValue(self.image_info['max'])
+            with QSignalBlocker(self.ui.max_spinbox):
+                self.ui.max_spinbox.setMinimum(self.image_info['min'])
+                self.ui.max_spinbox.setValue(self.image_info['max'])
 
             for view in self.views:
                 view.updateMinMax(self.image_info['min'] * self.data_scaling,
                                   self.image_info['max'] * self.data_scaling)
 
-    def update_spinboxes_unit(self, unit, scaling, precision):
-        self.min_spinbox.setScale(scaling, precision)
-        self.max_spinbox.setScale(scaling, precision)
+    def update_spinboxes_unit(self, unit: str, scaling: float,
+                              precision: int) -> None:
+        self.ui.min_spinbox.setScale(scaling, precision)
+        self.ui.max_spinbox.setScale(scaling, precision)
 
-        self.min_spinbox.setSuffix(unit)
-        self.max_spinbox.setSuffix(unit)
+        self.ui.min_spinbox.setSuffix(unit)
+        self.ui.max_spinbox.setSuffix(unit)
 
         self.data_scaling = scaling
         self.data_unit = unit
         self.data_precision = precision
 
-    def compute_min_max(self, img, cuts=None):
+    def compute_min_max(self, img: np.ndarray, cuts: AbstractCut | None = None
+                        ) -> tuple[float, float]:
         if cuts is None:
             img_min = img.min()
             img_max = img.max()
@@ -141,17 +146,17 @@ class MinMaxMixin:
         self.autoscale_min = img_min
         self.autoscale_max = img_max
 
-        if self.autoscale_button.isChecked():
-            with QSignalBlocker(self.min_spinbox):
-                self.min_spinbox.setMaximum(img_max)
-                self.min_spinbox.setValue(img_min)
+        if self.ui.autoscale_button.isChecked():
+            with QSignalBlocker(self.ui.min_spinbox):
+                self.ui.min_spinbox.setMaximum(img_max)
+                self.ui.min_spinbox.setValue(img_min)
 
-            with QSignalBlocker(self.max_spinbox):
-                self.max_spinbox.setMinimum(img_min)
-                self.max_spinbox.setValue(img_max)
+            with QSignalBlocker(self.ui.max_spinbox):
+                self.ui.max_spinbox.setMinimum(img_min)
+                self.ui.max_spinbox.setValue(img_max)
         else:
-            img_min = self.min_spinbox.value()
-            img_max = self.max_spinbox.value()
+            img_min = self.ui.min_spinbox.value()
+            img_max = self.ui.max_spinbox.value()
 
         return img_min, img_max
 
@@ -160,10 +165,10 @@ class SceneHoverMixin:
     hovered = Signal(str)
     formatter = KalAOFormatter()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-    def hover_xyv_to_str(self, x, y, v):
+    def hover_xyv_to_str(self, x: float, y: float, v: float) -> None:
         if not np.isnan(x) and not np.isnan(y):
             x = int(x)
             y = int(y)
@@ -186,16 +191,16 @@ class BackendWorker(QObject, QRunnable):
     exception = None
     ret = None
 
-    def __init__(self, fun, **kwargs):
+    def __init__(self, func: Callable, **kwargs: Any) -> None:
         super().__init__()
         QRunnable.__init__(self)
 
-        self.fun = fun
+        self.func = func
         self.kwargs = kwargs
 
-    def run(self):
+    def run(self) -> None:
         try:
-            self.ret = self.fun(**self.kwargs)
+            self.ret = self.func(**self.kwargs)
         except Exception as e:
             rprint(''.join(traceback.format_exception(e)))
             self.exception = e
@@ -204,23 +209,24 @@ class BackendWorker(QObject, QRunnable):
 
 
 class BackendActionMixin:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.threadpool = QThreadPool()
 
-    def action_send(self, widget_list, fun, **kwargs):
-        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+    def action_send(self, widget_list: QWidget | list[QWidget], func: Callable,
+                    **kwargs: Any) -> Any:
+        QGuiApplication.setOverrideCursor(QCursor(Qt.CursorShape.BusyCursor))
 
         if not isinstance(widget_list, list):
             widget_list = [widget_list]
 
         for widget in widget_list:
             widget.clearFocus()
-            widget.setEnabledStack(False, f'action_{fun.__name__}')
+            widget.setEnabledStack(False, f'action_{func.__name__}')
 
         loop = QEventLoop()
-        worker = BackendWorker(fun, **kwargs)
+        worker = BackendWorker(func, **kwargs)
         worker.done.connect(loop.quit)
 
         self.threadpool.start(worker)
@@ -229,14 +235,14 @@ class BackendActionMixin:
         QGuiApplication.restoreOverrideCursor()
 
         for widget in widget_list:
-            widget.setEnabledStack(True, f'action_{fun.__name__}')
+            widget.setEnabledStack(True, f'action_{func.__name__}')
 
         if worker.exception is not None:
             msgbox = KMessageBox(self)
-            msgbox.setIcon(QMessageBox.Critical)
+            msgbox.setIcon(QMessageBox.Icon.Critical)
             msgbox.setText('<b>An error occured!</b>')
             msgbox.setInformativeText(
-                f'An error occurred during call to "{fun.__name__}".')
+                f'An error occurred during call to "{func.__name__}".')
             msgbox.setDetailedText(''.join(
                 traceback.format_exception(worker.exception)))
             msgbox.setModal(True)
@@ -246,18 +252,20 @@ class BackendActionMixin:
 
 
 class BackendDataMixin:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.data_cache = {}
 
-    def consume_metadata(self, data, key, default=None, force=False):
+    def consume_metadata(self, data: dict[str, Any], key: str,
+                         default: Any = None, force: bool = False) -> Any:
         try:
             return data['metadata'][key]
         except KeyError:
             return default
 
-    def consume_shm(self, data, shm_name, default=None, force=False):
+    def consume_shm(self, data: dict[str, Any], shm_name: str,
+                    default: Any = None, force: bool = False) -> Any:
         try:
             if shm_name not in self.data_cache:
                 self.data_cache[shm_name] = {}
@@ -273,8 +281,9 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_shm_keyword(self, data, shm_name, key, default=None,
-                            force=False):
+    def consume_shm_keyword(self, data: dict[str,
+                                             Any], shm_name: str, key: str,
+                            default: Any = None, force: bool = False) -> Any:
         try:
             if shm_name not in self.data_cache:
                 self.data_cache[shm_name] = {}
@@ -293,23 +302,8 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_shm_status(self, data, shm_name, default=None, force=False):
-        try:
-            if shm_name not in self.data_cache:
-                self.data_cache[shm_name] = {}
-
-            value = data[shm_name]['status']
-            prev = self.data_cache[shm_name].get('status', None)
-
-            if value != prev or force:
-                self.data_cache[shm_name]['status'] = value
-                return value
-            else:
-                return default
-        except KeyError:
-            return default
-
-    def consume_shm_md(self, data, shm_name, default=None, force=False):
+    def consume_shm_md(self, data: dict[str, Any], shm_name: str,
+                       default: Any = None, force: bool = False) -> Any:
         try:
             if shm_name not in self.data_cache:
                 self.data_cache[shm_name] = {}
@@ -325,8 +319,9 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_fps_param(self, data, fps_name, param_name, default=None,
-                          force=False):
+    def consume_fps_param(self, data: dict[str, Any], fps_name: str,
+                          param_name: str, default: Any = None,
+                          force: bool = False) -> Any:
         try:
             if fps_name not in self.data_cache:
                 self.data_cache[fps_name] = {}
@@ -342,23 +337,25 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_fps_status(self, data, fps_name, default=None, force=False):
+    def consume_fps_md(self, data: dict[str, Any], fps_name: str,
+                       default: Any = None, force: bool = False) -> Any:
         try:
             if fps_name not in self.data_cache:
                 self.data_cache[fps_name] = {}
 
-            value = data[fps_name]['status']
-            prev = self.data_cache[fps_name].get('status', None)
+            value = data[fps_name]['md']
+            prev = self.data_cache[fps_name].get('md', None)
 
             if value != prev or force:
-                self.data_cache[fps_name]['status'] = value
+                self.data_cache[fps_name]['md'] = value
                 return value
             else:
                 return default
         except KeyError:
             return default
 
-    def consume_dict(self, data, key_dict, key, default=None, force=False):
+    def consume_dict(self, data: dict[str, Any], key_dict: str, key: str,
+                     default: Any = None, force: bool = False) -> Any:
         try:
             if key_dict not in self.data_cache:
                 self.data_cache[key_dict] = {}
@@ -374,8 +371,8 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_db(self, data, collection, key, default=(None, None),
-                   force=False):
+    def consume_db(self, data: dict[str, Any], collection: str, key: str,
+                   default=(None, None), force: bool = False) -> Any:
         try:
             if collection not in self.data_cache:
                 self.data_cache[collection] = {}
@@ -393,7 +390,8 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_fits(self, data, fits_file, default=None, force=False):
+    def consume_fits(self, data: dict[str, Any], fits_file: Path | str,
+                     default: Any = None, force: bool = False) -> Any:
         try:
             if not isinstance(fits_file, Path):
                 fits_file = Path(fits_file)
@@ -414,7 +412,8 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_fits_full(self, data, fits_file, default=None, force=False):
+    def consume_fits_full(self, data: dict[str, Any], fits_file: Path | str,
+                          default: Any = None, force: bool = False) -> Any:
         try:
             if not isinstance(fits_file, Path):
                 fits_file = Path(fits_file)
@@ -435,7 +434,8 @@ class BackendDataMixin:
         except KeyError:
             return default
 
-    def consume_fits_mtime(self, data, fits_file, default=None, force=False):
+    def consume_fits_mtime(self, data: dict[str, Any], fits_file: Path | str,
+                           default: Any = None, force: bool = False) -> Any:
         try:
             if not isinstance(fits_file, Path):
                 fits_file = Path(fits_file)
@@ -449,13 +449,15 @@ class BackendDataMixin:
             prev = self.data_cache[key].get('mtime', None)
 
             if value != prev or force:
+                # Do NOT store mtime in case image fetching fails (will be stored by consume_fits_full)
                 return value
             else:
                 return default
         except KeyError:
             return default
 
-    def data_to_widget(self, data, widget, true_value=[True]):
+    def data_to_widget(self, data: Any, widget: QWidget,
+                       true_value: list[Any] = [True]) -> None:
         if data is None:
             return
 

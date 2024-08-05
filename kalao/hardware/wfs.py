@@ -1,6 +1,5 @@
 import subprocess
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 import libtmux
@@ -104,10 +103,8 @@ def acquisition_running() -> bool:
     if nuvu_raw_shm is None:
         return False
 
-    maqtime = datetime.fromtimestamp(
-        nuvu_raw_shm.get_keywords()['_MAQTIME'] / 1e6, tz=timezone.utc)
-    return (datetime.now(timezone.utc) -
-            maqtime).total_seconds() < config.WFS.acquisition_time_timeout
+    return time.time() - nuvu_raw_shm.get_keywords(
+    )['_MAQTIME'] / 1e6 < config.WFS.acquisition_time_timeout
 
 
 def start_acquisition() -> ReturnCode:
@@ -305,6 +302,6 @@ def check_flux() -> bool:
     if shwfs_fps is None or not shwfs_fps.run_isrunning():
         return False
 
-    flux_avg = shwfs_fps.get_param('flux_avg')
+    flux_avg = shwfs_fps.get_param('flux_avg')  # TODO: from telemetry?
 
     return flux_avg > config.WFS.flux_min

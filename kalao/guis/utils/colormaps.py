@@ -1,21 +1,20 @@
 import inspect
 import sys
+from typing import Type
 
 import numpy as np
 import pandas as pd
 
-from PySide6.QtGui import QColor, QImage, QPixmap, Qt
+from PySide6.QtGui import QColor, QImage, QPixmap, QResizeEvent, Qt
 from PySide6.QtWidgets import QApplication, QLabel, QSizePolicy, QStyle
 
 import config
 
-colormaps_path = config.kalao_ics_path / 'colormaps'
-
-# See https://www.kennethmoreland.com/color-advice/
+colormaps_path = config.kalao_ics_path / 'assets/colormaps'
 
 
 class Colormap:
-    table = None
+    table: list[int]
 
     saturation_low_color = None
     saturation_high_color = None
@@ -33,7 +32,8 @@ class Colormap:
 class ColormapExtrapolated(Colormap):
     colors = None
 
-    def __init__(self, start=0, end=255, color_max=255):
+    def __init__(self, start: int = 0, end: int = 255,
+                 color_max: int = 255) -> None:
         length = len(self.colors)
 
         if self.has_transparency:
@@ -92,7 +92,7 @@ class ColormapCSV(Colormap):
     file = None
     scale = 1
 
-    def __init__(self):
+    def __init__(self) -> None:
         cmap = pd.read_csv(self.file)
 
         self.table = []
@@ -168,26 +168,28 @@ class BlackBodyTransparent(ColormapCSV):
 
 
 class ColormapLabel(QLabel):
-    def scaledPixmap(self):
-        return self.pixmap().scaled(self.size(), Qt.IgnoreAspectRatio,
-                                    Qt.FastTransformation)
+    def scaledPixmap(self) -> QPixmap:
+        return self.pixmap().scaled(self.size(),
+                                    Qt.AspectRatioMode.IgnoreAspectRatio,
+                                    Qt.TransformationMode.FastTransformation)
 
-    def resizeEvent(self, e):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         super().setPixmap(self.scaledPixmap())
 
 
-def show_colormap(colormap):
+def show_colormap(colormap: Colormap) -> None:
     if not hasattr(show_colormap, 'pos_y'):
         show_colormap.pos_y = 100
         show_colormap.labels = []
 
     label = ColormapLabel()
-    label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    label.setSizePolicy(QSizePolicy.Policy.Expanding,
+                        QSizePolicy.Policy.Expanding)
 
     array = np.arange(0, 256).reshape(1, 256)
     img_uint8 = np.require(array, np.uint8, 'C')
     image = QImage(img_uint8.data, img_uint8.shape[1], img_uint8.shape[0],
-                   img_uint8.shape[1], QImage.Format_Indexed8)
+                   img_uint8.shape[1], QImage.Format.Format_Indexed8)
     image.setColorTable(colormap.table)
 
     pixmap = QPixmap.fromImage(image)
@@ -205,10 +207,11 @@ def show_colormap(colormap):
         show_colormap.pos_y)
 
     show_colormap.pos_y += label.size().height() + QApplication.style(
-    ).pixelMetric(QStyle.PM_TitleBarHeight)
+    ).pixelMetric(QStyle.PixelMetric.PM_TitleBarHeight)
 
 
-def get_all_colormaps(exclude_transparent=False):
+def get_all_colormaps(exclude_transparent: bool = False
+                      ) -> list[Type[Colormap]]:
     colormaps = []
 
     for name, obj in inspect.getmembers(sys.modules[__name__],

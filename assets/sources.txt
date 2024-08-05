@@ -1,0 +1,15 @@
+# Colormaps
+
+https://www.kennethmoreland.com/color-advice/
+
+# Icons
+
+https://develop.kde.org/frameworks/breeze-icons/
+
+# Fonts
+
+https://rsms.me/inter/
+
+# Sounds
+
+https://invent.kde.org/plasma/ocean-sound-theme

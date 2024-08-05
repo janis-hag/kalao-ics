@@ -12,16 +12,16 @@ lorem = (
 lorem_words = lorem.lower().replace('.', '').replace(',', '').split(' ')
 
 
-def get_sentence(length):
+def get_sentence(length: int) -> str:
     message = ' '.join(random.sample(lorem_words, length))
     return message.capitalize() + '.'
 
 
-def get_paragraph(sentences, length):
+def get_paragraph(sentences: int, length: int) -> str:
     return ' '.join([get_sentence(length) for _ in range(sentences)])
 
 
-def get_paragraphs(paragraphs, sentences, length):
+def get_paragraphs(paragraphs: int, sentences: int, length: int) -> str:
     return '\n'.join([
         get_paragraph(sentences, length) for _ in range(paragraphs)
     ])

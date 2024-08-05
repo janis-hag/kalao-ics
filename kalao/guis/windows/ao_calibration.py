@@ -1,19 +1,22 @@
 import math
+from typing import Any
 
 import numpy as np
 
 from PySide6.QtCharts import QScatterSeries, QValueAxis
 from PySide6.QtCore import QPointF, QSignalBlocker, QTimer, Slot
-from PySide6.QtGui import QBrush, QPen, Qt
+from PySide6.QtGui import QBrush, QFont, QIcon, QPen, Qt
 from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QWidget
 
+from compiled.ui_ao_calibration import Ui_AOCalibrationWindow
+
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import ascii2html, colormaps
 from kalao.guis.utils.colormaps import CoolWarmTransparent
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
                                      SceneHoverMixin)
-from kalao.guis.utils.ui_loader import loadUi
-from kalao.guis.utils.widgets import KGraphicsView, KMainWindow, KMessageBox
+from kalao.guis.utils.widgets import KImageViewer, KMainWindow, KMessageBox
 
 
 class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
@@ -28,7 +31,9 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     axis_scaling = 1
     axis_precision = 0
 
-    def __init__(self, backend, conf, loop, wfs_shape, dm_shape, parent=None):
+    def __init__(self, backend: AbstractBackend, conf: str, loop: int,
+                 wfs_shape: tuple[int, ...], dm_shape: tuple[int, ...],
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
@@ -39,7 +44,9 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         self.wfs_shape = wfs_shape
         self.dm_shape = dm_shape
 
-        loadUi('ao_calibration.ui', self)
+        self.ui = Ui_AOCalibrationWindow()
+        self.ui.setupUi(self)
+
         self.resize(1200, 600)
 
         self.setWindowTitle(f'{conf.upper()} - {self.windowTitle()}')
@@ -65,8 +72,8 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             self.zRM_timer_interval = 100
 
         self.all_modes_widget = QWidget()
-        self.DMmodes_tiled_view = KGraphicsView(self.all_modes_widget)
-        self.modesWFS_tiled_view = KGraphicsView(self.all_modes_widget)
+        self.DMmodes_tiled_view = KImageViewer(self.all_modes_widget)
+        self.modesWFS_tiled_view = KImageViewer(self.all_modes_widget)
 
         layout = QHBoxLayout(self.all_modes_widget)
         layout.addWidget(self.DMmodes_tiled_view)
@@ -77,14 +84,14 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         ### Calibration tab
 
-        with QSignalBlocker(self.calib_combobox):
-            self.calib_combobox.addItem('Loaded')
-            self.calib_combobox.addItem('Saved')
+        with QSignalBlocker(self.ui.calib_combobox):
+            self.ui.calib_combobox.addItem('Loaded')
+            self.ui.calib_combobox.addItem('Saved')
 
-        for key in dir(self):
-            attr = getattr(self, key)
+        for key in dir(self.ui):
+            attr = getattr(self.ui, key)
 
-            if isinstance(attr, KGraphicsView):
+            if isinstance(attr, KImageViewer):
                 attr.hovered.connect(self.hover_xyv_to_str)
 
                 if key.startswith('modesWFS') or key.startswith(
@@ -99,12 +106,13 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         ### Latency tab
 
         # Create Chart and set General Chart setting
-        chart = self.latency_plot.chart()
+        chart = self.ui.latency_plot.chart()
+        chart.legend().hide()
 
         # Serie
-        pen = QPen(Color.TRANSPARENT, 0, Qt.SolidLine, Qt.SquareCap,
-                   Qt.MiterJoin)
-        brush = QBrush(Color.BLUE, Qt.SolidPattern)
+        pen = QPen(Color.TRANSPARENT, 0, Qt.PenStyle.SolidLine,
+                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
+        brush = QBrush(Color.BLUE, Qt.BrushStyle.SolidPattern)
 
         series = self.latency_series = QScatterSeries()
         series.setPen(pen)
@@ -119,7 +127,7 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         axis_x.setTickCount(7)
         axis_x.setRange(-1, self.latency_max)
         axis_x.setTitleText('Latency [ms]')
-        chart.addAxis(axis_x, Qt.AlignBottom)
+        chart.addAxis(axis_x, Qt.AlignmentFlag.AlignBottom)
         series.attachAxis(axis_x)
 
         # Y Axis Settings
@@ -127,14 +135,12 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         axis_y.setTickCount(5)
         axis_y.setRange(0, 1)
         axis_y.setTitleText('Signal [a.u.]')
-        chart.addAxis(axis_y, Qt.AlignLeft)
+        chart.addAxis(axis_y, Qt.AlignmentFlag.AlignLeft)
         series.attachAxis(axis_y)
-
-        chart.legend().hide()
 
         ### Zonal Response Matrix tab
 
-        self.zRM_view.updateColormap(colormaps.CoolWarm())
+        self.ui.zRM_view.updateColormap(colormaps.CoolWarm())
 
         self.zRM_timer = QTimer(self)
         self.zRM_timer.setInterval(self.zRM_timer_interval)
@@ -142,28 +148,30 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         ### Logs tab
 
-        self.calibration_textedit.document().setDefaultStyleSheet(
+        self.ui.calibration_textedit.setFont(QFont('Roboto Mono'))
+        self.ui.calibration_textedit.document().setDefaultStyleSheet(
             ascii2html.stylesheet)
 
         ### Common
 
-        self.calibration_loopname_label.updateText(loop_name=f'KalAO-{conf}')
-        self.calibration_loopnumber_label.updateText(loop_number=self.loop)
+        self.ui.calibration_loopname_label.updateText(
+            loop_name=f'KalAO-{conf}')
+        self.ui.calibration_loopnumber_label.updateText(loop_number=self.loop)
 
         self.step_post(None, None)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.ui.tabWidget.setCurrentIndex(0)
 
         self.show()
         self.center()
 
-    def step_pre(self, step):
-        getattr(self, f'calibration_{step}_indicator').setStatus(
+    def step_pre(self, step: str) -> None:
+        getattr(self.ui, f'calibration_{step}_indicator').setStatus(
             Color.ORANGE, 'Running')
 
-        self.calibration_textedit.clear()
+        self.ui.calibration_textedit.clear()
 
-    def step_post(self, step, data):
+    def step_post(self, step: str, data: dict[str, Any]) -> None:
         if step is None:
             step_index = -1
         else:
@@ -181,57 +189,58 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
                     pass
                 else:
                     if sucess:
-                        getattr(self,
+                        getattr(self.ui,
                                 f'calibration_{key}_indicator').setStatus(
                                     Color.GREEN, 'Success')
                         if key == 'mlat':
-                            i = self.tabWidget.indexOf(self.latency_tab)
-                            self.tabWidget.setTabEnabled(i, True)
-                            self.tabWidget.setCurrentIndex(i)
+                            i = self.ui.tabWidget.indexOf(self.ui.latency_tab)
+                            self.ui.tabWidget.setTabEnabled(i, True)
+                            self.ui.tabWidget.setCurrentIndex(i)
                         elif key == 'RMHdecode':
-                            i = self.tabWidget.indexOf(self.zRM_tab)
-                            self.tabWidget.setTabEnabled(i, True)
-                            self.tabWidget.setCurrentIndex(i)
+                            i = self.ui.tabWidget.indexOf(self.ui.zRM_tab)
+                            self.ui.tabWidget.setTabEnabled(i, True)
+                            self.ui.tabWidget.setCurrentIndex(i)
                         elif key == 'load':
-                            i = self.tabWidget.indexOf(self.calibration_tab)
-                            self.tabWidget.setCurrentIndex(i)
-                            self.calib_combobox.setCurrentText('Loaded')
+                            i = self.ui.tabWidget.indexOf(
+                                self.ui.calibration_tab)
+                            self.ui.tabWidget.setCurrentIndex(i)
+                            self.ui.calib_combobox.setCurrentText('Loaded')
                     else:
-                        getattr(self,
+                        getattr(self.ui,
                                 f'calibration_{key}_indicator').setStatus(
                                     Color.RED, 'Error')
 
-                        i = self.tabWidget.indexOf(self.logs_tab)
-                        self.tabWidget.setCurrentIndex(i)
+                        i = self.ui.tabWidget.indexOf(self.ui.logs_tab)
+                        self.ui.tabWidget.setCurrentIndex(i)
 
-                    self.calibration_textedit.appendHtml(
+                    self.ui.calibration_textedit.appendHtml(
                         ascii2html.translate(data['stdout']))
 
-                    horizontal_scrollbar = self.calibration_textedit.horizontalScrollBar(
+                    horizontal_scrollbar = self.ui.calibration_textedit.horizontalScrollBar(
                     )
                     horizontal_scrollbar.setValue(0)
 
-                    vertical_scrollbar = self.calibration_textedit.verticalScrollBar(
+                    vertical_scrollbar = self.ui.calibration_textedit.verticalScrollBar(
                     )
                     vertical_scrollbar.setValue(vertical_scrollbar.maximum())
 
-        def cleanup(key):
+        def cleanup(key: str) -> None:
             if key == 'mlat':
-                i = self.tabWidget.indexOf(self.latency_tab)
-                self.tabWidget.setTabEnabled(i, False)
+                i = self.ui.tabWidget.indexOf(self.ui.latency_tab)
+                self.ui.tabWidget.setTabEnabled(i, False)
             elif key == 'RMHdecode':
-                i = self.tabWidget.indexOf(self.zRM_tab)
-                self.tabWidget.setTabEnabled(i, False)
+                i = self.ui.tabWidget.indexOf(self.ui.zRM_tab)
+                self.ui.tabWidget.setTabEnabled(i, False)
 
         if step_index + 1 < len(self.calibration_order):
             key = self.calibration_order[step_index + 1]
 
             if key == 'save_restore':
-                self.calibration_save_restore_widget.setEnabled(True)
+                self.ui.calibration_save_restore_widget.setEnabled(True)
             else:
                 key = self.calibration_order[step_index + 1]
-                getattr(self, f'calibration_{key}_button').setEnabled(True)
-                getattr(self, f'calibration_{key}_indicator').setStatus(
+                getattr(self.ui, f'calibration_{key}_button').setEnabled(True)
+                getattr(self.ui, f'calibration_{key}_indicator').setStatus(
                     Color.BLACK, 'Ready')
 
                 cleanup(key)
@@ -239,35 +248,35 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         if step_index + 2 < len(self.calibration_order):
             for key in self.calibration_order[step_index + 2:]:
                 if key == 'save_restore':
-                    self.calibration_save_restore_widget.setEnabled(False)
+                    self.ui.calibration_save_restore_widget.setEnabled(False)
                 else:
-                    getattr(self,
+                    getattr(self.ui,
                             f'calibration_{key}_button').setEnabled(False)
-                    getattr(self, f'calibration_{key}_indicator').setStatus(
+                    getattr(self.ui, f'calibration_{key}_indicator').setStatus(
                         Color.BLACK, 'Not ready')
 
                     cleanup(key)
 
         return sucess
 
-    def calibration_check_return(self, data):
-        self.calibration_textedit.clear()
-        self.calibration_textedit.appendHtml(data['stdout'])
+    def calibration_check_return(self, data: dict[str, Any]) -> None:
+        self.ui.calibration_textedit.clear()
+        self.ui.calibration_textedit.appendHtml(data['stdout'])
 
         if data['returncode'] != 0:
-            i = self.tabWidget.indexOf(self.logs_tab)
-            self.tabWidget.setCurrentIndex(i)
+            i = self.ui.tabWidget.indexOf(self.ui.logs_tab)
+            self.ui.tabWidget.setCurrentIndex(i)
 
     ##### Calibration tab
 
-    def update_modes_stats(self):
+    def update_modes_stats(self) -> None:
         self.modes_number = np.inf
         self.DMmodes_min = np.inf
         self.modes_dm_max = -np.inf
         self.modesWFS_min = np.inf
         self.modes_wfs_max = -np.inf
 
-        if self.calib_combobox.currentText() == 'Saved':
+        if self.ui.calib_combobox.currentText() == 'Saved':
             data = self.modes_data.get('CMmodesDM', {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number, data.shape[0])
@@ -299,18 +308,18 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         if np.isinf(self.modes_number):
             self.modes_number = 1
 
-        self.mode_spinbox.setMaximum(self.modes_number)
-        self.mode_spinbox.setSuffix(f' / {self.modes_number}')
+        self.ui.mode_spinbox.setMaximum(self.modes_number)
+        self.ui.mode_spinbox.setSuffix(f' / {self.modes_number}')
 
     @Slot(bool)
-    def on_all_modes_button_clicked(self, checked):
+    def on_all_modes_button_clicked(self, checked: bool) -> None:
         self.update_all_modes_images()
         self.all_modes_widget.show()
         self.all_modes_widget.resize(1500, 1000)
 
     @Slot(bool)
-    def on_refresh_button_clicked(self, checked):
-        self.modes_data = self.action_send(self.modes_widget,
+    def on_refresh_button_clicked(self, checked: bool) -> None:
+        self.modes_data = self.action_send(self.ui.modes_widget,
                                            self.backend.ao_calibration_data,
                                            conf=self.conf, loop=self.loop)
 
@@ -319,21 +328,21 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         self.update_all_modes_images()
 
     @Slot(int)
-    def on_minmax_checkbox_stateChanged(self, state):
+    def on_minmax_checkbox_stateChanged(self, state: Qt.CheckState) -> None:
         self.update_calib_images()
 
     @Slot(int)
-    def on_calib_combobox_currentIndexChanged(self, index):
+    def on_calib_combobox_currentIndexChanged(self, index: int) -> None:
         self.update_modes_stats()
         self.update_calib_images()
         self.update_all_modes_images()
 
     @Slot(int)
-    def on_mode_spinbox_valueChanged(self, i):
+    def on_mode_spinbox_valueChanged(self, i: int) -> None:
         self.update_calib_images()
 
-    def update_calib_images(self):
-        if self.calib_combobox.currentText() == 'Saved':
+    def update_calib_images(self) -> None:
+        if self.ui.calib_combobox.currentText() == 'Saved':
             self.update_image('wfsref', 'wfsref', symetric=True)
             self.update_image('wfsrefc', 'wfsrefc', symetric=True)
             self.update_image('wfsmask', 'wfsmask')
@@ -358,8 +367,8 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             self.update_image('modesWFS', f'aol{self.loop}_modesWFS',
                               cube=True, symetric=True, first_axis=False)
 
-    def update_all_modes_images(self):
-        if self.calib_combobox.currentText() == 'Saved':
+    def update_all_modes_images(self) -> None:
+        if self.ui.calib_combobox.currentText() == 'Saved':
             self.create_images_tile(
                 self.modes_data.get('CMmodesDM').get('data'),
                 self.DMmodes_tiled_view, first_axis=True)
@@ -374,7 +383,8 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
                 self.modes_data.get(f'aol{self.loop}_modesWFS').get('data'),
                 self.modesWFS_tiled_view, first_axis=False)
 
-    def create_images_tile(self, img, widget, first_axis=True):
+    def create_images_tile(self, img: np.ndarray, view: KImageViewer,
+                           first_axis: bool = True) -> None:
         if len(img.shape) < 3:
             img = img[np.newaxis, :]
 
@@ -411,25 +421,25 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         img_max = np.nanmax(img_full)
         img_abs = max(abs(img_min), abs(img_max))
 
-        widget.updateColormap(CoolWarmTransparent())
-        widget.setImage(np.ma.masked_array(img_full, mask=img_mask),
-                        img_min=-img_abs, img_max=img_abs)
+        view.updateColormap(CoolWarmTransparent())
+        view.setImage(np.ma.masked_array(img_full, mask=img_mask),
+                      img_min=-img_abs, img_max=img_abs)
 
-    def update_image(self, view_key, data_key, cube=False, symetric=False,
-                     first_axis=True):
-        view = getattr(self, f'{view_key}_view')
+    def update_image(self, view_key: str, data_key: str, cube: bool = False,
+                     symetric: bool = False, first_axis: bool = True) -> None:
+        view = getattr(self.ui, f'{view_key}_view')
         data = self.modes_data.get(data_key, {}).get('data')
 
         if data is not None:
             if not cube:
                 img = data
             elif len(data.shape) == 2:
-                img = data[self.mode_spinbox.value() - 1, :]
+                img = data[self.ui.mode_spinbox.value() - 1, :]
             elif len(data.shape) == 3:
                 if first_axis:
-                    img = data[self.mode_spinbox.value() - 1, :, :]
+                    img = data[self.ui.mode_spinbox.value() - 1, :, :]
                 else:
-                    img = data[:, :, self.mode_spinbox.value() - 1]
+                    img = data[:, :, self.ui.mode_spinbox.value() - 1]
             else:
                 raise Exception(
                     f'Unexpected image size {len(data.shape)} for {data_key}')
@@ -439,8 +449,9 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         else:
             view.setImage(None)
 
-    def compute_minmax(self, img, view_key, symetric):
-        if self.minmax_checkbox.isChecked():
+    def compute_minmax(self, img: np.ndarray, view_key: str,
+                       symetric: bool) -> tuple[float, float]:
+        if self.ui.minmax_checkbox.isChecked():
             img_min = img.min()
             img_max = img.max()
         else:
@@ -464,8 +475,8 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         return img_min, img_max
 
     @Slot(bool)
-    def on_reload_button_clicked(self, checked):
-        data = self.action_send(self.modes_widget,
+    def on_reload_button_clicked(self, checked: bool) -> None:
+        data = self.action_send(self.ui.modes_widget,
                                 self.backend.ao_calibration_reload,
                                 conf=self.conf, loop=self.loop)
 
@@ -475,9 +486,9 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
     ##### Latency tab
 
-    def clear_latency(self):
-        self.latency_framerate_spinbox.setValue(np.nan)
-        self.latency_frames_spinbox.setValue(np.nan)
+    def clear_latency_tab(self) -> None:
+        self.ui.latency_framerate_spinbox.setValue(np.nan)
+        self.ui.latency_frames_spinbox.setValue(np.nan)
 
         self.latency_series.clear()
 
@@ -486,26 +497,26 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
     ##### Calibration sequence tab
 
     @Slot(bool)
-    def on_calibration_prepare_button_clicked(self, checked):
+    def on_calibration_prepare_button_clicked(self, checked: bool) -> None:
         self.step_pre('prepare')
 
-        data = self.action_send(self.calibration_buttons_widget,
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_prepare,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('prepare', data)
 
     @Slot(bool)
-    def on_calibration_mlat_button_clicked(self, checked):
+    def on_calibration_mlat_button_clicked(self, checked: bool) -> None:
         # Clear data
 
-        self.clear_latency()
+        self.clear_latency_tab()
 
         self.step_pre('mlat')
 
         # Take measurement
 
-        data = self.action_send(self.calibration_buttons_widget,
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_mlat,
                                 conf=self.conf, loop=self.loop)
 
@@ -517,18 +528,18 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         framerateHz = self.consume_fps_param(data, f'mlat-{self.loop}',
                                              'out.framerateHz', force=True)
         if framerateHz is not None:
-            self.latency_framerate_spinbox.setValue(framerateHz)
+            self.ui.latency_framerate_spinbox.setValue(framerateHz)
 
         latencyfr = self.consume_fps_param(data, f'mlat-{self.loop}',
                                            'out.latencyfr', force=True)
         if latencyfr is not None:
-            self.latency_frames_spinbox.setValue(latencyfr)
+            self.ui.latency_frames_spinbox.setValue(latencyfr)
 
         latency_data = data.get('hardwlatencypts')
         if latency_data is not None:
             if np.isnan(latency_data[:, 2]).all():
                 msgbox = KMessageBox(self)
-                msgbox.setIcon(QMessageBox.Critical)
+                msgbox.setIcon(QMessageBox.Icon.Critical)
                 msgbox.setText('<b>Latency measurement failed!</b>')
                 msgbox.setInformativeText(
                     'Even though the latency measurement succeeded, it only returned NaNs.'
@@ -546,40 +557,41 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             self.latency_axis_y.setRange(0, latency_data[:, 2].max() * 1.05)
 
     @Slot(bool)
-    def on_calibration_mkDMpokemodes_button_clicked(self, checked):
+    def on_calibration_mkDMpokemodes_button_clicked(self,
+                                                    checked: bool) -> None:
         self.step_pre('mkDMpokemodes')
 
-        data = self.action_send(self.calibration_buttons_widget,
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_mkDMpokemodes,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('mkDMpokemodes', data)
 
     @Slot(bool)
-    def on_calibration_takeref_button_clicked(self, checked):
+    def on_calibration_takeref_button_clicked(self, checked: bool) -> None:
         self.step_pre('takeref')
 
-        data = self.action_send(self.calibration_buttons_widget,
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_takeref,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('takeref', data)
 
     @Slot(bool)
-    def on_calibration_acqlinResp_button_clicked(self, checked):
+    def on_calibration_acqlinResp_button_clicked(self, checked: bool) -> None:
         self.step_pre('acqlinResp')
 
-        data = self.action_send(self.calibration_buttons_widget,
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_acqlinResp,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('acqlinResp', data)
 
     @Slot(bool)
-    def on_calibration_RMHdecode_button_clicked(self, checked):
+    def on_calibration_RMHdecode_button_clicked(self, checked: bool) -> None:
         self.step_pre('RMHdecode')
 
-        data = self.action_send(self.calibration_buttons_widget,
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_RMHdecode,
                                 conf=self.conf, loop=self.loop)
 
@@ -592,55 +604,61 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             self.zRM_min = img.min()
             self.zRM_max = img.max()
 
-            with QSignalBlocker(self.zRM_poke_spinbox):
-                self.zRM_poke_spinbox.setMaximum(img.shape[0])
-                self.zRM_poke_spinbox.setSuffix(f' / {img.shape[0]}')
-                self.zRM_poke_spinbox.setValue(1)
+            with QSignalBlocker(self.ui.zRM_poke_spinbox):
+                self.ui.zRM_poke_spinbox.setMaximum(img.shape[0])
+                self.ui.zRM_poke_spinbox.setSuffix(f' / {img.shape[0]}')
+                self.ui.zRM_poke_spinbox.setValue(1)
 
             self.update_zRM_view()
 
-            self.zRM_play_button.setChecked(True)
+            self.ui.zRM_play_button.setChecked(True)
         else:
             self.zRM_img = None
             self.zRM_min = np.nan
             self.zRM_max = np.nan
 
-            with QSignalBlocker(self.zRM_poke_spinbox):
-                self.zRM_poke_spinbox.setMaximum(1)
-                self.zRM_poke_spinbox.setSuffix(' / --')
-                self.zRM_poke_spinbox.setValue(1)
+            with QSignalBlocker(self.ui.zRM_poke_spinbox):
+                self.ui.zRM_poke_spinbox.setMaximum(1)
+                self.ui.zRM_poke_spinbox.setSuffix(' / --')
+                self.ui.zRM_poke_spinbox.setValue(1)
 
-    def zRM_next_image(self):
-        with QSignalBlocker(self.zRM_poke_spinbox):
-            self.zRM_poke_spinbox.setValue(self.zRM_poke_spinbox.value() %
-                                           self.zRM_poke_spinbox.maximum() + 1)
+    def zRM_next_image(self) -> None:
+        with QSignalBlocker(self.ui.zRM_poke_spinbox):
+            self.ui.zRM_poke_spinbox.setValue(
+                self.ui.zRM_poke_spinbox.value() %
+                self.ui.zRM_poke_spinbox.maximum() + 1)
 
             self.update_zRM_view()
 
     @Slot(bool)
-    def on_zRM_play_button_toggled(self, checked):
+    def on_zRM_play_button_toggled(self, checked: bool) -> None:
         if checked:
+            self.ui.zRM_play_button.setIcon(
+                QIcon(':/assets/icons/media-playback-start.svg'))
             self.zRM_timer.start()
         else:
+            self.ui.zRM_play_button.setIcon(
+                QIcon(':/assets/icons/media-playback-pause.svg'))
             self.zRM_timer.stop()
 
     @Slot(int)
-    def on_zRM_minmax_checkbox_stateChanged(self, state):
+    def on_zRM_minmax_checkbox_stateChanged(self,
+                                            state: Qt.CheckState) -> None:
         self.update_zRM_view()
 
     @Slot(int)
-    def on_zRM_poke_spinbox_valueChanged(self, i):
-        self.zRM_play_button.setChecked(False)
+    def on_zRM_poke_spinbox_valueChanged(self, i: int) -> None:
+        self.ui.zRM_play_button.setChecked(False)
 
         self.update_zRM_view()
 
-    def update_zRM_view(self):
+    def update_zRM_view(self) -> None:
         if self.zRM_img is None:
             return
 
-        img = self.zRM_img[self.zRM_poke_spinbox.value() - 1, :, :]
+        img = self.zRM_img[self.ui.zRM_poke_spinbox.value() - 1, :, :]
 
-        if self.zRM_minmax_checkbox.isChecked():
+        if self.ui.zRM_minmax_checkbox.isChecked():
             img_min = img.min()
             img_max = img.max()
         else:
@@ -651,33 +669,33 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         img_min = -abs_max
         img_max = abs_max
 
-        self.zRM_view.setImage(img, img_min, img_max)
+        self.ui.zRM_view.setImage(img, img_min, img_max)
 
     @Slot(bool)
-    def on_calibration_RMmkmask_button_clicked(self, checked):
+    def on_calibration_RMmkmask_button_clicked(self, checked: bool) -> None:
         self.step_pre('RMmkmask')
 
-        data = self.action_send(self.calibration_buttons_widget,
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_RMmkmask,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('RMmkmask', data)
 
     @Slot(bool)
-    def on_calibration_compCM_button_clicked(self, checked):
+    def on_calibration_compCM_button_clicked(self, checked: bool) -> None:
         self.step_pre('compCM')
 
-        data = self.action_send(self.calibration_buttons_widget,
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_compCM,
                                 conf=self.conf, loop=self.loop)
 
         self.step_post('compCM', data)
 
     @Slot(bool)
-    def on_calibration_load_button_clicked(self, checked):
+    def on_calibration_load_button_clicked(self, checked: bool) -> None:
         self.step_pre('load')
 
-        data = self.action_send(self.calibration_buttons_widget,
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_load,
                                 conf=self.conf, loop=self.loop)
 
@@ -686,11 +704,11 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         self.on_refresh_button_clicked(False)
 
     @Slot(bool)
-    def on_calibration_save_button_clicked(self, checked):
+    def on_calibration_save_button_clicked(self, checked: bool) -> None:
         data = self.action_send(
-            self.calibration_buttons_widget, self.backend.ao_calibration_save,
-            conf=self.conf, loop=self.loop,
-            comment=self.calibration_comment_lineedit.text())
+            self.ui.calibration_buttons_widget,
+            self.backend.ao_calibration_save, conf=self.conf, loop=self.loop,
+            comment=self.ui.calibration_comment_lineedit.text())
 
         if self.calibration_check_return(data):
             return
@@ -698,8 +716,8 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
         self.on_refresh_button_clicked(False)
 
     @Slot(bool)
-    def on_calibration_restore_button_clicked(self, checked):
-        data = self.action_send(self.calibration_buttons_widget,
+    def on_calibration_restore_button_clicked(self, checked: bool) -> None:
+        data = self.action_send(self.ui.calibration_buttons_widget,
                                 self.backend.ao_calibration_reload,
                                 conf=self.conf, loop=self.loop)
 

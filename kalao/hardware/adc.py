@@ -110,7 +110,7 @@ def set_angle(angle: float, offset: float = 0., blocking: bool = True,
         f'Setting angle between ADC prisms to {angle}° with an offset of {offset}°'
     )
 
-    memory.mset({'adc_angle': angle, 'adc_offset': offset})
+    memory.hmset('adc', {'angle': angle, 'offset': offset})
 
     # Motors are face to face, offset by same angle so they are counter-rotating
     rotate(config.PLC.Node.ADC1, config.ADC.max_disp_angle_1 + angle/2 +
@@ -128,19 +128,19 @@ def set_angle(angle: float, offset: float = 0., blocking: bool = True,
 
 
 def get_angle() -> float:
-    return memory.get('adc_angle', type=float, default=np.nan)
+    return memory.hget('adc', 'angle', type=float, default=np.nan)
 
 
 def get_offset() -> float:
-    return memory.get('adc_offset', type=float, default=np.nan)
+    return memory.hget('adc', 'offset', type=float, default=np.nan)
 
 
 def get_synchronisation() -> bool:
-    return memory.get('adc_synchronisation', type=bool, default=True)
+    return memory.hget('adc', 'synchronisation', type=bool, default=True)
 
 
 def set_synchronisation(state: bool) -> None:
-    memory.set('adc_synchronisation', state)
+    memory.hset('adc', 'synchronisation', state)
 
 
 def _compute_angle_and_offset(angle_adc1: float,

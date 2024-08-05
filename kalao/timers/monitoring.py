@@ -11,6 +11,7 @@ monitoring.py is part of the KalAO Instrument Control Software
 import math
 import signal
 import threading
+import time
 import traceback
 from datetime import datetime, timezone
 from types import FrameType
@@ -157,11 +158,8 @@ def gather_ao() -> dict[str, Any]:
     if nuvu_raw_shm is not None:
         stream_keywords = nuvu_raw_shm.get_keywords()
 
-        maqtime = datetime.fromtimestamp(stream_keywords['_MAQTIME'] / 1e6,
-                                         tz=timezone.utc)
-        acquisition_running = (
-            datetime.now(timezone.utc) -
-            maqtime).total_seconds() < config.WFS.acquisition_time_timeout
+        acquisition_running = time.time() - stream_keywords[
+            '_MAQTIME'] / 1e6 < config.WFS.acquisition_time_timeout
 
         data['wfs_emgain'] = stream_keywords.get('EMGAIN', np.nan)
         data['wfs_detgain'] = stream_keywords.get('DETGAIN', np.nan)
@@ -284,7 +282,7 @@ def _update_general() -> None:
         if config.Monitoring.alarms_repetition_rate is not None:
             _log(key, data[key], timestamp, alarm)
 
-    memory.set('monitoring_alarms_number', alarms_number)
+    memory.hset('monitoring', 'alarms_number', alarms_number)
 
     if data != {}:
         database.store('monitoring', data, timestamp=timestamp)
@@ -399,7 +397,7 @@ if __name__ == '__main__':
         job_thread = threading.Thread(target=job_func)
         job_thread.start()
 
-    def sighup_handler(signal_received: int, frame: FrameType | None) -> None:
+    def sighup_handler(signum: int, frame: FrameType | None) -> None:
         _update_ao_job()
 
     signal.signal(signal.SIGHUP, sighup_handler)

@@ -1,6 +1,7 @@
 # Exclude a variety of commonly ignored directories.
 exclude = [
-    "tcs_communication"
+    "tcs_communication",
+    "compiled"
 ]
 
 line-length = 80

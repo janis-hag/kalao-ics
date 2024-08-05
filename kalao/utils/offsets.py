@@ -37,11 +37,6 @@ def wfs_to_telescope(dx: float, dy: float, gain: float = 1) -> ReturnCode:
     alt_offset = dy * config.Offsets.wfs_y_to_tel_alt * gain
     az_offset = dx * config.Offsets.wfs_x_to_tel_az * gain
 
-    # logger.info(
-    #     'ttm',
-    #     f'Offloading WFS tip-tilt to telescope. On WFS: dx={dx}px, dy={dy}px. Offloaded: alt={alt_offset}asec, az={az_offset}asec'
-    # )
-
     if etcs.send_altaz_offset(alt_offset, az_offset,
                               wait=True) == ReturnCode.OK:
         return ReturnCode.OK
@@ -62,11 +57,6 @@ def camera_to_ttm(dx: float, dy: float, gain: float = 1,
 
     new_tip, new_tilt = ttm.check_saturation(new_tip, new_tilt)
 
-    # logger.info(
-    #     'ttm',
-    #     f'Changing tip-tilt based on FLI. On FLI: tip={dx}px, tilt={dy}px. TTM set to: tip={new_tip}mrad, tilt={new_tilt}mrad'
-    # )
-
     if ttm.set_tiptilt(output_shm_name, new_tip,
                        new_tilt) != (new_tip, new_tilt):
         return ReturnCode.GENERIC_ERROR
@@ -86,11 +76,6 @@ def wfs_to_ttm(dx: float, dy: float, gain: float = 1,
     new_tilt = tilt + dx * config.Offsets.wfs_x_to_ttm_tilt * gain
 
     new_tip, new_tilt = ttm.check_saturation(new_tip, new_tilt)
-
-    # logger.info(
-    #     'ttm',
-    #     f'Changing tip-tilt based on WFS. On WFS: dx={dx}px, dy={dy}px. TTM set to: tip={new_tip}mrad, tilt={new_tilt}mrad'
-    # )
 
     if ttm.set_tiptilt(output_shm_name, new_tip,
                        new_tilt) != (new_tip, new_tilt):

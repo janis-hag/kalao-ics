@@ -145,25 +145,26 @@ def init() -> ReturnCode:
     return ret_init
 
 
-def _send_request(params: dict = {}) -> requests.Response | None:
+def _send_request(params: dict | None = None) -> requests.Response | None:
     _params = {'components': 50947}
-    _params.update(params)
+
+    if params is not None:
+        _params.update(params)
 
     try:
         req = requests.get(config.IPPower.url, params=_params)
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            'ippower',
-            f'IPPower endpoint answered with a {e.__class__.__name__} exception.'
-        )
+
+        req.raise_for_status()
+
+        return req
+
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        logger.error('ippower', 'IPPower server seems to be down')
         return None
 
-    if req.status_code == 200:
-        return req
-    else:
+    except requests.exceptions.HTTPError:
         logger.error(
             'ippower',
-            f'IPPower endpoint answered with an Error {req.status_code}: {req.text}'
+            f'IPPower endpoint answered with an Error {req.status_code}, {req.text}'
         )
-
         return None

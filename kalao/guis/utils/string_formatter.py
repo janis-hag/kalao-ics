@@ -1,10 +1,11 @@
 from string import Formatter
+from typing import Any
 
 import numpy as np
 
 
 class KalAOFormatter(Formatter):
-    def format_field(self, value, format_spec):
+    def format_field(self, value: Any, format_spec: str) -> str:
         if isinstance(value, float):
             if np.isnan(value):
                 return '--'

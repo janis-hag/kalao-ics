@@ -6,13 +6,14 @@ import pandas as pd
 
 from astropy.io import fits
 
-from kalao import database, logger, memory
+from kalao import database, logger
 from kalao.hardware import camera, filterwheel
 from kalao.interfaces import etcs
 from kalao.sequencer import seq_utils
 from kalao.utils import fits_handling, starfinder
 
-from kalao.definitions.enums import ObservationType, ReturnCode
+from kalao.definitions.dataclasses import Template
+from kalao.definitions.enums import ReturnCode
 from kalao.definitions.exceptions import (AbortRequested,
                                           CameraTakeImageFailed,
                                           FocusingException,
@@ -24,8 +25,7 @@ from kalao.definitions.exceptions import (AbortRequested,
 import config
 
 
-def focus_sequence(exptime: float | None = None,
-                   steps: int = config.Focusing.steps,
+def focus_sequence(template: Template, exptime: float | None = None,
                    step_size: float = config.Focusing.step_size,
                    window_size: int = config.Focusing.window_size
                    ) -> ReturnCode:
@@ -33,15 +33,13 @@ def focus_sequence(exptime: float | None = None,
     Starts a sequence to find best telescope M2 focus position.
     """
 
-    memory.set('focusing_step', 0)
-
     filepath = fits_handling.get_focus_sequence_filepath()
 
     initial_focus = etcs.get_focus()
-    focus_start = initial_focus - steps/2*step_size
-    focus_stop = initial_focus + steps/2*step_size
+    focus_start = initial_focus - template.nexp / 2 * step_size
+    focus_stop = initial_focus + template.nexp / 2 * step_size
 
-    m2_positions = np.linspace(focus_start, focus_stop, steps)
+    m2_positions = np.linspace(focus_start, focus_stop, template.nexp)
 
     data = pd.DataFrame(columns=['focus', 'x', 'y', 'peak', 'fwhm'])
 
@@ -62,18 +60,16 @@ def focus_sequence(exptime: float | None = None,
 
             logger.info('focusing', 'Starting focus sequence')
 
-            for step, m2_position in enumerate(m2_positions):
+            for expno, m2_position in enumerate(m2_positions):
                 # Check if an abort was requested
                 if seq_utils.is_aborting():
                     raise AbortRequested
 
-                memory.set('focusing_step', step + 1)
-
                 etcs.set_focus(m2_position)
 
                 filepath = camera.take_science_image(
-                    ObservationType.FOCUS, exptime=exptime, comment=
-                    f'Focus sequence {step+1}/{steps}, focus={m2_position:.2f}um'
+                    template, exptime=exptime, comment=
+                    f'Focus sequence {expno + 1}/{template.nexp}, focus={m2_position:.2f}um'
                 )
 
                 if filepath is None:
@@ -90,7 +86,7 @@ def focus_sequence(exptime: float | None = None,
                     raise FocusingSaturated
 
                 # Store star info for fitting
-                data.loc[step] = {
+                data.loc[expno] = {
                     'focus': m2_position,
                     'x': star.x,
                     'y': star.y,
@@ -104,7 +100,7 @@ def focus_sequence(exptime: float | None = None,
                               round(star.x) - window_size//2:round(star.x) +
                               window_size//2]
 
-                hdu = fits.ImageHDU(img_cut, name=f'FOCUS{step+1}')
+                hdu = fits.ImageHDU(img_cut, name=f'FOCUS{expno+1}')
                 hdu.header.set('HIERARCH KAO FOC M2 POS', m2_position, '[um]')
                 hdu.header.set('HIERARCH KAO FOC STAR X', star.x, '[px]')
                 hdu.header.set('HIERARCH KAO FOC STAR Y', star.y, '[px]')
@@ -115,7 +111,7 @@ def focus_sequence(exptime: float | None = None,
                 hdul.append(hdu)
 
                 # If we have at least three points, start fitting a parabola
-                if step >= 2:
+                if expno >= 2:
                     x = data['focus'].to_numpy()
                     y = data['fwhm'].to_numpy()
 
@@ -133,7 +129,7 @@ def focus_sequence(exptime: float | None = None,
 
                 logger.info(
                     'focusing',
-                    f'Focus sequence {step+1}/{steps}: focus = {m2_position:.2f} µm, x = {star.x:.1f} px, y = {star.y:.1f} px, peak = {star.peak:.1f} ADU, FWHM = {star.fwhm:.2f} px'
+                    f'Focus sequence {expno+1}/{template.nexp}: focus = {m2_position:.2f} µm, x = {star.x:.1f} px, y = {star.y:.1f} px, peak = {star.peak:.1f} ADU, FWHM = {star.fwhm:.2f} px'
                 )
 
             # Check if we reached a minima

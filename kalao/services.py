@@ -8,10 +8,11 @@
 system.py is part of the KalAO Instrument Control Software
 (KalAO-ICS).
 """
-
 import signal
 import time
 from datetime import datetime, timezone
+from functools import wraps
+from typing import Any, Callable
 
 import dbus
 
@@ -25,27 +26,87 @@ import config
 # For documentation on the API
 
 
-def _connect_dbus_systemd(
-    system: bool = False
-) -> tuple[dbus.SystemBus | dbus.SessionBus, dbus.Interface]:
-    if system:
-        bus = dbus.SystemBus()
-    else:
-        bus = dbus.SessionBus()
+class Systemd:
+    def _connect_to_system_bus(self):
+        self._system_bus = dbus.SystemBus()
+        self._system_systemd = self._system_bus.get_object(
+            'org.freedesktop.systemd1', '/org/freedesktop/systemd1')
+        self._system_manager = dbus.Interface(
+            self._system_systemd, 'org.freedesktop.systemd1.Manager')
 
-    systemd = bus.get_object('org.freedesktop.systemd1',
-                             '/org/freedesktop/systemd1')
+    def _connect_to_session_bus(self):
+        self._session_bus = dbus.SessionBus()
+        self._session_systemd = self._session_bus.get_object(
+            'org.freedesktop.systemd1', '/org/freedesktop/systemd1')
+        self._session_manager = dbus.Interface(
+            self._session_systemd, 'org.freedesktop.systemd1.Manager')
 
-    manager = dbus.Interface(systemd, 'org.freedesktop.systemd1.Manager')
+    def bus(self, system: bool) -> dbus.SystemBus | dbus.SessionBus:
+        if system:
+            if not hasattr(self, '_system_bus'):
+                self._connect_to_system_bus()
 
-    return bus, manager
+            return self._system_bus
+        else:
+            if not hasattr(self, '_session_bus'):
+                self._connect_to_session_bus()
+
+            return self._session_bus
+
+    def manager(self, system: bool) -> dbus.Interface:
+        if system:
+            if not hasattr(self, '_system_manager'):
+                self._connect_to_system_bus()
+
+            return self._system_manager
+        else:
+            if not hasattr(self, '_session_manager'):
+                self._connect_to_session_bus()
+
+            return self._session_manager
+
+    def close(self):
+        if hasattr(self, '_system_bus'):
+            self._system_bus.close()
+
+        if hasattr(self, '_session_bus'):
+            self._session_bus.close()
 
 
-def get_status(unit: str, system: bool = False) -> tuple[str, str, datetime]:
-    bus, manager = _connect_dbus_systemd(system)
+def autoconnect(fun: Callable) -> Callable:
+    @wraps(fun)
+    def wrapper(*args: Any, systemd: Systemd | None, **kwargs: Any) -> Any:
+        ret = None
+        exception = None
 
-    service = bus.get_object('org.freedesktop.systemd1',
-                             object_path=manager.LoadUnit(unit))
+        if systemd is None:
+            disconnect_on_exit = True
+            systemd = Systemd()
+        else:
+            disconnect_on_exit = False
+
+        try:
+            ret = fun(*args, logind=systemd, **kwargs)
+        except Exception as e:
+            exception = e
+
+        if disconnect_on_exit:
+            systemd.close()
+
+        if exception is not None:
+            raise exception
+
+        return ret
+
+    return wrapper
+
+
+@autoconnect
+def get_status(unit: str, system: bool = False,
+               systemd: Systemd = None) -> tuple[str, str, datetime]:
+    service = systemd.bus(system).get_object(
+        'org.freedesktop.systemd1',
+        object_path=systemd.manager(system).LoadUnit(unit))
 
     interface = dbus.Interface(
         service, dbus_interface='org.freedesktop.DBus.Properties')
@@ -59,17 +120,13 @@ def get_status(unit: str, system: bool = False) -> tuple[str, str, datetime]:
     timestamp = datetime.fromtimestamp(
         int(timestamp) * 10**(-6), tz=timezone.utc)
 
-    bus.close()
-
     return state, substate, timestamp
 
 
-def is_enabled(unit: str, system: bool = False) -> bool | None:
-    bus, manager = _connect_dbus_systemd(system)
-
-    enabled = str(manager.GetUnitFileState(unit))
-
-    bus.close()
+@autoconnect
+def is_enabled(unit: str, system: bool = False,
+               systemd: Systemd = None) -> bool | None:
+    enabled = str(systemd.manager(system).GetUnitFileState(unit))
 
     if enabled == 'enabled':
         return True
@@ -79,8 +136,9 @@ def is_enabled(unit: str, system: bool = False) -> bool | None:
         return None
 
 
-def is_active(unit: str, system: bool = False) -> bool:
-    state, substate, timestamp = get_status(unit, system)
+def is_active(unit: str, system: bool = False,
+              systemd: Systemd = None) -> bool:
+    state, substate, timestamp = get_status(unit, system, systemd=systemd)
 
     if state == 'active':
         return True
@@ -88,18 +146,21 @@ def is_active(unit: str, system: bool = False) -> bool:
         return False
 
 
-def get_all_status() -> dict[str, tuple[str, str, datetime]]:
+@autoconnect
+def get_all_status(systemd: Systemd = None
+                   ) -> dict[str, tuple[str, str, datetime]]:
     status_dict = {}
     for service in config.Systemd.services.values():
         unit = service['unit']
         system = service.get('system', False)
 
-        status_dict[unit] = get_status(unit, system=system)
+        status_dict[unit] = get_status(unit, system=system, systemd=systemd)
 
     return status_dict
 
 
-def check_all_active() -> dict[str, bool]:
+@autoconnect
+def check_all_active(systemd: Systemd = None) -> dict[str, bool]:
     status_dict = {}
 
     for service in config.Systemd.services.values():
@@ -109,27 +170,25 @@ def check_all_active() -> dict[str, bool]:
         unit = service['unit']
         system = service.get('system', False)
 
-        status_dict[unit] = is_active(unit, system=system)
+        status_dict[unit] = is_active(unit, system=system, systemd=systemd)
 
     return status_dict
 
 
+@autoconnect
 def unit_control(unit: str, action: ServiceAction, system: bool = False,
                  runtime_only: bool = False, force: bool = True,
                  mode: str = 'replace', whom: str = 'all',
-                 signal: int = signal.SIGKILL) -> tuple[str, str, datetime]:
+                 signal: int = signal.SIGKILL,
+                 systemd: Systemd = None) -> tuple[str, str, datetime]:
     """
     Function to control systemd unit services.
-
-    :param unit_name: Name of the systemd unit service to control
-    :param action: RESTART/START/STOP/STATUS
-    :return:
     """
 
     if action != ServiceAction.STATUS:
         logger.info('services', f'Sending {action} command to {unit}.')
 
-    bus, manager = _connect_dbus_systemd(system)
+    manager = systemd.manager(system)
 
     if action == ServiceAction.STATUS:
         # Status is always returned as long as the action keyword is correct
@@ -154,16 +213,12 @@ def unit_control(unit: str, action: ServiceAction, system: bool = False,
         logger.error('services', f'Unknown action: {action}')
         return 'unknown', 'unknown', datetime.fromtimestamp(0, tz=timezone.utc)
 
-    bus.close()
-
     return get_status(unit)
 
 
 def init() -> ReturnCode:
     '''
     Initialise all system services and run sanity checks
-
-    :return:
     '''
 
     for service in config.Systemd.services.values():

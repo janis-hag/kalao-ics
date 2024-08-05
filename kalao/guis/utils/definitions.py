@@ -5,8 +5,6 @@ from PySide6.QtGui import QColor
 from kalao.utils.image import (LinearScale, LogScale, MinMaxCut, PercentileCut,
                                SigmaCut, SquaredScale, SquareRootScale)
 
-import config
-
 
 class Color:
     TRANSPARENT = QColor(0, 0, 0, 0)
@@ -63,12 +61,6 @@ class PokeState(StrEnum):
     FLAT = 'No poke'
     DOWN = 'Poke down'
     UP = 'Poke up'
-
-
-class Logo:
-    folder = config.kalao_ics_path / 'logo'
-    svg = folder / 'KalAO_logo.svg'
-    ico = folder / 'KalAO_icon.ico'
 
 
 HORI = 0

@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 from numpy.polynomial import Polynomial
 
@@ -6,57 +9,42 @@ from astropy.io import fits
 from PySide6.QtCharts import (QScatterSeries, QSplineSeries, QValueAxis,
                               QXYSeries)
 from PySide6.QtCore import QPointF, QTimer
-from PySide6.QtGui import QBrush, QFont, QPen, Qt
-from PySide6.QtWidgets import QLabel, QMessageBox, QVBoxLayout
+from PySide6.QtGui import QBrush, QCloseEvent, QFont, QPen, QShowEvent, Qt
+from PySide6.QtWidgets import QLabel, QMessageBox, QVBoxLayout, QWidget
 
+from compiled.ui_focus_sequence import Ui_FocusSequenceWindow
+
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import BackendDataMixin
-from kalao.guis.utils.ui_loader import loadUi
-from kalao.guis.utils.widgets import (KGraphicsView, KLabel, KMainWindow,
+from kalao.guis.utils.widgets import (KImageViewer, KLabel, KMainWindow,
                                       KMessageBox)
 
 import config
 
 
 class FocusSequenceWindow(KMainWindow, BackendDataMixin):
-    def __init__(self, backend, file=None, parent=None):
+    def __init__(self, backend: AbstractBackend, mainwindow=None,
+                 file: Path = None, parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
         self.file = file
 
-        loadUi('focus_sequence.ui', self)
+        self.ui = Ui_FocusSequenceWindow()
+        self.ui.setupUi(self)
+
         self.resize(800, 400)
 
-        self.widgets = {}
-        for i in range(config.Focusing.steps):
-            vlayout = QVBoxLayout()
-
-            font = QFont()
-            font.setBold(True)
-
-            title_label = QLabel(f'Step {i+1}')
-            title_label.setFont(font)
-            title_label.setAlignment(Qt.AlignHCenter)
-            vlayout.addWidget(title_label)
-
-            view = KGraphicsView()
-            vlayout.addWidget(view)
-
-            desc_label = KLabel('Score {fwhm:.2f}')
-            desc_label.updateText(fwhm=np.nan)
-            desc_label.setAlignment(Qt.AlignHCenter)
-            vlayout.addWidget(desc_label)
-
-            self.widgets[i + 1] = (view, desc_label)
-
-            self.sequence_layout.addLayout(vlayout, i // 4, i % 4)
+        self.sequence_widgets = []
 
         # Create Chart and set General Chart setting
-        chart = self.sequence_plot.chart()
+        chart = self.ui.sequence_plot.chart()
+        chart.legend().hide()
 
         # Serie
-        pen = QPen(Color.RED, 1.25, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen = QPen(Color.RED, 1.25, Qt.PenStyle.SolidLine,
+                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
 
         series_fit = self.focus_fit_series = QSplineSeries()
         series_fit.setPen(pen)
@@ -65,7 +53,7 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
         series_fit.setPointsVisible(False)
         chart.addSeries(series_fit)
 
-        brush = QBrush(Color.BLUE, Qt.SolidPattern)
+        brush = QBrush(Color.BLUE, Qt.BrushStyle.SolidPattern)
 
         series = self.focus_series = QScatterSeries()
         series.setBrush(brush)
@@ -79,7 +67,7 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
         axis_x.setLabelFormat('%.0f')
         axis_x.setTickCount(5)
         axis_x.setTitleText('M2 Position [µm]')
-        chart.addAxis(axis_x, Qt.AlignBottom)
+        chart.addAxis(axis_x, Qt.AlignmentFlag.AlignBottom)
         series.attachAxis(axis_x)
         series_fit.attachAxis(axis_x)
 
@@ -87,18 +75,18 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
         axis_y = self.axis_y = QValueAxis()
         axis_y.setTickCount(5)
         axis_y.setTitleText('Score [a.u.]')
-        chart.addAxis(axis_y, Qt.AlignLeft)
+        chart.addAxis(axis_y, Qt.AlignmentFlag.AlignLeft)
         series.attachAxis(axis_y)
         series_fit.attachAxis(axis_y)
 
-        chart.legend().hide()
-
         self.clear()
-        self.status_label.updateText(status='--')
+        self.ui.status_label.updateText(status='--')
 
         if self.file is None:
             backend.focusing_sequence_fits_updated.connect(
                 self.focusing_sequence_fits_updated)
+
+            self.create_widgets(config.Focusing.nexp)
 
             self.focus_timer = QTimer(parent=self)
             self.focus_timer.setInterval(
@@ -111,15 +99,18 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
             hdul = fits.open(self.file)
 
             if 'HIERARCH KAO FOC SUCCESS' not in hdul[0].header:
-                msgbox = KMessageBox(self)
-                msgbox.setIcon(QMessageBox.Critical)
+                self.close()
+                msgbox = KMessageBox(mainwindow)
+                msgbox.setIcon(QMessageBox.Icon.Critical)
                 msgbox.setText('<b>Invalid file!</b>')
                 msgbox.setInformativeText(
-                    'The selected file doesn\'t seem to contain a focus sequence.'
+                    f'"{self.file}" doesn\'t seem to contain a focus sequence.'
                 )
                 msgbox.setModal(True)
                 msgbox.show()
-                self.close()
+                return
+
+            self.create_widgets(len(hdul) - 1)
 
             self.show_sequence(hdul)
 
@@ -127,24 +118,47 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
         self.center()
         self.setFixedSize(self.size())
 
-    def focusing_sequence_fits_updated(self, data):
+    def create_widgets(self, length: int) -> None:
+        for i in range(length):
+            vlayout = QVBoxLayout()
+
+            font = QFont()
+            font.setBold(True)
+
+            title_label = QLabel(f'Step {i+1}')
+            title_label.setFont(font)
+            title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            vlayout.addWidget(title_label)
+
+            view = KImageViewer()
+            vlayout.addWidget(view)
+
+            label = KLabel('Score {fwhm:.2f}')
+            label.updateText(fwhm=np.nan)
+            label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            vlayout.addWidget(label)
+
+            self.ui.sequence_layout.addLayout(vlayout, i // 4, i % 4)
+
+            self.sequence_widgets.append({'view': view, 'label': label})
+
+    def focusing_sequence_fits_updated(self, data: dict[str, Any]) -> None:
         hdul = self.consume_fits_full(data, config.FITS.last_focus_sequence)
 
         if hdul is not None:
             self.show_sequence(hdul)
 
-    def show_sequence(self, hdul):
+    def show_sequence(self, hdul: fits.HDUList) -> None:
         self.clear()
 
         for i in range(1, len(hdul)):
-            view, desc_label = self.widgets[i]
-            view.setImage(hdul[i].data)
+            self.sequence_widgets[i - 1]['view'].setImage(hdul[i].data)
 
             fwhm = hdul[i].header[
                 'HIERARCH KAO FOC STAR FWHM'] * config.Camera.plate_scale
             focus = hdul[i].header['HIERARCH KAO FOC M2 POS']
 
-            desc_label.updateText(fwhm=fwhm)
+            self.sequence_widgets[i - 1]['label'].updateText(fwhm=fwhm)
 
             self.focus_series.append(QPointF(focus, fwhm))
 
@@ -198,17 +212,18 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
                 self.focus_timer.stop()
 
             if sucess:
-                self.status_label.updateText(status='Success!')
-                self.status_label.setStyleSheet('')
+                self.ui.status_label.updateText(status='Success!')
+                self.ui.status_label.setStyleSheet('')
             else:
                 reason = hdul[0].header['HIERARCH KAO FOC REASON']
 
-                self.status_label.updateText(status=reason)
-                self.status_label.setStyleSheet(f'color: {Color.RED.name()};')
+                self.ui.status_label.updateText(status=reason)
+                self.ui.status_label.setStyleSheet(
+                    f'color: {Color.RED.name()};')
 
                 if self.file is None:
                     msgbox = KMessageBox(self)
-                    msgbox.setIcon(QMessageBox.Critical)
+                    msgbox.setIcon(QMessageBox.Icon.Critical)
                     msgbox.setText('<b>Focusing failed!</b>')
                     msgbox.setInformativeText(
                         f'Focusing failed with the following error:\n\n{reason}'
@@ -216,28 +231,28 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
                     msgbox.setModal(True)
                     msgbox.show()
         else:
-            self.status_label.updateText(status=f'Step {len(hdul)-1}')
-            self.status_label.setStyleSheet('')
+            self.ui.status_label.updateText(status=f'Step {len(hdul)-1}')
+            self.ui.status_label.setStyleSheet('')
 
-    def clear(self):
+    def clear(self) -> None:
         self.focus_series.clear()
         self.focus_fit_series.clear()
 
         self.axis_x.setRange(0, 4)
         self.axis_y.setRange(0, 4)
 
-        for view, desc_label in self.widgets.values():
-            view.setImage(None)
-            desc_label.updateText(fwhm=np.nan)
+        for widget in self.sequence_widgets:
+            widget['view'].setImage(None)
+            widget['label'].updateText(fwhm=np.nan)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         if self.file is None:
             self.focus_timer.stop()
 
-        event.accept()
+        return super().closeEvent(event)
 
-    def showEvent(self, event):
+    def showEvent(self, event: QShowEvent) -> None:
         if self.file is None:
             self.focus_timer.start()
 
-        event.accept()
+        return super().showEvent(event)

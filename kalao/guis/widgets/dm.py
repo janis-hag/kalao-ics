@@ -1,14 +1,19 @@
+from typing import Any
+
 import numpy as np
 
 from PySide6.QtGui import Qt
+from PySide6.QtWidgets import QWidget
+
+from compiled.ui_dm import Ui_DMWidget
 
 from kalao.utils import zernike
 
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import (BackendDataMixin, MinMaxMixin,
                                      SceneHoverMixin)
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KWidget
 
 import config
@@ -31,24 +36,27 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     img = None
     masked = False
 
-    def __init__(self, backend, parent=None):
+    def __init__(self, backend: AbstractBackend,
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
         self.mask = zernike.generate_pattern_mask((12, 12))
 
-        loadUi('dm.ui', self)
+        self.ui = Ui_DMWidget()
+        self.ui.setupUi(self)
+
         self.resize(600, 400)
 
-        self.init_minmax(self.dm_view, symetric=True)
+        self.init_minmax(self.ui.dm_view, symetric=True)
 
-        self.change_units(Qt.Unchecked)
-        self.change_colormap(Qt.Unchecked)
+        self.change_units(Qt.CheckState.Unchecked)
+        self.change_colormap(Qt.CheckState.Unchecked)
 
-        self.dm_view.hovered.connect(self.hover_xyv_to_str)
+        self.ui.dm_view.hovered.connect(self.hover_xyv_to_str)
         backend.streams_all_updated.connect(self.streams_all_updated)
 
-    def streams_all_updated(self, data):
+    def streams_all_updated(self, data: dict[str, Any]) -> None:
         img = self.consume_shm(data, config.SHM.DM)
 
         max_stroke = self.consume_fps_param(data, config.FPS.BMC, 'max_stroke')
@@ -60,7 +68,7 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             self.img = img
             self.update_view()
 
-    def update_view(self):
+    def update_view(self) -> None:
         if self.img is None:
             return
 
@@ -76,7 +84,7 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             img.max() / self.image_info['max'],
             img.min() / self.image_info['min']) / self.max_stroke
 
-        self.dm_view.setImage(img, img_min, img_max)
+        self.ui.dm_view.setImage(img, img_min, img_max)
 
         stroke_max = np.max(img)
         stroke_min = np.min(img)
@@ -86,36 +94,38 @@ class DMWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.update_labels()
 
-    def update_labels(self):
-        self.stroke_raw_label.updateText(
+    def update_labels(self) -> None:
+        self.ui.stroke_raw_label.updateText(
             stroke_raw=self.stroke_raw * self.data_scaling,
             unit=self.data_unit)
-        self.stroke_effective_label.updateText(
+        self.ui.stroke_effective_label.updateText(
             stroke_effective=self.stroke_effective * self.data_scaling,
             unit=self.data_unit)
 
         if self.saturation >= 1:
-            self.saturation_label.setText('Saturated !')
-            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+            self.ui.saturation_label.setText('Saturated !')
+            self.ui.saturation_label.setStyleSheet(
+                f'color: {Color.RED.name()};')
         else:
-            self.saturation_label.updateText(saturation=self.saturation * 100)
-            self.saturation_label.setStyleSheet('')
+            self.ui.saturation_label.updateText(saturation=self.saturation *
+                                                100)
+            self.ui.saturation_label.setStyleSheet('')
 
-    def change_units(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
+    def change_units(self, state: Qt.CheckState) -> None:
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
             self.update_spinboxes_unit(' µm', 2, 2)
         else:
             self.update_spinboxes_unit(' µm', 1, 2)
 
         self.update_labels()
 
-    def change_colormap(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
-            self.dm_view.updateColormap(
+    def change_colormap(self, state: Qt.CheckState) -> None:
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
+            self.ui.dm_view.updateColormap(
                 colormaps.GrayscaleSaturationTransparent())
         else:
-            self.dm_view.updateColormap(colormaps.CoolWarmTransparent())
+            self.ui.dm_view.updateColormap(colormaps.CoolWarmTransparent())
 
-    def change_mask(self, state):
-        self.masked = Qt.CheckState(state) == Qt.Checked
+    def change_mask(self, state: Qt.CheckState) -> None:
+        self.masked = Qt.CheckState(state) == Qt.CheckState.Checked
         self.update_view()

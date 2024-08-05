@@ -29,7 +29,7 @@ from numpy.polynomial import Polynomial
 from kalao.utils import ktools
 from kalao.utils.rprint import rprint
 
-from kalao.definitions.enums import ObservationType, PLCStatus, RelayState
+from kalao.definitions.enums import PLCStatus, RelayState, TemplateID
 
 kalao_ics_path = Path(__file__).absolute().parent
 epsilon = 1e-12
@@ -201,6 +201,8 @@ class Camera:
 
     median_bias = 1007  # ADU
 
+    linear_range_max = 60000  # ADU
+
     laser_calib_power = 0.35  # mW
     laser_calib_exptime = 0.01  # s
     laser_calib_filter = 'ND1.5'
@@ -371,9 +373,7 @@ class PLC:
 
 class Sequencer:
     host = '127.0.0.1'
-    port = 5005
-    gop_arg_int = ['nbframes', 'nbPic']
-    gop_arg_float = ['texp', 'intensity', 'mv']
+    port = 8080
 
     init_timeout = 500  # s
 
@@ -400,50 +400,63 @@ class FITS:
     max_comment_length = 40
     max_length_without_HIERARCH = 8
 
-    on_sky_types = [
-        ObservationType.TARGET, ObservationType.TARGET_CENTERING,
-        ObservationType.FOCUS, ObservationType.SKY_FLAT
+    on_sky_templates = [
+        TemplateID.TARGET_OBSERVATION, TemplateID.TARGET_CENTERING,
+        TemplateID.FOCUS, TemplateID.SKY_FLAT
     ]
 
     base_header = {
-        ObservationType.TARGET: {
+        TemplateID.TARGET_OBSERVATION: {
+            'HIERARCH ESO TPL NAME': 'Target observation',
             'HIERARCH ESO DPR CATG': 'SCIENCE',
             'HIERARCH ESO DPR TYPE': 'OBJECT',
         },
-        ObservationType.BIAS: {
+        TemplateID.BIAS: {
+            'HIERARCH ESO TPL NAME': 'Bias',
             'HIERARCH ESO DPR CATG': 'CALIB',
             'HIERARCH ESO DPR TYPE': 'BIAS',
             'HIERARCH ESO OBS PROG ID': '199',
         },
-        ObservationType.DARK: {
+        TemplateID.DARK: {
+            'HIERARCH ESO TPL NAME': 'Dark',
             'HIERARCH ESO DPR CATG': 'CALIB',
             'HIERARCH ESO DPR TYPE': 'DARK',
             'HIERARCH ESO OBS PROG ID': '199',
         },
-        ObservationType.SKY_FLAT: {
+        TemplateID.SKY_FLAT: {
+            'HIERARCH ESO TPL NAME': 'Sky flat',
             'HIERARCH ESO DPR CATG': 'CALIB',
             'HIERARCH ESO DPR TYPE': 'FLAT,SKY',
             'HIERARCH ESO OBS PROG ID': '199',
         },
-        ObservationType.LAMP_FLAT: {
+        TemplateID.LAMP_FLAT: {
+            'HIERARCH ESO TPL NAME': 'Lamp flat',
             'HIERARCH ESO DPR CATG': 'CALIB',
             'HIERARCH ESO DPR TYPE': 'FLAT,LAMP',
             'HIERARCH ESO OBS PROG ID': '199',
         },
-        ObservationType.FOCUS: {
+        TemplateID.FOCUS: {
+            'HIERARCH ESO TPL NAME': 'Focus',
             'HIERARCH ESO DPR CATG': 'TECHNICAL',
             'HIERARCH ESO DPR TYPE': 'OBJECT,FOCUS',
             'HIERARCH ESO OBS PROG ID': '199',
         },
-        ObservationType.TARGET_CENTERING: {
+        TemplateID.TARGET_CENTERING: {
+            'HIERARCH ESO TPL NAME': 'Target centering',
             'HIERARCH ESO DPR CATG': 'ACQUISITION',
             'HIERARCH ESO DPR TYPE': 'OBJECT',
         },
-        ObservationType.LASER_CENTERING: {
+        TemplateID.LASER_CENTERING: {
+            'HIERARCH ESO TPL NAME': 'Laser centering',
             'HIERARCH ESO DPR CATG': 'ACQUISITION',
             'HIERARCH ESO DPR TYPE': 'STD,FIBER',
         },
-        ObservationType.ENGINEERING: {
+        TemplateID.ENGINEERING: {
+            'HIERARCH ESO TPL NAME': 'Engineering',
+            'HIERARCH ESO DPR CATG': 'TECHNICAL',
+        },
+        TemplateID.SELF_TEST: {
+            'HIERARCH ESO TPL NAME': 'Self-test',
             'HIERARCH ESO DPR CATG': 'TECHNICAL',
         },
     }
@@ -521,7 +534,7 @@ class Centering:
 
 
 class Focusing:
-    steps = 7  # -
+    nexp = 7  # -
     step_size = 50  # µm
     window_size = 80  # px
 
@@ -599,8 +612,8 @@ class Calib:
         dark_number = 5  # -
 
         include_types = [
-            ObservationType.TARGET, ObservationType.SKY_FLAT,
-            ObservationType.LAMP_FLAT
+            TemplateID.TARGET_OBSERVATION, TemplateID.SKY_FLAT,
+            TemplateID.LAMP_FLAT
         ]
 
     class AO:
@@ -626,6 +639,11 @@ class GOP:
     host = 'kalaortc01'  # 10.10.132.120
     port = 18234
     verbosity = 0
+
+    request_timeout = 120  # s
+
+    arg_int = ['nbframes', 'nbPic']
+    arg_float = ['texp', 'intensity', 'mv']
 
 
 class Email:
@@ -752,11 +770,14 @@ class Hardware:
 
 class GUI:
     ttm_plot_length = 300  # s
+    telemetry_buffer_length = 10  # s
 
     logs_max_entries = 10000  # -
     logs_initial_entries = 1000  # -
 
     monitoring_max_age = 2 * Monitoring.update_interval  # s
+
+    manual_centering_alarm_interval = 30  # s
 
     plots_mapping = {
         # -1
@@ -798,11 +819,20 @@ class GUI:
 
     http_host = '10.10.132.120'  # kalaortc01
     # http_host = '127.0.0.1'  # localhost
-    http_port = 8080
+    http_port = 8081
     http_dataformat = 'application/octet-stream'
+    http_request_timeout = 10  # s
 
     opengl_graphicsview = False
     opengl_charts = True
+
+
+class Telemetry:
+    # Warning: order is defined by C code
+    data_order = [
+        'timestamp_0', 'timestamp_1', 'tip', 'tilt', 'flux_avg', 'flux_max',
+        'residual_rms', 'slope_x_avg', 'slope_y_avg'
+    ]
 
 
 class FPS:

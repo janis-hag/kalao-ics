@@ -28,10 +28,9 @@ from kalao import database, euler, logger
 from kalao.timers import monitoring
 from kalao.utils import kstring, ktime
 
-from kalao.definitions.dataclasses import ROI
-from kalao.definitions.enums import (FlipMirrorStatus, LaserStatus,
-                                     ObservationType, ReturnCode,
-                                     ShutterStatus, TungstenStatus)
+from kalao.definitions.dataclasses import ROI, Template
+from kalao.definitions.enums import (FlipMirrorStatus, LaserStatus, ReturnCode,
+                                     ShutterStatus, TemplateID, TungstenStatus)
 
 import config
 
@@ -79,8 +78,8 @@ def get_focus_sequence_filepath() -> Path:
     return filepath
 
 
-def save_image(image_path: Path, obs_type: ObservationType,
-               comment: str | None = None) -> Path | None:
+def save_image(image_path: Path, template: Template,
+               comment: str) -> Path | None:
     '''
     Updates the temporary image header and saves into the archive.
 
@@ -89,7 +88,9 @@ def save_image(image_path: Path, obs_type: ObservationType,
     :return:
     '''
 
-    if obs_type == ObservationType.ENGINEERING:
+    if template.id == TemplateID.SELF_TEST:
+        folder = Path('/tmp')
+    elif template.id == TemplateID.ENGINEERING:
         folder = config.FITS.engineering_data_storage / ktime.get_night_str()
     else:
         folder = config.FITS.science_data_storage / ktime.get_night_str()
@@ -98,7 +99,7 @@ def save_image(image_path: Path, obs_type: ObservationType,
         folder.mkdir(parents=True)
 
     if image_path.exists():
-        final_filename = prepare_final_fits(image_path, obs_type,
+        final_filename = prepare_final_fits(image_path, template,
                                             comment=comment)
         final_filepath = folder / final_filename
 
@@ -106,16 +107,18 @@ def save_image(image_path: Path, obs_type: ObservationType,
         final_filepath.chmod(config.FITS.file_mask)
         # TODO possibly add the right UID and GID
 
-        database.store('obs', {'camera_image_path': final_filepath})
-        logger.info('sequencer', f'Saved {image_path} to {final_filepath}')
+        if template.id != TemplateID.SELF_TEST:
+            database.store('obs', {'camera_image_path': final_filepath})
 
-        symlink = config.FITS.last_image
-        symlink.unlink(missing_ok=True)
-        symlink.symlink_to(final_filepath)
+            logger.info('sequencer', f'Saved {image_path} to {final_filepath}')
 
-        symlink = config.FITS.last_image_all
-        symlink.unlink(missing_ok=True)
-        symlink.symlink_to(final_filepath)
+            symlink = config.FITS.last_image
+            symlink.unlink(missing_ok=True)
+            symlink.symlink_to(final_filepath)
+
+            symlink = config.FITS.last_image_all
+            symlink.unlink(missing_ok=True)
+            symlink.symlink_to(final_filepath)
 
         return final_filepath
     else:
@@ -178,7 +181,7 @@ def update_db_from_fits(header_df: pd.DataFrame) -> ReturnCode:
     return ReturnCode.OK
 
 
-def prepare_final_fits(image_path: Path, obs_type: ObservationType,
+def prepare_final_fits(image_path: Path, template: Template,
                        comment: str | None = None) -> str:
     """
     Updates the image header with values from the observing, monitoring, and telemetry logs.
@@ -189,9 +192,9 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
     """
 
     # Reading the fits definitions
-    header_base = _header_from_yml(config.FITS.fits_default_header_file)
+    header_base = _header_from_yaml(config.FITS.fits_default_header_file)
 
-    for key, value in config.FITS.base_header[obs_type].items():
+    for key, value in config.FITS.base_header[template.id].items():
         header_base.loc[key, 'value'] = value
 
     with fits.open(image_path, mode='update') as hdul:
@@ -208,8 +211,8 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
         header_obs = _header_from_db('obs', dt_end)
         header_monitoring = _header_from_db('monitoring', dt=None, data=data)
 
-        on_sky = obs_type in config.FITS.on_sky_types or (
-            obs_type == ObservationType.ENGINEERING and
+        on_sky = template.id in config.FITS.on_sky_templates or (
+            template.id == TemplateID.ENGINEERING and
             data['flipmirror_status'] == FlipMirrorStatus.DOWN and
             data['shutter_status'] == ShutterStatus.OPEN)
 
@@ -222,7 +225,8 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
         header_fits = _header_from_fits_header(fits_header,
                                                f'fits:{image_path.name}')
 
-        update_db_from_fits(header_fits)
+        if template.id != TemplateID.SELF_TEST:
+            update_db_from_fits(header_fits)
 
         header_df = pd.concat([
             header_fits,
@@ -232,12 +236,12 @@ def prepare_final_fits(image_path: Path, obs_type: ObservationType,
             header_telescope,
         ]).query('~index.duplicated(keep="last")')
 
-        header_df = _dynamic_cards_update(header_df, obs_type, on_sky,
+        header_df = _dynamic_cards_update(header_df, template, on_sky,
                                           filename)
-        header_df = _sort_header(header_df)
+        header_df = _sort_and_clean_header(header_df)
         _header_to_fits_header(header_df, fits_header)
 
-        if comment is not None:
+        if comment is not None and comment != '':
             fits_header.add_comment(comment)
 
         hdul.verify('silentfix+warn')
@@ -293,7 +297,7 @@ def _header_from_fits_header(fits_header: fits.Header,
     return header_df
 
 
-def _header_from_yml(file: str | Path) -> pd.DataFrame:
+def _header_from_yaml(file: str | Path) -> pd.DataFrame:
     '''
     Reads the fits header file definition YAML file and returns a pandas dataframe with
     the following keys: keyword, value, comment
@@ -366,7 +370,7 @@ def _header_from_db(collection_name: str, dt: datetime | None,
     return header_df
 
 
-def _sort_header(header_df: pd.DataFrame) -> pd.DataFrame:
+def _sort_and_clean_header(header_df: pd.DataFrame) -> pd.DataFrame:
     # Search for first HIERARCH keyword (i.e. longer than 8) and split in two header dataframes
     HIERARCH_lines = np.array(
         header_df.index.str.len() > config.FITS.max_length_without_HIERARCH)
@@ -379,7 +383,7 @@ def _sort_header(header_df: pd.DataFrame) -> pd.DataFrame:
         header_tail_df.sort_index()
     ])
 
-    return header_df
+    return header_df.dropna(subset=['value'])
 
 
 def _header_to_fits_header(header_df: pd.DataFrame,
@@ -448,7 +452,7 @@ def _clean_header(header_df: pd.DataFrame) -> pd.DataFrame:
     return header_df.rename(index=rename_dict)
 
 
-def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
+def _dynamic_cards_update(header_df: pd.DataFrame, template: Template,
                           on_sky: bool, filename: str) -> pd.DataFrame:
     date_obs = header_df.loc['DATE-OBS', 'value']
     date_end = header_df.loc['DATE-END', 'value']
@@ -469,9 +473,29 @@ def _dynamic_cards_update(header_df: pd.DataFrame, obs_type: ObservationType,
                   'value'] = f'KALAO-ICS/{config.version}'
     header_df.loc['HIERARCH ESO INS SOFW ID', 'source'] += '+dynamic'
 
+    if template.observation_block is not None:
+        # Update HIERARCH ESO OBS TPLNO
+        header_df.loc['HIERARCH ESO OBS TPLNO',
+                      'value'] = template.observation_block.tplno
+        header_df.loc['HIERARCH ESO OBS TPLNO', 'source'] += '+dynamic'
+
     # Update HIERARCH ESO TPL ID
-    header_df.loc['HIERARCH ESO TPL ID', 'value'] = str(obs_type)
+    header_df.loc['HIERARCH ESO TPL ID', 'value'] = str(template.id)
     header_df.loc['HIERARCH ESO TPL ID', 'source'] += '+dynamic'
+
+    # Update HIERARCH ESO TPL START
+    header_df.loc['HIERARCH ESO TPL START',
+                  'value'] = ktime.utc_millis_str(template.start)
+    header_df.loc['HIERARCH ESO TPL START', 'source'] += '+dynamic'
+
+    # Update HIERARCH ESO TPL NEXP
+    if template.nexp != -1:
+        header_df.loc['HIERARCH ESO TPL NEXP', 'value'] = template.nexp
+        header_df.loc['HIERARCH ESO TPL NEXP', 'source'] += '+dynamic'
+
+    # Update HIERARCH ESO TPL EXPNO
+    header_df.loc['HIERARCH ESO TPL EXPNO', 'value'] = template.expno
+    header_df.loc['HIERARCH ESO TPL EXPNO', 'source'] += '+dynamic'
 
     # Create HIERARCH ESO INS SHUT ST
     shutter = header_df.loc['HIERARCH ESO INS SHUT STATUS']

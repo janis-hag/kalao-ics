@@ -11,17 +11,19 @@ KalAO_GOP_server.py is part of the KalAO Instrument Control Software
 This server is the communication interface between the Euler telescope software and the KalAO sequencer.
 """
 
-import socket
-import time
+from itertools import zip_longest
+from typing import Any
+
+import requests
 
 from tcs_communication.pygop import tcs_srv_gop
 
-from kalao import database, logger
+from kalao import logger
 from kalao.interfaces import edp
 
-import config
+from kalao.definitions.enums import ReturnCode
 
-#TODO check if socket is available  and handle case when "Error: connection to sequencer refused" with retry and timeout
+import config
 
 
 def gop_server():
@@ -80,33 +82,36 @@ def gop_server():
         command = commandList[0]
         arguments = commandList[1:]
 
+        arguments = dict(zip_longest(*[iter(arguments)] * 2, fillvalue=""))
+
+        cast_args(arguments)
+
         logger.info('gop', f'command=> {command} < arg={" ".join(arguments)}')
 
         # Check if it's a KalAO command and send it
-        if command.startswith('K_') or command in [
-                'INSTRUMENTCHANGE', 'THE_END', 'ABORT', 'OBCHANGE'
+        if 'ABORT' in command:
+            ret, _ = _send_request('POST', '/abort', {})
+
+            if ret == ReturnCode.OK:
+                message = "/OK"
+            else:
+                message = "/ERROR"
+
+            logger.info('gop', f'Sending acknowledge: {message}')
+            gop.write(message)
+
+        elif command.startswith('K_') or command in [
+                'INSTRUMENTCHANGE', 'THE_END', 'OBCHANGE'
         ]:
-            if command in ['INSTRUMENTCHANGE', 'THE_END', 'OBCHANGE']:
-                database.store('obs', {'sequencer_on_target': False})
+            ret, _ = _send_request(
+                'POST', f'/template/{command.replace("K_", "KAO_")}',
+                arguments)
 
-            hostSeq, portSeq = (config.Sequencer.host, config.Sequencer.port)
-            socketSeq = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if ret == ReturnCode.OK:
+                message = "/OK"
+            else:
+                message = "/ERROR"
 
-            try:
-                socketSeq.connect((hostSeq, portSeq))
-                logger.info('gop', 'Connected to sequencer')
-
-                socketSeq.sendall(commandRaw.encode('utf8'))
-                logger.info('gop', 'Command sent')
-
-            except ConnectionRefusedError:
-                logger.error('gop', 'Connection to sequencer refused')
-                time.sleep(10)
-                continue
-            finally:
-                socketSeq.close()
-
-            message = "/OK"
             logger.info('gop', f'Sending acknowledge: {message}')
             gop.write(message)
 
@@ -116,16 +121,17 @@ def gop_server():
             gop.write(message)
 
         elif command == 'ONTARGET':
-            message = '/OK'
-
-            database.store('obs', {
-                'tcs_header_path': arguments[0],
-            })
-
-            database.store('obs', {'sequencer_on_target': True})
-
             logger.info('gop', f'Received fits header path: {arguments[0]}')
 
+            ret, _ = _send_request('POST', f'/on_target',
+                                   {'tcs_header_path': arguments[0]})
+
+            if ret == ReturnCode.OK:
+                message = "/OK"
+            else:
+                message = "/ERROR"
+
+            logger.info('gop', f'Sending acknowledge: {message}')
             gop.write(message)
 
         elif command == 'quit' or command == 'exit':
@@ -150,6 +156,70 @@ def gop_server():
     gop.closeConnection()
 
     return 0
+
+
+def cast_args(args: dict[str, Any]) -> int:
+    """
+    Modifies the dictionary received in parameter by trying to cast the values in the required type.
+    The required types are stored in the configuration file.
+
+    :param args: dict with keys: param name, values: param in
+    :return: 0 if there was no error and 1 otherwise
+    """
+
+    # Check for each key if the cast of the value is possible and cast it
+    for k, v in args.items():
+        if k in config.GOP.arg_int:
+            if v.isdigit():
+                args[k] = int(v)
+            else:
+                logger.error('gop', f'{k} value cannot be convert in int')
+        elif k in config.GOP.arg_float:
+            if v.replace('.', '', 1).isdigit():
+                args[k] = float(v)
+            else:
+                logger.error('gop', f'{k} value cannot be convert in float')
+
+        if k == 'kalfilter' and isinstance(v, str):
+            v = v.lower()
+            if v in ['g', 'r', 'i', 'z']:
+                args[k] = 'SDSS-' + v
+            elif v == 'nd':
+                args[k] = 'ND1.5'
+
+        elif k == 'kao':
+            args[k] = v.upper()
+
+    return 0
+
+
+def _send_request(method: str, endpoint: str, params: dict[str, Any] |
+                  None = None) -> tuple[ReturnCode, Any]:
+    kwargs = {}
+    if method == 'POST' and params is not None:
+        kwargs['json'] = params
+
+    try:
+        req = requests.request(
+            method, f'http://127.0.0.1:{config.Sequencer.port}{endpoint}',
+            timeout=config.Camera.request_timeout, **kwargs)
+
+        req.raise_for_status()
+
+        if req.headers['content-type'].startswith('application/json'):
+            return ReturnCode.OK, req.json()
+        else:
+            return ReturnCode.OK, req.text
+
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        return ReturnCode.GENERIC_ERROR, None
+
+    except requests.exceptions.HTTPError:
+        logger.error(
+            'camera',
+            f'Sequencer server endpoint {endpoint} answered with an Error {req.status_code}, {req.text}'
+        )
+        return ReturnCode.GENERIC_ERROR, None
 
 
 if __name__ == '__main__':

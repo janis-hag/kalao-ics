@@ -1,4 +1,3 @@
-import json
 import time
 from typing import Any
 
@@ -19,7 +18,7 @@ import config
 
 
 def get_tracking() -> bool:
-    ret, resp = _send_request('/tracking/status')
+    ret, resp = _send_request('GET', '/tracking/status')
 
     if ret == ReturnCode.ETCS_OK:
         return resp['tracking']['b_trackingOn']
@@ -28,7 +27,7 @@ def get_tracking() -> bool:
 
 
 def get_instrument() -> int:
-    ret, resp = _send_request('/m3/status')
+    ret, resp = _send_request('GET', '/m3/status')
 
     if ret == ReturnCode.ETCS_OK:
         return resp['instrument']
@@ -37,7 +36,7 @@ def get_instrument() -> int:
 
 
 def get_altaz() -> tuple[float, float]:
-    ret, resp = _send_request('/axis/status')
+    ret, resp = _send_request('GET', '/axis/status')
 
     if ret == ReturnCode.ETCS_OK:
         if resp['homing']['azi']['b_homed']:
@@ -72,7 +71,7 @@ def send_altaz_offset(delta_alt_arcsec: float, delta_az_arcsec: float,
 
     params = {'az_arcsec': delta_az_arcsec, 'el_arcsec': delta_alt_arcsec}
 
-    ret, resp = _send_request('/tracking/offset', params)
+    ret, resp = _send_request('POST', '/tracking/offset', params)
 
     if wait:
         time.sleep(2)
@@ -81,7 +80,7 @@ def send_altaz_offset(delta_alt_arcsec: float, delta_az_arcsec: float,
 
 
 def get_focus() -> float:
-    ret, resp = _send_request('/m2/status')
+    ret, resp = _send_request('GET', '/m2/status')
 
     if ret == ReturnCode.ETCS_OK:
         return resp['z']
@@ -106,7 +105,7 @@ def set_focus(position: float, wait: bool = True) -> float:
 
     params = {'position': position}
 
-    ret, resp = _send_request('/m2/focus', params)
+    ret, resp = _send_request('POST', '/m2/focus', params)
 
     if wait:
         time.sleep(5)
@@ -128,7 +127,7 @@ def get_tube_temps() -> dict[str, int | float]:
 def set_m3_lin(position: float) -> ReturnCode:
     params = {"position": position}
 
-    ret, resp = _send_request('/m3/position/lin', params)
+    ret, resp = _send_request('POST', '/m3/position/lin', params)
 
     return ret  # TODO: return lin pos
 
@@ -136,75 +135,54 @@ def set_m3_lin(position: float) -> ReturnCode:
 def set_m3_rot(position: float) -> ReturnCode:
     params = {"position": position}
 
-    ret, resp = _send_request('/m3/position/rot', params)
+    ret, resp = _send_request('POST', '/m3/position/rot', params)
 
     return ret  # TODO: return rot pos
 
 
-def _send_request(endpoint: str,
-                  params: dict[str, Any] = {}) -> tuple[ReturnCode, Any]:
-    # Clean params
-    for key, value in list(params.items()):
-        if value is None:
-            del params[key]
-
+def _send_request(method: str, endpoint: str, params: dict[str, Any] |
+                  None = None) -> tuple[ReturnCode, Any]:
     headers = {
         "Content-Type": "application/json",
         "Authorization": config.ETCS.token
     }
 
-    url = f'http://{config.ETCS.host}:{config.ETCS.port}{endpoint}'
+    kwargs = {}
+    if method == 'POST' and params is not None:
+        kwargs['json'] = params
 
     try:
-        if params == {}:
-            req = requests.get(url, timeout=config.ETCS.request_timeout,
-                               headers=headers)
+        req = requests.request(
+            method, f'http://{config.ETCS.host}:{config.ETCS.port}{endpoint}',
+            timeout=config.ETCS.request_timeout, headers=headers, **kwargs)
+
+        req.raise_for_status()
+
+        if req.headers['content-type'].startswith('application/json'):
+            return ReturnCode.ETCS_OK, req.json()
         else:
-            req = requests.post(url, json=params,
-                                timeout=config.ETCS.request_timeout,
-                                headers=headers)
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            'etcs',
-            f'Telescope server endpoint {endpoint} answered with a {e.__class__.__name__} exception.'
-        )
+            return ReturnCode.ETCS_OK, req.text
 
-        return ReturnCode.ETCS_SERVER_DOWN, None
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        return ReturnCode.ETCS_SERVER_UNREACHABLE, None
 
-    try:
-        data = json.loads(req.text)
-    except Exception:
-        data = req.text
-
-    if req.status_code == 200:
-        return ReturnCode.ETCS_OK, data
-    else:
-        text = ''
-
-        if isinstance(data, dict):
-            if 'message' in data:
-                text += f' {data["message"]}'
+    except requests.exceptions.HTTPError:
+        if req.headers['content-type'].startswith('application/json'):
+            text = req.json()["message"]
         else:
-            text = f' {data}'
+            text = req.text
 
         logger.error(
             'etcs',
-            f'Telescope server endpoint {endpoint} answered with an Error {req.status_code}.{text}'
+            f'Telescope server endpoint {endpoint} answered with an Error {req.status_code}, {text}'
         )
-
-        return ReturnCode.ETCS_ERROR, data
+        return ReturnCode.ETCS_ERROR, None
 
 
 def server_status() -> ETCSServerStatus:
-    """
-    Verify if the ETCS server is up and running and check if the camera can be queried.
-
-    :return: status of the camera server (UP/DOWN/ERROR)
-    """
-
     try:
-        r = requests.get(f'http://{config.ETCS.host}:{config.ETCS.port}/')
-        r.raise_for_status()  # Raises a HTTPError if the status is 4xx, 5xxx
+        r = requests.get(f'http://{config.ETCS.host}:{config.ETCS.port}/ping')
+        r.raise_for_status()
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
         return ETCSServerStatus.DOWN
     except requests.exceptions.HTTPError:

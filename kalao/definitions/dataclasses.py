@@ -3,7 +3,36 @@ from datetime import datetime
 
 import numpy as np
 
-from kalao.definitions.enums import AlarmLevel, LogLevel, ObservationType
+from kalao import memory
+
+from kalao.definitions.enums import AlarmLevel, LogLevel, TemplateID
+
+
+@dataclass
+class ObservationBlock:
+    tplno: int = 0
+
+
+@dataclass
+class Template:
+    id: TemplateID
+    start: datetime | None
+    observation_block: ObservationBlock | None = None
+    nexp: int = -1
+    expno: int = 0
+
+    def to_memory(self):
+        memory.hmset(
+            'sequencer', {
+                'id': str(self.id),
+                'start': self.start.timestamp(),
+                'nexp': self.nexp,
+                'expno': self.expno
+            })
+
+    def next_exposure(self):
+        self.expno += 1
+        memory.hset('sequencer', 'expno', self.expno)
 
 
 @dataclass(frozen=True)
@@ -31,6 +60,7 @@ class Star:
 
 @dataclass(frozen=True)
 class LogEntry:
+    cursor: str
     level: LogLevel
     timestamp: datetime
     origin: str
@@ -39,7 +69,7 @@ class LogEntry:
 
 @dataclass
 class CalibrationPose:
-    type: ObservationType
+    template: Template
     filter: str | None
     exposure_time: float
     median: float = np.nan

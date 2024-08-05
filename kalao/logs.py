@@ -57,6 +57,57 @@ def get_last_entries(reader: journal.Reader) -> list[LogEntry]:
     return entries
 
 
+def get_entires_by_lines(lines: int, filter: bool = True) -> list[LogEntry]:
+    reader = get_reader(filter=filter)
+    reader.seek_tail()
+    reader.get_previous(skip=lines + 1)
+
+    entries = []
+    for entry in reader:
+        entry_processed = process_entry(entry)
+
+        if entry is not None:
+            entries.append(entry_processed)
+
+    reader.close()
+
+    return entries
+
+
+def get_entries_since_cursor(cursor: str,
+                             filter: bool = True) -> list[LogEntry]:
+    reader = get_reader(filter=filter)
+    reader.seek_cursor(cursor)
+
+    entries = []
+    for entry in reader:
+        entry_processed = process_entry(entry)
+
+        if entry is not None:
+            entries.append(entry_processed)
+
+    reader.close()
+
+    return entries
+
+
+def get_entries_since_timestamp(timestamp: datetime | int | float,
+                                filter: bool = True) -> list[LogEntry]:
+    reader = get_reader(filter=filter)
+    reader.seek_realtime(timestamp)
+
+    entries = []
+    for entry in reader:
+        entry_processed = process_entry(entry)
+
+        if entry is not None:
+            entries.append(entry_processed)
+
+    reader.close()
+
+    return entries
+
+
 def get_entries_between(since: datetime, until: datetime,
                         filter: bool = True) -> list[LogEntry]:
     reader = get_reader(filter=filter)
@@ -72,6 +123,8 @@ def get_entries_between(since: datetime, until: datetime,
         if entry is not None:
             entries.append(entry_processed)
 
+    reader.close()
+
     return entries
 
 
@@ -80,8 +133,6 @@ def process_entry(entry: dict) -> LogEntry | None:
 
     if message != '':
         level = LogLevel.INFO
-
-        timestamp = entry['__REALTIME_TIMESTAMP'].strftime('%y-%m-%d %H:%M:%S')
 
         if 'USER_UNIT' in entry:
             origin = kstring.get_service_name(entry['USER_UNIT'])
@@ -101,5 +152,6 @@ def process_entry(entry: dict) -> LogEntry | None:
         elif 'WARNING' in message:
             level = LogLevel.WARNING
 
-        return LogEntry(level=level, timestamp=timestamp, origin=origin,
+        return LogEntry(cursor=entry['__CURSOR'], level=level,
+                        timestamp=entry['__REALTIME_TIMESTAMP'], origin=origin,
                         message=message)

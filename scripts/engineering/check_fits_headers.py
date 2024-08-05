@@ -6,15 +6,14 @@ from kalao.hardware import camera
 from kalao.utils import fits_handling
 
 from kalao.definitions.enums import (FlipMirrorStatus, LaserStatus,
-                                     ObservationType, ShutterStatus,
-                                     TungstenStatus)
+                                     ShutterStatus, TemplateID, TungstenStatus)
 
 import config
 
 
 def run(args):
     if args.fits is None:
-        ret = camera.take_fake('/tmp/camera_fake.fits')
+        ret = camera.get_test_image('/tmp/camera_fake.fits')
 
         if ret is not None:
             camera_header = fits_handling._header_from_fits_file(
@@ -27,7 +26,7 @@ def run(args):
 
     df = pd.concat([
         camera_header,
-        fits_handling._header_from_yml(config.FITS.fits_default_header_file),
+        fits_handling._header_from_yaml(config.FITS.fits_default_header_file),
         fits_handling._header_from_db('obs', dt=None),
         fits_handling._header_from_db('monitoring', dt=None),
         #fits_handling._clean_header(fits_handling._header_from_last_telescope_header()
@@ -43,8 +42,9 @@ def run(args):
            'value'] = TungstenStatus.OFF.value
 
     df = fits_handling._dynamic_cards_update(
-        df, ObservationType.TARGET, True, 'KALAO.1970-01-01T00:00:00.000.fits')
-    df = fits_handling._sort_header(df)
+        df, TemplateID.TARGET_OBSERVATION, True,
+        'KALAO.1970-01-01T00:00:00.000.fits')
+    df = fits_handling._sort_and_clean_header(df)
 
     print(fits_handling._header_to_string(df))
 

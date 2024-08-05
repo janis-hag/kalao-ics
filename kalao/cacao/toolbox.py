@@ -27,10 +27,41 @@ try:
 except ImportError:
 
     class SHM:
-        pass
+        def __init__(self, name, data=None, location=None, shared=None):
+            self.nptype = None
+            self.shape = None
+            self.IMAGE = None
+
+        def get_data(self, check=False):
+            pass
+
+        def set_data(self, data, check_type=False):
+            pass
+
+        def get_keywords(self):
+            pass
+
+        def close(self):
+            pass
 
     class FPS:
-        pass
+        def __init__(self, name):
+            pass
+
+        def get_param(self, name):
+            pass
+
+        def set_param(self, name, value):
+            pass
+
+        def conf_isrunning(self):
+            pass
+
+        def run_isrunning(self):
+            pass
+
+        def disconnect(self):
+            pass
 
 
 @dataclass

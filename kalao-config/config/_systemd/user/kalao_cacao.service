@@ -10,10 +10,17 @@ ExecStart=/home/kalao/kalao-cacao-workdir/scripts/start.sh
 ExecStop=/home/kalao/kalao-cacao-workdir/scripts/stop.sh
 ExecReload=/home/kalao/kalao-cacao-workdir/scripts/reload.sh
 RemainAfterExit=true
+Restart=always
+RestartSec=30
 StandardOutput=journal
 StandardError=journal
 Environment=PYTHONUNBUFFERED=1
 Environment=MILK_SHM_DIR=/tmp/milk
+
+Nice=0
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=98
+CPUSchedulingResetOnFork=false
 
 [Install]
 WantedBy=default.target

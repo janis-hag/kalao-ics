@@ -171,8 +171,11 @@ def ttmloop_zero() -> bool | None:
     return toolbox.set_fps_value(config.FPS.TTMLOOP, 'loopZERO', True)
 
 
-def set_modalgains(modalgains: np.ndarray,
+def set_modalgains(modalgains: list | np.ndarray,
                    shm_name: str = config.SHM.MODALGAINS) -> int:
+    if isinstance(modalgains, list):
+        modalgains = np.array(modalgains)
+
     modalgains_shm = toolbox.get_shm(shm_name)
 
     delta = modalgains_shm.shape[0] - modalgains.shape[0]

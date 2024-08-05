@@ -1,5 +1,6 @@
 import re
 from enum import StrEnum
+from typing import Any
 
 
 class Category(StrEnum):
@@ -29,7 +30,7 @@ default_state = {
 }
 
 
-def _generate_substitution(codes, state):
+def _generate_substitution(codes: str, state: dict[str, Any]) -> str:
     _handle_ansi_codes(codes, state)
 
     classes = []
@@ -99,14 +100,14 @@ def _generate_substitution(codes, state):
     return html
 
 
-def _handle_ansi_codes(codes, state):
+def _handle_ansi_codes(codes: str, state: dict[str, Any]) -> None:
     if codes == '':
         state.update(default_state)
         return
 
     codes = re.split(r'[;:]', codes)
 
-    def convert(v):
+    def convert(v: str) -> int | str:
         if v == '':
             return 0
 
@@ -121,119 +122,123 @@ def _handle_ansi_codes(codes, state):
     while i < len(codes):
         code = codes[i]
 
-        # Basics
+        if isinstance(code, int):
+            # Basics
 
-        if code == 0:
-            state.update(default_state)
+            if code == 0:
+                state.update(default_state)
 
-        elif code == 1:
-            state[Category.INTENSITY] = 1
+            elif code == 1:
+                state[Category.INTENSITY] = 1
 
-        elif code == 2:
-            state[Category.INTENSITY] = -1
+            elif code == 2:
+                state[Category.INTENSITY] = -1
 
-        elif code == 3:
-            state[Category.ITALIC] = 1
+            elif code == 3:
+                state[Category.ITALIC] = 1
 
-        elif code == 4:
-            state[Category.UNDERLINE] = 1
+            elif code == 4:
+                state[Category.UNDERLINE] = 1
 
-        elif code == 5:
-            state[Category.BLINKING] = 1
+            elif code == 5:
+                state[Category.BLINKING] = 1
 
-        elif code == 6:
-            state[Category.BLINKING] = 2
+            elif code == 6:
+                state[Category.BLINKING] = 2
 
-        elif code == 7:
-            state[Category.REVERSE] = 1
+            elif code == 7:
+                state[Category.REVERSE] = 1
 
-        elif code == 8:
-            state[Category.HIDDEN] = 1
+            elif code == 8:
+                state[Category.HIDDEN] = 1
 
-        elif code == 9:
-            state[Category.STRIKETHROUGH] = 1
+            elif code == 9:
+                state[Category.STRIKETHROUGH] = 1
 
-        # Fonts
+            # Fonts
 
-        # 10 to 20 are fonts (unsupported)
+            # 10 to 20 are fonts (unsupported)
 
-        elif code == 21:
-            state[Category.UNDERLINE] = 2
+            elif code == 21:
+                state[Category.UNDERLINE] = 2
 
-        # Reset
+            # Reset
 
-        elif code == 22:
-            state[Category.INTENSITY] = 0
+            elif code == 22:
+                state[Category.INTENSITY] = 0
 
-        elif code == 23:
-            state[Category.ITALIC] = 0
+            elif code == 23:
+                state[Category.ITALIC] = 0
 
-        elif code == 24:
-            state[Category.UNDERLINE] = 0
+            elif code == 24:
+                state[Category.UNDERLINE] = 0
 
-        elif code == 25:
-            state[Category.BLINKING] = 0
+            elif code == 25:
+                state[Category.BLINKING] = 0
 
-        elif code == 27:
-            state[Category.REVERSE] = 0
+            elif code == 27:
+                state[Category.REVERSE] = 0
 
-        elif code == 28:
-            state[Category.HIDDEN] = 0
+            elif code == 28:
+                state[Category.HIDDEN] = 0
 
-        elif code == 29:
-            state[Category.STRIKETHROUGH] = 0
+            elif code == 29:
+                state[Category.STRIKETHROUGH] = 0
 
-        # Foreground
+            # Foreground
 
-        elif 30 <= code <= 37:
-            color = _get_8color(code - 30)
-            if color is not None:
-                state[Category.FG_COLOR] = color
+            elif 30 <= code <= 37:
+                color = _get_8color(code - 30)
+                if color is not None:
+                    state[Category.FG_COLOR] = color
 
-        elif code == 38:
-            color, incr = _get_256color_or_truecolor(codes, i)
-            if color is not None:
-                state[Category.FG_COLOR] = color
-            i += incr
+            elif code == 38:
+                color, incr = _get_256color_or_truecolor(codes, i)
+                if color is not None:
+                    state[Category.FG_COLOR] = color
+                i += incr
 
-        elif code == 39:
-            state[Category.FG_COLOR] = None
+            elif code == 39:
+                state[Category.FG_COLOR] = None
 
-        # Background
+            # Background
 
-        elif 40 <= code <= 47:
-            color = _get_8color(code - 40)
-            if color is not None:
-                state[Category.BG_COLOR] = color
+            elif 40 <= code <= 47:
+                color = _get_8color(code - 40)
+                if color is not None:
+                    state[Category.BG_COLOR] = color
 
-        elif code == 48:
-            color, incr = _get_256color_or_truecolor(codes, i)
-            if color is not None:
-                state[Category.BG_COLOR] = color
-            i += incr
+            elif code == 48:
+                color, incr = _get_256color_or_truecolor(codes, i)
+                if color is not None:
+                    state[Category.BG_COLOR] = color
+                i += incr
 
-        elif code == 49:
-            state[Category.BG_COLOR] = None
+            elif code == 49:
+                state[Category.BG_COLOR] = None
 
-        elif code == 53:
-            state[Category.OVERLINE] = 1
+            elif code == 53:
+                state[Category.OVERLINE] = 1
 
-        elif code == 55:
-            state[Category.OVERLINE] = 0
+            elif code == 55:
+                state[Category.OVERLINE] = 0
 
-        # Foreground bright
+            # Foreground bright
 
-        elif 90 <= code <= 97:
-            color = _get_8color(code - 90)
-            if color is not None:
-                state[Category.FG_COLOR] = color + '-bright'
+            elif 90 <= code <= 97:
+                color = _get_8color(code - 90)
+                if color is not None:
+                    state[Category.FG_COLOR] = color + '-bright'
 
-        # Background bright
+            # Background bright
 
-        elif 100 <= code <= 107:
-            color = _get_8color(code - 100)
-            if color is not None:
-                state[Category.BG_COLOR] = color + '-bright'
+            elif 100 <= code <= 107:
+                color = _get_8color(code - 100)
+                if color is not None:
+                    state[Category.BG_COLOR] = color + '-bright'
+
+            else:
+                pass
 
         else:
             pass
@@ -241,7 +246,7 @@ def _handle_ansi_codes(codes, state):
         i += 1
 
 
-def _get_8color(n):
+def _get_8color(n: int) -> str | None:
     match n:
         case 0:
             return 'black'
@@ -271,7 +276,8 @@ def _get_8color(n):
             return None
 
 
-def _get_256color_or_truecolor(codes, i):
+def _get_256color_or_truecolor(codes: list[int | str],
+                               i: int) -> tuple[str | None, int]:
     try:
         if codes[i + 1] == 5:
             c = codes[i + 2]
@@ -311,7 +317,7 @@ def _get_256color_or_truecolor(codes, i):
         return None, 0
 
 
-def translate(text, close_last_span=True):
+def translate(text: str, close_last_span: bool = True) -> str:
     # Escape HTML characters
     table = text.maketrans({
         '\n': '<br/>',

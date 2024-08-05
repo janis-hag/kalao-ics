@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+import time
 from functools import wraps
 from typing import Any, Callable
 
@@ -11,8 +11,7 @@ _transitions = {
     SequencerStatus.UNKNOWN: [SequencerStatus.INITIALISING],
     SequencerStatus.OFF: [SequencerStatus.INITIALISING],
     SequencerStatus.INITIALISING: [SequencerStatus.WAITING],
-    SequencerStatus.WAITING: [SequencerStatus.BUSY],
-    SequencerStatus.BUSY: [SequencerStatus.SETUP],
+    SequencerStatus.WAITING: [SequencerStatus.SETUP],
     SequencerStatus.SETUP: [
         SequencerStatus.EXPOSING, SequencerStatus.FOCUSING,
         SequencerStatus.CENTERING, SequencerStatus.CALIBRATIONS,
@@ -27,13 +26,15 @@ _transitions = {
     SequencerStatus.CENTERING: [SequencerStatus.SETUP],
     SequencerStatus.WAIT_TRACKING: [SequencerStatus.SETUP],
     SequencerStatus.WAIT_LAMP: [SequencerStatus.CALIBRATIONS],
-    SequencerStatus.ERROR: [SequencerStatus.BUSY],
+    SequencerStatus.ERROR: [SequencerStatus.SETUP],
+    SequencerStatus.ABORTING: [SequencerStatus.WAITING, SequencerStatus.OFF],
+    SequencerStatus.ABORTING_ERROR: [SequencerStatus.ERROR],
 }
 
 
 def get_sequencer_status() -> SequencerStatus:
     return SequencerStatus(
-        memory.get('sequencer_status', default=SequencerStatus.UNKNOWN))
+        memory.hget('sequencer', 'status', default=SequencerStatus.UNKNOWN))
 
 
 def set_sequencer_status(status: SequencerStatus, check_abort=False) -> None:
@@ -57,14 +58,12 @@ def set_sequencer_status(status: SequencerStatus, check_abort=False) -> None:
 def _set_sequencer_status(status: SequencerStatus,
                           update_timestamp=True) -> None:
     if update_timestamp:
-        memory.mset({
-            'sequencer_status':
-                str(status),
-            'sequencer_status_timestamp':
-                datetime.now(timezone.utc).timestamp()
+        memory.hmset('sequencer', {
+            'status': str(status),
+            'status_timestamp': time.time()
         })
     else:
-        memory.set('sequencer_status', str(status))
+        memory.hset('sequencer', 'status', str(status))
     database.store('obs', {'sequencer_status': status})
 
 
@@ -73,10 +72,10 @@ def is_aborting() -> bool:
     return status in [SequencerStatus.ABORTING, SequencerStatus.ABORTING_ERROR]
 
 
-def with_sequencer_status(status: SequencerStatus) -> Any:
-    def _with_sequencer_status(fun: Callable) -> Any:
+def with_sequencer_status(status: SequencerStatus) -> Callable:
+    def _with_sequencer_status(fun: Callable) -> Callable:
         @wraps(fun)
-        def wrapper(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             ret = None
             exception = None
 

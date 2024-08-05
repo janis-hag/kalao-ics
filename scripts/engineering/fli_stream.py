@@ -11,13 +11,14 @@ fli_stream.py is part of the KalAO Instrument Control Software
 import argparse
 from signal import SIGINT, signal
 from sys import exit
+from types import FrameType
 
 from kalao.hardware import camera
 
 from kalao.definitions.enums import CameraServerStatus
 
 
-def sig_handler(signal_received, frame):
+def sig_handler(signum: int, frame: FrameType | None) -> None:
     # Handle any cleanup here
     print('\nSIGINT or CTRL-C detected. Exiting.')
     exit(0)

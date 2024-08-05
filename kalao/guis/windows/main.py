@@ -1,11 +1,13 @@
 from datetime import datetime
+from typing import Any
 
-from PySide6.QtGui import Qt
-from PySide6.QtWidgets import QApplication, QCheckBox, QTabWidget
+from PySide6.QtGui import QCloseEvent, QIcon, Qt
+from PySide6.QtWidgets import QApplication, QCheckBox, QTabWidget, QWidget
 
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import BackendDataMixin
-from kalao.guis.utils.widgets import KDetachedTabWindow, KLabel, KMainWindow
+from kalao.guis.utils.widgets import KLabel, KMainWindow
 from kalao.guis.widgets.engineering import EngineeringWidget
 from kalao.guis.widgets.help import HelpWidget
 from kalao.guis.widgets.logs import LogsWidget
@@ -13,23 +15,26 @@ from kalao.guis.widgets.loop_controls import LoopControlsWidget
 from kalao.guis.widgets.main import MainWidget
 from kalao.guis.widgets.monitoring import MonitoringWidget
 from kalao.guis.widgets.plots import PlotsWidget
+from kalao.guis.widgets.telemetry import TelemetryWidget
 
 
 class MainWindow(KMainWindow, BackendDataMixin):
-    def __init__(self, backend, expert_mode=False, on_sky_unit=False,
-                 deadman=False, parent=None):
+    def __init__(self, backend: AbstractBackend, expert_mode: bool = False,
+                 on_sky_unit: bool = False, deadman: bool = False,
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
 
         #self.showMaximized()
-        self.resize(1700, 1000)
+        self.resize(1600, 900)
 
         self.tabwidget = QTabWidget(parent=self)
         self.setCentralWidget(self.tabwidget)
 
         self.main = MainWidget(backend, on_sky_unit=on_sky_unit, parent=self)
         self.loop_controls = LoopControlsWidget(backend, parent=self)
+        self.telemetry = TelemetryWidget(backend, parent=self)
         self.monitoring = MonitoringWidget(backend, parent=self)
         self.engineering = EngineeringWidget(backend, deadman=deadman,
                                              parent=self)
@@ -38,13 +43,29 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.help = HelpWidget(parent=self)
 
         self.widgets = [
-            self.main, self.loop_controls, self.monitoring, self.plots,
-            self.engineering, self.logs, self.help
+            self.main,
+            self.loop_controls,
+            self.telemetry,
+            self.monitoring,
+            self.plots,
+            self.engineering,
+            self.logs,
+            self.help,
+        ]
+        self.widgets_icons = [
+            ':/assets/icons/go-home.svg',
+            ':/assets/icons/settings-configure.svg',
+            ':/assets/icons/view-statistics.svg',
+            ':/assets/icons/server-database.svg',
+            ':/assets/icons/view-media-chart.svg',
+            ':/assets/icons/folder-build.svg',
+            ':/assets/icons/folder-text.svg',
+            ':/assets/icons/help-about.svg',
         ]
 
-        for widget in self.widgets:
+        for widget, icon in zip(self.widgets, self.widgets_icons):
             self.tabwidget.addTab(
-                widget,
+                widget, QIcon(icon),
                 widget.windowTitle().removesuffix(' - KalAO'))
 
         self.last_update_label = KLabel(parent=self)
@@ -61,8 +82,8 @@ class MainWindow(KMainWindow, BackendDataMixin):
         for widget in [
                 self.main, self.main.wfs, self.main.camera, self.main.slopes,
                 self.main.flux, self.main.dm, self.main.ttm,
-                self.loop_controls, self.monitoring, self.engineering,
-                self.plots
+                self.loop_controls, self.telemetry, self.monitoring,
+                self.engineering, self.plots
         ]:
             widget.hovered.connect(self.info_to_statusbar)
 
@@ -82,10 +103,12 @@ class MainWindow(KMainWindow, BackendDataMixin):
 
         self.expert_checkbox.setChecked(expert_mode)
 
-        self.show()
-        self.center()
+        # Done by __main__ after splash screen end
+        # self.show()
+        # self.center()
 
-    def on_monitoring_updated(self, outdated, warnings, alarms):
+    def on_monitoring_updated(self, outdated: int, warnings: int,
+                              alarms: int) -> None:
         list = []
         color = self.initial_tab_color
         text = self.monitoring.windowTitle().removesuffix(' - KalAO')
@@ -108,7 +131,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.tabwidget.tabBar().setTabText(tab_index, text)
         self.tabwidget.tabBar().setTabTextColor(tab_index, color)
 
-    def on_engineering_updated(self, warnings, errors):
+    def on_engineering_updated(self, warnings: int, errors: int) -> None:
         list = []
         color = self.initial_tab_color
         text = self.engineering.windowTitle().removesuffix(' - KalAO')
@@ -128,7 +151,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.tabwidget.tabBar().setTabText(tab_index, text)
         self.tabwidget.tabBar().setTabTextColor(tab_index, color)
 
-    def on_logs_logged(self, warnings, errors):
+    def on_logs_logged(self, warnings: int, errors: int) -> None:
         list = []
         color = self.initial_tab_color
         text = self.logs.windowTitle().removesuffix(' - KalAO')
@@ -148,32 +171,78 @@ class MainWindow(KMainWindow, BackendDataMixin):
         self.tabwidget.tabBar().setTabText(tab_index, text)
         self.tabwidget.tabBar().setTabTextColor(tab_index, color)
 
-    def on_tabwidget_currentChanged(self, i):
+    def on_tabwidget_currentChanged(self, i: int) -> None:
         # Logs tab
         if i == self.tabwidget.indexOf(self.logs):
             self.logs.reset_scrollbars()
 
-    def on_tabwidget_tabBarDoubleClicked(self, i):
+    def on_tabwidget_tabBarDoubleClicked(self, i: int) -> None:
         if i == 0:
             return
 
-        KDetachedTabWindow(self.tabwidget.widget(i), parent=self)
+        KDetachedTabWindow(self.tabwidget.widget(i), self)
 
-    def on_expert_checkbox_stateChanged(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
+    def on_expert_checkbox_stateChanged(self, state: Qt.CheckState) -> None:
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
             self.engineering.setEnabled(True)
             self.loop_controls.setEnabled(True)
         else:
             self.engineering.setEnabled(False)
             self.loop_controls.setEnabled(False)
 
-    def all_updated(self, data):
+    def all_updated(self, data: dict[str, Any]) -> None:
         self.last_update_label.setText(
-            'Last update: ' +
-            datetime.now().astimezone().strftime('%H:%M:%S %d-%m-%Y'))
+            f'Last update: {datetime.now().astimezone():%H:%M:%S %d-%m-%Y}')
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         app = QApplication.instance()
         app.quit()
 
         event.accept()
+
+
+class KDetachedTabWindow(KMainWindow):
+    def __init__(self, widget: QWidget, mainwindow: MainWindow, *args:
+                 tuple[Any, ...], **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.mainwindow = mainwindow
+
+        self.setWindowTitle(widget.windowTitle())
+        self.setCentralWidget(widget)
+        self.resize(mainwindow.size())
+        self.show()
+        self.center()
+
+        if hasattr(widget, 'hovered'):
+            self.statusBar().show()
+            widget.hovered.disconnect(self.mainwindow.info_to_statusbar)
+            widget.hovered.connect(self.info_to_statusbar)
+
+        widget.show()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        widget = self.centralWidget()
+
+        i = self.mainwindow.widgets.index(widget)
+        icon = self.mainwindow.widgets_icons[i]
+
+        while i > 0:
+            i -= 1
+            j = self.mainwindow.tabwidget.indexOf(self.mainwindow.widgets[i])
+            if j != -1:
+                self.mainwindow.tabwidget.insertTab(
+                    j + 1, widget, QIcon(icon),
+                    widget.windowTitle().removesuffix(' - KalAO'))
+                self.mainwindow.tabwidget.setCurrentIndex(j + 1)
+                break
+        else:
+            self.mainwindow.tabwidget.addTab(
+                widget,
+                widget.windowTitle().removesuffix(' - KalAO'))
+
+        if hasattr(widget, 'hovered'):
+            widget.hovered.disconnect(self.info_to_statusbar)
+            widget.hovered.connect(self.mainwindow.info_to_statusbar)
+
+        return super().closeEvent(event)

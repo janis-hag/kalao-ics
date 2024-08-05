@@ -28,9 +28,9 @@ def kalao_status() -> str:
     :return: status_string to send to the Euler telescope
     """
 
-    sequencer_mapping = memory.mget({
-        'sequencer_status': str,
-        'sequencer_status_timestamp': float
+    sequencer_mapping = memory.hmget('sequencer', {
+        'status': str,
+        'status_timestamp': float
     })
 
     sequencer_status = sequencer_mapping['sequencer_status']
@@ -53,20 +53,21 @@ def kalao_status() -> str:
         status_string = f'|status|BUSY|elapsed_time|{switch_time:.0f}/{config.Tungsten.stabilisation_time:.0f}|requested_time|WAIT_LAMP'
 
     elif sequencer_status == SequencerStatus.FOCUSING:
-        focusing_step = memory.get('focusing_step', type=int, default=0)
-        status_string = f'|status|BUSY|elapsed_time|STEP {focusing_step}/{config.Focusing.steps}|requested_time|FOCUSING'
+        focusing_step = memory.hget('sequencer', 'expno', type=int, default=0)
+        status_string = f'|status|BUSY|elapsed_time|STEP {focusing_step}/{config.Focusing.nexp}|requested_time|FOCUSING'
 
     elif sequencer_status == SequencerStatus.CENTERING:
         centering_manual_flag = centering.get_manual_centering_flag()
         if centering_manual_flag:
             status_string = '|status|BUSY|elapsed_time|MANUAL|requested_time|CENTERING'
         else:
-            centering_step = memory.get('centering_step', type=int, default=0)
+            centering_step = memory.hget('sequencer', 'expno', type=int,
+                                         default=0)
             status_string = f'|status|BUSY|elapsed_time|STEP {centering_step}|requested_time|CENTERING'
 
     elif sequencer_status == SequencerStatus.CALIBRATIONS:
-        calibration_poses_step = memory.get('calibration_poses_step', type=int,
-                                            default=0)
+        calibration_poses_step = memory.hget('sequencer', 'expno', type=int,
+                                             default=0)
         status_string = f'|status|BUSY|elapsed_time|STEP {calibration_poses_step}|requested_time|CALIBRATIONS'
 
     elif sequencer_status == SequencerStatus.EXPOSING:

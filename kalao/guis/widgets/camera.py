@@ -1,50 +1,26 @@
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
 from PySide6.QtCore import QMarginsF, QPointF, QRectF, QTimer, Slot
 from PySide6.QtGui import QPen, Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
+
+from compiled.ui_camera import Ui_CameraWidget
 
 from kalao.utils.image import LogScale
 
+from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import (BackendDataMixin, MinMaxMixin,
                                      SceneHoverMixin)
-from kalao.guis.utils.ui_loader import loadUi
 from kalao.guis.utils.widgets import KMessageBox, KWidget
 from kalao.guis.windows.fits_viewer import FITSViewerWindow
 
 import config
-
-
-def get_latest_image_path(path=config.FITS.science_data_storage, sort='db'):
-    if sort == 'db':
-        from kalao.utils import fits_handling
-
-        return fits_handling.get_last_image_path()
-
-    elif sort == 'symlink':
-        return config.FITS.last_image
-
-    folders = list(filter(lambda item: item.is_dir(), path.iterdir()))
-
-    if sort == 'time':
-        latest_folder = max(folders, key=lambda item: item.stat().st_ctime)
-        files = latest_folder.glob('*')
-        latest_file = max(files, key=lambda item: item.stat().st_ctime)
-
-        return latest_file
-
-    elif sort == 'name':
-        latest_folder = max(folders)
-        files = latest_folder.glob('*')
-        latest_file = max(files)
-
-        return latest_file
 
 
 class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
@@ -64,45 +40,50 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     fits_viewer = None
 
     saturation = np.nan
+    img_max = np.nan
     timestamp = None
 
     hdul = None
 
-    def __init__(self, backend, parent=None):
+    def __init__(self, backend: AbstractBackend,
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
 
-        loadUi('camera.ui', self)
+        self.ui = Ui_CameraWidget()
+        self.ui.setupUi(self)
+
         self.resize(600, 400)
 
-        self.init_minmax(self.camera_view)
+        self.init_minmax(self.ui.camera_view)
 
-        self.camera_view.setView(self.image_info['shape'])
+        self.ui.camera_view.setView(self.image_info['shape'])
 
-        self.camera_view.setMargins(QMarginsF(40, 30, 40, 30))
+        self.ui.camera_view.setMargins(QMarginsF(40, 30, 40, 30))
 
-        self.change_units(Qt.Unchecked)
-        self.change_colormap(Qt.Unchecked)
+        self.change_units(Qt.CheckState.Unchecked)
+        self.change_colormap(Qt.CheckState.Unchecked)
 
-        pen = QPen(Color.BLUE, 1.5, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+        pen = QPen(Color.BLUE, 1.5, Qt.PenStyle.SolidLine,
+                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
 
-        self.roi = self.camera_view.scene().addEllipse(
+        self.roi = self.ui.camera_view.scene().addEllipse(
             self.data_center_x - self.WFS_fov / 2, self.data_center_y -
             self.WFS_fov / 2, self.WFS_fov, self.WFS_fov, pen)
         self.roi.setZValue(1)
 
         self.update_labels()
 
-        self.camera_view.hovered.connect(self.hover_xyv_to_str)
+        self.ui.camera_view.hovered.connect(self.hover_xyv_to_str)
         backend.all_updated.connect(self.all_updated)
         backend.camera_image_updated.connect(self.camera_image_updated)
 
-    def all_updated(self, data):
+    def all_updated(self, data: dict[str, Any]) -> None:
         mtime = self.consume_fits_mtime(data, config.FITS.last_image_all)
         if mtime is not None:
-            QTimer.singleShot(0, self, self.backend.camera_image)
+            QTimer.singleShot(0, self.backend.camera_image)
 
         centering_manual_flag = self.consume_dict(data, 'memory',
                                                   'centering_manual_flag')
@@ -115,7 +96,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 if self.fits_viewer is not None:
                     self.fits_viewer.exit_manual_centering()
 
-    def camera_image_updated(self, data):
+    def camera_image_updated(self, data: dict[str, Any]) -> None:
         hdul = self.consume_fits_full(data, config.FITS.last_image_all)
 
         if hdul is not None:
@@ -139,6 +120,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             img_min, img_max = self.compute_min_max(img)
 
             self.saturation = img.max() / self.image_info['max']
+            self.img_max = img.max()
 
             # View is full image size
             view = QRectF(0, 0, self.image_info['shape'][1],
@@ -149,27 +131,37 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                              hdul[0].header['HIERARCH ESO DET OUT1 PRSCY']
                              )  # Note: FITS indexing starts at 1
 
-            self.camera_view.setImage(img, img_min, img_max, scale=LogScale,
-                                      view=view, offset=offset)
+            self.ui.camera_view.setImage(img, img_min, img_max, scale=LogScale,
+                                         view=view, offset=offset)
 
             self.update_labels()
 
-    def update_labels(self):
+    def update_labels(self) -> None:
         if self.timestamp is None:
-            self.timestamp_label.updateText(timestamp='--')
+            self.ui.timestamp_label.updateText(timestamp='--')
         else:
-            self.timestamp_label.updateText(
+            self.ui.timestamp_label.updateText(
                 timestamp=self.timestamp.strftime('%H:%M:%S %d-%m-%Y'))
 
         if self.saturation >= 1:
-            self.saturation_label.setText('Saturated !')
-            self.saturation_label.setStyleSheet(f'color: {Color.RED.name()};')
+            self.ui.saturation_label.setText('Saturated !')
+            self.ui.saturation_label.setStyleSheet(
+                f'color: {Color.RED.name()};')
         else:
-            self.saturation_label.updateText(saturation=self.saturation * 100)
-            self.saturation_label.setStyleSheet('')
+            self.ui.saturation_label.updateText(saturation=self.saturation *
+                                                100)
+            self.ui.saturation_label.setStyleSheet('')
 
-    def change_units(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
+        if self.img_max > config.Camera.linear_range_max:
+            self.ui.linearity_label.setText('Outside of linear range')
+            self.ui.linearity_label.setStyleSheet(
+                f'color: {Color.RED.name()};')
+        else:
+            self.ui.linearity_label.setText('Inside of linear range')
+            self.ui.linearity_label.setStyleSheet('')
+
+    def change_units(self, state: Qt.CheckState) -> None:
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
             self.axis_unit = '"'
             self.axis_precision = 1
             self.axis_scaling = config.Camera.plate_scale
@@ -190,27 +182,27 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             ticks_x.append((tick_pos_x, tick_label))
             ticks_y.append((tick_pos_y, tick_label))
 
-        self.camera_view.setTickParams(0, 5, 5, 10, ticks_x, ticks_y)
+        self.ui.camera_view.setTickParams(0, 5, 5, 10, ticks_x, ticks_y)
 
-    def change_colormap(self, state):
-        if Qt.CheckState(state) == Qt.Checked:
-            self.camera_view.updateColormap(
+    def change_colormap(self, state: Qt.CheckState) -> None:
+        if Qt.CheckState(state) == Qt.CheckState.Checked:
+            self.ui.camera_view.updateColormap(
                 colormaps.GrayscaleSaturationTransparent())
         else:
-            self.camera_view.updateColormap(colormaps.BlackBody())
+            self.ui.camera_view.updateColormap(colormaps.BlackBody())
 
     @Slot(bool)
-    def on_open_button_clicked(self, checked):
+    def on_open_button_clicked(self, checked: bool) -> None:
         dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.ExistingFiles)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
         dialog.setNameFilter('Images (*.fits)')
-        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
 
         if config.FITS.science_data_storage.exists():
             dialog.setDirectory(str(config.FITS.science_data_storage))
 
         error_dialog = KMessageBox(self)
-        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setIcon(QMessageBox.Icon.Critical)
         error_dialog.setModal(True)
         error_dialog.setText('<b>FITS loading failed!</b>')
 
@@ -238,7 +230,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                         )
                         continue
 
-                    FITSViewerWindow(self.backend, file=filename, parent=self)
+                    FITSViewerWindow(self.backend, file=filename)
                 except PermissionError:
                     error_list.append(
                         f'{filename.name}: Can\'t read file, permission refused.'
@@ -249,14 +241,10 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 error_dialog.show()
 
     @Slot(bool)
-    def on_ds9_button_clicked(self, checked):
-        subprocess.Popen(['ds9', get_latest_image_path(sort='symlink')])
-
-    @Slot(bool)
-    def on_fits_viewer_button_clicked(self, checked):
+    def on_fits_viewer_button_clicked(self, checked: bool) -> None:
         self.open_fits_viewer()
 
-    def open_fits_viewer(self):
+    def open_fits_viewer(self) -> None:
         if self.fits_viewer is not None:
             self.fits_viewer.show()
             self.fits_viewer.activateWindow()
@@ -270,5 +258,4 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
                 hdul = None
 
             self.fits_viewer = FITSViewerWindow(
-                self.backend, hdul, on_sky_unit=(self.axis_unit == '"'),
-                parent=self)
+                self.backend, hdul, on_sky_unit=(self.axis_unit == '"'))
