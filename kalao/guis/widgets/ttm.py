@@ -161,15 +161,15 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
 
         if self.ui.autoscale_button.isChecked():
             with QSignalBlocker(self.ui.min_spinbox):
-                self.ui.min_spinbox.setMaximum(y_max / self.data_scaling)
-                self.ui.min_spinbox.setValue(y_min / self.data_scaling)
+                self.ui.min_spinbox.setMaximum(y_max)
+                self.ui.min_spinbox.setValue(y_min)
 
             with QSignalBlocker(self.ui.max_spinbox):
-                self.ui.max_spinbox.setMinimum(y_min / self.data_scaling)
-                self.ui.max_spinbox.setValue(y_max / self.data_scaling)
+                self.ui.max_spinbox.setMinimum(y_min)
+                self.ui.max_spinbox.setValue(y_max)
         else:
-            y_min = self.ui.min_spinbox.value() * self.data_scaling
-            y_max = self.ui.max_spinbox.value() * self.data_scaling
+            y_min = self.ui.min_spinbox.value()
+            y_max = self.ui.max_spinbox.value()
 
         delta = y_max - y_min
         if abs(delta) < config.epsilon:
@@ -213,6 +213,16 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
 
         self.tip_series.replace(self.tip_points)
         self.tilt_series.replace(self.tilt_points)
+
+        with QSignalBlocker(self.ui.min_spinbox):
+            self.ui.min_spinbox.setValue(self.ui.min_spinbox.value() *
+                                         self.data_scaling / prev_scaling)
+            self.ui.min_spinbox.setDecimals(self.data_precision)
+
+        with QSignalBlocker(self.ui.max_spinbox):
+            self.ui.max_spinbox.setValue(self.ui.max_spinbox.value() *
+                                         self.data_scaling / prev_scaling)
+            self.ui.max_spinbox.setDecimals(self.data_precision)
 
         self.update_axis()
 

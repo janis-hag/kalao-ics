@@ -302,6 +302,9 @@ def check_flux() -> bool:
     if shwfs_fps is None or not shwfs_fps.run_isrunning():
         return False
 
-    flux_avg = shwfs_fps.get_param('flux_avg')  # TODO: from telemetry?
+    flux_avg = 0.0
+    for _ in range(config.WFS.flux_averaging):
+        flux_avg += shwfs_fps.get_param('flux_avg')
+        time.sleep(config.WFS.flux_averaging_interval)
 
-    return flux_avg > config.WFS.flux_min
+    return flux_avg / config.WFS.flux_averaging > config.WFS.flux_min

@@ -1587,8 +1587,11 @@ class MainBackend(FakeSHMFPSBackend):
              lines: int = None) -> list[LogEntry]:
         logs = []
 
-        for _ in range(10):
-            logs.append(self._generate_log())
+        if lines is None:
+            lines = 10
+
+        for _ in range(lines):
+            logs.append(self._generate_log_entry())
 
         return logs
 
@@ -1599,11 +1602,11 @@ class MainBackend(FakeSHMFPSBackend):
         timestamps = pd.date_range(since, until, freq='60s')
 
         for timestamp in timestamps:
-            logs.append(self._generate_log(timestamp))
+            logs.append(self._generate_log_entry(timestamp.to_pydatetime()))
 
         return logs
 
-    def _generate_log(self, timestamp: datetime = None) -> LogEntry:
+    def _generate_log_entry(self, timestamp: datetime = None) -> LogEntry:
         if timestamp is None:
             timestamp = datetime.now(timezone.utc)
 

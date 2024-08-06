@@ -61,7 +61,7 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     charts = [
         TelemetryChart(name='ttm', unit='"', precision=2),
-        TelemetryChart(name='flux', unit='ADU', precision=0),
+        TelemetryChart(name='flux', unit=' ADU', precision=0),
         TelemetryChart(name='slopes', unit='"', precision=2),
     ]
 
@@ -160,7 +160,9 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
             # Create Chart and set General Chart setting
             chart.chart = getattr(self.ui, f'{chart.name}_plot').chart()
             chart.chart.legend().hide()
-            chart.chart.hovered.connect(self.hover_xy_to_str_charts)
+            chart.chart.hovered.connect(lambda series, x, y, _chart=chart: self
+                                        .hover_xy_to_str_charts(
+                                            series, x, y, _chart))
 
             # X Axis Settings
             axis_x = self.slopes_axis_x = QDateTimeAxis()
@@ -274,7 +276,7 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
             index = None
             row = None
 
-            # Note: skip last bin as it will have incomplete data
+            # Note: skip last bin as it will be based on incomplete data
             for index, row in df[:-2].iterrows():
                 timestamp_msec = index.timestamp() * 1000
 
@@ -359,14 +361,13 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
             chart.chart.axisY().setRange(y_min, y_max)
             chart.chart.axisY().applyNiceNumbers()
 
-    def hover_xy_to_str_charts(self, series: QLineSeries, x: float,
-                               y: float) -> None:
+    def hover_xy_to_str_charts(self, series: QLineSeries, x: float, y: float,
+                               chart: TelemetryChart) -> None:
         if not np.isnan(x) and not np.isnan(y):
             x = QDateTime.fromMSecsSinceEpoch(
                 int(x)).toString('HH:mm:ss dd-MM-yy')
 
-            # TODO: units and precision
-            self.hovered.emit(f'{y:.3f} at {x}')
+            self.hovered.emit(f'{y:.{chart.precision}f}{chart.unit} at {x}')
         else:
             self.hovered.emit('')
 

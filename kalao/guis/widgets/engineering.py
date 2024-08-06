@@ -738,11 +738,13 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
             status = self.consume_dict(data, 'services', service['unit'])
             if status is not None:
                 widgets = self.services_widgets[service['unit']]
-                widgets.lineedit.setText(f'{status[0]}')
+
                 if status[1] != '':
                     detailed_status = f'{status[0]} ({status[1]})'
                 else:
                     detailed_status = f'{status[0]}'
+
+                widgets.lineedit.setText(detailed_status)
                 widgets.lineedit.setToolTip(
                     f'Status: {detailed_status} | Since: {status[2].astimezone():%H:%M:%S %d-%m-%Y}'
                 )

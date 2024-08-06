@@ -154,6 +154,10 @@ def process_entry(entry: dict) -> LogEntry | None:
         elif 'WARNING' in message:
             level = LogLevel.WARNING
 
+        if origin == 'cacao' and '_SYSTEMD_USER_UNIT' in entry:
+            # Inhibit errors and warnings from cacao scripts as they output too many non-relevant ones
+            level = LogLevel.INFO
+
         return LogEntry(cursor=entry['__CURSOR'], level=level,
                         timestamp=entry['__REALTIME_TIMESTAMP'], origin=origin,
                         message=message)

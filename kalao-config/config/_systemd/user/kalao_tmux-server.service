@@ -3,8 +3,8 @@ Description=KalAO - Tmux server
 
 [Service]
 Type=forking
-ExecStart=/home/kalao/kalao-ics/scripts/kalao_tmux-server_start.sh
-ExecStop=/home/kalao/kalao-ics/scripts/kalao_tmux-server_stop.sh
+ExecStart=/home/kalao/kalao-ics/scripts/services/tmux-server_start.sh
+ExecStop=/home/kalao/kalao-ics/scripts/services/tmux-server_stop.sh
 Restart=on-failure
 RestartSec=30
 StandardOutput=journal
@@ -12,7 +12,7 @@ StandardError=journal
 Environment=PYTHONUNBUFFERED=1
 Environment=MILK_SHM_DIR=/tmp/milk
 
-Nice=0
+Nice=-20
 CPUSchedulingPolicy=rr
 CPUSchedulingPriority=98
 CPUSchedulingResetOnFork=false

@@ -22,7 +22,7 @@ StandardError=journal
 Environment=PYTHONUNBUFFERED=1
 Environment=MILK_SHM_DIR=/tmp/milk
 
-Nice=0
+Nice=-20
 CPUSchedulingPolicy=rr
 CPUSchedulingPriority=98
 CPUSchedulingResetOnFork=false

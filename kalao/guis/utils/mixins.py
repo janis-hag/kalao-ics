@@ -13,7 +13,8 @@ from kalao.utils.image import AbstractCut
 from kalao.utils.rprint import rprint
 
 from kalao.guis.utils.string_formatter import KalAOFormatter
-from kalao.guis.utils.widgets import KImageViewer, KMessageBox
+from kalao.guis.utils.widgets import (KImageViewer, KMessageBox,
+                                      KScaledDoubleSpinbox)
 
 
 class MinMaxMixin:
@@ -120,8 +121,11 @@ class MinMaxMixin:
 
     def update_spinboxes_unit(self, unit: str, scaling: float,
                               precision: int) -> None:
-        self.ui.min_spinbox.setScale(scaling, precision)
-        self.ui.max_spinbox.setScale(scaling, precision)
+        if isinstance(self.ui.min_spinbox, KScaledDoubleSpinbox):
+            self.ui.min_spinbox.setScale(scaling, precision)
+
+        if isinstance(self.ui.max_spinbox, KScaledDoubleSpinbox):
+            self.ui.max_spinbox.setScale(scaling, precision)
 
         self.ui.min_spinbox.setSuffix(unit)
         self.ui.max_spinbox.setSuffix(unit)

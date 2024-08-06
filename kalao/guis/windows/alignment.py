@@ -100,12 +100,12 @@ class AlignmentWindow(KMainWindow, BackendDataMixin):
             for i, subap in enumerate(subwindow.subap_indexes):
                 wfs.subapertures[subap].setPen(pen_red)
 
-                view = getattr(subwindow, f'view_{i + 1}')
+                view = getattr(subwindow.ui, f'view_{i + 1}')
                 view.updateColormap(colormaps.Grayscale())
                 subwindow.views.append(view)
 
                 view.subap = subap
-                view.label = getattr(subwindow, f'label_{i+1}')
+                view.label = getattr(subwindow.ui, f'label_{i+1}')
 
                 view.lines = {
                     PokeState.FLAT: {

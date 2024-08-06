@@ -222,6 +222,9 @@ class WFS:
     flux_stabilization_timeout = 10  # s
     flux_stabilization_time = 1.5  # s
 
+    flux_averaging = 200  # samples
+    flux_averaging_interval = 0.00055  # s
+
     # Should be 1/(1.2*7.09899) * 3600 * 180/np.pi * 48e-6 = 1.16 arcsec / px
     plate_scale = 1.16  # arcsec / px
 

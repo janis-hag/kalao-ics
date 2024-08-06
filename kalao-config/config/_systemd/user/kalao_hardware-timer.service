@@ -14,7 +14,7 @@ After=kalao_cacao.service
 
 [Service]
 Type=simple
-ExecStart=/home/kalao/kalao-ics/scripts/kalao_hardware-timer.sh
+ExecStart=/home/kalao/kalao-ics/scripts/services/hardware-timer.sh
 Restart=on-failure
 RestartSec=30
 StandardOutput=journal
