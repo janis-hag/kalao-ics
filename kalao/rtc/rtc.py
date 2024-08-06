@@ -36,7 +36,7 @@ class Logind:
 
 def autoconnect(fun: Callable) -> Callable:
     @wraps(fun)
-    def wrapper(*args: Any, system: bool = False, logind: Logind | None,
+    def wrapper(*args: Any, system: bool = False, logind: Logind | None = None,
                 **kwargs: Any) -> Any:
         ret = None
         exception = None

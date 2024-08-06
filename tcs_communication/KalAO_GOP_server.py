@@ -206,7 +206,7 @@ def _send_request(method: str, endpoint: str, params: dict[str, Any] |
 
         req.raise_for_status()
 
-        if req.headers['content-type'].startswith('application/json'):
+        if req.headers.get('content-type', '').startswith('application/json'):
             return ReturnCode.OK, req.json()
         else:
             return ReturnCode.OK, req.text

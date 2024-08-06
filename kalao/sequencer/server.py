@@ -302,6 +302,8 @@ def _execute_template(id: str, func: Callable, args: dict[str, Any],
 
 
 if __name__ == '__main__':
+    memory.flush()
+
     seq_utils.set_sequencer_status(SequencerStatus.INITIALISING)
 
     signal.signal(signal.SIGINT, sig_handler)

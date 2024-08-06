@@ -21,6 +21,7 @@ class Color:
     BLUE = QColor('#1d99f3')
     YELLOW = QColor('#fdbc4b')
     PURPLE = QColor('#8e44ad')
+    DARK_BLUE = QColor('#2c3e50')
 
 
 ColorPalette = [

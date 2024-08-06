@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1265</width>
-    <height>934</height>
+    <width>1253</width>
+    <height>743</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -326,69 +326,7 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QGroupBox" name="tiptilt_spectrum_groupbox">
-     <property name="title">
-      <string>Tip-Tilt Spectrum</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_3">
-      <item row="0" column="0">
-       <widget class="KDraggableChartView" name="tiptilt_spectrum_plot"/>
-      </item>
-      <item row="1" column="0">
-       <layout class="QHBoxLayout" name="tiptilt_spectrum_layout">
-        <item>
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>0</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="tip_spectrum_checkbox">
-          <property name="text">
-           <string>Tip spectrum</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="tilt_spectrum_checkbox">
-          <property name="text">
-           <string>Tilt spectrum</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>0</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="2" column="0">
+   <item row="2" column="1">
     <widget class="QGroupBox" name="settings_groupbox">
      <property name="title">
       <string>Settings</string>
@@ -467,7 +405,89 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="1" rowspan="2">
+   <item row="1" column="1">
+    <widget class="QGroupBox" name="spectrums_groupbox">
+     <property name="title">
+      <string>Spectrums</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <widget class="KDraggableChartView" name="spectrums_plot"/>
+      </item>
+      <item row="1" column="0">
+       <layout class="QHBoxLayout" name="spectrums_layout">
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="tip_spectrum_checkbox">
+          <property name="text">
+           <string>Tip spectrum</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="tilt_spectrum_checkbox">
+          <property name="text">
+           <string>Tilt spectrum</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="slope_x_avg_spectrum_checkbox">
+          <property name="text">
+           <string>Slope X spectrum</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="slope_y_avg_spectrum_checkbox">
+          <property name="text">
+           <string>Slope Y spectrum</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" rowspan="2">
     <widget class="QGroupBox" name="slopes_groupbox">
      <property name="title">
       <string>Slopes</string>

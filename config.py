@@ -665,6 +665,11 @@ class Systemd:
             'restart': False,
             'system': True
         },
+        'Tmux server': {
+            'unit': 'kalao_tmux-server.service',
+            'enabled': True,
+            'restart': False,
+        },
         'FLI (Science Camera)': {
             'unit': 'kalao_fli.service',
             'enabled': True,

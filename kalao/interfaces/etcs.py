@@ -158,7 +158,7 @@ def _send_request(method: str, endpoint: str, params: dict[str, Any] |
 
         req.raise_for_status()
 
-        if req.headers['content-type'].startswith('application/json'):
+        if req.headers.get('content-type', '').startswith('application/json'):
             return ReturnCode.ETCS_OK, req.json()
         else:
             return ReturnCode.ETCS_OK, req.text
@@ -167,7 +167,7 @@ def _send_request(method: str, endpoint: str, params: dict[str, Any] |
         return ReturnCode.ETCS_SERVER_UNREACHABLE, None
 
     except requests.exceptions.HTTPError:
-        if req.headers['content-type'].startswith('application/json'):
+        if req.headers.get('content-type', '').startswith('application/json'):
             text = req.json()["message"]
         else:
             text = req.text

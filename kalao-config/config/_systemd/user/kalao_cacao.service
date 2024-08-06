@@ -2,6 +2,11 @@
 Description=KalAO - CACAO
 
 After=kalao_system-setup.service
+Wants=kalao_system-setup.service
+
+After=kalao_tmux-server.service
+Wants=kalao_tmux-server.service
+
 After=kalao_nuvu.service
 
 [Service]
@@ -10,7 +15,7 @@ ExecStart=/home/kalao/kalao-cacao-workdir/scripts/start.sh
 ExecStop=/home/kalao/kalao-cacao-workdir/scripts/stop.sh
 ExecReload=/home/kalao/kalao-cacao-workdir/scripts/reload.sh
 RemainAfterExit=true
-Restart=always
+Restart=on-failure
 RestartSec=30
 StandardOutput=journal
 StandardError=journal

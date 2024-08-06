@@ -20,6 +20,10 @@ def _reset_client() -> None:
     # client.ping()
 
 
+def flush():
+    client.flushall()
+
+
 ##### Getters
 
 

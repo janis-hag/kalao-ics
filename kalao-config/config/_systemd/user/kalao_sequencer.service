@@ -4,15 +4,18 @@ Description=KalAO - Sequencer
 After=network-online.target
 Wants=network-online.target
 
-After=kalao_system-setup.service
 After=mongod.service
+Wants=mongod.service
+
 After=redis-server.service
+Wants=redis-server.service
+
 After=kalao_cacao.service
 
 [Service]
 Type=simple
 ExecStart=/home/kalao/kalao-ics/scripts/kalao_sequencer.sh
-Restart=always
+Restart=on-failure
 RestartSec=30
 StandardOutput=journal
 StandardError=journal

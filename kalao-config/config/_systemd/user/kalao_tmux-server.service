@@ -1,0 +1,23 @@
+[Unit]
+Description=KalAO - Tmux server
+
+# This service require "set-option exit-empty off" in .tmux.conf
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/tmux start-server
+ExecStop=/usr/bin/tmux kill-server
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+Environment=MILK_SHM_DIR=/tmp/milk
+
+Nice=0
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=98
+CPUSchedulingResetOnFork=false
+
+[Install]
+WantedBy=default.target

@@ -1,4 +1,89 @@
 ---
+# Services
+services_system-setup:
+  short: System setup service
+  long: System setup service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_tmux-server:
+  short: Tmux server service
+  long: Tmux server service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_fli:
+  short: Science Camera service
+  long: Science Camera service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_nuvu:
+  short: Wavefront sensor service
+  long: Wavefront sensor service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_cacao:
+  short: CACAO service
+  long: CACAO service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_sequencer:
+  short: Sequencer service
+  long: Sequencer service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_gop-server:
+  short: GOP Server service
+  long: GOP Server service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_monitoring-timer:
+  short: Monitoring timer service
+  long: Monitoring timer service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_hardware-timer:
+  short: Hardware timer service
+  long: Hardware timer service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_observation-timer:
+  short: Observatiom timer service
+  long: System setup service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_mailing-timer:
+  short: Mailing timer service
+  long: Mailing timer service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
+services_gui-backend:
+  short: GUI backend service
+  long: GUI backend service
+  unit:
+  group: Services
+  alarm_values: [ failed ]
+
 # Science Camera
 camera_server_status:
   short: Camera server status

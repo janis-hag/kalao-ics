@@ -2,13 +2,17 @@
 Description=KalAO - Nüvü Wavefront Sensor
 
 After=kalao_system-setup.service
+Wants=kalao_system-setup.service
+
+After=kalao_tmux-server.service
+Wants=kalao_tmux-server.service
 
 [Service]
 Type=oneshot
 ExecStart=/home/kalao/kalao-ics/scripts/kalao_nuvu_start.sh
 ExecStop=/home/kalao/kalao-ics/scripts/kalao_nuvu_stop.sh
 RemainAfterExit=true
-Restart=always
+Restart=on-failure
 RestartSec=30
 StandardOutput=journal
 StandardError=journal

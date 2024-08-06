@@ -7,4 +7,4 @@ source /home/kalao/kalao-venv-3.11/bin/activate
 
 cd /home/kalao/kalao-ics
 
-exec python /home/kalao/kalao-ics/guis/backends/http_server.py
+exec python /home/kalao/kalao-ics/kalao/guis/backends/http_server.py

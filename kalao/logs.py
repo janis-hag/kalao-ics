@@ -78,6 +78,7 @@ def get_entries_since_cursor(cursor: str,
                              filter: bool = True) -> list[LogEntry]:
     reader = get_reader(filter=filter)
     reader.seek_cursor(cursor)
+    reader.get_next()
 
     entries = []
     for entry in reader:
@@ -95,6 +96,7 @@ def get_entries_since_timestamp(timestamp: datetime | int | float,
                                 filter: bool = True) -> list[LogEntry]:
     reader = get_reader(filter=filter)
     reader.seek_realtime(timestamp)
+    reader.get_next()
 
     entries = []
     for entry in reader:

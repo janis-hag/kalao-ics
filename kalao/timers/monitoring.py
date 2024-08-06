@@ -21,7 +21,7 @@ import numpy as np
 
 import schedule
 
-from kalao import database, euler, ippower, logger, memory
+from kalao import database, euler, ippower, logger, memory, services
 from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import adc, camera, hw_utils, ttm
 from kalao.rtc import gpu, sensors
@@ -60,14 +60,14 @@ def gather_general() -> dict[str, Any]:
     data = {}
     exception_list = []
 
-    # Get monitoring from plc and store
+    # Hardware
     try:
         hw_values = hw_utils.get_all_status()
         data.update(hw_values)
     except Exception as exc:
         exception_list.append(exc)
 
-    # Get RTC data
+    # RTC
     try:
         rtc_sensors = sensors.status()
         data.update(rtc_sensors)
@@ -77,6 +77,17 @@ def gather_general() -> dict[str, Any]:
     try:
         rtc_gpu = gpu.status()
         data.update(rtc_gpu)
+    except Exception as exc:
+        exception_list.append(exc)
+
+    # Services
+    try:
+        services_status = services.get_all_status()
+
+        for key, value in services_status.items():
+            data[
+                f'services_{key.removeprefix("kalao_").removesuffix(".service")}'] = value[
+                    0]
     except Exception as exc:
         exception_list.append(exc)
 

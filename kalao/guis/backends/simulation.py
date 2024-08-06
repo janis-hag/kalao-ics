@@ -142,6 +142,8 @@ class MainBackend(FakeSHMFPSBackend):
                 IPPowerStatus.ON,
             'kalao_system-setup.service': ('active', 'exited',
                                            datetime.now(timezone.utc)),
+            'kalao_tmux-server.service': ('active', 'running',
+                                          datetime.now(timezone.utc)),
             'kalao_nuvu.service': ('active', 'exited',
                                    datetime.now(timezone.utc)),
             'kalao_cacao.service': ('active', 'exited',
@@ -507,6 +509,8 @@ class MainBackend(FakeSHMFPSBackend):
             data, 'services', {
                 'kalao_system-setup.service':
                     self.internal_state['kalao_system-setup.service'],
+                'kalao_tmux-server.service':
+                    self.internal_state['kalao_tmux-server.service'],
                 'kalao_nuvu.service':
                     self.internal_state['kalao_nuvu.service'],
                 'kalao_cacao.service':

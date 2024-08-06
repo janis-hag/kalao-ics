@@ -1,10 +1,13 @@
 [Unit]
 Description=KalAO - FLI Science Camera control server
 
+After=network-online.target
+Wants=network-online.target
+
 [Service]
 Type=simple
 ExecStart=/home/kalao/kalao-fli/launch-KalAOCamera.sh
-Restart=always
+Restart=on-failure
 RestartSec=30
 StandardOutput=journal
 StandardError=journal

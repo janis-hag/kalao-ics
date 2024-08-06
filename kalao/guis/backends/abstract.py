@@ -576,13 +576,10 @@ class SHMFPSBackend(AbstractBackend):
     def _update_shm_md(data: dict[str, Any], shm_name: str) -> None:
         shm = toolbox.get_shm(shm_name)
 
-        if shm is None:
-            return
-
         if shm_name not in data:
             data[shm_name] = {}
 
-        if shm_name not in data:
+        if shm is None:
             data[shm_name]['md'] = {'status': 'M'}
         else:
             data[shm_name]['md'] = {
@@ -619,10 +616,10 @@ class SHMFPSBackend(AbstractBackend):
             data[fps_name]['md'] = {'status': ''}
 
             if fps.conf_isrunning():
-                data[fps_name]['status'] += 'C'
+                data[fps_name]['md']['status'] += 'C'
 
             if fps.run_isrunning():
-                data[fps_name]['status'] += 'R'
+                data[fps_name]['md']['status'] += 'R'
 
     @staticmethod
     def _update_dict(data: dict[str, Any], key: str, dict: dict[str,

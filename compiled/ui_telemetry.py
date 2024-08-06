@@ -25,7 +25,7 @@ class Ui_TelemetryWidget(object):
     def setupUi(self, TelemetryWidget):
         if not TelemetryWidget.objectName():
             TelemetryWidget.setObjectName(u"TelemetryWidget")
-        TelemetryWidget.resize(1265, 934)
+        TelemetryWidget.resize(1253, 743)
         self.gridLayout = QGridLayout(TelemetryWidget)
         self.gridLayout.setObjectName(u"gridLayout")
         self.flux_groupbox = QGroupBox(TelemetryWidget)
@@ -216,43 +216,6 @@ class Ui_TelemetryWidget(object):
 
         self.gridLayout.addWidget(self.ttm_groupbox, 0, 0, 1, 1)
 
-        self.tiptilt_spectrum_groupbox = QGroupBox(TelemetryWidget)
-        self.tiptilt_spectrum_groupbox.setObjectName(u"tiptilt_spectrum_groupbox")
-        self.gridLayout_3 = QGridLayout(self.tiptilt_spectrum_groupbox)
-        self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.tiptilt_spectrum_plot = KDraggableChartView(self.tiptilt_spectrum_groupbox)
-        self.tiptilt_spectrum_plot.setObjectName(u"tiptilt_spectrum_plot")
-
-        self.gridLayout_3.addWidget(self.tiptilt_spectrum_plot, 0, 0, 1, 1)
-
-        self.tiptilt_spectrum_layout = QHBoxLayout()
-        self.tiptilt_spectrum_layout.setObjectName(u"tiptilt_spectrum_layout")
-        self.horizontalSpacer = QSpacerItem(0, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.tiptilt_spectrum_layout.addItem(self.horizontalSpacer)
-
-        self.tip_spectrum_checkbox = QCheckBox(self.tiptilt_spectrum_groupbox)
-        self.tip_spectrum_checkbox.setObjectName(u"tip_spectrum_checkbox")
-        self.tip_spectrum_checkbox.setChecked(True)
-
-        self.tiptilt_spectrum_layout.addWidget(self.tip_spectrum_checkbox)
-
-        self.tilt_spectrum_checkbox = QCheckBox(self.tiptilt_spectrum_groupbox)
-        self.tilt_spectrum_checkbox.setObjectName(u"tilt_spectrum_checkbox")
-        self.tilt_spectrum_checkbox.setChecked(True)
-
-        self.tiptilt_spectrum_layout.addWidget(self.tilt_spectrum_checkbox)
-
-        self.horizontalSpacer_2 = QSpacerItem(0, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.tiptilt_spectrum_layout.addItem(self.horizontalSpacer_2)
-
-
-        self.gridLayout_3.addLayout(self.tiptilt_spectrum_layout, 1, 0, 1, 1)
-
-
-        self.gridLayout.addWidget(self.tiptilt_spectrum_groupbox, 1, 0, 1, 1)
-
         self.settings_groupbox = QGroupBox(TelemetryWidget)
         self.settings_groupbox.setObjectName(u"settings_groupbox")
         self.gridLayout_2 = QGridLayout(self.settings_groupbox)
@@ -293,7 +256,56 @@ class Ui_TelemetryWidget(object):
 
         self.gridLayout_2.setColumnStretch(1, 1)
 
-        self.gridLayout.addWidget(self.settings_groupbox, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.settings_groupbox, 2, 1, 1, 1)
+
+        self.spectrums_groupbox = QGroupBox(TelemetryWidget)
+        self.spectrums_groupbox.setObjectName(u"spectrums_groupbox")
+        self.gridLayout_3 = QGridLayout(self.spectrums_groupbox)
+        self.gridLayout_3.setObjectName(u"gridLayout_3")
+        self.spectrums_plot = KDraggableChartView(self.spectrums_groupbox)
+        self.spectrums_plot.setObjectName(u"spectrums_plot")
+
+        self.gridLayout_3.addWidget(self.spectrums_plot, 0, 0, 1, 1)
+
+        self.spectrums_layout = QHBoxLayout()
+        self.spectrums_layout.setObjectName(u"spectrums_layout")
+        self.horizontalSpacer = QSpacerItem(0, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.spectrums_layout.addItem(self.horizontalSpacer)
+
+        self.tip_spectrum_checkbox = QCheckBox(self.spectrums_groupbox)
+        self.tip_spectrum_checkbox.setObjectName(u"tip_spectrum_checkbox")
+        self.tip_spectrum_checkbox.setChecked(True)
+
+        self.spectrums_layout.addWidget(self.tip_spectrum_checkbox)
+
+        self.tilt_spectrum_checkbox = QCheckBox(self.spectrums_groupbox)
+        self.tilt_spectrum_checkbox.setObjectName(u"tilt_spectrum_checkbox")
+        self.tilt_spectrum_checkbox.setChecked(True)
+
+        self.spectrums_layout.addWidget(self.tilt_spectrum_checkbox)
+
+        self.slope_x_avg_spectrum_checkbox = QCheckBox(self.spectrums_groupbox)
+        self.slope_x_avg_spectrum_checkbox.setObjectName(u"slope_x_avg_spectrum_checkbox")
+        self.slope_x_avg_spectrum_checkbox.setChecked(True)
+
+        self.spectrums_layout.addWidget(self.slope_x_avg_spectrum_checkbox)
+
+        self.slope_y_avg_spectrum_checkbox = QCheckBox(self.spectrums_groupbox)
+        self.slope_y_avg_spectrum_checkbox.setObjectName(u"slope_y_avg_spectrum_checkbox")
+        self.slope_y_avg_spectrum_checkbox.setChecked(True)
+
+        self.spectrums_layout.addWidget(self.slope_y_avg_spectrum_checkbox)
+
+        self.horizontalSpacer_2 = QSpacerItem(0, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.spectrums_layout.addItem(self.horizontalSpacer_2)
+
+
+        self.gridLayout_3.addLayout(self.spectrums_layout, 1, 0, 1, 1)
+
+
+        self.gridLayout.addWidget(self.spectrums_groupbox, 1, 1, 1, 1)
 
         self.slopes_groupbox = QGroupBox(TelemetryWidget)
         self.slopes_groupbox.setObjectName(u"slopes_groupbox")
@@ -418,7 +430,7 @@ class Ui_TelemetryWidget(object):
         self.gridLayout_5.setColumnStretch(2, 1)
         self.gridLayout_5.setColumnStretch(4, 1)
 
-        self.gridLayout.addWidget(self.slopes_groupbox, 1, 1, 2, 1)
+        self.gridLayout.addWidget(self.slopes_groupbox, 1, 0, 2, 1)
 
 
         self.retranslateUi(TelemetryWidget)
@@ -454,14 +466,16 @@ class Ui_TelemetryWidget(object):
         self.tilt_mean_spinbox.setSuffix(QCoreApplication.translate("TelemetryWidget", u"\"", None))
         self.tilt_mean_checkbox.setText("")
         self.ttm_mean_label.setText(QCoreApplication.translate("TelemetryWidget", u"Average", None))
-        self.tiptilt_spectrum_groupbox.setTitle(QCoreApplication.translate("TelemetryWidget", u"Tip-Tilt Spectrum", None))
-        self.tip_spectrum_checkbox.setText(QCoreApplication.translate("TelemetryWidget", u"Tip spectrum", None))
-        self.tilt_spectrum_checkbox.setText(QCoreApplication.translate("TelemetryWidget", u"Tilt spectrum", None))
         self.settings_groupbox.setTitle(QCoreApplication.translate("TelemetryWidget", u"Settings", None))
         self.binning_label.setText(QCoreApplication.translate("TelemetryWidget", u"Temporal binning", None))
         self.binning_spinbox.setSuffix(QCoreApplication.translate("TelemetryWidget", u" s", None))
         self.length_label.setText(QCoreApplication.translate("TelemetryWidget", u"Plots duration", None))
         self.length_spinbox.setSuffix(QCoreApplication.translate("TelemetryWidget", u" s", None))
+        self.spectrums_groupbox.setTitle(QCoreApplication.translate("TelemetryWidget", u"Spectrums", None))
+        self.tip_spectrum_checkbox.setText(QCoreApplication.translate("TelemetryWidget", u"Tip spectrum", None))
+        self.tilt_spectrum_checkbox.setText(QCoreApplication.translate("TelemetryWidget", u"Tilt spectrum", None))
+        self.slope_x_avg_spectrum_checkbox.setText(QCoreApplication.translate("TelemetryWidget", u"Slope X spectrum", None))
+        self.slope_y_avg_spectrum_checkbox.setText(QCoreApplication.translate("TelemetryWidget", u"Slope Y spectrum", None))
         self.slopes_groupbox.setTitle(QCoreApplication.translate("TelemetryWidget", u"Slopes", None))
         self.slope_y_avg_label.setText(QCoreApplication.translate("TelemetryWidget", u"Slope Y", None))
         self.slope_y_avg_mean_checkbox.setText("")

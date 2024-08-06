@@ -75,7 +75,8 @@ class Systemd:
 
 def autoconnect(fun: Callable) -> Callable:
     @wraps(fun)
-    def wrapper(*args: Any, systemd: Systemd | None, **kwargs: Any) -> Any:
+    def wrapper(*args: Any, systemd: Systemd | None = None,
+                **kwargs: Any) -> Any:
         ret = None
         exception = None
 
@@ -86,7 +87,7 @@ def autoconnect(fun: Callable) -> Callable:
             disconnect_on_exit = False
 
         try:
-            ret = fun(*args, logind=systemd, **kwargs)
+            ret = fun(*args, systemd=systemd, **kwargs)
         except Exception as e:
             exception = e
 

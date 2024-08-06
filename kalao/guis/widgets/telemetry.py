@@ -31,18 +31,24 @@ class TelemetryChart:
 
     chart = None
 
+
 @dataclass
 class TelemetrySeries:
     name: str
     chart_name: str
     color: QColor
     scaling: float
+    spectrum: bool = False
 
     mean_points: list = None
     mean_series: QLineSeries = None
 
     std_points: list = None
     std_series: QLineSeries = None
+
+    spectrum_points: list = None
+    spectrum_series: QLineSeries = None
+    spectrum_max: float = 0
 
 
 class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
@@ -56,9 +62,9 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     series = [
         TelemetrySeries(name='tip', chart_name='ttm', color=Color.BLUE,
-                        scaling=config.TTM.plate_scale),
+                        scaling=config.TTM.plate_scale, spectrum=True),
         TelemetrySeries(name='tilt', chart_name='ttm', color=Color.RED,
-                        scaling=config.TTM.plate_scale),
+                        scaling=config.TTM.plate_scale, spectrum=True),
         TelemetrySeries(name='flux_avg', chart_name='flux', color=Color.ORANGE,
                         scaling=1),
         TelemetrySeries(name='flux_max', chart_name='flux', color=Color.YELLOW,
@@ -66,9 +72,11 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
         TelemetrySeries(name='residual_rms', chart_name='slopes',
                         color=Color.GREEN, scaling=config.WFS.plate_scale),
         TelemetrySeries(name='slope_x_avg', chart_name='slopes',
-                        color=Color.PURPLE, scaling=config.WFS.plate_scale),
+                        color=Color.PURPLE, scaling=config.WFS.plate_scale,
+                        spectrum=True),
         TelemetrySeries(name='slope_y_avg', chart_name='slopes',
-                        color=Color.GREY, scaling=config.WFS.plate_scale),
+                        color=Color.DARK_BLUE, scaling=config.WFS.plate_scale,
+                        spectrum=True),
     ]
 
     last_timestamp = datetime.fromtimestamp(0)
@@ -85,62 +93,59 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         self.resize(600, 400)
 
-        ##### Tip-Tilt spectrum
+        ##### Spectrums
 
         # Create Chart and set General Chart setting
-        chart = self.ui.tiptilt_spectrum_plot.chart()
+        chart = self.ui.spectrums_plot.chart()
         chart.legend().hide()
 
-        # Serie
-        self.ui.tip_spectrum_checkbox.setStyleSheet(
-            f'color: {Color.BLUE.name()}')
-        self.tip_spectrum_points = []
-
-        pen = QPen(Color.BLUE, 1.25, Qt.PenStyle.SolidLine,
-                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
-
-        series_tip = self.tip_spectrum_series = QLineSeries()
-        series_tip.setPen(pen)
-        series_tip.setName('Tip Spectrum')
-        chart.addSeries(series_tip)
-
-        # Serie
-        self.ui.tilt_spectrum_checkbox.setStyleSheet(
-            f'color: {Color.RED.name()}')
-        self.tilt_spectrum_points = []
-
-        pen = QPen(Color.RED, 1.25, Qt.PenStyle.SolidLine,
-                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
-
-        series_tilt = self.tilt_spectrum_series = QLineSeries()
-        series_tilt.setPen(pen)
-        series_tilt.setName('Tilt Spectrum')
-        chart.addSeries(series_tilt)
-
-        if config.GUI.opengl_charts:
-            series_tip.setUseOpenGL(True)
-            series_tilt.setUseOpenGL(True)
-
         # X Axis Settings
-        axis_x = self.tiptilt_spectrum_axis_x = QLogValueAxis()
+        axis_x = self.spectrums_axis_x = QLogValueAxis()
         axis_x.setBase(10)
         axis_x.setRange(0.1, 1000)
         axis_x.setMinorTickCount(8)
         axis_x.setTitleText('Frequency [Hz]')
         chart.addAxis(axis_x, Qt.AlignmentFlag.AlignBottom)
-        series_tip.attachAxis(axis_x)
-        series_tilt.attachAxis(axis_x)
 
         # Y Axis Settings
-        axis_y = self.tiptilt_spectrum_axis_y = QValueAxis()
+        axis_y = self.spectrums_axis_y = QValueAxis()
         axis_y.setTickCount(7)
         axis_y.setRange(-0.05, 1.05)
-        axis_y.setTitleText('Amplitude RMS ["]')
+        axis_y.setTitleText('Amplitude RMS')
         chart.addAxis(axis_y, Qt.AlignmentFlag.AlignLeft)
-        series_tip.attachAxis(axis_y)
-        series_tilt.attachAxis(axis_y)
 
         chart.hovered.connect(self.hover_xy_to_str_spectrum)
+
+        self.spectrum_key_list = []
+
+        for series in self.series:
+            if not series.spectrum:
+                continue
+
+            self.spectrum_key_list.append(series.name)
+
+            getattr(self.ui, f'{series.name}_spectrum_checkbox').setStyleSheet(
+                f'color: {series.color.name()}')
+
+            pen = QPen(series.color, 1.25, Qt.PenStyle.SolidLine,
+                       Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
+
+            series_spectrum = QLineSeries()
+            series_spectrum.setPen(pen)
+            series_spectrum.setName(f'{series.name} spectrum')
+            chart.addSeries(series_spectrum)
+            series_spectrum.attachAxis(axis_x)
+            series_spectrum.attachAxis(axis_y)
+
+            series.spectrum_points = []
+            series.spectrum_series = series_spectrum
+
+            if config.GUI.opengl_charts:
+                series_spectrum.setUseOpenGL(True)
+
+            getattr(self.ui,
+                    f'{series.name}_spectrum_checkbox').stateChanged.connect(
+                        self.spectrums_checkboxes_stateChanged)
 
         ##### Telemetry
 
@@ -231,7 +236,7 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
             else:
                 self.df_buffer = df
 
-            self.update_tiptilt_spectrum(self.df_buffer)
+            self.update_spectrums(self.df_buffer)
             self.update_telemetry(self.df_buffer)
 
     def telemetry_checkboxes_stateChanged(self, state: Qt.CheckState) -> None:
@@ -355,58 +360,53 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def hover_xy_to_str_spectrum(self, series: QLineSeries, x: float,
                                  y: float) -> None:
         if not np.isnan(x) and not np.isnan(y):
-            self.hovered.emit(f'Frequency: {x:.1f} Hz, Amplitude: {y:.2f}"')
+            self.hovered.emit(f'Frequency: {x:.1f} Hz, Amplitude: {y:.2f}')
         else:
             self.hovered.emit('')
 
-    @Slot(int)
-    def on_tip_spectrum_checkbox_stateChanged(self,
-                                              state: Qt.CheckState) -> None:
-        self.update_tiptilt_spectrum()
+    def spectrums_checkboxes_stateChanged(self, state: Qt.CheckState) -> None:
+        self.update_spectrums()
 
-    @Slot(int)
-    def on_tilt_spectrum_checkbox_stateChanged(self,
-                                               state: Qt.CheckState) -> None:
-        self.update_tiptilt_spectrum()
-
-    def update_tiptilt_spectrum(self, df: pd.DataFrame | None = None) -> None:
+    def update_spectrums(self, df: pd.DataFrame | None = None) -> None:
         if df is not None:
             dt = np.diff(df['timestamp'].to_numpy()).mean()
 
             if dt == 0:
                 return  # Don't update the graph
 
-            tiptilt = df[['tip', 'tilt']].to_numpy().T * config.TTM.plate_scale
+            data = df[self.spectrum_key_list].to_numpy().T
 
             frequency, power = scipy.signal.periodogram(
-                tiptilt, 1 / dt, scaling='spectrum')
+                data, 1 / dt, scaling='spectrum')
             amplitude = np.sqrt(power)
 
-            self.tip_spectrum_points = []
-            self.tilt_spectrum_points = []
-            for f, a_tip, a_tilt in zip(frequency[1:], amplitude[0, 1:],
-                                        amplitude[1, 1:]):
-                self.tip_spectrum_points.append(QPointF(f, a_tip))
-                self.tilt_spectrum_points.append(QPointF(f, a_tilt))
+            for series in self.series:
+                if not series.spectrum:
+                    continue
 
-            self.tip_spectrum_max = amplitude[0, :].max()
-            self.tilt_spectrum_max = amplitude[1, :].max()
+                index = self.spectrum_key_list.index(series.name)
 
-            self.tiptilt_spectrum_axis_x.setRange(frequency[1], frequency[-1])
+                series.spectrum_points = []
+
+                for f, v in zip(frequency[1:], amplitude[index, 1:]):
+                    series.spectrum_points.append(QPointF(f, v))
+
+                series.spectrum_max = amplitude[index, :].max()
+
+            self.spectrums_axis_x.setRange(frequency[1], frequency[-1])
 
         y_max = 0
 
-        if self.ui.tip_spectrum_checkbox.isChecked():
-            self.tip_spectrum_series.replace(self.tip_spectrum_points)
-            y_max = max(y_max, self.tip_spectrum_max)
-        else:
-            self.tip_spectrum_series.replace([])
+        for series in self.series:
+            if not series.spectrum:
+                continue
 
-        if self.ui.tilt_spectrum_checkbox.isChecked():
-            self.tilt_spectrum_series.replace(self.tilt_spectrum_points)
-            y_max = max(y_max, self.tilt_spectrum_max)
-        else:
-            self.tilt_spectrum_series.replace([])
+            if getattr(self.ui,
+                       f'{series.name}_spectrum_checkbox').isChecked():
+                series.spectrum_series.replace(series.spectrum_points)
+                y_max = max(y_max, series.spectrum_max)
+            else:
+                series.spectrum_series.replace([])
 
         if y_max < config.epsilon:
             series_min = -0.01
@@ -415,5 +415,5 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
             series_min = -0.05 * y_max
             series_max = y_max * 1.05
 
-        self.tiptilt_spectrum_axis_y.setRange(series_min, series_max)
-        self.tiptilt_spectrum_axis_y.applyNiceNumbers()
+        self.spectrums_axis_y.setRange(series_min, series_max)
+        self.spectrums_axis_y.applyNiceNumbers()
