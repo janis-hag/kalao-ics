@@ -1,12 +1,10 @@
 [Unit]
 Description=KalAO - Tmux server
 
-# This service require "set-option exit-empty off" in .tmux.conf
-
 [Service]
 Type=forking
-ExecStart=/usr/bin/tmux start-server
-ExecStop=/usr/bin/tmux kill-server
+ExecStart=/home/kalao/kalao-ics/scripts/kalao_tmux-server_start.sh
+ExecStop=/home/kalao/kalao-ics/scripts/kalao_tmux-server_stop.sh
 Restart=on-failure
 RestartSec=30
 StandardOutput=journal

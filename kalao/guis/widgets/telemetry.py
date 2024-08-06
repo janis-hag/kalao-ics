@@ -11,7 +11,7 @@ from PySide6.QtCharts import (QDateTimeAxis, QLineSeries, QLogValueAxis,
                               QValueAxis)
 from PySide6.QtCore import QDateTime, QPointF, Signal, Slot
 from PySide6.QtGui import QColor, QPen, Qt
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QCheckBox, QDoubleSpinBox, QWidget
 
 from compiled.ui_telemetry import Ui_TelemetryWidget
 
@@ -42,13 +42,18 @@ class TelemetrySeries:
 
     mean_points: list = None
     mean_series: QLineSeries = None
+    mean_checkbox: QCheckBox = None
+    mean_spinbox: QDoubleSpinBox = None
 
     std_points: list = None
     std_series: QLineSeries = None
+    std_checkbox: QCheckBox = None
+    std_spinbox: QDoubleSpinBox = None
 
     spectrum_points: list = None
     spectrum_series: QLineSeries = None
     spectrum_max: float = 0
+    spectrum_checkbox: QCheckBox = None
 
 
 class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
@@ -143,9 +148,11 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
             if config.GUI.opengl_charts:
                 series_spectrum.setUseOpenGL(True)
 
-            getattr(self.ui,
-                    f'{series.name}_spectrum_checkbox').stateChanged.connect(
-                        self.spectrums_checkboxes_stateChanged)
+            series.spectrum_checkbox = getattr(
+                self.ui, f'{series.name}_spectrum_checkbox')
+
+            series.spectrum_checkbox.stateChanged.connect(
+                self.spectrums_checkboxes_stateChanged)
 
         ##### Telemetry
 
@@ -207,12 +214,18 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 series_mean.setUseOpenGL(True)
                 series_std.setUseOpenGL(True)
 
-            getattr(self.ui,
-                    f'{series.name}_mean_checkbox').stateChanged.connect(
-                        self.telemetry_checkboxes_stateChanged)
-            getattr(self.ui,
-                    f'{series.name}_std_checkbox').stateChanged.connect(
-                        self.telemetry_checkboxes_stateChanged)
+            series.mean_checkbox = getattr(self.ui,
+                                           f'{series.name}_mean_checkbox')
+            series.mean_spinbox = getattr(self.ui,
+                                          f'{series.name}_mean_spinbox')
+            series.std_checkbox = getattr(self.ui,
+                                          f'{series.name}_std_checkbox')
+            series.std_spinbox = getattr(self.ui, f'{series.name}_std_spinbox')
+
+            series.mean_checkbox.stateChanged.connect(
+                self.telemetry_checkboxes_stateChanged)
+            series.std_checkbox.stateChanged.connect(
+                self.telemetry_checkboxes_stateChanged)
 
         backend.all_updated.connect(self.all_updated)
 
@@ -280,10 +293,10 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
             if index is not None:
                 for series in self.series:
-                    getattr(self.ui, f'{series.name}_mean_spinbox').setValue(
-                        row[series.name]['mean'] * series.scaling)
-                    getattr(self.ui, f'{series.name}_std_spinbox').setValue(
-                        row[series.name]['std'] * series.scaling)
+                    series.mean_spinbox.setValue(row[series.name]['mean'] *
+                                                 series.scaling)
+                    series.std_spinbox.setValue(row[series.name]['std'] *
+                                                series.scaling)
 
                 self.last_timestamp = index
 
@@ -305,7 +318,7 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
             maxs[chart.name] = -np.inf
 
         for series in self.series:
-            if getattr(self.ui, f'{series.name}_mean_checkbox').isChecked():
+            if series.mean_checkbox.isChecked():
                 for p in series.mean_points:
                     mins[series.chart_name] = min(mins[series.chart_name],
                                                   p.y())
@@ -316,7 +329,7 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
             else:
                 series.mean_series.replace([])
 
-            if getattr(self.ui, f'{series.name}_std_checkbox').isChecked():
+            if series.std_checkbox.isChecked():
                 for p in series.std_points:
                     mins[series.chart_name] = min(mins[series.chart_name],
                                                   p.y())
@@ -389,9 +402,10 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
                 series.spectrum_points = []
 
                 for f, v in zip(frequency[1:], amplitude[index, 1:]):
-                    series.spectrum_points.append(QPointF(f, v))
+                    series.spectrum_points.append(
+                        QPointF(f, v * series.scaling))
 
-                series.spectrum_max = amplitude[index, :].max()
+                series.spectrum_max = amplitude[index, :].max() * series.scaling
 
             self.spectrums_axis_x.setRange(frequency[1], frequency[-1])
 
@@ -401,8 +415,7 @@ class TelemetryWidget(KWidget, BackendActionMixin, BackendDataMixin):
             if not series.spectrum:
                 continue
 
-            if getattr(self.ui,
-                       f'{series.name}_spectrum_checkbox').isChecked():
+            if series.spectrum_checkbox.isChecked():
                 series.spectrum_series.replace(series.spectrum_points)
                 y_max = max(y_max, series.spectrum_max)
             else:

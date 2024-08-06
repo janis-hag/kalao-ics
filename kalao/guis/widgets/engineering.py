@@ -9,7 +9,7 @@ from PySide6.QtCore import (QEvent, QObject, QSignalBlocker, QTimer, Signal,
                             Slot)
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import (QFileDialog, QFrame, QLabel, QLineEdit,
-                               QMessageBox, QPushButton, QSizePolicy, QWidget)
+                               QMessageBox, QSizePolicy, QToolButton, QWidget)
 
 from compiled.ui_engineering import Ui_EngineeringWidget
 
@@ -38,7 +38,7 @@ import config
 class ServiceWidget:
     lineedit: QLineEdit
     indicator: KStatusIndicator
-    buttons: dict[ServiceAction, QPushButton]
+    buttons: dict[ServiceAction, QToolButton]
 
 
 @dataclass
@@ -183,7 +183,10 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                     ServiceAction.RESTART, ServiceAction.KILL,
                     ServiceAction.RELOAD
             ]):
-                button = QPushButton(action.value.title())
+                button = QToolButton(self)
+                button.setText(action.value.title())
+                button.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                     QSizePolicy.Policy.Fixed)
                 button.clicked.connect(lambda checked=False, _unit=unit,
                                        _action=action: self.
                                        on_service_action_button_clicked(
