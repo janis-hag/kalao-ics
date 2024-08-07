@@ -107,6 +107,8 @@ class MainBackend(SHMFPSBackend):
                     adc.get_synchronisation(),
                 'ttm_offloading':
                     ttm.get_offloading(),
+                'gui_window_hint':
+                    memory.hget('gui', 'window_hint')
             })
 
         self._update_dict(data, 'hw',
@@ -211,9 +213,32 @@ class MainBackend(SHMFPSBackend):
     def calibration_sequence(self) -> dict[str, Any]:
         data = {}
 
-        self._update_dict(data, 'memory', {
-            'calibration_poses_list': memory.hget('calibration_poses', 'list')
-        })
+        self._update_dict(
+            data, 'memory', {
+                'calibration_poses': {
+                    'list': memory.hget('calibration_poses', 'list')
+                }
+            })
+
+        return data
+
+    @emit
+    @timeit
+    def centering_spiral_data(self) -> dict[str, Any]:
+        data = {}
+
+        self._update_dict(
+            data, 'memory', {
+                'spiral_search':
+                    memory.hmget(
+                        'spiral_search', {
+                            'radius': int,
+                            'overlap': float,
+                            'expno': int,
+                            'star_x': float,
+                            'star_y': float
+                        })
+            })
 
         return data
 

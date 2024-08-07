@@ -83,7 +83,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     def all_updated(self, data: dict[str, Any]) -> None:
         mtime = self.consume_fits_mtime(data, config.FITS.last_image_all)
         if mtime is not None:
-            QTimer.singleShot(0, self.backend.camera_image)
+            QTimer.singleShot(0, self.backend, self.backend.camera_image)
 
         centering_manual_flag = self.consume_dict(data, 'memory',
                                                   'centering_manual_flag')

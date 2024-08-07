@@ -6,14 +6,14 @@ import pandas as pd
 
 from astropy.io import fits
 
-from kalao import database, logger
+from kalao import database, logger, memory
 from kalao.hardware import camera, filterwheel
 from kalao.interfaces import etcs
 from kalao.sequencer import seq_utils
 from kalao.utils import fits_handling, starfinder
 
 from kalao.definitions.dataclasses import Template
-from kalao.definitions.enums import ReturnCode
+from kalao.definitions.enums import ReturnCode, WindowHint
 from kalao.definitions.exceptions import (AbortRequested,
                                           CameraTakeImageFailed,
                                           FocusingException,
@@ -46,6 +46,8 @@ def focus_sequence(template: Template, exptime: float | None = None,
     symlink = config.FITS.last_focus_sequence
     symlink.unlink(missing_ok=True)
     symlink.symlink_to(filepath)
+
+    memory.hset('gui', 'window_hint', WindowHint.FOCUS_SEQUENCE)
 
     with open(filepath, 'w+b') as file, fits.open(file, 'update') as hdul:
         try:
@@ -191,6 +193,8 @@ def focus_sequence(template: Template, exptime: float | None = None,
             # Seal focus sequence file
             filepath.chmod(config.FITS.file_mask)
 
+            memory.hdel('gui', 'window_hint')
+
             return ReturnCode.FOCUSING_ERROR
 
     # Seal focus sequence file
@@ -217,6 +221,8 @@ def focus_sequence(template: Template, exptime: float | None = None,
         database.store('obs', {
             'focusing_m2_position': best_focus,
         })
+
+    memory.hdel('gui', 'window_hint')
 
     return ReturnCode.FOCUSING_OK
 

@@ -65,11 +65,6 @@ def kalao_status() -> str:
                                          default=0)
             status_string = f'|status|BUSY|elapsed_time|STEP {centering_step}|requested_time|CENTERING'
 
-    elif sequencer_status == SequencerStatus.CALIBRATIONS:
-        calibration_poses_step = memory.hget('sequencer', 'expno', type=int,
-                                             default=0)
-        status_string = f'|status|BUSY|elapsed_time|STEP {calibration_poses_step}|requested_time|CALIBRATIONS'
-
     elif sequencer_status == SequencerStatus.EXPOSING:
         elapsed_time = exposure_status['exposure_time'] - exposure_status[
             'remaining_time']

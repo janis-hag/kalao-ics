@@ -23,13 +23,14 @@ from kalao.guis.windows.calibration_poses import CalibrationPosesWindow
 from kalao.guis.windows.dm_channels import DMChannelsWindow
 from kalao.guis.windows.dm_direct_control import DMDirectControlWindow
 from kalao.guis.windows.focus_sequence import FocusSequenceWindow
+from kalao.guis.windows.spiral_search import SpiralSearchWindow
 from kalao.guis.windows.ttm_direct_control import TTMDirectControlWindow
 
 from kalao.definitions.enums import (CameraStatus, FilterWheelStatus,
                                      FlipMirrorStatus, IPPowerStatus,
                                      LaserStatus, PLCStatus, RelayState,
-                                     SequencerStatus, ServiceAction,
-                                     ShutterStatus, TungstenStatus)
+                                     ServiceAction, ShutterStatus,
+                                     TungstenStatus, WindowHint)
 
 import config
 
@@ -69,6 +70,7 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     ttm_direct_control_window = None
     focus_sequence_window = None
     calibration_poses_window = None
+    spiral_search_window = None
 
     def __init__(self, backend: AbstractBackend, deadman: bool = False,
                  parent: QWidget = None) -> None:
@@ -767,15 +769,17 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
         ##### Sequencer status (automatic windows opening)
 
-        sequencer_status = self.consume_dict(data, 'memory',
-                                             'sequencer_status')
-        if sequencer_status is not None:
-            if sequencer_status == SequencerStatus.FOCUSING:
+        gui_window_hint = self.consume_dict(data, 'memory', 'gui_window_hint')
+        if gui_window_hint is not None:
+            if gui_window_hint == WindowHint.FOCUS_SEQUENCE:
                 # Note: force timer start in case the window was not closed
                 self.open_focus_sequence_window(force_timer=True)
 
-            elif sequencer_status == SequencerStatus.CALIBRATIONS:
+            elif gui_window_hint == WindowHint.CALIBRATION_POSES:
                 self.open_calibration_poses_window()
+
+            elif gui_window_hint == WindowHint.SPIRAL_SEARCH:
+                self.open_spiral_search_window()
 
         ##### CACAO / camstack
 
@@ -1386,6 +1390,13 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         else:
             self.calibration_poses_window = CalibrationPosesWindow(
                 self.backend)
+
+    def open_spiral_search_window(self) -> None:
+        if self.spiral_search_window is not None:
+            self.spiral_search.show()
+            self.spiral_search.activateWindow()
+        else:
+            self.spiral_search = SpiralSearchWindow(self.backend)
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.ToolTip:

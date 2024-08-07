@@ -26,7 +26,6 @@ decoder = KalAOJSONDecoder()
 
 class CalibrationPosesWindow(KMainWindow, BackendDataMixin):
     formatter = KalAOFormatter()
-    uuid = 0
 
     activeToolTip = None
 
@@ -57,8 +56,8 @@ class CalibrationPosesWindow(KMainWindow, BackendDataMixin):
 
         self.calib_timer = QTimer(parent=self)
         self.calib_timer.setInterval(
-            int(1000 / config.GUI.refreshrate_calibration_poses))
-        self.calib_timer.timeout.connect(self.backend.calibration_sequence)
+            int(1000 / config.GUI.refreshrate_auxillary))
+        self.calib_timer.timeout.connect(backend.calibration_sequence)
         self.calib_timer.start()
 
         self.show()
@@ -90,11 +89,11 @@ class CalibrationPosesWindow(KMainWindow, BackendDataMixin):
             self.ui.shutter_status_lineedit.setText(shutter_status)
 
     def calibration_sequence_updated(self, data: dict[str, Any]) -> None:
-        calibration_poses_list = self.consume_dict(data, 'memory',
-                                                   'calibration_poses_list')
+        calibration_poses = self.consume_dict(data, 'memory',
+                                              'calibration_poses')
 
-        if calibration_poses_list is not None:
-            self.update_calibs(decoder.decode(calibration_poses_list))
+        if calibration_poses is not None:
+            self.update_calibs(decoder.decode(calibration_poses['list']))
 
     def update_widgets(self, length: int) -> None:
         while len(self.calibration_widgets) < length:
@@ -211,6 +210,8 @@ class CalibrationPosesWindow(KMainWindow, BackendDataMixin):
         return super().closeEvent(event)
 
     def showEvent(self, event: QShowEvent) -> None:
+        QTimer.singleShot(0, self.backend, self.backend.calibration_sequence)
+
         self.calib_timer.start()
 
         return super().showEvent(event)

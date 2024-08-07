@@ -1,8 +1,6 @@
-import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from enum import StrEnum
 
 import numpy as np
 
@@ -20,7 +18,7 @@ from kalao.definitions.dataclasses import Star, Template
 from kalao.definitions.enums import (AdaptiveOpticsMode, CalibUnitPositionName,
                                      CameraStatus, CenteringMode,
                                      FlipMirrorStatus, ReturnCode,
-                                     ShutterStatus, TemplateID)
+                                     ShutterStatus, TemplateID, WindowHint)
 from kalao.definitions.exceptions import (
     AbortRequested, AutomaticCenteringTimeout, CameraTakeImageFailed,
     CenteringException, CenteringFluxWFSTooLow, CenteringMaxIter,
@@ -31,25 +29,18 @@ from kalao.definitions.exceptions import (
 import config
 
 
-class Direction(StrEnum):
-    TOP = 'TOP'
-    RIGHT = 'RIGHT'
-    BOTTOM = 'BOTTOM'
-    LEFT = 'LEFT'
-
-
-_spiral_next_mapping = {
-    Direction.TOP: Direction.RIGHT,
-    Direction.RIGHT: Direction.BOTTOM,
-    Direction.BOTTOM: Direction.LEFT,
-    Direction.LEFT: Direction.TOP,
-}
-
-
 @dataclass
 class CenteringMetadata:
     template: Template
     star: Star | None = None
+
+
+@dataclass
+class SpiralCoord:
+    radius: int
+    theta: float
+    x: float
+    y: float
 
 
 encoder = KalAOJSONEncoder()
@@ -221,9 +212,8 @@ def center_on_laser() -> ReturnCode:
     return ReturnCode.CENTERING_OK
 
 
-def spiral_search(exptime: float | None = None, overlap: float = 0.25,
-                  direction: Direction = Direction.TOP,
-                  max_turns: int = sys.maxsize) -> ReturnCode:
+def spiral_search(exptime: float | None = None,
+                  overlap: float = 0.15) -> ReturnCode:
     logger.info(
         'centering',
         f'Starting spiral search with an overlap of {overlap * 100:.0f}%.')
@@ -232,73 +222,103 @@ def spiral_search(exptime: float | None = None, overlap: float = 0.25,
                         start=datetime.now(timezone.utc))
     template.to_memory()
 
-    tot_dx = 0
-    tot_dy = 0
+    memory.hmset(
+        'spiral_search', {
+            'radius': 1,
+            'overlap': overlap,
+            'expno': 0,
+            'star_x': np.nan,
+            'star_y': np.nan
+        })
+    memory.hset('gui', 'window_hint', WindowHint.SPIRAL_SEARCH)
 
-    max_exps = 4*max_turns + 1
+    coords = spiral_create_grid(overlap=overlap, radius=1)
+    expno = 0
+    coord = coords[0]
 
-    while template.expno < max_exps:
-        tot = template.expno // 2 + 1
+    # Note: we assume that there was no star in the initial field
 
-        for s in range(tot):
-            try:
-                star = _get_star(template, exptime, comment='Spiral search')
-            except CenteringStarNotFound:
-                pass
-            else:
-                dx = config.Camera.center_x - star.x
-                dy = config.Camera.center_y - star.y
+    while True:
+        try:
+            expno += 1
+            prev_coord = coord
 
-                logger.info('centering',
-                            'Spiral search: star found, final centering')
+            if expno == len(coords):
+                coords = spiral_create_grid(overlap=overlap,
+                                            radius=coord.radius + 1)
 
-                if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
-                    raise CenteringOffsettingFailed
+            coord = coords[expno]
 
-                tot_dx += dx
-                tot_dy += dy
+            dx = coord.x - prev_coord.x
+            dy = coord.y - prev_coord.y
 
-                logger.info(
-                    'centering',
-                    f'Spiral search: found star in the field of view at alt = {+tot_dx*config.Offsets.camera_x_to_tel_alt:.2f}" and az = {+tot_dy*config.Offsets.camera_y_to_tel_az:.2f}".'
-                )
-
-                # Update image
-                camera.take_science_image(template, comment="Spiral search")
-
-                return ReturnCode.CENTERING_OK
-
-            dx = 1024 * (1-overlap)
-            dy = 1024 * (1-overlap)
-
-            match direction:
-                case Direction.TOP:
-                    dx = 0
-                    # dy positive
-                case Direction.RIGHT:
-                    dx *= -1
-                    dy = 0
-                case Direction.BOTTOM:
-                    dx = 0
-                    dy *= -1
-                case Direction.LEFT:
-                    # dx positive
-                    dy = 0
-
-            logger.info(
-                'centering',
-                f'Spiral search step {template.expno}: moving {direction} ({s+1}/{tot}).'
-            )
+            logger.info('centering', f'Spiral search step {expno}.')
 
             if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
                 raise CenteringOffsettingFailed
 
-            tot_dx += dx
-            tot_dy += dy
+            star = _get_star(template, exptime, comment='Spiral search')
 
-        direction = _spiral_next_mapping[direction]
+        except CenteringStarNotFound:
+            memory.hmset('spiral_search', {
+                'radius': coord.radius,
+                'expno': expno,
+            })
 
-    return ReturnCode.CENTERING_ERROR
+        else:
+            dx = config.Camera.center_x - star.x
+            dy = config.Camera.center_y - star.y
+
+            logger.info('centering',
+                        'Spiral search: star found, final centering')
+
+            if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
+                raise CenteringOffsettingFailed
+
+            tot_dx = coord.x + dx
+            tot_dy = coord.y + dy
+
+            logger.info(
+                'centering',
+                f'Spiral search: found star in the field of view at alt = {+tot_dx*config.Offsets.camera_x_to_tel_alt:.2f}" and az = {+tot_dy*config.Offsets.camera_y_to_tel_az:.2f}".'
+            )
+
+            memory.hmset(
+                'spiral_search', {
+                    'radius': coord.radius,
+                    'expno': expno,
+                    'star_x': tot_dx,
+                    'star_y': tot_dy
+                })
+
+            # Update image
+            camera.take_science_image(template, comment="Spiral search")
+
+            memory.hdel('gui', 'window_hint')
+            return ReturnCode.CENTERING_OK
+
+
+def spiral_create_grid(overlap: float, radius: int):
+    dx = config.Camera.size_x * (1-overlap)
+    dy = config.Camera.size_y * (1-overlap)
+
+    x = np.arange(-radius, radius + 1)
+    y = np.arange(-radius, radius + 1)
+
+    X, Y = np.meshgrid(x, y)
+
+    R = np.rint(np.sqrt(X**2 + Y**2))
+    Theta = np.atan2(Y, X) % (2 * np.pi)
+
+    coords = []
+    for i in range(R.shape[0]):
+        for j in range(R.shape[1]):
+            if R[i, j] <= radius:
+                coords.append(
+                    SpiralCoord(radius=R[i, j], theta=Theta[i, j],
+                                x=X[i, j] * dx, y=Y[i, j] * dy))
+
+    return sorted(coords, key=lambda c: (c.radius, c.theta))
 
 
 def request_manual_centering(template: Template) -> ReturnCode:

@@ -49,6 +49,16 @@ class OffsetedTextItem(QGraphicsSimpleTextItem):
                       b.y() + self.offset_y, b.width(), b.height())
 
 
+class CenteredTextItem(QGraphicsSimpleTextItem):
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem,
+              widget: QWidget) -> None:
+        translation = QPointF(-self.boundingRect().width() / 2,
+                              -self.boundingRect().height() / 2)
+        painter.translate(translation)
+        super().paint(painter, option, widget)
+        painter.translate(-translation)
+
+
 class KLabel(QLabel):
     _pixmap = None
     text_format = None
@@ -757,7 +767,7 @@ class KImageViewer(QGraphicsView):
             QPolygonF([east_arrow_p0, east_arrow_p1, east_arrow_p2]), pen,
             brush)
 
-        north_textitem = OffsetedTextItem('N')
+        north_textitem = CenteredTextItem('N')
         north_textitem.setFont(font)
         north_textitem.setPos(north_point +
                               QPointF(north_line.unitVector().dx(),
@@ -767,10 +777,8 @@ class KImageViewer(QGraphicsView):
             QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
         north_textitem.setBrush(brush)
         self._scene.addItem(north_textitem)
-        north_textitem.setOffset(-north_textitem.boundingRect().width() / 2,
-                                 -north_textitem.boundingRect().height() / 2)
 
-        east_textitem = OffsetedTextItem('E')
+        east_textitem = CenteredTextItem('E')
         east_textitem.setFont(font)
         east_textitem.setPos(east_point +
                              QPointF(east_line.unitVector().dx(),
@@ -780,8 +788,6 @@ class KImageViewer(QGraphicsView):
             QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
         east_textitem.setBrush(brush)
         self._scene.addItem(east_textitem)
-        east_textitem.setOffset(-east_textitem.boundingRect().width() / 2,
-                                -east_textitem.boundingRect().height() / 2)
 
         self.neindicator_group.addToGroup(north_east)
         self.neindicator_group.addToGroup(north_arrow)

@@ -62,7 +62,6 @@ class SequencerStatus(StrEnum):
     CENTERING = 'CENTERING'
     FOCUSING = 'FOCUSING'
     EXPOSING = 'EXPOSING'
-    CALIBRATIONS = 'CALIBRATIONS'
     WAIT_LAMP = 'WAIT_LAMP'
     WAIT_TRACKING = 'WAIT_TRACKING'
     ABORTING = 'ABORTING'
@@ -203,3 +202,9 @@ class AlarmLevel(StrEnum):
 class ReportType(StrEnum):
     CLI = 'CLI'
     HTML = 'HTML'
+
+
+class WindowHint(StrEnum):
+    FOCUS_SEQUENCE = 'focus_sequence'
+    CALIBRATION_POSES = 'calibration_poses'
+    SPIRAL_SEARCH = 'spiral_search'

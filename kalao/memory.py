@@ -1,5 +1,6 @@
 import os
 import uuid
+from enum import StrEnum, Enum
 
 import redis
 
@@ -92,6 +93,8 @@ def _convert_value_set(value: str | int | float | bool | None
                        ) -> str | int | float | None:
     if isinstance(value, bool):
         return int(value)
+    elif isinstance(value, Enum):
+        return value.value
     else:
         return value
 
@@ -118,7 +121,7 @@ def hmset(name: str, mapping: dict[str, str | int | float | bool]) -> int:
     return client.hset(name, mapping=mapping)
 
 
-def hdel(name: str, *keys: list[str]) -> int:
+def hdel(name: str, *keys: str) -> int:
     return client.hdel(name, *keys)
 
 

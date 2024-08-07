@@ -24,7 +24,7 @@ class Template:
     def to_memory(self):
         memory.hmset(
             'sequencer', {
-                'id': str(self.id),
+                'id': self.id,
                 'start': self.start.timestamp(),
                 'nexp': self.nexp,
                 'expno': self.expno

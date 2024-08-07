@@ -171,7 +171,9 @@ class DM:
     # 2 * 4.4 / 1200 / 1000 * 180/np.pi * 3600 = 1.51 arcsec / mrad
     plate_scale = 0.688  # arcsec / um
 
-    shape = (12, 12)
+    size_x = 12  # actuators
+    size_y = 12  # actuators
+    shape = (size_y, size_x)
 
 
 class TTM:
@@ -192,6 +194,10 @@ class Camera:
 
     # Note: max exposure time is limited due to this timeout setting
     request_timeout = 3600  # s
+
+    size_x = 1024  # px
+    size_y = 1024  # px
+    shape = (size_y, size_x)
 
     # Should be 1/(1.2*44.1023) * 3600 * 180/np.pi * 13e-6 = 0.0507 arcsec / px
     plate_scale = 0.0507  # arcsec / px
@@ -821,9 +827,8 @@ class GUI:
     refreshrate_streams = 10  # /s
     refreshrate_data = 1  # /s
     refreshrate_logs = 1  # /s
-    refreshrate_focus = 1  # /s
-    refreshrate_calibration_poses = 1  # /s
     refreshrate_monitoring = 0.1  # /s
+    refreshrate_auxillary = 1  # /s
 
     http_host = '10.10.132.120'  # kalaortc01
     # http_host = '127.0.0.1'  # localhost

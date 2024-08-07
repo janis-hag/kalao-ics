@@ -24,7 +24,7 @@ from kalao.hardware import (adc, calibunit, camera, dm, filterwheel,
                             flipmirror, hw_utils, laser, shutter, tungsten,
                             wfs)
 from kalao.sequencer import centering, focusing, seq_utils
-from kalao.sequencer.seq_utils import with_sequencer_status
+from kalao.sequencer.seq_utils import SequencerStatusContextManager
 from kalao.utils import exposure, fits_handling
 from kalao.utils.json import KalAOJSONEncoder
 
@@ -32,7 +32,8 @@ from kalao.definitions.dataclasses import CalibrationPose, Template
 from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
                                      FlipMirrorStatus, LaserStatus, LoopStatus,
                                      ReturnCode, SequencerStatus,
-                                     ShutterStatus, TemplateID, TungstenStatus)
+                                     ShutterStatus, TemplateID, TungstenStatus,
+                                     WindowHint)
 from kalao.definitions.exceptions import (
     AbortRequested, ADCConfigureFailed, CameraTakeImageFailed, CenteringFailed,
     DMNotOn, DMResetFailed, EMGainNotOff, FilterWheelNotInPosition,
@@ -216,12 +217,7 @@ def KAO_TRGOBS(template, **template_args: Any) -> ReturnCode:
                               adaptiveoptics_mode=kao)
 
             # Reset sequencer status after centering
-            memory.hmset(
-                'sequencer', {
-                    'id': str(template.id),
-                    'nexp': template.nexp,
-                    'expno': template.expno
-                })
+            template.to_memory()
 
             if centering_filter != filter:
                 # Move filter to correct position for science
@@ -422,71 +418,78 @@ def KAO_CONFIG(template, **template_args: Any) -> ReturnCode:
     return ReturnCode.SEQ_OK
 
 
-@with_sequencer_status(SequencerStatus.WAIT_TRACKING)
 def _wait_for_tracking() -> ReturnCode:
     """
     Waits for the telescope to be on target
     """
-    timeout = time.monotonic() + config.Sequencer.pointing_timeout
+    on_target = database.get_last_value('obs', 'sequencer_on_target')
 
-    logger.info('sequencer', 'Waiting for telescope to be on target.')
+    if on_target:
+        return ReturnCode.SEQ_OK
 
-    while time.monotonic() < timeout:
-        on_target = database.get_last_value('obs', 'sequencer_on_target')
+    with SequencerStatusContextManager(SequencerStatus.WAIT_TRACKING):
+        timeout = time.monotonic() + config.Sequencer.pointing_timeout
 
-        if on_target:
-            logger.info('sequencer', 'Telescope on target.')
-            fits_handling.update_db_from_telheader()
-            return ReturnCode.SEQ_OK
+        logger.info('sequencer', 'Waiting for telescope to be on target.')
 
-        if seq_utils.is_aborting():
-            raise AbortRequested
+        while time.monotonic() < timeout:
+            on_target = database.get_last_value('obs', 'sequencer_on_target')
 
-        time.sleep(config.Sequencer.pointing_poll_interval)
+            if on_target:
+                logger.info('sequencer', 'Telescope on target.')
+                fits_handling.update_db_from_telheader()
+                return ReturnCode.SEQ_OK
 
-    else:
-        logger.error(
-            'sequencer',
-            'Timeout while waiting for the telescope to be on target.')
-        raise TrackingTimeout
+            if seq_utils.is_aborting():
+                raise AbortRequested
+
+            time.sleep(config.Sequencer.pointing_poll_interval)
+
+        else:
+            logger.error(
+                'sequencer',
+                'Timeout while waiting for the telescope to be on target.')
+            raise TrackingTimeout
 
 
-@with_sequencer_status(SequencerStatus.WAIT_LAMP)
 def _wait_for_tungsten() -> ReturnCode:
     # Wait for tungsten to warm up
     state, switch_time = tungsten.get_switch_time()
 
-    logger.info('sequencer', 'Waiting for tungsten lamp to warm up.')
+    if switch_time > config.Tungsten.stabilisation_time:
+        return ReturnCode.SEQ_OK
 
-    while switch_time < config.Tungsten.stabilisation_time:
-        # Check if lamp is still on
-        if state != TungstenStatus.ON:
-            raise TungstenSwitchedOff
+    with SequencerStatusContextManager(SequencerStatus.WAIT_LAMP):
+        logger.info('sequencer', 'Waiting for tungsten lamp to warm up.')
 
-        if seq_utils.is_aborting():
-            raise AbortRequested
+        while switch_time < config.Tungsten.stabilisation_time:
+            # Check if lamp is still on
+            if state != TungstenStatus.ON:
+                raise TungstenSwitchedOff
 
-        time.sleep(config.Tungsten.stabilisation_poll_interval)
+            if seq_utils.is_aborting():
+                raise AbortRequested
 
-        state, switch_time = tungsten.get_switch_time()
+            time.sleep(config.Tungsten.stabilisation_poll_interval)
 
-    logger.info('sequencer', 'Tungsten lamp ready.')
-    return ReturnCode.SEQ_OK
+            state, switch_time = tungsten.get_switch_time()
+
+        logger.info('sequencer', 'Tungsten lamp ready.')
+        return ReturnCode.SEQ_OK
 
 
-@with_sequencer_status(SequencerStatus.CENTERING)
 def _center_on_target(exptime: float,
                       adaptiveoptics_mode: AdaptiveOpticsMode) -> None:
-    if centering.center_on_target(exptime=exptime,
-                                  adaptiveoptics_mode=adaptiveoptics_mode
-                                  ) != ReturnCode.CENTERING_OK:
-        raise CenteringFailed
+    with SequencerStatusContextManager(SequencerStatus.CENTERING):
+        if centering.center_on_target(exptime=exptime,
+                                      adaptiveoptics_mode=adaptiveoptics_mode
+                                      ) != ReturnCode.CENTERING_OK:
+            raise CenteringFailed
 
 
 def _run_calibs(calib_list: list[CalibrationPose]) -> ReturnCode:
-    seq_utils.set_sequencer_status(SequencerStatus.CALIBRATIONS,
-                                   check_abort=True)
     memory.hset('calibration_poses', 'list', encoder.encode(calib_list))
+    memory.hset('gui', 'window_hint', WindowHint.CALIBRATION_POSES)
 
     prev_calib_type = None
     prev_filter = filterwheel.get_filter(type=str)
@@ -502,6 +505,9 @@ def _run_calibs(calib_list: list[CalibrationPose]) -> ReturnCode:
             # Setup, if needed
 
             if prev_calib_type != calib.template.id:
+                seq_utils.set_sequencer_status(SequencerStatus.SETUP,
+                                               check_abort=True)
+
                 if calib.template.id == TemplateID.BIAS or calib.template.id == TemplateID.DARK:
                     if hw_utils.lamps_off() != ReturnCode.OK:
                         raise LampsNotOff
@@ -612,6 +618,9 @@ def _run_calibs(calib_list: list[CalibrationPose]) -> ReturnCode:
 
             # Take image
 
+            seq_utils.set_sequencer_status(SequencerStatus.EXPOSING,
+                                           check_abort=True)
+
             logger.info(
                 'sequencer',
                 f'Taking image for {calib.template.id.name}, exposure time = {calib.exposure_time:.3f} s'
@@ -644,6 +653,8 @@ def _run_calibs(calib_list: list[CalibrationPose]) -> ReturnCode:
             memory.hset('calibration_poses', 'list',
                         encoder.encode(calib_list))
 
+            memory.hdel('gui', 'window_hint')
+
             raise exc
 
         except (SkyFlatExptimeTooHigh, SkyFlatExptimeTooLow) as exc:
@@ -670,6 +681,8 @@ def _run_calibs(calib_list: list[CalibrationPose]) -> ReturnCode:
     if shutter.close() != ShutterStatus.CLOSED:
         logger.error('sequencer',
                      'Failed to close the shutter after calibration poses')
+
+    memory.hdel('gui', 'window_hint')
 
     return ReturnCode.SEQ_OK
 

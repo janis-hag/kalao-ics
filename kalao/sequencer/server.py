@@ -143,6 +143,8 @@ def abort() -> str:
 
     centering.invalidate_manual_centering()
 
+    memory.hdel('gui', 'window_hint')
+
     if camera.cancel() != ReturnCode.OK:
         logger.error('sequencer', 'Failed to send cancel order to camera.')
 
@@ -288,6 +290,8 @@ def _execute_template(id: str, func: Callable, args: dict[str, Any],
     # Close shutter in case there was an error
     if ret == ReturnCode.SEQ_ERROR and shutter.close() != ShutterStatus.CLOSED:
         logger.error('sequencer', 'Failed to close the shutter after error')
+
+    memory.hdel('gui', 'window_hint')
 
     if update_status:
         if ret == ReturnCode.SEQ_ERROR:

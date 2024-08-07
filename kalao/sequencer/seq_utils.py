@@ -1,6 +1,4 @@
 import time
-from functools import wraps
-from typing import Any, Callable
 
 from kalao import database, logger, memory
 
@@ -14,18 +12,14 @@ _transitions = {
     SequencerStatus.WAITING: [SequencerStatus.SETUP],
     SequencerStatus.SETUP: [
         SequencerStatus.EXPOSING, SequencerStatus.FOCUSING,
-        SequencerStatus.CENTERING, SequencerStatus.CALIBRATIONS,
-        SequencerStatus.WAIT_TRACKING, SequencerStatus.WAITING,
-        SequencerStatus.ERROR
+        SequencerStatus.CENTERING, SequencerStatus.WAIT_TRACKING,
+        SequencerStatus.WAITING, SequencerStatus.ERROR
     ],
     SequencerStatus.FOCUSING: [SequencerStatus.WAITING, SequencerStatus.ERROR],
     SequencerStatus.EXPOSING: [SequencerStatus.WAITING, SequencerStatus.ERROR],
-    SequencerStatus.CALIBRATIONS: [
-        SequencerStatus.WAITING, SequencerStatus.ERROR
-    ],
     SequencerStatus.CENTERING: [SequencerStatus.SETUP],
     SequencerStatus.WAIT_TRACKING: [SequencerStatus.SETUP],
-    SequencerStatus.WAIT_LAMP: [SequencerStatus.CALIBRATIONS],
+    SequencerStatus.WAIT_LAMP: [SequencerStatus.SETUP],
     SequencerStatus.ERROR: [SequencerStatus.SETUP],
     SequencerStatus.ABORTING: [SequencerStatus.WAITING, SequencerStatus.OFF],
     SequencerStatus.ABORTING_ERROR: [SequencerStatus.ERROR],
@@ -59,11 +53,11 @@ def _set_sequencer_status(status: SequencerStatus,
                           update_timestamp=True) -> None:
     if update_timestamp:
         memory.hmset('sequencer', {
-            'status': str(status),
+            'status': status,
             'status_timestamp': time.time()
         })
     else:
-        memory.hset('sequencer', 'status', str(status))
+        memory.hset('sequencer', 'status', status)
     database.store('obs', {'sequencer_status': status})
 
 
@@ -72,33 +66,16 @@ def is_aborting() -> bool:
     return status in [SequencerStatus.ABORTING, SequencerStatus.ABORTING_ERROR]
 
 
-def with_sequencer_status(status: SequencerStatus) -> Callable:
-    def _with_sequencer_status(fun: Callable) -> Callable:
-        @wraps(fun)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            ret = None
-            exception = None
+class SequencerStatusContextManager:
+    def __init__(self, status):
+        self.status = status
 
-            previous_status = get_sequencer_status()
-            _set_sequencer_status(status, update_timestamp=False)
+    def __enter__(self):
+        self.previous_status = get_sequencer_status()
+        _set_sequencer_status(self.status, update_timestamp=False)
 
-            try:
-                ret = fun(*args, **kwargs)
-            except Exception as e:
-                exception = e
-
-            current_status = get_sequencer_status()
-
-            # Restore previous status if status didn't change
-            # (e.g. do not change if status was switched to ABORTING or ERROR)
-            if current_status == status:
-                _set_sequencer_status(previous_status, update_timestamp=False)
-
-            if exception is not None:
-                raise exception
-
-            return ret
-
-        return wrapper
-
-    return _with_sequencer_status
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Restore previous status if status didn't change
+        # (e.g. do not change if status was switched to ABORTING or ERROR)
+        if get_sequencer_status() == self.status:
+            _set_sequencer_status(self.previous_status, update_timestamp=False)

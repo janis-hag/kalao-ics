@@ -26,7 +26,7 @@ from kalao.definitions.enums import (CameraServerStatus, CameraStatus,
                                      LaserStatus, LogLevel, PLCStatus,
                                      RelayState, SequencerStatus,
                                      ServiceAction, ShutterStatus, TemplateID,
-                                     TungstenStatus)
+                                     TungstenStatus, WindowHint)
 
 import config
 
@@ -168,6 +168,8 @@ class MainBackend(FakeSHMFPSBackend):
                 0,
             'sequencer_status':
                 SequencerStatus.WAITING.value,
+            'gui_window_hint':
+                ''
         })
 
         self._update_fli_service()
@@ -443,7 +445,9 @@ class MainBackend(FakeSHMFPSBackend):
                 'adc_synchronisation':
                     self.internal_state['adc_synchronisation'],
                 'ttm_offloading':
-                    self.internal_state['ttm_offloading']
+                    self.internal_state['ttm_offloading'],
+                'gui_window_hint':
+                    self.internal_state['gui_window_hint'],
             })
 
         adc_angle, adc_offset = adc._compute_angle_and_offset(
@@ -770,21 +774,43 @@ class MainBackend(FakeSHMFPSBackend):
                 CalibrationPose(template=template, filter=None,
                                 exposure_time=0.001))
 
-        # for j in range(3):
-        #     for i in range(5):
-        #         calib_list.append(
-        #             CalibrationPose(type=TemplateID.DARK, filter=None,
-        #                             exposure_time=10 * (j+1)))
-        #
-        # for f in config.Calib.Flats.default_flat_list:
-        #     calib_list.append(
-        #         CalibrationPose(
-        #             type=TemplateID.LAMP_FLAT, filter=f,
-        #             exposure_time=config.Calib.Flats.tungsten_exptime_list[f]))
+        for j in range(3):
+            template = Template(id=TemplateID.DARK, start=None, nexp=5)
+            for i in range(template.nexp):
+                calib_list.append(
+                    CalibrationPose(template=template, filter=None,
+                                    exposure_time=10 * (j+1)))
+
+        for f in config.Calib.Flats.default_flat_list:
+            template = Template(id=TemplateID.LAMP_FLAT, start=None, nexp=1)
+            calib_list.append(
+                CalibrationPose(
+                    template=template, filter=f,
+                    exposure_time=config.Calib.Flats.tungsten_exptime_list[f]))
 
         self._update_dict(data, 'memory', {
-            'calibration_poses_list': encoder.encode(calib_list)
+            'calibration_poses': {
+                'list': encoder.encode(calib_list)
+            }
         })
+
+        return data
+
+    @emit
+    @timeit
+    def centering_spiral_data(self) -> dict[str, Any]:
+        data = {}
+
+        self._update_dict(
+            data, 'memory', {
+                'spiral_search': {
+                    'radius': 1,
+                    'overlap': 0.25,
+                    'expno': 7,
+                    'star_x': 128,
+                    'star_y': -896
+                }
+            })
 
         return data
 
@@ -1553,6 +1579,7 @@ class MainBackend(FakeSHMFPSBackend):
         rprint('Laser centering launched (virtually)')
 
     def centering_spiral(self) -> None:
+        self.internal_state['gui_window_hint'] = WindowHint.SPIRAL_SEARCH
         rprint('Spiral search launched (virtually)')
 
     # Focusing
@@ -1561,6 +1588,7 @@ class MainBackend(FakeSHMFPSBackend):
         rprint('Autofocus launched (virtually)')
 
     def focusing_sequence(self) -> None:
+        self.internal_state['gui_window_hint'] = WindowHint.FOCUS_SEQUENCE
         self.internal_state['focusing-step'] = 0
         self.internal_state['sequencer_status'] = SequencerStatus.FOCUSING.value
         rprint('Focus sequence launched (virtually)')

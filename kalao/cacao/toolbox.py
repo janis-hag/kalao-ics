@@ -236,7 +236,11 @@ def set_tmux_value(session_name: str, key: str,
         return_str = ''
         i = -2
 
-        while -i <= len(stdout) and not stdout[i].startswith('>>>'):
+        while not stdout[i].startswith('>>>'):
+            if -i == len(stdout):
+                # We didn't manage to read the full output
+                return None
+
             return_str = stdout[i] + '\n' + return_str
             i -= 1
 

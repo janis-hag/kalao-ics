@@ -369,15 +369,7 @@ def _log(key: str, value: Any, timestamp: datetime, alarm: Alarm) -> None:
         if last // config.Monitoring.alarms_repetition_rate == since // config.Monitoring.alarms_repetition_rate:
             return
 
-    hr, min, sec = _sec_to_hms(since)
-
-    since_str = f'{sec:.0f}s'
-
-    if min != 0 or hr != 0:
-        since_str = f'{min:d}m ' + since_str
-
-    if hr != 0:
-        since_str = f'{hr:d}h ' + since_str
+    since_str = kstring.sec_to_hms_str(since)
 
     if alarm.condition == '==':
         log_func('monitoring_timer',

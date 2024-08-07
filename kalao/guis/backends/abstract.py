@@ -62,6 +62,7 @@ class AbstractBackend(QObject):
     streams_channels_ttm_updated = Signal(object)
     focusing_sequence_fits_updated = Signal(object)
     calibration_sequence_updated = Signal(object)
+    centering_spiral_data_updated = Signal(object)
 
     def __init__(self) -> None:
         super().__init__()
@@ -100,6 +101,10 @@ class AbstractBackend(QObject):
 
     @abstractmethod
     def calibration_sequence(self) -> dict[str, Any]:
+        pass
+
+    @abstractmethod
+    def centering_spiral_data(self) -> dict[str, Any]:
         pass
 
     @abstractmethod
