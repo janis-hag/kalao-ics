@@ -506,7 +506,8 @@ def _run_calibs(calib_list: list[CalibrationPose]) -> ReturnCode:
 
             if prev_calib_type != calib.template.id:
                 seq_utils.set_sequencer_status(SequencerStatus.SETUP,
-                                               check_abort=True)
+                                               check_abort=True,
+                                               check_status=True)
 
                 if calib.template.id == TemplateID.BIAS or calib.template.id == TemplateID.DARK:
                     if hw_utils.lamps_off() != ReturnCode.OK:

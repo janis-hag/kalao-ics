@@ -30,8 +30,8 @@ from kalao.definitions.exceptions import (AbortRequested, MissingKeyword,
 
 import config
 
-sigint_handler = None
-sigterm_handler = None
+sigint_orig_handler = None
+sigterm_orig_handler = None
 
 app = Flask(__name__)
 
@@ -50,9 +50,9 @@ def sig_handler(signum: int, frame: FrameType | None) -> None:
     logger.info('sequencer', 'Sequencer server off')
 
     if signum == signal.SIGINT:
-        handler = sigint_handler
+        handler = sigint_orig_handler
     elif signum == signal.SIGTERM:
-        handler = sigterm_handler
+        handler = sigterm_orig_handler
     else:
         handler = None
 
@@ -310,8 +310,8 @@ if __name__ == '__main__':
 
     seq_utils.set_sequencer_status(SequencerStatus.INITIALISING)
 
-    signal.signal(signal.SIGINT, sig_handler)
-    signal.signal(signal.SIGTERM, sig_handler)
+    sigint_orig_handler = signal.signal(signal.SIGINT, sig_handler)
+    sigterm_orig_handler = signal.signal(signal.SIGTERM, sig_handler)
 
     init()
 

@@ -805,7 +805,7 @@ class MainBackend(FakeSHMFPSBackend):
             data, 'memory', {
                 'spiral_search': {
                     'radius': 1,
-                    'overlap': 0.25,
+                    'overlap': 0.15,
                     'expno': 7,
                     'star_x': 128,
                     'star_y': -896

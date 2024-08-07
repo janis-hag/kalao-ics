@@ -13,7 +13,8 @@ from PySide6.QtGui import (QBrush, QCloseEvent, QColor, QFont, QIcon, QImage,
                            QTransform)
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QAbstractSpinBox, QDateTimeEdit, QDoubleSpinBox,
-                               QGraphicsItem, QGraphicsPixmapItem,
+                               QGraphicsItem, QGraphicsLineItem,
+                               QGraphicsPixmapItem, QGraphicsRectItem,
                                QGraphicsScene, QGraphicsSimpleTextItem,
                                QGraphicsView, QLabel, QMainWindow, QMessageBox,
                                QSizePolicy, QSpacerItem,
@@ -27,6 +28,24 @@ from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.string_formatter import KalAOFormatter
 
 import config
+
+
+class KNoAALine(QGraphicsLineItem):
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem,
+              widget: QWidget) -> None:
+        painter.save()
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing, on=False)
+        super().paint(painter, option, widget)
+        painter.restore()
+
+
+class KNoAARect(QGraphicsRectItem):
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem,
+              widget: QWidget) -> None:
+        painter.save()
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing, on=False)
+        super().paint(painter, option, widget)
+        painter.restore()
 
 
 class OffsetedTextItem(QGraphicsSimpleTextItem):
@@ -612,32 +631,50 @@ class KImageViewer(QGraphicsView):
     def _draw_vertical_axis(self, start: float, end: float, tick_start: float,
                             tick_end: float, pen: QPen,
                             ticks_y: list[float]) -> None:
-        self.axes_group.addToGroup(
-            self._scene.addLine(tick_start, start, tick_start, end, pen))
+        line = KNoAALine(tick_start, start, tick_start, end)
+        line.setPen(pen)
+        self._scene.addItem(line)
+        self.axes_group.addToGroup(line)
 
-        self.axes_group.addToGroup(
-            self._scene.addLine(tick_start, start, tick_end, start, pen))
-        self.axes_group.addToGroup(
-            self._scene.addLine(tick_start, end, tick_end, end, pen))
+        line = KNoAALine(tick_start, start, tick_end, start)
+        line.setPen(pen)
+        self._scene.addItem(line)
+        self.axes_group.addToGroup(line)
+
+        line = KNoAALine(tick_start, end, tick_end, end)
+        line.setPen(pen)
+        self._scene.addItem(line)
+        self.axes_group.addToGroup(line)
 
         for y, label in ticks_y:
-            self.axes_group.addToGroup(
-                self._scene.addLine(tick_start, y, tick_end, y, pen))
+            line = KNoAALine(tick_start, y, tick_end, y)
+            line.setPen(pen)
+            self._scene.addItem(line)
+            self.axes_group.addToGroup(line)
 
     def _draw_horizontal_axis(self, start: float, end: float,
                               tick_start: float, tick_end: float, pen: QPen,
                               ticks_x: list[float]) -> None:
-        self.axes_group.addToGroup(
-            self._scene.addLine(start, tick_start, end, tick_start, pen))
+        line = KNoAALine(start, tick_start, end, tick_start)
+        line.setPen(pen)
+        self._scene.addItem(line)
+        self.axes_group.addToGroup(line)
 
-        self.axes_group.addToGroup(
-            self._scene.addLine(start, tick_start, start, tick_end, pen))
-        self.axes_group.addToGroup(
-            self._scene.addLine(end, tick_start, end, tick_end, pen))
+        line = KNoAALine(start, tick_start, start, tick_end)
+        line.setPen(pen)
+        self._scene.addItem(line)
+        self.axes_group.addToGroup(line)
+
+        line = KNoAALine(end, tick_start, end, tick_end)
+        line.setPen(pen)
+        self._scene.addItem(line)
+        self.axes_group.addToGroup(line)
 
         for x, label in ticks_x:
-            self.axes_group.addToGroup(
-                self._scene.addLine(x, tick_start, x, tick_end, pen))
+            line = KNoAALine(x, tick_start, x, tick_end)
+            line.setPen(pen)
+            self._scene.addItem(line)
+            self.axes_group.addToGroup(line)
 
     def _draw_vertical_tick_labels(self, text_start: float, font: QFont,
                                    ticks_y: list[float]) -> None:
@@ -1077,9 +1114,10 @@ class KMessageBox(QMessageBox):
 
 
 class KStatusIndicator(QGraphicsView):
-    diameter: float = 100
-    border: float = 8
-    view = QRectF(0, 0, diameter, diameter)
+    diameter: float = 128
+    border: float = 16
+    view = QRectF(-border / 2, -border / 2, diameter + border,
+                  diameter + border)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
@@ -1098,7 +1136,8 @@ class KStatusIndicator(QGraphicsView):
 
         self.pen = QPen(Color.GREY, self.border, Qt.PenStyle.SolidLine,
                         Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
-        self.brush = QBrush(Color.DARK_GREY, Qt.BrushStyle.SolidPattern)
+        self.brush = QBrush(Color.GREY.lighter(175),
+                            Qt.BrushStyle.SolidPattern)
 
         self.ellipse = self._scene.addEllipse(0, 0, self.diameter,
                                               self.diameter, self.pen,
@@ -1108,8 +1147,13 @@ class KStatusIndicator(QGraphicsView):
 
     def setStatus(self, color: QColor = Color.DARK_GREY,
                   tooltip: str = '') -> None:
+        if color == Color.BLACK:
+            color = QColor('#333333')
+
         self.brush.setColor(color)
         self.ellipse.setBrush(self.brush)
+        self.pen.setColor(color.lighter(175))
+        self.ellipse.setPen(self.pen)
         self.setToolTip(f'Status: {tooltip}')
 
     def heightForWidth(self, width: int) -> int:
@@ -1143,8 +1187,8 @@ class KColorbar(QGraphicsView):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
 
-        self.scene = QGraphicsScene()
-        self.setScene(self.scene)
+        self._scene = QGraphicsScene()
+        self.setScene(self._scene)
 
         self.setRenderHints(QPainter.RenderHint.Antialiasing |
                             QPainter.RenderHint.SmoothPixmapTransform)
@@ -1156,14 +1200,17 @@ class KColorbar(QGraphicsView):
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        self.ticks_group = self.scene.createItemGroup([])
-        self.pixmap_item = self.scene.addPixmap(QPixmap())
+        self.ticks_group = self._scene.createItemGroup([])
+        self.pixmap_item = self._scene.addPixmap(QPixmap())
 
         pen = QPen(Color.BLACK, 0.5, Qt.PenStyle.SolidLine,
                    Qt.PenCapStyle.FlatCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
 
-        self.border = self.scene.addRect(0, 0, 1, 1, pen)
+        self.border = KNoAARect(0, 0, 1, 1)
+        self.border.setPen(pen)
+        self._scene.addItem(self.border)
+        self.border.setZValue(1)
 
     def draw_colorbar(self) -> None:
         colorbar_width = self.size().width() - self.margin
@@ -1223,7 +1270,7 @@ class KColorbar(QGraphicsView):
         self.border.setRect(self.pixmap_item.pixmap().rect())
 
         for item in self.ticks_group.childItems():
-            self.scene.removeItem(item)
+            self._scene.removeItem(item)
             self.ticks_group.removeFromGroup(item)
 
         pen = QPen(Color.BLACK, 0.5, Qt.PenStyle.SolidLine,
@@ -1234,9 +1281,11 @@ class KColorbar(QGraphicsView):
         font.setPixelSize(10)
 
         for i in np.linspace(0, 255, self.nb_ticks):
-            self.ticks_group.addToGroup(
-                self.scene.addLine(colorbar_width, 255.5 - i, colorbar_width +
-                                   self.tick_length, 255.5 - i, pen))
+            line = KNoAALine(colorbar_width, 255.5 - i,
+                             colorbar_width + self.tick_length, 255.5 - i)
+            line.setPen(pen)
+            self._scene.addItem(line)
+            self.ticks_group.addToGroup(line)
 
             v = scale.inverse(i) / 255 * (self.true_max -
                                           self.true_min) + self.true_min
@@ -1248,7 +1297,7 @@ class KColorbar(QGraphicsView):
                 255.5 - i)
             text_item.setFlag(
                 QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
-            self.scene.addItem(text_item)
+            self._scene.addItem(text_item)
             self.ticks_group.addToGroup(text_item)
 
             probe = OffsetedTextItem(f'{v:3.3g}')  # TODO minus?
@@ -1256,12 +1305,12 @@ class KColorbar(QGraphicsView):
             probe.setFlag(
                 QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
 
-            self.scene.addItem(probe)
+            self._scene.addItem(probe)
             text_item.setOffset(
                 0,
                 probe.boundingRect().height() / 2 -
                 text_item.boundingRect().height())
-            self.scene.removeItem(probe)
+            self._scene.removeItem(probe)
 
     def setTrueMinMax(self, true_min: float, true_max: float) -> None:
         self.true_min = true_min

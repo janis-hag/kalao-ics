@@ -31,7 +31,8 @@ def get_sequencer_status() -> SequencerStatus:
         memory.hget('sequencer', 'status', default=SequencerStatus.UNKNOWN))
 
 
-def set_sequencer_status(status: SequencerStatus, check_abort=False) -> None:
+def set_sequencer_status(status: SequencerStatus, check_abort=False,
+                         check_status=False) -> None:
     current_status = get_sequencer_status()
 
     if status not in _transitions[current_status] + [
@@ -46,11 +47,15 @@ def set_sequencer_status(status: SequencerStatus, check_abort=False) -> None:
     ]:
         raise AbortRequested
 
-    return _set_sequencer_status(status)
+    return _set_sequencer_status(status, check_status=check_status)
 
 
-def _set_sequencer_status(status: SequencerStatus,
-                          update_timestamp=True) -> None:
+def _set_sequencer_status(status: SequencerStatus, update_timestamp=True,
+                          check_status=False) -> None:
+    if check_status and get_sequencer_status() == status:
+        # Status already OK, skipping
+        return
+
     if update_timestamp:
         memory.hmset('sequencer', {
             'status': status,

@@ -2,9 +2,9 @@ from typing import Any
 
 import numpy as np
 
-from PySide6.QtCore import QRectF, QTimer, Slot
+from PySide6.QtCore import QPointF, QRectF, QTimer, Slot
 from PySide6.QtGui import (QBrush, QCloseEvent, QColor, QFont, QPainter, QPen,
-                           QResizeEvent, QShowEvent, Qt)
+                           QPolygonF, QResizeEvent, QShowEvent, Qt)
 from PySide6.QtWidgets import QWidget
 
 from compiled.ui_spiral_search import Ui_SpiralSearchWindow
@@ -116,13 +116,13 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin):
 
         # Default pen and brush
 
-        pen = QPen(Color.GREY, 1.5, Qt.PenStyle.SolidLine,
+        pen = QPen(Color.GREY, 0.5, Qt.PenStyle.SolidLine,
                    Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
 
         brush = QBrush(
             QColor(Color.GREY.red(), Color.GREY.green(), Color.GREY.blue(),
-                   16), Qt.BrushStyle.SolidPattern)
+                   48), Qt.BrushStyle.SolidPattern)
 
         font = QFont()
         font.setPixelSize(256)
@@ -131,13 +131,13 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin):
 
         # Pen and brush for exposures done
 
-        pen_done = QPen(Color.GREEN, 1.5, Qt.PenStyle.SolidLine,
+        pen_done = QPen(Color.GREEN, 0.5, Qt.PenStyle.SolidLine,
                         Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen_done.setCosmetic(True)
 
         brush_done = QBrush(
             QColor(Color.GREEN.red(), Color.GREEN.green(), Color.GREEN.blue(),
-                   32))
+                   64))
 
         # Draw detector footprints
 
@@ -162,18 +162,15 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin):
             text_item.setZValue(200)
 
         # Draw star if found
-
-        pen_star = QPen(Color.RED, 1.5, Qt.PenStyle.SolidLine,
-                        Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
-        pen_star.setCosmetic(True)
+        pen_star = Qt.PenStyle.NoPen
+        brush_star = QBrush(Color.YELLOW, Qt.BrushStyle.SolidPattern)
 
         if not np.isnan(self.star_x) and not np.isnan(self.star_y):
-            self._scene.addLine(self.star_x - 50, self.star_y - 50,
-                                self.star_x + 50, self.star_y + 50,
-                                pen_star).setZValue(300)
-            self._scene.addLine(self.star_x + 50, self.star_y - 50,
-                                self.star_x - 50, self.star_y + 50,
-                                pen_star).setZValue(300)
+            star = self._draw_star()
+
+            star_item = self._scene.addPolygon(star, pen_star, brush_star)
+            star_item.setPos(self.star_x, self.star_y)
+            star_item.setZValue(300)
 
             self.ui.star_label.updateText(
                 text=
@@ -187,12 +184,27 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin):
         self._view = QRectF(-0.5 * area_x, -0.5 * area_y, area_x, area_y)
 
         self._scene.setSceneRect(self._view)
-        self.ui.spiral_search_view.fitInView(self._view,
-                                       Qt.AspectRatioMode.KeepAspectRatio)
+        self.ui.spiral_search_view.fitInView(
+            self._view, Qt.AspectRatioMode.KeepAspectRatio)
+
+    def _draw_star(self, size=100, branches=5) -> QPolygonF:
+        polygon = QPolygonF()
+        angle = 2 * np.pi / (2*branches)
+
+        for i in range(branches):
+            polygon.append(
+                QPointF(-np.sin(2 * i * angle) * size,
+                        -np.cos(2 * i * angle) * size))
+            polygon.append(
+                QPointF(-np.sin((2*i + 1) * angle) * size / 2, -np.cos(
+                    (2*i + 1) * angle) * size / 2))
+        polygon.append(QPointF(0, -size))
+
+        return polygon
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self.ui.spiral_search_view.fitInView(self._view,
-                                       Qt.AspectRatioMode.KeepAspectRatio)
+        self.ui.spiral_search_view.fitInView(
+            self._view, Qt.AspectRatioMode.KeepAspectRatio)
 
         return super().resizeEvent(event)
 
@@ -203,8 +215,8 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin):
 
     def showEvent(self, event: QShowEvent) -> None:
         if not event.spontaneous():
-            self.ui.spiral_search_view.fitInView(self._view,
-                                           Qt.AspectRatioMode.KeepAspectRatio)
+            self.ui.spiral_search_view.fitInView(
+                self._view, Qt.AspectRatioMode.KeepAspectRatio)
 
         QTimer.singleShot(0, self.backend, self.backend.centering_spiral_data)
 

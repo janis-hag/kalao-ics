@@ -39,7 +39,8 @@ class KSplashScreen(QWidget):
 
     def handlePaintEvent(self) -> None:
         painter = QPainter(self)
-        painter.setRenderHints(QPainter.RenderHint.SmoothPixmapTransform)
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing |
+                               QPainter.RenderHint.SmoothPixmapTransform)
 
         painter.drawPixmap(QPoint(), self._pixmap)
 

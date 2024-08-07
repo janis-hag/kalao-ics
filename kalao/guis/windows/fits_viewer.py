@@ -145,9 +145,12 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         # Manual centering notification
 
+        self.media_devices = QMediaDevices()
+        self.media_devices.audioOutputsChanged.connect(
+            self.on_audiooutputs_changed)
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
-        self.audio_output.setDevice(QMediaDevices.defaultAudioOutput())
+        self.audio_output.setDevice(self.media_devices.defaultAudioOutput())
         self.audio_output.setVolume(1.0)
         self.player.setAudioOutput(self.audio_output)
         self.player.setSource(
@@ -407,6 +410,9 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.img = self.hdul[0].data[self.ui.frame_spinbox.value() - 1, :, :]
 
         self.update_image_view()
+
+    def on_audiooutputs_changed(self) -> None:
+        self.audio_output.setDevice(self.media_devices.defaultAudioOutput())
 
     @Slot(bool)
     def on_enter_manual_centering_action_triggered(self,
