@@ -795,17 +795,23 @@ class Ui_EngineeringWidget(object):
 
         self.gridLayout_7.addWidget(self.centering_laser_button, 0, 1, 1, 1)
 
+        self.verticalSpacer_4 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.gridLayout_7.addItem(self.verticalSpacer_4, 2, 0, 1, 2)
+
         self.centering_spiral_search_button = QPushButton(self.centering_groupbox)
         self.centering_spiral_search_button.setObjectName(u"centering_spiral_search_button")
         icon11 = QIcon()
         icon11.addFile(u":/assets/icons/spiral-shape.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.centering_spiral_search_button.setIcon(icon11)
 
-        self.gridLayout_7.addWidget(self.centering_spiral_search_button, 1, 0, 1, 2)
+        self.gridLayout_7.addWidget(self.centering_spiral_search_button, 1, 0, 1, 1)
 
-        self.verticalSpacer_4 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.centering_spiral_search_window_button = QPushButton(self.centering_groupbox)
+        self.centering_spiral_search_window_button.setObjectName(u"centering_spiral_search_window_button")
+        self.centering_spiral_search_window_button.setIcon(icon11)
 
-        self.gridLayout_7.addItem(self.verticalSpacer_4, 2, 0, 1, 2)
+        self.gridLayout_7.addWidget(self.centering_spiral_search_window_button, 1, 1, 1, 1)
 
 
         self.middle_pane_layout.addWidget(self.centering_groupbox)
@@ -814,39 +820,39 @@ class Ui_EngineeringWidget(object):
         self.focusing_groupbox.setObjectName(u"focusing_groupbox")
         self.gridLayout_5 = QGridLayout(self.focusing_groupbox)
         self.gridLayout_5.setObjectName(u"gridLayout_5")
-        self.focusing_focus_sequence_button = QPushButton(self.focusing_groupbox)
-        self.focusing_focus_sequence_button.setObjectName(u"focusing_focus_sequence_button")
-        icon12 = QIcon()
-        icon12.addFile(u":/assets/icons/focus.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.focusing_focus_sequence_button.setIcon(icon12)
-
-        self.gridLayout_5.addWidget(self.focusing_focus_sequence_button, 1, 0, 1, 1)
-
-        self.focusing_launch_focus_sequence_button = QPushButton(self.focusing_groupbox)
-        self.focusing_launch_focus_sequence_button.setObjectName(u"focusing_launch_focus_sequence_button")
-        self.focusing_launch_focus_sequence_button.setIcon(icon12)
-
-        self.gridLayout_5.addWidget(self.focusing_launch_focus_sequence_button, 0, 1, 1, 1)
-
         self.focusing_open_focus_sequence_button = QPushButton(self.focusing_groupbox)
         self.focusing_open_focus_sequence_button.setObjectName(u"focusing_open_focus_sequence_button")
-        icon13 = QIcon()
-        icon13.addFile(u":/assets/icons/document-open.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.focusing_open_focus_sequence_button.setIcon(icon13)
+        icon12 = QIcon()
+        icon12.addFile(u":/assets/icons/document-open.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.focusing_open_focus_sequence_button.setIcon(icon12)
 
         self.gridLayout_5.addWidget(self.focusing_open_focus_sequence_button, 1, 1, 1, 1)
-
-        self.focusing_autofocus_button = QPushButton(self.focusing_groupbox)
-        self.focusing_autofocus_button.setObjectName(u"focusing_autofocus_button")
-        icon14 = QIcon()
-        icon14.addFile(u":/assets/icons/tools-wizard.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.focusing_autofocus_button.setIcon(icon14)
-
-        self.gridLayout_5.addWidget(self.focusing_autofocus_button, 0, 0, 1, 1)
 
         self.verticalSpacer_8 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.gridLayout_5.addItem(self.verticalSpacer_8, 2, 0, 1, 2)
+
+        self.focusing_autofocus_button = QPushButton(self.focusing_groupbox)
+        self.focusing_autofocus_button.setObjectName(u"focusing_autofocus_button")
+        icon13 = QIcon()
+        icon13.addFile(u":/assets/icons/tools-wizard.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.focusing_autofocus_button.setIcon(icon13)
+
+        self.gridLayout_5.addWidget(self.focusing_autofocus_button, 1, 0, 1, 1)
+
+        self.focusing_focus_sequence_button = QPushButton(self.focusing_groupbox)
+        self.focusing_focus_sequence_button.setObjectName(u"focusing_focus_sequence_button")
+        icon14 = QIcon()
+        icon14.addFile(u":/assets/icons/focus.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.focusing_focus_sequence_button.setIcon(icon14)
+
+        self.gridLayout_5.addWidget(self.focusing_focus_sequence_button, 0, 0, 1, 1)
+
+        self.focusing_focus_sequence_window_button = QPushButton(self.focusing_groupbox)
+        self.focusing_focus_sequence_window_button.setObjectName(u"focusing_focus_sequence_window_button")
+        self.focusing_focus_sequence_window_button.setIcon(icon14)
+
+        self.gridLayout_5.addWidget(self.focusing_focus_sequence_window_button, 0, 1, 1, 1)
 
 
         self.middle_pane_layout.addWidget(self.focusing_groupbox)
@@ -1296,11 +1302,12 @@ class Ui_EngineeringWidget(object):
         self.centering_star_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch star centering", None))
         self.centering_laser_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch laser centering", None))
         self.centering_spiral_search_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch spiral search", None))
+        self.centering_spiral_search_window_button.setText(QCoreApplication.translate("EngineeringWidget", u"Spiral search window ...", None))
         self.focusing_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"Focusing", None))
-        self.focusing_focus_sequence_button.setText(QCoreApplication.translate("EngineeringWidget", u"Focus sequence ...", None))
-        self.focusing_launch_focus_sequence_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch focus sequence", None))
         self.focusing_open_focus_sequence_button.setText(QCoreApplication.translate("EngineeringWidget", u"Open a focus sequence ...", None))
         self.focusing_autofocus_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch autofocus", None))
+        self.focusing_focus_sequence_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch focus sequence", None))
+        self.focusing_focus_sequence_window_button.setText(QCoreApplication.translate("EngineeringWidget", u"Focus sequence window...", None))
         self.stream_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"CACAO Streams", None))
         self.stream_status_label.setText("")
         self.shm_name_label.setText(QCoreApplication.translate("EngineeringWidget", u"Name", None))

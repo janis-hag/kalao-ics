@@ -51,7 +51,7 @@
         <item>
          <layout class="QGridLayout" name="calibration_layout" columnstretch="1,1,1,1,0">
           <item row="0" column="2">
-           <widget class="QLabel" name="exposure_timetime_label">
+           <widget class="QLabel" name="exposure_time_label">
             <property name="font">
              <font>
               <bold>true</bold>

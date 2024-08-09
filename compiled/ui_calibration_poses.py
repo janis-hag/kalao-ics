@@ -51,12 +51,12 @@ class Ui_CalibrationPosesWindow(object):
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.calibration_layout = QGridLayout()
         self.calibration_layout.setObjectName(u"calibration_layout")
-        self.exposure_timetime_label = QLabel(self.scrollAreaWidgetContents)
-        self.exposure_timetime_label.setObjectName(u"exposure_timetime_label")
-        self.exposure_timetime_label.setFont(font)
-        self.exposure_timetime_label.setAlignment(Qt.AlignCenter)
+        self.exposure_time_label = QLabel(self.scrollAreaWidgetContents)
+        self.exposure_time_label.setObjectName(u"exposure_time_label")
+        self.exposure_time_label.setFont(font)
+        self.exposure_time_label.setAlignment(Qt.AlignCenter)
 
-        self.calibration_layout.addWidget(self.exposure_timetime_label, 0, 2, 1, 1)
+        self.calibration_layout.addWidget(self.exposure_time_label, 0, 2, 1, 1)
 
         self.status_label = QLabel(self.scrollAreaWidgetContents)
         self.status_label.setObjectName(u"status_label")
@@ -215,7 +215,7 @@ class Ui_CalibrationPosesWindow(object):
     def retranslateUi(self, CalibrationPosesWindow):
         CalibrationPosesWindow.setWindowTitle(QCoreApplication.translate("CalibrationPosesWindow", u"Calibration Poses - KalAO", None))
         self.done_label.setText(QCoreApplication.translate("CalibrationPosesWindow", u"Calibrations: {current_calib}/{total_calib}", None))
-        self.exposure_timetime_label.setText(QCoreApplication.translate("CalibrationPosesWindow", u"Exposure time", None))
+        self.exposure_time_label.setText(QCoreApplication.translate("CalibrationPosesWindow", u"Exposure time", None))
         self.status_label.setText(QCoreApplication.translate("CalibrationPosesWindow", u"Status", None))
         self.filter_label.setText(QCoreApplication.translate("CalibrationPosesWindow", u"Filter", None))
         self.median_label.setText(QCoreApplication.translate("CalibrationPosesWindow", u"Flux", None))

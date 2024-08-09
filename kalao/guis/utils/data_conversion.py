@@ -49,7 +49,7 @@ def ndarray_normalize(img: np.ndarray | np.ma.masked_array, img_min: float |
     scale_min = colormap.min
     scale_max = colormap.max
 
-    if np.ma.is_masked(img):
+    if isinstance(img, np.ma.masked_array):
         mask = img.mask
         img = img.filled(img_min)
     else:

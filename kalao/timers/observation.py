@@ -55,7 +55,7 @@ def _check_ao() -> None:
             abort = True
 
     if abort:
-        seq_utils.set_sequencer_status(SequencerStatus.ABORTING_ERROR)
+        seq_utils.set_sequencer_status(SequencerStatus.ABORTING_SOFTWARE)
         camera.cancel()
         aocontrol.open_loops()
 

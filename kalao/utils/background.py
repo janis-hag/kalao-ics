@@ -1,13 +1,11 @@
 import multiprocessing
 import time
-import traceback
 from multiprocessing import Process, Queue
 from typing import Callable
 
 import numpy as np
 
 from kalao import logger
-from kalao.utils.rprint import rprint
 
 from kalao.definitions.enums import ReturnCode
 
@@ -27,7 +25,7 @@ def _wrapper(log: str, func: Callable, queue: Queue) -> None:
     except Exception as e:
         logger.error(log,
                      f'Exception occurred during {_get_name(func)} execution')
-        rprint(''.join(traceback.format_exception(e)))
+        logger.exception(log, e)
         ret = ReturnCode.EXCEPTION
     else:
         if isinstance(ret, ReturnCode):

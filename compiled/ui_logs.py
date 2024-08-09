@@ -182,13 +182,13 @@ class Ui_LogsWidget(object):
 
         self.time_layout.addItem(self.horizontalSpacer_8)
 
-        self.retieve_button = QPushButton(LogsWidget)
-        self.retieve_button.setObjectName(u"retieve_button")
+        self.retrieve_button = QPushButton(LogsWidget)
+        self.retrieve_button.setObjectName(u"retrieve_button")
         icon2 = QIcon()
         icon2.addFile(u":/assets/icons/download.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.retieve_button.setIcon(icon2)
+        self.retrieve_button.setIcon(icon2)
 
-        self.time_layout.addWidget(self.retieve_button)
+        self.time_layout.addWidget(self.retrieve_button)
 
         self.live_button = QPushButton(LogsWidget)
         self.live_button.setObjectName(u"live_button")
@@ -235,7 +235,7 @@ class Ui_LogsWidget(object):
         self.since_datetimeedit.setDisplayFormat(QCoreApplication.translate("LogsWidget", u"HH:mm:ss dd.MM.yy", None))
         self.until_label.setText(QCoreApplication.translate("LogsWidget", u"Until", None))
         self.until_datetimeedit.setDisplayFormat(QCoreApplication.translate("LogsWidget", u"HH:mm:ss dd.MM.yy", None))
-        self.retieve_button.setText(QCoreApplication.translate("LogsWidget", u"Retrieve", None))
+        self.retrieve_button.setText(QCoreApplication.translate("LogsWidget", u"Retrieve", None))
         self.live_button.setText(QCoreApplication.translate("LogsWidget", u"Live", None))
         ___qtreewidgetitem = self.filters_tree.headerItem()
         ___qtreewidgetitem.setText(0, QCoreApplication.translate("LogsWidget", u"Filters", None));

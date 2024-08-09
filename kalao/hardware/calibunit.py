@@ -107,8 +107,7 @@ def stop(beck: Client = None) -> None:
 
 @plc.autoconnect
 def wait(beck: Client = None) -> int:
-    plc.wait_loop('Waiting for calibration unit movement',
-                  lambda: is_moving(beck=beck), 5)
+    plc.wait_loop(lambda: is_moving(beck=beck), 5)
 
     return 0
 

@@ -73,15 +73,18 @@ def mget(keys_mapping: dict[str, type]
     return mapping
 
 
-def hmget(name: str, keys_mapping: dict[str, type]
-          ) -> dict[str, str | int | float | bool | None]:
+def hmget(
+    name: str,
+    keys_mapping: dict[str,
+                       tuple[type, str | int | float | bool | None] | type]
+) -> dict[str, str | int | float | bool | None]:
     keys = list(keys_mapping.keys())
 
     values = client.hmget(name, keys)
 
     mapping = {}
     for i, key in enumerate(keys):
-        mapping[key] = _convert_value_get(values[i], keys_mapping[key])
+        mapping[key] = _convert_value_get(values[i], *keys_mapping[key])
 
     return mapping
 
@@ -144,6 +147,9 @@ def lock(key: str) -> str | None:
 
 
 def unlock(key: str, secret: str = '', force: bool = False) -> bool:
+    if secret is None:
+        return True
+
     if force or client.get(key) == secret:
         client.delete(key)
         return True

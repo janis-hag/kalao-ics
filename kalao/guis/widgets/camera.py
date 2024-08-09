@@ -85,13 +85,17 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         if mtime is not None:
             QTimer.singleShot(0, self.backend, self.backend.camera_image)
 
-        centering_manual_flag = self.consume_dict(data, 'memory',
-                                                  'centering_manual_flag')
+        centering_manual_flag = self.consume_dict(data, 'centering_manual',
+                                                  'flag')
         if centering_manual_flag is not None:
             if centering_manual_flag is True:
+                centering_manual_reason = self.consume_dict(
+                    data, 'centering_manual', 'reason', force=True)
+
                 self.open_fits_viewer()
                 if self.fits_viewer is not None:
-                    self.fits_viewer.enter_manual_centering()
+                    self.fits_viewer.enter_manual_centering(
+                        reason=centering_manual_reason)
             elif centering_manual_flag is False:
                 if self.fits_viewer is not None:
                     self.fits_viewer.exit_manual_centering()

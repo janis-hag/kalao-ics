@@ -1,7 +1,8 @@
 from functools import wraps
 from typing import Any, Callable
 
-import dbus
+import dasbus.client.proxy
+import dasbus.connection
 
 from kalao import ippower, logger
 from kalao.hardware import cooling, dm, hw_utils, shutter
@@ -17,21 +18,23 @@ import config
 
 class Logind:
     def _connect_to_system_bus(self):
-        self._system_bus = dbus.SystemBus()
-        self._system_logind = self._system_bus.get_object(
-            'org.freedesktop.login1', '/org/freedesktop/login1')
-        self._system_manager = dbus.Interface(
-            self._system_logind, 'org.freedesktop.login1.Manager')
+        self._system_bus = dasbus.connection.SystemMessageBus()
+        self._system_manager = dasbus.client.proxy.InterfaceProxy(
+            self._system_bus, 'org.freedesktop.login1',
+            '/org/freedesktop/login1', 'org.freedesktop.login1.Manager')
 
-    def manager(self) -> dbus.Interface:
+    def manager(self) -> dasbus.client.proxy.InterfaceProxy:
         if not hasattr(self, '_system_manager'):
             self._connect_to_system_bus()
 
         return self._system_manager
 
     def close(self) -> None:
+        if hasattr(self, '_system_manager'):
+            dasbus.client.proxy.disconnect_proxy(self._system_manager)
+
         if hasattr(self, '_system_bus'):
-            self._system_bus.close()
+            self._system_bus.disconnect()
 
 
 def autoconnect(fun: Callable) -> Callable:

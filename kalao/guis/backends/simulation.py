@@ -438,16 +438,19 @@ class MainBackend(FakeSHMFPSBackend):
             data, 'memory', {
                 'sequencer_status':
                     self.internal_state['sequencer_status'],
-                'centering_manual_flag':
-                    False,
-                'centering_timeout':
-                    0,
                 'adc_synchronisation':
                     self.internal_state['adc_synchronisation'],
                 'ttm_offloading':
                     self.internal_state['ttm_offloading'],
                 'gui_window_hint':
                     self.internal_state['gui_window_hint'],
+            })
+
+        self._update_dict(
+            data, 'centering_manual', {
+                'flag': False,
+                'timeout': time.time() + config.Centering.manual_timeout,
+                'reason': 'Test'
             })
 
         adc_angle, adc_offset = adc._compute_angle_and_offset(

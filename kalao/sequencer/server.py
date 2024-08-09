@@ -5,7 +5,6 @@ import logging
 import os
 import signal
 import threading
-import traceback
 from datetime import datetime, timezone
 from types import FrameType
 from typing import Any, Callable
@@ -20,7 +19,6 @@ from kalao.hardware import (adc, calibunit, camera, cooling, filterwheel,
                             flipmirror, laser, shutter, tungsten)
 from kalao.sequencer import centering, seq_utils, templates
 from kalao.utils import background
-from kalao.utils.rprint import rprint
 
 from kalao.definitions.dataclasses import Template
 from kalao.definitions.enums import (ReturnCode, SequencerStatus,
@@ -138,12 +136,10 @@ def abort() -> str:
     if not memory.locked('sequencer_lock'):
         return 'Nothing to abort'
 
-    seq_utils.set_sequencer_status(SequencerStatus.ABORTING)
+    seq_utils.set_sequencer_status(SequencerStatus.ABORTING_USER)
     logger.info('sequencer', 'Received an abort request, aborting sequence.')
 
     centering.invalidate_manual_centering()
-
-    memory.hdel('gui', 'window_hint')
 
     if camera.cancel() != ReturnCode.OK:
         logger.error('sequencer', 'Failed to send cancel order to camera.')
@@ -179,9 +175,12 @@ def template(id: str) -> str | tuple[str, int]:
     # Parse json first
     args = request.json
 
-    lock_secret = memory.lock('sequencer_lock')
-    if lock_secret is None:
-        return 'A sequence is already running', 409
+    if id.startswith('KAO_'):
+        lock_secret = memory.lock('sequencer_lock')
+        if lock_secret is None:
+            return 'A sequence is already running', 409
+    else:
+        lock_secret = None
 
     try:
         if 'type' in args:
@@ -206,7 +205,7 @@ def template(id: str) -> str | tuple[str, int]:
             zenith_angle = euler.telescope_zenith_angle(coord)
             adc.configure(zenith_angle=zenith_angle, blocking=False)
 
-        logger.info('sequencer', f'Starting {id}')
+        logger.info('sequencer', f'Starting template {id}')
 
         th = threading.Thread(
             target=_execute_template, kwargs={
@@ -235,6 +234,8 @@ def _execute_template(id: str, func: Callable, args: dict[str, Any],
         template = Template(id=TemplateID(id),
                             start=datetime.now(timezone.utc))
 
+        memory.hdel('sequencer', 'error')
+
         # TODO: remove some after EULER-J
         if id == TemplateID.FOCUS:
             template.nexp = config.Focusing.nexp
@@ -252,13 +253,14 @@ def _execute_template(id: str, func: Callable, args: dict[str, Any],
     except AbortRequested:
         status = seq_utils.get_sequencer_status()
 
-        if status == SequencerStatus.ABORTING:
-            logger.info('sequencer', f'{id} aborted on request')
+        if status == SequencerStatus.ABORTING_USER:
+            logger.info('sequencer', f'Template {id} aborted on request')
 
             ret = ReturnCode.SEQ_OK
 
         else:
-            logger.error('sequencer', f'{id} aborted')
+            logger.error('sequencer', f'Template {id} aborted by software')
+            memory.hset('sequencer', 'error', 'Aborted by software')
 
             ret = ReturnCode.SEQ_ERROR
 
@@ -267,31 +269,35 @@ def _execute_template(id: str, func: Callable, args: dict[str, Any],
             seq_utils.set_sequencer_status(SequencerStatus.ERROR)
 
         if isinstance(e, MissingKeyword):
-            logger.error('sequencer',
-                         f'"{e.__doc__} ({e.args[0]})" happened during {id}')
+            logger.error(
+                'sequencer',
+                f'"{e.__doc__} ({e.args[0]})" happened during template {id}')
         else:
-            logger.error('sequencer', f'"{e.__doc__}" happened during {id}')
+            logger.error('sequencer',
+                         f'"{e.__doc__}" happened during template {id}')
+
+        memory.hset('sequencer', 'error', e.__doc__)
 
         ret = ReturnCode.SEQ_ERROR
 
     except Exception as e:
 
-        logger.error('sequencer', f'Unknown exception occurred during {id}')
+        logger.error('sequencer',
+                     f'Unexpected exception occurred during template {id}')
+        logger.exception('sequencer', e)
 
-        rprint(''.join(traceback.format_exception(e)))
+        memory.hset('sequencer', 'error', 'Unexpected exception')
 
         ret = ReturnCode.SEQ_ERROR
 
     else:
-        logger.info('sequencer', f'{id} ended')
+        logger.info('sequencer', f'Template {id} ended')
 
         ret = ReturnCode.SEQ_OK
 
     # Close shutter in case there was an error
     if ret == ReturnCode.SEQ_ERROR and shutter.close() != ShutterStatus.CLOSED:
         logger.error('sequencer', 'Failed to close the shutter after error')
-
-    memory.hdel('gui', 'window_hint')
 
     if update_status:
         if ret == ReturnCode.SEQ_ERROR:

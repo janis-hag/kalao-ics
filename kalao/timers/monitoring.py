@@ -12,7 +12,6 @@ import math
 import signal
 import threading
 import time
-import traceback
 from datetime import datetime, timezone
 from types import FrameType
 from typing import Any, Callable
@@ -26,7 +25,6 @@ from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import adc, camera, hw_utils, ttm
 from kalao.rtc import gpu, sensors
 from kalao.utils import kstring
-from kalao.utils.rprint import rprint
 
 from kalao.definitions.dataclasses import Alarm
 from kalao.definitions.enums import AlarmLevel, CameraServerStatus, LoopStatus
@@ -155,7 +153,7 @@ def gather_general() -> dict[str, Any]:
         )
 
         for exc in exception_list:
-            rprint(''.join(traceback.format_exception(exc)))
+            logger.exception('monitoring_timer', exc)
 
     return data
 

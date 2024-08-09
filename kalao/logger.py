@@ -1,3 +1,5 @@
+import traceback
+
 from kalao import database
 from kalao.utils.rprint import rprint
 
@@ -14,6 +16,12 @@ def warn(name: str, message: str) -> None:
 
 def error(name: str, message: str) -> None:
     log(name, LogLevel.ERROR, message)
+
+
+def exception(name: str, exc: Exception) -> None:
+    for lines in traceback.format_exception(exc):
+        for message in lines.strip('\n').split('\n'):
+            log(name, LogLevel.ERROR, message)
 
 
 def log(name: str, level: LogLevel, message: str) -> None:

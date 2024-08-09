@@ -9,7 +9,7 @@ from systemd import journal
 
 from kalao import database
 from kalao.timers import monitoring
-from kalao.utils import ktime
+from kalao.utils import kstring, ktime
 
 from kalao.definitions.enums import AlarmLevel, LogLevel, ReportType
 
@@ -347,7 +347,7 @@ def generate(since: datetime, until: datetime, short: bool = False,
                 continue
 
             services_stats.append({
-                'key': key.removesuffix('.service'),
+                'key': kstring.get_service_name(key),
                 'failures': failures,
             })
 

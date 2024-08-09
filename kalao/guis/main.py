@@ -142,6 +142,7 @@ signal.signal(signal.SIGTERM, sig_handler)
 
 np.ma.masked_print_option.set_display('--')
 np.set_printoptions(nanstr='--')
+# np.seterr(all='raise')
 
 # Qt stuff
 
@@ -236,7 +237,7 @@ else:
     # QTimer.singleShot(0, backend, backend.streams_all)
     QTimer.singleShot(0, backend, backend.all)
     QTimer.singleShot(0, backend, backend.monitoring)
-    QTimer.singleShot(0, backend, window.logs.get_logs_init)
+    QTimer.singleShot(0, app, window.logs.get_logs_init)
 
     streams_timer.start()
     data_timer.start()

@@ -2,7 +2,7 @@ import time
 
 from kalao import database, logger, memory
 
-from kalao.definitions.enums import SequencerStatus
+from kalao.definitions.enums import SequencerStatus, WindowHint
 from kalao.definitions.exceptions import AbortRequested
 
 _transitions = {
@@ -21,8 +21,10 @@ _transitions = {
     SequencerStatus.WAIT_TRACKING: [SequencerStatus.SETUP],
     SequencerStatus.WAIT_LAMP: [SequencerStatus.SETUP],
     SequencerStatus.ERROR: [SequencerStatus.SETUP],
-    SequencerStatus.ABORTING: [SequencerStatus.WAITING, SequencerStatus.OFF],
-    SequencerStatus.ABORTING_ERROR: [SequencerStatus.ERROR],
+    SequencerStatus.ABORTING_USER: [
+        SequencerStatus.WAITING, SequencerStatus.OFF
+    ],
+    SequencerStatus.ABORTING_SOFTWARE: [SequencerStatus.ERROR],
 }
 
 
@@ -36,14 +38,14 @@ def set_sequencer_status(status: SequencerStatus, check_abort=False,
     current_status = get_sequencer_status()
 
     if status not in _transitions[current_status] + [
-            SequencerStatus.ABORTING, SequencerStatus.ABORTING_ERROR
+            SequencerStatus.ABORTING_USER, SequencerStatus.ABORTING_SOFTWARE
     ]:
         logger.error(
             'sequencer',
             f'Forbidden transition from {current_status} to {status}')
 
     if check_abort and current_status in [
-            SequencerStatus.ABORTING, SequencerStatus.ABORTING_ERROR
+            SequencerStatus.ABORTING_USER, SequencerStatus.ABORTING_SOFTWARE
     ]:
         raise AbortRequested
 
@@ -67,8 +69,9 @@ def _set_sequencer_status(status: SequencerStatus, update_timestamp=True,
 
 
 def is_aborting() -> bool:
-    status = get_sequencer_status()
-    return status in [SequencerStatus.ABORTING, SequencerStatus.ABORTING_ERROR]
+    return get_sequencer_status() in [
+        SequencerStatus.ABORTING_USER, SequencerStatus.ABORTING_SOFTWARE
+    ]
 
 
 class SequencerStatusContextManager:
@@ -84,3 +87,14 @@ class SequencerStatusContextManager:
         # (e.g. do not change if status was switched to ABORTING or ERROR)
         if get_sequencer_status() == self.status:
             _set_sequencer_status(self.previous_status, update_timestamp=False)
+
+
+class WindowHintContextManager:
+    def __init__(self, hint: WindowHint):
+        self.hint = hint
+
+    def __enter__(self):
+        memory.hset('gui', 'window_hint', self.hint)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        memory.hdel('gui', 'window_hint')

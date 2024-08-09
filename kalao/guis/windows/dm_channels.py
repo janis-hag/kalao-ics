@@ -50,6 +50,11 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             prefix = 'DM_'
             self.disp_stream = config.SHM.DM
             self.commands_stream = config.SHM.COMMANDS_DM
+            self.mask = np.full(config.DM.shape, False)
+            self.mask[0, 0] = True
+            self.mask[0, -1] = True
+            self.mask[-1, 0] = True
+            self.mask[-1, -1] = True
 
             self.backend.streams_channels_dm_updated.connect(
                 self.streams_channels_updated)
@@ -67,6 +72,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             prefix = 'TTM_'
             self.disp_stream = config.SHM.TTM
             self.commands_stream = config.SHM.COMMANDS_TTM
+            self.mask = np.full((2, ), False)
 
             self.backend.streams_channels_ttm_updated.connect(
                 self.streams_channels_updated)
@@ -80,7 +86,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.ui.stroke_label_dm.updateText(min=np.nan, max=np.nan,
                                            unit=self.data_unit)
 
-        self.ui.commands_view.updateColormap(colormaps.CoolWarm())
+        self.ui.commands_view.updateColormap(colormaps.CoolWarmTransparent())
         self.ui.commands_view.hovered.connect(self.hover_xyv_to_str_commands)
         self.ui.stroke_label_commands.updateText(min=np.nan, max=np.nan,
                                                  unit='')
@@ -126,7 +132,6 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     def streams_channels_updated(self, data: dict[str, Any]) -> None:
         img = self.consume_shm(data, self.disp_stream)
-
         if img is not None:
             self.img_min, self.img_max = self.compute_min_max(img)
 
@@ -135,8 +140,8 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                                                unit=self.data_unit)
 
         img = self.consume_shm(data, self.commands_stream)
-
         if img is not None:
+            img = np.ma.masked_array(img, self.mask, fill_value=np.nan)
             self.ui.commands_view.setImage(img, -1, 1)
             self.ui.stroke_label_commands.updateText(min=img.min(),
                                                      max=img.max(), unit='')

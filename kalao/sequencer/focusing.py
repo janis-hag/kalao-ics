@@ -10,6 +10,7 @@ from kalao import database, logger, memory
 from kalao.hardware import camera, filterwheel
 from kalao.interfaces import etcs
 from kalao.sequencer import seq_utils
+from kalao.sequencer.seq_utils import WindowHintContextManager
 from kalao.utils import fits_handling, starfinder
 
 from kalao.definitions.dataclasses import Template
@@ -47,9 +48,9 @@ def focus_sequence(template: Template, exptime: float | None = None,
     symlink.unlink(missing_ok=True)
     symlink.symlink_to(filepath)
 
-    memory.hset('gui', 'window_hint', WindowHint.FOCUS_SEQUENCE)
-
-    with open(filepath, 'w+b') as file, fits.open(file, 'update') as hdul:
+    with open(filepath, 'w+b') as file, fits.open(
+            file, 'update') as hdul, WindowHintContextManager(
+                WindowHint.FOCUS_SEQUENCE):
         try:
             filter = filterwheel.get_filter(type=str, from_memory=True)
 
@@ -176,8 +177,11 @@ def focus_sequence(template: Template, exptime: float | None = None,
             hdul.flush()
 
             etcs.set_focus(best_focus)
+
         except (FocusingException, AbortRequested, CameraTakeImageFailed) as e:
-            logger.error('focusing', f'Focus sequence aborted, "{e.__doc__}"')
+            logger.error(
+                'focusing',
+                f'"{e.__doc__}" happened during focus sequence, aborting')
 
             hdul[0].header.set('HIERARCH KAO FOC SUCCESS', False,
                                'Focus sequence successful')
@@ -193,9 +197,7 @@ def focus_sequence(template: Template, exptime: float | None = None,
             # Seal focus sequence file
             filepath.chmod(config.FITS.file_mask)
 
-            memory.hdel('gui', 'window_hint')
-
-            return ReturnCode.FOCUSING_ERROR
+            raise e
 
     # Seal focus sequence file
     filepath.chmod(config.FITS.file_mask)
@@ -221,8 +223,6 @@ def focus_sequence(template: Template, exptime: float | None = None,
         database.store('obs', {
             'focusing_m2_position': best_focus,
         })
-
-    memory.hdel('gui', 'window_hint')
 
     return ReturnCode.FOCUSING_OK
 

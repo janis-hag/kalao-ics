@@ -14,7 +14,8 @@ from datetime import datetime, timezone
 from functools import wraps
 from typing import Any, Callable
 
-import dbus
+import dasbus.client.proxy
+import dasbus.connection
 
 from kalao import logger
 
@@ -28,20 +29,18 @@ import config
 
 class Systemd:
     def _connect_to_system_bus(self):
-        self._system_bus = dbus.SystemBus()
-        self._system_systemd = self._system_bus.get_object(
-            'org.freedesktop.systemd1', '/org/freedesktop/systemd1')
-        self._system_manager = dbus.Interface(
-            self._system_systemd, 'org.freedesktop.systemd1.Manager')
+        self._system_bus = dasbus.connection.SystemMessageBus()
+        self._system_manager = dasbus.client.proxy.InterfaceProxy(
+            self._system_bus, 'org.freedesktop.systemd1',
+            '/org/freedesktop/systemd1', 'org.freedesktop.systemd1.Manager')
 
     def _connect_to_session_bus(self):
-        self._session_bus = dbus.SessionBus()
-        self._session_systemd = self._session_bus.get_object(
-            'org.freedesktop.systemd1', '/org/freedesktop/systemd1')
-        self._session_manager = dbus.Interface(
-            self._session_systemd, 'org.freedesktop.systemd1.Manager')
+        self._session_bus = dasbus.connection.SessionMessageBus()
+        self._session_manager = dasbus.client.proxy.InterfaceProxy(
+            self._session_bus, 'org.freedesktop.systemd1',
+            '/org/freedesktop/systemd1', 'org.freedesktop.systemd1.Manager')
 
-    def bus(self, system: bool) -> dbus.SystemBus | dbus.SessionBus:
+    def bus(self, system: bool) -> dasbus.connection.MessageBus:
         if system:
             if not hasattr(self, '_system_bus'):
                 self._connect_to_system_bus()
@@ -53,7 +52,7 @@ class Systemd:
 
             return self._session_bus
 
-    def manager(self, system: bool) -> dbus.Interface:
+    def manager(self, system: bool) -> dasbus.client.proxy.InterfaceProxy:
         if system:
             if not hasattr(self, '_system_manager'):
                 self._connect_to_system_bus()
@@ -66,11 +65,17 @@ class Systemd:
             return self._session_manager
 
     def close(self):
+        if hasattr(self, '_system_manager'):
+            dasbus.client.proxy.disconnect_proxy(self._system_manager)
+
         if hasattr(self, '_system_bus'):
-            self._system_bus.close()
+            self._system_bus.disconnect()
+
+        if hasattr(self, '_session_manager'):
+            dasbus.client.proxy.disconnect_proxy(self._session_manager)
 
         if hasattr(self, '_session_bus'):
-            self._session_bus.close()
+            self._session_bus.disconnect()
 
 
 def autoconnect(fun: Callable) -> Callable:
@@ -105,17 +110,18 @@ def autoconnect(fun: Callable) -> Callable:
 @autoconnect
 def get_status(unit: str, system: bool = False,
                systemd: Systemd = None) -> tuple[str, str, datetime]:
-    service = systemd.bus(system).get_object(
-        'org.freedesktop.systemd1',
-        object_path=systemd.manager(system).LoadUnit(unit))
+    interface = dasbus.client.proxy.InterfaceProxy(
+        systemd.bus(system), 'org.freedesktop.systemd1',
+        systemd.manager(system).LoadUnit(unit),
+        'org.freedesktop.DBus.Properties')
 
-    interface = dbus.Interface(
-        service, dbus_interface='org.freedesktop.DBus.Properties')
-
-    state = str(interface.Get('org.freedesktop.systemd1.Unit', 'ActiveState'))
+    state = interface.Get('org.freedesktop.systemd1.Unit',
+                          'ActiveState').get_string()
     substate = str(interface.Get('org.freedesktop.systemd1.Unit', 'SubState'))
     timestamp = interface.Get('org.freedesktop.systemd1.Unit',
-                              'StateChangeTimestamp')
+                              'StateChangeTimestamp').get_uint64()
+
+    dasbus.client.proxy.disconnect_proxy(interface)
 
     # Convert Unix microseconds timestamp into datetime object
     timestamp = datetime.fromtimestamp(

@@ -368,7 +368,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="retieve_button">
+      <widget class="QPushButton" name="retrieve_button">
        <property name="text">
         <string>Retrieve</string>
        </property>

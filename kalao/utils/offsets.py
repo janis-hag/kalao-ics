@@ -61,7 +61,7 @@ def camera_to_ttm(dx: float, dy: float, gain: float = 1,
                        new_tilt) != (new_tip, new_tilt):
         return ReturnCode.GENERIC_ERROR
     else:
-        time.sleep(0.1)
+        time.sleep(1)
         return ReturnCode.OK
 
 

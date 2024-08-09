@@ -31,7 +31,7 @@ class Ui_FITSViewerWindow(object):
     def setupUi(self, FITSViewerWindow):
         if not FITSViewerWindow.objectName():
             FITSViewerWindow.setObjectName(u"FITSViewerWindow")
-        FITSViewerWindow.resize(992, 631)
+        FITSViewerWindow.resize(1554, 680)
         self.enter_manual_centering_action = QAction(FITSViewerWindow)
         self.enter_manual_centering_action.setObjectName(u"enter_manual_centering_action")
         icon = QIcon()
@@ -285,36 +285,40 @@ class Ui_FITSViewerWindow(object):
         self.centering_widget.setObjectName(u"centering_widget")
         self.gridLayout_3 = QGridLayout(self.centering_widget)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
+        self.centering_abort_button = QPushButton(self.centering_widget)
+        self.centering_abort_button.setObjectName(u"centering_abort_button")
+        icon1 = QIcon()
+        icon1.addFile(u":/assets/icons/emblem-error.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.centering_abort_button.setIcon(icon1)
+
+        self.gridLayout_3.addWidget(self.centering_abort_button, 0, 2, 1, 1)
+
+        self.centering_exit_button = QPushButton(self.centering_widget)
+        self.centering_exit_button.setObjectName(u"centering_exit_button")
+        icon2 = QIcon()
+        icon2.addFile(u":/assets/icons/emblem-checked.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.centering_exit_button.setIcon(icon2)
+
+        self.gridLayout_3.addWidget(self.centering_exit_button, 0, 1, 1, 1)
+
         self.centering_volume_button = QToolButton(self.centering_widget)
         self.centering_volume_button.setObjectName(u"centering_volume_button")
         self.centering_volume_button.setCheckable(True)
 
-        self.gridLayout_3.addWidget(self.centering_volume_button, 0, 3, 1, 1)
+        self.gridLayout_3.addWidget(self.centering_volume_button, 0, 0, 1, 1)
 
-        self.centering_exit_button = QPushButton(self.centering_widget)
-        self.centering_exit_button.setObjectName(u"centering_exit_button")
-        icon1 = QIcon()
-        icon1.addFile(u":/assets/icons/emblem-checked.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.centering_exit_button.setIcon(icon1)
+        self.centering_reason_label = KLabel(self.centering_widget)
+        self.centering_reason_label.setObjectName(u"centering_reason_label")
+        self.centering_reason_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.gridLayout_3.addWidget(self.centering_exit_button, 0, 0, 1, 1)
-
-        self.centering_abort_button = QPushButton(self.centering_widget)
-        self.centering_abort_button.setObjectName(u"centering_abort_button")
-        icon2 = QIcon()
-        icon2.addFile(u":/assets/icons/emblem-error.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.centering_abort_button.setIcon(icon2)
-
-        self.gridLayout_3.addWidget(self.centering_abort_button, 0, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.centering_reason_label, 1, 1, 1, 1)
 
         self.centering_timeout_label = KLabel(self.centering_widget)
         self.centering_timeout_label.setObjectName(u"centering_timeout_label")
         self.centering_timeout_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.gridLayout_3.addWidget(self.centering_timeout_label, 0, 2, 1, 1)
+        self.gridLayout_3.addWidget(self.centering_timeout_label, 1, 2, 1, 1)
 
-        self.gridLayout_3.setColumnStretch(0, 1)
-        self.gridLayout_3.setColumnStretch(1, 1)
 
         self.gridLayout_2.addWidget(self.centering_widget, 2, 1, 1, 2)
 
@@ -406,7 +410,7 @@ class Ui_FITSViewerWindow(object):
         FITSViewerWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(FITSViewerWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 992, 30))
+        self.menubar.setGeometry(QRect(0, 0, 1554, 30))
         self.colormap_menu = QMenu(self.menubar)
         self.colormap_menu.setObjectName(u"colormap_menu")
         self.scale_menu = QMenu(self.menubar)
@@ -455,10 +459,11 @@ class Ui_FITSViewerWindow(object):
         self.star_y_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Y: {y:.{axis_precision}f}{axis_unit}", None))
         self.star_fwhm_label.setText(QCoreApplication.translate("FITSViewerWindow", u"FWHM: {fwhm:.{axis_precision}f}{axis_unit}", None))
         self.star_peak_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Peak: {peak:.{data_precision}f}{data_unit}", None))
-        self.centering_volume_button.setText("")
-        self.centering_exit_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Validate manual centering", None))
         self.centering_abort_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Abort observation", None))
-        self.centering_timeout_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Time left: {centering_timeout:.0f} s", None))
+        self.centering_exit_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Validate manual centering", None))
+        self.centering_volume_button.setText("")
+        self.centering_reason_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Reason: {reason}", None))
+        self.centering_timeout_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Time left: {timeout:.0f} s", None))
         self.keywords_toolbutton.setText(QCoreApplication.translate("FITSViewerWindow", u"Keywords", None))
         self.keywords_filter_lineedit.setPlaceholderText(QCoreApplication.translate("FITSViewerWindow", u"Filter ...", None))
         self.keywords_columns_combobox.setItemText(0, QCoreApplication.translate("FITSViewerWindow", u"All columns", None))

@@ -11,6 +11,7 @@ from kalao.cacao import aocontrol, toolbox
 from kalao.hardware import (calibunit, camera, dm, filterwheel, flipmirror,
                             laser, shutter, wfs)
 from kalao.sequencer import seq_utils
+from kalao.sequencer.seq_utils import WindowHintContextManager
 from kalao.utils import offsets, starfinder
 from kalao.utils.json import KalAOJSONDecoder, KalAOJSONEncoder
 
@@ -97,7 +98,7 @@ def center_on_target(
             )
 
             # Will wait until manual centering is done, or raise an exception if manual centering timeout is reached
-            request_manual_centering(template)
+            request_manual_centering(template, reason=e.__doc__)
 
     else:
         logger.info('centering', 'Starting manual centering')
@@ -110,7 +111,7 @@ def center_on_target(
             raise CameraTakeImageFailed
 
         # Will wait until manual centering is done, or raise an exception if manual centering timeout is reached
-        request_manual_centering(template)
+        request_manual_centering(template, reason='Requested by observer')
 
     if adaptiveoptics_mode == AdaptiveOpticsMode.ENABLED:
         # Check if enough light is on the WFS for precise centering
@@ -230,72 +231,71 @@ def spiral_search(exptime: float | None = None,
             'star_x': np.nan,
             'star_y': np.nan
         })
-    memory.hset('gui', 'window_hint', WindowHint.SPIRAL_SEARCH)
 
-    coords = spiral_create_grid(overlap=overlap, radius=1)
-    expno = 0
-    coord = coords[0]
+    with WindowHintContextManager(WindowHint.SPIRAL_SEARCH):
+        coords = spiral_create_grid(overlap=overlap, radius=1)
+        expno = 0
+        coord = coords[0]
 
-    # Note: we assume that there was no star in the initial field
+        # Note: we assume that there was no star in the initial field
 
-    while True:
-        try:
-            expno += 1
-            prev_coord = coord
+        while True:
+            try:
+                expno += 1
+                prev_coord = coord
 
-            if expno == len(coords):
-                coords = spiral_create_grid(overlap=overlap,
-                                            radius=coord.radius + 1)
+                if expno == len(coords):
+                    coords = spiral_create_grid(overlap=overlap,
+                                                radius=coord.radius + 1)
 
-            coord = coords[expno]
+                coord = coords[expno]
 
-            dx = coord.x - prev_coord.x
-            dy = coord.y - prev_coord.y
+                dx = coord.x - prev_coord.x
+                dy = coord.y - prev_coord.y
 
-            logger.info('centering', f'Spiral search step {expno}.')
+                logger.info('centering', f'Spiral search step {expno}.')
 
-            if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
-                raise CenteringOffsettingFailed
+                if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
+                    raise CenteringOffsettingFailed
 
-            star = _get_star(template, exptime, comment='Spiral search')
+                star = _get_star(template, exptime, comment='Spiral search')
 
-        except CenteringStarNotFound:
-            memory.hmset('spiral_search', {
-                'radius': coord.radius,
-                'expno': expno,
-            })
-
-        else:
-            dx = config.Camera.center_x - star.x
-            dy = config.Camera.center_y - star.y
-
-            logger.info('centering',
-                        'Spiral search: star found, final centering')
-
-            if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
-                raise CenteringOffsettingFailed
-
-            tot_dx = coord.x + dx
-            tot_dy = coord.y + dy
-
-            logger.info(
-                'centering',
-                f'Spiral search: found star in the field of view at alt = {+tot_dx*config.Offsets.camera_x_to_tel_alt:.2f}" and az = {+tot_dy*config.Offsets.camera_y_to_tel_az:.2f}".'
-            )
-
-            memory.hmset(
-                'spiral_search', {
+            except CenteringStarNotFound:
+                memory.hmset('spiral_search', {
                     'radius': coord.radius,
                     'expno': expno,
-                    'star_x': tot_dx,
-                    'star_y': tot_dy
                 })
 
-            # Update image
-            camera.take_science_image(template, comment="Spiral search")
+            else:
+                dx = config.Camera.center_x - star.x
+                dy = config.Camera.center_y - star.y
 
-            memory.hdel('gui', 'window_hint')
-            return ReturnCode.CENTERING_OK
+                logger.info('centering',
+                            'Spiral search: star found, final centering')
+
+                if offsets.camera_to_telescope(dx, dy) != ReturnCode.OK:
+                    raise CenteringOffsettingFailed
+
+                tot_dx = coord.x + dx
+                tot_dy = coord.y + dy
+
+                logger.info(
+                    'centering',
+                    f'Spiral search: found star in the field of view at alt = {+tot_dx*config.Offsets.camera_x_to_tel_alt:.2f}" and az = {+tot_dy*config.Offsets.camera_y_to_tel_az:.2f}".'
+                )
+
+                memory.hmset(
+                    'spiral_search', {
+                        'radius': coord.radius,
+                        'expno': expno,
+                        'star_x': tot_dx,
+                        'star_y': tot_dy
+                    })
+
+                # Update image
+                camera.take_science_image(template, comment="Spiral search")
+
+                return ReturnCode.CENTERING_OK
 
 
 def spiral_create_grid(overlap: float, radius: int):
@@ -307,8 +307,8 @@ def spiral_create_grid(overlap: float, radius: int):
 
     X, Y = np.meshgrid(x, y)
 
-    R = np.rint(np.sqrt(X**2 + Y**2))
-    Theta = np.atan2(Y, X) % (2 * np.pi)
+    R = np.rint(np.sqrt(X**2 + Y**2)).astype(int)
+    Theta = np.arctan2(Y, X) % (2 * np.pi)
 
     coords = []
     for i in range(R.shape[0]):
@@ -321,14 +321,16 @@ def spiral_create_grid(overlap: float, radius: int):
     return sorted(coords, key=lambda c: (c.radius, c.theta))
 
 
-def request_manual_centering(template: Template) -> ReturnCode:
+def request_manual_centering(template: Template,
+                             reason: str = '') -> ReturnCode:
     logger.info('centering', 'Starting manual centering.')
     set_manual_centering_flag(True)
 
     memory.hmset(
-        'centering', {
+        'centering_manual', {
             'template': encoder.encode(template),
-            'timeout': time.time() + config.Centering.manual_timeout
+            'timeout': time.time() + config.Centering.manual_timeout,
+            'reason': reason
         })
 
     timeout = time.monotonic() + config.Centering.manual_timeout
@@ -382,15 +384,15 @@ def invalidate_manual_centering() -> ReturnCode:
 
 
 def get_manual_centering_flag() -> bool:
-    return memory.hget('centering', 'manual_flag', type=bool, default=False)
+    return memory.hget('centering_manual', 'flag', type=bool, default=False)
 
 
 def set_manual_centering_flag(flag: bool) -> None:
-    memory.hset('centering', 'manual_flag', flag)
+    memory.hset('centering_manual', 'flag', flag)
     database.store('obs', {'centering_manual_flag': flag})
 
     if not flag:
-        memory.hdel('centering', 'template')
+        memory.hdel('centering_manual', 'template')
 
 
 def manual_centering(dx: float, dy: float) -> ReturnCode:
@@ -400,7 +402,7 @@ def manual_centering(dx: float, dy: float) -> ReturnCode:
             'Manual centering offsets ignored, exposure ongoing or camera unavailable.'
         )
 
-    template = decoder.decode(memory.hget('centering', 'template'))
+    template = decoder.decode(memory.hget('centering_manual', 'template'))
 
     if template is None:
         template = Template(id=TemplateID.TARGET_CENTERING,
@@ -414,7 +416,7 @@ def manual_centering(dx: float, dy: float) -> ReturnCode:
     if img_path is None:
         raise CameraTakeImageFailed
 
-    memory.hset('centering', 'template', encoder.encode(template))
+    memory.hset('centering_manual', 'template', encoder.encode(template))
 
     return ReturnCode.CENTERING_OK
 

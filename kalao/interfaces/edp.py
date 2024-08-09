@@ -28,12 +28,13 @@ def kalao_status() -> str:
     :return: status_string to send to the Euler telescope
     """
 
-    sequencer_mapping = memory.hmget('sequencer', {
-        'status': str,
-        'status_timestamp': float
-    })
+    sequencer_mapping = memory.hmget(
+        'sequencer', {
+            'status': (str, SequencerStatus.UNKNOWN.value),
+            'status_timestamp': (float, 0)
+        })
 
-    sequencer_status = sequencer_mapping['sequencer_status']
+    sequencer_status = sequencer_mapping['status']
     exposure_status = camera.get_exposure_status()
 
     if sequencer_status is None:
@@ -79,7 +80,7 @@ def kalao_status() -> str:
             status_string = f'|status|BUSY|elapsed_time|{elapsed_time:.0f}/{exposure_time}|requested_time|{sequencer_status}'
         else:
             elapsed_time = datetime.now(timezone.utc).timestamp(
-            ) - sequencer_mapping['sequencer_status_timestamp']
+            ) - sequencer_mapping['status_timestamp']
             status_string = f'|status|BUSY|elapsed_time|{elapsed_time:.0f}|requested_time|{sequencer_status}'
 
     return status_string

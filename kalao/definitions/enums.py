@@ -2,6 +2,7 @@ from enum import Flag, IntEnum, StrEnum, auto
 
 
 class TemplateID(StrEnum):
+    # Templates that produce images
     TARGET_OBSERVATION = 'KAO_TRGOBS'
     BIAS = 'KAO_BIAS'
     DARK = 'KAO_DARK'
@@ -12,6 +13,15 @@ class TemplateID(StrEnum):
     LASER_CENTERING = 'KAO_LSRCEN'
     ENGINEERING = 'KAO_ENGIN'
     SELF_TEST = 'KAO_SLFTST'
+
+    # Other templates
+    LAMPON = 'KAO_LAMPON'
+    LAMPOF = 'KAO_LAMPOF'
+
+    CONFIG = 'KAO_CONFIG'
+    OBCHANGE = 'OBCHANGE'
+    INSTRUMENTCHANGE = 'INSTRUMENTCHANGE'
+    ENDCAL = 'KAO_ENDCAL'
 
 
 class CenteringMode(StrEnum):
@@ -62,10 +72,13 @@ class SequencerStatus(StrEnum):
     CENTERING = 'CENTERING'
     FOCUSING = 'FOCUSING'
     EXPOSING = 'EXPOSING'
+
     WAIT_LAMP = 'WAIT_LAMP'
     WAIT_TRACKING = 'WAIT_TRACKING'
-    ABORTING = 'ABORTING'
-    ABORTING_ERROR = 'ABORTING_ERROR'
+    WAIT_STABILISATION = 'WAIT_STABILISATION'
+
+    ABORTING_USER = 'ABORTING_USER'
+    ABORTING_SOFTWARE = 'ABORTING_SOFTWARE'
 
 
 class IPPowerStatus(IntEnum):

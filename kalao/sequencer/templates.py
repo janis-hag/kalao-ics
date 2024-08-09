@@ -24,7 +24,8 @@ from kalao.hardware import (adc, calibunit, camera, dm, filterwheel,
                             flipmirror, hw_utils, laser, shutter, tungsten,
                             wfs)
 from kalao.sequencer import centering, focusing, seq_utils
-from kalao.sequencer.seq_utils import SequencerStatusContextManager
+from kalao.sequencer.seq_utils import (SequencerStatusContextManager,
+                                       WindowHintContextManager)
 from kalao.utils import exposure, fits_handling
 from kalao.utils.json import KalAOJSONEncoder
 
@@ -37,11 +38,11 @@ from kalao.definitions.enums import (AdaptiveOpticsMode, CenteringMode,
 from kalao.definitions.exceptions import (
     AbortRequested, ADCConfigureFailed, CameraTakeImageFailed, CenteringFailed,
     DMNotOn, DMResetFailed, EMGainNotOff, FilterWheelNotInPosition,
-    FlipMirrorNotDown, FlipMirrorNotUp, FocusSequenceFailed, LampsNotOff,
-    LoopsNotClosed, LoopsNotOpen, MissingKeyword, SequencerException,
-    ShutterNotClosed, ShutterNotOpen, SkyFlatExptimeTooHigh,
-    SkyFlatExptimeTooLow, TrackingTimeout, TungstenNotInPosition,
-    TungstenNotOn, TungstenSwitchedOff, WFSAcquisitionOff)
+    FlipMirrorNotDown, FlipMirrorNotUp, LampsNotOff, LoopsNotClosed,
+    LoopsNotOpen, MissingKeyword, SequencerException, ShutterNotClosed,
+    ShutterNotOpen, SkyFlatExptimeTooHigh, SkyFlatExptimeTooLow,
+    TrackingTimeout, TungstenNotInPosition, TungstenNotOn, TungstenSwitchedOff,
+    WFSAcquisitionOff)
 
 import config
 
@@ -152,8 +153,8 @@ def KAO_TRGOBS(template, **template_args: Any) -> ReturnCode:
     try:
         filter = template_args['kalfilter']
         exptime = template_args['texp']
-        kao = template_args['kao']
-        auto_center = template_args['centering']
+        ao_mode = template_args['kao']
+        centering_mode = template_args['centering']
         nbframes = template_args['nbframes']
         roi_size = template_args['windowsiz']
         mag = template_args['mv']
@@ -169,7 +170,7 @@ def KAO_TRGOBS(template, **template_args: Any) -> ReturnCode:
     ao_running = aocontrol.check_loops() == LoopStatus.ALL_LOOPS_ON
 
     # Do not center if AO is running, as the AO kept the target centered
-    centering_needed = not ao_running and auto_center != CenteringMode.NONE
+    centering_needed = not ao_running and centering_mode != CenteringMode.NONE
 
     if not ao_running:
         # Do not do a focus while AO is running (it will break the loop)
@@ -178,7 +179,7 @@ def KAO_TRGOBS(template, **template_args: Any) -> ReturnCode:
         if dm.on() != ReturnCode.OK:
             raise DMNotOn
 
-        if kao == AdaptiveOpticsMode.ENABLED:
+        if ao_mode == AdaptiveOpticsMode.ENABLED:
             if wfs.start_acquisition() != ReturnCode.OK:
                 raise WFSAcquisitionOff
         else:
@@ -214,7 +215,7 @@ def KAO_TRGOBS(template, **template_args: Any) -> ReturnCode:
 
         if centering_needed:
             _center_on_target(exptime=centering_exptime,
-                              adaptiveoptics_mode=kao)
+                              adaptiveoptics_mode=ao_mode)
 
             # Reset sequencer status after centering
             template.to_memory()
@@ -224,13 +225,15 @@ def KAO_TRGOBS(template, **template_args: Any) -> ReturnCode:
                 if filterwheel.set_filter(filter) != filter:
                     raise FilterWheelNotInPosition
 
-        if kao == AdaptiveOpticsMode.ENABLED:
+        if ao_mode == AdaptiveOpticsMode.ENABLED:
             logger.info('sequencer', 'Starting Adaptive Optics')
 
             if aocontrol.close_loops() != LoopStatus.ALL_LOOPS_ON:
                 raise LoopsNotClosed
 
-            time.sleep(config.AO.loop_stabilization_time)
+            with SequencerStatusContextManager(
+                    SequencerStatus.WAIT_STABILISATION):
+                time.sleep(config.AO.loop_stabilization_time)
 
     seq_utils.set_sequencer_status(SequencerStatus.EXPOSING, check_abort=True)
 
@@ -291,9 +294,7 @@ def KAO_FOCUS(template, **template_args: Any) -> ReturnCode:
 
     seq_utils.set_sequencer_status(SequencerStatus.FOCUSING, check_abort=True)
 
-    if focusing.focus_sequence(template,
-                               exptime=exptime) != ReturnCode.FOCUSING_OK:
-        raise FocusSequenceFailed
+    focusing.focus_sequence(template, exptime=exptime)
 
     if shutter.close() != ShutterStatus.CLOSED:
         logger.error('sequencer',
@@ -489,203 +490,201 @@ def _center_on_target(exptime: float,
 
 def _run_calibs(calib_list: list[CalibrationPose]) -> ReturnCode:
     memory.hset('calibration_poses', 'list', encoder.encode(calib_list))
-    memory.hset('gui', 'window_hint', WindowHint.CALIBRATION_POSES)
 
-    prev_calib_type = None
-    prev_filter = filterwheel.get_filter(type=str)
-    prev_exptime = None
-    img = None
+    with WindowHintContextManager(WindowHint.CALIBRATION_POSES):
+        prev_calib_type = None
+        prev_filter = filterwheel.get_filter(type=str)
+        prev_exptime = None
+        img = None
 
-    for calib in calib_list:
-        try:
-            if calib.template.start is None:
-                calib.template.start = datetime.now(timezone.utc)
-                calib.template.to_memory()
+        for calib in calib_list:
+            try:
+                if calib.template.start is None:
+                    calib.template.start = datetime.now(timezone.utc)
+                    calib.template.to_memory()
 
-            # Setup, if needed
+                # Setup, if needed
 
-            if prev_calib_type != calib.template.id:
-                seq_utils.set_sequencer_status(SequencerStatus.SETUP,
-                                               check_abort=True,
-                                               check_status=True)
+                if prev_calib_type != calib.template.id:
+                    seq_utils.set_sequencer_status(SequencerStatus.SETUP,
+                                                   check_abort=True,
+                                                   check_status=True)
 
-                if calib.template.id == TemplateID.BIAS or calib.template.id == TemplateID.DARK:
-                    if hw_utils.lamps_off() != ReturnCode.OK:
-                        raise LampsNotOff
+                    if calib.template.id == TemplateID.BIAS or calib.template.id == TemplateID.DARK:
+                        if hw_utils.lamps_off() != ReturnCode.OK:
+                            raise LampsNotOff
 
-                    if shutter.close() != ShutterStatus.CLOSED:
-                        raise ShutterNotClosed
+                        if shutter.close() != ShutterStatus.CLOSED:
+                            raise ShutterNotClosed
 
-                elif calib.template.id == TemplateID.LAMP_FLAT:
-                    if wfs.emgain_off() != ReturnCode.OK:
-                        raise EMGainNotOff
+                    elif calib.template.id == TemplateID.LAMP_FLAT:
+                        if wfs.emgain_off() != ReturnCode.OK:
+                            raise EMGainNotOff
 
-                    if dm.on() != ReturnCode.OK:
-                        raise DMNotOn
+                        if dm.on() != ReturnCode.OK:
+                            raise DMNotOn
 
-                    if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
-                        raise LoopsNotOpen
+                        if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
+                            raise LoopsNotOpen
 
-                    if aocontrol.reset_all_dms() != ReturnCode.OK:
-                        raise DMResetFailed
+                        if aocontrol.reset_all_dms() != ReturnCode.OK:
+                            raise DMResetFailed
 
-                    if tungsten.on() != TungstenStatus.ON:
-                        raise TungstenNotOn
+                        if tungsten.on() != TungstenStatus.ON:
+                            raise TungstenNotOn
 
-                    if np.isnan(calibunit.move_to_tungsten_position()):
-                        raise TungstenNotInPosition
+                        if np.isnan(calibunit.move_to_tungsten_position()):
+                            raise TungstenNotInPosition
 
-                    if shutter.close() != ShutterStatus.CLOSED:
-                        raise ShutterNotClosed
+                        if shutter.close() != ShutterStatus.CLOSED:
+                            raise ShutterNotClosed
 
-                    if flipmirror.up() != FlipMirrorStatus.UP:
-                        raise FlipMirrorNotUp
+                        if flipmirror.up() != FlipMirrorStatus.UP:
+                            raise FlipMirrorNotUp
 
-                    _wait_for_tungsten()
+                        _wait_for_tungsten()
+
+                    elif calib.template.id == TemplateID.SKY_FLAT:
+                        if wfs.emgain_off() != ReturnCode.OK:
+                            raise EMGainNotOff
+
+                        if dm.on() != ReturnCode.OK:
+                            raise DMNotOn
+
+                        if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
+                            raise LoopsNotOpen
+
+                        if aocontrol.reset_all_dms() != ReturnCode.OK:
+                            raise DMResetFailed
+
+                        if hw_utils.lamps_off() != ReturnCode.OK:
+                            raise LampsNotOff
+
+                        if flipmirror.down() != FlipMirrorStatus.DOWN:
+                            raise FlipMirrorNotDown
+
+                        if shutter.open() != ShutterStatus.OPEN:
+                            raise ShutterNotOpen
+
+                        _wait_for_tracking()
+
+                        # TODO: check sun elevation
+
+                        prev_exptime = None
+
+                prev_calib_type = calib.template.id
+
+                # Checks that need to be done for every pose
+
+                if calib.template.id == TemplateID.LAMP_FLAT:
+                    # Check if tungsten is still on
+                    if tungsten.get_status() != TungstenStatus.ON:
+                        raise TungstenSwitchedOff
 
                 elif calib.template.id == TemplateID.SKY_FLAT:
-                    if wfs.emgain_off() != ReturnCode.OK:
-                        raise EMGainNotOff
+                    if np.isnan(calib.exposure_time):
+                        # Compute exposure time
+                        if prev_exptime is None or img is None:
+                            calib.exposure_time = exposure.flat_exptime(
+                                config.Calib.Flats.target_adu, calib.filter)
+                        else:
+                            calib.exposure_time = exposure.next_flat_exptime(
+                                config.Calib.Flats.target_adu, img,
+                                prev_exptime, prev_filter, calib.filter)
 
-                    if dm.on() != ReturnCode.OK:
-                        raise DMNotOn
+                        memory.hset('calibration_poses', 'list',
+                                    encoder.encode(calib_list))
 
-                    if aocontrol.open_loops() != LoopStatus.ALL_LOOPS_OFF:
-                        raise LoopsNotOpen
+                        if calib.exposure_time < config.Calib.Flats.min_exptime:
+                            raise SkyFlatExptimeTooLow
 
-                    if aocontrol.reset_all_dms() != ReturnCode.OK:
-                        raise DMResetFailed
+                        elif calib.exposure_time > config.Calib.Flats.max_exptime:
+                            raise SkyFlatExptimeTooHigh
 
-                    if hw_utils.lamps_off() != ReturnCode.OK:
-                        raise LampsNotOff
+                # Set correct filter, if needed
 
-                    if flipmirror.down() != FlipMirrorStatus.DOWN:
-                        raise FlipMirrorNotDown
+                if calib.filter is not None and prev_filter != calib.filter:
+                    if filterwheel.set_filter(calib.filter) != calib.filter:
+                        raise FilterWheelNotInPosition
 
-                    if shutter.open() != ShutterStatus.OPEN:
-                        raise ShutterNotOpen
+                    prev_filter = calib.filter
 
-                    _wait_for_tracking()
+                # Check if an abort was requested before taking image
 
-                    # TODO: check sun elevation
+                if seq_utils.is_aborting():
+                    raise AbortRequested
 
-                    prev_exptime = None
+                # Prevent inactivity checks from triggering
 
-            prev_calib_type = calib.template.id
+                database.store('obs', {'deadman_keepalive': -1})
 
-            # Checks that need to be done for every pose
+                # Take image
 
-            if calib.template.id == TemplateID.LAMP_FLAT:
-                # Check if tungsten is still on
-                if tungsten.get_status() != TungstenStatus.ON:
-                    raise TungstenSwitchedOff
+                seq_utils.set_sequencer_status(SequencerStatus.EXPOSING,
+                                               check_abort=True)
 
-            elif calib.template.id == TemplateID.SKY_FLAT:
-                if np.isnan(calib.exposure_time):
-                    # Compute exposure time
-                    if prev_exptime is None or img is None:
-                        calib.exposure_time = exposure.flat_exptime(
-                            config.Calib.Flats.target_adu, calib.filter)
-                    else:
-                        calib.exposure_time = exposure.next_flat_exptime(
-                            config.Calib.Flats.target_adu, img, prev_exptime,
-                            prev_filter, calib.filter)
+                logger.info(
+                    'sequencer',
+                    f'Taking image for {calib.template.id.name}, exposure time = {calib.exposure_time:.3f} s'
+                )
 
-                    memory.hset('calibration_poses', 'list',
-                                encoder.encode(calib_list))
+                calib.status = 'EXPOSING'
+                memory.hset('calibration_poses', 'list',
+                            encoder.encode(calib_list))
 
-                    if calib.exposure_time < config.Calib.Flats.min_exptime:
-                        raise SkyFlatExptimeTooLow
+                image_path = camera.take_science_image(
+                    calib.template, exptime=calib.exposure_time)
 
-                    elif calib.exposure_time > config.Calib.Flats.max_exptime:
-                        raise SkyFlatExptimeTooHigh
+                if image_path is None:
+                    raise CameraTakeImageFailed
 
-            # Set correct filter, if needed
+                prev_exptime = calib.exposure_time
+                img = fits.getdata(image_path)
 
-            if calib.filter is not None and prev_filter != calib.filter:
-                if filterwheel.set_filter(calib.filter) != calib.filter:
-                    raise FilterWheelNotInPosition
+                calib.median = np.median(img)
+                calib.status = 'OK'
+                memory.hset('calibration_poses', 'list',
+                            encoder.encode(calib_list))
 
-                prev_filter = calib.filter
+                # Check if an abort was requested
+                if seq_utils.is_aborting():
+                    raise AbortRequested
 
-            # Check if an abort was requested before taking image
+            except AbortRequested as exc:
+                calib.status = 'ERROR'
+                memory.hset('calibration_poses', 'list',
+                            encoder.encode(calib_list))
 
-            if seq_utils.is_aborting():
-                raise AbortRequested
+                raise exc
 
-            # Prevent inactivity checks from triggering
+            except (SkyFlatExptimeTooHigh, SkyFlatExptimeTooLow) as exc:
+                calib.status = 'SKIPPED'
+                calib.error_text = exc.__doc__
+                memory.hset('calibration_poses', 'list',
+                            encoder.encode(calib_list))
 
-            database.store('obs', {'deadman_keepalive': -1})
+                continue
 
-            # Take image
+            except SequencerException as exc:
+                logger.error(
+                    'sequencer',
+                    f'"{exc.__doc__}" happened during calibration pose')
 
-            seq_utils.set_sequencer_status(SequencerStatus.EXPOSING,
-                                           check_abort=True)
+                calib.status = 'ERROR'
+                calib.error_text = exc.__doc__
+                memory.hset('calibration_poses', 'list',
+                            encoder.encode(calib_list))
 
-            logger.info(
+                continue
+
+        # Note: do not turn off tungsten in case of successive flats
+
+        if shutter.close() != ShutterStatus.CLOSED:
+            logger.error(
                 'sequencer',
-                f'Taking image for {calib.template.id.name}, exposure time = {calib.exposure_time:.3f} s'
-            )
+                'Failed to close the shutter after calibration poses')
 
-            calib.status = 'EXPOSING'
-            memory.hset('calibration_poses', 'list',
-                        encoder.encode(calib_list))
-
-            image_path = camera.take_science_image(calib.template,
-                                                   exptime=calib.exposure_time)
-
-            if image_path is None:
-                raise CameraTakeImageFailed
-
-            prev_exptime = calib.exposure_time
-            img = fits.getdata(image_path)
-
-            calib.median = np.median(img)
-            calib.status = 'OK'
-            memory.hset('calibration_poses', 'list',
-                        encoder.encode(calib_list))
-
-            # Check if an abort was requested
-            if seq_utils.is_aborting():
-                raise AbortRequested
-
-        except AbortRequested as exc:
-            calib.status = 'ERROR'
-            memory.hset('calibration_poses', 'list',
-                        encoder.encode(calib_list))
-
-            memory.hdel('gui', 'window_hint')
-
-            raise exc
-
-        except (SkyFlatExptimeTooHigh, SkyFlatExptimeTooLow) as exc:
-            calib.status = 'SKIPPED'
-            calib.error_text = exc.__doc__
-            memory.hset('calibration_poses', 'list',
-                        encoder.encode(calib_list))
-
-            continue
-
-        except SequencerException as exc:
-            logger.error('sequencer',
-                         f'"{exc.__doc__}" happened during calibration pose')
-
-            calib.status = 'ERROR'
-            calib.error_text = exc.__doc__
-            memory.hset('calibration_poses', 'list',
-                        encoder.encode(calib_list))
-
-            continue
-
-    # Note: do not turn off tungsten in case of successive flats
-
-    if shutter.close() != ShutterStatus.CLOSED:
-        logger.error('sequencer',
-                     'Failed to close the shutter after calibration poses')
-
-    memory.hdel('gui', 'window_hint')
-
-    return ReturnCode.SEQ_OK
+        return ReturnCode.SEQ_OK
 
 
 def _open_loops() -> None:

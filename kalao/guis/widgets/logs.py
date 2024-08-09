@@ -3,8 +3,8 @@ from datetime import timezone
 import numpy as np
 
 from PySide6.QtCore import QDateTime, QSignalBlocker, QTimer, Signal, Slot
-from PySide6.QtGui import (QFont, QResizeEvent, Qt, QTextBlockUserData,
-                           QTextCursor)
+from PySide6.QtGui import (QCursor, QFont, QGuiApplication, QResizeEvent, Qt,
+                           QTextBlockUserData, QTextCursor)
 from PySide6.QtWidgets import QTreeWidgetItem, QWidget
 
 from compiled.ui_logs import Ui_LogsWidget
@@ -156,7 +156,9 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.logs_timer.timeout.connect(self.get_logs_new)
 
     def get_logs_init(self) -> None:
-        entries = self.backend.logs(lines=config.GUI.logs_initial_entries)
+        entries = self.action_send([
+            self.ui.retrieve_button, self.ui.live_button
+        ], self.backend.logs, lines=config.GUI.logs_initial_entries)
 
         for entry in entries:
             self.add_log_entry(entry)
@@ -166,7 +168,8 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.logs_timer.start()
 
     def get_logs_new(self) -> None:
-        entries = self.backend.logs(cursor=self.last_cursor)
+        entries = self.action_send([], self.backend.logs,
+                                   cursor=self.last_cursor)
 
         for entry in entries:
             self.add_log_entry(entry)
@@ -232,7 +235,10 @@ class LogsWidget(KWidget, BackendActionMixin):
         self.ui.since_datetimeedit.setMaximumDateTime(datetime)
 
     @Slot(bool)
-    def on_retieve_button_clicked(self, checked: bool) -> None:
+    def on_retrieve_button_clicked(self, checked: bool) -> None:
+        # Set cursor as display can be long
+        QGuiApplication.setOverrideCursor(QCursor(Qt.CursorShape.BusyCursor))
+
         since = self.ui.since_datetimeedit.dateTime().toUTC().toPython(
         ).replace(tzinfo=timezone.utc)
         until = self.ui.until_datetimeedit.dateTime().toUTC().toPython(
@@ -240,9 +246,9 @@ class LogsWidget(KWidget, BackendActionMixin):
 
         self.logs_timer.stop()
 
-        entries = self.action_send(self.ui.retieve_button,
-                                   self.backend.logs_between, since=since,
-                                   until=until)
+        entries = self.action_send([
+            self.ui.retrieve_button, self.ui.live_button
+        ], self.backend.logs_between, since=since, until=until)
 
         self.ui.logs_textedit.clear()
 
@@ -254,13 +260,15 @@ class LogsWidget(KWidget, BackendActionMixin):
 
         self.on_acknowledge_button_clicked(False)
 
+        QGuiApplication.restoreOverrideCursor()
+
     @Slot(bool)
     def on_live_button_clicked(self, checked: bool) -> None:
         self.ui.logs_textedit.clear()
 
         self.max_entries = config.GUI.logs_max_entries
 
-        QTimer.singleShot(0, self.get_logs_init)
+        self.get_logs_init()
 
     @Slot(QTreeWidgetItem, int)
     def on_filters_tree_itemChanged(self, item: QTreeWidgetItem,
@@ -347,7 +355,7 @@ class LogsWidget(KWidget, BackendActionMixin):
         while block != self.ui.logs_textedit.document().end():
             userdata = block.userData()
             if userdata is None:
-                break
+                continue
 
             block.setVisible(self.entry_visible(userdata.data))
 

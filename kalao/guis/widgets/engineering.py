@@ -1237,6 +1237,11 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send(self.centering_widgets, self.backend.centering_spiral)
 
     @Slot(bool)
+    def on_centering_spiral_search_window_button_clicked(self, checked: bool
+                                                         ) -> None:
+        self.open_spiral_search_window()
+
+    @Slot(bool)
     def on_focusing_open_focus_sequence_button_clicked(self,
                                                        checked: bool) -> None:
         dialog = QFileDialog(self)
@@ -1293,13 +1298,13 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                          self.backend.focusing_autofocus)
 
     @Slot(bool)
-    def on_focusing_launch_focus_sequence_button_clicked(self, checked: bool
-                                                         ) -> None:
-        self.action_send(self.ui.focusing_launch_focus_sequence_button,
+    def on_focusing_focus_sequence_button_clicked(self, checked: bool) -> None:
+        self.action_send(self.ui.focusing_focus_sequence_button,
                          self.backend.focusing_sequence)
 
     @Slot(bool)
-    def on_focusing_focus_sequence_button_clicked(self, checked: bool) -> None:
+    def on_focusing_focus_sequence_window_button_clicked(self, checked: bool
+                                                         ) -> None:
         self.open_focus_sequence_window()
 
     @Slot(bool)

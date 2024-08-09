@@ -359,15 +359,16 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.center()
 
     def all_updated(self, data: dict[str, Any]) -> None:
-        centering_timeout = self.consume_dict(data, 'memory',
-                                              'centering_timeout', force=True)
+        # Note: signal connected only during centering
+
+        centering_timeout = self.consume_dict(data, 'centering_manual',
+                                              'timeout', force=True)
         if centering_timeout is not None:
             time_left = centering_timeout - self.consume_metadata(
                 data, 'timestamp')
             if time_left < 0:
                 time_left = 0
-            self.ui.centering_timeout_label.updateText(
-                centering_timeout=time_left)
+            self.ui.centering_timeout_label.updateText(timeout=time_left)
 
     def camera_image_updated(self, data: dict[str, Any]) -> None:
         hdul = self.consume_fits_full(data, config.FITS.last_image_all)
@@ -444,10 +445,14 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
     def centering_notification(self) -> None:
         self.player.play()
 
-    def enter_manual_centering(self, requested_by_user: bool = False) -> None:
+    def enter_manual_centering(self, requested_by_user: bool = False,
+                               reason='Unknown') -> None:
         # If KalAO ICS request centering while user activated centering mode, switch the flag
         if self.centering and not requested_by_user:
             self.centering_requested_by_user = False
+
+            self.ui.centering_reason_label.updateText(reason=reason)
+
             self.backend.all_updated.connect(
                 self.all_updated, Qt.ConnectionType.UniqueConnection)
             return
@@ -475,24 +480,26 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.update_zoom_view()
 
             if not requested_by_user:
+                self.ui.centering_reason_label.updateText(reason=reason)
+
                 msgbox = KMessageBox(self)
                 msgbox.setIcon(QMessageBox.Icon.Information)
                 msgbox.setText('<b>Manual centering needed!</b>')
                 msgbox.setInformativeText(
-                    'Manual centering has been requested.\n\nClick on a star to center it.\n\nValidate using the "Validate Manual Centering" button.'
+                    f'Manual centering has been requested.\n\nReason: "{reason}".\n\nClick on a star to center it.\n\nValidate using the "Validate Manual Centering" button.'
                 )
                 msgbox.setModal(False)
                 msgbox.show()
 
                 self.ui.centering_volume_button.setChecked(False)
 
-                self.ui.centering_timeout_label.updateText(
-                    centering_timeout=np.nan)
+                self.ui.centering_timeout_label.updateText(timeout=np.nan)
                 self.backend.all_updated.connect(
                     self.all_updated, Qt.ConnectionType.UniqueConnection)
             else:
-                self.ui.centering_timeout_label.updateText(
-                    centering_timeout=np.nan)
+                self.ui.centering_reason_label.updateText(
+                    reason='Request by user')
+                self.ui.centering_timeout_label.updateText(timeout=np.nan)
 
             self.centering = True
             self.centering_requested_by_user = requested_by_user
@@ -844,6 +851,9 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.update_zoom_view()
 
     def update_zoom_view(self) -> None:
+        if self.img is None:
+            return
+
         if self.zoomwindow_actiongroup.checkedAction(
         ).data == FollowMode.STAR and not np.isnan([self.star_x, self.star_y
                                                     ]).any():

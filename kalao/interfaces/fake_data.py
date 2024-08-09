@@ -99,7 +99,7 @@ def wfs_frame(
     frame += rng.normal(bias, readoutnoise, size=frame.shape)
 
     # Clip as unit16
-    return np.clip(np.rint(frame), 0, 2**16 - 1) - bias
+    return (np.clip(np.rint(frame), 0, 2**16 - 1) - bias).astype(np.int32)
 
 
 def slopes(wfs_frame):

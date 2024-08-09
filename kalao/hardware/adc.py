@@ -179,8 +179,7 @@ def stop(node: str, beck: Client = None) -> None:
 
 @plc.autoconnect
 def wait(node: str, beck: Client = None) -> int:
-    plc.wait_loop(f'Waiting for {_name[node]} rotation',
-                  lambda: is_moving(node, beck=beck), 5)
+    plc.wait_loop(lambda: is_moving(node, beck=beck), 5)
 
     return 0
 

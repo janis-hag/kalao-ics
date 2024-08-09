@@ -96,20 +96,20 @@ class MainBackend(SHMFPSBackend):
 
         self._update_dict(
             data, 'memory', {
-                'sequencer_status':
-                    seq_utils.get_sequencer_status(),
-                'centering_manual_flag':
-                    centering.get_manual_centering_flag(),
-                'centering_timeout':
-                    memory.hget('centering', 'timeout', type=float,
-                                default=np.nan),
-                'adc_synchronisation':
-                    adc.get_synchronisation(),
-                'ttm_offloading':
-                    ttm.get_offloading(),
-                'gui_window_hint':
-                    memory.hget('gui', 'window_hint')
+                'sequencer_status': seq_utils.get_sequencer_status(),
+                'adc_synchronisation': adc.get_synchronisation(),
+                'ttm_offloading': ttm.get_offloading(),
+                'gui_window_hint': memory.hget('gui', 'window_hint')
             })
+
+        self._update_dict(
+            data, 'centering_manual',
+            memory.hmget(
+                'centering_manual', {
+                    'flag': (bool, False),
+                    'timeout': (float, np.nan),
+                    'reason': (str, '')
+                }))
 
         self._update_dict(data, 'hw',
                           hw_utils.get_all_status(filter_from_memory=True))

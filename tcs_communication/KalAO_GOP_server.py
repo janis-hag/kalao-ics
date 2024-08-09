@@ -121,10 +121,13 @@ def gop_server():
             gop.write(message)
 
         elif command == 'ONTARGET':
-            logger.info('gop', f'Received fits header path: {arguments[0]}')
+            logger.info(
+                'gop',
+                f'Received fits header path: {list(arguments.keys())[0]}')
 
-            ret, _ = _send_request('POST', f'/on_target',
-                                   {'tcs_header_path': arguments[0]})
+            ret, _ = _send_request('POST', f'/on_target', {
+                'tcs_header_path': list(arguments.keys())[0]
+            })
 
             if ret == ReturnCode.OK:
                 message = "/OK"
@@ -216,7 +219,7 @@ def _send_request(method: str, endpoint: str, params: dict[str, Any] |
 
     except requests.exceptions.HTTPError:
         logger.error(
-            'camera',
+            'gop',
             f'Sequencer server endpoint {endpoint} answered with an Error {req.status_code}, {req.text}'
         )
         return ReturnCode.GENERIC_ERROR, None

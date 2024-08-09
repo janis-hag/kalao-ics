@@ -111,9 +111,8 @@ def motor_init(node: str, force_init: bool = True,
 
         time.sleep(config.PLC.init_poll_interval)
         wait_loop(
-            f'Waiting for {node} initialisation', lambda: motor_get_status(
-                node, beck=beck) == PLCStatus.INITIALISING,
-            config.PLC.init_poll_interval)
+            lambda: motor_get_status(node, beck=beck) == PLCStatus.
+            INITIALISING, config.PLC.init_poll_interval)
 
         if not beck.get_node(f'{node}.stat.bInitialised').get_value():
             return ReturnCode.HW_INIT_FAILED
@@ -163,7 +162,6 @@ def motor_move(node: str, position: float, velocity: float, blocking: bool,
         # Wait for movement
         time.sleep(2)
         wait_loop(
-            f'Waiting for {node} movement',
             lambda: motor_get_status(node, beck=beck) == PLCStatus.MOVING, 5)
 
         # Get new position
@@ -216,10 +214,6 @@ def get_error(node: str, beck: Client = None) -> tuple[int, str]:
         return 0, ''
 
 
-def wait_loop(message: str, test: Callable[[], bool],
-              wait_time: float) -> None:
-    #rprint(f'{message} ', end='', flush=True)
+def wait_loop(test: Callable[[], bool], wait_time: float) -> None:
     while test():
-        #rprint('.', end='', flush=True)
         time.sleep(wait_time)
-    #rprint(' DONE', flush=True)

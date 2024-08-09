@@ -1365,17 +1365,6 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0" colspan="2">
-         <widget class="QPushButton" name="centering_spiral_search_button">
-          <property name="text">
-           <string>Launch spiral search</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../assets.qrc">
-            <normaloff>:/assets/icons/spiral-shape.svg</normaloff>:/assets/icons/spiral-shape.svg</iconset>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0" colspan="2">
          <spacer name="verticalSpacer_4">
           <property name="orientation">
@@ -1389,6 +1378,28 @@
           </property>
          </spacer>
         </item>
+        <item row="1" column="0">
+         <widget class="QPushButton" name="centering_spiral_search_button">
+          <property name="text">
+           <string>Launch spiral search</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../assets.qrc">
+            <normaloff>:/assets/icons/spiral-shape.svg</normaloff>:/assets/icons/spiral-shape.svg</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="centering_spiral_search_window_button">
+          <property name="text">
+           <string>Spiral search window ...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../assets.qrc">
+            <normaloff>:/assets/icons/spiral-shape.svg</normaloff>:/assets/icons/spiral-shape.svg</iconset>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>
@@ -1398,28 +1409,6 @@
         <string>Focusing</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_5">
-        <item row="1" column="0">
-         <widget class="QPushButton" name="focusing_focus_sequence_button">
-          <property name="text">
-           <string>Focus sequence ...</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../assets.qrc">
-            <normaloff>:/assets/icons/focus.svg</normaloff>:/assets/icons/focus.svg</iconset>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QPushButton" name="focusing_launch_focus_sequence_button">
-          <property name="text">
-           <string>Launch focus sequence</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../assets.qrc">
-            <normaloff>:/assets/icons/focus.svg</normaloff>:/assets/icons/focus.svg</iconset>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="1">
          <widget class="QPushButton" name="focusing_open_focus_sequence_button">
           <property name="text">
@@ -1428,17 +1417,6 @@
           <property name="icon">
            <iconset resource="../assets.qrc">
             <normaloff>:/assets/icons/document-open.svg</normaloff>:/assets/icons/document-open.svg</iconset>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QPushButton" name="focusing_autofocus_button">
-          <property name="text">
-           <string>Launch autofocus</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../assets.qrc">
-            <normaloff>:/assets/icons/tools-wizard.svg</normaloff>:/assets/icons/tools-wizard.svg</iconset>
           </property>
          </widget>
         </item>
@@ -1454,6 +1432,39 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item row="1" column="0">
+         <widget class="QPushButton" name="focusing_autofocus_button">
+          <property name="text">
+           <string>Launch autofocus</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../assets.qrc">
+            <normaloff>:/assets/icons/tools-wizard.svg</normaloff>:/assets/icons/tools-wizard.svg</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QPushButton" name="focusing_focus_sequence_button">
+          <property name="text">
+           <string>Launch focus sequence</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../assets.qrc">
+            <normaloff>:/assets/icons/focus.svg</normaloff>:/assets/icons/focus.svg</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="focusing_focus_sequence_window_button">
+          <property name="text">
+           <string>Focus sequence window...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../assets.qrc">
+            <normaloff>:/assets/icons/focus.svg</normaloff>:/assets/icons/focus.svg</iconset>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

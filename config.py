@@ -534,7 +534,7 @@ class Centering:
     camera_with_telescope_precision = 20  # px
 
     camera_with_ttm_max_iter = 5  # -
-    camera_with_ttm_precision = 5  # px
+    camera_with_ttm_precision = 10  # px
 
     wfs_with_ttm_max_iter = 5  # -
     wfs_with_ttm_precision = 0.2  # px

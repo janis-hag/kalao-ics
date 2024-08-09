@@ -15,7 +15,7 @@ from kalao.utils.json import KalAOJSONDecoder
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color
-from kalao.guis.utils.mixins import BackendDataMixin
+from kalao.guis.utils.mixins import BackendActionMixin, BackendDataMixin
 from kalao.guis.utils.widgets import (CenteredTextItem,
                                       KHoverableGraphicsScene, KMainWindow)
 
@@ -24,7 +24,7 @@ import config
 decoder = KalAOJSONDecoder()
 
 
-class SpiralSearchWindow(KMainWindow, BackendDataMixin):
+class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
     _view = QRectF(0, 0, 1, 1)
 
     star_x = np.nan
@@ -201,6 +201,10 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin):
         polygon.append(QPointF(0, -size))
 
         return polygon
+
+    @Slot(bool)
+    def on_abort_button_clicked(self, checked: bool) -> None:
+        self.action_send(self.ui.abort_button, self.backend.sequencer_abort)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.ui.spiral_search_view.fitInView(

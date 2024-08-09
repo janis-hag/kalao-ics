@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>992</width>
-    <height>631</height>
+    <width>1554</width>
+    <height>680</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -437,29 +437,8 @@
         </item>
         <item row="2" column="1" colspan="2">
          <widget class="QWidget" name="centering_widget" native="true">
-          <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,1,0,0">
-           <item row="0" column="3">
-            <widget class="QToolButton" name="centering_volume_button">
-             <property name="text">
-              <string/>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QPushButton" name="centering_exit_button">
-             <property name="text">
-              <string>Validate manual centering</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../assets.qrc">
-               <normaloff>:/assets/icons/emblem-checked.svg</normaloff>:/assets/icons/emblem-checked.svg</iconset>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
+          <layout class="QGridLayout" name="gridLayout_3">
+           <item row="0" column="2">
             <widget class="QPushButton" name="centering_abort_button">
              <property name="text">
               <string>Abort observation</string>
@@ -470,10 +449,41 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="2">
+           <item row="0" column="1">
+            <widget class="QPushButton" name="centering_exit_button">
+             <property name="text">
+              <string>Validate manual centering</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../assets.qrc">
+               <normaloff>:/assets/icons/emblem-checked.svg</normaloff>:/assets/icons/emblem-checked.svg</iconset>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QToolButton" name="centering_volume_button">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="KLabel" name="centering_reason_label">
+             <property name="text">
+              <string>Reason: {reason}</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
             <widget class="KLabel" name="centering_timeout_label">
              <property name="text">
-              <string>Time left: {centering_timeout:.0f} s</string>
+              <string>Time left: {timeout:.0f} s</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -606,7 +616,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>992</width>
+     <width>1554</width>
      <height>30</height>
     </rect>
    </property>

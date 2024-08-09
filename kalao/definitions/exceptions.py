@@ -86,10 +86,6 @@ class CenteringFailed(SequencerException):
     """Failed to center on target"""
 
 
-class FocusSequenceFailed(SequencerException):
-    """Focus sequence failed"""
-
-
 ##### Centering
 
 

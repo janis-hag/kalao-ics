@@ -31,7 +31,8 @@ PySensors
 
 # To interact with systemd
 systemd-python
-dbus-python
+dasbus
+PyGObject
 
 # DB
 pymongo
