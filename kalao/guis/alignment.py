@@ -44,9 +44,9 @@ QLocale.setDefault(QLocale(QLocale.English, QLocale.UnitedKingdom))
 # Windows
 
 if args.simulation:
-    from kalao.guis.backends.alignment_simulation import AlignmentBackend
+    from kalao.guis.backends.simulation import AlignmentBackend
 else:
-    from kalao.guis.backends.alignment_local import AlignmentBackend
+    from kalao.guis.backends.local import AlignmentBackend
 
 backend = AlignmentBackend()
 

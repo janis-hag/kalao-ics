@@ -9,9 +9,8 @@ from PySide6.QtWidgets import QWidget
 
 from compiled.ui_spiral_search import Ui_SpiralSearchWindow
 
-from kalao.sequencer import centering
-from kalao.utils import kstring
-from kalao.utils.json import KalAOJSONDecoder
+from kalao.common import kstring, spiral_search
+from kalao.common.json import KalAOJSONDecoder
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color
@@ -27,8 +26,8 @@ decoder = KalAOJSONDecoder()
 class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
     _view = QRectF(0, 0, 1, 1)
 
-    star_x = np.nan
-    star_y = np.nan
+    star_dx = np.nan
+    star_dy = np.nan
 
     expno = 0
 
@@ -45,6 +44,10 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
 
         self._scene = KHoverableGraphicsScene()
         self.ui.spiral_search_view.setScene(self._scene)
+
+        self.ui.spiral_search_view.setStyleSheet('background: transparent')
+        self.ui.spiral_search_view.setBackgroundBrush(QBrush(
+            Color.TRANSPARENT))
 
         self.ui.spiral_search_view.setRenderHints(
             QPainter.RenderHint.Antialiasing |
@@ -69,19 +72,21 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
         spiral_search = self.consume_dict(data, 'memory', 'spiral_search')
 
         if spiral_search is not None:
-            self.star_x = spiral_search['star_x']
-            self.star_y = spiral_search['star_y']
+            self.star_dx = spiral_search['star_dx']
+            self.star_dy = spiral_search['star_dy']
             self.expno = spiral_search['expno']
 
-            if self.star_x is None:
-                self.star_x = np.nan
+            if self.star_dx is None:
+                self.star_dx = np.nan
 
-            if self.star_y is None:
-                self.star_y = np.nan
+            if self.star_dy is None:
+                self.star_dy = np.nan
 
             self.ui.overlap_spinbox.setValue(
                 round(spiral_search['overlap'] * 100))
             self.ui.radius_spinbox.setValue(spiral_search['radius'] + 1)
+
+            self.draw_grid()
 
     @Slot(int)
     def on_overlap_spinbox_valueChanged(self, i: int) -> None:
@@ -112,7 +117,7 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
 
         # Compute coords
 
-        coords = centering.spiral_create_grid(overlap=overlap, radius=radius)
+        coords = spiral_search.generate_grid(overlap=overlap, radius=radius)
 
         # Default pen and brush
 
@@ -142,8 +147,8 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
         # Draw detector footprints
 
         for i, coord in enumerate(coords):
-            rect = QRectF(coord.x - config.Camera.size_x / 2,
-                          coord.y - config.Camera.size_y / 2,
+            rect = QRectF(-coord.dx - config.Camera.size_x / 2,
+                          -coord.dy - config.Camera.size_y / 2,
                           config.Camera.size_x, config.Camera.size_y)
             rect_item = self._scene.addRect(rect, pen, brush)
 
@@ -156,7 +161,7 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
 
             text_item = CenteredTextItem(f'{i}')
             text_item.setFont(font)
-            text_item.setPos(coord.x, coord.y)
+            text_item.setPos(-coord.dx, -coord.dy)
             text_item.setBrush(brush_font)
             self._scene.addItem(text_item)
             text_item.setZValue(200)
@@ -165,16 +170,16 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
         pen_star = Qt.PenStyle.NoPen
         brush_star = QBrush(Color.YELLOW, Qt.BrushStyle.SolidPattern)
 
-        if not np.isnan(self.star_x) and not np.isnan(self.star_y):
+        if not np.isnan(self.star_dx) and not np.isnan(self.star_dy):
             star = self._draw_star()
 
             star_item = self._scene.addPolygon(star, pen_star, brush_star)
-            star_item.setPos(self.star_x, self.star_y)
+            star_item.setPos(-self.star_dx, -self.star_dy)
             star_item.setZValue(300)
 
             self.ui.star_label.updateText(
                 text=
-                f'alt = {+self.star_x*config.Offsets.camera_x_to_tel_alt:.2f}" and az = {+self.star_y*config.Offsets.camera_y_to_tel_az:.2f}"'
+                f'alt = {+self.star_dx*config.Offsets.camera_x_to_tel_alt:.2f}" and az = {+self.star_dy*config.Offsets.camera_y_to_tel_az:.2f}"'
             )
         else:
             self.ui.star_label.updateText(text='not found')

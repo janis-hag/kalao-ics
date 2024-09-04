@@ -2,8 +2,9 @@ from enum import Enum, StrEnum
 
 from PySide6.QtGui import QColor
 
-from kalao.utils.image import (LinearScale, LogScale, MinMaxCut, PercentileCut,
-                               SigmaCut, SquaredScale, SquareRootScale)
+from kalao.common.image import (LinearScale, LogScale, MinMaxCut,
+                                PercentileCut, SigmaCut, SquaredScale,
+                                SquareRootScale)
 
 
 class Color:

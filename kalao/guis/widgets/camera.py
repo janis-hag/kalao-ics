@@ -4,36 +4,26 @@ from typing import Any
 
 import numpy as np
 
-from PySide6.QtCore import QMarginsF, QPointF, QRectF, QTimer, Slot
+from PySide6.QtCore import QMarginsF, QPointF, QRectF, QTimer, Signal, Slot
 from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
 from compiled.ui_camera import Ui_CameraWidget
 
-from kalao.utils.image import LogScale
+from kalao.common.image import LogScale
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color
-from kalao.guis.utils.mixins import (BackendDataMixin, MinMaxMixin,
-                                     SceneHoverMixin)
+from kalao.guis.utils.mixins import BackendDataMixin
 from kalao.guis.utils.widgets import KMessageBox, KWidget
 from kalao.guis.windows.fits_viewer import FITSViewerWindow
 
 import config
 
 
-class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
+class CameraWidget(KWidget, BackendDataMixin):
     image_info = config.Images.fli
-
-    data_unit = ' ADU'
-    data_precision = 0
-    data_center_x = config.Camera.center_x
-    data_center_y = config.Camera.center_y
-
-    axis_unit = ' px'
-    axis_precision = 0
-    axis_scaling = 1
 
     WFS_fov = 4 * config.WFS.plate_scale / config.Camera.plate_scale
 
@@ -44,6 +34,8 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
     timestamp = None
 
     hdul = None
+
+    hovered = Signal(str)
 
     def __init__(self, backend: AbstractBackend,
                  parent: QWidget = None) -> None:
@@ -56,7 +48,12 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.resize(600, 400)
 
-        self.init_minmax(self.ui.camera_view)
+        self.ui.minmax_widget.setup(self.ui.camera_view, ' ADU', 0, 1, -999999,
+                                    999999, self.image_info['min'],
+                                    self.image_info['max'])
+        self.ui.camera_view.set_data_md(' ADU', 0)
+        self.ui.camera_view.set_axis_md(' px', 0, 1, config.Camera.center_x,
+                                        config.Camera.center_y)
 
         self.ui.camera_view.setView(self.image_info['shape'])
 
@@ -65,18 +62,26 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.change_units(Qt.CheckState.Unchecked)
         self.change_colormap(Qt.CheckState.Unchecked)
 
+        ticks_x = np.array([-400, -300, -200, -100, 0, 100, 200, 300, 400
+                            ]) + config.Camera.center_x
+        ticks_y = np.array([-400, -300, -200, -100, 0, 100, 200, 300, 400
+                            ]) + config.Camera.center_y
+        self.ui.camera_view.setTickParams(0, 5, 5, 10, ticks_x, ticks_y)
+
         pen = QPen(Color.BLUE, 1.5, Qt.PenStyle.SolidLine,
                    Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
 
         self.roi = self.ui.camera_view.scene().addEllipse(
-            self.data_center_x - self.WFS_fov / 2, self.data_center_y -
-            self.WFS_fov / 2, self.WFS_fov, self.WFS_fov, pen)
+            self.ui.camera_view.axis_x_offset - self.WFS_fov / 2,
+            self.ui.camera_view.axis_y_offset - self.WFS_fov / 2, self.WFS_fov,
+            self.WFS_fov, pen)
         self.roi.setZValue(1)
 
         self.update_labels()
 
-        self.ui.camera_view.hovered.connect(self.hover_xyv_to_str)
+        self.ui.camera_view.hovered_str.connect(lambda string: self.hovered.
+                                                emit(string))
         backend.all_updated.connect(self.all_updated)
         backend.camera_image_updated.connect(self.camera_image_updated)
 
@@ -121,7 +126,7 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             # self.camera_view.setNEIndicator(parang from keywords)
 
-            img_min, img_max = self.compute_min_max(img)
+            img_min, img_max = self.ui.minmax_widget.compute_min_max(img)
 
             self.saturation = img.max() / self.image_info['max']
             self.img_max = img.max()
@@ -166,27 +171,15 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_units(self, state: Qt.CheckState) -> None:
         if Qt.CheckState(state) == Qt.CheckState.Checked:
-            self.axis_unit = '"'
-            self.axis_precision = 1
-            self.axis_scaling = config.Camera.plate_scale
+            self.ui.camera_view.set_axis_md('"', 1, config.Camera.plate_scale,
+                                            config.Camera.center_x,
+                                            config.Camera.center_y)
         else:
-            self.axis_unit = ' px'
-            self.axis_precision = 0
-            self.axis_scaling = 1
+            self.ui.camera_view.set_axis_md(' px', 0, 1,
+                                            config.Camera.center_x,
+                                            config.Camera.center_y)
 
         self.update_labels()
-
-        ticks_x = []
-        ticks_y = []
-        for xy in [-400, -300, -200, -100, 0, 100, 200, 300, 400]:
-            tick_label = f'{xy*self.axis_scaling:.{self.axis_precision}f}'
-            tick_pos_x = xy + self.data_center_x
-            tick_pos_y = xy + self.data_center_y
-
-            ticks_x.append((tick_pos_x, tick_label))
-            ticks_y.append((tick_pos_y, tick_label))
-
-        self.ui.camera_view.setTickParams(0, 5, 5, 10, ticks_x, ticks_y)
 
     def change_colormap(self, state: Qt.CheckState) -> None:
         if Qt.CheckState(state) == Qt.CheckState.Checked:
@@ -261,5 +254,4 @@ class CameraWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
             else:
                 hdul = None
 
-            self.fits_viewer = FITSViewerWindow(
-                self.backend, hdul, on_sky_unit=(self.axis_unit == '"'))
+            self.fits_viewer = FITSViewerWindow(self.backend, hdul)

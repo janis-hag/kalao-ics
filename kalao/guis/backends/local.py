@@ -1,29 +1,197 @@
 import subprocess
+import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+from astropy.io import fits
+
+from PySide6.QtCore import Signal
+
 import libtmux
 import requests
 
-from kalao import database, ippower, logs, memory, services
-from kalao.cacao import aocontrol
-from kalao.hardware import (adc, calibunit, camera, cooling, dm, filterwheel,
-                            flipmirror, hw_utils, laser, shutter, ttm,
-                            tungsten, wfs)
-from kalao.rtc import rtc
-from kalao.sequencer import centering, focusing, seq_utils
-from kalao.timers import monitoring
+from kalao.common import ktools
+from kalao.common.dataclasses import LogEntry, Template
+from kalao.common.enums import (FlipMirrorStatus, IPPowerStatus, LoopStatus,
+                                ServiceAction, ShutterStatus, TemplateID)
 
-from kalao.guis.backends.abstract import SHMFPSBackend, emit, timeit
+from kalao.ics import database, ippower, logs, memory, services
+from kalao.ics.cacao import aocontrol, toolbox
+from kalao.ics.hardware import (adc, calibunit, camera, cooling, dm,
+                                filterwheel, flipmirror, hw_utils, laser,
+                                shutter, ttm, tungsten, wfs)
+from kalao.ics.rtc import rtc
+from kalao.ics.sequencer import centering, focusing, seq_utils
+from kalao.ics.timers import monitoring
 
-from kalao.definitions.dataclasses import LogEntry, Template
-from kalao.definitions.enums import (FlipMirrorStatus, IPPowerStatus,
-                                     LoopStatus, ServiceAction, ShutterStatus,
-                                     TemplateID)
+from kalao.guis.backends.abstract import AbstractBackend, emit, timeit
+from kalao.guis.utils.definitions import PokeState
 
 import config
+
+
+class SHMFPSBackend(AbstractBackend):
+    @staticmethod
+    def _update_shm(data: dict[str, Any], shm_name: str,
+                    key: str | None = None) -> None:
+        if key is None:
+            key = shm_name
+
+        shm = toolbox.get_shm(shm_name)
+
+        if shm is None:
+            return
+
+        if key not in data:
+            data[key] = {}
+
+        data[key].update({
+            'cnt0': shm.IMAGE.md.cnt0,
+            'data': shm.get_data(check=False),
+        })
+
+    @staticmethod
+    def _update_shm_keywords(data: dict[str, Any], shm_name: str) -> None:
+        shm = toolbox.get_shm(shm_name)
+
+        if shm is None:
+            return
+
+        if shm_name not in data:
+            data[shm_name] = {}
+
+        data[shm_name]['keywords'] = shm.get_keywords()
+
+    @staticmethod
+    def _update_shm_md(data: dict[str, Any], shm_name: str) -> None:
+        shm = toolbox.get_shm(shm_name)
+
+        if shm_name not in data:
+            data[shm_name] = {}
+
+        if shm is None:
+            data[shm_name]['md'] = {'status': 'M'}
+        else:
+            data[shm_name]['md'] = {
+                'status': '',
+                'shape': shm.shape_c,
+                'cnt0': shm.IMAGE.md.cnt0,
+                'creationtime': shm.IMAGE.md.creationtime,
+                'acqtime': shm.IMAGE.md.acqtime,
+            }
+
+    @staticmethod
+    def _update_fps_param(data: dict[str, Any], fps_name: str,
+                          param_name: str) -> None:
+        fps = toolbox.get_fps(fps_name)
+
+        if fps is None:
+            return
+
+        if fps_name not in data:
+            data[fps_name] = {}
+
+        data[fps_name][param_name] = fps.get_param(param_name)
+
+    @staticmethod
+    def _update_fps_md(data: dict[str, Any], fps_name: str) -> None:
+        fps = toolbox.get_fps(fps_name)
+
+        if fps_name not in data:
+            data[fps_name] = {}
+
+        if fps is None:
+            data[fps_name]['md'] = {'status': 'M'}
+        else:
+            data[fps_name]['md'] = {'status': ''}
+
+            if fps.conf_isrunning():
+                data[fps_name]['md']['status'] += 'C'
+
+            if fps.run_isrunning():
+                data[fps_name]['md']['status'] += 'R'
+
+    @staticmethod
+    def _update_dict(data: dict[str, Any], key: str, dict: dict[str,
+                                                                Any]) -> None:
+        if key not in data:
+            data[key] = {}
+
+        data[key].update(dict)
+
+    @staticmethod
+    def _update_db(data: dict[str, Any], collection: str,
+                   db_data: dict[str, Any]) -> None:
+        if collection not in data:
+            data[collection] = {}
+
+        data[collection].update(db_data)
+
+    @staticmethod
+    def _update_fits(data: dict[str, Any], fits_file: Path | str) -> None:
+        if not isinstance(fits_file, Path):
+            fits_file = Path(fits_file)
+
+        key = fits_file.stem
+
+        try:
+            data[key] = {
+                'mtime':
+                    datetime.fromtimestamp(fits_file.stat().st_mtime,
+                                           tz=timezone.utc),
+                'data':
+                    fits.getdata(fits_file),
+            }
+        except (FileNotFoundError, OSError):
+            pass
+
+    @staticmethod
+    def _update_fits_full(data: dict[str, Any], fits_file: Path | str) -> None:
+        if not isinstance(fits_file, Path):
+            fits_file = Path(fits_file)
+
+        key = fits_file.stem
+
+        try:
+            # Recreate HDU List to avoid "cannot pickle '_io.BufferedReader' object" error
+            hdul = fits.open(fits_file)
+            hdul_ = fits.HDUList()
+
+            for hdu in hdul:
+                hdu_ = type(hdu)()
+                hdu_.data = hdu.data
+                hdu_.header = hdu.header
+                hdul_.append(hdu_)
+
+            data[key] = {
+                'mtime':
+                    datetime.fromtimestamp(fits_file.stat().st_mtime,
+                                           tz=timezone.utc),
+                'hdul':
+                    hdul_,
+            }
+        except (FileNotFoundError, OSError):
+            pass
+
+    @staticmethod
+    def _update_fits_mtime(data: dict[str, Any],
+                           fits_file: Path | str) -> None:
+        if not isinstance(fits_file, Path):
+            fits_file = Path(fits_file)
+
+        key = fits_file.stem
+
+        try:
+            if data.get(key) is None:
+                data[key] = {}
+
+            data[key]['mtime'] = datetime.fromtimestamp(
+                fits_file.stat().st_mtime, tz=timezone.utc)
+        except (FileNotFoundError, OSError):
+            pass
 
 
 class MainBackend(SHMFPSBackend):
@@ -32,6 +200,9 @@ class MainBackend(SHMFPSBackend):
 
     def version(self) -> str:
         return config.version
+
+    def name(self) -> str:
+        return 'local'
 
     @emit
     @timeit
@@ -232,11 +403,11 @@ class MainBackend(SHMFPSBackend):
                 'spiral_search':
                     memory.hmget(
                         'spiral_search', {
-                            'radius': int,
-                            'overlap': float,
-                            'expno': int,
-                            'star_x': float,
-                            'star_y': float
+                            'radius': (int, 1),
+                            'overlap': (float, 0.),
+                            'expno': (int, 0),
+                            'star_dx': (float, np.nan),
+                            'star_dy': (float, np.nan)
                         })
             })
 
@@ -587,6 +758,9 @@ class MainBackend(SHMFPSBackend):
     def wfs_autogain_setting(self, *, setting: int) -> None:
         wfs.set_autogain_setting(setting)
 
+    def wfs_emgainoff(self) -> None:
+        wfs.emgain_off()
+
     # Deformable Mirror
 
     def dm_maxstroke(self, *, stroke: float) -> None:
@@ -791,13 +965,13 @@ class MainBackend(SHMFPSBackend):
     # Centering
 
     def centering_star(self) -> None:
-        centering.center_on_target()
+        centering.center_on_target(fallback_to_manual=False)
 
     def centering_laser(self) -> None:
         centering.center_on_laser()
 
     def centering_spiral(self) -> None:
-        centering.spiral_search()
+        centering.do_spiral_search()
 
     # Focusing
 
@@ -841,3 +1015,79 @@ class MainBackend(SHMFPSBackend):
     def logs_between(self, *, since: datetime,
                      until: datetime) -> list[LogEntry]:
         return logs.get_entries_between(since, until)
+
+
+class AlignmentBackend(SHMFPSBackend):
+    alignment_window = None
+
+    streams_all_updated = Signal(object)
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.nuvu_shm = toolbox.get_shm(config.SHM.NUVU)
+        self.poke_shm = toolbox.get_shm(config.SHM.DM_REGISTRATION)
+        self.slopes_shm = toolbox.get_shm(config.SHM.SLOPES)
+
+        self.slopes_fps = toolbox.get_fps(config.FPS.SHWFS)
+
+    @emit
+    @timeit
+    def streams_all(self) -> dict[str, Any]:
+        data = {}
+
+        dm_array = np.zeros(self.poke_shm.shape, self.poke_shm.nptype)
+
+        # Do not poke actuators
+        for act in self.alignment_window.actuators_to_poke:
+            dm_array[ktools.get_actuator_2d(act)] = 0
+
+        self.poke_shm.set_data(dm_array, True)
+        time.sleep(self.alignment_window.wait_after_poke)
+        self._update_shm(data, config.SHM.NUVU,
+                         key=f'{config.SHM.NUVU}_{PokeState.FLAT}')
+        self._update_shm(data, config.SHM.SLOPES,
+                         key=f'{config.SHM.SLOPES}_{PokeState.FLAT}')
+
+        self._update_shm(data, config.SHM.FLUX)
+
+        self._update_fps_param(data, config.FPS.SHWFS, 'slope_x_avg')
+        self._update_fps_param(data, config.FPS.SHWFS, 'slope_y_avg')
+        self._update_fps_param(data, config.FPS.SHWFS, 'residual_rms')
+
+        # Poke actuators down
+        for act in self.alignment_window.actuators_to_poke:
+            dm_array[ktools.get_actuator_2d(
+                act)] = -self.alignment_window.poke_amplitude
+
+        self.poke_shm.set_data(dm_array, True)
+        time.sleep(self.alignment_window.wait_after_poke)
+        self._update_shm(data, config.SHM.NUVU,
+                         key=f'{config.SHM.NUVU}_{PokeState.DOWN}')
+        self._update_shm(data, config.SHM.SLOPES,
+                         key=f'{config.SHM.SLOPES}_{PokeState.DOWN}')
+
+        # Poke actuators up
+        for act in self.alignment_window.actuators_to_poke:
+            dm_array[ktools.get_actuator_2d(
+                act)] = self.alignment_window.poke_amplitude
+
+        self.poke_shm.set_data(dm_array, True)
+        time.sleep(self.alignment_window.wait_after_poke)
+        self._update_shm(data, config.SHM.NUVU,
+                         key=f'{config.SHM.NUVU}_{PokeState.UP}')
+        self._update_shm(data, config.SHM.SLOPES,
+                         key=f'{config.SHM.SLOPES}_{PokeState.UP}')
+
+        data[config.SHM.
+             NUVU] = data[f'{config.SHM.NUVU}_{self.alignment_window.display}']
+
+        if self.alignment_window.display == PokeState.FLAT:
+            data[config.SHM.
+                 SLOPES] = data[f'{config.SHM.SLOPES}_{PokeState.FLAT}']
+        else:
+            data[config.SHM.SLOPES] = data[
+                self.alignment_window.
+                display] - data[f'{config.SHM.SLOPES}_{PokeState.FLAT}']
+
+        return data

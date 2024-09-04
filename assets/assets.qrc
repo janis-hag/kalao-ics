@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="assets">
+    <file>icons/arrow-up.svg</file>
+    <file>icons/arrow-down.svg</file>
     <file>icons/audio-volume-high.svg</file>
     <file>icons/audio-volume-muted.svg</file>
     <file>icons/calibration-poses.svg</file>

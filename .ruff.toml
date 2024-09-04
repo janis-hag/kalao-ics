@@ -31,9 +31,9 @@ docstring-code-format = true
 "astro" = ["astropy", "photutils"]
 "cacao" = ["pyMilk", "CacaoProcessTools"]
 "graphic" = ["PySide6"]
-"kalao" = ["kalao"]
-"kguis" = ["kalao.guis"]
-"kdefinitions" = ["kalao.definitions"]
+"kalao_common" = ["kalao.common"]
+"kalao_ics" = ["kalao.ics"]
+"kalao_guis" = ["kalao.guis"]
 "config" = ["config"]
 
 [lint.isort]
@@ -49,8 +49,8 @@ section-order = [
     "third-party",
     "first-party",
     "local-folder",
-    "kalao",
-    "kguis",
-    "kdefinitions",
+    "kalao_common",
+    "kalao_ics",
+    "kalao_guis",
     "config"
 ]

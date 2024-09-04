@@ -2,35 +2,25 @@ from typing import Any
 
 import numpy as np
 
+from PySide6.QtCore import Signal
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QWidget
 
 from compiled.ui_slopes import Ui_SlopesWidget
 
-from kalao.utils import ktools
+from kalao.common import ktools
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color
-from kalao.guis.utils.mixins import (BackendDataMixin, MinMaxMixin,
-                                     SceneHoverMixin)
+from kalao.guis.utils.mixins import BackendDataMixin
 from kalao.guis.utils.widgets import KWidget
 
 import config
 
 
-class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
+class SlopesWidget(KWidget, BackendDataMixin):
     image_info = config.Images.shwfs_slopes
-
-    data_unit = ' px'
-    data_precision = 2
-
-    axis_unit = ' px'
-    axis_precision = 0
-
-    tiptilt_unit = ' px'
-    tiptilt_scaling = 1
-    tiptilt_precision = 2
 
     saturation = np.nan
     slope_x_avg = np.nan
@@ -39,6 +29,8 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     img = None
     masked = False
+
+    hovered = Signal(str)
 
     def __init__(self, backend: AbstractBackend,
                  parent: QWidget = None) -> None:
@@ -53,12 +45,17 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.resize(600, 400)
 
-        self.init_minmax(self.ui.slopes_view, symetric=True)
+        self.ui.minmax_widget.setup(self.ui.slopes_view, ' px', 2, 1, -99, 99,
+                                    self.image_info['min'],
+                                    self.image_info['max'], symetric=True)
+        self.ui.slopes_view.set_data_md(' px', 2)
+        self.ui.slopes_view.set_axis_md('', 0)
 
         self.change_units(Qt.CheckState.Unchecked)
         self.change_colormap(Qt.CheckState.Unchecked)
 
-        self.ui.slopes_view.hovered.connect(self.hover_xyv_to_str)
+        self.ui.slopes_view.hovered_str.connect(lambda string: self.hovered.
+                                                emit(string))
         backend.streams_all_updated.connect(self.streams_all_updated)
 
     def streams_all_updated(self, data: dict[str, Any]) -> None:
@@ -99,20 +96,25 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         self.saturation = max(img.max() / self.image_info['max'],
                               img.min() / self.image_info['min'])
 
-        img_min, img_max = self.compute_min_max(img)
+        img_min, img_max = self.ui.minmax_widget.compute_min_max(img)
 
         self.ui.slopes_view.setImage(img, img_min, img_max)
 
     def update_labels(self) -> None:
         self.ui.slope_x_avg_label.updateText(
-            slope_x_avg=self.slope_x_avg * self.tiptilt_scaling,
-            unit=self.tiptilt_unit, precision=self.tiptilt_precision)
+            slope_x_avg=self.slope_x_avg * self.ui.slopes_view.data_scaling,
+            unit=self.ui.slopes_view.data_unit,
+            precision=self.ui.slopes_view.data_precision)
+
         self.ui.slope_y_avg_label.updateText(
-            slope_y_avg=self.slope_y_avg * self.tiptilt_scaling,
-            unit=self.tiptilt_unit, precision=self.tiptilt_precision)
+            slope_y_avg=self.slope_y_avg * self.ui.slopes_view.data_scaling,
+            unit=self.ui.slopes_view.data_unit,
+            precision=self.ui.slopes_view.data_precision)
+
         self.ui.residual_rms_label.updateText(
-            residual_rms=self.residual_rms * self.data_scaling,
-            unit=self.data_unit, precision=self.data_precision)
+            residual_rms=self.residual_rms * self.ui.slopes_view.data_scaling,
+            unit=self.ui.slopes_view.data_unit,
+            precision=self.ui.slopes_view.data_precision)
 
         if self.saturation >= 1:
             self.ui.saturation_label.setText('Saturated !')
@@ -125,15 +127,13 @@ class SlopesWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def change_units(self, state: Qt.CheckState) -> None:
         if Qt.CheckState(state) == Qt.CheckState.Checked:
-            self.tiptilt_scaling = config.WFS.plate_scale
-            self.tiptilt_unit = '"'
-            self.tiptilt_precision = 1
-            self.update_spinboxes_unit('"', config.WFS.plate_scale, 1)
+            self.ui.minmax_widget.update_spinboxes_unit(
+                '"', 2, config.WFS.plate_scale)
+            self.ui.slopes_view.set_data_md('"', 2,
+                                            scaling=config.WFS.plate_scale)
         else:
-            self.tiptilt_scaling = 1
-            self.tiptilt_unit = ' px'
-            self.tiptilt_precision = 2
-            self.update_spinboxes_unit(' px', 1, 2)
+            self.ui.minmax_widget.update_spinboxes_unit(' px', 2, 1)
+            self.ui.slopes_view.set_data_md(' px', 2, scaling=1)
 
         self.update_labels()
 

@@ -17,9 +17,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractScrollArea, QApplication, QFrame, QGridLayout,
     QLabel, QPushButton, QSizePolicy, QSpacerItem,
-    QToolButton, QVBoxLayout, QWidget)
+    QVBoxLayout, QWidget)
 
-from kalao.guis.utils.widgets import (KImageViewer, KLabel, KScaledDoubleSpinbox)
+from kalao.guis.utils.parts import ImgMinMaxPart
+from kalao.guis.utils.widgets import (KImageViewer, KLabel)
 from . import rc_assets
 
 class Ui_CameraWidget(object):
@@ -50,69 +51,22 @@ class Ui_CameraWidget(object):
 
         self.side_layout = QVBoxLayout()
         self.side_layout.setObjectName(u"side_layout")
-        self.scale_layout = QGridLayout()
-        self.scale_layout.setObjectName(u"scale_layout")
-        self.min_spinbox = KScaledDoubleSpinbox(CameraWidget)
-        self.min_spinbox.setObjectName(u"min_spinbox")
-        self.min_spinbox.setKeyboardTracking(False)
-        self.min_spinbox.setDecimals(0)
-        self.min_spinbox.setMinimum(0.000000000000000)
-        self.min_spinbox.setMaximum(100000.000000000000000)
-        self.min_spinbox.setSingleStep(100.000000000000000)
+        self.minmax_widget = ImgMinMaxPart(CameraWidget)
+        self.minmax_widget.setObjectName(u"minmax_widget")
 
-        self.scale_layout.addWidget(self.min_spinbox, 1, 0, 1, 1)
-
-        self.autoscale_button = QToolButton(CameraWidget)
-        self.autoscale_button.setObjectName(u"autoscale_button")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.autoscale_button.sizePolicy().hasHeightForWidth())
-        self.autoscale_button.setSizePolicy(sizePolicy)
-        self.autoscale_button.setCheckable(True)
-        self.autoscale_button.setChecked(True)
-
-        self.scale_layout.addWidget(self.autoscale_button, 0, 0, 1, 1)
-
-        self.max_spinbox = KScaledDoubleSpinbox(CameraWidget)
-        self.max_spinbox.setObjectName(u"max_spinbox")
-        self.max_spinbox.setKeyboardTracking(False)
-        self.max_spinbox.setDecimals(0)
-        self.max_spinbox.setMinimum(0.000000000000000)
-        self.max_spinbox.setMaximum(100000.000000000000000)
-        self.max_spinbox.setSingleStep(100.000000000000000)
-
-        self.scale_layout.addWidget(self.max_spinbox, 1, 2, 1, 1, Qt.AlignmentFlag.AlignVCenter)
-
-        self.fullscale_button = QToolButton(CameraWidget)
-        self.fullscale_button.setObjectName(u"fullscale_button")
-        sizePolicy.setHeightForWidth(self.fullscale_button.sizePolicy().hasHeightForWidth())
-        self.fullscale_button.setSizePolicy(sizePolicy)
-        self.fullscale_button.setCheckable(True)
-
-        self.scale_layout.addWidget(self.fullscale_button, 0, 2, 1, 1)
-
-        self.minmax_label = QLabel(CameraWidget)
-        self.minmax_label.setObjectName(u"minmax_label")
-
-        self.scale_layout.addWidget(self.minmax_label, 1, 1, 1, 1)
+        self.side_layout.addWidget(self.minmax_widget)
 
         self.saturation_label = KLabel(CameraWidget)
         self.saturation_label.setObjectName(u"saturation_label")
         self.saturation_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.scale_layout.addWidget(self.saturation_label, 2, 0, 1, 3, Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
+        self.side_layout.addWidget(self.saturation_label)
 
         self.linearity_label = QLabel(CameraWidget)
         self.linearity_label.setObjectName(u"linearity_label")
         self.linearity_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.scale_layout.addWidget(self.linearity_label, 3, 0, 1, 3)
-
-        self.scale_layout.setColumnStretch(0, 1)
-        self.scale_layout.setColumnStretch(2, 1)
-
-        self.side_layout.addLayout(self.scale_layout)
+        self.side_layout.addWidget(self.linearity_label)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
@@ -153,9 +107,6 @@ class Ui_CameraWidget(object):
     def retranslateUi(self, CameraWidget):
         CameraWidget.setWindowTitle(QCoreApplication.translate("CameraWidget", u"Science Camera - KalAO", None))
         self.title_label.setText(QCoreApplication.translate("CameraWidget", u"Science Camera", None))
-        self.autoscale_button.setText(QCoreApplication.translate("CameraWidget", u"Autoscale", None))
-        self.fullscale_button.setText(QCoreApplication.translate("CameraWidget", u"Fullscale", None))
-        self.minmax_label.setText(QCoreApplication.translate("CameraWidget", u"\u2013", None))
         self.saturation_label.setText(QCoreApplication.translate("CameraWidget", u"Saturation {saturation:.0f} %", None))
         self.linearity_label.setText(QCoreApplication.translate("CameraWidget", u"Inside of linear range", None))
         self.timestamp_label.setText(QCoreApplication.translate("CameraWidget", u"Timestamp: {timestamp}", None))

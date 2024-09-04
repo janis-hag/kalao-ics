@@ -1,0 +1,11 @@
+# Requirements only needed for development (neither the ICS, nor the GUIs)
+
+# Code style
+isort
+yapf
+mypy
+ruff
+
+# For debugging
+matplotlib
+ipython

@@ -7,4 +7,6 @@ source /home/kalao/kalao-venv-3.11/bin/activate
 
 cd /home/kalao/kalao-ics
 
+renice -n 19 $$
+
 exec python /home/kalao/kalao-ics/kalao/guis/alignment.py

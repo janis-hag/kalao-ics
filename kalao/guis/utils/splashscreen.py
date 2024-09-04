@@ -2,7 +2,7 @@ from PySide6.QtCore import QEvent, QPoint, QRect, QSize
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, Qt
 from PySide6.QtWidgets import QApplication, QWidget
 
-from kalao.utils.rprint import rprint
+from kalao.common.rprint import rprint
 
 
 class KSplashScreen(QWidget):

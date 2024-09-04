@@ -1,0 +1,16 @@
+# Requirements for running both the ICS and the GUIs
+
+# Basics
+numpy
+scipy
+pandas
+scikit-image
+astropy
+PyYAML
+Unidecode
+
+# To avoid some errors (about cryptography being missing)
+cryptography
+
+# Performances
+pyarrow

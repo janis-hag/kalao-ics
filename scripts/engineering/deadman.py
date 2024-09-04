@@ -1,7 +1,7 @@
 import time
 from datetime import datetime, timezone
 
-from kalao import database, logger
+from kalao.ics import database, logger
 
 import config
 

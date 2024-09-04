@@ -1,0 +1,4 @@
+# Requirements for running the GUIs
+
+# For GUIs
+PySide6

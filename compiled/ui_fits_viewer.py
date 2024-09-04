@@ -24,14 +24,15 @@ from PySide6.QtWidgets import (QAbstractScrollArea, QAbstractSpinBox, QApplicati
     QStatusBar, QTableView, QToolButton, QVBoxLayout,
     QWidget)
 
-from kalao.guis.utils.widgets import (KColorbar, KImageViewer, KLabel, KScaledDoubleSpinbox)
+from kalao.guis.utils.parts import ImgMinMaxPart
+from kalao.guis.utils.widgets import (KColorbar, KImageViewer, KLabel, KNaNDoubleSpinbox)
 from . import rc_assets
 
 class Ui_FITSViewerWindow(object):
     def setupUi(self, FITSViewerWindow):
         if not FITSViewerWindow.objectName():
             FITSViewerWindow.setObjectName(u"FITSViewerWindow")
-        FITSViewerWindow.resize(1554, 680)
+        FITSViewerWindow.resize(1534, 968)
         self.enter_manual_centering_action = QAction(FITSViewerWindow)
         self.enter_manual_centering_action.setObjectName(u"enter_manual_centering_action")
         icon = QIcon()
@@ -98,65 +99,42 @@ class Ui_FITSViewerWindow(object):
 
         self.side_layout = QVBoxLayout()
         self.side_layout.setObjectName(u"side_layout")
-        self.scale_layout = QGridLayout()
-        self.scale_layout.setObjectName(u"scale_layout")
-        self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.minmax_widget = ImgMinMaxPart(self.gridLayoutWidget)
+        self.minmax_widget.setObjectName(u"minmax_widget")
 
-        self.scale_layout.addItem(self.verticalSpacer_3, 1, 0, 1, 3)
+        self.side_layout.addWidget(self.minmax_widget)
 
+        self.saturation_label = KLabel(self.gridLayoutWidget)
+        self.saturation_label.setObjectName(u"saturation_label")
+        self.saturation_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.side_layout.addWidget(self.saturation_label)
+
+        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+
+        self.side_layout.addItem(self.verticalSpacer_2)
+
+        self.gridLayout_4 = QGridLayout()
+        self.gridLayout_4.setObjectName(u"gridLayout_4")
         self.y_label = QLabel(self.gridLayoutWidget)
         self.y_label.setObjectName(u"y_label")
         self.y_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.scale_layout.addWidget(self.y_label, 3, 0, 1, 1)
-
-        self.x_label = QLabel(self.gridLayoutWidget)
-        self.x_label.setObjectName(u"x_label")
-        self.x_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-
-        self.scale_layout.addWidget(self.x_label, 2, 0, 1, 1)
-
-        self.zoom_label = QLabel(self.gridLayoutWidget)
-        self.zoom_label.setObjectName(u"zoom_label")
-        self.zoom_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-
-        self.scale_layout.addWidget(self.zoom_label, 4, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.y_label, 2, 0, 1, 1)
 
         self.frame_label = QLabel(self.gridLayoutWidget)
         self.frame_label.setObjectName(u"frame_label")
         self.frame_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.scale_layout.addWidget(self.frame_label, 5, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.frame_label, 6, 0, 1, 1)
 
-        self.frame_slider = QSlider(self.gridLayoutWidget)
-        self.frame_slider.setObjectName(u"frame_slider")
-        self.frame_slider.setMinimum(1)
-        self.frame_slider.setMaximum(1)
-        self.frame_slider.setOrientation(Qt.Orientation.Horizontal)
+        self.value_label = QLabel(self.gridLayoutWidget)
+        self.value_label.setObjectName(u"value_label")
+        self.value_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.scale_layout.addWidget(self.frame_slider, 5, 1, 1, 1)
+        self.gridLayout_4.addWidget(self.value_label, 0, 0, 1, 1)
 
-        self.zoom_spinbox = QSpinBox(self.gridLayoutWidget)
-        self.zoom_spinbox.setObjectName(u"zoom_spinbox")
-        self.zoom_spinbox.setReadOnly(True)
-        self.zoom_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.zoom_spinbox.setKeyboardTracking(False)
-        self.zoom_spinbox.setMinimum(1)
-        self.zoom_spinbox.setMaximum(1024)
-        self.zoom_spinbox.setStepType(QAbstractSpinBox.StepType.DefaultStepType)
-        self.zoom_spinbox.setValue(1)
-
-        self.scale_layout.addWidget(self.zoom_spinbox, 4, 1, 1, 2)
-
-        self.frame_spinbox = QSpinBox(self.gridLayoutWidget)
-        self.frame_spinbox.setObjectName(u"frame_spinbox")
-        self.frame_spinbox.setKeyboardTracking(False)
-        self.frame_spinbox.setMinimum(1)
-        self.frame_spinbox.setMaximum(1)
-
-        self.scale_layout.addWidget(self.frame_spinbox, 5, 2, 1, 1)
-
-        self.y_spinbox = KScaledDoubleSpinbox(self.gridLayoutWidget)
+        self.y_spinbox = KNaNDoubleSpinbox(self.gridLayoutWidget)
         self.y_spinbox.setObjectName(u"y_spinbox")
         self.y_spinbox.setReadOnly(True)
         self.y_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
@@ -165,9 +143,20 @@ class Ui_FITSViewerWindow(object):
         self.y_spinbox.setMinimum(-9999.000000000000000)
         self.y_spinbox.setMaximum(9999.000000000000000)
 
-        self.scale_layout.addWidget(self.y_spinbox, 3, 1, 1, 2)
+        self.gridLayout_4.addWidget(self.y_spinbox, 2, 1, 1, 1)
 
-        self.x_spinbox = KScaledDoubleSpinbox(self.gridLayoutWidget)
+        self.value_spinbox = KNaNDoubleSpinbox(self.gridLayoutWidget)
+        self.value_spinbox.setObjectName(u"value_spinbox")
+        self.value_spinbox.setReadOnly(True)
+        self.value_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.value_spinbox.setKeyboardTracking(False)
+        self.value_spinbox.setDecimals(0)
+        self.value_spinbox.setMinimum(-9999.000000000000000)
+        self.value_spinbox.setMaximum(9999.000000000000000)
+
+        self.gridLayout_4.addWidget(self.value_spinbox, 0, 1, 1, 1)
+
+        self.x_spinbox = KNaNDoubleSpinbox(self.gridLayoutWidget)
         self.x_spinbox.setObjectName(u"x_spinbox")
         self.x_spinbox.setReadOnly(True)
         self.x_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
@@ -176,73 +165,78 @@ class Ui_FITSViewerWindow(object):
         self.x_spinbox.setMinimum(-9999.000000000000000)
         self.x_spinbox.setMaximum(9999.000000000000000)
 
-        self.scale_layout.addWidget(self.x_spinbox, 2, 1, 1, 2)
+        self.gridLayout_4.addWidget(self.x_spinbox, 1, 1, 1, 1)
 
-        self.scale_layout_2 = QGridLayout()
-        self.scale_layout_2.setObjectName(u"scale_layout_2")
-        self.saturation_label = KLabel(self.gridLayoutWidget)
-        self.saturation_label.setObjectName(u"saturation_label")
-        self.saturation_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.wcs_1_label = KLabel(self.gridLayoutWidget)
+        self.wcs_1_label.setObjectName(u"wcs_1_label")
+        self.wcs_1_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.scale_layout_2.addWidget(self.saturation_label, 2, 0, 1, 3, Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
+        self.gridLayout_4.addWidget(self.wcs_1_label, 3, 0, 1, 1)
 
-        self.min_spinbox = KScaledDoubleSpinbox(self.gridLayoutWidget)
-        self.min_spinbox.setObjectName(u"min_spinbox")
-        self.min_spinbox.setKeyboardTracking(False)
-        self.min_spinbox.setDecimals(0)
-        self.min_spinbox.setMinimum(0.000000000000000)
-        self.min_spinbox.setMaximum(100000.000000000000000)
-        self.min_spinbox.setSingleStep(100.000000000000000)
+        self.wcs_1_lineedit = QLineEdit(self.gridLayoutWidget)
+        self.wcs_1_lineedit.setObjectName(u"wcs_1_lineedit")
+        self.wcs_1_lineedit.setReadOnly(True)
 
-        self.scale_layout_2.addWidget(self.min_spinbox, 1, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.wcs_1_lineedit, 3, 1, 1, 1)
 
-        self.max_spinbox = KScaledDoubleSpinbox(self.gridLayoutWidget)
-        self.max_spinbox.setObjectName(u"max_spinbox")
-        self.max_spinbox.setKeyboardTracking(False)
-        self.max_spinbox.setDecimals(0)
-        self.max_spinbox.setMinimum(0.000000000000000)
-        self.max_spinbox.setMaximum(100000.000000000000000)
-        self.max_spinbox.setSingleStep(100.000000000000000)
+        self.x_label = QLabel(self.gridLayoutWidget)
+        self.x_label.setObjectName(u"x_label")
+        self.x_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.scale_layout_2.addWidget(self.max_spinbox, 1, 2, 1, 1, Qt.AlignmentFlag.AlignVCenter)
+        self.gridLayout_4.addWidget(self.x_label, 1, 0, 1, 1)
 
-        self.minmax_label = QLabel(self.gridLayoutWidget)
-        self.minmax_label.setObjectName(u"minmax_label")
+        self.wcs_2_label = KLabel(self.gridLayoutWidget)
+        self.wcs_2_label.setObjectName(u"wcs_2_label")
+        self.wcs_2_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.scale_layout_2.addWidget(self.minmax_label, 1, 1, 1, 1)
+        self.gridLayout_4.addWidget(self.wcs_2_label, 4, 0, 1, 1)
 
-        self.fullscale_button = QToolButton(self.gridLayoutWidget)
-        self.fullscale_button.setObjectName(u"fullscale_button")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.fullscale_button.sizePolicy().hasHeightForWidth())
-        self.fullscale_button.setSizePolicy(sizePolicy1)
-        self.fullscale_button.setCheckable(True)
+        self.wcs_2_lineedit = QLineEdit(self.gridLayoutWidget)
+        self.wcs_2_lineedit.setObjectName(u"wcs_2_lineedit")
+        self.wcs_2_lineedit.setReadOnly(True)
 
-        self.scale_layout_2.addWidget(self.fullscale_button, 0, 2, 1, 1)
+        self.gridLayout_4.addWidget(self.wcs_2_lineedit, 4, 1, 1, 1)
 
-        self.autoscale_button = QToolButton(self.gridLayoutWidget)
-        self.autoscale_button.setObjectName(u"autoscale_button")
-        sizePolicy1.setHeightForWidth(self.autoscale_button.sizePolicy().hasHeightForWidth())
-        self.autoscale_button.setSizePolicy(sizePolicy1)
-        self.autoscale_button.setCheckable(True)
-        self.autoscale_button.setChecked(True)
+        self.wcs_system_label = QLabel(self.gridLayoutWidget)
+        self.wcs_system_label.setObjectName(u"wcs_system_label")
+        self.wcs_system_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.scale_layout_2.addWidget(self.autoscale_button, 0, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.wcs_system_label, 5, 0, 1, 1)
 
-        self.scale_layout_2.setColumnStretch(0, 1)
-        self.scale_layout_2.setColumnStretch(2, 1)
+        self.wcs_system_lineedit = QLineEdit(self.gridLayoutWidget)
+        self.wcs_system_lineedit.setObjectName(u"wcs_system_lineedit")
+        self.wcs_system_lineedit.setReadOnly(True)
 
-        self.scale_layout.addLayout(self.scale_layout_2, 0, 0, 1, 3)
+        self.gridLayout_4.addWidget(self.wcs_system_lineedit, 5, 1, 1, 1)
+
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.frame_slider = QSlider(self.gridLayoutWidget)
+        self.frame_slider.setObjectName(u"frame_slider")
+        self.frame_slider.setMinimum(1)
+        self.frame_slider.setMaximum(1)
+        self.frame_slider.setOrientation(Qt.Orientation.Horizontal)
+
+        self.horizontalLayout.addWidget(self.frame_slider)
+
+        self.frame_spinbox = QSpinBox(self.gridLayoutWidget)
+        self.frame_spinbox.setObjectName(u"frame_spinbox")
+        self.frame_spinbox.setKeyboardTracking(False)
+        self.frame_spinbox.setMinimum(1)
+        self.frame_spinbox.setMaximum(1)
+
+        self.horizontalLayout.addWidget(self.frame_spinbox)
 
 
-        self.side_layout.addLayout(self.scale_layout)
+        self.gridLayout_4.addLayout(self.horizontalLayout, 6, 1, 1, 1)
 
-        self.onsky_checkbox = QCheckBox(self.gridLayoutWidget)
-        self.onsky_checkbox.setObjectName(u"onsky_checkbox")
+        self.relative_coord_checkbox = QCheckBox(self.gridLayoutWidget)
+        self.relative_coord_checkbox.setObjectName(u"relative_coord_checkbox")
 
-        self.side_layout.addWidget(self.onsky_checkbox, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.gridLayout_4.addWidget(self.relative_coord_checkbox, 7, 1, 1, 1)
+
+
+        self.side_layout.addLayout(self.gridLayout_4)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
@@ -285,21 +279,19 @@ class Ui_FITSViewerWindow(object):
         self.centering_widget.setObjectName(u"centering_widget")
         self.gridLayout_3 = QGridLayout(self.centering_widget)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.centering_abort_button = QPushButton(self.centering_widget)
-        self.centering_abort_button.setObjectName(u"centering_abort_button")
+        self.centering_timeout_label = KLabel(self.centering_widget)
+        self.centering_timeout_label.setObjectName(u"centering_timeout_label")
+        self.centering_timeout_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.gridLayout_3.addWidget(self.centering_timeout_label, 2, 2, 1, 1)
+
+        self.centering_validate_button = QPushButton(self.centering_widget)
+        self.centering_validate_button.setObjectName(u"centering_validate_button")
         icon1 = QIcon()
-        icon1.addFile(u":/assets/icons/emblem-error.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.centering_abort_button.setIcon(icon1)
+        icon1.addFile(u":/assets/icons/emblem-checked.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.centering_validate_button.setIcon(icon1)
 
-        self.gridLayout_3.addWidget(self.centering_abort_button, 0, 2, 1, 1)
-
-        self.centering_exit_button = QPushButton(self.centering_widget)
-        self.centering_exit_button.setObjectName(u"centering_exit_button")
-        icon2 = QIcon()
-        icon2.addFile(u":/assets/icons/emblem-checked.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.centering_exit_button.setIcon(icon2)
-
-        self.gridLayout_3.addWidget(self.centering_exit_button, 0, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.centering_validate_button, 0, 1, 1, 1)
 
         self.centering_volume_button = QToolButton(self.centering_widget)
         self.centering_volume_button.setObjectName(u"centering_volume_button")
@@ -311,13 +303,29 @@ class Ui_FITSViewerWindow(object):
         self.centering_reason_label.setObjectName(u"centering_reason_label")
         self.centering_reason_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.gridLayout_3.addWidget(self.centering_reason_label, 1, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.centering_reason_label, 2, 1, 1, 1)
 
-        self.centering_timeout_label = KLabel(self.centering_widget)
-        self.centering_timeout_label.setObjectName(u"centering_timeout_label")
-        self.centering_timeout_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.centering_abort_button = QPushButton(self.centering_widget)
+        self.centering_abort_button.setObjectName(u"centering_abort_button")
+        icon2 = QIcon()
+        icon2.addFile(u":/assets/icons/emblem-error.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.centering_abort_button.setIcon(icon2)
 
-        self.gridLayout_3.addWidget(self.centering_timeout_label, 1, 2, 1, 1)
+        self.gridLayout_3.addWidget(self.centering_abort_button, 0, 2, 1, 1)
+
+        self.centering_spiral_search_button = QPushButton(self.centering_widget)
+        self.centering_spiral_search_button.setObjectName(u"centering_spiral_search_button")
+        icon3 = QIcon()
+        icon3.addFile(u":/assets/icons/spiral-shape.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.centering_spiral_search_button.setIcon(icon3)
+
+        self.gridLayout_3.addWidget(self.centering_spiral_search_button, 1, 1, 1, 1)
+
+        self.centering_star_button = QPushButton(self.centering_widget)
+        self.centering_star_button.setObjectName(u"centering_star_button")
+        self.centering_star_button.setIcon(icon)
+
+        self.gridLayout_3.addWidget(self.centering_star_button, 1, 2, 1, 1)
 
 
         self.gridLayout_2.addWidget(self.centering_widget, 2, 1, 1, 2)
@@ -333,11 +341,11 @@ class Ui_FITSViewerWindow(object):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.keywords_button_widget = QWidget(self.layoutWidget)
         self.keywords_button_widget.setObjectName(u"keywords_button_widget")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.keywords_button_widget.sizePolicy().hasHeightForWidth())
-        self.keywords_button_widget.setSizePolicy(sizePolicy2)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.keywords_button_widget.sizePolicy().hasHeightForWidth())
+        self.keywords_button_widget.setSizePolicy(sizePolicy1)
         self.horizontalLayout_2 = QHBoxLayout(self.keywords_button_widget)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(-1, 0, -1, 0)
@@ -363,11 +371,11 @@ class Ui_FITSViewerWindow(object):
 
         self.keywords_widget = QWidget(self.layoutWidget)
         self.keywords_widget.setObjectName(u"keywords_widget")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Ignored)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.keywords_widget.sizePolicy().hasHeightForWidth())
-        self.keywords_widget.setSizePolicy(sizePolicy3)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Ignored)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.keywords_widget.sizePolicy().hasHeightForWidth())
+        self.keywords_widget.setSizePolicy(sizePolicy2)
         self.verticalLayout_2 = QVBoxLayout(self.keywords_widget)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.keywords_filter_layout = QHBoxLayout()
@@ -410,7 +418,7 @@ class Ui_FITSViewerWindow(object):
         FITSViewerWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(FITSViewerWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1554, 30))
+        self.menubar.setGeometry(QRect(0, 0, 1534, 23))
         self.colormap_menu = QMenu(self.menubar)
         self.colormap_menu.setObjectName(u"colormap_menu")
         self.scale_menu = QMenu(self.menubar)
@@ -443,27 +451,29 @@ class Ui_FITSViewerWindow(object):
         self.enter_manual_centering_action.setText(QCoreApplication.translate("FITSViewerWindow", u"&Enter manual centering", None))
         self.zoom_title_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Zoom - Science Camera", None))
         self.title_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Science Camera", None))
-        self.y_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Y", None))
-        self.x_label.setText(QCoreApplication.translate("FITSViewerWindow", u"X", None))
-        self.zoom_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Zoom", None))
-        self.frame_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Frame", None))
-        self.zoom_spinbox.setSuffix(QCoreApplication.translate("FITSViewerWindow", u" x", None))
-        self.zoom_spinbox.setPrefix("")
         self.saturation_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Saturation {saturation:.0f} %", None))
-        self.minmax_label.setText(QCoreApplication.translate("FITSViewerWindow", u"\u2013", None))
-        self.fullscale_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Fullscale", None))
-        self.autoscale_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Autoscale", None))
-        self.onsky_checkbox.setText(QCoreApplication.translate("FITSViewerWindow", u"On-Sky Units", None))
+        self.y_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Y", None))
+        self.frame_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Frame", None))
+        self.value_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Value", None))
+        self.y_spinbox.setSuffix(QCoreApplication.translate("FITSViewerWindow", u" px", None))
+        self.x_spinbox.setSuffix(QCoreApplication.translate("FITSViewerWindow", u" px", None))
+        self.wcs_1_label.setText(QCoreApplication.translate("FITSViewerWindow", u"{ctype1}", None))
+        self.x_label.setText(QCoreApplication.translate("FITSViewerWindow", u"X", None))
+        self.wcs_2_label.setText(QCoreApplication.translate("FITSViewerWindow", u"{ctype2}", None))
+        self.wcs_system_label.setText(QCoreApplication.translate("FITSViewerWindow", u"System", None))
+        self.relative_coord_checkbox.setText(QCoreApplication.translate("FITSViewerWindow", u"Relative coordinates", None))
         self.timestamp_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Timestamp: {timestamp}", None))
         self.star_x_label.setText(QCoreApplication.translate("FITSViewerWindow", u"X: {x:.{axis_precision}f}{axis_unit}", None))
         self.star_y_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Y: {y:.{axis_precision}f}{axis_unit}", None))
         self.star_fwhm_label.setText(QCoreApplication.translate("FITSViewerWindow", u"FWHM: {fwhm:.{axis_precision}f}{axis_unit}", None))
         self.star_peak_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Peak: {peak:.{data_precision}f}{data_unit}", None))
-        self.centering_abort_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Abort observation", None))
-        self.centering_exit_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Validate manual centering", None))
+        self.centering_timeout_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Time left: {timeout:.0f} s", None))
+        self.centering_validate_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Validate manual centering", None))
         self.centering_volume_button.setText("")
         self.centering_reason_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Reason: {reason}", None))
-        self.centering_timeout_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Time left: {timeout:.0f} s", None))
+        self.centering_abort_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Abort", None))
+        self.centering_spiral_search_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Spiral search", None))
+        self.centering_star_button.setText(QCoreApplication.translate("FITSViewerWindow", u"Automatic star centering", None))
         self.keywords_toolbutton.setText(QCoreApplication.translate("FITSViewerWindow", u"Keywords", None))
         self.keywords_filter_lineedit.setPlaceholderText(QCoreApplication.translate("FITSViewerWindow", u"Filter ...", None))
         self.keywords_columns_combobox.setItemText(0, QCoreApplication.translate("FITSViewerWindow", u"All columns", None))

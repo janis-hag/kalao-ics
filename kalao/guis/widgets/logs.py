@@ -9,17 +9,15 @@ from PySide6.QtWidgets import QTreeWidgetItem, QWidget
 
 from compiled.ui_logs import Ui_LogsWidget
 
-from kalao import database
-from kalao.utils import kstring
+from kalao.common import database_definitions, kstring
+from kalao.common.dataclasses import LogEntry
+from kalao.common.enums import LogLevel
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import ascii2html
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import BackendActionMixin
 from kalao.guis.utils.widgets import KWidget
-
-from kalao.definitions.dataclasses import LogEntry
-from kalao.definitions.enums import LogLevel
 
 import config
 
@@ -68,6 +66,9 @@ class LogsWidget(KWidget, BackendActionMixin):
               }}
             }}
             """)
+
+        self.ui.find_widget.setup(self.ui.logs_textedit, start_from='end',
+                                  allow_wrap=False)
 
         #####
 
@@ -131,7 +132,7 @@ class LogsWidget(KWidget, BackendActionMixin):
         logs.addChild(child)
         self.logs_items['<none>'] = child
 
-        for key in sorted(database.definitions['logs']['metadata'].keys()):
+        for key in sorted(database_definitions.logs.keys()):
             key = kstring.get_log_name(key)
             child = QTreeWidgetItem([key])
             child.setCheckState(0, Qt.CheckState.Checked)
@@ -169,7 +170,8 @@ class LogsWidget(KWidget, BackendActionMixin):
 
     def get_logs_new(self) -> None:
         entries = self.action_send([], self.backend.logs,
-                                   cursor=self.last_cursor)
+                                   cursor=self.last_cursor,
+                                   inhibit_cursor=True)
 
         for entry in entries:
             self.add_log_entry(entry)

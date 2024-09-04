@@ -7,7 +7,7 @@ from astropy.io import fits
 
 import matplotlib.pyplot as plt
 
-from kalao.utils import kmath, ktools, zernike
+from kalao.common import kmath, ktools, zernike
 
 import config
 

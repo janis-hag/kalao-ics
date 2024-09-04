@@ -4,7 +4,7 @@ import numpy as np
 
 from PySide6.QtGui import QImage
 
-from kalao.utils.image import AbstractScale, LinearScale
+from kalao.common.image import AbstractScale, LinearScale
 
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.colormaps import Colormap

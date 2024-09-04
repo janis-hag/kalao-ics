@@ -9,10 +9,9 @@ from PySide6.QtCore import (QEventLoop, QObject, QRunnable, QSignalBlocker,
 from PySide6.QtGui import QCursor, QGuiApplication, Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox, QMessageBox, QWidget
 
-from kalao.utils.image import AbstractCut
-from kalao.utils.rprint import rprint
+from kalao.common.image import AbstractCut
+from kalao.common.rprint import rprint
 
-from kalao.guis.utils.string_formatter import KalAOFormatter
 from kalao.guis.utils.widgets import (KImageViewer, KMessageBox,
                                       KScaledDoubleSpinbox)
 
@@ -165,31 +164,6 @@ class MinMaxMixin:
         return img_min, img_max
 
 
-class SceneHoverMixin:
-    hovered = Signal(str)
-    formatter = KalAOFormatter()
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
-    def hover_xyv_to_str(self, x: float, y: float, v: float) -> None:
-        if not np.isnan(x) and not np.isnan(y):
-            x = int(x)
-            y = int(y)
-
-            string = self.formatter.format(
-                'X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, V: {v:.{data_precision}f}{data_unit}',
-                x=(x - self.data_center_x) * self.axis_scaling,
-                y=(y - self.data_center_y) * self.axis_scaling,
-                v=v * self.data_scaling, axis_precision=self.axis_precision,
-                axis_unit=self.axis_unit, data_precision=self.data_precision,
-                data_unit=self.data_unit)
-
-            self.hovered.emit(string)
-        else:
-            self.hovered.emit('')
-
-
 class BackendWorker(QObject, QRunnable):
     done = Signal()
     exception = None
@@ -219,8 +193,10 @@ class BackendActionMixin:
         self.threadpool = QThreadPool()
 
     def action_send(self, widget_list: QWidget | list[QWidget], func: Callable,
-                    **kwargs: Any) -> Any:
-        QGuiApplication.setOverrideCursor(QCursor(Qt.CursorShape.BusyCursor))
+                    inhibit_cursor=False, **kwargs: Any) -> Any:
+        if not inhibit_cursor:
+            QGuiApplication.setOverrideCursor(
+                QCursor(Qt.CursorShape.BusyCursor))
 
         if not isinstance(widget_list, list):
             widget_list = [widget_list]
@@ -236,7 +212,8 @@ class BackendActionMixin:
         self.threadpool.start(worker)
         loop.exec()
 
-        QGuiApplication.restoreOverrideCursor()
+        if not inhibit_cursor:
+            QGuiApplication.restoreOverrideCursor()
 
         for widget in widget_list:
             widget.setEnabledStack(True, f'action_{func.__name__}')

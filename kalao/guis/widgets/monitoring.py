@@ -10,17 +10,14 @@ from PySide6.QtWidgets import (QGridLayout, QGroupBox, QLabel, QLineEdit,
 
 from compiled.ui_monitoring import Ui_MonitoringWidget
 
-from kalao import database
-from kalao.timers import monitoring
-from kalao.utils import kstring
+from kalao.common import database_definitions, kstring
+from kalao.common.enums import AlarmLevel
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import BackendDataMixin
 from kalao.guis.utils.string_formatter import KalAOFormatter
 from kalao.guis.utils.widgets import KWidget
-
-from kalao.definitions.enums import AlarmLevel
 
 import config
 
@@ -53,8 +50,7 @@ class MonitoringWidget(KWidget, BackendDataMixin):
         self.groupboxes = {}
         self.lineedits = {}
 
-        for key, metadata in database.definitions['monitoring'][
-                'metadata'].items():
+        for key, metadata in database_definitions.monitoring.items():
             self.add_item('monitoring', key, metadata)
 
         column_length = np.zeros(self.ui.data_layout.count())
@@ -177,7 +173,8 @@ class MonitoringWidget(KWidget, BackendDataMixin):
                     f'{timestamp_text} (outdated){lineedit.ranges}')
                 outdated += 1
             elif lineedit.checked:
-                alarm = monitoring.check_alarms(lineedit.key, lineedit.value)
+                alarm = database_definitions.check_alarm(
+                    lineedit.key, lineedit.value)
 
                 if alarm.level == AlarmLevel.ALARM:
                     lineedit.setStyleSheet(

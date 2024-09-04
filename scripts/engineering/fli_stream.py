@@ -13,9 +13,9 @@ from signal import SIGINT, signal
 from sys import exit
 from types import FrameType
 
-from kalao.hardware import camera
+from kalao.common.enums import CameraServerStatus
 
-from kalao.definitions.enums import CameraServerStatus
+from kalao.ics.hardware import camera
 
 
 def sig_handler(signum: int, frame: FrameType | None) -> None:

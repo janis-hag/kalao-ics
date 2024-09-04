@@ -1,0 +1,33 @@
+# Requirements for running the ICS
+
+# Install ImageStreamIO, CacaoProcessTools and pyMilk from sources (see wiki)
+
+# Basics
+requests
+
+# Timers
+schedule
+
+# Tmux
+libtmux
+
+# Beckhoff
+opcua
+
+# Thorlabs FW
+microscope
+
+# RTC sensors
+PySensors
+
+# To interact with systemd and logind
+systemd-python
+dasbus
+PyGObject
+
+# DBs
+pymongo
+redis[hiredis]
+
+# HTTP servers / REST APIs
+Flask

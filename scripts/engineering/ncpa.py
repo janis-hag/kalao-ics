@@ -20,12 +20,12 @@ import numpy as np
 
 from astropy.io import fits
 
-from kalao.cacao import aocontrol, toolbox
-from kalao.hardware import camera, filterwheel, laser, wfs
-from kalao.utils import kmath, ktime, starfinder, zernike
-from kalao.utils.ansi_escape_codes import ANSIEscapeCodes as ANSI
+from kalao.common import kmath, ktime, starfinder, zernike
+from kalao.common.ansi_escape_codes import ANSIEscapeCodes as ANSI
+from kalao.common.enums import CameraServerStatus, LoopStatus
 
-from kalao.definitions.enums import CameraServerStatus, LoopStatus
+from kalao.ics.cacao import aocontrol, toolbox
+from kalao.ics.hardware import camera, filterwheel, laser, wfs
 
 import config
 

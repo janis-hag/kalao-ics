@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBo
     QVBoxLayout, QWidget)
 
 from kalao.guis.utils.widgets import (KChartView, KDraggableChartView)
+from . import rc_assets
 
 class Ui_LoopControlsWidget(object):
     def setupUi(self, LoopControlsWidget):
@@ -90,6 +91,9 @@ class Ui_LoopControlsWidget(object):
 
         self.dmloop_zero_button = QPushButton(self.dmloop_groupbox)
         self.dmloop_zero_button.setObjectName(u"dmloop_zero_button")
+        icon = QIcon()
+        icon.addFile(u":/assets/icons/system-reboot.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.dmloop_zero_button.setIcon(icon)
 
         self.formLayout_3.setWidget(4, QFormLayout.SpanningRole, self.dmloop_zero_button)
 
@@ -155,6 +159,7 @@ class Ui_LoopControlsWidget(object):
 
         self.ttmloop_zero_button = QPushButton(self.ttmloop_groupbox)
         self.ttmloop_zero_button.setObjectName(u"ttmloop_zero_button")
+        self.ttmloop_zero_button.setIcon(icon)
 
         self.formLayout_4.setWidget(4, QFormLayout.SpanningRole, self.ttmloop_zero_button)
 
@@ -224,6 +229,14 @@ class Ui_LoopControlsWidget(object):
         self.wfs_algorithm_combobox.setEnabled(False)
 
         self.formLayout_2.setWidget(4, QFormLayout.FieldRole, self.wfs_algorithm_combobox)
+
+        self.wfs_emgainoff_button = QPushButton(self.wfs_groupbox)
+        self.wfs_emgainoff_button.setObjectName(u"wfs_emgainoff_button")
+        icon1 = QIcon()
+        icon1.addFile(u":/assets/icons/system-shutdown.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.wfs_emgainoff_button.setIcon(icon1)
+
+        self.formLayout_2.setWidget(5, QFormLayout.SpanningRole, self.wfs_emgainoff_button)
 
 
         self.controls_layout.addWidget(self.wfs_groupbox)
@@ -409,6 +422,7 @@ class Ui_LoopControlsWidget(object):
         self.wfs_autogain_checkbox.setText("")
         self.wfs_autogain_setting_label.setText(QCoreApplication.translate("LoopControlsWidget", u"Auto-gain setting", None))
         self.wfs_algorithm_label.setText(QCoreApplication.translate("LoopControlsWidget", u"Algorithm", None))
+        self.wfs_emgainoff_button.setText(QCoreApplication.translate("LoopControlsWidget", u"EM Gain && Auto-gain off", None))
         self.dm_groupbox.setTitle(QCoreApplication.translate("LoopControlsWidget", u"Deformable Mirror (Boston Micromachines Corporation)", None))
         self.dm_maxstroke_label.setText(QCoreApplication.translate("LoopControlsWidget", u"Max stroke", None))
         self.dm_maxstroke_spinbox.setSuffix(QCoreApplication.translate("LoopControlsWidget", u" %", None))

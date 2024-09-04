@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (QDoubleSpinBox, QFileDialog, QLabel,
 
 from compiled.ui_dm_direct_control import Ui_DMDirectControlWindow
 
-from kalao.utils import ktools, zernike
+from kalao.common import ktools, zernike
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.colormaps import Colormap, CoolWarm

@@ -2,31 +2,25 @@ from typing import Any
 
 import numpy as np
 
+from PySide6.QtCore import Signal
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QWidget
 
 from compiled.ui_flux import Ui_FluxWidget
 
-from kalao.utils import ktools
+from kalao.common import ktools
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color
-from kalao.guis.utils.mixins import (BackendDataMixin, MinMaxMixin,
-                                     SceneHoverMixin)
+from kalao.guis.utils.mixins import BackendDataMixin
 from kalao.guis.utils.widgets import KWidget
 
 import config
 
 
-class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
+class FluxWidget(KWidget, BackendDataMixin):
     image_info = config.Images.shwfs_flux
-
-    data_unit = ' ADU'
-    data_precision = 0
-
-    axis_unit = ' px'
-    axis_precision = 0
 
     saturation = np.nan
     flux_avg = np.nan
@@ -34,6 +28,8 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     img = None
     masked = False
+
+    hovered = Signal(str)
 
     def __init__(self, backend: AbstractBackend,
                  parent: QWidget = None) -> None:
@@ -48,12 +44,17 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.resize(600, 400)
 
-        self.init_minmax(self.ui.flux_view)
+        self.ui.minmax_widget.setup(self.ui.flux_view, ' ADU', 0, 1, -999999,
+                                    999999, self.image_info['min'],
+                                    self.image_info['max'])
+        self.ui.flux_view.set_data_md(' ADU', 0)
+        self.ui.flux_view.set_axis_md('', 0)
 
         self.update_labels()
         self.change_colormap(Qt.CheckState.Unchecked)
 
-        self.ui.flux_view.hovered.connect(self.hover_xyv_to_str)
+        self.ui.flux_view.hovered_str.connect(lambda string: self.hovered.emit(
+            string))
         backend.streams_all_updated.connect(self.streams_all_updated)
 
     def streams_all_updated(self, data: dict[str, Any]) -> None:
@@ -85,7 +86,7 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         else:
             img = self.img
 
-        img_min, img_max = self.compute_min_max(img)
+        img_min, img_max = self.ui.minmax_widget.compute_min_max(img)
 
         self.saturation = img.max() / self.image_info['max']
 
@@ -93,10 +94,11 @@ class FluxWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
     def update_labels(self) -> None:
         self.ui.flux_avg_label.updateText(
-            flux_avg=self.flux_avg * self.data_scaling, unit=self.data_unit)
+            flux_avg=self.flux_avg * self.ui.flux_view.data_scaling,
+            unit=self.ui.flux_view.data_unit)
         self.ui.flux_brightest_label.updateText(
-            flux_brightest=self.flux_brightest * self.data_scaling,
-            unit=self.data_unit)
+            flux_brightest=self.flux_brightest *
+            self.ui.flux_view.data_scaling, unit=self.ui.flux_view.data_unit)
 
         if self.saturation >= 1:
             self.ui.saturation_label.setText('Saturated !')

@@ -15,58 +15,28 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QHBoxLayout, QLineEdit,
-    QSizePolicy, QTextBrowser, QToolButton, QVBoxLayout,
+from PySide6.QtWidgets import (QApplication, QSizePolicy, QTextBrowser, QVBoxLayout,
     QWidget)
+
+from kalao.guis.utils.parts import FindPart
 
 class Ui_HelpWidget(object):
     def setupUi(self, HelpWidget):
         if not HelpWidget.objectName():
             HelpWidget.setObjectName(u"HelpWidget")
-        HelpWidget.resize(886, 640)
+        HelpWidget.resize(886, 725)
         self.verticalLayout = QVBoxLayout(HelpWidget)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.textedit = QTextBrowser(HelpWidget)
-        self.textedit.setObjectName(u"textedit")
-        self.textedit.setOpenExternalLinks(True)
+        self.help_textedit = QTextBrowser(HelpWidget)
+        self.help_textedit.setObjectName(u"help_textedit")
+        self.help_textedit.setOpenExternalLinks(True)
 
-        self.verticalLayout.addWidget(self.textedit)
+        self.verticalLayout.addWidget(self.help_textedit)
 
-        self.searchlayout = QHBoxLayout()
-        self.searchlayout.setObjectName(u"searchlayout")
-        self.search_lineedit = QLineEdit(HelpWidget)
-        self.search_lineedit.setObjectName(u"search_lineedit")
-        self.search_lineedit.setClearButtonEnabled(True)
+        self.find_widget = FindPart(HelpWidget)
+        self.find_widget.setObjectName(u"find_widget")
 
-        self.searchlayout.addWidget(self.search_lineedit)
-
-        self.next_button = QToolButton(HelpWidget)
-        self.next_button.setObjectName(u"next_button")
-        self.next_button.setEnabled(False)
-        self.next_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
-        self.next_button.setArrowType(Qt.ArrowType.DownArrow)
-
-        self.searchlayout.addWidget(self.next_button)
-
-        self.previous_button = QToolButton(HelpWidget)
-        self.previous_button.setObjectName(u"previous_button")
-        self.previous_button.setEnabled(False)
-        self.previous_button.setArrowType(Qt.ArrowType.UpArrow)
-
-        self.searchlayout.addWidget(self.previous_button)
-
-        self.casesensitive_checkbox = QCheckBox(HelpWidget)
-        self.casesensitive_checkbox.setObjectName(u"casesensitive_checkbox")
-
-        self.searchlayout.addWidget(self.casesensitive_checkbox)
-
-        self.wholewords_checkbox = QCheckBox(HelpWidget)
-        self.wholewords_checkbox.setObjectName(u"wholewords_checkbox")
-
-        self.searchlayout.addWidget(self.wholewords_checkbox)
-
-
-        self.verticalLayout.addLayout(self.searchlayout)
+        self.verticalLayout.addWidget(self.find_widget)
 
 
         self.retranslateUi(HelpWidget)
@@ -76,10 +46,5 @@ class Ui_HelpWidget(object):
 
     def retranslateUi(self, HelpWidget):
         HelpWidget.setWindowTitle(QCoreApplication.translate("HelpWidget", u"Help - KalAO", None))
-        self.search_lineedit.setPlaceholderText(QCoreApplication.translate("HelpWidget", u"Find ...", None))
-        self.next_button.setText(QCoreApplication.translate("HelpWidget", u"Next", None))
-        self.previous_button.setText(QCoreApplication.translate("HelpWidget", u"Previous", None))
-        self.casesensitive_checkbox.setText(QCoreApplication.translate("HelpWidget", u"Case sensitive", None))
-        self.wholewords_checkbox.setText(QCoreApplication.translate("HelpWidget", u"Whole words", None))
     # retranslateUi
 

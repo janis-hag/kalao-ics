@@ -11,7 +11,7 @@ nuvu_raw_to_stream.py is part of the KalAO Instrument Control Software
 
 import numpy as np
 
-from kalao.cacao import toolbox
+from kalao.ics.cacao import toolbox
 
 import config
 

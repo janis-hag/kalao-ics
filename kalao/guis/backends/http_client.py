@@ -6,8 +6,8 @@ from PySide6.QtCore import QByteArray, QEventLoop, QUrl
 from PySide6.QtNetwork import (QNetworkAccessManager, QNetworkReply,
                                QNetworkRequest)
 
-from kalao.utils.json import KalAOJSONDecoder, KalAOJSONEncoder
-from kalao.utils.rprint import rprint
+from kalao.common.json import KalAOJSONDecoder, KalAOJSONEncoder
+from kalao.common.rprint import rprint
 
 from kalao.guis.backends.abstract import AbstractBackend, name_to_url
 
@@ -23,11 +23,14 @@ class MainBackend(AbstractBackend):
 
         for key, item in sorted(vars(AbstractBackend).items()):
             if callable(item) and not key.startswith('_') and not key.endswith(
-                    '_updated'):
+                    '_updated') and key != 'name':
                 func = functools.partial(self._forward, key)
                 func.__name__ = key
 
                 self.__dict__[key] = func
+
+    def name(self) -> str:
+        return 'remote'
 
     def _forward(self, path: str, **kwargs: Any) -> Any:
         url = name_to_url(path)
@@ -36,7 +39,10 @@ class MainBackend(AbstractBackend):
         request.setUrl(
             QUrl(f'http://{config.GUI.http_host}:{config.GUI.http_port}{url}'))
         request.setRawHeader(b'Accept', config.GUI.http_dataformat.encode())
-        request.setTransferTimeout(int(config.GUI.http_request_timeout * 1000))
+
+        if path == 'version':
+            request.setTransferTimeout(
+                int(config.GUI.http_request_timeout * 1000))
 
         loop = QEventLoop()
         manager = QNetworkAccessManager()

@@ -5,7 +5,7 @@ import numpy as np
 
 from astropy.io import fits
 
-from kalao.utils import ktools
+from kalao.common import ktools
 
 import config
 

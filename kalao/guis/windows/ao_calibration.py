@@ -4,7 +4,7 @@ from typing import Any
 import numpy as np
 
 from PySide6.QtCharts import QScatterSeries, QValueAxis
-from PySide6.QtCore import QPointF, QSignalBlocker, QTimer, Slot
+from PySide6.QtCore import QPointF, QSignalBlocker, QTimer, Signal, Slot
 from PySide6.QtGui import QBrush, QFont, QIcon, QPen, Qt
 from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QWidget
 
@@ -14,22 +14,12 @@ from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import ascii2html, colormaps
 from kalao.guis.utils.colormaps import CoolWarmTransparent
 from kalao.guis.utils.definitions import Color
-from kalao.guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
-                                     SceneHoverMixin)
+from kalao.guis.utils.mixins import BackendActionMixin, BackendDataMixin
 from kalao.guis.utils.widgets import KImageViewer, KMainWindow, KMessageBox
 
 
-class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
-                          BackendActionMixin):
-    data_unit = ''
-    data_scaling = 1
-    data_precision = 2
-    data_center_x = 0
-    data_center_y = 0
-
-    axis_unit = ''
-    axis_scaling = 1
-    axis_precision = 0
+class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
+    hovered = Signal(str)
 
     def __init__(self, backend: AbstractBackend, conf: str, loop: int,
                  wfs_shape: tuple[int, ...], dm_shape: tuple[int, ...],
@@ -88,16 +78,70 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
             self.ui.calib_combobox.addItem('Loaded')
             self.ui.calib_combobox.addItem('Saved')
 
-        for key in dir(self.ui):
-            attr = getattr(self.ui, key)
+        if loop == 1:
+            for view in [
+                    self.ui.wfsmap_view, self.ui.wfsmask_view,
+                    self.ui.dmmap_view, self.ui.dmmask_view
+            ]:
+                view.set_data_md('', 2)
+                view.set_axis_md('', 0)
 
-            if isinstance(attr, KImageViewer):
-                attr.hovered.connect(self.hover_xyv_to_str)
+                view.hovered_str.connect(lambda string: self.hovered.emit(
+                    string))
 
-                if key.startswith('modesWFS') or key.startswith(
-                        'DMmodes') or key.startswith(
-                            'wfsref') or key.startswith('wfsrefc'):
-                    attr.updateColormap(colormaps.CoolWarm())
+            for view in [
+                    self.ui.modesWFS_view, self.ui.wfsrefc_view,
+                    self.ui.wfsref_view
+            ]:
+                view.set_data_md(' px', 2)
+                view.set_axis_md('', 0)
+
+                view.hovered_str.connect(lambda string: self.hovered.emit(
+                    string))
+
+                view.updateColormap(colormaps.CoolWarm())
+
+            for view in [self.ui.DMmodes_view]:
+                view.set_data_md(' µm', 2)
+                view.set_axis_md('', 0)
+
+                view.hovered_str.connect(lambda string: self.hovered.emit(
+                    string))
+
+                view.updateColormap(colormaps.CoolWarm())
+        elif loop == 2:
+            for view in [
+                    self.ui.wfsmap_view, self.ui.wfsmask_view,
+                    self.ui.dmmap_view, self.ui.dmmask_view
+            ]:
+                view.set_data_md('', 2)
+                view.set_axis_md('', 0)
+
+                view.hovered_str.connect(lambda string: self.hovered.emit(
+                    string))
+
+            for view in [
+                    self.ui.modesWFS_view, self.ui.wfsrefc_view,
+                    self.ui.wfsref_view
+            ]:
+                view.set_data_md(' µm', 2)
+                view.set_axis_md('', 0)
+
+                view.hovered_str.connect(lambda string: self.hovered.emit(
+                    string))
+
+                view.updateColormap(colormaps.CoolWarm())
+
+            for view in [self.ui.DMmodes_view]:
+                view.set_data_md(' mrad', 2)
+                view.set_axis_md('', 0)
+
+                view.hovered_str.connect(lambda string: self.hovered.emit(
+                    string))
+
+                view.updateColormap(colormaps.CoolWarm())
+        else:
+            raise Exception(f'Unknown loop number {loop}')
 
         self.hovered.connect(self.info_to_statusbar)
 
@@ -140,7 +184,20 @@ class AOCalibrationWindow(KMainWindow, SceneHoverMixin, BackendDataMixin,
 
         ### Zonal Response Matrix tab
 
-        self.ui.zRM_view.updateColormap(colormaps.CoolWarm())
+        if loop == 1:
+            self.ui.zRM_view.set_data_md(' px', 2)
+            self.ui.zRM_view.set_axis_md('', 0)
+            self.ui.zRM_view.hovered_str.connect(lambda string: self.hovered.
+                                                 emit(string))
+            self.ui.zRM_view.updateColormap(colormaps.CoolWarm())
+        elif loop == 2:
+            self.ui.zRM_view.set_data_md(' µm', 2)
+            self.ui.zRM_view.set_axis_md('', 0)
+            self.ui.zRM_view.hovered_str.connect(lambda string: self.hovered.
+                                                 emit(string))
+            self.ui.zRM_view.updateColormap(colormaps.CoolWarm())
+        else:
+            raise Exception(f'Unknown loop number {loop}')
 
         self.zRM_timer = QTimer(self)
         self.zRM_timer.setInterval(self.zRM_timer_interval)

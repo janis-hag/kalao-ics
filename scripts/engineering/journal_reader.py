@@ -1,10 +1,10 @@
 import argparse
 import select
 
-from kalao import logs
-from kalao.utils.ansi_escape_codes import ANSIEscapeCodes as ANSI
+from kalao.common.ansi_escape_codes import ANSIEscapeCodes as ANSI
+from kalao.common.enums import LogLevel
 
-from kalao.definitions.enums import LogLevel
+from kalao.ics import logs
 
 
 def run(args):

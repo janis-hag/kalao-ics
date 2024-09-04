@@ -1,7 +1,8 @@
 from opcua import Client, ua
 
-from kalao.hardware import plc
-from kalao.utils.rprint import rprint
+from kalao.common.rprint import rprint
+
+from kalao.ics.hardware import plc
 
 
 @plc.autoconnect

@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QAbstractSpinBox, QDateTimeEdit, QDoubleSpinBox,
                                QSizePolicy, QSpacerItem,
                                QStyleOptionGraphicsItem, QWidget)
 
-from kalao.utils.image import AbstractScale, LinearScale
+from kalao.common.image import AbstractScale, LinearScale
 
 from kalao.guis.utils import colormaps, data_conversion
 from kalao.guis.utils.colormaps import Colormap
@@ -389,7 +389,10 @@ class KImageViewer(QGraphicsView):
     neindicator_visible = False
     neindicator_parallactic_angle = None
 
+    formatter = KalAOFormatter()
+
     hovered = Signal(float, float, float)
+    hovered_str = Signal(str)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -423,6 +426,20 @@ class KImageViewer(QGraphicsView):
         # # policy = QSizePolicy()
         # policy.setHeightForWidth(True)
         # self.setSizePolicy(policy)
+
+    def set_data_md(self, unit, precision, scaling=1):
+        self.data_unit = unit
+        self.data_precision = precision
+        self.data_scaling = scaling
+
+    def set_axis_md(self, unit, precision, scaling=1, x_offset=0, y_offset=0):
+        self.axis_unit = unit
+        self.axis_precision = precision
+        self.axis_scaling = scaling
+        self.axis_x_offset = x_offset
+        self.axis_y_offset = y_offset
+
+        self._draw_axes()
 
     # def hasHeightForWidth(self):
     #     return True
@@ -466,11 +483,8 @@ class KImageViewer(QGraphicsView):
         self.setTransform(QTransform(xratio, 0, 0, yratio, 0, 0))
         self.centerOn(rect.center())
 
-        if self.tick_visible:
-            self._draw_axes()
-
-        if self.neindicator_visible:
-            self._draw_neindicator()
+        self._draw_axes()
+        self._draw_neindicator()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
@@ -568,16 +582,34 @@ class KImageViewer(QGraphicsView):
             if 0 <= y_img < self.img.shape[0] and 0 <= x_img < self.img.shape[
                     1]:
                 self.setCursor(Qt.CursorShape.CrossCursor)
-                if np.ma.is_masked(self.img):
-                    self.hovered.emit(x, y, self.img.filled()[y_img, x_img])
+
+                if isinstance(self.img, np.ma.masked_array):
+                    v = self.img.filled()[y_img, x_img]
                 else:
-                    self.hovered.emit(x, y, self.img[y_img, x_img])
+                    v = self.img[y_img, x_img]
+
+                self.hovered.emit(x, y, v)
+                self.hovered_str.emit(self.xyv_to_str(x, y, v))
             else:
                 self.unsetCursor()
                 self.hovered.emit(np.nan, np.nan, np.nan)
+                self.hovered_str.emit('')
         else:
             self.unsetCursor()
             self.hovered.emit(np.nan, np.nan, np.nan)
+            self.hovered_str.emit('')
+
+    def xyv_to_str(self, x, y, v):
+        x = int(x)
+        y = int(y)
+
+        return self.formatter.format(
+            'X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, V: {v:.{data_precision}f}{data_unit}',
+            x=(x - self.axis_x_offset) * self.axis_scaling,
+            y=(y - self.axis_y_offset) * self.axis_scaling,
+            v=v * self.data_scaling, axis_precision=self.axis_precision,
+            axis_unit=self.axis_unit, data_precision=self.data_precision,
+            data_unit=self.data_unit)
 
     def setTickParams(self, spacing: float, length: float, text_spacing: float,
                       fontsize: int, ticks_x: list[float],
@@ -593,6 +625,9 @@ class KImageViewer(QGraphicsView):
         self._draw_axes()
 
     def _draw_axes(self) -> None:
+        if not self.tick_visible:
+            return
+
         for item in self.axes_group.childItems():
             self._scene.removeItem(item)
             self.axes_group.removeFromGroup(item)
@@ -646,7 +681,7 @@ class KImageViewer(QGraphicsView):
         self._scene.addItem(line)
         self.axes_group.addToGroup(line)
 
-        for y, label in ticks_y:
+        for y in ticks_y:
             line = KNoAALine(tick_start, y, tick_end, y)
             line.setPen(pen)
             self._scene.addItem(line)
@@ -670,7 +705,7 @@ class KImageViewer(QGraphicsView):
         self._scene.addItem(line)
         self.axes_group.addToGroup(line)
 
-        for x, label in ticks_x:
+        for x in ticks_x:
             line = KNoAALine(x, tick_start, x, tick_end)
             line.setPen(pen)
             self._scene.addItem(line)
@@ -678,7 +713,9 @@ class KImageViewer(QGraphicsView):
 
     def _draw_vertical_tick_labels(self, text_start: float, font: QFont,
                                    ticks_y: list[float]) -> None:
-        for y, label in ticks_y:
+        for y in ticks_y:
+            label = f'{(y - self.axis_y_offset) * self.axis_scaling:.{self.axis_precision}f}'
+
             text_item = OffsetedTextItem(label)
             text_item.setFont(font)
             text_item.setPos(text_start, y)
@@ -705,7 +742,9 @@ class KImageViewer(QGraphicsView):
 
     def _draw_horizontal_tick_labels(self, text_start: float, font: QFont,
                                      ticks_x: list[float]) -> None:
-        for x, label in ticks_x:
+        for x in ticks_x:
+            label = f'{(x - self.axis_x_offset) * self.axis_scaling:.{self.axis_precision}f}'
+
             text_item = OffsetedTextItem(label)
             text_item.setFont(font)
             text_item.setPos(x, text_start)
@@ -735,6 +774,9 @@ class KImageViewer(QGraphicsView):
         self._draw_neindicator()
 
     def _draw_neindicator(self) -> None:
+        if not self.neindicator_visible:
+            return
+
         for item in self.neindicator_group.childItems():
             self._scene.removeItem(item)
             self.neindicator_group.removeFromGroup(item)
@@ -742,50 +784,51 @@ class KImageViewer(QGraphicsView):
         # Reset group position to avoid drifting
         self.neindicator_group.setPos(0, 0)
 
-        pen = QPen(Color.GREEN, 1.25, Qt.PenStyle.SolidLine,
+        pen = QPen(Color.PURPLE, 2, Qt.PenStyle.SolidLine,
                    Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         pen.setCosmetic(True)
 
-        brush = QBrush(Color.GREEN, Qt.BrushStyle.SolidPattern)
+        brush = QBrush(Color.PURPLE, Qt.BrushStyle.SolidPattern)
 
         font = QFont()
-        font.setPixelSize(10)
+        font.setPixelSize(20)
         font.setBold(True)
 
         angle = self.neindicator_parallactic_angle * np.pi / 180
-        length = 15 / self.scaling
-        arrow_size = 5 / self.scaling
-        margin = 5 / self.scaling
+        length = 45 / self.scaling
+        arrow_size = 15 / self.scaling
+        margin = 10 / self.scaling
 
         center_point = QPointF(0, 0)
 
-        north_point = center_point + QPointF(-np.sin(angle) * length,
-                                             -np.cos(angle) * length)
+        north_point = center_point + QPointF(
+            np.cos(angle) * length,
+            np.sin(angle) * length)
         north_line = QLineF(center_point, north_point)
 
-        east_point = center_point + QPointF(
-            np.cos(angle) * length, -np.sin(angle) * length)
+        east_point = center_point + QPointF(-np.sin(angle) * length,
+                                            -np.cos(angle) * length)
         east_line = QLineF(center_point, east_point)
 
         north_arrow_p0 = north_point + QPointF(
             north_line.unitVector().dx() * arrow_size / 2,
             north_line.unitVector().dy() * arrow_size / 2)
         north_arrow_p1 = north_arrow_p0 + QPointF(
-            np.cos(-angle + np.pi / 3) * arrow_size,
-            np.sin(-angle + np.pi / 3) * arrow_size)
+            -np.sin(angle + np.pi / 3) * arrow_size,
+            -np.cos(angle + np.pi / 3) * arrow_size)
         north_arrow_p2 = north_arrow_p0 + QPointF(
-            np.cos(-angle + np.pi - np.pi / 3) * arrow_size,
-            np.sin(-angle + np.pi - np.pi / 3) * arrow_size)
+            -np.sin(angle + 2 * np.pi / 3) * arrow_size,
+            -np.cos(angle + 2 * np.pi / 3) * arrow_size)
 
         east_arrow_p0 = east_point + QPointF(
             east_line.unitVector().dx() * arrow_size / 2,
             east_line.unitVector().dy() * arrow_size / 2)
         east_arrow_p1 = east_arrow_p0 + QPointF(
-            -np.sin(-angle + np.pi / 3) * arrow_size,
-            np.cos(-angle + np.pi / 3) * arrow_size)
+            np.cos(angle + np.pi / 3) * arrow_size,
+            np.sin(angle + np.pi / 3) * arrow_size)
         east_arrow_p2 = east_arrow_p0 + QPointF(
-            -np.sin(-angle + np.pi - np.pi / 3) * arrow_size,
-            np.cos(-angle + np.pi - np.pi / 3) * arrow_size)
+            np.cos(angle + 2 * np.pi / 3) * arrow_size,
+            np.sin(angle + 2 * np.pi / 3) * arrow_size)
 
         north_east_path = QPainterPath(north_point)
         north_east_path.lineTo(center_point)

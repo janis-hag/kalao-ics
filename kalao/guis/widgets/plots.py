@@ -12,8 +12,7 @@ from PySide6.QtWidgets import QMessageBox, QTreeWidgetItem, QWidget
 
 from compiled.ui_plots import Ui_PlotsWidget
 
-from kalao import database
-from kalao.utils import kstring, ktime
+from kalao.common import database_definitions, kstring, ktime
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color, ColorPalette
@@ -46,8 +45,8 @@ class PlotsWidget(KWidget, BackendActionMixin):
                                             self.ui.monitoring_treeview),
                                            ('obs', self.ui.obs_treeview)]:
             for k, v in sorted(
-                    database.definitions[collection_name]['metadata'].items(),
-                    key=lambda t:
+                    getattr(database_definitions,
+                            collection_name).items(), key=lambda t:
                 (t[1].get('group', ''), t[1]['short'].casefold())):
                 if k in config.GUI.plots_exclude_list:
                     continue
@@ -254,7 +253,8 @@ class PlotsWidget(KWidget, BackendActionMixin):
         if self.ui.autoupdate_database_button.isChecked():
             self.on_plot_button_clicked(False)
         else:
-            data = self.action_send([], self.backend.plots_data_live)
+            data = self.action_send([], self.backend.plots_data_live,
+                                    inhibit_cursor=True)
 
             monitoring_keys = []
             for item in self.ui.monitoring_treeview.findItems(
@@ -345,8 +345,8 @@ class PlotsWidget(KWidget, BackendActionMixin):
             for series_name, series_values in collection.items():
                 self.value_before_conversion[collection_name][series_name] = {}
 
-                metadata = database.definitions[collection_name]['metadata'][
-                    series_name]
+                metadata = getattr(database_definitions,
+                                   collection_name)[series_name]
 
                 pen = QPen(ColorPalette[color_index], 1.25,
                            Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap,
@@ -449,7 +449,7 @@ class PlotsWidget(KWidget, BackendActionMixin):
             msgbox.setModal(True)
             msgbox.show()
 
-    def x_range_changed(self, min: float, max: float) -> None:
+    def x_range_changed(self, min: QDateTime, max: QDateTime) -> None:
         self.ui.since_datetimeedit.setDateTime(min)
         self.ui.until_datetimeedit.setDateTime(max)
 
@@ -476,8 +476,9 @@ class PlotsWidget(KWidget, BackendActionMixin):
             if series is None:
                 self.hovered.emit(f'{y:.9g} at {x}')
             else:
-                metadata = database.definitions[
-                    self.current_collection]['metadata'][self.current_series]
+                metadata = getattr(
+                    database_definitions,
+                    self.current_collection)[self.current_series]
 
                 try:
                     y_true = f' ({self.value_before_conversion[self.current_collection][self.current_series][x]})'

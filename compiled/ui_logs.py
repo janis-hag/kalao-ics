@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QDateTimeEdit, QG
     QPushButton, QSizePolicy, QSpacerItem, QSpinBox,
     QTreeWidget, QTreeWidgetItem, QWidget)
 
+from kalao.guis.utils.parts import FindPart
 from kalao.guis.utils.widgets import KDateTimeEdit
 from . import rc_assets
 
@@ -27,7 +28,7 @@ class Ui_LogsWidget(object):
     def setupUi(self, LogsWidget):
         if not LogsWidget.objectName():
             LogsWidget.setObjectName(u"LogsWidget")
-        LogsWidget.resize(1073, 593)
+        LogsWidget.resize(1408, 723)
         self.gridLayout = QGridLayout(LogsWidget)
         self.gridLayout.setObjectName(u"gridLayout")
         self.clear_services_button = QPushButton(LogsWidget)
@@ -60,10 +61,6 @@ class Ui_LogsWidget(object):
 
         self.total_layout = QHBoxLayout()
         self.total_layout.setObjectName(u"total_layout")
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.total_layout.addItem(self.horizontalSpacer)
-
         self.warnings_label = QLabel(LogsWidget)
         self.warnings_label.setObjectName(u"warnings_label")
 
@@ -107,6 +104,11 @@ class Ui_LogsWidget(object):
         self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.total_layout.addItem(self.horizontalSpacer_4)
+
+        self.find_widget = FindPart(LogsWidget)
+        self.find_widget.setObjectName(u"find_widget")
+
+        self.total_layout.addWidget(self.find_widget)
 
 
         self.gridLayout.addLayout(self.total_layout, 5, 0, 1, 1)

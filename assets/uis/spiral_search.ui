@@ -40,6 +40,12 @@
     </item>
     <item row="1" column="2">
      <widget class="QSpinBox" name="radius_spinbox">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
       <property name="suffix">
        <string> frames</string>
       </property>
@@ -60,6 +66,12 @@
     </item>
     <item row="2" column="2">
      <widget class="QSpinBox" name="overlap_spinbox">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
       <property name="suffix">
        <string> %</string>
       </property>
@@ -106,7 +118,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>30</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>

@@ -12,9 +12,9 @@ StandardError=journal
 Environment=PYTHONUNBUFFERED=1
 Environment=MILK_SHM_DIR=/tmp/milk
 
-Nice=-20
-CPUSchedulingPolicy=rr
-CPUSchedulingPriority=98
+Nice=0
+CPUSchedulingPolicy=other
+CPUSchedulingPriority=0
 CPUSchedulingResetOnFork=false
 
 [Install]

@@ -18,10 +18,10 @@ import requests
 
 from tcs_communication.pygop import tcs_srv_gop
 
-from kalao import logger
-from kalao.interfaces import edp
+from kalao.common.enums import ReturnCode
 
-from kalao.definitions.enums import ReturnCode
+from kalao.ics import logger
+from kalao.ics.interfaces import edp
 
 import config
 

@@ -2,11 +2,11 @@ import argparse
 
 import pandas as pd
 
-from kalao.hardware import camera
-from kalao.utils import fits_handling
+from kalao.common.enums import (FlipMirrorStatus, LaserStatus, ShutterStatus,
+                                TemplateID, TungstenStatus)
 
-from kalao.definitions.enums import (FlipMirrorStatus, LaserStatus,
-                                     ShutterStatus, TemplateID, TungstenStatus)
+from kalao.ics.hardware import camera
+from kalao.ics.utils import fits_handling
 
 import config
 

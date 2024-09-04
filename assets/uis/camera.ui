@@ -51,108 +51,27 @@
    <item row="0" column="0" rowspan="2">
     <layout class="QVBoxLayout" name="side_layout">
      <item>
-      <layout class="QGridLayout" name="scale_layout" columnstretch="1,0,1">
-       <item row="1" column="0">
-        <widget class="KScaledDoubleSpinbox" name="min_spinbox">
-         <property name="keyboardTracking">
-          <bool>false</bool>
-         </property>
-         <property name="decimals">
-          <number>0</number>
-         </property>
-         <property name="minimum">
-          <double>0.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>100000.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QToolButton" name="autoscale_button">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Autoscale</string>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2" alignment="Qt::AlignmentFlag::AlignVCenter">
-        <widget class="KScaledDoubleSpinbox" name="max_spinbox">
-         <property name="keyboardTracking">
-          <bool>false</bool>
-         </property>
-         <property name="decimals">
-          <number>0</number>
-         </property>
-         <property name="minimum">
-          <double>0.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>100000.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QToolButton" name="fullscale_button">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Fullscale</string>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="minmax_label">
-         <property name="text">
-          <string>–</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="3" alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
-        <widget class="KLabel" name="saturation_label">
-         <property name="text">
-          <string>Saturation {saturation:.0f} %</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="3">
-        <widget class="QLabel" name="linearity_label">
-         <property name="text">
-          <string>Inside of linear range</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="ImgMinMaxPart" name="minmax_widget"/>
+     </item>
+     <item>
+      <widget class="KLabel" name="saturation_label">
+       <property name="text">
+        <string>Saturation {saturation:.0f} %</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="linearity_label">
+       <property name="text">
+        <string>Inside of linear range</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignCenter</set>
+       </property>
+      </widget>
      </item>
      <item>
       <spacer name="verticalSpacer">
@@ -205,6 +124,11 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>ImgMinMaxPart</class>
+   <extends>QWidget</extends>
+   <header>kalao.guis.utils.parts</header>
+  </customwidget>
+  <customwidget>
    <class>KLabel</class>
    <extends>QLabel</extends>
    <header>kalao.guis.utils.widgets</header>
@@ -212,11 +136,6 @@
   <customwidget>
    <class>KImageViewer</class>
    <extends>QGraphicsView</extends>
-   <header>kalao.guis.utils.widgets</header>
-  </customwidget>
-  <customwidget>
-   <class>KScaledDoubleSpinbox</class>
-   <extends>QDoubleSpinBox</extends>
    <header>kalao.guis.utils.widgets</header>
   </customwidget>
  </customwidgets>

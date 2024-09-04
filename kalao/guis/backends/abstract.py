@@ -1,21 +1,14 @@
 import time
 from abc import abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime
 from functools import wraps
-from pathlib import Path
 from typing import Any, Callable
 
 import numpy as np
 
-from astropy.io import fits
-
 from PySide6.QtCore import QObject, Signal
 
-from kalao.cacao import toolbox
-
-from kalao.definitions.dataclasses import LogEntry
-
-import config
+from kalao.common.dataclasses import LogEntry
 
 
 def emit(fun: Callable) -> Callable:
@@ -69,6 +62,10 @@ class AbstractBackend(QObject):
 
     @abstractmethod
     def version(self) -> str:
+        pass
+
+    @abstractmethod
+    def name(self) -> str:
         pass
 
     @abstractmethod
@@ -252,6 +249,10 @@ class AbstractBackend(QObject):
 
     @abstractmethod
     def wfs_autogain_setting(self, *, setting: int) -> None:
+        pass
+
+    @abstractmethod
+    def wfs_emgainoff(self) -> None:
         pass
 
     # Deformable Mirror
@@ -543,275 +544,3 @@ class AbstractBackend(QObject):
     def logs_between(self, *, since: datetime,
                      until: datetime) -> list[LogEntry]:
         pass
-
-
-class SHMFPSBackend(AbstractBackend):
-    @staticmethod
-    def _update_shm(data: dict[str, Any], shm_name: str,
-                    key: str | None = None) -> None:
-        if key is None:
-            key = shm_name
-
-        shm = toolbox.get_shm(shm_name)
-
-        if shm is None:
-            return
-
-        if key not in data:
-            data[key] = {}
-
-        data[key].update({
-            'cnt0': shm.IMAGE.md.cnt0,
-            'data': shm.get_data(check=False),
-        })
-
-    @staticmethod
-    def _update_shm_keywords(data: dict[str, Any], shm_name: str) -> None:
-        shm = toolbox.get_shm(shm_name)
-
-        if shm is None:
-            return
-
-        if shm_name not in data:
-            data[shm_name] = {}
-
-        data[shm_name]['keywords'] = shm.get_keywords()
-
-    @staticmethod
-    def _update_shm_md(data: dict[str, Any], shm_name: str) -> None:
-        shm = toolbox.get_shm(shm_name)
-
-        if shm_name not in data:
-            data[shm_name] = {}
-
-        if shm is None:
-            data[shm_name]['md'] = {'status': 'M'}
-        else:
-            data[shm_name]['md'] = {
-                'status': '',
-                'shape': shm.shape,
-                'cnt0': shm.IMAGE.md.cnt0,
-                'creationtime': shm.IMAGE.md.creationtime,
-                'acqtime': shm.IMAGE.md.acqtime,
-            }
-
-    @staticmethod
-    def _update_fps_param(data: dict[str, Any], fps_name: str,
-                          param_name: str) -> None:
-        fps = toolbox.get_fps(fps_name)
-
-        if fps is None:
-            return
-
-        if fps_name not in data:
-            data[fps_name] = {}
-
-        data[fps_name][param_name] = fps.get_param(param_name)
-
-    @staticmethod
-    def _update_fps_md(data: dict[str, Any], fps_name: str) -> None:
-        fps = toolbox.get_fps(fps_name)
-
-        if fps_name not in data:
-            data[fps_name] = {}
-
-        if fps is None:
-            data[fps_name]['md'] = {'status': 'M'}
-        else:
-            data[fps_name]['md'] = {'status': ''}
-
-            if fps.conf_isrunning():
-                data[fps_name]['md']['status'] += 'C'
-
-            if fps.run_isrunning():
-                data[fps_name]['md']['status'] += 'R'
-
-    @staticmethod
-    def _update_dict(data: dict[str, Any], key: str, dict: dict[str,
-                                                                Any]) -> None:
-        if key not in data:
-            data[key] = {}
-
-        data[key].update(dict)
-
-    @staticmethod
-    def _update_db(data: dict[str, Any], collection: str,
-                   db_data: dict[str, Any]) -> None:
-        if collection not in data:
-            data[collection] = {}
-
-        data[collection].update(db_data)
-
-    @staticmethod
-    def _update_fits(data: dict[str, Any], fits_file: Path | str) -> None:
-        if not isinstance(fits_file, Path):
-            fits_file = Path(fits_file)
-
-        key = fits_file.stem
-
-        try:
-            data[key] = {
-                'mtime':
-                    datetime.fromtimestamp(fits_file.stat().st_mtime,
-                                           tz=timezone.utc),
-                'data':
-                    fits.getdata(fits_file),
-            }
-        except (FileNotFoundError, OSError):
-            pass
-
-    @staticmethod
-    def _update_fits_full(data: dict[str, Any], fits_file: Path | str) -> None:
-        if not isinstance(fits_file, Path):
-            fits_file = Path(fits_file)
-
-        key = fits_file.stem
-
-        try:
-            # Recreate HDU List to avoid "cannot pickle '_io.BufferedReader' object" error
-            hdul = fits.open(fits_file)
-            hdul_ = fits.HDUList()
-
-            for hdu in hdul:
-                hdu_ = type(hdu)()
-                hdu_.data = hdu.data
-                hdu_.header = hdu.header
-                hdul_.append(hdu_)
-
-            data[key] = {
-                'mtime':
-                    datetime.fromtimestamp(fits_file.stat().st_mtime,
-                                           tz=timezone.utc),
-                'hdul':
-                    hdul_,
-            }
-        except (FileNotFoundError, OSError):
-            pass
-
-    @staticmethod
-    def _update_fits_mtime(data: dict[str, Any],
-                           fits_file: Path | str) -> None:
-        if not isinstance(fits_file, Path):
-            fits_file = Path(fits_file)
-
-        key = fits_file.stem
-
-        try:
-            if data.get(key) is None:
-                data[key] = {}
-
-            data[key]['mtime'] = datetime.fromtimestamp(
-                fits_file.stat().st_mtime, tz=timezone.utc)
-        except (FileNotFoundError, OSError):
-            pass
-
-
-class FakeSHMFPSBackend(AbstractBackend):
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.internal_state = {}
-
-    def _update_shm(self, data: dict[str, Any], shm_name: str, stream_data,
-                    key: str | None = None) -> None:
-        if key is None:
-            key = shm_name
-
-        if key not in data:
-            data[key] = {}
-
-        cnt0 = self.internal_state.get(f'{shm_name}-cnt0', -1) + 1
-
-        data[key].update({
-            'cnt0': cnt0,
-            'data': stream_data,
-        })
-
-        self.internal_state[f'{shm_name}-cnt0'] = cnt0
-
-    @staticmethod
-    def _update_shm_keywords(data: dict[str, Any], shm_name: str,
-                             keywords: dict[str, Any]) -> None:
-        if shm_name not in data:
-            data[shm_name] = {}
-
-        data[shm_name]['keywords'] = keywords
-
-    @staticmethod
-    def _update_shm_md(data: dict[str, Any], shm_name: str) -> None:
-        if shm_name not in data:
-            data[shm_name] = {}
-
-        data[shm_name]['md'] = {
-            'status': '',
-            'shape': (12, 12),
-            'cnt0': 123,
-            'creationtime': datetime.fromtimestamp(0),
-            'acqtime': datetime.now(),
-        }
-
-    @staticmethod
-    def _update_fps_param(data: dict[str, Any], fps_name: str, param_name: str,
-                          param) -> None:
-        if fps_name not in data:
-            data[fps_name] = {}
-
-        data[fps_name][param_name] = param
-
-    @staticmethod
-    def _update_fps_md(data: dict[str, Any], fps_name: str, md: dict) -> None:
-        if fps_name not in data:
-            data[fps_name] = {}
-
-        data[fps_name]['md'] = md
-
-    @staticmethod
-    def _update_dict(data: dict[str, Any], key: str, dict: dict[str,
-                                                                Any]) -> None:
-        if key not in data:
-            data[key] = {}
-
-        data[key].update(dict)
-
-    @staticmethod
-    def _update_db(data: dict[str, Any], collection: str,
-                   db_data: dict[str, Any]) -> None:
-        if collection not in data:
-            data[collection] = {}
-
-        data[collection].update(db_data)
-
-    @staticmethod
-    def _update_fits(data: dict[str, Any], fits_file: Path | str,
-                     array: dict[str, Any]) -> None:
-        if not isinstance(fits_file, Path):
-            fits_file = Path(fits_file)
-
-        key = fits_file.stem
-
-        data[key] = {'mtime': datetime.now(timezone.utc), 'data': array}
-
-    def _update_fits_full(self, data: dict[str, Any], fits_file: Path | str,
-                          hdul: fits.HDUList) -> None:
-        if not isinstance(fits_file, Path):
-            fits_file = Path(fits_file)
-
-        key = fits_file.stem
-
-        data[key] = {'mtime': datetime.now(timezone.utc), 'hdul': hdul}
-
-        if fits_file == config.FITS.last_image_all:
-            data[key]['mtime'] = self.internal_state.get('fli-mtime')
-
-    @staticmethod
-    def _update_fits_mtime(data: dict[str, Any], fits_file: Path | str,
-                           mtime: float) -> None:
-        if not isinstance(fits_file, Path):
-            fits_file = Path(fits_file)
-
-        key = fits_file.stem
-
-        if key not in data:
-            data[key] = {}
-
-        data[key]['mtime'] = mtime

@@ -7,4 +7,4 @@ source /home/kalao/kalao-venv-3.11/bin/activate
 
 cd /home/kalao/kalao-ics
 
-python -c 'from kalao.hardware import wfs; exit(wfs.start())'
+python -c 'from kalao.ics.hardware import wfs; exit(wfs.start())'

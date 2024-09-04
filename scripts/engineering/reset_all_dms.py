@@ -4,6 +4,6 @@
 @author: Nathanaël Restori
 """
 
-from kalao.cacao.aocontrol import reset_all_dms
+from kalao.ics.cacao.aocontrol import reset_all_dms
 
 reset_all_dms()

@@ -1,6 +1,7 @@
 import random
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -8,32 +9,171 @@ import pandas as pd
 
 from astropy.io import fits
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Signal
 
-from kalao import database
-from kalao.hardware import adc
-from kalao.interfaces import fake_data
-from kalao.utils import kmath, kstring, ktools, zernike
-from kalao.utils.json import KalAOJSONEncoder
-from kalao.utils.rprint import rprint
+from kalao.common import database_definitions, kmath, kstring, ktools, zernike
+from kalao.common.dataclasses import CalibrationPose, LogEntry, Template
+from kalao.common.enums import (CameraServerStatus, CameraStatus,
+                                FlipMirrorStatus, IPPowerStatus, LaserStatus,
+                                LogLevel, PLCStatus, RelayState,
+                                SequencerStatus, ServiceAction, ShutterStatus,
+                                TemplateID, TungstenStatus, WindowHint)
+from kalao.common.json import KalAOJSONEncoder
+from kalao.common.rprint import rprint
 
-from kalao.guis.backends.abstract import FakeSHMFPSBackend, emit, timeit
-from kalao.guis.utils import lorem
-
-from kalao.definitions.dataclasses import CalibrationPose, LogEntry, Template
-from kalao.definitions.enums import (CameraServerStatus, CameraStatus,
-                                     FlipMirrorStatus, IPPowerStatus,
-                                     LaserStatus, LogLevel, PLCStatus,
-                                     RelayState, SequencerStatus,
-                                     ServiceAction, ShutterStatus, TemplateID,
-                                     TungstenStatus, WindowHint)
+from kalao.guis.backends.abstract import AbstractBackend, emit, timeit
+from kalao.guis.utils import fake_data, lorem
+from kalao.guis.utils.definitions import PokeState
 
 import config
 
 encoder = KalAOJSONEncoder()
 
 
-class MainBackend(FakeSHMFPSBackend):
+class SHMFPSBackend(AbstractBackend):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.internal_state = {}
+
+    def _update_shm(self, data: dict[str, Any], shm_name: str, stream_data,
+                    key: str | None = None) -> None:
+        if key is None:
+            key = shm_name
+
+        if key not in data:
+            data[key] = {}
+
+        cnt0 = self.internal_state.get(f'{shm_name}-cnt0', -1) + 1
+
+        data[key].update({
+            'cnt0': cnt0,
+            'data': stream_data,
+        })
+
+        self.internal_state[f'{shm_name}-cnt0'] = cnt0
+
+    @staticmethod
+    def _update_shm_keywords(data: dict[str, Any], shm_name: str,
+                             keywords: dict[str, Any]) -> None:
+        if shm_name not in data:
+            data[shm_name] = {}
+
+        data[shm_name]['keywords'] = keywords
+
+    @staticmethod
+    def _update_shm_md(data: dict[str, Any], shm_name: str) -> None:
+        if shm_name not in data:
+            data[shm_name] = {}
+
+        match shm_name:
+            case 'nuvu_raw':
+                shape = (520, 70)
+            case 'nuvu_stream':
+                shape = (64, 64)
+            case 'shwfs_slopes':
+                shape = (22, 11)
+            case 'shwfs_flux':
+                shape = (11, 11)
+            case 'aol1_imWFS2':
+                shape = (22, 11)
+            case 'aol1_modevalWFS':
+                shape = (68, 1)
+            case 'aol1_modevalDM':
+                shape = (68, 1)
+            case 'dm01disp':
+                shape = (12, 12)
+            case 'bmc_commands_dm':
+                shape = (12, 12)
+            case 'aol2_imWFS2':
+                shape = (12, 12)
+            case 'aol2_modevalWFS':
+                shape = (2, 1)
+            case 'aol2_modevalDM':
+                shape = (2, 1)
+            case 'dm02disp':
+                shape = (2, 1)
+            case 'bmc_commands_ttm':
+                shape = (2, 1)
+            case _:
+                shape = (0, )
+
+        data[shm_name]['md'] = {
+            'status': '',
+            'shape': shape,
+            'cnt0': 123,
+            'creationtime': datetime.fromtimestamp(0),
+            'acqtime': datetime.now(),
+        }
+
+    @staticmethod
+    def _update_fps_param(data: dict[str, Any], fps_name: str, param_name: str,
+                          param) -> None:
+        if fps_name not in data:
+            data[fps_name] = {}
+
+        data[fps_name][param_name] = param
+
+    @staticmethod
+    def _update_fps_md(data: dict[str, Any], fps_name: str, md: dict) -> None:
+        if fps_name not in data:
+            data[fps_name] = {}
+
+        data[fps_name]['md'] = md
+
+    @staticmethod
+    def _update_dict(data: dict[str, Any], key: str, dict: dict[str,
+                                                                Any]) -> None:
+        if key not in data:
+            data[key] = {}
+
+        data[key].update(dict)
+
+    @staticmethod
+    def _update_db(data: dict[str, Any], collection: str,
+                   db_data: dict[str, Any]) -> None:
+        if collection not in data:
+            data[collection] = {}
+
+        data[collection].update(db_data)
+
+    @staticmethod
+    def _update_fits(data: dict[str, Any], fits_file: Path | str,
+                     array: dict[str, Any]) -> None:
+        if not isinstance(fits_file, Path):
+            fits_file = Path(fits_file)
+
+        key = fits_file.stem
+
+        data[key] = {'mtime': datetime.now(timezone.utc), 'data': array}
+
+    def _update_fits_full(self, data: dict[str, Any], fits_file: Path | str,
+                          hdul: fits.HDUList) -> None:
+        if not isinstance(fits_file, Path):
+            fits_file = Path(fits_file)
+
+        key = fits_file.stem
+
+        data[key] = {'mtime': datetime.now(timezone.utc), 'hdul': hdul}
+
+        if fits_file == config.FITS.last_image_all:
+            data[key]['mtime'] = self.internal_state.get('fli-mtime')
+
+    @staticmethod
+    def _update_fits_mtime(data: dict[str, Any], fits_file: Path | str,
+                           mtime: float) -> None:
+        if not isinstance(fits_file, Path):
+            fits_file = Path(fits_file)
+
+        key = fits_file.stem
+
+        if key not in data:
+            data[key] = {}
+
+        data[key]['mtime'] = mtime
+
+
+class MainBackend(SHMFPSBackend):
     last_camera_update = 0
     first = True
 
@@ -176,7 +316,7 @@ class MainBackend(FakeSHMFPSBackend):
         self._update_nuvu_service()
 
         self.logs_logs = ['']
-        for key in sorted(database.definitions['logs']['metadata'].keys()):
+        for key in sorted(database_definitions.logs.keys()):
             self.logs_logs.append(kstring.get_log_name(key))
 
         self.logs_services = ['systemd']
@@ -248,6 +388,9 @@ class MainBackend(FakeSHMFPSBackend):
 
     def version(self) -> str:
         return config.version
+
+    def name(self) -> str:
+        return 'simulation'
 
     @emit
     @timeit
@@ -358,6 +501,16 @@ class MainBackend(FakeSHMFPSBackend):
         hdu.header.set('HIERARCH ESO DET WIN1 NY', 2 * hw)
         hdu.header.set('CRPIX1', hw + 1)  # Note: FITS indexing starts at 1
         hdu.header.set('CRPIX2', hw + 1)  # Note: FITS indexing starts at 1
+        hdu.header.set('CTYPE1', 'RA---TAN')
+        hdu.header.set('CTYPE2', 'DEC--TAN')
+        hdu.header.set('CRVAL1', 60)
+        hdu.header.set('CRVAL2', 45)
+        hdu.header.set('CUNIT1', 'deg')
+        hdu.header.set('CUNIT2', 'deg')
+        hdu.header.set('CD1_1', config.Camera.plate_scale / 3600)
+        hdu.header.set('CD1_2', 0)
+        hdu.header.set('CD2_1', 0)
+        hdu.header.set('CD2_2', config.Camera.plate_scale / 3600)
 
         hdul = fits.HDUList()
         hdul.append(hdu)
@@ -453,9 +606,11 @@ class MainBackend(FakeSHMFPSBackend):
                 'reason': 'Test'
             })
 
-        adc_angle, adc_offset = adc._compute_angle_and_offset(
-            self.internal_state['adc1_angle'],
-            self.internal_state['adc2_angle'])
+        angle1 = self.internal_state['adc1_angle'] - config.ADC.max_disp_angle_1
+        angle2 = self.internal_state['adc2_angle'] - config.ADC.max_disp_angle_2
+
+        adc_angle = angle1 + angle2
+        adc_offset = (angle1-angle2) / 2
 
         self.internal_state['adc_angle'] = adc_angle
         self.internal_state['adc_offset'] = adc_offset
@@ -642,8 +797,7 @@ class MainBackend(FakeSHMFPSBackend):
         })
 
         data_monitoring = {}
-        for key, metadata in database.definitions['monitoring'][
-                'metadata'].items():
+        for key, metadata in database_definitions.monitoring.items():
             if key in self.internal_state:
                 value = self.internal_state[key]
                 data_monitoring[key] = {
@@ -808,10 +962,10 @@ class MainBackend(FakeSHMFPSBackend):
             data, 'memory', {
                 'spiral_search': {
                     'radius': 1,
-                    'overlap': 0.15,
+                    'overlap': config.SpiralSearch.overlap,
                     'expno': 7,
-                    'star_x': 128,
-                    'star_y': -896
+                    'star_dx': 128,
+                    'star_dy': -896
                 }
             })
 
@@ -842,7 +996,7 @@ class MainBackend(FakeSHMFPSBackend):
     def plots_data_live(self) -> dict[str, Any]:
         data = {}
         data['timestamp'] = datetime.now(timezone.utc)
-        for key in database.definitions['monitoring']['metadata'].keys():
+        for key in database_definitions.monitoring.keys():
             data[key] = np.random.normal(0, 1)
 
         return data
@@ -1188,6 +1342,13 @@ class MainBackend(FakeSHMFPSBackend):
                 'wfs_exposuretime'] = config.WFS.autogain_params[setting][1]
 
         rprint(f'Set Nüvü Auto-gain setting to {setting} (virtually)')
+
+    def wfs_emgainoff(self) -> None:
+        self.internal_state['wfs_autogain_on'] = False
+        self.internal_state['wfs_autogain_setting'] = 0
+        self.internal_state['wfs_emgain'] = 1
+
+        rprint(f'Set Nüvü EM Gain to off (virtually)')
 
     # Deformable Mirror
 
@@ -1656,3 +1817,72 @@ class MainBackend(FakeSHMFPSBackend):
 
         return LogEntry(cursor='', level=level, timestamp=timestamp,
                         origin=origin, message=message)
+
+
+class AlignmentBackend(SHMFPSBackend):
+    alignment_window = None
+
+    streams_all_updated = Signal(object)
+
+    @emit
+    @timeit
+    def streams_all(self) -> dict[str, Any]:
+        data = {}
+
+        data_dm_down = zernike.generate_pattern([0], (12, 12))
+        for act in self.alignment_window.actuators_to_poke:
+            data_dm_down[ktools.get_actuator_2d(
+                act)] = -self.alignment_window.poke_amplitude
+
+        data_dm_up = zernike.generate_pattern([0], (12, 12))
+        for act in self.alignment_window.actuators_to_poke:
+            data_dm_up[ktools.get_actuator_2d(
+                act)] = self.alignment_window.poke_amplitude
+
+        data_nuvu = {
+            PokeState.FLAT:
+                fake_data.wfs_frame(tiptilt=[0, 0]),
+            PokeState.DOWN:
+                fake_data.wfs_frame(tiptilt=[0, 0], dmdisp=data_dm_down),
+            PokeState.UP:
+                fake_data.wfs_frame(tiptilt=[0, 0], dmdisp=data_dm_up),
+        }
+
+        data_slopes = {
+            PokeState.FLAT: fake_data.slopes(data_nuvu[PokeState.FLAT]),
+            PokeState.DOWN: fake_data.slopes(data_nuvu[PokeState.DOWN]),
+            PokeState.UP: fake_data.slopes(data_nuvu[PokeState.UP]),
+        }
+
+        slopes_params = fake_data.slopes_params(data_slopes[PokeState.FLAT])
+
+        self._update_shm(data, config.SHM.NUVU, data_nuvu[PokeState.FLAT],
+                         key=f'{config.SHM.NUVU}_{PokeState.FLAT}')
+        self._update_shm(data, config.SHM.NUVU, data_nuvu[PokeState.UP],
+                         key=f'{config.SHM.NUVU}_{PokeState.UP}')
+        self._update_shm(data, config.SHM.NUVU, data_nuvu[PokeState.DOWN],
+                         key=f'{config.SHM.NUVU}_{PokeState.DOWN}')
+
+        self._update_shm(data, config.SHM.NUVU,
+                         data_nuvu[self.alignment_window.display])
+
+        self._update_shm(data, config.SHM.FLUX,
+                         fake_data.flux(data_nuvu[PokeState.FLAT]))
+
+        if self.alignment_window.display == PokeState.FLAT:
+            self._update_shm(data, config.SHM.SLOPES,
+                             data_slopes[PokeState.FLAT])
+        else:
+            self._update_shm(
+                data, config.SHM.SLOPES,
+                data_slopes[self.alignment_window.display] -
+                data_slopes[PokeState.FLAT])
+
+        self._update_fps_param(data, config.FPS.SHWFS, 'slope_x_avg',
+                               slopes_params['slope_x_avg'])
+        self._update_fps_param(data, config.FPS.SHWFS, 'slope_y_avg',
+                               slopes_params['slope_y_avg'])
+        self._update_fps_param(data, config.FPS.SHWFS, 'residual_rms',
+                               slopes_params['residual_rms'])
+
+        return data

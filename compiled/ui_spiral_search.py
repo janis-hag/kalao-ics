@@ -15,9 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QGraphicsView, QGridLayout, QLabel,
-    QMainWindow, QMenuBar, QPushButton, QSizePolicy,
-    QSpinBox, QStatusBar, QWidget)
+from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QGraphicsView, QGridLayout,
+    QLabel, QMainWindow, QMenuBar, QPushButton,
+    QSizePolicy, QSpinBox, QStatusBar, QWidget)
 
 from kalao.guis.utils.widgets import KLabel
 from . import rc_assets
@@ -50,6 +50,8 @@ class Ui_SpiralSearchWindow(object):
 
         self.radius_spinbox = QSpinBox(self.centralwidget)
         self.radius_spinbox.setObjectName(u"radius_spinbox")
+        self.radius_spinbox.setReadOnly(True)
+        self.radius_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.radius_spinbox.setMinimum(1)
 
         self.gridLayout.addWidget(self.radius_spinbox, 1, 2, 1, 1)
@@ -62,6 +64,8 @@ class Ui_SpiralSearchWindow(object):
 
         self.overlap_spinbox = QSpinBox(self.centralwidget)
         self.overlap_spinbox.setObjectName(u"overlap_spinbox")
+        self.overlap_spinbox.setReadOnly(True)
+        self.overlap_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.overlap_spinbox.setMinimum(0)
         self.overlap_spinbox.setMaximum(50)
         self.overlap_spinbox.setSingleStep(5)
@@ -87,7 +91,7 @@ class Ui_SpiralSearchWindow(object):
         SpiralSearchWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(SpiralSearchWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 800, 30))
+        self.menubar.setGeometry(QRect(0, 0, 800, 23))
         SpiralSearchWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(SpiralSearchWindow)
         self.statusbar.setObjectName(u"statusbar")

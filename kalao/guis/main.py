@@ -5,7 +5,7 @@ from PySide6.QtCore import QLocale
 from PySide6.QtGui import QColor, QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication
 
-from kalao.utils.rprint import rprint
+from kalao.common.rprint import rprint
 
 from kalao.guis.utils.splashscreen import KSplashScreen
 

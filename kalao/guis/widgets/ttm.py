@@ -11,19 +11,16 @@ from compiled.ui_ttm import Ui_TTMWidget
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color
-from kalao.guis.utils.mixins import BackendDataMixin, MinMaxMixin
+from kalao.guis.utils.mixins import BackendDataMixin
 from kalao.guis.utils.widgets import KWidget
 
 import config
 
 
-class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
+class TTMWidget(KWidget, BackendDataMixin):
     image_info = config.Images.dm02disp
 
     hovered = Signal(str)
-
-    data_unit = ' mrad'
-    data_precision = 2
 
     plot_length = config.GUI.ttm_plot_length * 1000
 
@@ -42,7 +39,9 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
 
         self.resize(600, 400)
 
-        self.init_minmax(self.ui.tiptilt_plot)
+        self.ui.minmax_widget.setup(self.ui.tiptilt_plot, 'mrad', 2, 1, -999,
+                                    999, self.image_info['min'],
+                                    self.image_info['max'])
 
         chart = self.ui.tiptilt_plot.chart()
         chart.legend().hide()
@@ -111,9 +110,11 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
             # Add new point
 
             self.tip_points.append(
-                QPointF(timestamp_msec, self.tip * self.data_scaling))
+                QPointF(timestamp_msec,
+                        self.tip * self.ui.minmax_widget.data_scaling))
             self.tilt_points.append(
-                QPointF(timestamp_msec, self.tilt * self.data_scaling))
+                QPointF(timestamp_msec,
+                        self.tilt * self.ui.minmax_widget.data_scaling))
 
             # Delete old points
 
@@ -130,10 +131,12 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
             self.update_axis()
 
     def update_labels(self) -> None:
-        self.ui.tip_label.updateText(tip=self.tip * self.data_scaling,
-                                     unit=self.data_unit)
-        self.ui.tilt_label.updateText(tilt=self.tilt * self.data_scaling,
-                                      unit=self.data_unit)
+        self.ui.tip_label.updateText(
+            tip=self.tip * self.ui.minmax_widget.data_scaling,
+            unit=self.ui.minmax_widget.data_unit)
+        self.ui.tilt_label.updateText(
+            tilt=self.tilt * self.ui.minmax_widget.data_scaling,
+            unit=self.ui.minmax_widget.data_unit)
 
         if self.saturation >= 1:
             self.ui.saturation_label.setText('Saturated !')
@@ -156,20 +159,20 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
             y_min = min(y_min, p.y())
             y_max = max(y_max, p.y())
 
-        self.autoscale_min = y_min
-        self.autoscale_max = y_max
+        self.ui.minmax_widget.autoscale_min = y_min
+        self.ui.minmax_widget.autoscale_max = y_max
 
-        if self.ui.autoscale_button.isChecked():
-            with QSignalBlocker(self.ui.min_spinbox):
-                self.ui.min_spinbox.setMaximum(y_max)
-                self.ui.min_spinbox.setValue(y_min)
+        if self.ui.minmax_widget.ui.autoscale_button.isChecked():
+            with QSignalBlocker(self.ui.minmax_widget.ui.min_spinbox):
+                self.ui.minmax_widget.ui.min_spinbox.setMaximum(y_max)
+                self.ui.minmax_widget.ui.min_spinbox.setValue(y_min)
 
-            with QSignalBlocker(self.ui.max_spinbox):
-                self.ui.max_spinbox.setMinimum(y_min)
-                self.ui.max_spinbox.setValue(y_max)
+            with QSignalBlocker(self.ui.minmax_widget.ui.max_spinbox):
+                self.ui.minmax_widget.ui.max_spinbox.setMinimum(y_min)
+                self.ui.minmax_widget.ui.max_spinbox.setValue(y_max)
         else:
-            y_min = self.ui.min_spinbox.value()
-            y_max = self.ui.max_spinbox.value()
+            y_min = self.ui.minmax_widget.ui.min_spinbox.value()
+            y_max = self.ui.minmax_widget.ui.max_spinbox.value()
 
         delta = y_max - y_min
         if abs(delta) < config.epsilon:
@@ -189,40 +192,39 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
         self.axis_y.setRange(y_min, y_max)
 
     def change_units(self, state: Qt.CheckState) -> None:
-        prev_scaling = self.data_scaling
+        prev_scaling = self.ui.minmax_widget.data_scaling
+
         if Qt.CheckState(state) == Qt.CheckState.Checked:
-            self.update_spinboxes_unit('"', config.TTM.plate_scale, 2)
+            self.ui.minmax_widget.update_spinboxes_unit(
+                '"', 2, config.TTM.plate_scale)
         else:
-            self.update_spinboxes_unit(' mrad', 1, 2)
+            self.ui.minmax_widget.update_spinboxes_unit(' mrad', 2, 1)
 
         self.update_labels()
+
+        # self.ui.minmax_widget.autoscale_min *= self.ui.minmax_widget.data_scaling / prev_scaling
+        # self.ui.minmax_widget.autoscale_max *= self.ui.minmax_widget.data_scaling / prev_scaling
+        # self.ui.minmax_widget.fullscale_min *= self.ui.minmax_widget.data_scaling / prev_scaling
+        # self.ui.minmax_widget.fullscale_max *= self.ui.minmax_widget.data_scaling / prev_scaling
 
         new_tip = []
         for p in self.tip_points:
             new_tip.append(
-                QPointF(p.x(),
-                        p.y() * self.data_scaling / prev_scaling))
+                QPointF(
+                    p.x(),
+                    p.y() * self.ui.minmax_widget.data_scaling / prev_scaling))
         self.tip_points = new_tip
 
         new_tilt = []
         for p in self.tilt_points:
             new_tilt.append(
-                QPointF(p.x(),
-                        p.y() * self.data_scaling / prev_scaling))
+                QPointF(
+                    p.x(),
+                    p.y() * self.ui.minmax_widget.data_scaling / prev_scaling))
         self.tilt_points = new_tilt
 
         self.tip_series.replace(self.tip_points)
         self.tilt_series.replace(self.tilt_points)
-
-        with QSignalBlocker(self.ui.min_spinbox):
-            self.ui.min_spinbox.setValue(self.ui.min_spinbox.value() *
-                                         self.data_scaling / prev_scaling)
-            self.ui.min_spinbox.setDecimals(self.data_precision)
-
-        with QSignalBlocker(self.ui.max_spinbox):
-            self.ui.max_spinbox.setValue(self.ui.max_spinbox.value() *
-                                         self.data_scaling / prev_scaling)
-            self.ui.max_spinbox.setDecimals(self.data_precision)
 
         self.update_axis()
 
@@ -231,6 +233,7 @@ class TTMWidget(KWidget, MinMaxMixin, BackendDataMixin):
             x = QDateTime.fromMSecsSinceEpoch(
                 int(x)).toString('HH:mm:ss dd-MM-yy')
 
-            self.hovered.emit(f'{y:.{self.data_precision}f} at {x}')
+            self.hovered.emit(
+                f'{y:.{self.ui.minmax_widget.data_precision}f} at {x}')
         else:
             self.hovered.emit('')

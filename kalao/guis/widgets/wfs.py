@@ -2,37 +2,36 @@ from typing import Any
 
 import numpy as np
 
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import QWidget
 
 from compiled.ui_wfs import Ui_WFSWidget
 
-from kalao.utils import ktools
-from kalao.utils.image import LogScale
+from kalao.common import ktools
+from kalao.common.image import LogScale
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color
-from kalao.guis.utils.mixins import (BackendDataMixin, MinMaxMixin,
-                                     SceneHoverMixin)
+from kalao.guis.utils.mixins import BackendDataMixin
+from kalao.guis.utils.string_formatter import KalAOFormatter
 from kalao.guis.utils.widgets import KWidget
 
 import config
 
 
-class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
+class WFSWidget(KWidget, BackendDataMixin):
     image_info = config.Images.nuvu_stream
-
-    data_unit = ' ADU'
-    data_precision = 0
-
-    axis_unit = ' px'
-    axis_precision = 0
 
     subap_current = None
     act_current = None
 
     saturation = np.nan
+
+    formatter = KalAOFormatter()
+
+    hovered = Signal(str)
 
     def __init__(self, backend: AbstractBackend,
                  parent: QWidget = None) -> None:
@@ -45,7 +44,11 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
         self.resize(600, 400)
 
-        self.init_minmax(self.ui.wfs_view)
+        self.ui.minmax_widget.setup(self.ui.wfs_view, ' ADU', 0, 1, -999999,
+                                    999999, self.image_info['min'],
+                                    self.image_info['max'])
+        self.ui.wfs_view.set_data_md(' ADU', 0)
+        self.ui.wfs_view.set_axis_md(' px', 0)
 
         self.change_colormap(Qt.CheckState.Unchecked)
 
@@ -102,7 +105,7 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
         img = self.consume_shm(data, config.SHM.NUVU)
 
         if img is not None:
-            img_min, img_max = self.compute_min_max(img)
+            img_min, img_max = self.ui.minmax_widget.compute_min_max(img)
 
             # Do not check min due to bias subtraction
             self.saturation = img.max() / self.image_info['max']
@@ -139,11 +142,15 @@ class WFSWidget(KWidget, MinMaxMixin, SceneHoverMixin, BackendDataMixin):
 
             string = self.formatter.format(
                 'X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, V: {v:.{data_precision}f}{data_unit}',
-                x=(x - self.data_center_x) * self.axis_scaling,
-                y=(y - self.data_center_y) * self.axis_scaling,
-                v=v * self.data_scaling, axis_precision=self.axis_precision,
-                axis_unit=self.axis_unit, data_precision=self.data_precision,
-                data_unit=self.data_unit)
+                x=(x - self.ui.wfs_view.axis_x_offset) *
+                self.ui.wfs_view.axis_scaling,
+                y=(y - self.ui.wfs_view.axis_y_offset) *
+                self.ui.wfs_view.axis_scaling,
+                v=v * self.ui.wfs_view.data_scaling,
+                axis_precision=self.ui.wfs_view.axis_precision,
+                axis_unit=self.ui.wfs_view.axis_unit,
+                data_precision=self.ui.wfs_view.data_precision,
+                data_unit=self.ui.wfs_view.data_unit)
 
             subaperture = ktools.subaperture_at_px(x, y)
             actuator = ktools.actuator_at_px(x, y)

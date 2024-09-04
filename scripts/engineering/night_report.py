@@ -1,11 +1,11 @@
 import argparse
+import zoneinfo
 from datetime import date, datetime, time, timedelta
 
-import pytz
+from kalao.common import ktime
+from kalao.common.enums import ReportType
 
-from kalao.utils import ktime, report
-
-from kalao.definitions.enums import ReportType
+from kalao.ics.utils import report
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Report Generator.')
@@ -30,8 +30,8 @@ if __name__ == '__main__':
         since = ktime.get_start_of_night()
         since = since - timedelta(days=1)
     else:
-        since = datetime.combine(args.night, time(12, 0, 0, 0))
-        since = pytz.timezone('America/Santiago').localize(since)
+        since = datetime.combine(args.night, time(12, 0, 0, 0)).replace(
+            tzinfo=zoneinfo.ZoneInfo('America/Santiago'))
 
     print(
         report.generate(since, since + timedelta(days=1), short=args.short,

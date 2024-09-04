@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QWidget
 from compiled.ui_alignment import Ui_AlignmentWindow
 from compiled.ui_alignment_subwindow import Ui_AlignmentSubwindow
 
-from kalao.utils import ktools
+from kalao.common import ktools
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps

@@ -4,16 +4,18 @@ import inspect
 import logging
 import pickle
 import traceback
+import zoneinfo
 from datetime import date, datetime, time, timedelta
 from typing import Any, Callable
 
-import pytz
 from flask import Flask, Response, jsonify, make_response, request
 from flask.json.provider import JSONProvider
 
-from kalao.utils import ktime, report
-from kalao.utils.json import KalAOJSONDecoder, KalAOJSONEncoder
-from kalao.utils.rprint import rprint
+from kalao.common import ktime
+from kalao.common.json import KalAOJSONDecoder, KalAOJSONEncoder
+from kalao.common.rprint import rprint
+
+from kalao.ics.utils import report
 
 from kalao.guis.backends.abstract import AbstractBackend, name_to_url
 
@@ -57,8 +59,8 @@ def night_report(night: str | None = None) -> Response:
         since = ktime.get_start_of_night()
         since = since - timedelta(days=1)
     else:
-        since = datetime.combine(date.fromisoformat(night), time(12, 0, 0, 0))
-        since = pytz.timezone('America/Santiago').localize(since)
+        since = datetime.combine(date.fromisoformat(night), time(
+            12, 0, 0, 0)).replace(tzinfo=zoneinfo.ZoneInfo('America/Santiago'))
 
     content = report.generate(since, since + timedelta(days=1), short=True)
 

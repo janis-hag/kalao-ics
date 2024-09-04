@@ -372,6 +372,13 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         self.action_send(self.ui.wfs_autogain_setting_combobox,
                          self.backend.wfs_autogain_setting, setting=index)
 
+    @Slot(bool)
+    def on_wfs_emgainoff_button_clicked(self, checked: bool) -> None:
+        self.action_send([
+            self.ui.wfs_emgain_spinbox, self.ui.wfs_autogain_checkbox,
+            self.ui.wfs_autogain_setting_combobox, self.ui.wfs_emgainoff_button
+        ], self.backend.wfs_emgainoff)
+
     # Deformable Mirror
 
     @Slot(float)

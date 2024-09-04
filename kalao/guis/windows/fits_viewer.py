@@ -11,21 +11,21 @@ from astropy.io import fits
 from PySide6.QtCore import (QAbstractTableModel, QMargins, QMarginsF,
                             QModelIndex, QObject, QPointF, QRectF,
                             QSignalBlocker, QSortFilterProxyModel, QTimer,
-                            QUrl, Slot)
+                            QUrl, Signal, Slot)
 from PySide6.QtGui import (QAction, QActionGroup, QCloseEvent, QIcon, QPen,
                            QShowEvent, Qt)
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
-from PySide6.QtWidgets import QHeaderView, QMessageBox, QSizePolicy, QWidget
+from PySide6.QtWidgets import (QHeaderView, QLineEdit, QMessageBox,
+                               QSizePolicy, QWidget)
 
 from compiled.ui_fits_viewer import Ui_FITSViewerWindow
 
-from kalao.utils import image, starfinder
+from kalao.common import image, kstring, starfinder
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.definitions import Color, Cuts, Scale
-from kalao.guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
-                                     MinMaxMixin, SceneHoverMixin)
+from kalao.guis.utils.mixins import BackendActionMixin, BackendDataMixin
 from kalao.guis.utils.widgets import KMainWindow, KMessageBox
 
 import config
@@ -88,18 +88,8 @@ class FITSCardsModel(QAbstractTableModel):
         self.layoutChanged.emit()
 
 
-class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
-                       SceneHoverMixin, BackendDataMixin):
+class FITSViewerWindow(KMainWindow, BackendActionMixin, BackendDataMixin):
     image_info = config.Images.fli
-
-    data_unit = ' ADU'
-    data_precision = 0
-    data_center_x = 0
-    data_center_y = 0
-
-    axis_unit = ' px'
-    axis_precision = 0
-    axis_scaling = 1
 
     img_width = np.nan
     img_height = np.nan
@@ -129,11 +119,12 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     WFS_fov = 4 * config.WFS.plate_scale / config.Camera.plate_scale
 
-    keywords_table_size = 300
+    keywords_table_size = 300  # px
+
+    hovered = Signal(str)
 
     def __init__(self, backend: AbstractBackend, hdul: fits.HDUList = None,
-                 file: Path = None, on_sky_unit: bool = False,
-                 parent: QWidget = None) -> None:
+                 file: Path = None, parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
@@ -193,9 +184,15 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         self.resize(1400, 600)
 
-        self.init_minmax([
+        self.ui.minmax_widget.setup([
             self.ui.image_view, self.ui.zoom_view, self.ui.colorbar
-        ])
+        ], ' ADU', 0, 1, -999999, 999999, self.image_info['min'],
+                                    self.image_info['max'])
+        self.ui.image_view.set_data_md(' ADU', 0)
+        self.ui.image_view.set_axis_md(' px', 0)
+
+        self.ui.zoom_view.set_data_md(' ADU', 0)
+        self.ui.zoom_view.set_axis_md(' px', 0)
 
         self.ui.image_view.setView(self.image_info['shape'])
 
@@ -220,8 +217,9 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         pen.setCosmetic(True)
 
         self.wfs_fov = self.ui.image_view.scene().addEllipse(
-            self.data_center_x - self.WFS_fov / 2, self.data_center_y -
-            self.WFS_fov / 2, self.WFS_fov, self.WFS_fov, pen)
+            self.ui.image_view.axis_x_offset - self.WFS_fov / 2,
+            self.ui.image_view.axis_y_offset - self.WFS_fov / 2, self.WFS_fov,
+            self.WFS_fov, pen)
         self.wfs_fov.setZValue(1)
         self.wfs_fov.setVisible(False)
 
@@ -335,10 +333,6 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.ui.zoom_view.scene().clicked.connect(self.zoom_clicked)
         self.ui.zoom_view.scene().scrolled.connect(self.zoom_scrolled)
 
-        self.ui.onsky_checkbox.setChecked(on_sky_unit)
-        self.on_onsky_checkbox_stateChanged(
-            self.ui.onsky_checkbox.checkState())
-
         self.hovered.connect(self.info_to_statusbar)
 
         # Open file vs live view
@@ -387,7 +381,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.ui.colorbar.updateScale(action.data)
 
     def on_cuts_actiongroup_triggered(self, action: QAction) -> None:
-        self.ui.autoscale_button.setChecked(True)
+        self.ui.minmax_widget.ui.autoscale_button.setChecked(True)
         self.update_image_view()
 
     def on_zoomwindow_actiongroup_triggered(self, action: QAction) -> None:
@@ -421,14 +415,24 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.enter_manual_centering(requested_by_user=True)
 
     @Slot(bool)
-    def on_centering_exit_button_clicked(self, checked: bool) -> None:
+    def on_centering_validate_button_clicked(self, checked: bool) -> None:
         self.exit_manual_centering(requested_by_user=True)
 
     @Slot(bool)
     def on_centering_abort_button_clicked(self, checked: bool) -> None:
         self.action_send([
-            self.ui.centering_exit_button, self.ui.centering_abort_button
+            self.ui.centering_validate_button, self.ui.centering_abort_button
         ], self.backend.sequencer_abort)
+
+    @Slot(bool)
+    def on_centering_spiral_search_button_clicked(self, checked: bool) -> None:
+        self.action_send(self.ui.centering_spiral_search_button,
+                         self.backend.centering_spiral)
+
+    @Slot(bool)
+    def on_centering_star_button_clicked(self, checked: bool) -> None:
+        self.action_send(self.ui.centering_star_button,
+                         self.backend.centering_star)
 
     @Slot(bool)
     def on_centering_volume_button_toggled(self, checked: bool) -> None:
@@ -520,15 +524,15 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
             self.zoom_level = self.previous_zoom_level
 
-            self.zoom_center_x = self.data_center_x
-            self.zoom_center_y = self.data_center_y
+            self.zoom_center_x = self.ui.image_view.axis_x_offset
+            self.zoom_center_y = self.ui.image_view.axis_y_offset
 
             self.update_zoom_view()
 
             # Update centering flag only if centering requested KalAO ICS and validation was by user
             if not self.centering_requested_by_user and requested_by_user:
                 self.action_send([
-                    self.ui.centering_exit_button,
+                    self.ui.centering_validate_button,
                     self.ui.centering_abort_button
                 ], self.backend.centering_manual_validate)
 
@@ -560,14 +564,13 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 self.vertical_line.setVisible(True)
                 self.horizontal_line.setVisible(True)
 
-            string = f'X: {(x-self.data_center_x)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, Y: {(y-self.data_center_y)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, V: {v*self.data_scaling:.{self.data_precision}f}{self.data_unit}'
-
-            self.hovered.emit(string)
+            self.update_coords(x, y)
+            self.ui.value_spinbox.setValue(v)
         else:
             if self.zoomwindow_actiongroup.checkedAction(
             ).data == FollowMode.MOUSE:
-                self.zoom_center_x = self.data_center_x
-                self.zoom_center_y = self.data_center_y
+                self.zoom_center_x = self.ui.image_view.axis_x_offset
+                self.zoom_center_y = self.ui.image_view.axis_y_offset
 
                 self.update_zoom_view()
 
@@ -575,18 +578,19 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 self.vertical_line.setVisible(False)
                 self.horizontal_line.setVisible(False)
 
-            self.hovered.emit('')
+            self.update_coords(np.nan, np.nan)
+            self.ui.value_spinbox.setValue(np.nan)
 
     def hover_xyv_to_str_zoom(self, x: float, y: float, v: float) -> None:
         if not np.isnan(x) and not np.isnan(y):
             x = int(x)
             y = int(y)
 
-            string = f'X: {(x-self.data_center_x)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, Y: {(y-self.data_center_y)*self.axis_scaling:.{self.axis_precision}f}{self.axis_unit}, V: {v*self.data_scaling:.{self.data_precision}f}{self.data_unit}'
-
-            self.hovered.emit(string)
+            self.update_coords(x, y)
+            self.ui.value_spinbox.setValue(v)
         else:
-            self.hovered.emit('')
+            self.update_coords(np.nan, np.nan)
+            self.ui.value_spinbox.setValue(np.nan)
 
     def camera_clicked(self, x: float, y: float) -> None:
         if not 0 <= x < self.img_width or not 0 <= y < self.img_height:
@@ -594,8 +598,8 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         if self.centering:
             self.action_send([], self.backend.centering_manual_offsets,
-                             dx=self.data_center_x - x,
-                             dy=self.data_center_y - y)
+                             dx=self.ui.image_view.axis_x_offset - x,
+                             dy=self.ui.image_view.axis_y_offset - y)
 
         if self.zoomwindow_actiongroup.checkedAction(
         ).data != FollowMode.FIXED:
@@ -742,34 +746,83 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         else:
             self.timestamp = None
 
-        self.data_unit = ' ' + hdu.header.get('BUNIT', 'ADU')
-        self.data_center_x = hdu.header.get(
+        self.wcs_bunit = ' ' + hdu.header.get('BUNIT', 'ADU')
+
+        self.wcs_crpix1 = hdu.header.get(
             'CRPIX1', 1) - 1  # Note: FITS indexing starts at 1
-        self.data_center_y = hdu.header.get(
+        self.wcs_crpix2 = hdu.header.get(
             'CRPIX2', 1) - 1  # Note: FITS indexing starts at 1
-        self.axis_unit_x = hdu.header.get('CUNIT1', '"')
-        self.axis_unit_y = hdu.header.get('CUNIT2', '"')
-        cd11 = hdu.header.get('CD1_1', 0)
-        cd12 = hdu.header.get('CD1_2', 0)
-        cd21 = hdu.header.get('CD2_1', 0)
-        cd22 = hdu.header.get('CD2_2', 0)
 
-        cdelt1 = np.sqrt(cd11**2 + cd21**2)
-        cdelt2 = np.sqrt(cd12**2 + cd22**2)
+        self.wcs_crval1 = hdu.header.get('CRVAL1', 0)
+        self.wcs_crval2 = hdu.header.get('CRVAL2', 0)
 
-        if np.sign(cd11*cd22 - cd12*cd21) == -1:
-            cdelt1 = -cdelt1
+        self.wcs_ctype1 = hdu.header.get('CTYPE1', 'UNK')
+        self.wcs_ctype2 = hdu.header.get('CTYPE2', 'UNK')
 
-        crota2 = np.arctan2(
-            np.sign(cdelt1 * cdelt2) * cd12,
-            cd22)  # = np.arctan2(-np.sign(cdelt1*cdelt2)*cd21, cd11)
-        crota2 *= 180 / np.pi
+        self.wcs_cunit1 = hdu.header.get('CUNIT1', '')
+        self.wcs_cunit2 = hdu.header.get('CUNIT2', '')
 
-        self.wfs_fov.setRect(self.data_center_x - self.WFS_fov / 2,
-                             self.data_center_y - self.WFS_fov / 2,
-                             self.WFS_fov, self.WFS_fov)
+        self.wcs_cd11 = hdu.header.get('CD1_1', 0)
+        self.wcs_cd12 = hdu.header.get('CD1_2', 0)
+        self.wcs_cd21 = hdu.header.get('CD2_1', 0)
+        self.wcs_cd22 = hdu.header.get('CD2_2', 0)
 
-        #self.image_view.setNEIndicator(parang from keywords)
+        self.wcs_pc11 = hdu.header.get('PC1_1', 1)
+        self.wcs_pc12 = hdu.header.get('PC1_2', 0)
+        self.wcs_pc21 = hdu.header.get('PC2_1', 0)
+        self.wcs_pc22 = hdu.header.get('PC2_2', 1)
+
+        self.wcs_cdelt1 = hdu.header.get('CDELT1', 1)
+        self.wcs_cdelt2 = hdu.header.get('CDELT2', 1)
+
+        self.wcs_radesys = hdu.header.get('RADESYS', None)
+        self.wcs_equinox = hdu.header.get('EQUINOX', None)
+
+        if self.wcs_radesys is None:
+            if self.wcs_equinox is None:
+                self.wcs_radesys = 'ICRS'
+            elif self.wcs_equinox < 1984.0:
+                self.wcs_radesys = 'FK4'
+            elif self.wcs_equinox >= 1984.0:
+                self.wcs_radesys = 'FK5'
+            else:
+                self.wcs_radesys = 'ERROR'
+
+        if self.wcs_equinox is None:
+            if self.wcs_radesys == 'ICRS':
+                self.wcs_equinox = np.nan
+            elif self.wcs_radesys == 'FK4':
+                self.wcs_equinox = 1950.0
+            elif self.wcs_radesys == 'FK5':
+                self.wcs_equinox = 2000.0
+            else:
+                self.wcs_equinox = np.nan
+
+        if self.wcs_radesys == 'ICRS':
+            wcs_equinox_str = ''
+        elif self.wcs_radesys == 'FK4':
+            wcs_equinox_str = f' (B{self.wcs_equinox})'
+        elif self.wcs_radesys == 'FK5':
+            wcs_equinox_str = f' (J{self.wcs_equinox})'
+        else:
+            wcs_equinox_str = f' ({self.wcs_equinox})'
+
+        # cdelt1 = np.sqrt(cd11**2 + cd21**2)
+        # cdelt2 = np.sqrt(cd12**2 + cd22**2)
+        #
+        # if np.sign(cd11*cd22 - cd12*cd21) == -1:
+        #     cdelt1 = -cdelt1
+        #
+        # crota2 = np.arctan2(
+        #     np.sign(cdelt1 * cdelt2) * cd12,
+        #     cd22)  # = np.arctan2(-np.sign(cdelt1*cdelt2)*cd21, cd11)
+        # crota2 *= 180 / np.pi
+
+        self.wfs_fov.setRect(self.wcs_crpix1 - self.WFS_fov / 2,
+                             self.wcs_crpix2 - self.WFS_fov / 2, self.WFS_fov,
+                             self.WFS_fov)
+
+        self.ui.image_view.setNEIndicator(0)
 
         # Zoom window (reset if image size changed)
 
@@ -819,23 +872,38 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
         # Ticks
 
-        x_tick_start = -self.data_center_x
-        x_tick_stop = -self.data_center_x + self.img_width
-        self.ticks_x = np.linspace(x_tick_start, x_tick_stop, 9)
+        ticks_x = np.linspace(0, self.img_width, 9)
+        ticks_y = np.linspace(0, self.img_height, 9)
+        self.ui.image_view.setTickParams(0, 5, 5, 10, ticks_x, ticks_y)
 
-        y_tick_start = -self.data_center_y
-        y_tick_stop = -self.data_center_y + self.img_width
-        self.ticks_y = np.linspace(y_tick_start, y_tick_stop, 9)
+        # Update
+
+        self.ui.value_spinbox.setSuffix(f' {self.wcs_bunit}')
+
+        self.ui.wcs_system_lineedit.setText(
+            f'{self.wcs_radesys}{wcs_equinox_str}')
+
+        self.ui.minmax_widget.update_spinboxes_unit(f' {self.wcs_bunit}', 0, 1)
+
+        self.ui.image_view.set_data_md(f' {self.wcs_bunit}', 0)
+        self.ui.image_view.set_axis_md(' px', 0, 1, self.wcs_crpix1,
+                                       self.wcs_crpix2)
+
+        self.ui.zoom_view.set_data_md(f' {self.wcs_bunit}', 0)
+        self.ui.zoom_view.set_axis_md(' px', 0, 1, self.wcs_crpix1,
+                                      self.wcs_crpix2)
+
+        self.on_relative_coord_checkbox_stateChanged(
+            self.ui.relative_coord_checkbox.checkState())
 
         self.update_image_view()
         self.update_labels()
-        self.update_ticks()
 
     def update_image_view(self) -> None:
         if self.img is None:
             return
 
-        img_min, img_max = self.compute_min_max(
+        img_min, img_max = self.ui.minmax_widget.compute_min_max(
             self.img,
             self.cuts_actiongroup.checkedAction().data)
 
@@ -866,14 +934,14 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         hh = self.zoom_half_height = self.img_height // self.zoom_level // 2
 
         with QSignalBlocker(self.ui.x_spinbox):
-            self.ui.x_spinbox.setValue(x - self.data_center_x)
+            self.ui.x_spinbox.setValue(x - self.ui.image_view.axis_x_offset)
 
         with QSignalBlocker(self.ui.y_spinbox):
-            self.ui.y_spinbox.setValue(y - self.data_center_y)
+            self.ui.y_spinbox.setValue(y - self.ui.image_view.axis_y_offset)
 
-        with QSignalBlocker(self.ui.zoom_spinbox):
-            self.ui.zoom_spinbox.setValue(self.zoom_level)
-            self.update_zoom_spinbox_suffix()
+        # with QSignalBlocker(self.ui.zoom_spinbox):
+        #     self.ui.zoom_spinbox.setValue(self.zoom_level)
+        #     self.update_zoom_spinbox_suffix()
 
         x = round(x)
         y = round(y)
@@ -887,11 +955,15 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         offset_x = max(x - hw, 0)
         offset_y = max(y - hh, 0)
 
-        self.ui.zoom_view.setImage(zoom, self.ui.min_spinbox.value(),
-                                   self.ui.max_spinbox.value(),
-                                   self.scale_actiongroup.checkedAction().data,
-                                   view=QRectF(x - hw, y - hh, 2 * hw, 2 * hh),
-                                   offset=QPointF(offset_x, offset_y))
+        self.ui.zoom_view.setImage(
+            zoom,
+            self.ui.minmax_widget.ui.min_spinbox.value() /
+            self.ui.minmax_widget.data_scaling,
+            self.ui.minmax_widget.ui.max_spinbox.value() /
+            self.ui.minmax_widget.data_scaling,
+            self.scale_actiongroup.checkedAction().data,
+            view=QRectF(x - hw, y - hh, 2 * hw,
+                        2 * hh), offset=QPointF(offset_x, offset_y))
 
     def update_labels(self) -> None:
         if self.timestamp is None:
@@ -901,27 +973,29 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                 timestamp=self.timestamp.strftime('%H:%M:%S %d-%m-%Y'))
 
         self.ui.star_x_label.updateText(
-            x=(self.star_x - self.data_center_x) * self.axis_scaling,
-            axis_unit=self.axis_unit,
-            axis_precision=self.axis_precision + 1,
+            x=(self.star_x - self.ui.image_view.axis_x_offset) *
+            self.ui.image_view.axis_scaling,
+            axis_unit=self.ui.image_view.axis_unit,
+            axis_precision=self.ui.image_view.axis_precision + 1,
         )
 
         self.ui.star_y_label.updateText(
-            y=(self.star_y - self.data_center_y) * self.axis_scaling,
-            axis_unit=self.axis_unit,
-            axis_precision=self.axis_precision + 1,
+            y=(self.star_y - self.ui.image_view.axis_y_offset) *
+            self.ui.image_view.axis_scaling,
+            axis_unit=self.ui.image_view.axis_unit,
+            axis_precision=self.ui.image_view.axis_precision + 1,
         )
 
         self.ui.star_fwhm_label.updateText(
-            fwhm=self.star_fwhm * self.axis_scaling,
-            axis_unit=self.axis_unit,
-            axis_precision=self.axis_precision + 1,
+            fwhm=self.star_fwhm * self.ui.image_view.axis_scaling,
+            axis_unit=self.ui.image_view.axis_unit,
+            axis_precision=self.ui.image_view.axis_precision + 1,
         )
 
         self.ui.star_peak_label.updateText(
-            peak=self.star_peak * self.data_scaling,
-            data_unit=self.data_unit,
-            data_precision=self.data_precision,
+            peak=self.star_peak * self.ui.image_view.data_scaling,
+            data_unit=self.ui.image_view.data_unit,
+            data_precision=self.ui.image_view.data_precision,
         )
 
         if self.saturation >= 1:
@@ -933,49 +1007,105 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
                                                 100)
             self.ui.saturation_label.setStyleSheet('')
 
-    def update_ticks(self) -> None:
-        ticks_x = []
-        ticks_y = []
+    # def update_zoom_spinbox_suffix(self) -> None:
+    #     size_x = 2 * self.zoom_half_width * self.axis_scaling
+    #     size_y = 2 * self.zoom_half_height * self.axis_scaling
+    #     self.ui.zoom_spinbox.setSuffix(
+    #         f'x ({size_x:.{self.axis_precision}f}{self.axis_unit} x {size_y:.{self.axis_precision}f}{self.axis_unit})'
+    #     )
 
-        for x in self.ticks_x:
-            tick_label = f'{x*self.axis_scaling:.{self.axis_precision}f}'
-            tick_pos = x + self.data_center_x
-            ticks_x.append((tick_pos, tick_label))
-
-        for y in self.ticks_y:
-            tick_label = f'{y*self.axis_scaling:.{self.axis_precision}f}'
-            tick_pos = y + self.data_center_y
-            ticks_y.append((tick_pos, tick_label))
-
-        self.ui.image_view.setTickParams(0, 5, 5, 10, ticks_x, ticks_y)
-
-    def update_zoom_spinbox_suffix(self) -> None:
-        size_x = 2 * self.zoom_half_width * self.axis_scaling
-        size_y = 2 * self.zoom_half_height * self.axis_scaling
-        self.ui.zoom_spinbox.setSuffix(
-            f'x ({size_x:.{self.axis_precision}f}{self.axis_unit} x {size_y:.{self.axis_precision}f}{self.axis_unit})'
-        )
+    ##### Coordinates transformation
 
     @Slot(int)
-    def on_onsky_checkbox_stateChanged(self, state: Qt.CheckState) -> None:
+    def on_relative_coord_checkbox_stateChanged(self,
+                                                state: Qt.CheckState) -> None:
         if Qt.CheckState(state) == Qt.CheckState.Checked:
-            self.axis_unit = '"'
-            self.axis_precision = 1
-            self.axis_scaling = config.Camera.plate_scale
+            self.ui.x_label.setText('ΔX')
+            self.ui.y_label.setText('ΔY')
+            self.ui.wcs_1_label.setText('Δ' + self.wcs_ctype1[0:3].strip('-'))
+            self.ui.wcs_2_label.setText('Δ' + self.wcs_ctype2[0:3].strip('-'))
         else:
-            self.axis_unit = ' px'
-            self.axis_precision = 0
-            self.axis_scaling = 1
+            self.ui.x_label.setText('X')
+            self.ui.y_label.setText('Y')
+            self.ui.wcs_1_label.setText(self.wcs_ctype1[0:3].strip('-'))
+            self.ui.wcs_2_label.setText(self.wcs_ctype2[0:3].strip('-'))
 
-        self.update_labels()
-        self.update_zoom_spinbox_suffix()
+    def norm_coordinates(self, ra: float, dec: float) -> [float, float]:
+        if dec > 90:
+            dec = 180 - dec
+            ra = ra + 180
+        elif dec < -90:
+            dec = -180 - dec
+            ra = ra + 180
 
-        self.ui.x_spinbox.setScale(self.axis_scaling, self.axis_precision)
-        self.ui.y_spinbox.setScale(self.axis_scaling, self.axis_precision)
-        self.ui.x_spinbox.setSuffix(self.axis_unit)
-        self.ui.y_spinbox.setSuffix(self.axis_unit)
+        ra = ra % 360
 
-        self.update_ticks()
+        return ra, dec
+
+    def update_world_coord_lineedit(self, lineedit: QLineEdit, value: float,
+                                    unit: str, type: str, short: bool):
+        if np.isnan(value):
+            lineedit.setText('--')
+        elif unit == 'deg':
+            if type.startswith('RA--'):
+                lineedit.setText(
+                    kstring.sec_to_hms_str(value * 3600 / 15, decimal=1,
+                                           short=short))
+            else:
+                lineedit.setText(
+                    kstring.sec_to_dms_str(value * 3600, decimal=1,
+                                           short=short))
+        else:
+            lineedit.setText(f'{value:f}{unit}')
+
+    def update_coords(self, x, y):
+        dx = x - self.wcs_crpix1
+        dy = y - self.wcs_crpix2
+
+        if self.ui.relative_coord_checkbox.isChecked():
+            self.ui.x_spinbox.setValue(dx)
+            self.ui.y_spinbox.setValue(dy)
+        else:
+            self.ui.x_spinbox.setValue(x)
+            self.ui.y_spinbox.setValue(y)
+
+        if self.wcs_cd11 != 0 or self.wcs_cd12 != 0 or self.wcs_cd21 != 0 or self.wcs_cd22 != 0:
+            dl = self.wcs_cd11 * dx + self.wcs_cd12 * dy
+            dm = self.wcs_cd21 * dx + self.wcs_cd22 * dy
+        else:
+            dl = self.wcs_pc11 * dx + self.wcs_pc12 * dy
+            dm = self.wcs_pc21 * dx + self.wcs_pc22 * dy
+
+            dl *= self.wcs_cdelt1
+            dm *= self.wcs_cdelt2
+
+        l = dl + self.wcs_crval1
+        m = dm + self.wcs_crval2
+
+        if self.ui.relative_coord_checkbox.isChecked():
+            displayed_l = dl
+            displayed_m = dm
+            short = True
+        else:
+            if self.wcs_ctype1.startswith(
+                    'RA--') and self.wcs_ctype2.startswith('DEC-'):
+                displayed_l, displayed_m = self.norm_coordinates(l, m)
+            elif self.wcs_ctype1.startswith(
+                    'DEC-') and self.wcs_ctype2.startswith('RA--'):
+                displayed_m, displayed_l = self.norm_coordinates(m, l)
+            else:
+                displayed_l, displayed_m = l, m
+
+            short = False
+
+        self.update_world_coord_lineedit(self.ui.wcs_1_lineedit, displayed_l,
+                                         self.wcs_cunit1, self.wcs_ctype1,
+                                         short)
+        self.update_world_coord_lineedit(self.ui.wcs_2_lineedit, displayed_m,
+                                         self.wcs_cunit2, self.wcs_ctype2,
+                                         short)
+
+    ##### Keywords table
 
     def update_keywords_table(self, header: fits.Header) -> None:
         self.keywords_model.update_data(header)
@@ -1041,6 +1171,8 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.keywords_proxymodel.setFilterCaseSensitivity(
                 case_senstitivity)
             self.keywords_proxymodel.setFilterFixedString(text)
+
+    ##### Window
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if self.file is None:

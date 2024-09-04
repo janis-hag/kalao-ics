@@ -26,10 +26,9 @@ from pathlib import Path
 import numpy as np
 from numpy.polynomial import Polynomial
 
-from kalao.utils import ktools
-from kalao.utils.rprint import rprint
-
-from kalao.definitions.enums import PLCStatus, RelayState, TemplateID
+from kalao.common import ktools
+from kalao.common.enums import PLCStatus, RelayState, TemplateID
+from kalao.common.rprint import rprint
 
 kalao_ics_path = Path(__file__).absolute().parent
 epsilon = 1e-12
@@ -540,6 +539,10 @@ class Centering:
     wfs_with_ttm_precision = 0.2  # px
 
     min_exptime = 5  # s
+
+
+class SpiralSearch:
+    overlap = 0.15  # -
 
 
 class Focusing:

@@ -8,6 +8,8 @@ from PySide6.QtWidgets import QWidget
 
 from compiled.ui_main import Ui_MainWidget
 
+from kalao.common.enums import CameraStatus
+
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import BackendDataMixin
@@ -18,8 +20,6 @@ from kalao.guis.widgets.flux import FluxWidget
 from kalao.guis.widgets.slopes import SlopesWidget
 from kalao.guis.widgets.ttm import TTMWidget
 from kalao.guis.widgets.wfs import WFSWidget
-
-from kalao.definitions.enums import CameraStatus
 
 import config
 

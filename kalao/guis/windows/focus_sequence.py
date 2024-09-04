@@ -95,22 +95,9 @@ class FocusSequenceWindow(KMainWindow, BackendDataMixin):
             self.focus_timer.start()
         else:
             self.setWindowTitle(f'{self.file.name} - {self.windowTitle()}')
+
             hdul = fits.open(self.file)
-
-            if 'HIERARCH KAO FOC SUCCESS' not in hdul[0].header:
-                self.close()
-                msgbox = KMessageBox(mainwindow)
-                msgbox.setIcon(QMessageBox.Icon.Critical)
-                msgbox.setText('<b>Invalid file!</b>')
-                msgbox.setInformativeText(
-                    f'"{self.file}" doesn\'t seem to contain a focus sequence.'
-                )
-                msgbox.setModal(True)
-                msgbox.show()
-                return
-
             self.create_widgets(len(hdul) - 1)
-
             self.show_sequence(hdul)
 
         self.show()

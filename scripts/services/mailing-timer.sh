@@ -7,4 +7,4 @@ source /home/kalao/kalao-venv-3.11/bin/activate
 
 cd /home/kalao/kalao-ics
 
-exec python /home/kalao/kalao-ics/kalao/timers/mailing.py
+exec python /home/kalao/kalao-ics/kalao/ics/timers/mailing.py

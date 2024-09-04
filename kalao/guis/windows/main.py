@@ -68,8 +68,10 @@ class MainWindow(KMainWindow, BackendDataMixin):
                 widget, QIcon(icon),
                 widget.windowTitle().removesuffix(' - KalAO'))
 
-        self.last_update_label = KLabel(parent=self)
-        self.statusBar().addPermanentWidget(self.last_update_label)
+        self.info_label = KLabel(
+            f'Backend: {self.backend.name()} | Last update: {{datetime:%H:%M:%S %d-%m-%Y}}',
+            parent=self)
+        self.statusBar().addPermanentWidget(self.info_label)
 
         self.expert_checkbox = QCheckBox('Expert Mode', parent=self)
         self.expert_checkbox.setChecked(
@@ -191,8 +193,7 @@ class MainWindow(KMainWindow, BackendDataMixin):
             self.loop_controls.setEnabled(False)
 
     def all_updated(self, data: dict[str, Any]) -> None:
-        self.last_update_label.setText(
-            f'Last update: {datetime.now().astimezone():%H:%M:%S %d-%m-%Y}')
+        self.info_label.updateText(datetime=datetime.now())
 
     def closeEvent(self, event: QCloseEvent) -> None:
         app = QApplication.instance()

@@ -5,6 +5,8 @@ from typing import Any
 
 import numpy as np
 
+from astropy.io import fits
+
 from PySide6.QtCore import (QEvent, QObject, QSignalBlocker, QTimer, Signal,
                             Slot)
 from PySide6.QtGui import Qt
@@ -12,6 +14,11 @@ from PySide6.QtWidgets import (QFileDialog, QFrame, QLabel, QLineEdit,
                                QMessageBox, QSizePolicy, QToolButton, QWidget)
 
 from compiled.ui_engineering import Ui_EngineeringWidget
+
+from kalao.common.enums import (CameraStatus, FilterWheelStatus,
+                                FlipMirrorStatus, IPPowerStatus, LaserStatus,
+                                PLCStatus, RelayState, ServiceAction,
+                                ShutterStatus, TungstenStatus, WindowHint)
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color
@@ -25,12 +32,6 @@ from kalao.guis.windows.dm_direct_control import DMDirectControlWindow
 from kalao.guis.windows.focus_sequence import FocusSequenceWindow
 from kalao.guis.windows.spiral_search import SpiralSearchWindow
 from kalao.guis.windows.ttm_direct_control import TTMDirectControlWindow
-
-from kalao.definitions.enums import (CameraStatus, FilterWheelStatus,
-                                     FlipMirrorStatus, IPPowerStatus,
-                                     LaserStatus, PLCStatus, RelayState,
-                                     ServiceAction, ShutterStatus,
-                                     TungstenStatus, WindowHint)
 
 import config
 
@@ -884,15 +885,11 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                     else:
                         fps = np.nan
 
-                    shape = md['shape']
-                    if len(shape) == 1:
-                        shape = (shape[0], 1)
-
                     self.milk_streams_md[stream] = md.copy()
                     self.milk_streams_widgets[stream].fps_label.updateText(
                         fps=fps)
                     self.milk_streams_widgets[stream].size_label.setText(
-                        'x'.join([str(i) for i in shape]))
+                        'x'.join([str(i) for i in md['shape']]))
 
                     if fps > 0:
                         self.milk_streams_widgets[stream].indicator.setStatus(
@@ -1076,20 +1073,20 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def on_pump_checkbox_stateChanged(self, state: Qt.CheckState) -> None:
         self.action_send(self.ui.pump_checkbox,
                          self.backend.hardware_pump_status,
-                         state=Qt.CheckState(state) == Qt.CheckState.Checked)
+                         status=Qt.CheckState(state) == Qt.CheckState.Checked)
 
     @Slot(int)
     def on_heatexchanger_fan_checkbox_stateChanged(self, state: Qt.CheckState
                                                    ) -> None:
         self.action_send(self.ui.heatexchanger_fan_checkbox,
                          self.backend.hardware_fan_status,
-                         state=Qt.CheckState(state) == Qt.CheckState.Checked)
+                         status=Qt.CheckState(state) == Qt.CheckState.Checked)
 
     @Slot(int)
     def on_heater_checkbox_stateChanged(self, state: Qt.CheckState) -> None:
         self.action_send(self.ui.pump_checkbox,
                          self.backend.hardware_heater_status,
-                         state=Qt.CheckState(state) == Qt.CheckState.Checked)
+                         status=Qt.CheckState(state) == Qt.CheckState.Checked)
 
     @Slot(float)
     def on_camera_exposure_time_spinbox_valueChanged(self, d: float) -> None:
@@ -1281,6 +1278,13 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
                         )
                         continue
 
+                    if 'HIERARCH KAO FOC SUCCESS' not in fits.getheader(
+                            filename):
+                        error_list.append(
+                            f'{filename.name}: Doesn\'t seem to contain a focus sequence.'
+                        )
+                        continue
+
                     FocusSequenceWindow(self.backend, mainwindow=self,
                                         file=filename)
                 except PermissionError:
@@ -1337,7 +1341,8 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
     def update_deadman(self) -> None:
         self.deadman_count += 1
 
-        self.action_send([], self.backend.deadman, count=self.deadman_count)
+        self.action_send([], self.backend.deadman, count=self.deadman_count,
+                         inhibit_cursor=True)
 
         now = datetime.now()
         next = now + timedelta(
@@ -1398,10 +1403,10 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
     def open_spiral_search_window(self) -> None:
         if self.spiral_search_window is not None:
-            self.spiral_search.show()
-            self.spiral_search.activateWindow()
+            self.spiral_search_window.show()
+            self.spiral_search_window.activateWindow()
         else:
-            self.spiral_search = SpiralSearchWindow(self.backend)
+            self.spiral_search_window = SpiralSearchWindow(self.backend)
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.ToolTip:

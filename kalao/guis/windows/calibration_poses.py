@@ -8,7 +8,8 @@ from PySide6.QtWidgets import QAbstractSpinBox, QLineEdit, QSizePolicy, QWidget
 
 from compiled.ui_calibration_poses import Ui_CalibrationPosesWindow
 
-from kalao.utils.json import KalAOJSONDecoder
+from kalao.common.dataclasses import CalibrationPose
+from kalao.common.json import KalAOJSONDecoder
 
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils.definitions import Color
@@ -16,8 +17,6 @@ from kalao.guis.utils.mixins import BackendDataMixin
 from kalao.guis.utils.string_formatter import KalAOFormatter
 from kalao.guis.utils.widgets import (KMainWindow, KNaNDoubleSpinbox,
                                       KStatusIndicator)
-
-from kalao.definitions.dataclasses import CalibrationPose
 
 import config
 

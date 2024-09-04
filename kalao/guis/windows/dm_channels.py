@@ -2,7 +2,7 @@ from typing import Any
 
 import numpy as np
 
-from PySide6.QtCore import QTimer, Slot
+from PySide6.QtCore import QTimer, Signal, Slot
 from PySide6.QtGui import QCloseEvent, QShowEvent
 from PySide6.QtWidgets import QWidget
 
@@ -11,14 +11,14 @@ from compiled.ui_dm_channels import Ui_DMChannelsWindow
 from kalao.guis.backends.abstract import AbstractBackend
 from kalao.guis.utils import colormaps
 from kalao.guis.utils.mixins import (BackendActionMixin, BackendDataMixin,
-                                     MinMaxMixin, SceneHoverMixin)
+                                     MinMaxMixin)
 from kalao.guis.utils.widgets import KMainWindow
 
 import config
 
 
 class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
-                       SceneHoverMixin, BackendDataMixin):
+                       BackendDataMixin):
     image_info = config.Images.dm01disp
 
     data_unit = ' µm'
@@ -29,6 +29,8 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
 
     img_min = np.nan
     img_max = np.nan
+
+    hovered = Signal(str)
 
     def __init__(self, backend: AbstractBackend, dm_number: int,
                  parent: QWidget = None) -> None:
@@ -50,6 +52,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             prefix = 'DM_'
             self.disp_stream = config.SHM.DM
             self.commands_stream = config.SHM.COMMANDS_DM
+            self.data_unit = ' µm'
             self.mask = np.full(config.DM.shape, False)
             self.mask[0, 0] = True
             self.mask[0, -1] = True
@@ -81,13 +84,21 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         else:
             raise Exception(f'Unknown DM number {dm_number}')
 
+        self.ui.dm_view.set_data_md(self.data_unit, 2)
+        self.ui.dm_view.set_axis_md('', 0)
         self.ui.dm_view.updateColormap(colormaps.CoolWarm())
-        self.ui.dm_view.hovered.connect(self.hover_xyv_to_str)
+        self.ui.dm_view.hovered_str.connect(lambda string: self.hovered.emit(
+            string))
+
         self.ui.stroke_label_dm.updateText(min=np.nan, max=np.nan,
                                            unit=self.data_unit)
 
+        self.ui.commands_view.set_data_md('', 2)
+        self.ui.commands_view.set_axis_md('', 0)
         self.ui.commands_view.updateColormap(colormaps.CoolWarmTransparent())
-        self.ui.commands_view.hovered.connect(self.hover_xyv_to_str_commands)
+        self.ui.commands_view.hovered_str.connect(lambda string: self.hovered.
+                                                  emit(string))
+
         self.ui.stroke_label_commands.updateText(min=np.nan, max=np.nan,
                                                  unit='')
 
@@ -95,8 +106,10 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.reset_buttons = []
         for i in range(0, 12):
             view = getattr(self.ui, f'view_{i:02d}')
-            view.hovered.connect(self.hover_xyv_to_str)
+            view.set_data_md(self.data_unit, 2)
+            view.set_axis_md('', 0)
             view.updateColormap(colormaps.CoolWarm())
+            view.hovered_str.connect(lambda string: self.hovered.emit(string))
 
             reset_button = getattr(self.ui, f'reset_button_{i:02d}')
             reset_button.clicked.connect(lambda checked=False, _i=i: self.
@@ -166,23 +179,6 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
         self.action_send(self.reset_buttons + [self.ui.reset_all_button],
                          self.backend.channels_resetall,
                          dm_number=self.dm_number)
-
-    def hover_xyv_to_str_commands(self, x: float, y: float, v: float) -> None:
-        if not np.isnan(x) and not np.isnan(y):
-            x = int(x)
-            y = int(y)
-
-            string = self.formatter.format(
-                'X: {x:.{axis_precision}f}{axis_unit}, Y: {y:.{axis_precision}f}{axis_unit}, V: {v:.{data_precision}f}{data_unit}',
-                x=(x - self.data_center_x) * self.axis_scaling,
-                y=(y - self.data_center_y) * self.axis_scaling,
-                v=v * self.data_scaling, axis_precision=self.axis_precision,
-                axis_unit=self.axis_unit, data_precision=self.data_precision,
-                data_unit='')
-
-            self.hovered.emit(string)
-        else:
-            self.hovered.emit('')
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.channels_timer.stop()

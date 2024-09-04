@@ -1,4 +1,4 @@
-from kalao.utils import exposure
+from kalao.ics.utils import exposure
 
 mag = 2
 target_adu = 16384
