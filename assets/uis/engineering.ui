@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1562</width>
-    <height>1086</height>
+    <width>1534</width>
+    <height>967</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -873,17 +873,39 @@
      <item>
       <widget class="QGroupBox" name="calibration_poses_groupbox">
        <property name="title">
-        <string>Calibration Poses</string>
+        <string>Windows</string>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
          <widget class="QPushButton" name="calibration_poses_button">
           <property name="text">
-           <string>Calibration poses ...</string>
+           <string>Calibration poses window ...</string>
           </property>
           <property name="icon">
            <iconset resource="../assets.qrc">
             <normaloff>:/assets/icons/calibration-poses.svg</normaloff>:/assets/icons/calibration-poses.svg</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="centering_spiral_search_window_button">
+          <property name="text">
+           <string>Spiral search window ...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../assets.qrc">
+            <normaloff>:/assets/icons/spiral-shape.svg</normaloff>:/assets/icons/spiral-shape.svg</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="focusing_focus_sequence_window_button">
+          <property name="text">
+           <string>Focus sequence window ...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../assets.qrc">
+            <normaloff>:/assets/icons/focus.svg</normaloff>:/assets/icons/focus.svg</iconset>
           </property>
          </widget>
         </item>
@@ -1378,21 +1400,10 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="0">
+        <item row="1" column="0" colspan="2">
          <widget class="QPushButton" name="centering_spiral_search_button">
           <property name="text">
            <string>Launch spiral search</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../assets.qrc">
-            <normaloff>:/assets/icons/spiral-shape.svg</normaloff>:/assets/icons/spiral-shape.svg</iconset>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QPushButton" name="centering_spiral_search_window_button">
-          <property name="text">
-           <string>Spiral search window ...</string>
           </property>
           <property name="icon">
            <iconset resource="../assets.qrc">
@@ -1409,17 +1420,6 @@
         <string>Focusing</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_5">
-        <item row="1" column="1">
-         <widget class="QPushButton" name="focusing_open_focus_sequence_button">
-          <property name="text">
-           <string>Open a focus sequence ...</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../assets.qrc">
-            <normaloff>:/assets/icons/document-open.svg</normaloff>:/assets/icons/document-open.svg</iconset>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0" colspan="2">
          <spacer name="verticalSpacer_8">
           <property name="orientation">
@@ -1433,17 +1433,6 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="0">
-         <widget class="QPushButton" name="focusing_autofocus_button">
-          <property name="text">
-           <string>Launch autofocus</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../assets.qrc">
-            <normaloff>:/assets/icons/tools-wizard.svg</normaloff>:/assets/icons/tools-wizard.svg</iconset>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="0">
          <widget class="QPushButton" name="focusing_focus_sequence_button">
           <property name="text">
@@ -1456,13 +1445,24 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="focusing_focus_sequence_window_button">
+         <widget class="QPushButton" name="focusing_autofocus_button">
           <property name="text">
-           <string>Focus sequence window...</string>
+           <string>Launch autofocus</string>
           </property>
           <property name="icon">
            <iconset resource="../assets.qrc">
-            <normaloff>:/assets/icons/focus.svg</normaloff>:/assets/icons/focus.svg</iconset>
+            <normaloff>:/assets/icons/tools-wizard.svg</normaloff>:/assets/icons/tools-wizard.svg</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QPushButton" name="focusing_open_focus_sequence_button">
+          <property name="text">
+           <string>Open a focus sequence ...</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../assets.qrc">
+            <normaloff>:/assets/icons/document-open.svg</normaloff>:/assets/icons/document-open.svg</iconset>
           </property>
          </widget>
         </item>
@@ -1569,174 +1569,7 @@
         <string>Camstack</string>
        </property>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="1">
-         <spacer name="horizontalSpacer_9">
-          <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="0">
-         <layout class="QGridLayout" name="camstack_layout" columnstretch="0,0,0">
-          <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="QLabel" name="camstack_proc_label">
-            <property name="font">
-             <font>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>PROC</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="QLabel" name="camstack_tmux_label">
-            <property name="font">
-             <font>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>TMUX</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="kalaocamctrl_label">
-            <property name="text">
-             <string>kalaocam_ctrl</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="KStatusIndicator" name="kalaocamctrl_proc_indicator">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="cursor" stdset="0">
-             <cursorShape>WhatsThisCursor</cursorShape>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="KStatusIndicator" name="kalaocamctrl_tmux_indicator">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="cursor" stdset="0">
-             <cursorShape>WhatsThisCursor</cursorShape>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="camstack_name_label">
-            <property name="font">
-             <font>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Name</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="nuvufgrab_label">
-            <property name="text">
-             <string>nuvu_fgrab</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="KStatusIndicator" name="nuvufgrab_tmux_indicator">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="cursor" stdset="0">
-             <cursorShape>WhatsThisCursor</cursorShape>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="KStatusIndicator" name="nuvufgrab_proc_indicator">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-            <property name="cursor" stdset="0">
-             <cursorShape>WhatsThisCursor</cursorShape>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="1" column="0" colspan="2">
+        <item row="3" column="0" colspan="3">
          <spacer name="verticalSpacer_11">
           <property name="orientation">
            <enum>Qt::Orientation::Vertical</enum>
@@ -1744,7 +1577,170 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>20</width>
-            <height>40</height>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="camstack_proc_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>PROC</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="camstack_tmux_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>TMUX</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="camstack_name_label">
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Name</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
+         <widget class="KStatusIndicator" name="nuvufgrab_tmux_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="kalaocamctrl_label">
+          <property name="text">
+           <string>kalaocam_ctrl</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
+         <widget class="KStatusIndicator" name="nuvufgrab_proc_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
+         <widget class="KStatusIndicator" name="kalaocamctrl_tmux_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="nuvufgrab_label">
+          <property name="text">
+           <string>nuvu_fgrab</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
+         <widget class="KStatusIndicator" name="kalaocamctrl_proc_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3" rowspan="3">
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
            </size>
           </property>
          </spacer>
@@ -1757,24 +1753,24 @@
        <property name="title">
         <string>IPPower</string>
        </property>
-       <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,0,1,1">
-        <item row="1" column="0">
-         <widget class="QLabel" name="ippower_bench_label">
+       <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,0,1,1,0">
+        <item row="2" column="0">
+         <widget class="QLabel" name="ippower_dm_label">
           <property name="text">
-           <string>Bench</string>
+           <string>DM</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="ippower_rtc_on_button">
+        <item row="0" column="3">
+         <widget class="QPushButton" name="ippower_rtc_off_button">
           <property name="enabled">
            <bool>false</bool>
           </property>
           <property name="text">
-           <string>Power on</string>
+           <string>Power off</string>
           </property>
           <property name="icon">
            <iconset resource="../assets.qrc">
@@ -1807,6 +1803,30 @@
           </property>
          </widget>
         </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="ippower_rtc_on_button">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Power on</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../assets.qrc">
+            <normaloff>:/assets/icons/system-shutdown.svg</normaloff>:/assets/icons/system-shutdown.svg</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="ippower_bench_label">
+          <property name="text">
+           <string>Bench</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="1">
          <widget class="KStatusIndicator" name="ippower_bench_indicator">
           <property name="sizePolicy">
@@ -1832,52 +1852,26 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="ippower_dm_label">
+        <item row="3" column="0" colspan="4">
+         <spacer name="verticalSpacer_12">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="ippower_rtc_label">
           <property name="text">
-           <string>DM</string>
+           <string>RTC</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="KStatusIndicator" name="ippower_rtc_indicator">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="cursor" stdset="0">
-           <cursorShape>WhatsThisCursor</cursorShape>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="3">
-         <widget class="QPushButton" name="ippower_rtc_off_button">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>Power off</string>
-          </property>
-          <property name="icon">
-           <iconset resource="../assets.qrc">
-            <normaloff>:/assets/icons/system-shutdown.svg</normaloff>:/assets/icons/system-shutdown.svg</iconset>
           </property>
          </widget>
         </item>
@@ -1925,15 +1919,43 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="ippower_rtc_label">
-          <property name="text">
-           <string>RTC</string>
+        <item row="0" column="1">
+         <widget class="KStatusIndicator" name="ippower_rtc_indicator">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+          <property name="minimumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="cursor" stdset="0">
+           <cursorShape>WhatsThisCursor</cursorShape>
           </property>
          </widget>
+        </item>
+        <item row="0" column="4" rowspan="3">
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </widget>

@@ -4,18 +4,13 @@ import inspect
 import logging
 import pickle
 import traceback
-import zoneinfo
-from datetime import date, datetime, time, timedelta
 from typing import Any, Callable
 
 from flask import Flask, Response, jsonify, make_response, request
 from flask.json.provider import JSONProvider
 
-from kalao.common import ktime
 from kalao.common.json import KalAOJSONDecoder, KalAOJSONEncoder
 from kalao.common.rprint import rprint
-
-from kalao.ics.utils import report
 
 from kalao.guis.backends.abstract import AbstractBackend, name_to_url
 
@@ -50,24 +45,6 @@ log.setLevel(logging.ERROR)
 @app.route('/ping')
 def ping() -> str:
     return 'Pong'
-
-
-@app.route('/night_report')
-@app.route('/night_report/<night>')
-def night_report(night: str | None = None) -> Response:
-    if night is None:
-        since = ktime.get_start_of_night()
-        since = since - timedelta(days=1)
-    else:
-        since = datetime.combine(date.fromisoformat(night), time(
-            12, 0, 0, 0)).replace(tzinfo=zoneinfo.ZoneInfo('America/Santiago'))
-
-    content = report.generate(since, since + timedelta(days=1), short=True)
-
-    response = make_response(content)
-    response.headers['Content-Type'] = 'text/plain; charset=utf-8'
-
-    return response
 
 
 def _serve(fun: Callable,

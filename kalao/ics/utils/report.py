@@ -7,7 +7,7 @@ from typing import Any
 from pymongo import DESCENDING
 from systemd import journal
 
-from kalao.common import database_definitions, kstring, ktime
+from kalao.common import database_definitions, git, kstring, ktime
 from kalao.common.enums import AlarmLevel, LogLevel, ReportType
 
 from kalao.ics import database
@@ -163,7 +163,7 @@ def generate(since: datetime, until: datetime, short: bool = False,
               type=type)
 
         for repo in config.Git.repositories:
-            if '-dirty' in config.get_git_version(repo):
+            if '-dirty' in git.get_version(repo):
                 print(
                     str_io,
                     f'Warning: {repo} git repository contains uncommited changes.',

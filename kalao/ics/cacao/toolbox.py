@@ -216,8 +216,8 @@ def set_tmux_value(session_name: str, key: str,
         return None
 
 
-def wait_file(file: str | Path, timeout: float = 30,
-              wait_time: float = 1) -> ReturnCode:
+def wait_file(file: str | Path, timeout: float,
+              polling_interval: float = 1) -> ReturnCode:
     if not isinstance(file, Path):
         file = Path(file)
 
@@ -229,4 +229,4 @@ def wait_file(file: str | Path, timeout: float = 30,
         elif (time.monotonic() - start) > timeout:
             return ReturnCode.TIMEOUT
 
-        time.sleep(wait_time)
+        time.sleep(polling_interval)

@@ -65,7 +65,7 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         with QSignalBlocker(self.ui.wfs_autogain_setting_combobox):
             for emgain, exptime in config.WFS.autogain_params:
                 self.ui.wfs_autogain_setting_combobox.addItem(
-                    f'EM Gain: {emgain:d}, Exp. time: {exptime:.1f} ms')
+                    f'EM Gain: {emgain:d}, Exp. time: {exptime:.3g} ms')
 
             self.ui.wfs_autogain_setting_combobox.setCurrentIndex(-1)
 
@@ -479,11 +479,11 @@ class LoopControlsWidget(KWidget, BackendActionMixin, BackendDataMixin):
         last = self.ui.last_spinbox.value() - 1
         law = laws[self.ui.law_combobox.currentText()]
 
-        modalgains = [1] * self.modalgains_series.count()
+        modalgains = np.ones(self.modalgains_series.count())
         modalgains[cutoff:last + 1] = law(cutoff, last + 1)
         modalgains[last + 1:] = 0
 
-        self.display_modalgains(np.array(modalgains))
+        self.display_modalgains(modalgains)
 
         self.action_send([], self.backend.ao_dmloop_modalgains,
                          modalgains=modalgains)

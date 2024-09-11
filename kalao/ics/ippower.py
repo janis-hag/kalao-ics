@@ -132,7 +132,7 @@ def _get_port_name_from_req(req: requests.Response, power_port: int) -> str:
 def init() -> ReturnCode:
     logger.info('ippower', 'Initialising IPPowers')
 
-    # Do not change state of PC or DM
+    # Do not change state of RTC or DM
 
     # Powering up the bench
     if switch(config.IPPower.Port.Bench, IPPowerStatus.ON) == IPPowerStatus.ON:

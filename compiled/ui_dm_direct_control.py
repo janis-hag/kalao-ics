@@ -18,7 +18,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QDoubleSpinBox, QFormLayout, QGridLayout,
     QGroupBox, QHBoxLayout, QLabel, QMainWindow,
     QMenuBar, QPushButton, QSizePolicy, QSlider,
-    QVBoxLayout, QWidget)
+    QStatusBar, QVBoxLayout, QWidget)
 from . import rc_assets
 
 class Ui_DMDirectControlWindow(object):
@@ -195,8 +195,11 @@ class Ui_DMDirectControlWindow(object):
         DMDirectControlWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(DMDirectControlWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 907, 30))
+        self.menubar.setGeometry(QRect(0, 0, 907, 23))
         DMDirectControlWindow.setMenuBar(self.menubar)
+        self.statusbar = QStatusBar(DMDirectControlWindow)
+        self.statusbar.setObjectName(u"statusbar")
+        DMDirectControlWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(DMDirectControlWindow)
 

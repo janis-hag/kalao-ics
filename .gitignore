@@ -1,4 +1,4 @@
-kalao-config/config/_systemd/user/default.target.wants/
+dotfiles/config/_systemd/user/default.target.wants/
 
 *.a
 *.mke

@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QWidget
 
 from compiled.ui_spiral_search import Ui_SpiralSearchWindow
 
-from kalao.common import kstring, spiral_search
+from kalao.common import spiral_search
 from kalao.common.json import KalAOJSONDecoder
 
 from kalao.guis.backends.abstract import AbstractBackend
@@ -52,9 +52,6 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
         self.ui.spiral_search_view.setRenderHints(
             QPainter.RenderHint.Antialiasing |
             QPainter.RenderHint.SmoothPixmapTransform)
-
-        self.ui.area_label.updateText(x='--"', y='--"')
-        self.ui.star_label.updateText(text='--')
 
         backend.centering_spiral_data_updated.connect(
             self.centering_spiral_data_updated)
@@ -111,10 +108,6 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
         area_x = area * config.Camera.size_x
         area_y = area * config.Camera.size_x
 
-        self.ui.area_label.updateText(
-            x=kstring.sec_to_dms_str(area_x * config.Camera.plate_scale),
-            y=kstring.sec_to_dms_str(area_y * config.Camera.plate_scale))
-
         # Compute coords
 
         coords = spiral_search.generate_grid(overlap=overlap, radius=radius)
@@ -167,22 +160,23 @@ class SpiralSearchWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
             text_item.setZValue(200)
 
         # Draw star if found
-        pen_star = Qt.PenStyle.NoPen
         brush_star = QBrush(Color.YELLOW, Qt.BrushStyle.SolidPattern)
 
         if not np.isnan(self.star_dx) and not np.isnan(self.star_dy):
             star = self._draw_star()
 
-            star_item = self._scene.addPolygon(star, pen_star, brush_star)
+            star_item = self._scene.addPolygon(star, Qt.PenStyle.NoPen,
+                                               brush_star)
             star_item.setPos(-self.star_dx, -self.star_dy)
             star_item.setZValue(300)
 
-            self.ui.star_label.updateText(
-                text=
-                f'alt = {+self.star_dx*config.Offsets.camera_x_to_tel_alt:.2f}" and az = {+self.star_dy*config.Offsets.camera_y_to_tel_az:.2f}"'
-            )
+            self.ui.star_altitude_spinbox.setValue(
+                self.star_dx * config.Offsets.camera_x_to_tel_alt)
+            self.ui.star_azimut_spinbox.setValue(
+                self.star_dy * config.Offsets.camera_y_to_tel_az)
         else:
-            self.ui.star_label.updateText(text='not found')
+            self.ui.star_altitude_spinbox.setValue(np.nan)
+            self.ui.star_azimut_spinbox.setValue(np.nan)
 
         # Update view
 

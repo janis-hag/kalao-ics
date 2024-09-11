@@ -20,27 +20,19 @@
 # WFS Plate scale = 1.16 arcsec / px
 # FlI Plate scale = 0.0507 arcsec / px
 
-import subprocess
 from pathlib import Path
 
 import numpy as np
 from numpy.polynomial import Polynomial
 
-from kalao.common import ktools
+from kalao.common import git, ktools
 from kalao.common.enums import PLCStatus, RelayState, TemplateID
 from kalao.common.rprint import rprint
 
 kalao_ics_path = Path(__file__).absolute().parent
 epsilon = 1e-12
 
-
-def get_git_version(repository: Path) -> str:
-    return subprocess.check_output([
-        'git', 'describe', '--abbrev=7', '--dirty', '--always', '--tags'
-    ], cwd=repository).decode().strip()
-
-
-version = get_git_version(kalao_ics_path)
+version = git.get_version(kalao_ics_path)
 
 
 class Git:
@@ -116,7 +108,7 @@ class AO:
     TTM_loop_number = 2
 
     # How long to wait after starting AO
-    loop_stabilization_time = 2  # s
+    loops_stabilization_time = 2  # s
 
     check_interval = 1  # s
 
@@ -179,7 +171,6 @@ class TTM:
     # Should be 2 * 20 / 1200 / 1000 * 180/np.pi * 3600 = 6.88 arcsec / mrad
     plate_scale = 6.88  # arcsec / mrad
 
-    # Recommended: 0.5 * 5 * 0.05 (10% of TTM range)
     offload_threshold = 0  # mrad
     offload_gain = 0.05  # -
     offload_interval = 1  # s
@@ -202,7 +193,7 @@ class Camera:
     plate_scale = 0.0507  # arcsec / px
 
     center_x = 523  # px
-    center_y = 543  # px
+    center_y = 536  # px
 
     median_bias = 1007  # ADU
 
@@ -220,11 +211,13 @@ class WFS:
     max_exposuretime = 1000
     readouttime = 0.5538
 
+    camstack_start_timeout = 30  # s
+
     acquisition_time_timeout = 1
     acquisition_start_wait = 1
 
     flux_min = 800  # ADU
-    flux_stabilization_timeout = 10  # s
+    flux_stabilization_timeout = 15  # s
     flux_stabilization_time = 1.5  # s
 
     flux_averaging = 200  # samples
@@ -249,10 +242,23 @@ class WFS:
     ]
 
     # Default values, will be updated from autogain_file at startup
-    autogain_params = [(1, 0.5), (2, 0.5), (4, 0.5), (8, 0.5), (16, 0.5),
-                       (32, 0.5), (64, 0.5), (128, 0.5), (256, 0.5),
-                       (512, 0.5), (1000, 0.5), (1000, 1.0), (1000, 2.0),
-                       (1000, 4.0), (1000, 8.0)]
+    autogain_params = [
+        (1, 0.55),
+        (2, 0.55),
+        (4, 0.55),
+        (8, 0.55),
+        (16, 0.55),
+        (32, 0.55),
+        (64, 0.55),
+        (128, 0.55),
+        (256, 0.55),
+        (512, 0.55),
+        (1000, 0.55),
+        (1000, 1.0),
+        (1000, 2.0),
+        (1000, 4.0),
+        (1000, 8.0),
+    ]
     max_autogain_setting = len(autogain_params) - 1
 
 
@@ -494,7 +500,8 @@ class Starfinder:
     min_peak = 500  # ADU
 
     # 40 px corresponds to 2 arcsec
-    window = 40  # px
+    window_gaussian_fit = 40  # px
+    window_moments = 128  # px
 
 
 class Offsets:
@@ -673,6 +680,18 @@ class Systemd:
     services = {
         'System setup at boot': {
             'unit': 'kalao_system-setup.service',
+            'enabled': True,
+            'restart': False,
+            'system': True
+        },
+        'MongoDB (Database)': {
+            'unit': 'mongod.service',
+            'enabled': True,
+            'restart': False,
+            'system': True
+        },
+        'Redis (Memory cache)': {
+            'unit': 'redis.service',
             'enabled': True,
             'restart': False,
             'system': True

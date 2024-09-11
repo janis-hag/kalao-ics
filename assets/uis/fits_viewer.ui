@@ -212,10 +212,10 @@
                <number>0</number>
               </property>
               <property name="minimum">
-               <double>-9999.000000000000000</double>
+               <double>-999999.000000000000000</double>
               </property>
               <property name="maximum">
-               <double>9999.000000000000000</double>
+               <double>999999.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -336,7 +336,7 @@
              </layout>
             </item>
             <item row="7" column="1">
-             <widget class="QCheckBox" name="relative_coord_checkbox">
+             <widget class="QCheckBox" name="relative_coords_checkbox">
               <property name="text">
                <string>Relative coordinates</string>
               </property>
@@ -423,7 +423,7 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QPushButton" name="centering_exit_button">
+            <widget class="QPushButton" name="centering_validate_button">
              <property name="text">
               <string>Validate manual centering</string>
              </property>

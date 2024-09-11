@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 
 from astropy.io import fits
+from astropy.wcs import WCS
 
 from PySide6.QtCore import (QAbstractTableModel, QMargins, QMarginsF,
                             QModelIndex, QObject, QPointF, QRectF,
@@ -59,7 +60,7 @@ class FITSCardsModel(QAbstractTableModel):
         col = index.column()
 
         if role == Qt.DisplayRole:
-            return self._data[row][col]
+            return str(self._data[row][col])
 
         return None
 
@@ -123,8 +124,9 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, BackendDataMixin):
 
     hovered = Signal(str)
 
-    def __init__(self, backend: AbstractBackend, hdul: fits.HDUList = None,
-                 file: Path = None, parent: QWidget = None) -> None:
+    def __init__(self, backend: AbstractBackend | None,
+                 hdul: fits.HDUList | None = None, file: Path | None = None,
+                 parent: QWidget = None) -> None:
         super().__init__(parent)
 
         self.backend = backend
@@ -697,7 +699,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, BackendDataMixin):
         if hdul[0].data is None:
             return
 
-        elif len(hdul[0].data.shape) == 2:
+        elif hdul[0].data.ndim == 2:
             self.ui.frame_label.setEnabled(False)
 
             with QSignalBlocker(self.ui.frame_spinbox):
@@ -712,7 +714,7 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, BackendDataMixin):
 
             self.img = hdul[0].data
 
-        elif len(hdul[0].data.shape) == 3:
+        elif hdul[0].data.ndim == 3:
             on_last = self.ui.frame_spinbox.value(
             ) == self.ui.frame_spinbox.maximum()
 
@@ -746,83 +748,64 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, BackendDataMixin):
         else:
             self.timestamp = None
 
-        self.wcs_bunit = ' ' + hdu.header.get('BUNIT', 'ADU')
+        bunit = ' ' + hdu.header.get('BUNIT', 'ADU')
+        wcsaxes = hdu.header.get('WCSAXES')
 
-        self.wcs_crpix1 = hdu.header.get(
-            'CRPIX1', 1) - 1  # Note: FITS indexing starts at 1
-        self.wcs_crpix2 = hdu.header.get(
-            'CRPIX2', 1) - 1  # Note: FITS indexing starts at 1
+        self.wcs = WCS(hdu.header, naxis=wcsaxes)
 
-        self.wcs_crval1 = hdu.header.get('CRVAL1', 0)
-        self.wcs_crval2 = hdu.header.get('CRVAL2', 0)
-
-        self.wcs_ctype1 = hdu.header.get('CTYPE1', 'UNK')
-        self.wcs_ctype2 = hdu.header.get('CTYPE2', 'UNK')
-
-        self.wcs_cunit1 = hdu.header.get('CUNIT1', '')
-        self.wcs_cunit2 = hdu.header.get('CUNIT2', '')
-
-        self.wcs_cd11 = hdu.header.get('CD1_1', 0)
-        self.wcs_cd12 = hdu.header.get('CD1_2', 0)
-        self.wcs_cd21 = hdu.header.get('CD2_1', 0)
-        self.wcs_cd22 = hdu.header.get('CD2_2', 0)
-
-        self.wcs_pc11 = hdu.header.get('PC1_1', 1)
-        self.wcs_pc12 = hdu.header.get('PC1_2', 0)
-        self.wcs_pc21 = hdu.header.get('PC2_1', 0)
-        self.wcs_pc22 = hdu.header.get('PC2_2', 1)
-
-        self.wcs_cdelt1 = hdu.header.get('CDELT1', 1)
-        self.wcs_cdelt2 = hdu.header.get('CDELT2', 1)
-
-        self.wcs_radesys = hdu.header.get('RADESYS', None)
-        self.wcs_equinox = hdu.header.get('EQUINOX', None)
-
-        if self.wcs_radesys is None:
-            if self.wcs_equinox is None:
-                self.wcs_radesys = 'ICRS'
-            elif self.wcs_equinox < 1984.0:
-                self.wcs_radesys = 'FK4'
-            elif self.wcs_equinox >= 1984.0:
-                self.wcs_radesys = 'FK5'
-            else:
-                self.wcs_radesys = 'ERROR'
-
-        if self.wcs_equinox is None:
-            if self.wcs_radesys == 'ICRS':
-                self.wcs_equinox = np.nan
-            elif self.wcs_radesys == 'FK4':
-                self.wcs_equinox = 1950.0
-            elif self.wcs_radesys == 'FK5':
-                self.wcs_equinox = 2000.0
-            else:
-                self.wcs_equinox = np.nan
-
-        if self.wcs_radesys == 'ICRS':
+        if self.wcs.wcs.radesys == 'ICRS':
             wcs_equinox_str = ''
-        elif self.wcs_radesys == 'FK4':
-            wcs_equinox_str = f' (B{self.wcs_equinox})'
-        elif self.wcs_radesys == 'FK5':
-            wcs_equinox_str = f' (J{self.wcs_equinox})'
+        elif self.wcs.wcs.radesys == 'FK4':
+            wcs_equinox_str = f' (B{self.wcs.wcs.equinox})'
+        elif self.wcs.wcs.radesys == 'FK5':
+            wcs_equinox_str = f' (J{self.wcs.wcs.equinox})'
         else:
-            wcs_equinox_str = f' ({self.wcs_equinox})'
+            wcs_equinox_str = f' ({self.wcs.wcs.equinox})'
 
-        # cdelt1 = np.sqrt(cd11**2 + cd21**2)
-        # cdelt2 = np.sqrt(cd12**2 + cd22**2)
-        #
-        # if np.sign(cd11*cd22 - cd12*cd21) == -1:
-        #     cdelt1 = -cdelt1
-        #
-        # crota2 = np.arctan2(
-        #     np.sign(cdelt1 * cdelt2) * cd12,
-        #     cd22)  # = np.arctan2(-np.sign(cdelt1*cdelt2)*cd21, cd11)
-        # crota2 *= 180 / np.pi
+        self.wfs_fov.setRect(self.wcs.wcs.crpix[0] - 1 - self.WFS_fov / 2,
+                             self.wcs.wcs.crpix[1] - 1 - self.WFS_fov / 2,
+                             self.WFS_fov,
+                             self.WFS_fov)  # Note: FITS indexing starts at 1
 
-        self.wfs_fov.setRect(self.wcs_crpix1 - self.WFS_fov / 2,
-                             self.wcs_crpix2 - self.WFS_fov / 2, self.WFS_fov,
-                             self.WFS_fov)
+        l_dx, l_dy = self.wcs.all_world2pix(self.wcs.wcs.crval[0] + 1e-12,
+                                            self.wcs.wcs.crval[1], 1)
+        m_dx, m_dy = self.wcs.all_world2pix(self.wcs.wcs.crval[0],
+                                            self.wcs.wcs.crval[1] + 1e-12, 1)
 
-        self.ui.image_view.setNEIndicator(0)
+        l_dx -= self.wcs.wcs.crpix[0]
+        l_dy -= self.wcs.wcs.crpix[1]
+        m_dx -= self.wcs.wcs.crpix[0]
+        m_dy -= self.wcs.wcs.crpix[1]
+
+        l_norm = np.sqrt(l_dx**2 + l_dy**2)
+        m_norm = np.sqrt(m_dx**2 + m_dy**2)
+
+        lm_norm = max(l_norm, m_norm)
+
+        l_angle = np.arctan2(l_dy, l_dx) * 180 / np.pi
+        m_angle = np.arctan2(m_dy, m_dx) * 180 / np.pi
+
+        if self.wcs.wcs.ctype[0].startswith(
+                'RA--') and self.wcs.wcs.ctype[1].startswith('DEC-'):
+            l_text = 'E'
+            m_text = 'N'
+        elif self.wcs.wcs.ctype[0].startswith(
+                'DEC-') and self.wcs.wcs.ctype[1].startswith('RA--'):
+            l_text = 'N'
+            m_text = 'E'
+        else:
+            l_text = ''
+            m_text = ''
+
+        self.ui.image_view.resetArrows()
+
+        self.ui.image_view.addArrow(0, 1, 'X', Color.GREEN)
+        self.ui.image_view.addArrow(90, 1, 'Y', Color.GREEN)
+
+        self.ui.image_view.addArrow(l_angle, l_norm / lm_norm, l_text,
+                                    Color.PURPLE)
+        self.ui.image_view.addArrow(m_angle, m_norm / lm_norm, m_text,
+                                    Color.PURPLE)
 
         # Zoom window (reset if image size changed)
 
@@ -878,23 +861,25 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, BackendDataMixin):
 
         # Update
 
-        self.ui.value_spinbox.setSuffix(f' {self.wcs_bunit}')
+        self.ui.value_spinbox.setSuffix(f' {bunit}')
 
         self.ui.wcs_system_lineedit.setText(
-            f'{self.wcs_radesys}{wcs_equinox_str}')
+            f'{self.wcs.wcs.radesys}{wcs_equinox_str}')
 
-        self.ui.minmax_widget.update_spinboxes_unit(f' {self.wcs_bunit}', 0, 1)
+        self.ui.minmax_widget.update_spinboxes_unit(f' {bunit}', 0, 1)
 
-        self.ui.image_view.set_data_md(f' {self.wcs_bunit}', 0)
-        self.ui.image_view.set_axis_md(' px', 0, 1, self.wcs_crpix1,
-                                       self.wcs_crpix2)
+        self.ui.image_view.set_data_md(f' {bunit}', 0)
+        self.ui.image_view.set_axis_md(' px', 0, 1, self.wcs.wcs.crpix[0] - 1,
+                                       self.wcs.wcs.crpix[1] -
+                                       1)  # Note: FITS indexing starts at 1
 
-        self.ui.zoom_view.set_data_md(f' {self.wcs_bunit}', 0)
-        self.ui.zoom_view.set_axis_md(' px', 0, 1, self.wcs_crpix1,
-                                      self.wcs_crpix2)
+        self.ui.zoom_view.set_data_md(f' {bunit}', 0)
+        self.ui.zoom_view.set_axis_md(' px', 0, 1, self.wcs.wcs.crpix[0] - 1,
+                                      self.wcs.wcs.crpix[1] -
+                                      1)  # Note: FITS indexing starts at 1
 
-        self.on_relative_coord_checkbox_stateChanged(
-            self.ui.relative_coord_checkbox.checkState())
+        self.on_relative_coords_checkbox_stateChanged(
+            self.ui.relative_coords_checkbox.checkState())
 
         self.update_image_view()
         self.update_labels()
@@ -932,16 +917,6 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, BackendDataMixin):
         y = self.zoom_center_y
         hw = self.zoom_half_width = self.img_width // self.zoom_level // 2
         hh = self.zoom_half_height = self.img_height // self.zoom_level // 2
-
-        with QSignalBlocker(self.ui.x_spinbox):
-            self.ui.x_spinbox.setValue(x - self.ui.image_view.axis_x_offset)
-
-        with QSignalBlocker(self.ui.y_spinbox):
-            self.ui.y_spinbox.setValue(y - self.ui.image_view.axis_y_offset)
-
-        # with QSignalBlocker(self.ui.zoom_spinbox):
-        #     self.ui.zoom_spinbox.setValue(self.zoom_level)
-        #     self.update_zoom_spinbox_suffix()
 
         x = round(x)
         y = round(y)
@@ -1007,40 +982,23 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, BackendDataMixin):
                                                 100)
             self.ui.saturation_label.setStyleSheet('')
 
-    # def update_zoom_spinbox_suffix(self) -> None:
-    #     size_x = 2 * self.zoom_half_width * self.axis_scaling
-    #     size_y = 2 * self.zoom_half_height * self.axis_scaling
-    #     self.ui.zoom_spinbox.setSuffix(
-    #         f'x ({size_x:.{self.axis_precision}f}{self.axis_unit} x {size_y:.{self.axis_precision}f}{self.axis_unit})'
-    #     )
-
     ##### Coordinates transformation
 
     @Slot(int)
-    def on_relative_coord_checkbox_stateChanged(self,
-                                                state: Qt.CheckState) -> None:
+    def on_relative_coords_checkbox_stateChanged(self,
+                                                 state: Qt.CheckState) -> None:
         if Qt.CheckState(state) == Qt.CheckState.Checked:
             self.ui.x_label.setText('ΔX')
             self.ui.y_label.setText('ΔY')
-            self.ui.wcs_1_label.setText('Δ' + self.wcs_ctype1[0:3].strip('-'))
-            self.ui.wcs_2_label.setText('Δ' + self.wcs_ctype2[0:3].strip('-'))
+            self.ui.wcs_1_label.setText('Δ' +
+                                        self.wcs.wcs.ctype[0][0:3].strip('-'))
+            self.ui.wcs_2_label.setText('Δ' +
+                                        self.wcs.wcs.ctype[1][0:3].strip('-'))
         else:
             self.ui.x_label.setText('X')
             self.ui.y_label.setText('Y')
-            self.ui.wcs_1_label.setText(self.wcs_ctype1[0:3].strip('-'))
-            self.ui.wcs_2_label.setText(self.wcs_ctype2[0:3].strip('-'))
-
-    def norm_coordinates(self, ra: float, dec: float) -> [float, float]:
-        if dec > 90:
-            dec = 180 - dec
-            ra = ra + 180
-        elif dec < -90:
-            dec = -180 - dec
-            ra = ra + 180
-
-        ra = ra % 360
-
-        return ra, dec
+            self.ui.wcs_1_label.setText(self.wcs.wcs.ctype[0][0:3].strip('-'))
+            self.ui.wcs_2_label.setText(self.wcs.wcs.ctype[1][0:3].strip('-'))
 
     def update_world_coord_lineedit(self, lineedit: QLineEdit, value: float,
                                     unit: str, type: str, short: bool):
@@ -1059,51 +1017,35 @@ class FITSViewerWindow(KMainWindow, BackendActionMixin, BackendDataMixin):
             lineedit.setText(f'{value:f}{unit}')
 
     def update_coords(self, x, y):
-        dx = x - self.wcs_crpix1
-        dy = y - self.wcs_crpix2
-
-        if self.ui.relative_coord_checkbox.isChecked():
-            self.ui.x_spinbox.setValue(dx)
-            self.ui.y_spinbox.setValue(dy)
+        if self.ui.relative_coords_checkbox.isChecked():
+            self.ui.x_spinbox.setValue(x -
+                                       (self.wcs.wcs.crpix[0] -
+                                        1))  # Note: FITS indexing starts at 1
+            self.ui.y_spinbox.setValue(y -
+                                       (self.wcs.wcs.crpix[1] -
+                                        1))  # Note: FITS indexing starts at 1
         else:
             self.ui.x_spinbox.setValue(x)
             self.ui.y_spinbox.setValue(y)
 
-        if self.wcs_cd11 != 0 or self.wcs_cd12 != 0 or self.wcs_cd21 != 0 or self.wcs_cd22 != 0:
-            dl = self.wcs_cd11 * dx + self.wcs_cd12 * dy
-            dm = self.wcs_cd21 * dx + self.wcs_cd22 * dy
-        else:
-            dl = self.wcs_pc11 * dx + self.wcs_pc12 * dy
-            dm = self.wcs_pc21 * dx + self.wcs_pc22 * dy
+        l, m = self.wcs.all_pix2world(x, y, 0)
 
-            dl *= self.wcs_cdelt1
-            dm *= self.wcs_cdelt2
-
-        l = dl + self.wcs_crval1
-        m = dm + self.wcs_crval2
-
-        if self.ui.relative_coord_checkbox.isChecked():
-            displayed_l = dl
-            displayed_m = dm
+        if self.ui.relative_coords_checkbox.isChecked():
+            displayed_l = l - self.wcs.wcs.crval[0]
+            displayed_m = m - self.wcs.wcs.crval[1]
             short = True
         else:
-            if self.wcs_ctype1.startswith(
-                    'RA--') and self.wcs_ctype2.startswith('DEC-'):
-                displayed_l, displayed_m = self.norm_coordinates(l, m)
-            elif self.wcs_ctype1.startswith(
-                    'DEC-') and self.wcs_ctype2.startswith('RA--'):
-                displayed_m, displayed_l = self.norm_coordinates(m, l)
-            else:
-                displayed_l, displayed_m = l, m
+            displayed_l = l
+            displayed_m = m
 
             short = False
 
         self.update_world_coord_lineedit(self.ui.wcs_1_lineedit, displayed_l,
-                                         self.wcs_cunit1, self.wcs_ctype1,
-                                         short)
+                                         self.wcs.wcs.cunit[0],
+                                         self.wcs.wcs.ctype[0], short)
         self.update_world_coord_lineedit(self.ui.wcs_2_lineedit, displayed_m,
-                                         self.wcs_cunit2, self.wcs_ctype2,
-                                         short)
+                                         self.wcs.wcs.cunit[1],
+                                         self.wcs.wcs.ctype[1], short)
 
     ##### Keywords table
 

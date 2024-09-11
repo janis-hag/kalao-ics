@@ -1,5 +1,9 @@
+#----- Python
+
 export PYTHONUNBUFFERED=1
 export PYTHONPATH=/home/kalao/kalao-ics
+
+#----- milk
 
 export MILK_SHM_DIR=/tmp/milk
 mkdir -p $MILK_SHM_DIR
@@ -11,9 +15,27 @@ export MILK_INSTALLDIR=/usr/local/milk
 export PATH=${PATH}:${MILK_INSTALLDIR}/bin
 export PKG_CONFIG_PATH=${PKG_CONFIG_PATH:-}:${MILK_INSTALLDIR}/lib/pkgconfig
 
+#----- camstack
+
 export SCEXAO_HW=/home/kalao/kalao-edtdriver
 export PATH=${SCEXAO_HW}/bin:${PATH}
 
-export PATH=/home/kalao/.local/bin:${PATH}
+#----- CUDA
 
+export CUDADIR=/usr/local/cuda
+export PATH=${PATH}:/usr/local/cuda/bin
+
+#----- OpenBLAS
+
+export OPENBLASDIR=/usr/lib/x86_64-linux-gnu/openblas-pthread
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/opt/OpenBLAS/lib/pkgconfig
+
+#----- MAGMA
+
+export LD_LIBRARY_PATH=/usr/local/magma/lib:$LD_LIBRARY_PATH
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/magma/lib/pkgconfig/
+
+#----- Misc.
+
+export PATH=/home/kalao/.local/bin:${PATH}
 export TERM=xterm-256color

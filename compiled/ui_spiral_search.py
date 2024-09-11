@@ -17,9 +17,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QGraphicsView, QGridLayout,
     QLabel, QMainWindow, QMenuBar, QPushButton,
-    QSizePolicy, QSpinBox, QStatusBar, QWidget)
+    QSizePolicy, QSpacerItem, QSpinBox, QStatusBar,
+    QWidget)
 
-from kalao.guis.utils.widgets import KLabel
+from kalao.guis.utils.widgets import KNaNDoubleSpinbox
 from . import rc_assets
 
 class Ui_SpiralSearchWindow(object):
@@ -31,22 +32,44 @@ class Ui_SpiralSearchWindow(object):
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName(u"gridLayout")
+        self.abort_button = QPushButton(self.centralwidget)
+        self.abort_button.setObjectName(u"abort_button")
+        icon = QIcon()
+        icon.addFile(u":/assets/icons/emblem-error.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.abort_button.setIcon(icon)
+
+        self.gridLayout.addWidget(self.abort_button, 3, 0, 1, 5)
+
+        self.star_azimut_spinbox = KNaNDoubleSpinbox(self.centralwidget)
+        self.star_azimut_spinbox.setObjectName(u"star_azimut_spinbox")
+        self.star_azimut_spinbox.setReadOnly(True)
+        self.star_azimut_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.star_azimut_spinbox.setDecimals(0)
+        self.star_azimut_spinbox.setMinimum(-999999.000000000000000)
+        self.star_azimut_spinbox.setMaximum(999999.000000000000000)
+
+        self.gridLayout.addWidget(self.star_azimut_spinbox, 2, 1, 1, 1)
+
+        self.star_altitude_label = QLabel(self.centralwidget)
+        self.star_altitude_label.setObjectName(u"star_altitude_label")
+
+        self.gridLayout.addWidget(self.star_altitude_label, 1, 0, 1, 1)
+
+        self.star_azimut_label = QLabel(self.centralwidget)
+        self.star_azimut_label.setObjectName(u"star_azimut_label")
+
+        self.gridLayout.addWidget(self.star_azimut_label, 2, 0, 1, 1)
+
         self.spiral_search_view = QGraphicsView(self.centralwidget)
         self.spiral_search_view.setObjectName(u"spiral_search_view")
 
-        self.gridLayout.addWidget(self.spiral_search_view, 0, 0, 1, 3)
+        self.gridLayout.addWidget(self.spiral_search_view, 0, 0, 1, 5)
 
-        self.overlap_label = QLabel(self.centralwidget)
-        self.overlap_label.setObjectName(u"overlap_label")
-        self.overlap_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.radius_label = QLabel(self.centralwidget)
+        self.radius_label.setObjectName(u"radius_label")
+        self.radius_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.gridLayout.addWidget(self.overlap_label, 2, 1, 1, 1)
-
-        self.area_label = KLabel(self.centralwidget)
-        self.area_label.setObjectName(u"area_label")
-        self.area_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.gridLayout.addWidget(self.area_label, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.radius_label, 1, 3, 1, 1)
 
         self.radius_spinbox = QSpinBox(self.centralwidget)
         self.radius_spinbox.setObjectName(u"radius_spinbox")
@@ -54,13 +77,7 @@ class Ui_SpiralSearchWindow(object):
         self.radius_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.radius_spinbox.setMinimum(1)
 
-        self.gridLayout.addWidget(self.radius_spinbox, 1, 2, 1, 1)
-
-        self.star_label = KLabel(self.centralwidget)
-        self.star_label.setObjectName(u"star_label")
-        self.star_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.gridLayout.addWidget(self.star_label, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.radius_spinbox, 1, 4, 1, 1)
 
         self.overlap_spinbox = QSpinBox(self.centralwidget)
         self.overlap_spinbox.setObjectName(u"overlap_spinbox")
@@ -71,23 +88,33 @@ class Ui_SpiralSearchWindow(object):
         self.overlap_spinbox.setSingleStep(5)
         self.overlap_spinbox.setValue(15)
 
-        self.gridLayout.addWidget(self.overlap_spinbox, 2, 2, 1, 1)
+        self.gridLayout.addWidget(self.overlap_spinbox, 2, 4, 1, 1)
 
-        self.radius_label = QLabel(self.centralwidget)
-        self.radius_label.setObjectName(u"radius_label")
-        self.radius_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.star_altitude_spinbox = KNaNDoubleSpinbox(self.centralwidget)
+        self.star_altitude_spinbox.setObjectName(u"star_altitude_spinbox")
+        self.star_altitude_spinbox.setReadOnly(True)
+        self.star_altitude_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.star_altitude_spinbox.setDecimals(0)
+        self.star_altitude_spinbox.setMinimum(-999999.000000000000000)
+        self.star_altitude_spinbox.setMaximum(999999.000000000000000)
 
-        self.gridLayout.addWidget(self.radius_label, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.star_altitude_spinbox, 1, 1, 1, 1)
 
-        self.abort_button = QPushButton(self.centralwidget)
-        self.abort_button.setObjectName(u"abort_button")
-        icon = QIcon()
-        icon.addFile(u":/assets/icons/emblem-error.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.abort_button.setIcon(icon)
+        self.overlap_label = QLabel(self.centralwidget)
+        self.overlap_label.setObjectName(u"overlap_label")
+        self.overlap_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.gridLayout.addWidget(self.abort_button, 3, 0, 1, 3)
+        self.gridLayout.addWidget(self.overlap_label, 2, 3, 1, 1)
 
-        self.gridLayout.setColumnStretch(0, 1)
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout.addItem(self.horizontalSpacer, 1, 2, 1, 1)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout.addItem(self.horizontalSpacer_2, 2, 2, 1, 1)
+
+        self.gridLayout.setColumnStretch(2, 1)
         SpiralSearchWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(SpiralSearchWindow)
         self.menubar.setObjectName(u"menubar")
@@ -104,12 +131,14 @@ class Ui_SpiralSearchWindow(object):
 
     def retranslateUi(self, SpiralSearchWindow):
         SpiralSearchWindow.setWindowTitle(QCoreApplication.translate("SpiralSearchWindow", u"Spiral Search - KalAO", None))
-        self.overlap_label.setText(QCoreApplication.translate("SpiralSearchWindow", u"Overlap", None))
-        self.area_label.setText(QCoreApplication.translate("SpiralSearchWindow", u"Displayed area: {x} x {y}", None))
-        self.radius_spinbox.setSuffix(QCoreApplication.translate("SpiralSearchWindow", u" frames", None))
-        self.star_label.setText(QCoreApplication.translate("SpiralSearchWindow", u"Star position: {text}", None))
-        self.overlap_spinbox.setSuffix(QCoreApplication.translate("SpiralSearchWindow", u" %", None))
-        self.radius_label.setText(QCoreApplication.translate("SpiralSearchWindow", u"Radius", None))
         self.abort_button.setText(QCoreApplication.translate("SpiralSearchWindow", u"Abort", None))
+        self.star_azimut_spinbox.setSuffix(QCoreApplication.translate("SpiralSearchWindow", u"\"", None))
+        self.star_altitude_label.setText(QCoreApplication.translate("SpiralSearchWindow", u"Star altitude", None))
+        self.star_azimut_label.setText(QCoreApplication.translate("SpiralSearchWindow", u"Star azimut", None))
+        self.radius_label.setText(QCoreApplication.translate("SpiralSearchWindow", u"Radius", None))
+        self.radius_spinbox.setSuffix(QCoreApplication.translate("SpiralSearchWindow", u" frames", None))
+        self.overlap_spinbox.setSuffix(QCoreApplication.translate("SpiralSearchWindow", u" %", None))
+        self.star_altitude_spinbox.setSuffix(QCoreApplication.translate("SpiralSearchWindow", u"\"", None))
+        self.overlap_label.setText(QCoreApplication.translate("SpiralSearchWindow", u"Overlap", None))
     # retranslateUi
 

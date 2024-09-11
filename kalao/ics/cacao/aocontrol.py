@@ -16,6 +16,7 @@ from kalao.common.enums import LoopStatus, ReturnCode, ServiceAction
 
 from kalao.ics import logger, services
 from kalao.ics.cacao import toolbox
+from kalao.ics.hardware import wfs
 
 import config
 
@@ -119,24 +120,12 @@ def switch_loop(loop_number: int, close: bool = True, autozero: bool = True,
     time.sleep(1)
 
     if loop_number == 1 and with_autogain:
-        switch_autogain(on=close)
+        wfs.switch_autogain(on=close)
 
     services.unit_control(config.Systemd.services['Monitoring Timer']['unit'],
                           ServiceAction.RELOAD)
 
     return check_loops()
-
-
-def autogain_on() -> bool | None:
-    return switch_autogain(on=True)
-
-
-def autogain_off() -> bool | None:
-    return switch_autogain(on=False)
-
-
-def switch_autogain(on=True) -> bool | None:
-    return toolbox.set_fps_value(config.FPS.NUVU, 'autogain_on', on)
 
 
 def set_dmloop_gain(gain: float) -> float | None:
@@ -215,7 +204,7 @@ def reset_channel(dm_number: int, channel: int,
     elif dm_number == config.AO.TTM_loop_number:
         log = 'ttm'
     else:
-        raise Exception(f'Unknown DM number {dm_number}')
+        raise IndexError(f'Unknown DM number {dm_number}')
 
     logger.info(log, f'Resetting channel {channel:02d} of DM {dm_number:02d}')
 
@@ -245,7 +234,7 @@ def reset_dm(dm_number: int, force_flat: bool = False) -> ReturnCode:
     elif dm_number == config.AO.TTM_loop_number:
         log = 'ttm'
     else:
-        raise Exception(f'Unknown DM number {dm_number}')
+        raise IndexError(f'Unknown DM number {dm_number}')
 
     logger.info(log, f'Resetting DM {dm_number:02d}')
 

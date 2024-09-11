@@ -28,7 +28,7 @@ class Ui_EngineeringWidget(object):
     def setupUi(self, EngineeringWidget):
         if not EngineeringWidget.objectName():
             EngineeringWidget.setObjectName(u"EngineeringWidget")
-        EngineeringWidget.resize(1562, 1086)
+        EngineeringWidget.resize(1534, 967)
         self.horizontalLayout_3 = QHBoxLayout(EngineeringWidget)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.left_pane_layout = QVBoxLayout()
@@ -503,15 +503,31 @@ class Ui_EngineeringWidget(object):
 
         self.calibration_poses_groupbox = QGroupBox(EngineeringWidget)
         self.calibration_poses_groupbox.setObjectName(u"calibration_poses_groupbox")
-        self.verticalLayout_4 = QVBoxLayout(self.calibration_poses_groupbox)
-        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.horizontalLayout_2 = QHBoxLayout(self.calibration_poses_groupbox)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.calibration_poses_button = QPushButton(self.calibration_poses_groupbox)
         self.calibration_poses_button.setObjectName(u"calibration_poses_button")
         icon = QIcon()
         icon.addFile(u":/assets/icons/calibration-poses.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.calibration_poses_button.setIcon(icon)
 
-        self.verticalLayout_4.addWidget(self.calibration_poses_button)
+        self.horizontalLayout_2.addWidget(self.calibration_poses_button)
+
+        self.centering_spiral_search_window_button = QPushButton(self.calibration_poses_groupbox)
+        self.centering_spiral_search_window_button.setObjectName(u"centering_spiral_search_window_button")
+        icon1 = QIcon()
+        icon1.addFile(u":/assets/icons/spiral-shape.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.centering_spiral_search_window_button.setIcon(icon1)
+
+        self.horizontalLayout_2.addWidget(self.centering_spiral_search_window_button)
+
+        self.focusing_focus_sequence_window_button = QPushButton(self.calibration_poses_groupbox)
+        self.focusing_focus_sequence_window_button.setObjectName(u"focusing_focus_sequence_window_button")
+        icon2 = QIcon()
+        icon2.addFile(u":/assets/icons/focus.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.focusing_focus_sequence_window_button.setIcon(icon2)
+
+        self.horizontalLayout_2.addWidget(self.focusing_focus_sequence_window_button)
 
 
         self.left_pane_layout.addWidget(self.calibration_poses_groupbox)
@@ -623,17 +639,17 @@ class Ui_EngineeringWidget(object):
 
         self.camera_new_image_button = QPushButton(self.camera_groupbox)
         self.camera_new_image_button.setObjectName(u"camera_new_image_button")
-        icon1 = QIcon()
-        icon1.addFile(u":/assets/icons/insert-image.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.camera_new_image_button.setIcon(icon1)
+        icon3 = QIcon()
+        icon3.addFile(u":/assets/icons/insert-image.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.camera_new_image_button.setIcon(icon3)
 
         self.formLayout_2.setWidget(6, QFormLayout.SpanningRole, self.camera_new_image_button)
 
         self.camera_cancel_button = QPushButton(self.camera_groupbox)
         self.camera_cancel_button.setObjectName(u"camera_cancel_button")
-        icon2 = QIcon()
-        icon2.addFile(u":/assets/icons/dialog-cancel.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.camera_cancel_button.setIcon(icon2)
+        icon4 = QIcon()
+        icon4.addFile(u":/assets/icons/dialog-cancel.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.camera_cancel_button.setIcon(icon4)
 
         self.formLayout_2.setWidget(7, QFormLayout.SpanningRole, self.camera_cancel_button)
 
@@ -655,9 +671,9 @@ class Ui_EngineeringWidget(object):
         self.gridLayout_6.setObjectName(u"gridLayout_6")
         self.wfs_acquisition_start_button = QPushButton(self.wfs_groupbox)
         self.wfs_acquisition_start_button.setObjectName(u"wfs_acquisition_start_button")
-        icon3 = QIcon()
-        icon3.addFile(u":/assets/icons/media-playback-start.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.wfs_acquisition_start_button.setIcon(icon3)
+        icon5 = QIcon()
+        icon5.addFile(u":/assets/icons/media-playback-start.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.wfs_acquisition_start_button.setIcon(icon5)
 
         self.gridLayout_6.addWidget(self.wfs_acquisition_start_button, 0, 2, 1, 1)
 
@@ -682,9 +698,9 @@ class Ui_EngineeringWidget(object):
 
         self.wfs_acquisition_stop_button = QPushButton(self.wfs_groupbox)
         self.wfs_acquisition_stop_button.setObjectName(u"wfs_acquisition_stop_button")
-        icon4 = QIcon()
-        icon4.addFile(u":/assets/icons/media-playback-stop.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.wfs_acquisition_stop_button.setIcon(icon4)
+        icon6 = QIcon()
+        icon6.addFile(u":/assets/icons/media-playback-stop.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.wfs_acquisition_stop_button.setIcon(icon6)
 
         self.gridLayout_6.addWidget(self.wfs_acquisition_stop_button, 0, 3, 1, 1)
 
@@ -703,39 +719,39 @@ class Ui_EngineeringWidget(object):
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.dm_on_button = QPushButton(self.dm_groupbox)
         self.dm_on_button.setObjectName(u"dm_on_button")
-        icon5 = QIcon()
-        icon5.addFile(u":/assets/icons/system-shutdown.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.dm_on_button.setIcon(icon5)
+        icon7 = QIcon()
+        icon7.addFile(u":/assets/icons/system-shutdown.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.dm_on_button.setIcon(icon7)
 
         self.gridLayout_2.addWidget(self.dm_on_button, 0, 0, 1, 1)
 
         self.dm_off_button = QPushButton(self.dm_groupbox)
         self.dm_off_button.setObjectName(u"dm_off_button")
-        self.dm_off_button.setIcon(icon5)
+        self.dm_off_button.setIcon(icon7)
 
         self.gridLayout_2.addWidget(self.dm_off_button, 0, 1, 1, 1)
 
         self.dm_channels_button = QPushButton(self.dm_groupbox)
         self.dm_channels_button.setObjectName(u"dm_channels_button")
-        icon6 = QIcon()
-        icon6.addFile(u":/assets/icons/vcs-merge.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.dm_channels_button.setIcon(icon6)
+        icon8 = QIcon()
+        icon8.addFile(u":/assets/icons/vcs-merge.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.dm_channels_button.setIcon(icon8)
 
         self.gridLayout_2.addWidget(self.dm_channels_button, 1, 0, 1, 2)
 
         self.dm_calibration_button = QPushButton(self.dm_groupbox)
         self.dm_calibration_button.setObjectName(u"dm_calibration_button")
-        icon7 = QIcon()
-        icon7.addFile(u":/assets/icons/pattern.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.dm_calibration_button.setIcon(icon7)
+        icon9 = QIcon()
+        icon9.addFile(u":/assets/icons/pattern.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.dm_calibration_button.setIcon(icon9)
 
         self.gridLayout_2.addWidget(self.dm_calibration_button, 2, 0, 1, 2)
 
         self.dm_direct_control_button = QPushButton(self.dm_groupbox)
         self.dm_direct_control_button.setObjectName(u"dm_direct_control_button")
-        icon8 = QIcon()
-        icon8.addFile(u":/assets/icons/grid-rectangular.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.dm_direct_control_button.setIcon(icon8)
+        icon10 = QIcon()
+        icon10.addFile(u":/assets/icons/grid-rectangular.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.dm_direct_control_button.setIcon(icon10)
 
         self.gridLayout_2.addWidget(self.dm_direct_control_button, 3, 0, 1, 2)
 
@@ -752,21 +768,21 @@ class Ui_EngineeringWidget(object):
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.ttm_channels_button = QPushButton(self.ttm_groupbox)
         self.ttm_channels_button.setObjectName(u"ttm_channels_button")
-        self.ttm_channels_button.setIcon(icon6)
+        self.ttm_channels_button.setIcon(icon8)
 
         self.verticalLayout_3.addWidget(self.ttm_channels_button)
 
         self.ttm_calibration_button = QPushButton(self.ttm_groupbox)
         self.ttm_calibration_button.setObjectName(u"ttm_calibration_button")
-        self.ttm_calibration_button.setIcon(icon7)
+        self.ttm_calibration_button.setIcon(icon9)
 
         self.verticalLayout_3.addWidget(self.ttm_calibration_button)
 
         self.ttm_direct_control_button = QPushButton(self.ttm_groupbox)
         self.ttm_direct_control_button.setObjectName(u"ttm_direct_control_button")
-        icon9 = QIcon()
-        icon9.addFile(u":/assets/icons/settings-configure.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.ttm_direct_control_button.setIcon(icon9)
+        icon11 = QIcon()
+        icon11.addFile(u":/assets/icons/settings-configure.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.ttm_direct_control_button.setIcon(icon11)
 
         self.verticalLayout_3.addWidget(self.ttm_direct_control_button)
 
@@ -783,15 +799,15 @@ class Ui_EngineeringWidget(object):
         self.gridLayout_7.setObjectName(u"gridLayout_7")
         self.centering_star_button = QPushButton(self.centering_groupbox)
         self.centering_star_button.setObjectName(u"centering_star_button")
-        icon10 = QIcon()
-        icon10.addFile(u":/assets/icons/crosshairs.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.centering_star_button.setIcon(icon10)
+        icon12 = QIcon()
+        icon12.addFile(u":/assets/icons/crosshairs.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.centering_star_button.setIcon(icon12)
 
         self.gridLayout_7.addWidget(self.centering_star_button, 0, 0, 1, 1)
 
         self.centering_laser_button = QPushButton(self.centering_groupbox)
         self.centering_laser_button.setObjectName(u"centering_laser_button")
-        self.centering_laser_button.setIcon(icon10)
+        self.centering_laser_button.setIcon(icon12)
 
         self.gridLayout_7.addWidget(self.centering_laser_button, 0, 1, 1, 1)
 
@@ -801,17 +817,9 @@ class Ui_EngineeringWidget(object):
 
         self.centering_spiral_search_button = QPushButton(self.centering_groupbox)
         self.centering_spiral_search_button.setObjectName(u"centering_spiral_search_button")
-        icon11 = QIcon()
-        icon11.addFile(u":/assets/icons/spiral-shape.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.centering_spiral_search_button.setIcon(icon11)
+        self.centering_spiral_search_button.setIcon(icon1)
 
-        self.gridLayout_7.addWidget(self.centering_spiral_search_button, 1, 0, 1, 1)
-
-        self.centering_spiral_search_window_button = QPushButton(self.centering_groupbox)
-        self.centering_spiral_search_window_button.setObjectName(u"centering_spiral_search_window_button")
-        self.centering_spiral_search_window_button.setIcon(icon11)
-
-        self.gridLayout_7.addWidget(self.centering_spiral_search_window_button, 1, 1, 1, 1)
+        self.gridLayout_7.addWidget(self.centering_spiral_search_button, 1, 0, 1, 2)
 
 
         self.middle_pane_layout.addWidget(self.centering_groupbox)
@@ -820,17 +828,15 @@ class Ui_EngineeringWidget(object):
         self.focusing_groupbox.setObjectName(u"focusing_groupbox")
         self.gridLayout_5 = QGridLayout(self.focusing_groupbox)
         self.gridLayout_5.setObjectName(u"gridLayout_5")
-        self.focusing_open_focus_sequence_button = QPushButton(self.focusing_groupbox)
-        self.focusing_open_focus_sequence_button.setObjectName(u"focusing_open_focus_sequence_button")
-        icon12 = QIcon()
-        icon12.addFile(u":/assets/icons/document-open.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.focusing_open_focus_sequence_button.setIcon(icon12)
-
-        self.gridLayout_5.addWidget(self.focusing_open_focus_sequence_button, 1, 1, 1, 1)
-
         self.verticalSpacer_8 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.gridLayout_5.addItem(self.verticalSpacer_8, 2, 0, 1, 2)
+
+        self.focusing_focus_sequence_button = QPushButton(self.focusing_groupbox)
+        self.focusing_focus_sequence_button.setObjectName(u"focusing_focus_sequence_button")
+        self.focusing_focus_sequence_button.setIcon(icon2)
+
+        self.gridLayout_5.addWidget(self.focusing_focus_sequence_button, 0, 0, 1, 1)
 
         self.focusing_autofocus_button = QPushButton(self.focusing_groupbox)
         self.focusing_autofocus_button.setObjectName(u"focusing_autofocus_button")
@@ -838,21 +844,15 @@ class Ui_EngineeringWidget(object):
         icon13.addFile(u":/assets/icons/tools-wizard.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.focusing_autofocus_button.setIcon(icon13)
 
-        self.gridLayout_5.addWidget(self.focusing_autofocus_button, 1, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.focusing_autofocus_button, 0, 1, 1, 1)
 
-        self.focusing_focus_sequence_button = QPushButton(self.focusing_groupbox)
-        self.focusing_focus_sequence_button.setObjectName(u"focusing_focus_sequence_button")
+        self.focusing_open_focus_sequence_button = QPushButton(self.focusing_groupbox)
+        self.focusing_open_focus_sequence_button.setObjectName(u"focusing_open_focus_sequence_button")
         icon14 = QIcon()
-        icon14.addFile(u":/assets/icons/focus.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.focusing_focus_sequence_button.setIcon(icon14)
+        icon14.addFile(u":/assets/icons/document-open.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.focusing_open_focus_sequence_button.setIcon(icon14)
 
-        self.gridLayout_5.addWidget(self.focusing_focus_sequence_button, 0, 0, 1, 1)
-
-        self.focusing_focus_sequence_window_button = QPushButton(self.focusing_groupbox)
-        self.focusing_focus_sequence_window_button.setObjectName(u"focusing_focus_sequence_window_button")
-        self.focusing_focus_sequence_window_button.setIcon(icon14)
-
-        self.gridLayout_5.addWidget(self.focusing_focus_sequence_window_button, 0, 1, 1, 1)
+        self.gridLayout_5.addWidget(self.focusing_open_focus_sequence_button, 1, 0, 1, 2)
 
 
         self.middle_pane_layout.addWidget(self.focusing_groupbox)
@@ -919,59 +919,27 @@ class Ui_EngineeringWidget(object):
         self.camstack_groupbox.setObjectName(u"camstack_groupbox")
         self.gridLayout = QGridLayout(self.camstack_groupbox)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.horizontalSpacer_9 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.verticalSpacer_11 = QSpacerItem(20, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
-        self.gridLayout.addItem(self.horizontalSpacer_9, 0, 1, 1, 1)
+        self.gridLayout.addItem(self.verticalSpacer_11, 3, 0, 1, 3)
 
-        self.camstack_layout = QGridLayout()
-        self.camstack_layout.setObjectName(u"camstack_layout")
         self.camstack_proc_label = QLabel(self.camstack_groupbox)
         self.camstack_proc_label.setObjectName(u"camstack_proc_label")
         self.camstack_proc_label.setFont(font)
 
-        self.camstack_layout.addWidget(self.camstack_proc_label, 0, 2, 1, 1, Qt.AlignmentFlag.AlignHCenter)
+        self.gridLayout.addWidget(self.camstack_proc_label, 0, 2, 1, 1)
 
         self.camstack_tmux_label = QLabel(self.camstack_groupbox)
         self.camstack_tmux_label.setObjectName(u"camstack_tmux_label")
         self.camstack_tmux_label.setFont(font)
 
-        self.camstack_layout.addWidget(self.camstack_tmux_label, 0, 1, 1, 1, Qt.AlignmentFlag.AlignHCenter)
-
-        self.kalaocamctrl_label = QLabel(self.camstack_groupbox)
-        self.kalaocamctrl_label.setObjectName(u"kalaocamctrl_label")
-
-        self.camstack_layout.addWidget(self.kalaocamctrl_label, 1, 0, 1, 1)
-
-        self.kalaocamctrl_proc_indicator = KStatusIndicator(self.camstack_groupbox)
-        self.kalaocamctrl_proc_indicator.setObjectName(u"kalaocamctrl_proc_indicator")
-        sizePolicy.setHeightForWidth(self.kalaocamctrl_proc_indicator.sizePolicy().hasHeightForWidth())
-        self.kalaocamctrl_proc_indicator.setSizePolicy(sizePolicy)
-        self.kalaocamctrl_proc_indicator.setMinimumSize(QSize(20, 20))
-        self.kalaocamctrl_proc_indicator.setMaximumSize(QSize(20, 20))
-        self.kalaocamctrl_proc_indicator.viewport().setProperty("cursor", QCursor(Qt.CursorShape.WhatsThisCursor))
-
-        self.camstack_layout.addWidget(self.kalaocamctrl_proc_indicator, 1, 2, 1, 1, Qt.AlignmentFlag.AlignHCenter)
-
-        self.kalaocamctrl_tmux_indicator = KStatusIndicator(self.camstack_groupbox)
-        self.kalaocamctrl_tmux_indicator.setObjectName(u"kalaocamctrl_tmux_indicator")
-        sizePolicy.setHeightForWidth(self.kalaocamctrl_tmux_indicator.sizePolicy().hasHeightForWidth())
-        self.kalaocamctrl_tmux_indicator.setSizePolicy(sizePolicy)
-        self.kalaocamctrl_tmux_indicator.setMinimumSize(QSize(20, 20))
-        self.kalaocamctrl_tmux_indicator.setMaximumSize(QSize(20, 20))
-        self.kalaocamctrl_tmux_indicator.viewport().setProperty("cursor", QCursor(Qt.CursorShape.WhatsThisCursor))
-
-        self.camstack_layout.addWidget(self.kalaocamctrl_tmux_indicator, 1, 1, 1, 1, Qt.AlignmentFlag.AlignHCenter)
+        self.gridLayout.addWidget(self.camstack_tmux_label, 0, 1, 1, 1)
 
         self.camstack_name_label = QLabel(self.camstack_groupbox)
         self.camstack_name_label.setObjectName(u"camstack_name_label")
         self.camstack_name_label.setFont(font)
 
-        self.camstack_layout.addWidget(self.camstack_name_label, 0, 0, 1, 1)
-
-        self.nuvufgrab_label = QLabel(self.camstack_groupbox)
-        self.nuvufgrab_label.setObjectName(u"nuvufgrab_label")
-
-        self.camstack_layout.addWidget(self.nuvufgrab_label, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.camstack_name_label, 0, 0, 1, 1)
 
         self.nuvufgrab_tmux_indicator = KStatusIndicator(self.camstack_groupbox)
         self.nuvufgrab_tmux_indicator.setObjectName(u"nuvufgrab_tmux_indicator")
@@ -981,7 +949,12 @@ class Ui_EngineeringWidget(object):
         self.nuvufgrab_tmux_indicator.setMaximumSize(QSize(20, 20))
         self.nuvufgrab_tmux_indicator.viewport().setProperty("cursor", QCursor(Qt.CursorShape.WhatsThisCursor))
 
-        self.camstack_layout.addWidget(self.nuvufgrab_tmux_indicator, 2, 1, 1, 1, Qt.AlignmentFlag.AlignHCenter)
+        self.gridLayout.addWidget(self.nuvufgrab_tmux_indicator, 2, 1, 1, 1, Qt.AlignmentFlag.AlignHCenter)
+
+        self.kalaocamctrl_label = QLabel(self.camstack_groupbox)
+        self.kalaocamctrl_label.setObjectName(u"kalaocamctrl_label")
+
+        self.gridLayout.addWidget(self.kalaocamctrl_label, 1, 0, 1, 1)
 
         self.nuvufgrab_proc_indicator = KStatusIndicator(self.camstack_groupbox)
         self.nuvufgrab_proc_indicator.setObjectName(u"nuvufgrab_proc_indicator")
@@ -991,14 +964,36 @@ class Ui_EngineeringWidget(object):
         self.nuvufgrab_proc_indicator.setMaximumSize(QSize(20, 20))
         self.nuvufgrab_proc_indicator.viewport().setProperty("cursor", QCursor(Qt.CursorShape.WhatsThisCursor))
 
-        self.camstack_layout.addWidget(self.nuvufgrab_proc_indicator, 2, 2, 1, 1, Qt.AlignmentFlag.AlignHCenter)
+        self.gridLayout.addWidget(self.nuvufgrab_proc_indicator, 2, 2, 1, 1, Qt.AlignmentFlag.AlignHCenter)
 
+        self.kalaocamctrl_tmux_indicator = KStatusIndicator(self.camstack_groupbox)
+        self.kalaocamctrl_tmux_indicator.setObjectName(u"kalaocamctrl_tmux_indicator")
+        sizePolicy.setHeightForWidth(self.kalaocamctrl_tmux_indicator.sizePolicy().hasHeightForWidth())
+        self.kalaocamctrl_tmux_indicator.setSizePolicy(sizePolicy)
+        self.kalaocamctrl_tmux_indicator.setMinimumSize(QSize(20, 20))
+        self.kalaocamctrl_tmux_indicator.setMaximumSize(QSize(20, 20))
+        self.kalaocamctrl_tmux_indicator.viewport().setProperty("cursor", QCursor(Qt.CursorShape.WhatsThisCursor))
 
-        self.gridLayout.addLayout(self.camstack_layout, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.kalaocamctrl_tmux_indicator, 1, 1, 1, 1, Qt.AlignmentFlag.AlignHCenter)
 
-        self.verticalSpacer_11 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.nuvufgrab_label = QLabel(self.camstack_groupbox)
+        self.nuvufgrab_label.setObjectName(u"nuvufgrab_label")
 
-        self.gridLayout.addItem(self.verticalSpacer_11, 1, 0, 1, 2)
+        self.gridLayout.addWidget(self.nuvufgrab_label, 2, 0, 1, 1)
+
+        self.kalaocamctrl_proc_indicator = KStatusIndicator(self.camstack_groupbox)
+        self.kalaocamctrl_proc_indicator.setObjectName(u"kalaocamctrl_proc_indicator")
+        sizePolicy.setHeightForWidth(self.kalaocamctrl_proc_indicator.sizePolicy().hasHeightForWidth())
+        self.kalaocamctrl_proc_indicator.setSizePolicy(sizePolicy)
+        self.kalaocamctrl_proc_indicator.setMinimumSize(QSize(20, 20))
+        self.kalaocamctrl_proc_indicator.setMaximumSize(QSize(20, 20))
+        self.kalaocamctrl_proc_indicator.viewport().setProperty("cursor", QCursor(Qt.CursorShape.WhatsThisCursor))
+
+        self.gridLayout.addWidget(self.kalaocamctrl_proc_indicator, 1, 2, 1, 1, Qt.AlignmentFlag.AlignHCenter)
+
+        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout.addItem(self.horizontalSpacer_6, 0, 3, 3, 1)
 
 
         self.right_pane_layout.addWidget(self.camstack_groupbox, 0, 1, 1, 1)
@@ -1007,18 +1002,18 @@ class Ui_EngineeringWidget(object):
         self.ippower_groupbox.setObjectName(u"ippower_groupbox")
         self.gridLayout_3 = QGridLayout(self.ippower_groupbox)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.ippower_bench_label = QLabel(self.ippower_groupbox)
-        self.ippower_bench_label.setObjectName(u"ippower_bench_label")
-        self.ippower_bench_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.ippower_dm_label = QLabel(self.ippower_groupbox)
+        self.ippower_dm_label.setObjectName(u"ippower_dm_label")
+        self.ippower_dm_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.gridLayout_3.addWidget(self.ippower_bench_label, 1, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.ippower_dm_label, 2, 0, 1, 1)
 
-        self.ippower_rtc_on_button = QPushButton(self.ippower_groupbox)
-        self.ippower_rtc_on_button.setObjectName(u"ippower_rtc_on_button")
-        self.ippower_rtc_on_button.setEnabled(False)
-        self.ippower_rtc_on_button.setIcon(icon5)
+        self.ippower_rtc_off_button = QPushButton(self.ippower_groupbox)
+        self.ippower_rtc_off_button.setObjectName(u"ippower_rtc_off_button")
+        self.ippower_rtc_off_button.setEnabled(False)
+        self.ippower_rtc_off_button.setIcon(icon7)
 
-        self.gridLayout_3.addWidget(self.ippower_rtc_on_button, 0, 2, 1, 1)
+        self.gridLayout_3.addWidget(self.ippower_rtc_off_button, 0, 3, 1, 1)
 
         self.ippower_dm_indicator = KStatusIndicator(self.ippower_groupbox)
         self.ippower_dm_indicator.setObjectName(u"ippower_dm_indicator")
@@ -1030,6 +1025,19 @@ class Ui_EngineeringWidget(object):
 
         self.gridLayout_3.addWidget(self.ippower_dm_indicator, 2, 1, 1, 1)
 
+        self.ippower_rtc_on_button = QPushButton(self.ippower_groupbox)
+        self.ippower_rtc_on_button.setObjectName(u"ippower_rtc_on_button")
+        self.ippower_rtc_on_button.setEnabled(False)
+        self.ippower_rtc_on_button.setIcon(icon7)
+
+        self.gridLayout_3.addWidget(self.ippower_rtc_on_button, 0, 2, 1, 1)
+
+        self.ippower_bench_label = QLabel(self.ippower_groupbox)
+        self.ippower_bench_label.setObjectName(u"ippower_bench_label")
+        self.ippower_bench_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+
+        self.gridLayout_3.addWidget(self.ippower_bench_label, 1, 0, 1, 1)
+
         self.ippower_bench_indicator = KStatusIndicator(self.ippower_groupbox)
         self.ippower_bench_indicator.setObjectName(u"ippower_bench_indicator")
         sizePolicy2.setHeightForWidth(self.ippower_bench_indicator.sizePolicy().hasHeightForWidth())
@@ -1040,11 +1048,39 @@ class Ui_EngineeringWidget(object):
 
         self.gridLayout_3.addWidget(self.ippower_bench_indicator, 1, 1, 1, 1)
 
-        self.ippower_dm_label = QLabel(self.ippower_groupbox)
-        self.ippower_dm_label.setObjectName(u"ippower_dm_label")
-        self.ippower_dm_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.verticalSpacer_12 = QSpacerItem(20, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
-        self.gridLayout_3.addWidget(self.ippower_dm_label, 2, 0, 1, 1)
+        self.gridLayout_3.addItem(self.verticalSpacer_12, 3, 0, 1, 4)
+
+        self.ippower_rtc_label = QLabel(self.ippower_groupbox)
+        self.ippower_rtc_label.setObjectName(u"ippower_rtc_label")
+        self.ippower_rtc_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+
+        self.gridLayout_3.addWidget(self.ippower_rtc_label, 0, 0, 1, 1)
+
+        self.ippower_bench_on_button = QPushButton(self.ippower_groupbox)
+        self.ippower_bench_on_button.setObjectName(u"ippower_bench_on_button")
+        self.ippower_bench_on_button.setIcon(icon7)
+
+        self.gridLayout_3.addWidget(self.ippower_bench_on_button, 1, 2, 1, 1)
+
+        self.ippower_dm_on_button = QPushButton(self.ippower_groupbox)
+        self.ippower_dm_on_button.setObjectName(u"ippower_dm_on_button")
+        self.ippower_dm_on_button.setIcon(icon7)
+
+        self.gridLayout_3.addWidget(self.ippower_dm_on_button, 2, 2, 1, 1)
+
+        self.ippower_bench_off_button = QPushButton(self.ippower_groupbox)
+        self.ippower_bench_off_button.setObjectName(u"ippower_bench_off_button")
+        self.ippower_bench_off_button.setIcon(icon7)
+
+        self.gridLayout_3.addWidget(self.ippower_bench_off_button, 1, 3, 1, 1)
+
+        self.ippower_dm_off_button = QPushButton(self.ippower_groupbox)
+        self.ippower_dm_off_button.setObjectName(u"ippower_dm_off_button")
+        self.ippower_dm_off_button.setIcon(icon7)
+
+        self.gridLayout_3.addWidget(self.ippower_dm_off_button, 2, 3, 1, 1)
 
         self.ippower_rtc_indicator = KStatusIndicator(self.ippower_groupbox)
         self.ippower_rtc_indicator.setObjectName(u"ippower_rtc_indicator")
@@ -1056,42 +1092,9 @@ class Ui_EngineeringWidget(object):
 
         self.gridLayout_3.addWidget(self.ippower_rtc_indicator, 0, 1, 1, 1)
 
-        self.ippower_rtc_off_button = QPushButton(self.ippower_groupbox)
-        self.ippower_rtc_off_button.setObjectName(u"ippower_rtc_off_button")
-        self.ippower_rtc_off_button.setEnabled(False)
-        self.ippower_rtc_off_button.setIcon(icon5)
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.gridLayout_3.addWidget(self.ippower_rtc_off_button, 0, 3, 1, 1)
-
-        self.ippower_bench_on_button = QPushButton(self.ippower_groupbox)
-        self.ippower_bench_on_button.setObjectName(u"ippower_bench_on_button")
-        self.ippower_bench_on_button.setIcon(icon5)
-
-        self.gridLayout_3.addWidget(self.ippower_bench_on_button, 1, 2, 1, 1)
-
-        self.ippower_dm_on_button = QPushButton(self.ippower_groupbox)
-        self.ippower_dm_on_button.setObjectName(u"ippower_dm_on_button")
-        self.ippower_dm_on_button.setIcon(icon5)
-
-        self.gridLayout_3.addWidget(self.ippower_dm_on_button, 2, 2, 1, 1)
-
-        self.ippower_bench_off_button = QPushButton(self.ippower_groupbox)
-        self.ippower_bench_off_button.setObjectName(u"ippower_bench_off_button")
-        self.ippower_bench_off_button.setIcon(icon5)
-
-        self.gridLayout_3.addWidget(self.ippower_bench_off_button, 1, 3, 1, 1)
-
-        self.ippower_dm_off_button = QPushButton(self.ippower_groupbox)
-        self.ippower_dm_off_button.setObjectName(u"ippower_dm_off_button")
-        self.ippower_dm_off_button.setIcon(icon5)
-
-        self.gridLayout_3.addWidget(self.ippower_dm_off_button, 2, 3, 1, 1)
-
-        self.ippower_rtc_label = QLabel(self.ippower_groupbox)
-        self.ippower_rtc_label.setObjectName(u"ippower_rtc_label")
-        self.ippower_rtc_label.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-
-        self.gridLayout_3.addWidget(self.ippower_rtc_label, 0, 0, 1, 1)
+        self.gridLayout_3.addItem(self.horizontalSpacer_4, 0, 4, 3, 1)
 
         self.gridLayout_3.setColumnStretch(2, 1)
         self.gridLayout_3.setColumnStretch(3, 1)
@@ -1187,13 +1190,13 @@ class Ui_EngineeringWidget(object):
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.instrument_shutdown_sequence_button = QPushButton(self.instrument_rtc_groupbox)
         self.instrument_shutdown_sequence_button.setObjectName(u"instrument_shutdown_sequence_button")
-        self.instrument_shutdown_sequence_button.setIcon(icon5)
+        self.instrument_shutdown_sequence_button.setIcon(icon7)
 
         self.horizontalLayout_4.addWidget(self.instrument_shutdown_sequence_button)
 
         self.rtc_poweroff_button = QPushButton(self.instrument_rtc_groupbox)
         self.rtc_poweroff_button.setObjectName(u"rtc_poweroff_button")
-        self.rtc_poweroff_button.setIcon(icon5)
+        self.rtc_poweroff_button.setIcon(icon7)
 
         self.horizontalLayout_4.addWidget(self.rtc_poweroff_button)
 
@@ -1268,8 +1271,10 @@ class Ui_EngineeringWidget(object):
         self.lamps_off_button.setText(QCoreApplication.translate("EngineeringWidget", u"Lamps Off", None))
         self.label.setText(QCoreApplication.translate("EngineeringWidget", u"<a href=\"https://gitlab.unige.ch/kalao/kalao-ics/-/wikis/Technical/Filters-and-Science-Camera\">Filter details here.</a>", None))
         self.services_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"Services", None))
-        self.calibration_poses_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"Calibration Poses", None))
-        self.calibration_poses_button.setText(QCoreApplication.translate("EngineeringWidget", u"Calibration poses ...", None))
+        self.calibration_poses_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"Windows", None))
+        self.calibration_poses_button.setText(QCoreApplication.translate("EngineeringWidget", u"Calibration poses window ...", None))
+        self.centering_spiral_search_window_button.setText(QCoreApplication.translate("EngineeringWidget", u"Spiral search window ...", None))
+        self.focusing_focus_sequence_window_button.setText(QCoreApplication.translate("EngineeringWidget", u"Focus sequence window ...", None))
         self.camera_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"Science Camera (Finger Lakes Instrumentation)", None))
         self.camera_exposure_time_label.setText(QCoreApplication.translate("EngineeringWidget", u"Exposure time", None))
         self.camera_exposure_time_spinbox.setSuffix(QCoreApplication.translate("EngineeringWidget", u" s", None))
@@ -1302,12 +1307,10 @@ class Ui_EngineeringWidget(object):
         self.centering_star_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch star centering", None))
         self.centering_laser_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch laser centering", None))
         self.centering_spiral_search_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch spiral search", None))
-        self.centering_spiral_search_window_button.setText(QCoreApplication.translate("EngineeringWidget", u"Spiral search window ...", None))
         self.focusing_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"Focusing", None))
-        self.focusing_open_focus_sequence_button.setText(QCoreApplication.translate("EngineeringWidget", u"Open a focus sequence ...", None))
-        self.focusing_autofocus_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch autofocus", None))
         self.focusing_focus_sequence_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch focus sequence", None))
-        self.focusing_focus_sequence_window_button.setText(QCoreApplication.translate("EngineeringWidget", u"Focus sequence window...", None))
+        self.focusing_autofocus_button.setText(QCoreApplication.translate("EngineeringWidget", u"Launch autofocus", None))
+        self.focusing_open_focus_sequence_button.setText(QCoreApplication.translate("EngineeringWidget", u"Open a focus sequence ...", None))
         self.stream_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"CACAO Streams", None))
         self.stream_status_label.setText("")
         self.shm_name_label.setText(QCoreApplication.translate("EngineeringWidget", u"Name", None))
@@ -1317,19 +1320,19 @@ class Ui_EngineeringWidget(object):
         self.camstack_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"Camstack", None))
         self.camstack_proc_label.setText(QCoreApplication.translate("EngineeringWidget", u"PROC", None))
         self.camstack_tmux_label.setText(QCoreApplication.translate("EngineeringWidget", u"TMUX", None))
-        self.kalaocamctrl_label.setText(QCoreApplication.translate("EngineeringWidget", u"kalaocam_ctrl", None))
         self.camstack_name_label.setText(QCoreApplication.translate("EngineeringWidget", u"Name", None))
+        self.kalaocamctrl_label.setText(QCoreApplication.translate("EngineeringWidget", u"kalaocam_ctrl", None))
         self.nuvufgrab_label.setText(QCoreApplication.translate("EngineeringWidget", u"nuvu_fgrab", None))
         self.ippower_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"IPPower", None))
-        self.ippower_bench_label.setText(QCoreApplication.translate("EngineeringWidget", u"Bench", None))
-        self.ippower_rtc_on_button.setText(QCoreApplication.translate("EngineeringWidget", u"Power on", None))
         self.ippower_dm_label.setText(QCoreApplication.translate("EngineeringWidget", u"DM", None))
         self.ippower_rtc_off_button.setText(QCoreApplication.translate("EngineeringWidget", u"Power off", None))
+        self.ippower_rtc_on_button.setText(QCoreApplication.translate("EngineeringWidget", u"Power on", None))
+        self.ippower_bench_label.setText(QCoreApplication.translate("EngineeringWidget", u"Bench", None))
+        self.ippower_rtc_label.setText(QCoreApplication.translate("EngineeringWidget", u"RTC", None))
         self.ippower_bench_on_button.setText(QCoreApplication.translate("EngineeringWidget", u"Power on", None))
         self.ippower_dm_on_button.setText(QCoreApplication.translate("EngineeringWidget", u"Power on", None))
         self.ippower_bench_off_button.setText(QCoreApplication.translate("EngineeringWidget", u"Power off", None))
         self.ippower_dm_off_button.setText(QCoreApplication.translate("EngineeringWidget", u"Power off", None))
-        self.ippower_rtc_label.setText(QCoreApplication.translate("EngineeringWidget", u"RTC", None))
         self.modalstats_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"CACAO Modal stats", None))
         self.cacao_modalstatsTUI_label.setText(QCoreApplication.translate("EngineeringWidget", u"Use <span style=\"font-weight: bold;\">cacao-modalstatsTUI</span> to tune modal gains et check loops stability.", None))
         self.proc_groupbox.setTitle(QCoreApplication.translate("EngineeringWidget", u"CACAO Processes", None))

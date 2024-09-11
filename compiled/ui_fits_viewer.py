@@ -151,8 +151,8 @@ class Ui_FITSViewerWindow(object):
         self.value_spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.value_spinbox.setKeyboardTracking(False)
         self.value_spinbox.setDecimals(0)
-        self.value_spinbox.setMinimum(-9999.000000000000000)
-        self.value_spinbox.setMaximum(9999.000000000000000)
+        self.value_spinbox.setMinimum(-999999.000000000000000)
+        self.value_spinbox.setMaximum(999999.000000000000000)
 
         self.gridLayout_4.addWidget(self.value_spinbox, 0, 1, 1, 1)
 
@@ -230,10 +230,10 @@ class Ui_FITSViewerWindow(object):
 
         self.gridLayout_4.addLayout(self.horizontalLayout, 6, 1, 1, 1)
 
-        self.relative_coord_checkbox = QCheckBox(self.gridLayoutWidget)
-        self.relative_coord_checkbox.setObjectName(u"relative_coord_checkbox")
+        self.relative_coords_checkbox = QCheckBox(self.gridLayoutWidget)
+        self.relative_coords_checkbox.setObjectName(u"relative_coords_checkbox")
 
-        self.gridLayout_4.addWidget(self.relative_coord_checkbox, 7, 1, 1, 1)
+        self.gridLayout_4.addWidget(self.relative_coords_checkbox, 7, 1, 1, 1)
 
 
         self.side_layout.addLayout(self.gridLayout_4)
@@ -461,7 +461,7 @@ class Ui_FITSViewerWindow(object):
         self.x_label.setText(QCoreApplication.translate("FITSViewerWindow", u"X", None))
         self.wcs_2_label.setText(QCoreApplication.translate("FITSViewerWindow", u"{ctype2}", None))
         self.wcs_system_label.setText(QCoreApplication.translate("FITSViewerWindow", u"System", None))
-        self.relative_coord_checkbox.setText(QCoreApplication.translate("FITSViewerWindow", u"Relative coordinates", None))
+        self.relative_coords_checkbox.setText(QCoreApplication.translate("FITSViewerWindow", u"Relative coordinates", None))
         self.timestamp_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Timestamp: {timestamp}", None))
         self.star_x_label.setText(QCoreApplication.translate("FITSViewerWindow", u"X: {x:.{axis_precision}f}{axis_unit}", None))
         self.star_y_label.setText(QCoreApplication.translate("FITSViewerWindow", u"Y: {y:.{axis_precision}f}{axis_unit}", None))

@@ -25,8 +25,7 @@ import config
 
 
 def find_star(img: np.ndarray, min_peak: float = config.Starfinder.min_peak,
-              hw: int = config.Starfinder.window // 2,
-              method: str = 'gaussian_fit') -> Star | None:
+              hw: int = -1, method: str = 'gaussian_fit') -> Star | None:
     star = find_stars(img, min_peak=min_peak, hw=hw, num=1, method=method)
 
     if len(star) == 0:
@@ -36,7 +35,7 @@ def find_star(img: np.ndarray, min_peak: float = config.Starfinder.min_peak,
 
 
 def find_stars(img: np.ndarray, min_peak: float = config.Starfinder.min_peak,
-               hw: int = config.Starfinder.window // 2, num: int = sys.maxsize,
+               hw: int = -1, num: int = sys.maxsize,
                method: str = 'gaussian_fit') -> list[Star]:
     stars, bad_pixels = find_stars_and_bad_pixels(img, min_peak=min_peak,
                                                   hw=hw, num=num,
@@ -47,8 +46,7 @@ def find_stars(img: np.ndarray, min_peak: float = config.Starfinder.min_peak,
 
 def find_stars_and_bad_pixels(img: np.ndarray,
                               min_peak: float = config.Starfinder.min_peak,
-                              hw: int = config.Starfinder.window // 2,
-                              num: int = sys.maxsize,
+                              hw: int = -1, num: int = sys.maxsize,
                               method: str = 'gaussian_fit'
                               ) -> tuple[list[Star], np.ndarray]:
     img = img.astype(np.float64)
@@ -74,8 +72,13 @@ def find_stars_and_bad_pixels(img: np.ndarray,
 
     stars_fitted = []
 
-    if method == 'moments':
-        hw = 128
+    if hw == -1:
+        if method == 'gaussian_fit':
+            hw = config.Starfinder.window_gaussian_fit // 2
+        elif method == 'moments':
+            hw = config.Starfinder.window_moments // 2
+        else:
+            raise ValueError(f'Unknown method {method}')
 
     i = 0
     while i < len(peaks):
@@ -108,7 +111,7 @@ def find_stars_and_bad_pixels(img: np.ndarray,
         elif method == 'moments':
             star = _star_moments(X_cut, Y_cut, img_cut)
         else:
-            raise Exception(f'Unknown method {method}')
+            raise ValueError(f'Unknown method {method}')
 
         if star is None:
             continue

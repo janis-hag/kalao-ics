@@ -82,7 +82,7 @@ class DMChannelsWindow(KMainWindow, BackendActionMixin, MinMaxMixin,
             self.channels_timer.timeout.connect(
                 self.backend.streams_channels_ttm)
         else:
-            raise Exception(f'Unknown DM number {dm_number}')
+            raise IndexError(f'Unknown DM number {dm_number}')
 
         self.ui.dm_view.set_data_md(self.data_unit, 2)
         self.ui.dm_view.set_axis_md('', 0)

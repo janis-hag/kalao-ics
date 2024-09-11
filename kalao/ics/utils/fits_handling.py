@@ -649,8 +649,8 @@ def generate_wcs(coord: SkyCoord, time: Time, roi: ROI | None = None,
     if coord is not None:
         cdelt1 = config.Camera.plate_scale / 3600
         cdelt2 = config.Camera.plate_scale / 3600
-        # crota2 = parallactic_angle(coord, time) + config.ADC.max_disp_offset
-        crota2 = 0
+        crota2 = parallactic_angle(
+            coord, time) + 90  # + TODO: some offset + mirroring
         crota2_rad = crota2 * np.pi / 180
 
         wcs_header.loc['CTYPE1'] = ('RA---TAN',
@@ -675,8 +675,8 @@ def generate_wcs(coord: SkyCoord, time: Time, roi: ROI | None = None,
 
         if method == 'CD':
             cd11 = cdelt1 * np.cos(crota2_rad)
-            cd12 = -cdelt2 * np.sin(crota2_rad)
-            cd21 = cdelt1 * np.sin(crota2_rad)
+            cd12 = -cdelt1 * np.sin(crota2_rad)
+            cd21 = cdelt2 * np.sin(crota2_rad)
             cd22 = cdelt2 * np.cos(crota2_rad)
 
             wcs_header.loc['CD1_1'] = (
@@ -687,6 +687,7 @@ def generate_wcs(coord: SkyCoord, time: Time, roi: ROI | None = None,
                 cd21, 'Coordinate transformation matrix element', 'wcs')
             wcs_header.loc['CD2_2'] = (
                 cd22, 'Coordinate transformation matrix element', 'wcs')
+
         elif method == 'PC':
             pc11 = np.cos(crota2_rad)
             pc12 = -np.sin(crota2_rad)
@@ -703,11 +704,15 @@ def generate_wcs(coord: SkyCoord, time: Time, roi: ROI | None = None,
                 pc21, 'Coordinate transformation matrix element', 'wcs')
             wcs_header.loc['PC2_2'] = (
                 pc22, 'Coordinate transformation matrix element', 'wcs')
+
         elif method == 'CROTA':
             wcs_header.loc['CDELT1'] = (cdelt1, 'Coordinate scales', 'wcs')
             wcs_header.loc['CDELT2'] = (cdelt2, 'Coordinate scales', 'wcs')
             wcs_header.loc['CROTA2'] = (crota2, 'Rotation of coordinate axis',
                                         'wcs')
+
+        else:
+            raise ValueError(f'Unknown WCS method {method}')
 
         radesys = coord.frame.name.upper()
 
@@ -723,24 +728,15 @@ def generate_wcs(coord: SkyCoord, time: Time, roi: ROI | None = None,
 
 
 def parallactic_angle(coord: SkyCoord, time: Time) -> float:
-    r2d = 180 / np.pi
-    d2r = np.pi / 180
+    lat = euler.observing_location().lat.rad
+    lst = time.sidereal_time('apparent').rad
+    ha = lst - coord.ra.rad
+    dec = coord.dec.rad
 
-    geolat_rad = config.Euler.latitude * d2r
+    tan1 = np.sin(ha) * np.cos(lat)
+    tan2 = np.cos(dec) * np.sin(lat) - np.sin(dec) * np.cos(lat) * np.cos(ha)
 
-    lst_ra = time.sidereal_time('mean').hour * 15 * d2r  #(15./3600)*d2r
-
-    ha_rad = lst_ra - coord.ra.rad
-    dec_rad = coord.dec.rad
-
-    # VLT TCS formula
-    f1 = float(np.cos(geolat_rad) * np.sin(ha_rad))
-    f2 = float(
-        np.sin(geolat_rad) * np.cos(dec_rad) -
-        np.cos(geolat_rad) * np.sin(dec_rad) * np.cos(ha_rad))
-    parang = -r2d * np.arctan2(-f1, f2)  # Sign depends on focus
-
-    return parang
+    return np.arctan2(tan1, tan2) * 180 / np.pi
 
 
 def get_exposure_times_for_darks() -> list[float]:

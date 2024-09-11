@@ -4,9 +4,10 @@ from typing import Any
 import numpy as np
 
 from PySide6.QtCharts import QScatterSeries, QValueAxis
-from PySide6.QtCore import QPointF, QSignalBlocker, QTimer, Signal, Slot
+from PySide6.QtCore import (QMargins, QPointF, QRect, QSignalBlocker, QTimer,
+                            Signal, Slot)
 from PySide6.QtGui import QBrush, QFont, QIcon, QPen, Qt
-from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QVBoxLayout, QWidget
 
 from compiled.ui_ao_calibration import Ui_AOCalibrationWindow
 
@@ -15,7 +16,8 @@ from kalao.guis.utils import ascii2html, colormaps
 from kalao.guis.utils.colormaps import CoolWarmTransparent
 from kalao.guis.utils.definitions import Color
 from kalao.guis.utils.mixins import BackendActionMixin, BackendDataMixin
-from kalao.guis.utils.widgets import KImageViewer, KMainWindow, KMessageBox
+from kalao.guis.utils.widgets import (KImageViewer, KMainWindow, KMessageBox,
+                                      KNoAARect)
 
 
 class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
@@ -54,23 +56,34 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
             'save_restore',
         ]
 
-        if conf == 'ttmloop':
-            self.latency_max = 20
-            self.zRM_timer_interval = 1000
-        else:
-            self.latency_max = 5
-            self.zRM_timer_interval = 100
-
         self.all_modes_widget = QWidget()
         self.DMmodes_tiled_view = KImageViewer(self.all_modes_widget)
         self.modesWFS_tiled_view = KImageViewer(self.all_modes_widget)
 
-        layout = QHBoxLayout(self.all_modes_widget)
-        layout.addWidget(self.DMmodes_tiled_view)
-        layout.addWidget(self.modesWFS_tiled_view)
+        self.DMmodes_tiled_view.setMargins(QMargins(1, 1, 1, 1))
+        self.modesWFS_tiled_view.setMargins(QMargins(1, 1, 1, 1))
 
-        layout.setStretch(0, 1)
-        layout.setStretch(1, 2)
+        if conf == 'ttmloop':
+            self.latency_max = 20
+            self.zRM_timer_interval = 1000
+
+            layout = QVBoxLayout(self.all_modes_widget)
+            layout.addWidget(self.DMmodes_tiled_view)
+            layout.addWidget(self.modesWFS_tiled_view)
+
+            layout.setStretch(0, 1)
+            layout.setStretch(1, 2)
+
+        else:
+            self.latency_max = 5
+            self.zRM_timer_interval = 100
+
+            layout = QHBoxLayout(self.all_modes_widget)
+            layout.addWidget(self.DMmodes_tiled_view)
+            layout.addWidget(self.modesWFS_tiled_view)
+
+            layout.setStretch(0, 1)
+            layout.setStretch(1, 2)
 
         ### Calibration tab
 
@@ -141,7 +154,7 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
 
                 view.updateColormap(colormaps.CoolWarm())
         else:
-            raise Exception(f'Unknown loop number {loop}')
+            raise IndexError(f'Unknown loop number {loop}')
 
         self.hovered.connect(self.info_to_statusbar)
 
@@ -154,12 +167,10 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
         chart.legend().hide()
 
         # Serie
-        pen = QPen(Color.TRANSPARENT, 0, Qt.PenStyle.SolidLine,
-                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
         brush = QBrush(Color.BLUE, Qt.BrushStyle.SolidPattern)
 
         series = self.latency_series = QScatterSeries()
-        series.setPen(pen)
+        series.setPen(Qt.PenStyle.NoPen)
         series.setBrush(brush)
         series.setMarkerSize(3)
         series.setName('Latency')
@@ -197,7 +208,7 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
                                                  emit(string))
             self.ui.zRM_view.updateColormap(colormaps.CoolWarm())
         else:
-            raise Exception(f'Unknown loop number {loop}')
+            raise IndexError(f'Unknown loop number {loop}')
 
         self.zRM_timer = QTimer(self)
         self.zRM_timer.setInterval(self.zRM_timer_interval)
@@ -350,7 +361,7 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
                                        {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number,
-                                        data.shape[len(data.shape) - 1])
+                                        data.shape[data.ndim - 1])
                 self.DMmodes_min = min(self.DMmodes_min, data.min())
                 self.modes_dm_max = max(self.modes_dm_max, data.max())
 
@@ -358,7 +369,7 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
                                        {}).get('data')
             if data is not None:
                 self.modes_number = min(self.modes_number,
-                                        data.shape[len(data.shape) - 1])
+                                        data.shape[data.ndim - 1])
                 self.modesWFS_min = min(self.modesWFS_min, data.min())
                 self.modes_wfs_max = max(self.modes_wfs_max, data.max())
 
@@ -372,7 +383,11 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
     def on_all_modes_button_clicked(self, checked: bool) -> None:
         self.update_all_modes_images()
         self.all_modes_widget.show()
-        self.all_modes_widget.resize(1500, 1000)
+
+        if self.conf == 'ttmloop':
+            self.all_modes_widget.resize(600, 500)
+        else:
+            self.all_modes_widget.resize(1500, 1000)
 
     @Slot(bool)
     def on_refresh_button_clicked(self, checked: bool) -> None:
@@ -442,7 +457,15 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
 
     def create_images_tile(self, img: np.ndarray, view: KImageViewer,
                            first_axis: bool = True) -> None:
-        if len(img.shape) < 3:
+        for item in view._scene.items():
+            if isinstance(item, KNoAARect):
+                view._scene.removeItem(item)
+
+        pen = QPen(Color.BLACK, 1, Qt.PenStyle.SolidLine,
+                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
+        pen.setCosmetic(True)
+
+        if img.ndim < 3:
             img = img[np.newaxis, :]
 
         if first_axis:
@@ -469,6 +492,11 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
             img_full[k // x * img_i:k//x*img_i + img_i,
                      k % x * img_j:k%x*img_j + img_j] = img_new
 
+            rect = QRect(k % x * img_j, k // x * img_i, img_j, img_i)
+            rect_item = KNoAARect(rect)
+            rect_item.setPen(pen)
+            view._scene.addItem(rect_item)
+
         for k in range(size, x * y):
             img_mask[k // x * img_i:k//x*img_i + img_i,
                      k % x * img_j:k%x*img_j + img_j] = np.full((img_i, img_j),
@@ -490,16 +518,16 @@ class AOCalibrationWindow(KMainWindow, BackendDataMixin, BackendActionMixin):
         if data is not None:
             if not cube:
                 img = data
-            elif len(data.shape) == 2:
+            elif data.ndim == 2:
                 img = data[self.ui.mode_spinbox.value() - 1, :]
-            elif len(data.shape) == 3:
+            elif data.ndim == 3:
                 if first_axis:
                     img = data[self.ui.mode_spinbox.value() - 1, :, :]
                 else:
                     img = data[:, :, self.ui.mode_spinbox.value() - 1]
             else:
                 raise Exception(
-                    f'Unexpected image size {len(data.shape)} for {data_key}')
+                    f'Unexpected image size {data.ndim} for {data_key}')
 
             img_min, img_max = self.compute_minmax(img, view_key, symetric)
             view.setImage(img, img_min, img_max)

@@ -34,7 +34,6 @@ def _offload_ttm() -> None:
 
 
 def _check_ao() -> None:
-    abort = False
     loops_status = aocontrol.check_loops()
 
     if LoopStatus.TTM_LOOP_ON in loops_status and LoopStatus.DM_LOOP_ON not in loops_status:
@@ -43,7 +42,9 @@ def _check_ao() -> None:
 
         aocontrol.open_loop(config.AO.TTM_loop_number)
 
-    if LoopStatus.DM_LOOP_ON in loops_status:
+    elif LoopStatus.DM_LOOP_ON in loops_status:
+        abort = False
+
         if not wfs.acquisition_running():
             logger.warn('observation_timer',
                         'Disabling loop(s) as WFS acquisition froze')
@@ -54,10 +55,11 @@ def _check_ao() -> None:
                         'Disabling loop(s) as flux is too low')
             abort = True
 
-    if abort:
-        seq_utils.set_sequencer_status(SequencerStatus.ABORTING_SOFTWARE)
-        camera.cancel()
-        aocontrol.open_loops()
+        if abort:
+            seq_utils.set_sequencer_status(SequencerStatus.ABORTING_SOFTWARE)
+            camera.cancel()
+            aocontrol.open_loops()
+            wfs.emgain_off()
 
 
 if __name__ == '__main__':

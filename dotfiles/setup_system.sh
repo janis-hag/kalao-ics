@@ -5,7 +5,7 @@ set -euo pipefail
 set -x
 
 # Install system services
-cp /home/kalao/kalao-ics/kalao-config/kalao_system-setup.service /etc/systemd/system/
+cp /home/kalao/kalao-ics/dotfiles/kalao_system-setup.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable kalao_system-setup.service
 systemctl start kalao_system-setup.service

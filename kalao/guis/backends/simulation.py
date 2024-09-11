@@ -78,9 +78,9 @@ class SHMFPSBackend(AbstractBackend):
             case 'aol1_imWFS2':
                 shape = (22, 11)
             case 'aol1_modevalWFS':
-                shape = (68, 1)
+                shape = (90, 1)
             case 'aol1_modevalDM':
-                shape = (68, 1)
+                shape = (90, 1)
             case 'dm01disp':
                 shape = (12, 12)
             case 'bmc_commands_dm':
@@ -481,11 +481,12 @@ class MainBackend(SHMFPSBackend):
                                        tiptilt=self._get_dm02disp(),
                                        illumination=illumination))
 
-        hw = 128
+        hw = 256
         frames = np.array(frames)[:, config.Camera.center_y -
                                   hw:config.Camera.center_y + hw,
                                   config.Camera.center_x -
                                   hw:config.Camera.center_x + hw]
+
         hdu = fits.PrimaryHDU(frames)
         hdu.header.set(
             'DATE',
@@ -499,6 +500,7 @@ class MainBackend(SHMFPSBackend):
                        hw + 1)  # Note: FITS indexing starts at 1
         hdu.header.set('HIERARCH ESO DET WIN1 NX', 2 * hw)
         hdu.header.set('HIERARCH ESO DET WIN1 NY', 2 * hw)
+        hdu.header.set('WCSAXES', 2)
         hdu.header.set('CRPIX1', hw + 1)  # Note: FITS indexing starts at 1
         hdu.header.set('CRPIX2', hw + 1)  # Note: FITS indexing starts at 1
         hdu.header.set('CTYPE1', 'RA---TAN')
@@ -507,10 +509,22 @@ class MainBackend(SHMFPSBackend):
         hdu.header.set('CRVAL2', 45)
         hdu.header.set('CUNIT1', 'deg')
         hdu.header.set('CUNIT2', 'deg')
-        hdu.header.set('CD1_1', config.Camera.plate_scale / 3600)
-        hdu.header.set('CD1_2', 0)
-        hdu.header.set('CD2_1', 0)
-        hdu.header.set('CD2_2', config.Camera.plate_scale / 3600)
+
+        cdelt1 = config.Camera.plate_scale / 3600
+        cdelt2 = config.Camera.plate_scale / 3600
+        crota2_rad = np.pi / 3
+
+        hdu.header.set('CD1_1', cdelt1 * np.cos(crota2_rad))
+        hdu.header.set('CD1_2', -cdelt1 * np.sin(crota2_rad))
+        hdu.header.set('CD2_1', cdelt2 * np.sin(crota2_rad))
+        hdu.header.set('CD2_2', cdelt2 * np.cos(crota2_rad))
+
+        # hdu.header.set('CDELT1', cdelt1)
+        # hdu.header.set('CDELT2', cdelt2)
+        # hdu.header.set('PC1_1', np.cos(crota2_rad))
+        # hdu.header.set('PC1_2', -np.sin(crota2_rad))
+        # hdu.header.set('PC2_1', np.sin(crota2_rad))
+        # hdu.header.set('PC2_2', np.cos(crota2_rad))
 
         hdul = fits.HDUList()
         hdul.append(hdu)
@@ -1150,7 +1164,7 @@ class MainBackend(SHMFPSBackend):
         dt = 1 / framerate
 
         if loop == 1:
-            latency = 2.2
+            latency = 1.85
             spread = 1
         else:
             latency = 7
@@ -1348,7 +1362,7 @@ class MainBackend(SHMFPSBackend):
         self.internal_state['wfs_autogain_setting'] = 0
         self.internal_state['wfs_emgain'] = 1
 
-        rprint(f'Set Nüvü EM Gain to off (virtually)')
+        rprint('Set Nüvü EM Gain to off (virtually)')
 
     # Deformable Mirror
 
@@ -1707,7 +1721,7 @@ class MainBackend(SHMFPSBackend):
             for i in range(12):
                 self.internal_state[f'dm02disp{i:02d}'] = np.zeros((2, ))
         else:
-            raise Exception(f'Unknown DM number {dm_number}')
+            raise IndexError(f'Unknown DM number {dm_number}')
 
         rprint(f'Resetted DM {dm_number} (virtually)')
 

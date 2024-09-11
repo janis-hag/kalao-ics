@@ -17,7 +17,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDoubleSpinBox, QHBoxLayout, QLabel,
     QMainWindow, QMenuBar, QSizePolicy, QSlider,
-    QVBoxLayout, QWidget)
+    QStatusBar, QVBoxLayout, QWidget)
 
 class Ui_TTMDirectControlWindow(object):
     def setupUi(self, TTMDirectControlWindow):
@@ -97,8 +97,11 @@ class Ui_TTMDirectControlWindow(object):
         TTMDirectControlWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(TTMDirectControlWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 846, 30))
+        self.menubar.setGeometry(QRect(0, 0, 846, 23))
         TTMDirectControlWindow.setMenuBar(self.menubar)
+        self.statusbar = QStatusBar(TTMDirectControlWindow)
+        self.statusbar.setObjectName(u"statusbar")
+        TTMDirectControlWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(TTMDirectControlWindow)
 

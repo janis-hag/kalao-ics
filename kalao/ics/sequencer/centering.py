@@ -235,7 +235,7 @@ def do_spiral_search(exptime: float | None = None,
             'star_dy': np.nan
         })
 
-    with (WindowHintContextManager(WindowHint.SPIRAL_SEARCH)):
+    with WindowHintContextManager(WindowHint.SPIRAL_SEARCH):
         coords = spiral_search.generate_grid(overlap=overlap, radius=1)
         expno = 0
         coord = coords[0]
@@ -249,7 +249,7 @@ def do_spiral_search(exptime: float | None = None,
 
                 expno += 1
 
-                if expno == len(coords):
+                if expno >= len(coords):
                     coords = spiral_search.generate_grid(
                         overlap=overlap, radius=coord.radius + 1)
 
@@ -287,7 +287,7 @@ def do_spiral_search(exptime: float | None = None,
 
                 logger.info(
                     'centering',
-                    f'Spiral search: found star in the field of view at alt = {+tot_dx*config.Offsets.camera_x_to_tel_alt:.2f}" and az = {+tot_dy*config.Offsets.camera_y_to_tel_az:.2f}".'
+                    f'Spiral search: found star in the field of view at alt = {+tot_dx*config.Offsets.camera_x_to_tel_alt:.0f}" and az = {+tot_dy*config.Offsets.camera_y_to_tel_az:.0f}".'
                 )
 
                 memory.hmset(
@@ -334,14 +334,13 @@ def request_manual_centering(template: Template,
         raise ManualCenteringTimeout
 
     # If the user validated the centering before exposure ended, wait
-    camera_status = camera.get_camera_status()
-    while camera_status in [CameraStatus.EXPOSING, CameraStatus.READING_CCD]:
+    while camera.get_camera_status() in [
+            CameraStatus.EXPOSING, CameraStatus.READING_CCD
+    ]:
         time.sleep(1)
 
         if seq_utils.is_aborting():
             raise AbortRequested
-
-        camera_status = camera.get_camera_status()
 
     return ReturnCode.CENTERING_OK
 

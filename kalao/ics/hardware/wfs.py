@@ -13,8 +13,7 @@ from kalao.ics.cacao import toolbox
 import config
 
 
-def start(start_nuvu_acquire: bool = True,
-          start_shwfs_process: bool = True) -> ReturnCode:
+def start() -> ReturnCode:
     logger.info('wfs', 'Starting WFS')
 
     shwfs_process_fps = toolbox.get_fps(config.FPS.SHWFS)
@@ -25,13 +24,17 @@ def start(start_nuvu_acquire: bool = True,
         'KALAOCAM'
     ])
 
-    logger.info('wfs', 'Waiting for nuvu_raw to start')
+    logger.info(
+        'wfs',
+        f'Waiting for nuvu_raw to start (max. {config.WFS.camstack_start_timeout} s)'
+    )
 
-    if toolbox.wait_file('/tmp/milk/nuvu_raw.im.shm') != ReturnCode.OK:
+    if toolbox.wait_file('/tmp/milk/nuvu_raw.im.shm',
+                         config.WFS.camstack_start_timeout) != ReturnCode.OK:
         logger.error('wfs', 'Timeout while waiting for nuvu_raw')
         return ReturnCode.GENERIC_ERROR
 
-    if nuvu_acquire_fps is not None and start_nuvu_acquire:
+    if nuvu_acquire_fps is not None:
         if not nuvu_acquire_fps.run_isrunning():
             logger.info('wfs', f'Starting {config.FPS.NUVU}')
 
@@ -43,7 +46,7 @@ def start(start_nuvu_acquire: bool = True,
             logger.error('wfs', f'Unable to start {config.FPS.NUVU}')
             return ReturnCode.GENERIC_ERROR
 
-    if shwfs_process_fps is not None and start_shwfs_process:
+    if shwfs_process_fps is not None:
         if not shwfs_process_fps.run_isrunning():
             logger.info('wfs', f'Starting {config.FPS.SHWFS}')
 
@@ -149,6 +152,8 @@ def stop_acquisition() -> ReturnCode:
 
 
 def set_temperature(temperature: float) -> float:
+    logger.info('wfs', f'Setting WFS CCD temperature to {temperature:.1f} °C')
+
     return toolbox.set_tmux_value('kalaocam_ctrl', 'SetCCDTemperature',
                                   temperature)
 
@@ -165,13 +170,30 @@ def close_shutter() -> float:
     return toolbox.set_tmux_value('kalaocam_ctrl', 'SetShutterMode', -2)
 
 
-def set_autogain_setting(setting: int) -> int | None:
-    setting = int(setting)
+def autogain_on() -> bool | None:
+    return switch_autogain(on=True)
 
+
+def autogain_off() -> bool | None:
+    return switch_autogain(on=False)
+
+
+def switch_autogain(on=True) -> bool | None:
+    if on:
+        logger.info('wfs', f'Switching WFS auto-gain on')
+    else:
+        logger.info('wfs', f'Switching WFS auto-gain off')
+
+    return toolbox.set_fps_value(config.FPS.NUVU, 'autogain_on', on)
+
+
+def set_autogain_setting(setting: int) -> int | None:
     if setting > config.WFS.max_autogain_setting:
         setting = config.WFS.max_autogain_setting
     elif setting < 0:
         setting = 0
+
+    logger.info('wfs', f'Setting WFS auto-gain setting to {setting:d}')
 
     return toolbox.set_fps_value(config.FPS.NUVU, 'autogain_setting', setting)
 
@@ -188,6 +210,8 @@ def set_emgain(emgain: int = 1, method: str = 'fps') -> int | None:
         emgain = config.WFS.min_emgain
     elif emgain > config.WFS.max_emgain:
         emgain = config.WFS.max_emgain
+
+    logger.info('wfs', f'Setting WFS EM gain to {emgain:d}')
 
     if method == 'fps':
         return toolbox.set_fps_value(config.FPS.NUVU, 'emgain', emgain)
@@ -212,6 +236,8 @@ def set_exptime(exptime: float = 0, method: str = 'fps') -> float | None:
     elif exptime > config.WFS.max_exposuretime:
         exptime = config.WFS.max_exposuretime
 
+    logger.info('wfs', f'Setting WFS exposure time to {exptime:.3g} s')
+
     if method == 'fps':
         return toolbox.set_fps_value(config.FPS.NUVU, 'exposuretime', exptime)
     elif method == 'tmux':
@@ -229,6 +255,8 @@ def emgain_off() -> ReturnCode:
 
     :return: 0 on success
     """
+
+    logger.info('wfs', 'Turning EM Gain and Auto-gain off')
 
     ret = ReturnCode.OK
 
@@ -267,6 +295,8 @@ def optimize_flux() -> ReturnCode:
     if check_flux():
         return ReturnCode.OK
 
+    logger.info('wfs', 'Optimizing WFS flux')
+
     nuvu_acquire_fps = toolbox.get_fps(config.FPS.NUVU)
 
     if nuvu_acquire_fps is None:
@@ -290,9 +320,13 @@ def optimize_flux() -> ReturnCode:
 
         elif timestamp - prev_timestamp >= config.WFS.flux_stabilization_time:
             if check_flux():
+                logger.error('wfs', 'WFS flux optimization done')
+
                 return ReturnCode.OK
             else:
                 break
+
+    logger.error('wfs', 'Failed to optimize WFS flux')
 
     # Reset values if no signal detected
     nuvu_acquire_fps.set_param('autogain_setting', 0)

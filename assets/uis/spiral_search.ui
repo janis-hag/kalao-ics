@@ -14,31 +14,68 @@
    <string>Spiral Search - KalAO</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout" columnstretch="1,0,0">
-    <item row="0" column="0" colspan="3">
-     <widget class="QGraphicsView" name="spiral_search_view"/>
+   <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,1,0,0">
+    <item row="3" column="0" colspan="5">
+     <widget class="QPushButton" name="abort_button">
+      <property name="text">
+       <string>Abort</string>
+      </property>
+      <property name="icon">
+       <iconset resource="../assets.qrc">
+        <normaloff>:/assets/icons/emblem-error.svg</normaloff>:/assets/icons/emblem-error.svg</iconset>
+      </property>
+     </widget>
     </item>
     <item row="2" column="1">
-     <widget class="QLabel" name="overlap_label">
+     <widget class="KNaNDoubleSpinbox" name="star_azimut_spinbox">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="suffix">
+       <string>&quot;</string>
+      </property>
+      <property name="decimals">
+       <number>0</number>
+      </property>
+      <property name="minimum">
+       <double>-999999.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>999999.000000000000000</double>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="star_altitude_label">
       <property name="text">
-       <string>Overlap</string>
+       <string>Star altitude</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="star_azimut_label">
+      <property name="text">
+       <string>Star azimut</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="5">
+     <widget class="QGraphicsView" name="spiral_search_view"/>
+    </item>
+    <item row="1" column="3">
+     <widget class="QLabel" name="radius_label">
+      <property name="text">
+       <string>Radius</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="KLabel" name="area_label">
-      <property name="text">
-       <string>Displayed area: {x} x {y}</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignmentFlag::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
+    <item row="1" column="4">
      <widget class="QSpinBox" name="radius_spinbox">
       <property name="readOnly">
        <bool>true</bool>
@@ -54,17 +91,7 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="0">
-     <widget class="KLabel" name="star_label">
-      <property name="text">
-       <string>Star position: {text}</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignmentFlag::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="2">
+    <item row="2" column="4">
      <widget class="QSpinBox" name="overlap_spinbox">
       <property name="readOnly">
        <bool>true</bool>
@@ -90,25 +117,62 @@
      </widget>
     </item>
     <item row="1" column="1">
-     <widget class="QLabel" name="radius_label">
+     <widget class="KNaNDoubleSpinbox" name="star_altitude_spinbox">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+      <property name="buttonSymbols">
+       <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+      </property>
+      <property name="suffix">
+       <string>&quot;</string>
+      </property>
+      <property name="decimals">
+       <number>0</number>
+      </property>
+      <property name="minimum">
+       <double>-999999.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>999999.000000000000000</double>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="3">
+     <widget class="QLabel" name="overlap_label">
       <property name="text">
-       <string>Radius</string>
+       <string>Overlap</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
       </property>
      </widget>
     </item>
-    <item row="3" column="0" colspan="3">
-     <widget class="QPushButton" name="abort_button">
-      <property name="text">
-       <string>Abort</string>
+    <item row="1" column="2">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
-      <property name="icon">
-       <iconset resource="../assets.qrc">
-        <normaloff>:/assets/icons/emblem-error.svg</normaloff>:/assets/icons/emblem-error.svg</iconset>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
       </property>
-     </widget>
+     </spacer>
+    </item>
+    <item row="2" column="2">
+     <spacer name="horizontalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
     </item>
    </layout>
   </widget>
@@ -126,8 +190,8 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>KLabel</class>
-   <extends>QLabel</extends>
+   <class>KNaNDoubleSpinbox</class>
+   <extends>QDoubleSpinBox</extends>
    <header>kalao.guis.utils.widgets</header>
   </customwidget>
  </customwidgets>

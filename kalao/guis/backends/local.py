@@ -753,7 +753,7 @@ class MainBackend(SHMFPSBackend):
         wfs.set_exptime(exposuretime)
 
     def wfs_autogain_on(self, *, state: bool) -> None:
-        aocontrol.switch_autogain(state)
+        wfs.switch_autogain(state)
 
     def wfs_autogain_setting(self, *, setting: int) -> None:
         wfs.set_autogain_setting(setting)

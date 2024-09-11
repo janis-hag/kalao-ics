@@ -230,7 +230,11 @@ def KAO_TRGOBS(template, **template_args: Any) -> ReturnCode:
 
             with SequencerStatusContextManager(
                     SequencerStatus.WAIT_STABILISATION):
-                time.sleep(config.AO.loop_stabilization_time)
+                logger.info(
+                    'sequencer',
+                    f'Waiting for AO loops stabilisation ({config.AO.loops_stabilization_time} s).'
+                )
+                time.sleep(config.AO.loops_stabilization_time)
 
     seq_utils.set_sequencer_status(SequencerStatus.EXPOSING, check_abort=True)
 
@@ -428,7 +432,10 @@ def _wait_for_tracking() -> ReturnCode:
     with SequencerStatusContextManager(SequencerStatus.WAIT_TRACKING):
         timeout = time.monotonic() + config.Sequencer.pointing_timeout
 
-        logger.info('sequencer', 'Waiting for telescope to be on target.')
+        logger.info(
+            'sequencer',
+            f'Waiting for telescope to be on target (max. {config.Sequencer.pointing_timeout} s).'
+        )
 
         while time.monotonic() < timeout:
             on_target = database.get_last_value('obs', 'sequencer_on_target')
@@ -458,7 +465,10 @@ def _wait_for_tungsten() -> ReturnCode:
         return ReturnCode.SEQ_OK
 
     with SequencerStatusContextManager(SequencerStatus.WAIT_LAMP):
-        logger.info('sequencer', 'Waiting for tungsten lamp to warm up.')
+        logger.info(
+            'sequencer',
+            f'Waiting for tungsten lamp to warm up (max. {config.Tungsten.stabilisation_time} s).'
+        )
 
         while switch_time < config.Tungsten.stabilisation_time:
             # Check if lamp is still on

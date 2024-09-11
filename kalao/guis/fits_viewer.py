@@ -28,6 +28,6 @@ QLocale.setDefault(QLocale(QLocale.English, QLocale.UnitedKingdom))
 
 # Windows
 
-window = FITSViewerWindow(None, file=Path(args.filename), on_sky_unit=True)
+window = FITSViewerWindow(None, file=Path(args.filename))
 
 app.exec()

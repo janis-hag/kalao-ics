@@ -8,9 +8,8 @@ from PySide6.QtCharts import (QAbstractAxis, QAbstractSeries, QChart,
 from PySide6.QtCore import (QEvent, QLineF, QMargins, QPoint, QPointF, QRect,
                             QRectF, QSignalBlocker, QSize, Signal)
 from PySide6.QtGui import (QBrush, QCloseEvent, QColor, QFont, QIcon, QImage,
-                           QMouseEvent, QPainter, QPainterPath, QPen, QPixmap,
-                           QPolygonF, QResizeEvent, QSurfaceFormat, Qt,
-                           QTransform)
+                           QMouseEvent, QPainter, QPen, QPixmap, QPolygonF,
+                           QResizeEvent, QSurfaceFormat, Qt, QTransform)
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QAbstractSpinBox, QDateTimeEdit, QDoubleSpinBox,
                                QGraphicsItem, QGraphicsLineItem,
@@ -374,9 +373,19 @@ class KImageViewer(QGraphicsView):
     view: QRect = None
     margins: QMargins = QMargins(0, 0, 0, 0)
     shape: tuple[int, ...] = (0, 0)
-    offset: QPointF = QPointF(0, 0)
+    offset: QPoint = QPoint(0, 0)
 
     colormap: Colormap = colormaps.BlackBody()
+
+    data_unit = ''
+    data_precision = 0
+    data_scaling = 1
+
+    axis_unit = ''
+    axis_precision = 0
+    axis_scaling = 1
+    axis_x_offset = 0
+    axis_y_offset = 0
 
     tick_visible = False
     tick_spacing = None
@@ -385,9 +394,6 @@ class KImageViewer(QGraphicsView):
     tick_fontsize = None
     tick_ticks_x = None
     tick_ticks_y = None
-
-    neindicator_visible = False
-    neindicator_parallactic_angle = None
 
     formatter = KalAOFormatter()
 
@@ -419,6 +425,8 @@ class KImageViewer(QGraphicsView):
 
         self.neindicator_group = self._scene.createItemGroup([])
         self.axes_group = self._scene.createItemGroup([])
+
+        self.arrows = []
 
         # policy = self.sizePolicy()
         # policy.setVerticalPolicy(QSizePolicy.Policy.Preferred)
@@ -484,7 +492,7 @@ class KImageViewer(QGraphicsView):
         self.centerOn(rect.center())
 
         self._draw_axes()
-        self._draw_neindicator()
+        self._draw_arrows()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
@@ -496,8 +504,8 @@ class KImageViewer(QGraphicsView):
     def setImage(self, img: np.ndarray, img_min: float | None = None,
                  img_max: float | None = None,
                  scale: Type[AbstractScale] = LinearScale, view: QRect = None,
-                 offset: QPointF = None) -> None:
-        if img is not None and len(img.shape) < 2:
+                 offset: QPoint = None) -> None:
+        if img is not None and img.ndim < 2:
             img = img[np.newaxis, :]
 
         self.img = img
@@ -523,7 +531,7 @@ class KImageViewer(QGraphicsView):
             self.pixmap_item.setPixmap(self.pixmap)
 
         if offset is None:
-            self.offset = QPointF(0, 0)
+            self.offset = QPoint(0, 0)
         else:
             self.offset = offset
 
@@ -767,14 +775,19 @@ class KImageViewer(QGraphicsView):
 
             self.axes_group.addToGroup(text_item)
 
-    def setNEIndicator(self, parallactic_angle: float) -> None:
-        self.neindicator_visible = True
-        self.neindicator_parallactic_angle = parallactic_angle
+    def addArrow(self, angle: float, length: float, text: str,
+                 color: QColor) -> None:
+        self.arrows.append((angle, length, text, color))
 
-        self._draw_neindicator()
+        self._draw_arrows()
 
-    def _draw_neindicator(self) -> None:
-        if not self.neindicator_visible:
+    def resetArrows(self):
+        self.arrows = []
+
+        self._draw_arrows()
+
+    def _draw_arrows(self) -> None:
+        if not self.arrows:
             return
 
         for item in self.neindicator_group.childItems():
@@ -784,100 +797,74 @@ class KImageViewer(QGraphicsView):
         # Reset group position to avoid drifting
         self.neindicator_group.setPos(0, 0)
 
-        pen = QPen(Color.PURPLE, 2, Qt.PenStyle.SolidLine,
-                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
-        pen.setCosmetic(True)
-
-        brush = QBrush(Color.PURPLE, Qt.BrushStyle.SolidPattern)
-
-        font = QFont()
-        font.setPixelSize(20)
-        font.setBold(True)
-
-        angle = self.neindicator_parallactic_angle * np.pi / 180
-        length = 45 / self.scaling
-        arrow_size = 15 / self.scaling
+        actual_length = 35 / self.scaling
+        arrow_size = 12 / self.scaling
         margin = 10 / self.scaling
+        font_size = 16
 
-        center_point = QPointF(0, 0)
+        for angle, length, text, color in self.arrows:
+            line_item, arrow_item, text_item = self._draw_arrow(
+                angle, length * actual_length, arrow_size, text, font_size,
+                color)
 
-        north_point = center_point + QPointF(
-            np.cos(angle) * length,
-            np.sin(angle) * length)
-        north_line = QLineF(center_point, north_point)
+            self.neindicator_group.addToGroup(line_item)
+            self.neindicator_group.addToGroup(arrow_item)
+            self.neindicator_group.addToGroup(text_item)
 
-        east_point = center_point + QPointF(-np.sin(angle) * length,
-                                            -np.cos(angle) * length)
-        east_line = QLineF(center_point, east_point)
-
-        north_arrow_p0 = north_point + QPointF(
-            north_line.unitVector().dx() * arrow_size / 2,
-            north_line.unitVector().dy() * arrow_size / 2)
-        north_arrow_p1 = north_arrow_p0 + QPointF(
-            -np.sin(angle + np.pi / 3) * arrow_size,
-            -np.cos(angle + np.pi / 3) * arrow_size)
-        north_arrow_p2 = north_arrow_p0 + QPointF(
-            -np.sin(angle + 2 * np.pi / 3) * arrow_size,
-            -np.cos(angle + 2 * np.pi / 3) * arrow_size)
-
-        east_arrow_p0 = east_point + QPointF(
-            east_line.unitVector().dx() * arrow_size / 2,
-            east_line.unitVector().dy() * arrow_size / 2)
-        east_arrow_p1 = east_arrow_p0 + QPointF(
-            np.cos(angle + np.pi / 3) * arrow_size,
-            np.sin(angle + np.pi / 3) * arrow_size)
-        east_arrow_p2 = east_arrow_p0 + QPointF(
-            np.cos(angle + 2 * np.pi / 3) * arrow_size,
-            np.sin(angle + 2 * np.pi / 3) * arrow_size)
-
-        north_east_path = QPainterPath(north_point)
-        north_east_path.lineTo(center_point)
-        north_east_path.lineTo(east_point)
-
-        north_east = self._scene.addPath(north_east_path, pen)
-
-        pen = QPen(Color.TRANSPARENT, 0, Qt.PenStyle.SolidLine,
-                   Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
-        pen.setCosmetic(True)
-
-        north_arrow = self._scene.addPolygon(
-            QPolygonF([north_arrow_p0, north_arrow_p1, north_arrow_p2]), pen,
-            brush)
-        east_arrow = self._scene.addPolygon(
-            QPolygonF([east_arrow_p0, east_arrow_p1, east_arrow_p2]), pen,
-            brush)
-
-        north_textitem = CenteredTextItem('N')
-        north_textitem.setFont(font)
-        north_textitem.setPos(north_point +
-                              QPointF(north_line.unitVector().dx(),
-                                      north_line.unitVector().dy()) * 1.5 *
-                              arrow_size)
-        north_textitem.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
-        north_textitem.setBrush(brush)
-        self._scene.addItem(north_textitem)
-
-        east_textitem = CenteredTextItem('E')
-        east_textitem.setFont(font)
-        east_textitem.setPos(east_point +
-                             QPointF(east_line.unitVector().dx(),
-                                     east_line.unitVector().dy()) * 1.5 *
-                             arrow_size)
-        east_textitem.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
-        east_textitem.setBrush(brush)
-        self._scene.addItem(east_textitem)
-
-        self.neindicator_group.addToGroup(north_east)
-        self.neindicator_group.addToGroup(north_arrow)
-        self.neindicator_group.addToGroup(east_arrow)
-        self.neindicator_group.addToGroup(north_textitem)
-        self.neindicator_group.addToGroup(east_textitem)
         self.neindicator_group.setZValue(1)
 
         rect = self.neindicator_group.childrenBoundingRect()
         self.neindicator_group.setPos(-rect.x() + margin, -rect.y() + margin)
+
+    def _draw_arrow(self, angle, length, arrow_size, text, font_size, color):
+        angle *= np.pi / 180
+
+        pen = QPen(color, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap,
+                   Qt.PenJoinStyle.MiterJoin)
+        pen.setCosmetic(True)
+
+        brush = QBrush(color, Qt.BrushStyle.SolidPattern)
+
+        font = QFont()
+        font.setPixelSize(font_size)
+        font.setBold(True)
+
+        center_point = QPointF(0, 0)
+
+        end_point = center_point + QPointF(
+            np.cos(angle) * length,
+            np.sin(angle) * length)
+        line = QLineF(center_point, end_point)
+
+        arrow_p0 = end_point + QPointF(
+            np.cos(angle) * arrow_size * np.sqrt(3) / 2,
+            np.sin(angle) * arrow_size * np.sqrt(3) / 2)
+        arrow_p1 = arrow_p0 + QPointF(
+            np.cos(angle - 5 * np.pi / 6) * arrow_size,
+            np.sin(angle - 5 * np.pi / 6) * arrow_size)
+        arrow_p2 = arrow_p0 + QPointF(
+            np.cos(angle + 5 * np.pi / 6) * arrow_size,
+            np.sin(angle + 5 * np.pi / 6) * arrow_size)
+
+        arrow_item = self._scene.addPolygon(
+            QPolygonF([arrow_p0, arrow_p1, arrow_p2]), Qt.PenStyle.NoPen,
+            brush)
+
+        line_item = self._scene.addLine(line, pen)
+
+        text_item = CenteredTextItem(text)
+        text_item.setFont(font)
+        text_item.setPos(end_point + QPointF(
+            np.cos(angle) *
+            (arrow_size * np.sqrt(3) / 2 + font_size / 2 / self.scaling),
+            np.sin(angle) *
+            (arrow_size * np.sqrt(3) / 2 + font_size / 2 / self.scaling)))
+        text_item.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
+        text_item.setBrush(brush)
+        self._scene.addItem(text_item)
+
+        return line_item, arrow_item, text_item
 
 
 class KChart(QChart):
@@ -1177,10 +1164,10 @@ class KStatusIndicator(QGraphicsView):
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        self.pen = QPen(Color.GREY, self.border, Qt.PenStyle.SolidLine,
-                        Qt.PenCapStyle.SquareCap, Qt.PenJoinStyle.MiterJoin)
-        self.brush = QBrush(Color.GREY.lighter(175),
-                            Qt.BrushStyle.SolidPattern)
+        self.pen = QPen(Color.GREY.lighter(175), self.border,
+                        Qt.PenStyle.SolidLine, Qt.PenCapStyle.SquareCap,
+                        Qt.PenJoinStyle.MiterJoin)
+        self.brush = QBrush(Color.GREY, Qt.BrushStyle.SolidPattern)
 
         self.ellipse = self._scene.addEllipse(0, 0, self.diameter,
                                               self.diameter, self.pen,
@@ -1188,8 +1175,7 @@ class KStatusIndicator(QGraphicsView):
 
         self.fitInView(self.view, Qt.AspectRatioMode.KeepAspectRatio)
 
-    def setStatus(self, color: QColor = Color.DARK_GREY,
-                  tooltip: str = '') -> None:
+    def setStatus(self, color: QColor = Color.GREY, tooltip: str = '') -> None:
         if color == Color.BLACK:
             color = QColor('#333333')
 
@@ -1333,7 +1319,7 @@ class KColorbar(QGraphicsView):
             v = scale.inverse(i) / 255 * (self.true_max -
                                           self.true_min) + self.true_min
 
-            text_item = OffsetedTextItem(f'{v:3.3g}')
+            text_item = OffsetedTextItem(f'{v:.0f}')
             text_item.setFont(font)
             text_item.setPos(
                 colorbar_width + self.tick_length + self.tick_text_spacing,

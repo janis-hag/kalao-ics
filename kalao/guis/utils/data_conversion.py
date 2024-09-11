@@ -16,7 +16,7 @@ def ndarray_to_qimage(img: np.ndarray | np.ma.masked_array, img_min: float |
                       None = None, img_max: float | None = None,
                       colormap: Colormap = colormaps.Grayscale(),
                       scale: Type[AbstractScale] = LinearScale) -> QImage:
-    if len(img.shape) < 2:
+    if img.ndim < 2:
         img = img[np.newaxis, :]
 
     img_scaled = ndarray_normalize(img, img_min=img_min, img_max=img_max,

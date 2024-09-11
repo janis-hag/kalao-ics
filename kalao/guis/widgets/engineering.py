@@ -787,14 +787,18 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
         tmux_sessions = self.consume_dict(data, 'tmux', 'tmux_sessions')
         if tmux_sessions is not None:
             if 'kalaocam_ctrl' in tmux_sessions:
-                self.ui.kalaocamctrl_tmux_indicator.setStatus(Color.GREEN)
+                self.ui.kalaocamctrl_tmux_indicator.setStatus(
+                    Color.GREEN, 'present')
             else:
-                self.ui.kalaocamctrl_tmux_indicator.setStatus(Color.RED)
+                self.ui.kalaocamctrl_tmux_indicator.setStatus(
+                    Color.RED, 'missing')
 
             if 'nuvu_fgrab' in tmux_sessions:
-                self.ui.nuvufgrab_tmux_indicator.setStatus(Color.GREEN)
+                self.ui.nuvufgrab_tmux_indicator.setStatus(
+                    Color.GREEN, 'present')
             else:
-                self.ui.nuvufgrab_tmux_indicator.setStatus(Color.RED)
+                self.ui.nuvufgrab_tmux_indicator.setStatus(
+                    Color.RED, 'missing')
 
             for proc in config.AO.processes:
                 if proc is None:
@@ -802,10 +806,10 @@ class EngineeringWidget(KWidget, BackendActionMixin, BackendDataMixin):
 
                 if proc in tmux_sessions:
                     self.milk_processes_widgets[proc].tmux_indicator.setStatus(
-                        Color.GREEN)
+                        Color.GREEN, 'present')
                 else:
                     self.milk_processes_widgets[proc].tmux_indicator.setStatus(
-                        Color.RED)
+                        Color.RED, 'missing')
 
         kalaocam_ctrl_proc = self.consume_dict(data, 'pgrep', 'kalaocam_ctrl')
         if kalaocam_ctrl_proc is not None:

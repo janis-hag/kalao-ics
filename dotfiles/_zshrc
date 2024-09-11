@@ -1,0 +1,134 @@
+#!/bin/zsh
+
+#----- Prompt
+
+autoload -Uz vcs_info
+precmd_vcs_info() { vcs_info }
+precmd_functions+=( precmd_vcs_info )
+
+zstyle ':vcs_info:git:*' formats '%b '
+
+setopt prompt_subst
+PROMPT='%F{green}%n@%m%f %F{blue}%~%f %F{red}${vcs_info_msg_0_}%f$ '
+RPROMPT='%F{green}%*%f'
+
+#----- History
+
+setopt share_history        # Share history between shells
+setopt hist_ignore_all_dups # Don't have duplication in history
+setopt hist_ignore_space    # Don't save command starting with a space
+setopt hist_reduce_blanks   # Remove superfluous blanks
+setopt hist_verify
+
+export HISTSIZE=10000
+export SAVEHIST=$HISTSIZE
+export HISTFILE=~/.zsh_history
+
+#----- Useful aliases
+
+alias grep='grep --color=auto'
+alias ls='ls --color=auto'
+alias ll='ls -larth --color=auto'
+alias nano='nano -w'
+alias cp='cp -v'
+alias mv='mv -v'
+alias rm='rm -v'
+
+#----- Bind keys
+
+# create a zkbd compatible hash;
+# to add other keys to this hash, see: man 5 terminfo
+typeset -A key
+
+key[Home]=${terminfo[khome]}
+key[End]=${terminfo[kend]}
+key[Insert]=${terminfo[kich1]}
+key[Delete]=${terminfo[kdch1]}
+key[Up]=${terminfo[kcuu1]}
+key[Down]=${terminfo[kcud1]}
+key[Left]=${terminfo[kcub1]}
+key[Right]=${terminfo[kcuf1]}
+key[PageUp]=${terminfo[kpp]}
+key[PageDown]=${terminfo[knp]}
+
+[[ -n "${key[Home]}"    ]]  && bindkey  "${key[Home]}"    beginning-of-line
+[[ -n "${key[End]}"     ]]  && bindkey  "${key[End]}"     end-of-line
+[[ -n "${key[Insert]}"  ]]  && bindkey  "${key[Insert]}"  overwrite-mode
+[[ -n "${key[Delete]}"  ]]  && bindkey  "${key[Delete]}"  delete-char
+[[ -n "${key[Up]}"      ]]  && bindkey  "${key[Up]}"      history-beginning-search-backward
+[[ -n "${key[Down]}"    ]]  && bindkey  "${key[Down]}"    history-beginning-search-forward
+[[ -n "${key[Left]}"    ]]  && bindkey  "${key[Left]}"    backward-char
+[[ -n "${key[Right]}"   ]]  && bindkey  "${key[Right]}"   forward-char
+
+# Finally, make sure the terminal is in application mode, when zle is
+# active. Only then are the values from $terminfo valid.
+if (( ${+terminfo[smkx]} )) && (( ${+terminfo[rmkx]} )); then
+    function zle-line-init () {
+        printf '%s' "${terminfo[smkx]}"
+    }
+    function zle-line-finish () {
+        printf '%s' "${terminfo[rmkx]}"
+    }
+    zle -N zle-line-init
+    zle -N zle-line-finish
+fi
+
+#----- Misc
+
+autoload -U zargs # Super xargs
+autoload -U zmv   # Rename with (*) and $1
+autoload -U zcalc
+
+setopt extended_glob
+setopt numeric_glob_sort
+setopt glob_dots         # The jocker match dot files
+setopt correct_all       # Correction
+setopt nomatch           # Output an error if filename pattern has no matches
+setopt auto_cd           # cd using directory name
+setopt notify
+
+#----- Auto-completion
+
+autoload -U compinit
+compinit
+
+zstyle ':completion:*:*:cd:*' tag-order local-directories path-directories
+
+# Nice menu for completion
+zstyle ':completion:*' menu select
+zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p%s
+
+# Don't show already selected elements
+zstyle ':completion:*:(cd|mv|cp|rm):*' ignore-line yes
+
+# Match approximate name
+zstyle ':completion:*' completer _complete _match _approximate
+zstyle ':completion:*:match:*' original only
+zstyle ':completion:*:approximate:*' max-errors 1 numeric
+
+# Ignore completion for unavailable commands
+zstyle ':completion:*:functions' ignored-patterns '_*'
+
+# Remove trailing slash for directories
+zstyle ':completion:*' squeeze-slashes true
+
+# Do not get back to parent directory with ../
+zstyle ':completion:*:(cd|mv|cp|rm):*' ignore-parents parent pwd
+
+# Show processes when completing kill
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*:processes' command 'ps -aU$USER'
+zstyle ':completion:*:*:*:*:processes' menu yes select
+zstyle ':completion:*:*:*:*:processes' force-list always
+zstyle ':completion:*:processes-names' command  'ps c -u ${USER} -o command | uniq'
+zstyle ':completion:*:*:kill:*:processes' list-colors "=(#b) #([0-9]#) #([a-z/0-9?]#) #([0-9:]#)*=0=$color[bold];$color[red]=$color[bold];$color[cyan]=$color[green]"
+
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path ~/.zsh_cache
+
+zstyle :compinstall filename "$HOME/.zshrc"
+
+#----- Source KalAO-specific files and config
+
+source ~/.kalao_env
+source ~/kalao-venv-3.11/bin/activate

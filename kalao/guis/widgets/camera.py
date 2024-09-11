@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 
-from PySide6.QtCore import QMarginsF, QPointF, QRectF, QTimer, Signal, Slot
+from PySide6.QtCore import QMargins, QPoint, QRect, QTimer, Signal, Slot
 from PySide6.QtGui import QPen, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
@@ -57,7 +57,7 @@ class CameraWidget(KWidget, BackendDataMixin):
 
         self.ui.camera_view.setView(self.image_info['shape'])
 
-        self.ui.camera_view.setMargins(QMarginsF(40, 30, 40, 30))
+        self.ui.camera_view.setMargins(QMargins(40, 30, 40, 30))
 
         self.change_units(Qt.CheckState.Unchecked)
         self.change_colormap(Qt.CheckState.Unchecked)
@@ -113,9 +113,9 @@ class CameraWidget(KWidget, BackendDataMixin):
 
             if hdul[0].data is None:
                 return
-            elif len(hdul[0].data.shape) == 2:
+            elif hdul[0].data.ndim == 2:
                 img = hdul[0].data
-            elif len(hdul[0].data.shape) == 3:
+            elif hdul[0].data.ndim == 3:
                 img = hdul[0].data[-1, :, :]
             else:
                 raise Exception('Unexpected shape for camera image')
@@ -124,21 +124,19 @@ class CameraWidget(KWidget, BackendDataMixin):
                 hdul[0].header['DATE']).replace(
                     tzinfo=timezone.utc).astimezone()
 
-            # self.camera_view.setNEIndicator(parang from keywords)
-
             img_min, img_max = self.ui.minmax_widget.compute_min_max(img)
 
             self.saturation = img.max() / self.image_info['max']
             self.img_max = img.max()
 
             # View is full image size
-            view = QRectF(0, 0, self.image_info['shape'][1],
-                          self.image_info['shape'][0])
-            offset = QPointF(hdul[0].header['HIERARCH ESO DET WIN1 STRX'] - 1 -
-                             hdul[0].header['HIERARCH ESO DET OUT1 PRSCX'],
-                             hdul[0].header['HIERARCH ESO DET WIN1 STRY'] - 1 -
-                             hdul[0].header['HIERARCH ESO DET OUT1 PRSCY']
-                             )  # Note: FITS indexing starts at 1
+            view = QRect(0, 0, self.image_info['shape'][1],
+                         self.image_info['shape'][0])
+            offset = QPoint(hdul[0].header['HIERARCH ESO DET WIN1 STRX'] - 1 -
+                            hdul[0].header['HIERARCH ESO DET OUT1 PRSCX'],
+                            hdul[0].header['HIERARCH ESO DET WIN1 STRY'] - 1 -
+                            hdul[0].header['HIERARCH ESO DET OUT1 PRSCY']
+                            )  # Note: FITS indexing starts at 1
 
             self.ui.camera_view.setImage(img, img_min, img_max, scale=LogScale,
                                          view=view, offset=offset)
